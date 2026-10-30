@@ -118,8 +118,9 @@ export const busOf = (): Bus => {
  * renderer's regions inside the view, on `subject`, filled the renderer's way and run by its presses; `run` a keymap
  * command or an extension's `<cap>/<name>` on a subject or the one in focus; `display` a subject, or its key; `go` to
  * a location; `bus`, the page's viewer subjects (@since 1.118); a toast; a confirm whose button says `verb`; `href`, the
- * hash of the renderer's page that displays a subject when a link takes the page there, for a link in a frame where
- * nothing runs (@since 1.121). A renderer lends what its `renderer.json` kit names.
+ * hash of the renderer's page that displays a subject, or goes to a location, when a link takes the page there, for a
+ * link in a frame where nothing runs (@since 1.121). A renderer lends what its `renderer.json` kit names; a view uses
+ * `href` when it is lent, so a renderer without it still hosts the views that do.
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
@@ -130,7 +131,7 @@ export type Kit = {
   bus: Bus
   toast(text: string, action?: { label: string; run(): void }): void
   confirm(text: string, verb: string): Promise<boolean>
-  href(subject: Subject): string
+  href?(to: Subject | Location): string
 }
 
 /**
@@ -178,7 +179,7 @@ export const CORE_VIEWS: readonly View[] = [
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
-  { ...byType('document', ['text/markdown'], { label: 'Document', hint: 'the markdown drawn as a document' }), shows: ['section'], regions: ['section.acts'], needs: ['region', 'bus', 'display', 'toast', 'confirm', 'href'] },
+  { ...byType('document', ['text/markdown'], { label: 'Document', hint: 'the markdown drawn as a document' }), shows: ['section'], regions: ['section.acts'], needs: ['region', 'bus', 'display', 'toast', 'confirm'] },
   byType('html', ['text/html'], { label: 'Page', hint: 'the page, running framed at an origin of its own' }),
   byType('image', ['image/*'], { label: 'Image', hint: 'the image' }),
   byType('video', ['video/*'], { label: 'Video', hint: 'the video, playing' }),

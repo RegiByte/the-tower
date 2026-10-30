@@ -114,8 +114,9 @@ would reach for a markdown library's `parse` and draw it inline.
   link's `xlink:href` read as its href) where it goes, so pressing one needs nothing heard: a `#fragment` naming an
   element (headings get their GitHub slug as an id) stays in the frame, written as `about:srcdoc#…` since a srcdoc
   resolves a bare `#` against the page's address; a link the view places itself takes the page to one of its
-  locations, `target="_top"` with the page's address written whole: a file of the shelf entry by the shelf's
-  location, or, in a file of a worker's checkout, a path relative to it
+  locations by the hash the kit's `href` gives, `target="_top"` with the page's address written whole (refused in a
+  renderer that lends no `href`): a file of the shelf entry by the shelf's location on it, or, in a file of a
+  worker's checkout, a path relative to it
   ([`relativeHref`](ref:hub/src/shared/markdown.ts#relativeHref)) resolved in its repo
   ([`linkedFile`](ref:hub/src/shared/subjects.ts#linkedFile)) by the hash `kit.href` gives that `file`
   ([`linkHash`](ref:hub/renderers/page/page.js#linkHash), [[ui-model]]); a link `safeHref` allows opens a tab of its
