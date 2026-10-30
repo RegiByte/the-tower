@@ -267,13 +267,15 @@ export const resolveCommand = (config: Config, name: string | undefined): string
   return config.argv[name && names.includes(name) ? name : names[0]]
 }
 
-/** The project's resolved preferred command name; `undefined` in single-command mode. */
-export const projectPreferredCommand = (config: Config, projectId: string): string | undefined => {
+/** The name `resolveCommand` actually resolves to: the named key when valid, else the object's first; `undefined` in single-command mode. */
+export const resolvedCommandName = (config: Config, name: string | undefined): string | undefined => {
   const names = commandNames(config)
   if (names === undefined) return undefined
-  const wanted = config.projects[projectId].command
-  return wanted && names.includes(wanted) ? wanted : names[0]
+  return name && names.includes(name) ? name : names[0]
 }
+
+/** The project's resolved preferred command name; `undefined` in single-command mode. */
+export const projectPreferredCommand = (config: Config, projectId: string): string | undefined => resolvedCommandName(config, config.projects[projectId].command)
 
 /**
  * The whole system's configuration. The directory holding this file is the system's root:

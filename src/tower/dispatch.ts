@@ -38,6 +38,7 @@ import {
   projectCollections,
   projectDirs,
   projectPlugins,
+  projectPreferredCommand,
   resolveCommand,
   sessionDirs,
   worktreeName,
@@ -71,6 +72,17 @@ export type Verb = Exclude<Route, 'mux/watch' | 'mux/unwatch'>
 /** Whether the config declares the collection for the project. */
 export const isDeclaredIn = (config: Config, project: string, collection: string): boolean =>
   Object.hasOwn(config.projects, project) && Object.hasOwn(projectCollections(config, project), collection)
+
+/** The `Launch` a spawn verb's input carries into `newLaunch`: every launch field the API lets a spawn set. */
+export const spawnLaunchOf = ({ model, effort, prompt, command }: { model?: string; effort?: string; prompt?: string; command?: string }): Launch => ({ model, effort, prompt, command })
+
+/** A spawn's launch, Claude's defaults filled in for what it left blank, and the project's preferred command when it named none. */
+export const launchWithDefaults = (config: Config, projectId: string, launch: Launch, defaults: { model?: string; effort?: string }): Launch => ({
+  ...launch,
+  model: launch.model ?? defaults.model,
+  effort: launch.effort ?? defaults.effort,
+  command: launch.command ?? projectPreferredCommand(config, projectId),
+})
 
 
 type Deps = {
@@ -582,7 +594,7 @@ export const dispatch = defineResource({
         plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
         contributed: merged.contributed,
         facts: [...spawn.facts, ...coreFacts(merged, lead?.id)],
-        launch: { ...launch, model: launch.model ?? merged.defaults.model, effort: launch.effort ?? merged.defaults.effort },
+        launch: launchWithDefaults(config, projectId, launch, merged.defaults),
       }
     }
 
@@ -908,10 +920,10 @@ export const dispatch = defineResource({
       }
 
     const HANDLERS: { [R in Verb]: (input: RouteInput[R], caller: Caller) => Answer | Promise<Answer> } = {
-      spawn: ({ project, cwd, cut, callsign, model, effort, prompt, x, by, hire }, caller) => {
+      spawn: ({ project, cwd, cut, callsign, model, effort, prompt, command, x, by, hire }, caller) => {
         const fields = spawnFields(project, x ?? {})
         if ('t' in fields) return fields
-        const launch = { model, effort, prompt }
+        const launch = spawnLaunchOf({ model, effort, prompt, command })
         const spawn: Spawn = { ...fields, by, hire: hire ?? false, prompt, within: nestedIn(caller, 'tower/spawn') }
         const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, callsign, launch, spawn) : spawnIn(project, cwd, callsign, launch, spawn)), prompt, by)
         return hire ? hired(project, by!, spawning) : spawning()
