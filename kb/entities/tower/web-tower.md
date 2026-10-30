@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-10-29",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/worker.js#worker", "hub/renderers/page/review.js#review", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -16,9 +16,8 @@ drawn as a floor and the skyline, a click unfolding the floor, with no page erro
 `page.js` composes them: its machine ([`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers)) with the
 executors, the draw, and the clicks, keys and board wired to them. Each pane is a module exporting a factory that
 takes what it reads and calls as plain functions and returns what the page composes, its own state closed inside it:
-the [`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar), the selected
-[`worker`](ref:hub/renderers/page/worker.js#worker) (its header, pane tabs and showings), its terminal (`screen.js`, a view of `/term-view.js`, as each docked shell is),
-brief (`brief-pane.js`) and Changes and Reviews ([`review`](ref:hub/renderers/page/review.js#review)), the
+the [`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar), what its terminals share (`screen.js`: the face, the mode,
+leaving one), the
 [`stats`](ref:hub/renderers/page/stats.js#stats), the settings, alerts, shells, the archives read for a worker the
 board left out, the drafts' titles and new-worker form, a kept item and the dialogs. What they draw with alike is
 `kit.js`, what they read off the board alike [`boardKit`](ref:hub/renderers/page/board.js#boardKit). The rest of the
@@ -62,9 +61,10 @@ it has one, `#archive/<p>`, `#shelf/<p>/<n>`, `#draft/<p>`…, else `#v/<cap>/<n
 is the same place, and enters the next. The page's machine holds that view beside the board, the viewer's record and the attention state
 ([[machines]]), and every handler that sets the view tells attention through
 [`viewed`](ref:hub/renderers/page/page.js#viewed), so the worker whose waits ring for nobody is the one on screen while
-the window has the viewer's eye. An extension's view is mounted in `#view-host` by
-[`hosted`](ref:hub/renderers/page/hosted.js#hosted) with the page's kit (its terminal, keymap runner, display, toasts
-and confirm), updated on each board and closed as the location leaves; [`display`](ref:hub/renderers/page/page.js#display)
+the window has the viewer's eye. Every view of the main pane, a worker's among them, is
+mounted in `#view-host` by [`regions`](ref:hub/renderers/page/regions.js#regions) with the page's kit (its terminal,
+regions, keymap runner, display, toasts and confirm), updated on each board and closed as the location leaves, but for
+the last four workers left, kept drawn and hidden; a worker's tabs are a tabs region it fills the same way ([[ui-model]]); [`display`](ref:hub/renderers/page/page.js#display)
 places a subject through `/views.js` onto a view or one of the page's routes, a floor's section and the palette offer
 "Open <label>" for the views offered there, and extensions' chords run on the subject in focus.
 

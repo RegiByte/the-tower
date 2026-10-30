@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-26",
   "reviewed": "2026-10-29",
-  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/hosted.js#hosted", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#itemView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
+  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/regions.js#regions", "hub/src/views/card.ts#mount", "hub/src/views/terminal.ts#mount", "hub/src/views/brief.ts#mount", "hub/src/views/changes.ts#mount", "hub/src/views/shown.ts#mount", "hub/extensions/reviews/client/thread.ts#mount", "hub/src/shared/views.ts#RegionHandle", "hub/src/shared/views.ts#TabWords", "hub/src/shared/subjects.ts#linesSubject", "hub/renderers/page/archive.js#archive", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#itemView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
 }
 ---
 **Problem.** An extension could add actions and badges to the board's subjects, and run code in a renderer as a
@@ -46,13 +46,25 @@ and a framed document's section are the same thing.
   fallback accepting none; one head serves them all ([`itemView`](ref:hub/src/views/item.ts#itemView)), with the way
   back to the floor's view of the extension declaring the item's collection. An item's type is its file name's
   ([`MEDIA_TYPES`](ref:hub/src/shared/media.ts#MEDIA_TYPES): code as `text/plain`, so nothing a framed page loads
-  from it runs as a script). `tower/card` has no module yet: the tower page draws it by its route
-  ([`mainViewOf`](ref:hub/renderers/page/view.js#mainViewOf): a card, and a showing as its pane) until step 5a.
+  from it runs as a script). The worker view is views since 1.111: [`tower/card`](ref:hub/src/views/card.ts#mount)
+  draws a worker's head and declares `card.panes`, its tabs, where the renderer mounts the views on the card,
+  [`tower/terminal`](ref:hub/src/views/terminal.ts#mount), [`tower/brief`](ref:hub/src/views/brief.ts#mount) (shows
+  `conversation`), [`tower/changes`](ref:hub/src/views/changes.ts#mount) (shows `lines`) and the reviews extension's
+  [`reviews/thread`](ref:hub/extensions/reviews/client/thread.ts#mount), then one tab per showing, drawn by
+  [`tower/shown`](ref:hub/src/views/shown.ts#mount), today's switch on a showing's kind until shown files are drawn by
+  the views by type. A view's `tab` export says, from the board, whether it has a tab on a subject and its tally; a
+  mounted one's `tab()` says it from what it read, and a `tab` event on its host asks for the tab again
+  ([`TabWords`](ref:hub/src/shared/views.ts#TabWords)). Until step 6 each tab reads what it needs itself: Changes
+  reads the thread for its notes' marks, Reviews the Changes against the default branch for its quotes, and a note's
+  lines are a `lines` subject ([`linesSubject`](ref:hub/src/shared/subjects.ts#linesSubject)) displayed into Changes.
 - *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `region`, `run`,
   `display`, `go`, `toast`, `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it
   needs. `region` (since 1.108) fills one of the renderer's regions inside a view, `item.head` in the drafts editor,
   with what extensions add to a subject, drawn and run the renderer's way
-  ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)); views mount in one from step 5a. `run('spawn', subject)`
+  ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), each hold in the element of the host marked to hold it
+  (`data-holds="badges"`, `lines`, `actions`: the page's convention, so one head draws them in three places). A region
+  holding views mounts them by the layout, a tabs region its tabs as (view, subject) pairs, and is handed `show` and
+  `visible` ([`RegionHandle`](ref:hub/src/shared/views.ts#RegionHandle), since 1.111). `run('spawn', subject)`
   opens the renderer's new-worker form on a floor, or on a draft, which is deleted once a worker starts on it. A command is
   lent the part with no host ([`CommandKit`](ref:hub/src/shared/views.ts#CommandKit)) through
   [`runCommandWith`](ref:hub/src/shared/adds.ts#runCommandWith); `runCommand` keeps its signature with
@@ -74,18 +86,23 @@ and a framed document's section are the same thing.
   tab before the main view. The renderer mounts the location and hands the view `show(subject)` when it is on a
   subject above; a view given that is mounted and takes it stays, and when it is on that subject's kind the location
   follows it there with no remount (a new draft, on its item once its first save is on the board). The tower page's
-  [`display`](ref:hub/renderers/page/page.js#display) lands a card's showing or conversation on its tab, and a worker
-  the board doesn't carry after reading the floors' archives, else once the board carries it (a run just started).
+  [`display`](ref:hub/renderers/page/page.js#display) opens a worker the board doesn't carry as a read subject when a
+  view hands it the card (the archive's), else after reading the floors' archives, else once the board carries it when
+  the page started it: its own spawns and resumes, and any its views started through the `tower` it lends them.
 - *Focus* ([`focusedSubject`](ref:hub/renderers/page/page.js#focusedSubject)): the subject of the innermost region
   holding the document's focus, else the main pane's; chords and `kit.run` resolve there.
 - *Keys* (D5): `commands.<c>.keys` and `views.<v>.keys` give default chords, global, by `<cap>/<name>` in
   `board.keys` ([`addedKeys`](ref:hub/src/shared/keymap.ts#addedKeys), [[keymap]]). The config's choice wins; a
   default colliding with the keymap's, a renderer's `keeps`, a configured chord or another extension's default is
   dropped, both in the last case, each a problem on its extension. From a script frame only a view's chord resolves.
-- *The page* ([[web-tower]]) hosts views in its main pane through one `MainView` case,
-  [`hosted`](ref:hub/renderers/page/hosted.js#hosted): the skyline, a floor's archive and policies, a collection, a
-  shelf entry and a draft among them since 1.108, drawn and hashed as before; its click switchboard leaves a view's
-  presses to the view, but for the regions it fills there. A worker and a kept item stay its routes. The grid of
+- *The page* ([[web-tower]]) hosts every view of its main pane, the worker's since 1.111, through
+  [`regions`](ref:hub/renderers/page/regions.js#regions), drawn and hashed as before (`#<id>/changes` is a worker on its
+  Changes tab); its click switchboard leaves a view's presses to the view, but for the regions it fills there. Over
+  §6's rule that a `one` region closes its view as the location leaves, the page keeps the four workers left last
+  drawn and hidden, each told `visible(false)` and never a close it didn't get, so a worker is as it was left when
+  gone back to (its tab, its panes' scroll, its pick, its terminal streaming); a showing's tab is kept across workers
+  up to eight. A worker the board left is a read subject the page holds
+  ([`archive`](ref:hub/renderers/page/archive.js#archive)). The grid of
   terminals ([`examples/extensions/grid`](ref:hub/examples/extensions/grid/extension.json)) proves it: reloaded at its
   location, its cells and head toggle kept in its state.
 
@@ -211,4 +228,4 @@ flowchart LR
 
 **Impact.** An extension's view is a place on screen any renderer hosting views mounts, reachable by location,
 display, the palette and a chord, with no renderer code of its own. The tower page's main pane hosts them; the worker
-view's tabs, the sidebar's trays and the card's cells follow on the same contract.
+view's tabs are views on that contract since 1.111; the sidebar's trays and the grid's cells follow on it.
