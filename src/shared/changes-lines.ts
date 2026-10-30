@@ -166,7 +166,7 @@ export const livePick = (read: ChangesRead, pick: LinePick | undefined) =>
  */
 export type NamedLines = { repo: string; path: string; from: number; to: number; quote: { lang: string; lines: string[] } }
 
-/** The picked rows as lines: the file's lines now, or a `diff` with their marks when the rows hold a removal. @since 1.114 */
+/** The picked rows as lines: the file's lines now, or a `diff` with their marks when the rows hold a removal. @since 1.116 */
 export function pickedLines(repos: RepoChanges[], pick: LinePick): NamedLines {
   const [repo, f] = changedFiles(repos).find(([r, f]) => fileKey(r, f) === pick.key)!
   const [lo, hi] = pickRange(pick)
@@ -182,7 +182,7 @@ export function pickedLines(repos: RepoChanges[], pick: LinePick): NamedLines {
 
 /**
  * Where lines' first line is in the Changes: its file, and the row holding the line now (else on the old side; -1 when
- * the diff doesn't show it). Undefined when its file has no changes now. @since 1.114
+ * the diff doesn't show it). Undefined when its file has no changes now. @since 1.116
  */
 export function linesSpot(repos: RepoChanges[], lines: Pick<NamedLines, 'repo' | 'path' | 'from'>) {
   const found = changedFiles(repos).find(([repo, f]) => repoName(repo.dir) === lines.repo && f.path === lines.path)

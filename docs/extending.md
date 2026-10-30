@@ -565,7 +565,7 @@ board), on floors where it is on, seeing
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
 an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}`, the verb
 qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?}`), tidy entries, lines and marks at `board.adds[<subject key>]`, each tagged
-with its `cap`; a mark (API 1.114, `marksOf(board, card)` in `/cards.js`) is `{repo, path, line, to?, label, tone?,
+with its `cap`; a mark (API 1.116, `marksOf(board, card)` in `/cards.js`) is `{repo, path, line, to?, label, tone?,
 hint?, display?}` on lines the card's worker changed, `repo` named as its Changes name it (the main checkout's folder),
 and the Changes draw it on those lines, saying its `hint` (the reviews extension marks the lines each note of the
 worker's thread is about, `n3`, "noted in n3"); `display`, a subject key a click on the mark would show, is drawn by no
@@ -581,7 +581,7 @@ has its `ctx.board`.
 `client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`. Each
 of `commands` is one of its modules' exports, with `words`. Its `on` offers it on every subject of those kinds with
 no fold needed (`"on": ["item.drafts"]`, or `"item.*"` for every collection's items, or `"lines"`, lines picked in a
-worker's Changes, since API 1.114), whether the extension folds or not; one with no `on` is the palette's alone. Its `accepts` (API 1.98) narrows that to the subjects whose
+worker's Changes, since API 1.116), whether the extension folds or not; one with no `on` is the palette's alone. Its `accepts` (API 1.98) narrows that to the subjects whose
 `value.type` it lists: media types, `"text/markdown"`, or a top-level type's every subtype, `"image/*"`; a subject
 with no type is offered none of them. A renderer draws a subject's actions and badges with `/cards.js`: name the
 subject (`cardSubject(card)`, `floorSubject(floor)`, `shownSubject(card, shown)`, `itemSubject(project, collection,
@@ -729,7 +729,7 @@ badges, lines and actions each where `tower/card` places them, `card.panes`' tab
 (`views`). It keeps the last four workers left drawn and hidden, told `visible(false)`, so one is as it was left when
 gone back to.
 
-**Picked lines** (API 1.114). Lines picked in a worker's Changes are a `lines` subject (`linesSubject` in `/cards.js`:
+**Picked lines** (API 1.116). Lines picked in a worker's Changes are a `lines` subject (`linesSubject` in `/cards.js`:
 the card, the repo, the path, the range and the lines as they read, `quote`), which only the page that picked them
 holds. Under them the Changes ask the kit for `lines.acts`, a region holding commands and one view at `row` scale: a
 command `on: ["lines"]` runs on the lines, and a view `on: ["lines"]` is drawn there, as the reviews extension's

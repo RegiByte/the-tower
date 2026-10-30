@@ -68,7 +68,7 @@ and a framed document's section are the same thing.
   pick, its `hidden` hiding them, and an old hash naming it lands on the showing's tab. A view's `tab` export says, from the board, whether it has a tab on a subject and its tally; a
   mounted one's `tab()` says it from what it read, and a `tab` event on its host asks for the tab again
   ([`TabWords`](ref:hub/src/shared/views.ts#TabWords)).
-- *Changes and reviews* (step 6, since 1.114) meet through data, each reading only its own. Lines of a worker's
+- *Changes and reviews* (step 6, since 1.116) meet through data, each reading only its own. Lines of a worker's
   changes are a `lines` viewer subject ([`linesSubject`](ref:hub/src/shared/subjects.ts#linesSubject)), which only the
   page that picked them holds. The reviews extension folds `marks` on each card, one per anchor of its thread
   ([`threadMarks`](ref:hub/extensions/reviews/client/anchors.ts#threadMarks)), which Changes draws on their lines as

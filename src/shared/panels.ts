@@ -4,7 +4,7 @@
  * markdown). A renderer keeps the state (what it read, folds, the pick, text being written), passes it in as a view
  * model, puts the html in an element with `drawPanel` and wires the attributes below. The tower serves it as
  * `/panels.js`, bundled with the modules it gathers: `changes-reads.ts`, `changes-lines.ts` and `changes-panel.ts`,
- * `anchors-legacy.ts` (deprecated since 1.114, review notes' anchors and the note box, now the reviews extension's),
+ * `anchors-legacy.ts` (deprecated since 1.116, review notes' anchors and the note box, now the reviews extension's),
  * `reviews-panel.ts`, `stats-panel.ts`, `policies-panel.ts`, `file-acts.ts`, `panel-kit.ts` and `panels-css.ts`.
  *
  * The protocol a renderer wires, by the attribute on the element clicked (`closest`):

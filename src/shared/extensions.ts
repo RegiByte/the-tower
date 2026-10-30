@@ -275,7 +275,7 @@ export type ExtensionViewEntry = {
 
 /**
  * What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the
- * board's, since 1.86; `marks`, a card's, since 1.114.
+ * board's, since 1.86; `marks`, a card's, since 1.116.
  */
 export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots', 'marks'] as const
 
@@ -283,7 +283,7 @@ export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots', 'mar
 export const SLOTS_ADD_SINCE = '1.86'
 
 /** The tower version a manifest that adds `marks` requires. */
-export const MARKS_ADD_SINCE = '1.114'
+export const MARKS_ADD_SINCE = '1.116'
 export type Add = (typeof ADDS)[number]
 
 /** How a badge reads, as a card's attention does. */
@@ -305,7 +305,7 @@ export type Badge = { label: string; tone?: BadgeTone; hint?: string; href?: str
  * A mark on lines a worker changed, drawn beside them wherever its Changes are: `repo` named as the Changes name it
  * (the main checkout's folder), `path` from the repo's root, lines `line` to `to` as the file counts them now, `label`
  * what it reads (`n3`), `hint` what it says on hover. `display`: a subject key a click on it shows, for a renderer that
- * can show it. A card's only. @since 1.114
+ * can show it. A card's only. @since 1.116
  */
 export type Mark = { repo: string; path: string; line: number; to?: number; label: string; tone?: BadgeTone; hint?: string; display?: string }
 
@@ -343,7 +343,7 @@ export type AddedMark = Mark & { cap: string }
 /**
  * What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker.
  * `slots`: a floor's or the board's, which the tower's slot loop fires through each one's `slots['*']`. `marks`: a
- * card's, on the lines its worker changed (@since 1.114).
+ * card's, on the lines its worker changed (@since 1.116).
  */
 export type Adds = { actions?: AddedAction[]; badges?: AddedBadge[]; tidy?: AddedTidy[]; lines?: AddedLine[]; slots?: AddedSlot[]; marks?: AddedMark[] }
 

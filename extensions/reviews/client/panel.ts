@@ -123,10 +123,10 @@ export type ThreadViewer = {
   thread: ReviewThread | undefined; failed: string | undefined; changes: RepoChanges[] | undefined; picked: string | undefined; re: number | undefined
 }
 
-/** What the viewer holds of a thread, its anchors' states read as the reviews extension reads them (`anchors/<project>`). @since 1.114 */
+/** What the viewer holds of a thread, its anchors' states read as the reviews extension reads them (`anchors/<project>`). @since 1.116 */
 export type ThreadStates = Omit<ThreadViewer, 'changes'> & { states: AnchorStates | undefined }
 
-/** The Reviews panel's view of a thread opened at `at`, from the board and what the viewer holds, its anchors' states as read. @since 1.114 */
+/** The Reviews panel's view of a thread opened at `at`, from the board and what the viewer holds, its anchors' states as read. @since 1.116 */
 export function threadViewAt(board: Board, at: ThreadPlace, viewer: ThreadStates): ThreadView {
   const f = board.floors.find((f) => f.id === at.project)!
   return {
