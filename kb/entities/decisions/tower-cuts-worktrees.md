@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
 }
 ---
@@ -24,7 +24,7 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   worktree, branch and directories ([`worktreeBrief`](ref:hub/src/shared/launch.ts#worktreeBrief)), on spawn and
   resume, because auto modes skip the permission guard and CLAUDE.md names the main checkouts' paths.
 - **Read, never stored.** [`readRepo`](ref:hub/src/worktrees.ts#readRepo) reads each project dir's git (worktree
-  list, status, unpushed commits, `branch.<br>.towerBase`, origin's branches) without fetching, on a thread of its own
+  list, status, unpushed commits, files changed since the base, `branch.<br>.towerBase`, origin's branches) without fetching, on a thread of its own
   ([`readRepos`](ref:hub/src/system.ts#readRepos)), the board's as its git changes, asking git again only for the parts a
   change touched ([[live-system]]), every verb's afresh after a fetch; the pure fold
   ([`floorWorktrees`](ref:hub/src/bridge/worktrees.ts#floorWorktrees)) makes one entry per name across repos with a
