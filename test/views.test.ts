@@ -155,4 +155,9 @@ test('views: display places a card on its worker view, its children in its tabs,
   assert.deepEqual(at('shown:w1/300'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/text', subject: 'shown:w1/300' } })
   assert.deepEqual(at('shown:w1/100', 'tower/text'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/text', subject: 'shown:w1/100' } })
   assert.deepEqual(at('card:w1', 'grid/grid'), { view: 'grid/grid', subject: 'floor:p' })
+  const explorer: View = { id: 'files/explorer', cap: 'files', on: ['card'], shows: ['file'], scales: ['pane', 'cell'], needs: ['region', 'toast'], words: { label: 'Files' } }
+  const withExplorer: Placing = { ...p, views: [...CORE_VIEWS, explorer] }
+  const file = fileSubject({ card: 'w1', project: 'p', repo: 'r', path: 'PRINCIPLES.md', text: 'files/raw/p/w1/r/PRINCIPLES.md', type: 'text/markdown' })
+  assert.deepEqual(displayed(withExplorer, file), { view: 'tower/card', subject: 'card:w1', pane: { view: 'files/explorer', subject: 'card:w1' } }, 'a file goes to the tab that shows files, over a view by type on it')
+  assert.deepEqual(displayed(withExplorer, file, 'tower/document')?.pane, { view: 'tower/document', subject: file.key }, 'a view asked for is still found among the rest')
 })
