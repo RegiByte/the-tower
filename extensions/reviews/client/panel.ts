@@ -16,7 +16,7 @@ import { anchorWhere } from './anchors.ts'
 import { fileButtonsHtml } from '../../../src/shared/file-acts.ts'
 import { failedHtml, settledHtml } from '../../../src/shared/panel-kit.ts'
 import type { CardPart, FloorPart, FloorThread, NoteCall } from '../threads.ts'
-import { anchorState, langOf, parseThread, repoName, resolvedIn, resolvesOf, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type Message, type Quote, type ReviewThread } from './reviews.ts'
+import { anchorStates, langOf, parseThread, repoName, resolvedIn, resolvesOf, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type AnchorStates, type Message, type Quote, type ReviewThread } from './reviews.ts'
 
 /** A card's reviews part: where its thread is, how its work stands, what of it is new to it, and its note while it is live. `undefined` where reviews is off. */
 export const cardReviews = (c: Card): CardPart | undefined => c.x?.[REVIEWS] as CardPart | undefined
@@ -37,15 +37,15 @@ export const noteCallOf = (c: Card): NoteCall | undefined => cardReviews(c)?.not
 type Worker = { id: string; callsign: string; checkout: string }
 
 /**
- * The Reviews panel: `reader` is the worker whose view it is, its notes new to it marked while the work goes on; `changes` what its
- * anchors are looked for in; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
+ * The Reviews panel: `reader` is the worker whose view it is, its notes new to it marked while the work goes on; `states`
+ * where its anchors stand among the reader's changes (`anchorStates`), once known; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
  * the composer signs with (`board.user.name`), its notes marked as the viewer's own. `failed` is why the last read
  * of the thread failed, drawn while none is read. `state`: where the checkout's work stands (the card's `threadState`, or a
  * floor thread's `state`); `noting`: the card or floor thread offers its note, so the composer, replies and Send are drawn.
  */
 export type ThreadView = {
   project: string; checkout: string; tag: string | undefined; thread: ReviewThread | undefined; failed: string | undefined; reader: Worker | undefined
-  changes: RepoChanges[] | undefined; targets: Worker[]; target: Worker | undefined; re: number | undefined; user: string
+  states: AnchorStates | undefined; targets: Worker[]; target: Worker | undefined; re: number | undefined; user: string
   files: ThreadFiles; state: CheckoutState; noting: boolean
 }
 
@@ -123,15 +123,22 @@ export type ThreadViewer = {
   thread: ReviewThread | undefined; failed: string | undefined; changes: RepoChanges[] | undefined; picked: string | undefined; re: number | undefined
 }
 
-/** The Reviews panel's view of a thread opened at `at`, from the board and what the viewer holds. */
-export function threadViewOf(board: Board, at: ThreadPlace, viewer: ThreadViewer): ThreadView {
+/** What the viewer holds of a thread, its anchors' states read as the reviews extension reads them (`anchors/<project>`). @since 1.114 */
+export type ThreadStates = Omit<ThreadViewer, 'changes'> & { states: AnchorStates | undefined }
+
+/** The Reviews panel's view of a thread opened at `at`, from the board and what the viewer holds, its anchors' states as read. @since 1.114 */
+export function threadViewAt(board: Board, at: ThreadPlace, viewer: ThreadStates): ThreadView {
   const f = board.floors.find((f) => f.id === at.project)!
   return {
     project: at.project, checkout: at.checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: viewer.thread, failed: viewer.failed,
-    reader: at.reader, changes: viewer.changes, targets: sendTargets(f, at.checkout), target: sendTarget(f, at.checkout, viewer.picked), re: viewer.re,
+    reader: at.reader, states: viewer.states, targets: sendTargets(f, at.checkout), target: sendTarget(f, at.checkout, viewer.picked), re: viewer.re,
     user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: at.note !== undefined,
   }
 }
+
+/** The Reviews panel's view of a thread opened at `at`, from the board and what the viewer holds, its anchors looked for in the reader's Changes. */
+export const threadViewOf = (board: Board, at: ThreadPlace, { changes, ...viewer }: ThreadViewer): ThreadView =>
+  threadViewAt(board, at, { ...viewer, states: viewer.thread && changes && anchorStates(viewer.thread, changes) })
 
 const ANCHOR_STATE: Partial<Record<AnchorState, string>> = { changed: 'changed since', gone: 'no longer in the diff' }
 
@@ -145,7 +152,7 @@ function quoteHtml(path: string, quote: Quote) {
 }
 
 function anchorHtml(v: ThreadView, a: Anchor, i: number, n: number) {
-  const state = v.changes && anchorState(a, v.changes)
+  const state = v.states?.[`${n}|${i}`]
   const dir = v.files.dirs.find((d) => repoName(d) === a.repo)
   return `<div class="anchor ${state ?? ''}"><div class="where"><button class="go" data-anchor="${n}|${i}" data-tip="show these lines in Changes"><code>${esc(anchorWhere(a))}</code>${
     state && ANCHOR_STATE[state] ? `<span class="state">${ANCHOR_STATE[state]}</span>` : ''}</button>${dir ? fileButtonsHtml(`${dir}/${a.path}`, a.from) : ''}</div>${a.quote ? quoteHtml(a.path, a.quote) : ''}</div>`

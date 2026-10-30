@@ -1,7 +1,8 @@
 /**
  * The reviews extension (decision `review-threads`): one append-only markdown thread per checkout in its owned
  * `reviews` collection, appended to only through `reviews/append`; each card's thread and each floor's threads folded
- * from the parsed files and the core's checkouts; the floor's history, and what the CLI says of a thread. Its notes
+ * from the parsed files and the core's checkouts, each anchor of a card's thread marking the lines it is about; the
+ * floor's history, what the CLI says of a thread, and where a card's anchors stand among its worker's changes. Its notes
  * are resolved by appending a note that marks them (`reviews/resolve`). A landed
  * checkout's thread is filed by Tidy (`tower/tidy.apply`), and a discarded one's recovery note is left before anything
  * goes (`tower/discard.record`) and the thread filed once the worktree is gone (`tower/discard.done`). A reviewer is
@@ -14,9 +15,11 @@ import type { Tip } from '../../src/bridge/worktrees.ts'
 import { apiError, isApiError, type ApiError, type RouteInput } from '../../src/shared/api.ts'
 import { workerNamed } from '../../src/shared/crews.ts'
 import type { CallCtx, FoldCtx, LaunchParts, LaunchRequest, Part, Start } from '../../src/shared/extensions.ts'
-import { appended, bodyProblem, landedThreadId, nextNumber, parseThread, resolutionBody, resolveProblem, REVIEWS, reviewPrompt, sendText, stamp, threadId, unseenBy, type ReviewThread } from './client/reviews.ts'
+import type { RepoChanges } from '../../src/changes.ts'
+import { threadMarks } from './client/anchors.ts'
+import { anchorStates, appended, bodyProblem, landedThreadId, nextNumber, parseThread, resolutionBody, resolveProblem, REVIEWS, reviewPrompt, sendText, stamp, threadId, unseenBy, type ReviewThread } from './client/reviews.ts'
 import { discardNote, tidyEntries } from './filing.ts'
-import { cardPart, floorThreads, reviewHistory, type FloorPart, type ThreadFile } from './threads.ts'
+import { cardPart, floorThreads, reviewHistory, threadFileOf, type CardPart, type FloorPart, type ThreadFile } from './threads.ts'
 
 type AppendInput = RouteInput['review/append']
 
@@ -57,6 +60,9 @@ const launch = ({ kind, fields }: LaunchRequest): LaunchParts =>
 
 type Hire = { project: string; of: string; by?: string; tell?: boolean }
 
+/** Whose anchors: the worker whose card's thread they are on, among whose changes they stand. */
+type AnchorsQuery = { card: string }
+
 /** What `tower thread`, `tower note` and `tower send` say of a checkout's thread, read as `reader`. */
 type SaidQuery = { checkout: string; reader: string; sender?: string; hirer?: string }
 
@@ -93,6 +99,17 @@ const start: Start = (ctx) => {
     return { t: 'appended' as const, id, n, modifiedAt: item.modifiedAt }
   }
 
+  /** Where each anchor of a card's thread stands among its worker's changes against its default branch. */
+  const anchors = async (project: string, { card: id }: AnchorsQuery) => {
+    const card = floorOf(ctx.board(), project)?.cards.find((c) => c.id === id)
+    if (!card) return apiError('not_found', `${project} has no worker ${id} on the board`)
+    const part = card.x?.[CAP] as CardPart | undefined
+    if (!part) return apiError('not_found', `reviews is off on ${project}`)
+    const file = threadFileOf(part, files(project))
+    if (!file) return { states: {} }
+    return { states: anchorStates(file.thread, (await ctx.read('tower/changes/<id>', { id })) as RepoChanges[]) }
+  }
+
   const said = async (project: string, { checkout, reader, sender, hirer }: SaidQuery) => {
     const id = threadId(checkout)
     const text = await textOf(project, id)
@@ -113,9 +130,13 @@ const start: Start = (ctx) => {
       card: (card: Card, { board, own }: FoldCtx): Part => {
         const of = ofCard(card, own)
         const floor = floorOf(board, card.project)!
+        const files = filesOf(own.collections[REVIEWS] ?? [])
+        const x = cardPart(card, floor, files, of)
+        const file = threadFileOf(x, files)
         return {
-          x: cardPart(card, floor, filesOf(own.collections[REVIEWS] ?? []), of),
+          x,
           actions: unreviewable(card, floor, of) ? [] : [{ verb: `${CAP}/hire`, call: { project: card.project, of: card.callsign } }],
+          ...(file && { marks: threadMarks(file.thread) }),
         }
       },
       floor: (floor: Floor, { own }): Part => {
@@ -180,6 +201,7 @@ const start: Start = (ctx) => {
     reads: {
       'history/<project>': ({ params }: { params: Record<string, string> }) => reviewHistory(files(params.project)),
       'said/<project>': ({ params, query }: { params: Record<string, string>; query: SaidQuery }) => said(params.project, query),
+      'anchors/<project>': ({ params, query }: { params: Record<string, string>; query: AnchorsQuery }) => anchors(params.project, query),
     },
   }
 }

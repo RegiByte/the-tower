@@ -226,6 +226,12 @@ export const anchorState = (anchor: Anchor, repos: RepoChanges[]): AnchorState =
   return holds(anchor.quote.lang === 'diff' ? marked : now, anchor.quote.lines) ? 'same' : 'changed'
 }
 
+/** Each anchor's state among a worker's changes, by `<n>|<i>`: its note's number and its place among the note's anchors. @since 1.114 */
+export type AnchorStates = Record<string, AnchorState>
+
+export const anchorStates = (thread: ReviewThread, repos: RepoChanges[]): AnchorStates =>
+  Object.fromEntries(thread.messages.flatMap((m) => m.anchors.map((a, i) => [`${m.n}|${i}`, anchorState(a, repos)])))
+
 /**
  * The prompt that sends a worker to a thread: who sent it (a callsign, or `THE_USER`), which notes are new to it, how to read and answer
  * them, and, to a hired worker, that it reports to its `hirer` once it has (the card's `hiredBy`). One line, so it lands in the composer as typed.
