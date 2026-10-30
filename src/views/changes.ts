@@ -92,13 +92,13 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     return linesSubject(lines)
   }
 
-  /** The region under the pick, on the lines picked now, placed where the redraw left its row. */
+  /** The region under the pick, placed where the redraw left its row, then on the lines picked now: what it holds takes focus in the document. */
   function placeActs() {
     if (!desk.pick || desk.picking) return
+    el.querySelector('[data-pick-acts]')?.replaceWith(acts)
     const subject = pickedSubject()
     if (picks) picks.update(subject)
     else picks = kit.region(acts, 'lines.acts', subject)
-    el.querySelector('[data-pick-acts]')?.replaceWith(acts)
   }
 
   /** Follows the worker while the view is seen. */
