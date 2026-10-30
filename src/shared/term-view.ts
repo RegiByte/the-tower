@@ -163,10 +163,10 @@ function fileLinks(term: Terminal, y: number, open: (path: string, line?: number
   let text = ''
   const cellAt: number[] = []
   for (let x = 0; x < line.length; x++) {
-    const chars = line.getCell(x)?.getChars() ?? ''
+    const chars = line.getCell(x)?.getChars() || ' '
     if (line.getCell(x)?.getWidth() === 0) continue
-    for (const _ of chars || ' ') cellAt.push(x)
-    text += chars || ' '
+    for (let i = 0; i < chars.length; i++) cellAt.push(x)
+    text += chars
   }
   cellAt.push(line.length)
   const links = fileMentions(text).map((f): ILink => ({
