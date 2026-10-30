@@ -16,7 +16,7 @@
     "hub/extensions/reviews/client/reviews.ts#THE_USER",
     "hub/extensions/reviews/client/reviews.ts#sendText",
     "hub/extensions/reviews/client/panel.ts#ThreadView",
-    "hub/src/shared/changes-panel.ts#ChangesView",
+    "hub/extensions/reviews/client/composer.ts#mount",
     "hub/src/directory.ts#agent",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/src/mod/skills/review/SKILL.md",
@@ -32,9 +32,10 @@ tower got agents that talked about someone else.
   skills, every `tower` message and the API's descriptions.
 - `config.user.name` ([`UserConfig`](ref:hub/src/shared/model.ts#UserConfig)) signs the notes renderers write for the
   user, `user` when unset ([`userName`](ref:hub/src/shared/model.ts#userName)). The board carries it as
-  `board.user.name`, so a renderer written from scratch signs the same way. The Changes and Reviews panels take it as
-  `user` ([`ThreadView`](ref:hub/extensions/reviews/client/panel.ts#ThreadView)), label their composers with it and mark notes signed
-  with it as the viewer's own.
+  `board.user.name`, so a renderer written from scratch signs the same way. The Reviews panel takes it as
+  `user` ([`ThreadView`](ref:hub/extensions/reviews/client/panel.ts#ThreadView)), labels its composer with it and marks notes signed
+  with it as the viewer's own; the note box on lines picked in Changes, `reviews/composer`
+  ([`mount`](ref:hub/extensions/reviews/client/composer.ts#mount)), reads it from the board and signs with it too.
 - The brief says the name once, "the user (Ana)", only when the config gives one, so a worker knows whose notes
   `## Ana · …` are.
 - Send's prompt names its sender: a callsign, or [`THE_USER`](ref:hub/extensions/reviews/client/reviews.ts#THE_USER) from a renderer

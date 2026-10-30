@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-10-30",
-  "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#changesHtml", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
+  "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/views/changes.ts#mount", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -34,7 +34,7 @@ request, never kept:
   the whole side's colours only where what it carries in from above is a comment, or a string or fence that closes
   within it ([`readsWhole`](ref:hub/src/shared/changes-panel.ts#readsWhole)): highlight.js misreads some code and never closes
   what it opened, which would colour every hunk below.
-- **When.** Only while a worker's Changes or Reviews are open: on open, on a poll (`CHANGES_POLL_MS`), and when the
+- **When.** Only while a worker's Changes are open: on open, on a poll (`CHANGES_POLL_MS`), and when the
   worker's status leaves `working`. Claude edits through scripts as often as through its edit tools, so no tool event
   is a reliable trigger. Every renderer reads them through [`changesHandlers`](ref:hub/src/shared/changes-reads.ts#changesHandlers),
   a machine on `/loop.js` that a renderer tells, on each draw, whose Changes are open (held reads,
@@ -56,12 +56,16 @@ request, never kept:
   diffs a removed line and the added line beside it by code token, bounded since it runs on the page's thread.
 - **Landed or gone.** Once a worker's work no longer goes on (`card.checkoutState`, [[review-threads]]), its Changes
   say so in place of an empty diff: landed on its base (for [[carried]] work, with what landing changed), or the
-  worktree removed. A diff git still reads is shown under that line, its lines pickable only while the card offers
-  `note` ([[board-verbs]]).
+  worktree removed. A diff git still reads is shown under that line, its lines pickable only while the checkout is
+  live.
 
-Every renderer draws it through the shared Changes panel ([[shared-panels]]): the tower page as a pane beside
-Terminal and Brief, Tower 3D at a desk. Its line numbers pick lines for a note; each file opens in Finder or the
-editor ([[open-files]]).
+Every renderer draws it through the shared Changes panel ([[shared-panels]]): the tower page as `tower/changes`
+([`mount`](ref:hub/src/views/changes.ts#mount)), a tab beside Terminal and Brief, Tower 3D at a desk. Lines are marked
+by what extensions add to the card (`marks`, the reviews extension's notes), and its line numbers pick lines, a
+`lines` subject, under which the renderer draws what acts on them (`lines.acts`: a review's note box, [[ui-model]]).
+Lines are pickable where something acts on them. The view reads the worker's diff and nothing else: where a review
+note's quote stands among the changes is the reviews extension's own read ([[review-threads]]). Each file opens in
+Finder or the editor ([[open-files]]).
 
 **Alternatives considered.**
 - Since `HEAD` on main: every local commit emptied the diff and turned notes anchored to those lines outdated.
