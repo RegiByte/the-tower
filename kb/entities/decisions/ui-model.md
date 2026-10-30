@@ -103,7 +103,7 @@ and a framed document's section are the same thing.
   read path its content is served at, `type` and, when it has one, `file`, its absolute path (1.117), which the binary
   fallback's Finder and editor buttons need. It is how a view that browses a worker's files (the files example)
   hands one to a region, where the layout picks among the views on `file` (the files example's `files/code` first for code,
-  the core's views by type for the rest). A `fragment` (1.119) says where to open it, a link's `#fragment`. A
+  the core's views by type for the rest). A `fragment` (1.120) says where to open it, a link's `#fragment`. A
   relative link in a markdown file of a checkout is another file of its repo
   ([`linkedFile`](ref:hub/src/shared/subjects.ts#linkedFile), [[markdown-safe]]), which `tower/document` displays:
   `displayed` walks up to its card, where a tab whose view `shows` `file` (the files example's explorer) is chosen
@@ -205,7 +205,7 @@ and a framed document's section are the same thing.
   to four times a slow round's length (30 s at most), nothing while hidden; a file over 1 MB that changes waits for
   Reload, since each draw has the tower read and send the whole file. Where the contract fell short, it grew by
   addition: a read serving a file, a read path's rest param, a region's default layout, and the `file` kind. Its
-  explorer `shows` `file` (1.119): a file of its worker displayed from anywhere, a link followed in a document among
+  explorer `shows` `file` (1.120): a file of its worker displayed from anywhere, a link followed in a document among
   them, opens in its tree with each folder on its way, at the link's fragment.
 
 The model in one picture:

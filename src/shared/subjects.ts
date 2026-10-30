@@ -57,7 +57,7 @@ export const linesSubject = (lines: Lines): Subject => ({
  * A file in a worker's checkout, as a renderer holds it: its repo (named as an anchor names it, `repoName` of
  * `/reviews.js`), its path in the repo, its absolute path where it has one (`file`, for Finder and the editor), where its content is read
  * (`text`, a read path), its media type, and where in it to show first, a link's `#fragment`. @since 1.114; `file`
- * @since 1.117; `fragment` @since 1.119
+ * @since 1.117; `fragment` @since 1.120
  */
 export type CheckoutFile = { card: string; project: string; repo: string; path: string; file?: string; text: string; type: string; fragment?: string }
 
@@ -73,7 +73,7 @@ export const fileSubject = (file: CheckoutFile): Subject => ({
  * The file of the same checkout that `href`, a link relative to `from` (`relativeHref` of `/markdown.js`), names: its
  * path resolved against `from`'s folder, read beside it, its type by its name, and its `#fragment`. A folder is named by
  * its path as a file is. Undefined when the path climbs out of `from`'s repo; a `%` that starts no escape throws a
- * `URIError`, as decoding it does. @since 1.119
+ * `URIError`, as decoding it does. @since 1.120
  */
 export const linkedFile = (from: CheckoutFile, href: string): CheckoutFile | undefined => {
   const [rest, hash] = href.split(/#(.*)/s)

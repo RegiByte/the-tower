@@ -25,7 +25,7 @@ export const safeHref = (href: string) => URL.canParse(href, TOWER) && LINK_PROT
 /** Whether an image is the tower's own: a path, read from the tower; an address elsewhere would be fetched from there. */
 const towerImage = (href: string) => URL.canParse(href, TOWER) && new URL(href, TOWER).origin === new URL(TOWER).origin
 
-/** Whether a link or an image names a path relative to the document it is in: no scheme, no leading slash, no lone `#fragment`. @since 1.119 */
+/** Whether a link or an image names a path relative to the document it is in: no scheme, no leading slash, no lone `#fragment`. @since 1.120 */
 export const relativeHref = (href: string) => !/^([a-z][a-z\d+.-]*:|\/|#)/i.test(href)
 
 /** Where a markdown page served at `url` reads a relative image from, a path of the tower's; none for an absolute or remote one. */

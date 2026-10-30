@@ -827,7 +827,7 @@ review anchor names it (`repoName`), `file` its absolute path, optional (API 1.1
 a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
 declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on `file` too, so
 it is drawn like a showing; a view of an extension's for a type (the files example's `files/code`) takes over where the
-layout names it first. `fragment` (API 1.119) is where to open it, a heading's slug or an element's id, which
+layout names it first. `fragment` (API 1.120) is where to open it, a heading's slug or an element's id, which
 `tower/document` scrolls to. A relative link in a markdown file of a checkout names another file of its repo:
 `linkedFile(from, href)` in `/cards.js` resolves it (undefined when it climbs out of the repo), and `tower/document`
 displays it. Display walks up to its card, whose tabs hand it to a view that `shows: ["file"]`, as the files
