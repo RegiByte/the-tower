@@ -1,0 +1,240 @@
+import type { Board, Card, CardResource, Floor } from '../bridge/board.ts'
+import {
+  BLOCKED_TEXT, HOST_MEANS, LET_GO_MEANS, callOf, can, claudeFlagHtml, detailsOf, esc, gistLine, lampOf, letGoAsk, letGoneLine, modelName, noLongerOffered, offeredCall, reapAsk, resumesRow,
+  sendHomeAsk, sentHome, statusName, statusTitle, when, whereLineOf, whyNot, type DaemonVerb,
+} from '../shared/cards.ts'
+import { ICON, withIcons } from '../shared/icons.ts'
+import { pressing } from '../shared/press.ts'
+import type { Subject } from '../shared/subjects.ts'
+import { verbLabel } from '../shared/verb-words.ts'
+import type { Mount } from '../shared/views.ts'
+import { reviewerOf } from '../shared/checkouts.ts'
+import { keyedTip, paintOnce } from './parts.ts'
+
+/**
+ * A worker: its head (who and where, a glance at its context, cost and leftovers, its details, what extensions add to
+ * it in `card.head`, and Resume, Let go, Send home and the close) over its tabs, `card.panes`, which the renderer fills
+ * with the views on the card and one per thing it showed. A worker that waits on you says so between them. The
+ * `head` option, false, draws its tabs alone.
+ */
+
+const ID = 'tower/card'
+
+const CSS = `:where([data-view="${ID}"]) {
+  gap: var(--sp-m);
+  & .bar { flex: none; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  & .bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); }
+  & .bar-top[hidden] { display: none; }
+  & .part, & :is([data-holds="badges"], [data-holds="lines"], [data-holds="actions"]) { display: contents; }
+  & .bar-info { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-l); min-width: 0; flex: 1 1 20rem; white-space: nowrap; color: var(--muted); font-size: var(--fs-s); }
+  & .bar-info .call { flex: none; font: 800 var(--fs-2xl)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
+  & .bar-info .pill { flex: none; font-variant-numeric: tabular-nums; }
+  & .bar-info .where { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  & .bar-info .adds-line { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+  & .bar-info .stats { flex: none; margin-left: auto; display: flex; align-items: center; gap: var(--sp-l); }
+  & .bar-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  & .bar-info .meter { width: 56px; --fill: var(--working); }
+  & .bar-info .ports { color: var(--ink); cursor: pointer; font-family: var(--mono); font-size: var(--fs-xs); padding: 1px var(--sp-s); border: 0; border-radius: var(--radius); background: var(--panel-2); }
+  & .bar-info .ports.orphan { color: var(--on-broken); background: var(--broken); }
+  & .bar-info .dismiss { flex: none; min-height: 0; padding: 1px var(--sp-s); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
+  & .bar-actions { flex: none; display: flex; gap: var(--sp-s); margin-left: auto; }
+  & .bar-actions .icon-btn { aspect-ratio: 1; }
+  & .bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
+  & .bar-top[hidden] + .bar-line { margin-top: 0; }
+  & .bar-line .shown-adds { display: flex; align-items: center; gap: var(--sp-s); }
+  & .bar-details, & .bar-left { margin: 0; inset: 100px 20px auto auto; width: min(620px, 90vw); max-height: 70vh; overflow: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); scrollbar-gutter: stable; }
+  & .bar-details h3, & .bar-left h3 { margin: 0 0 var(--sp-l); font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }
+  & .bar-left .proc { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-xs) var(--sp-l); padding: var(--sp-s) 0; border-top: 1px solid var(--line); font-size: var(--fs-s); }
+  & .bar-left .proc code { font-family: var(--mono); }
+  & .bar-left .proc .on { color: var(--muted); font-family: var(--mono); }
+  & .bar-left .proc .on.orphan { color: var(--broken-text); }
+  & .bar-left .proc .cmd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); color: var(--muted); }
+  & .bar-left .all { display: flex; justify-content: flex-end; padding-top: var(--sp-l); border-top: 1px solid var(--line); }
+  & .bar-details dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-xs) var(--sp-xl); margin: 0; font-size: var(--fs-s); }
+  & .bar-details dt { color: var(--faint); }
+  & .bar-details dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--mono); }
+  & .ask { display: none; align-items: center; gap: var(--sp-l); flex: none; padding: var(--sp-m) var(--sp-l) var(--sp-m) var(--sp-xl); border-radius: var(--radius); font-size: var(--fs-l);
+    background: color-mix(in oklab, var(--needs) 11%, var(--panel)); border: 1px solid var(--needs); }
+  &.asking .ask { display: flex; }
+  & .ask .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  & .ask .what b { color: var(--needs-text); }
+  & .ask .call { font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }
+  & .ask button { margin-left: auto; flex: none; }
+  & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--enamel); border-radius: var(--radius); }
+}`
+
+/** `Bash npm test` → the tool's name in bold, then what it acts on. */
+const toolHtml = (tool: string) => {
+  const [name, ...target] = tool.split(' ')
+  return `<span class="tool"><b>${esc(name)}</b> ${esc(target.join(' '))}</span>`
+}
+
+/** A meter's fill: ink, broken past `hot`. */
+const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
+
+/** How many cards were mounted on this page: each one's popovers get ids of their own. */
+let mounts = 0
+
+export const mount: Mount = (host, { tower, board: first, subject, kit, options }) => {
+  let board = first
+  let card = subject.value as Card
+  const head = options.head !== false
+  const pop = `card-${++mounts}`
+  host.innerHTML = `<style>${CSS}</style><div class="bar">
+    <div class="bar-top"${head ? '' : ' hidden'}><div class="bar-info"><span class="part lead"></span><span data-holds="badges"></span><span class="part where-part"></span><span data-holds="lines"></span><span class="part stats-part"></span></div>
+      <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions"></span><span class="part own"></span></div></div>
+    <div class="tab-row bar-line" data-holds="tabs"></div></div>
+  <div class="bar-details" id="${pop}-details" popover></div><div class="bar-left" id="${pop}-left" popover></div>
+  <div class="ask"></div>
+  <div class="screen" data-holds="views"></div>`
+  const $ = <E extends HTMLElement = HTMLElement>(selector: string) => host.querySelector<E>(selector)!
+  const top = $('.bar-top')
+  const details = $('.bar-details')
+  const left = $('.bar-left')
+  const headRegion = head ? kit.region(top, 'card.head', subject) : undefined
+  const panes = kit.region(host, 'card.panes', subject)
+
+  /** The details open over the top of the panes, clear of the head that opened them. */
+  details.addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && (details.style.top = `${$('.screen').getBoundingClientRect().top + 6}px`))
+
+  const floor = () => board.floors.find((f) => f.id === card.project)
+
+  /** Why a daemon verb can't run now: a daemon it needs is down. */
+  const heldWhy = (verb: DaemonVerb) => whyNot(board, verb)
+  const heldHtml = (verb: DaemonVerb, label: string, inner: string, cls = '') =>
+    `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(heldWhy(verb) ?? HOST_MEANS.unknown)}">${inner}</button>`
+
+  const letGoHtml = (c: Card, label: string) =>
+    !can(c, 'let-go') ? '' : heldWhy('let-go') ? heldHtml('let-go', label, label) : `<button data-let-go data-tip="${esc(`let ${c.callsign} go: ${LET_GO_MEANS}`)}">${label}</button>`
+
+  const sendHomeTitle = (c: Card) => {
+    const sent = sentHome(cards(), c)
+    return sent.length === 1 ? `end ${c.callsign}; it can be resumed` : `end ${sent.map((h) => h.callsign).join(', ')}: ${c.callsign} and everyone under it that runs; each can be resumed`
+  }
+
+  const cards = () => board.floors.flatMap((f) => f.cards)
+
+  /** What the worker left running, each process ended on its own or all at once. */
+  function leftHtml(c: Card) {
+    if (!c.resources.length) return `<h3>${c.callsign} left nothing running</h3>`
+    const row = (r: CardResource) => `<div class="proc"><code>${r.pid}</code><span class="on ${r.orphan ? 'orphan' : ''}">${[...r.ports.map((p) => `:${p}`), r.orphan ? 'orphan' : ''].filter(Boolean).join(' ')}</span>
+    <span class="cmd" data-tip="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(callOf(r, 'reap')))}" data-tip="end process ${r.pid}">${verbLabel('resource', 'reap')}</button></div>`
+    return `<h3>Left running by ${c.callsign}</h3>${c.resources.map(row).join('')}
+    <div class="all"><button class="danger" data-reap>${verbLabel('card', 'reap')} ${c.resources.length}</button></div>`
+  }
+
+  /** The rest of what is known about the worker: what it does now in full, and every detail. */
+  function detailsHtml(c: Card) {
+    const rows = [['now', gistLine(c)], ...detailsOf(c), resumesRow(c, when), ['started', when(c.startedAt)]].filter(([, value]) => value)
+    return `<h3>${c.callsign}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
+  }
+
+  function draw() {
+    const c = card
+    const ports = c.resources.flatMap((r) => r.ports.map((p) => `:${p}`)).join(' ')
+    const orphan = c.resources.some((r) => r.orphan)
+    const ctx = c.context
+    paintOnce(
+      $('.lead'),
+      `<span class="call" role="heading" aria-level="2">${c.callsign}</span>
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span translate="no" data-since="${c.enteredAt}"></span></span>`,
+    )
+    paintOnce($('.where-part'), `<span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, reviewerOf(c))))}</span>`)
+    paintOnce(
+      $('.stats-part'),
+      `<span class="stats">
+      ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
+      ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
+      ${claudeFlagHtml(c) ?? ''}
+      ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="${pop}-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
+    </span>`,
+    )
+    paintOnce($('.details-part'), `<button class="icon-btn" popovertarget="${pop}-details" aria-label="details" data-tip="everything else about ${c.callsign}">${ICON.info}</button>`)
+    paintOnce(
+      $('.own'),
+      `${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume'), `${ICON.resume} ${verbLabel('card', 'resume')}`, 'primary') : `<button class="primary" data-resume>${ICON.resume} ${verbLabel('card', 'resume')}</button>`}
+    ${letGoHtml(c, verbLabel('card', 'let-go'))}
+    ${can(c, 'send-home') ? `<button class="danger" data-send-home data-tip="${esc(sendHomeTitle(c))}">${verbLabel('card', 'send-home')}</button>` : ''}
+    <button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>`,
+    )
+    paintOnce(details, detailsHtml(c))
+    paintOnce(left, leftHtml(c))
+    host.classList.toggle('asking', head && (c.status === 'needs_input' || c.status === 'blocked'))
+    paintOnce(
+      $('.ask'),
+      `<span class="what"><span class="call">${c.callsign}</span> ${c.blocked ? esc(BLOCKED_TEXT[c.blocked]) : c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}</span>
+    ${can(c, 'drive') ? `<button class="primary" data-drive ${keyedTip(board.keys, 'answer in its terminal', 'pane-terminal')}>${verbLabel('card', 'drive')}</button>` : ''}`,
+    )
+  }
+
+  const told = <T,>(request: Promise<T>) => request.catch((err: Error) => void kit.toast(err.message))
+
+  /** A worker started from here opens once the board carries it. */
+  const opened = (reply: { t: string; id?: string } | void) => reply?.t === 'spawned' && kit.display(`card:${reply.id}`)
+
+  /** Ends the worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
+  async function sendHome(button: HTMLElement) {
+    const c = card
+    if (!can(c, 'send-home')) return kit.toast(noLongerOffered(c.callsign, 'send-home'))
+    const sent = sentHome(cards(), c)
+    if (!(await kit.confirm(sendHomeAsk(c, sent), verbLabel('card', 'send-home')))) return
+    const ended = await told(
+      pressing(button, async () => {
+        for (const call of callOf(c, 'send-home') ?? []) if (!(await told(tower.run(call)))) return false
+        return true
+      }),
+    )
+    if (ended) kit.toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: verbLabel('card', 'resume'), run: () => void resumeSentHome(c) } : undefined)
+  }
+
+  /** The resume of a worker sent home, read from the board or its floor's archive. */
+  async function resumeSentHome(c: Card) {
+    const dead = cards().find((d) => d.id === c.id) ?? (await told(tower.archive(c.project)))?.find((d) => d.id === c.id)
+    const call = dead && callOf(dead, 'resume')
+    if (!call) return kit.toast(`${c.callsign} can't be resumed now`)
+    opened(await told(tower.run(call)))
+  }
+
+  host.addEventListener('click', async (e) => {
+    const target = e.target as Element
+    const region = target.closest('[data-region]')
+    if (region && host.contains(region)) return
+    const button = target.closest<HTMLElement>('button')
+    if (!button) return
+    const c = card
+    if (button.matches('[data-home]')) return kit.display('board')
+    if (button.matches('[data-drive]')) return void kit.run('pane-terminal', subject)
+    if (button.matches('[data-resume]')) {
+      const call = callOf(c, 'resume')
+      return call ? opened(await told(pressing(button, () => tower.run(call)))) : kit.toast(noLongerOffered(c.callsign, 'resume'))
+    }
+    if (button.matches('[data-let-go]')) {
+      if (!(await kit.confirm(letGoAsk(c), verbLabel('card', 'let-go')))) return
+      if (await told(pressing(button, async () => tower.run(offeredCall(c, 'let-go', c.callsign))))) kit.toast(letGoneLine(c))
+      return
+    }
+    if (button.matches('[data-send-home]')) return void sendHome(button)
+    if (button.matches('[data-reap-process]')) return void told(pressing(button, () => tower.run(JSON.parse(button.dataset.reapProcess!))))
+    if (button.matches('[data-reap]') && (await kit.confirm(reapAsk(c), 'End them'))) void told(pressing(button, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
+  })
+
+  draw()
+
+  return {
+    update(next: Board, now: Subject) {
+      board = next
+      card = now.value as Card
+      draw()
+      headRegion?.update(now)
+      panes.update(now)
+    },
+    show: (s) => panes.show?.(s) ?? false,
+    visible: (on) => panes.visible?.(on),
+    close() {
+      headRegion?.close()
+      panes.close()
+    },
+  }
+}
+
