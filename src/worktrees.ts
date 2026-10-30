@@ -36,6 +36,7 @@ import {
   type TreeRead,
   type WorktreeState,
 } from './bridge/worktrees.ts'
+import { changedSince, sinceOf } from './changed-files.ts'
 import { git, gitWith, GitTimeout, run, wholeTree } from './git.ts'
 import type { RepoLayout, Stale } from './bridge/repo-changes.ts'
 import type { ErrorCode } from './shared/api.ts'
@@ -192,7 +193,15 @@ const ownCommits = async (dir: string, created: string | undefined, head: string
   return ownCounts(`${dir}\0${from}\0${head}`, async () => Number(await git(dir, ['rev-list', '--count', `${from}..${head}`])))
 }
 
-const treeRead = async (round: Round, name: string, entry: GitWorktree, records: Map<string, TowerRecord>, status: string[], created: string | undefined): Promise<TreeRead> => {
+const treeRead = async (
+  round: Round,
+  name: string,
+  entry: GitWorktree,
+  records: Map<string, TowerRecord>,
+  status: string[],
+  created: string | undefined,
+  counted: Counted | undefined,
+): Promise<TreeRead> => {
   const record = (entry.branch && records.get(entry.branch)) || {}
   const against = againstIn(round.commits, record.base, round.originHead)
   const exposure = entry.head ? await exposureOf(round, entry.head, record, against) : { unpushed: { count: 0, named: [] as string[] }, absorbed: false }
@@ -211,6 +220,7 @@ const treeRead = async (round: Round, name: string, entry: GitWorktree, records:
     ...(exposure.carried && { carried: exposure.carried }),
     own: entry.branch && entry.head ? await ownCommits(round.dir, created, entry.head) : undefined,
     risk: [...status.slice(0, RISK_LINES), ...exposure.unpushed.named],
+    ...(counted && { changed: counted.changed }),
   }
 }
 
@@ -268,9 +278,51 @@ const worktreeList = async (dir: string) => {
 /**
  * What a read of a repo's git found that its next read may keep: `layout`, where its git lives, for telling what a
  * change touched (`staleOf`); `facts`, what every worktree's read is judged on; `main`, the main checkout's status
- * lines; `statuses`, each present tower worktree's, by name; `created`, each read branch's oldest reflog entry.
+ * lines; `statuses`, each present tower worktree's, by name; `created`, each read branch's oldest reflog entry;
+ * `counted`, each checkout's changed files, by its name (`main` for the main checkout's).
  */
-export type RepoParts = { layout: RepoLayout; facts: RepoFacts; main: string[]; statuses: Map<string, string[]>; created: Map<string, string | undefined> }
+export type RepoParts = {
+  layout: RepoLayout
+  facts: RepoFacts
+  main: string[]
+  statuses: Map<string, string[]>
+  created: Map<string, string | undefined>
+  counted: Map<string, Counted>
+}
+
+/** A checkout's changed files (`changedSince`) as counted at `HEAD` commit `head`, from commit `since`. */
+type Counted = { head: string; since: string; changed: number }
+
+/** Where commit `head` left a commit it was counted from, by `dir` and the pair. */
+const sinces = remembered<string | undefined>()
+
+/**
+ * The files the checkout at `path` changed (`changedSince`), from where its `HEAD`, commit `head`, left its
+ * `againstChoice`; `undefined` when the two share no history. `last` is kept while neither its working tree
+ * (`treeKept`) nor the refs (`refsKept`) changed, and recounted only when its working tree or `since` did. Its
+ * upstream is asked only when no base answers, and `since` is remembered by commits wherever the base names one.
+ */
+const countedIn = async (
+  round: Round,
+  path: string,
+  branch: string | undefined,
+  head: string,
+  records: Map<string, TowerRecord>,
+  last: Counted | undefined,
+  treeKept: boolean,
+  refsKept: boolean,
+): Promise<Counted | undefined> => {
+  const kept = last?.head === head ? last : undefined
+  if (kept && treeKept && refsKept) return kept
+  const base = branch && records.get(branch)?.base
+  const upstream = base && againstIn(round.commits, base, round.originHead) ? undefined : await upstreamOf(path)
+  const against = againstChoice(base, round.commits, round.originHead, upstream)
+  const from = round.commits.get(against)
+  const since = await (from ? sinces(`${path}\0${from}\0${head}`, () => sinceOf(path, from, head)) : sinceOf(path, against, head))
+  if (since === undefined) return undefined
+  if (kept && treeKept && kept.since === since) return kept
+  return { head, since, changed: await changedSince(path, since) }
+}
 
 /**
  * `heads`: each local branch's commit; `remotes`: the remote refs as `<commit> <ref>` lines; `ahead`: the main
@@ -354,13 +406,27 @@ export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale
   ])
   const layout = { ...located, admins: Object.fromEntries(towerEntries.flatMap(({ name, entry }) => (entry.prunable ? [] : [[name, adminOf(entry.path)]])).filter(([, admin]) => admin)) }
   const round: Round = { dir, originHead, commits, remotes }
+  const refsKept = prior !== undefined && !fresh!.repo
+  const mainEntry = entries[0]
+  const checkouts = [
+    ...(located.gitDir !== located.root && mainEntry?.head ? [{ name: MAIN_CHECKOUT, path: dir, entry: mainEntry, treeKept: prior !== undefined && !fresh!.main }] : []),
+    ...towerEntries.filter(({ entry }) => !entry.prunable && entry.head).map(({ name, entry }) => ({ name, path: entry.path, entry, treeKept: Boolean(keptStatus(name)) })),
+  ]
+  const counted = new Map(
+    (
+      await Promise.all(
+        checkouts.map(async ({ name, path, entry, treeKept }) => [name, await countedIn(round, path, entry.branch, entry.head!, records, prior?.counted.get(name), treeKept, refsKept)] as const),
+      )
+    ).filter((c): c is [string, Counted] => c[1] !== undefined),
+  )
   const [trees, kept] = await Promise.all([
-    Promise.all(towerEntries.map(({ name, entry }) => treeRead(round, name, entry, records, statuses.get(name) ?? [], entry.branch && created.get(entry.branch)))),
+    Promise.all(towerEntries.map(({ name, entry }) => treeRead(round, name, entry, records, statuses.get(name) ?? [], entry.branch && created.get(entry.branch), counted.get(name)))),
     Promise.all(keptBranches.map(([branch, record]) => branchRead(round, branch, heads.get(branch)!, record, created.get(branch)))),
   ])
+  const mainCounted = counted.get(MAIN_CHECKOUT)
   return {
-    read: { dir, git: true, bases: originBases(remotes, originHead), originHead, main: { dirty: main.length, ahead: facts.ahead }, trees, kept },
-    parts: { layout, facts, main, statuses, created },
+    read: { dir, git: true, bases: originBases(remotes, originHead), originHead, main: { dirty: main.length, ahead: facts.ahead, ...(mainCounted && { changed: mainCounted.changed }) }, trees, kept },
+    parts: { layout, facts, main, statuses, created, counted },
   }
 }
 

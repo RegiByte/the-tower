@@ -4,7 +4,7 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
@@ -78,7 +78,8 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   [[machines]]).
 - **Partial reads.** [`rereadRepo`](ref:hub/src/worktrees.ts#rereadRepo) asks git only for the stale parts and keeps
   the rest from the repo's last parts, which the live system holds and sends with each read (a branch's reflog is read
-  again once its head moved); answers about commits are remembered on the thread. The board's shape is the same.
+  again once its head moved, a checkout's changed files once its status is read again or its base moved); answers
+  about commits are remembered on the thread. The board's shape is the same.
 - **Safety rounds.** The OS may drop or merge file events (FSEvents' "must rescan" is read as an unknown path; inotify
   drops on overflow without a word), so every 10 s a few repos' own facts and main status are read, each once per `SAFETY_REPO_MS` (2 min), and a
   few worktrees' status, each once per `SAFETY_TREES_MS` (10 min): on 6 repos of 40 worktrees, 48 git a minute idle.

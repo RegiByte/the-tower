@@ -121,7 +121,22 @@ export const isCarried = ({ dirty, unpushed, absorbed, carried }: Exposure) => d
  * One of the tower's worktrees in one repo. `present`: its folder exists; a missing one is git's `prunable`. `from`: the
  * checkout it was forked from, for a fork.
  */
-export type TreeRead = Exposure & Cut & { name: string; path: string; branch?: string; head?: string; base?: string; from?: string; present: boolean }
+export type TreeRead = Exposure &
+  Cut & {
+    name: string
+    path: string
+    branch?: string
+    head?: string
+    base?: string
+    from?: string
+    present: boolean
+    /**
+     * Files changed against the merge-base with its counted-from ref (its base, origin's default once that's gone, its
+     * upstream, or `HEAD`), committed plus uncommitted, untracked included up to 300: what its Changes count under scope
+     * `all`. Absent when it has no commit, or shares no history with that ref. @since 1.119
+     */
+    changed?: number
+  }
 
 /**
  * A branch the tower cut that no worktree has checked out. `head`: its commit as read; `tree`: the worktree name it was
@@ -137,7 +152,16 @@ export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; head:
 export type RepoRead = { dir: string; git: false } | { dir: string; git: true; bases: string[]; originHead: string | undefined; main: MainRead; trees: TreeRead[]; kept: BranchRead[] }
 
 /** The main checkout's unlanded work: `dirty` files (tracked or not), and commits `ahead` of its upstream (none without one). */
-export type MainRead = { dirty: number; ahead: number }
+export type MainRead = {
+  dirty: number
+  ahead: number
+  /**
+   * Files changed against the merge-base with its counted-from ref (its base, origin's default once that's gone, its
+   * upstream, or `HEAD`), committed plus uncommitted, untracked included up to 300: what its Changes count under scope
+   * `all`. Absent when it has no commit, or shares no history with that ref. @since 1.119
+   */
+  changed?: number
+}
 
 /** `carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by Tidy. */
 export type WorktreeState = 'live' | 'lost' | 'at-risk' | 'carried' | 'removable'
