@@ -6,15 +6,15 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-02",
-  "reviewed": "2026-10-29",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#board", "hub/src/shared/api.ts", "hub/src/tower/tower.js", "hub/src/tower/served.ts#MODULES", "hub/src/shared/waits.ts#neighbours", "hub/src/collections.ts", "hub/AGENTS.md"]
+  "reviewed": "2026-10-30",
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#board", "hub/src/shared/api.ts", "hub/src/tower/tower.js", "hub/src/tower/served.ts#MODULES", "hub/src/shared/waits.ts#neighbours", "hub/src/collections.ts", "hub/PRINCIPLES.md"]
 }
 ---
 **Problem.** Every renderer is a stepping stone toward the next, and living in the tower produces a new want every
 day. Logic written into one renderer has to be rewritten, or is lost, with the next. "Disposable" can also be read
 as "cheap to delete", which would score a large renderer as a breach; this decision says which reading is meant.
 
-**Why.** The project is a system, not an app (AGENTS.md, Principles): Unix-style composition over data, an
+**Why.** The project is a system, not an app ([[principles]]): Unix-style composition over data, an
 Emacs-style surface where what the user can do the system and its agents can do too, and open models over
 specific features. A capability shaped by one renderer's use case serves one presentation.
 
