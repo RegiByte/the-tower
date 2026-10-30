@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-16",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": [
     "hub/renderers/kaykit/scenes/prefabs/meeting_long.json",
     "hub/renderers/tower3d/editor.html",
