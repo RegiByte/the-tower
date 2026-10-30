@@ -767,8 +767,9 @@ lands under every section (narrate's Listen reads that section alone) and `show(
 The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by
 sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs follows
 its links by one rule: a `#fragment` scrolls to the element or heading (by its GitHub slug) it names, a web or mail
-link opens a tab of its own, a file of a shelf entry opens in place, and any other link is refused, said in a toast:
-a link relative to a showing or a kept item among them.
+link opens a tab of its own, a file of a shelf entry opens in place, a relative link in a file of a worker's checkout
+displays the file it names (below), and any other link is refused, said in a toast: a relative link in a showing or
+a kept item among them.
 
 **A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
 as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':
@@ -826,7 +827,11 @@ review anchor names it (`repoName`), `file` its absolute path, optional (API 1.1
 a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
 declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on `file` too, so
 it is drawn like a showing; a view of an extension's for a type (the files example's `files/code`) takes over where the
-layout names it first.
+layout names it first. `fragment` (API 1.119) is where to open it, a heading's slug or an element's id, which
+`tower/document` scrolls to. A relative link in a markdown file of a checkout names another file of its repo:
+`linkedFile(from, href)` in `/cards.js` resolves it (undefined when it climbs out of the repo), and `tower/document`
+displays it. Display walks up to its card, whose tabs hand it to a view that `shows: ["file"]`, as the files
+example's explorer does to open it in its tree.
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).

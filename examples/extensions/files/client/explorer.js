@@ -11,7 +11,8 @@ import { fileButtonsHtml, fileCall } from '/panels.js'
  * read again when it changed, and the open file drawn again when it changed on disk (past `FOLLOW_BYTES`, on
  * Reload). It tells the file's view whether it is seen. The folders opened and the file open are kept per worker
  * (`ctx.state`), so the tab reopens as it was left. In a narrow room (a grid's cell) the tree and the file share the
- * space by turns.
+ * space by turns. A `file` subject of its worker displayed elsewhere (a link followed in a document) is handed to it
+ * (`show`): its folders opened, a folder scrolled to, a file opened at the link's fragment.
  */
 
 const ID = 'files/explorer'
@@ -95,7 +96,8 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   let card = subject.value
   let board = first
   const read = (name, query) => tower.get(`files/${name}/${encodeURIComponent(card.project)}/${encodeURIComponent(card.id)}${query ? `?${new URLSearchParams(query)}` : ''}`)
-  const toast = (err) => kit.toast?.(err.message)
+  const say = (text) => kit.toast(text)
+  const toast = (err) => say(err.message)
 
   host.innerHTML = `<style>${CSS}</style><div class="fx"><nav class="fx-tree" aria-label="files"><p class="note">Reading the checkout…</p></nav>
     <section class="fx-file"><div class="fx-head"><button class="back" data-back>‹ Files</button><span class="path"></span><span class="meta"></span><span class="acts"></span></div><div class="fx-open"><p class="empty">Pick a file to open it.</p></div></section></div>`
@@ -115,8 +117,8 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   /** What git marks changed, by repo, and the status read last. */
   let marks = new Map()
   let stamp = ''
-  /** The file open: its repo, path, what `files/stat` said of it, and the region drawing it. */
-  let file = /** @type {{ repo: string, path: string, stat?: { size: number, mtime: number, type: string, file: string }, stale?: boolean, region?: { close(): void, visible?(on: boolean): void } } | undefined} */ (undefined)
+  /** The file open: its repo, path, what `files/stat` said of it, the fragment a link named until it is drawn, and the region drawing it. */
+  let file = /** @type {{ repo: string, path: string, stat?: { size: number, mtime: number, type: string, file: string }, fragment?: string, stale?: boolean, region?: { close(): void, visible?(on: boolean): void } } | undefined} */ (undefined)
 
   const keepOpened = () => state.set(`open.${card.id}`, [...opened])
 
@@ -186,13 +188,18 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
       }),
     )
 
-  async function toggle(key) {
+  /** Folder `key` opened, listed the first time. */
+  async function expand(key) {
     const [repo, path] = partsOf(key)
-    if (opened.has(key)) opened.delete(key)
-    else {
-      opened.add(key)
-      if (!listings.has(key)) await list(repo, path).catch(toast)
-    }
+    opened.add(key)
+    if (!listings.has(key)) await list(repo, path).catch(toast)
+    keepOpened()
+    paint()
+  }
+
+  async function toggle(key) {
+    if (!opened.has(key)) return expand(key)
+    opened.delete(key)
     keepOpened()
     paint()
   }
@@ -207,20 +214,22 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     headActs.innerHTML = file.stat ? fileButtonsHtml(file.stat.file) : ''
   }
 
-  /** The file open drawn again in `file.open`, by the view its type picks. */
+  /** The file open drawn again in `file.open`, by the view its type picks, at the fragment a link named the first time. */
   function drawFile() {
     file?.region?.close()
     if (file) file.stale = false
     if (!file?.stat) return void (openEl.innerHTML = `<p class="empty">${esc(file?.path ?? '')} is gone from disk.</p>`)
+    const { fragment } = file
+    delete file.fragment
     const text = `files/raw/${encodeURIComponent(card.project)}/${encodeURIComponent(card.id)}/${encodeURIComponent(file.repo)}/${urlPath(file.path)}`
-    const at = fileSubject({ card: card.id, project: card.project, repo: file.repo, path: file.path, file: file.stat.file, text, type: file.stat.type })
+    const at = fileSubject({ card: card.id, project: card.project, repo: file.repo, path: file.path, file: file.stat.file, text, type: file.stat.type, ...(fragment && { fragment }) })
     file.region = kit.region(openEl, 'file.open', at)
   }
 
-  /** The file `path` of `repo` open, as `files/stat` describes it. */
-  function show(repo, path, stat) {
+  /** The file `path` of `repo` open, as `files/stat` describes it, at `fragment` when a link named one. */
+  function show(repo, path, stat, fragment) {
     file?.region?.close()
-    file = { repo, path, stat }
+    file = { repo, path, stat, ...(fragment && { fragment }) }
     state.set(`file.${card.id}`, { repo, path })
     fx.classList.add('reading')
     drawHead()
@@ -228,11 +237,38 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     paint()
   }
 
-  const openFile = (repo, path) =>
+  const openFile = (repo, path, fragment) =>
     read('stat', { repo, path }).then(
-      (stat) => show(repo, path, stat),
+      (stat) => show(repo, path, stat, fragment),
       toast,
     )
+
+  /**
+   * `path` of `repo`, as a link named it: each folder on its way opened, then a folder opened and scrolled to, a file
+   * opened at `fragment`; what the checkout doesn't hold, or holds only as a link out of it, said in a toast.
+   */
+  async function reveal({ repo, path, fragment }) {
+    if (!repos.includes(repo)) return say(`${card.callsign}'s checkout has no repo ${repo}`)
+    const parts = path ? path.split('/') : []
+    const name = parts.pop()
+    for (const at of Array.from({ length: parts.length + 1 }, (_, n) => parts.slice(0, n).join('/'))) {
+      const key = keyOf(repo, at)
+      if (!listings.has(key)) {
+        const listed = await list(repo, at).then(() => true, (err) => (toast(err), false))
+        if (!listed) return
+      }
+      opened.add(key)
+    }
+    const entry = name === undefined ? { kind: 'dir' } : listings.get(keyOf(repo, parts.join('/')))?.entries.find((e) => e.name === name)
+    keepOpened()
+    if (!entry) return paint(), say(`${repo} has no ${path}`)
+    if (entry.outside) return paint(), say(`${repo}/${path} links outside the checkout: the explorer reads only the worker's own files`)
+    if (entry.kind === 'file') return openFile(repo, path, fragment)
+    const key = keyOf(repo, path)
+    await expand(key)
+    const row = [...tree.querySelectorAll('[data-dir]')].find((el) => el.getAttribute('data-dir') === key)
+    row?.scrollIntoView({ block: 'nearest' })
+  }
 
   /** The status read, and when it changed, the open folders listed again; the open file drawn again when it changed on disk. */
   async function poll() {
@@ -298,6 +334,11 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   void tick()
 
   return {
+    show(at) {
+      if (at.kind !== 'file' || at.value.card !== card.id) return false
+      void reveal(at.value)
+      return true
+    },
     update(next, at) {
       board = next
       card = at.value
