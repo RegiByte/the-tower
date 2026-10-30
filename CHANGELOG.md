@@ -12,6 +12,36 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.72.0
+
+The grid's cells as compact heads, and the rules the repository follows written down, with a rewritten README.
+No restart beyond the tower's own (`tower down tower`, then `tower up tower`), the renderer API 1.112 → 1.113
+(additive, no major).
+
+- **A card's compact head and its host's controls** (API 1.113): at `cell` scale `tower/card` draws a flat two-row
+  head (callsign, status, where and what extensions add, then the tabs; one row with `head: false`). The host speaks
+  through the card's options (`CardOptions`, exported from `/x/tower/card.js`): `acts` are its controls at the end of
+  the head, `pick` turns the callsign into a menu of other workers, and `omit` lists the commands the head leaves
+  out. A press or a choice reaches the host as a bubbling `act` or `pick` event. A contributions region takes
+  `{ omit }` as its options. The card at `pane` scale is unchanged (#271).
+- **Live region options** (API 1.113): `RegionHandle.options(next)` and `Mounted.options?(next)` hand new options to
+  what a region holds. The page's one-view and tabs regions pass them to a view that has `options`, which redraws in
+  place and keeps its tab, scroll and terminal; a view without it is mounted afresh (#271).
+- **Grid 2.1**: the grid's own strip is gone, and each cell is the worker's compact head over its tabs. Open and ✕ are
+  the card's `acts`; the ▾ beside the callsign lists the floor's workers on duty, and picking one already in another
+  cell swaps the two (both stay mounted), any other replaces this cell. Hide heads and Show heads no longer remount
+  the cells: each keeps its tab and scroll. Three cells are two over one (four stay four squares). A cell whose
+  worker left the board keeps its ✕. The manifest `requires` 1.113 (#272). A user running the example in place
+  (`extensions.<id>.path`) gets it with `tower update`; a user who copied it copies it again.
+- **`PRINCIPLES.md`**: the rules every change to the repository follows, each with its reason and the kb decision
+  behind it. They take precedence over a contributor's own instructions and their agent's. `CLAUDE.md` imports it,
+  then `AGENTS.md`, which is now a map and the checks; the facts only `AGENTS.md` held moved into the kb, with new
+  decisions `functional-core`, `fail-clearly` and `composition-over-optionality`. The `tower:review` skill holds a
+  diff against the rules a project states, and a breach is a finding that names the rule (#270).
+- **README**: rewritten for a reader who hasn't installed the tower, with fresh screenshots, a small config example,
+  and running an example extension in place through `extensions.<id>.path`. `tower init` points at `docs/config.md`
+  for the rest of the config (#269).
+
 ## v1.71.0
 
 The UI model's step 5a, part B: the grid's cells drawn as worker views. No restart beyond the tower's own
