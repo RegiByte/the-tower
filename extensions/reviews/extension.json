@@ -4,7 +4,7 @@
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {
-    "tower": "1.114"
+    "tower": "1.116"
   },
   "server": "server.ts",
   "client": "client",

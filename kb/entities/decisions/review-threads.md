@@ -88,9 +88,9 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   readable once the code moves on; [`anchorState`](ref:hub/extensions/reviews/client/reviews.ts#anchorState) looks for those
   lines in a worker's current Changes to say whether they changed or left the diff. The extension answers it for every
   anchor of a card's thread with its read `anchors/<project>?card=<id>`
-  ([`anchors`](ref:hub/extensions/reviews/server.ts#anchors)), against the core's `changes/<id>` (since 1.114), so a
+  ([`anchors`](ref:hub/extensions/reviews/server.ts#anchors)), against the core's `changes/<id>` (since 1.116), so a
   renderer's Reviews read no diff of their own.
-- *Marks on the Changes* (since 1.114): each card's fold adds a mark per anchor of the thread it reads
+- *Marks on the Changes* (since 1.116): each card's fold adds a mark per anchor of the thread it reads
   ([`threadFileOf`](ref:hub/extensions/reviews/threads.ts#threadFileOf),
   [`threadMarks`](ref:hub/extensions/reviews/client/anchors.ts#threadMarks)): `n3` on the lines it is about, saying
   "noted in n3"; a quote of removed lines marks none. Changes draw them as any extension's marks ([[changes-view]]).

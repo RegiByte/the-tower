@@ -53,7 +53,7 @@ export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => [
 /** The lines extensions add to what `tower whoami` prints for the worker of `card`. */
 export const linesOf = (board: Board, card: string): string[] => (board.adds[`card:${card}`]?.lines ?? []).map((l) => l.text)
 
-/** The marks extensions put on the lines the worker of `card` changed, in fold order. @since 1.114 */
+/** The marks extensions put on the lines the worker of `card` changed, in fold order. @since 1.116 */
 export const marksOf = (board: Board, card: string): AddedMark[] => board.adds[`card:${card}`]?.marks ?? []
 
 /** An extension's command as the board shows it, while its extension runs. */

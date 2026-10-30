@@ -49,7 +49,7 @@ export type PanelView = ChangesBase & PanelMarks
 /**
  * The Changes panel of a worker whose lines are marked by what extensions add to its card (`marksOf`), each line
  * number saying its marks' hints. `pickable`: lines can be picked, for what the renderer offers on them, drawn in
- * the element marked `data-pick-acts` under the pick, which the renderer fills (the `lines.acts` region). @since 1.114
+ * the element marked `data-pick-acts` under the pick, which the renderer fills (the `lines.acts` region). @since 1.116
  */
 export type MarkedChangesView = ChangesBase & { marks: AddedMark[]; pickable: boolean }
 
@@ -68,7 +68,7 @@ const PICK_TIP = 'click to pick this line, drag or ⇧-click for more'
 /** What a renderer offers on picked lines goes here, under them. */
 const pickActsHtml = (_: ReadView, cols: number) => `<tr class="note-row"><td colspan="${cols}"><div class="pick-acts" data-pick-acts></div></td></tr>`
 
-/** What changed in a worker's repos, its lines marked by what extensions add to its card. @since 1.114 */
+/** What changed in a worker's repos, its lines marked by what extensions add to its card. @since 1.116 */
 export const markedChangesHtml = (v: MarkedChangesView) =>
   changesPanelHtml({ ...v, marked: (repo, f) => markedLines(v.marks, repo, f), pickTip: PICK_TIP, underPick: pickActsHtml })
 

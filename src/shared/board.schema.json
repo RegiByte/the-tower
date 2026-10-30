@@ -4976,7 +4976,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker. `slots`: a floor's or the board's, which the tower's slot loop fires through each one's `slots['*']`. `marks`: a card's, on the lines its worker changed (@since 1.114)."
+      "description": "What extensions added to one subject, in fold order. `lines`: what `tower whoami` prints for a card's worker. `slots`: a floor's or the board's, which the tower's slot loop fires through each one's `slots['*']`. `marks`: a card's, on the lines its worker changed (@since 1.116)."
     },
     "AddedAction": {
       "anyOf": [

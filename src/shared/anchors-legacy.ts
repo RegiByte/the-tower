@@ -1,8 +1,8 @@
 /**
- * A review note's anchors among a worker's Changes, as `/panels.js` served them before 1.114: what a pick anchors, where
+ * A review note's anchors among a worker's Changes, as `/panels.js` served them before 1.116: what a pick anchors, where
  * an anchor is, the lines notes mark, and the Changes panel drawing them with the note box under picked lines. Bundled
  * into `/panels.js`.
- * @deprecated since 1.114: the reviews extension's client (`/x/reviews/anchors.js`); Changes and reviews meet through
+ * @deprecated since 1.116: the reviews extension's client (`/x/reviews/anchors.js`); Changes and reviews meet through
  * the `lines` subject, a card's `marks` and the `lines.acts` region. These copies go at 2.0.
  */
 import type { RepoChanges } from '../changes.ts'

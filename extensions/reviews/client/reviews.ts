@@ -226,7 +226,7 @@ export const anchorState = (anchor: Anchor, repos: RepoChanges[]): AnchorState =
   return holds(anchor.quote.lang === 'diff' ? marked : now, anchor.quote.lines) ? 'same' : 'changed'
 }
 
-/** Each anchor's state among a worker's changes, by `<n>|<i>`: its note's number and its place among the note's anchors. @since 1.114 */
+/** Each anchor's state among a worker's changes, by `<n>|<i>`: its note's number and its place among the note's anchors. @since 1.116 */
 export type AnchorStates = Record<string, AnchorState>
 
 export const anchorStates = (thread: ReviewThread, repos: RepoChanges[]): AnchorStates =>

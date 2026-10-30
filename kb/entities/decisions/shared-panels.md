@@ -61,7 +61,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   [[policies]]; deprecated since 1.91 for the policies extension's own panel, `/x/policies/panel.js`, which the tower
   page draws). Each takes a view model and reads nothing global. The logic of rows, picks, anchors and marks lives
   beside them as pure functions. The tower page draws all four; Tower 3D draws Changes, Reviews and Stats. The Changes
-  panel knows nothing of review threads (since 1.114): it draws the card's `marks` on their lines, picks lines where a
+  panel knows nothing of review threads (since 1.116): it draws the card's `marks` on their lines, picks lines where a
   renderer says something acts on them, and leaves an element under the pick (`data-pick-acts`) the renderer fills
   with the `lines.acts` region ([[ui-model]]). Both draw through one core,
   [`changesPanelHtml`](ref:hub/src/shared/changes-panel.ts#changesPanelHtml), which takes what each line says it is
