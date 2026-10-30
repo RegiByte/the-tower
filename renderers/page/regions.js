@@ -184,6 +184,10 @@ export function regions(deps) {
         ]))
         if (closed) return done.close()
         mounted = done
+        if (options !== ctx.options) {
+          if (!mounted.options) return remount()
+          mounted.options(options)
+        }
         if (seen !== undefined) mounted.visible?.(seen)
         for (const s of pending.splice(0)) if (!mounted.show?.(s)) commandKit.toast(`${s.key} isn't there any more`)
       } catch (err) {
