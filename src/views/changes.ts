@@ -135,19 +135,26 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     )
     placeActs()
     if (focused && document.activeElement !== focused) focused.focus({ preventScroll: true })
-    const counted = tally()?.text
-    if (counted !== tallied) (tallied = counted), host.dispatchEvent(new Event('tab', { bubbles: true }))
+    retally()
     if (desk.jump && shown) jump()
   }
 
-  /** Files viewed of files changed, once read: the tab's tally. */
+  /**
+   * Files viewed of files changed, once read and while seen: the tab's tally. Unseen, its read is no longer kept up, and
+   * the board's count (`tab`) speaks for the tab.
+   */
   const tally = () => {
-    const shown = read()
+    const shown = seen ? read() : undefined
     if (!shown) return undefined
     const { viewed, files } = viewedCount(shown)
     return files ? { text: `${viewed}/${files}` } : undefined
   }
   let tallied: string | undefined
+  /** Tells the region to draw the tab again once its tally changed. */
+  function retally() {
+    const counted = tally()?.text
+    if (counted !== tallied) (tallied = counted), host.dispatchEvent(new Event('tab', { bubbles: true }))
+  }
 
   function compare(to: ChangesScope) {
     dropPick()
@@ -250,6 +257,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     visible(on) {
       seen = on
       follow()
+      retally()
     },
     tab: tally,
     close() {
