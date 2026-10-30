@@ -169,8 +169,10 @@ and a framed document's section are the same thing.
   [`display`](ref:hub/renderers/page/page.js#display) opens a worker the board doesn't carry as a read subject when a
   view hands it the card (the archive's), else after reading the floors' archives, else once the board carries it when
   the page started it: its own spawns and resumes, and any its views started through the `tower` it lends them.
-  A link in a frame where nothing runs can't call `display`, only navigate, so `kit.href(subject)` (since 1.121) is
-  the hash of the renderer's page that displays it: in the tower page
+  A link in a frame where nothing runs can't call `display`, only navigate, so `kit.href(to)` (since 1.121) is the
+  hash of the renderer's page that goes to a location, or displays a subject: no view needs it, so a renderer
+  written before it still hosts `tower/document` and `tower/shelf`, whose links to other files then draw refused; in
+  the tower page a location's is its hash, and a subject's
   ([`linkHash`](ref:hub/renderers/page/page.js#linkHash)) the location `display` puts it at when the board holds it
   there, which a reload or another tab reads again; else `#to/<n>`, a subject the page holds while it is open, which
   it displays and then writes the hash of where it is (a reload on it says the link is gone). A file of a checkout

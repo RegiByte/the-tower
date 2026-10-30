@@ -14,7 +14,8 @@
  *   npm run tool:webkit -- "$TOWER_URL/#<id>" --wait 1500 --eval 'frames[0].scrollY' --click 400,300 --eval 'location.hash'
  *
  * Coordinates for a click inside a frame are the frame's rect plus the element's within it, read with an --eval first.
- * The harness (`webkit.swift`) is compiled once per change to it, into the cache (`~/.tower/cache` is never read).
+ * The harness (`webkit.swift`) is compiled once per change to it, into the system's temp folder (`tower-webkit/`),
+ * named by the source's hash.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'

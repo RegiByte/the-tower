@@ -2,7 +2,7 @@ import { esc } from '../shared/cards.ts'
 import { relativeHref, sectionLabels, sectionsHtml, sectionsOf } from '../shared/markdown.ts'
 import { fileSubject, linkedFile, sectionSubject, type CheckoutFile, type Subject } from '../shared/subjects.ts'
 import type { Kit, RegionHandle } from '../shared/views.ts'
-import { contain, decoded, DOCUMENT_SANDBOX, linkTo, scrollToFragment, writeLinks, type LinkTo } from './frame.ts'
+import { contain, decoded, DOCUMENT_SANDBOX, linkTo, NO_HREF, scrollToFragment, writeLinks, type LinkTo } from './frame.ts'
 import { bodyText, frameDoc, typeView, type Body, type Drawn } from './item.ts'
 
 /**
@@ -22,7 +22,8 @@ const RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
 /**
  * Where a link relative to `from`, a file of a worker's checkout, goes: another file or folder of its repo, displayed
  * where the page puts a file of a card (a view that `shows` it, such as a Files tab) at the link's fragment, by the
- * hash `kit.href` gives it; a fragment of `from` itself, in the frame; a path climbing out of the repo, refused.
+ * hash `kit.href` gives it, refused where the renderer lends none; a fragment of `from` itself, in the frame; a path
+ * climbing out of the repo, refused.
  */
 const linkedFrom = (doc: Document, from: CheckoutFile, kit: Kit) => (href: string): LinkTo | undefined => {
   if (!relativeHref(href)) return undefined
@@ -30,6 +31,7 @@ const linkedFrom = (doc: Document, from: CheckoutFile, kit: Kit) => (href: strin
   const to = linkedFile(from, href)
   if (!to) return { t: 'refused', why: `it leads out of the repo ${from.repo}: a link in a worker's file opens only what its checkout holds` }
   if (to.path === from.path) return linkTo(doc, `#${href.split(/#(.*)/s)[1] ?? ''}`, () => undefined)
+  if (!kit.href) return { t: 'refused', why: NO_HREF }
   return { t: 'page', hash: kit.href(fileSubject(to)) }
 }
 

@@ -638,7 +638,7 @@ const mainRegion = regions({
   termFont,
   scheme,
   run,
-  commandKit: { ...commandKit, go: (location) => void goTo(location), href: (subject) => linkHash(subject) },
+  commandKit: { ...commandKit, go: (location) => void goTo(location), href: (to) => ('view' in to ? hashOf({ t: 'view', location: to }, board()) || '#' : linkHash(to)) },
   tower: viewTower,
   contributions: kitRegion,
   subjectOf,

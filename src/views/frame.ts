@@ -72,6 +72,9 @@ export const linkTo = (doc: Document, href: string, here: (href: string) => Link
   return { t: 'refused', why: `the tower follows web and mail links, its own paths, and #links to this document's headings` }
 }
 
+/** Why a link the view would place is refused in a renderer whose kit lends no `href`. */
+export const NO_HREF = 'this renderer lends no kit.href, which a link out of a frame where nothing runs needs'
+
 const XLINK = 'http://www.w3.org/1999/xlink'
 
 /**

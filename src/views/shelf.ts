@@ -7,8 +7,8 @@ import { documentHtml } from '../shared/markdown.ts'
 import type { ShelfEntry } from '../shared/model.ts'
 import { failedHtml } from '../shared/panel-kit.ts'
 import type { RelayedUi } from '../shared/shelf-page.ts'
-import { shortHashOf, type Mount } from '../shared/views.ts'
-import { contain, decoded, DOCUMENT_SANDBOX, writeLinks, type LinkTo } from './frame.ts'
+import type { Mount } from '../shared/views.ts'
+import { contain, decoded, DOCUMENT_SANDBOX, NO_HREF, writeLinks, type LinkTo } from './frame.ts'
 import { closeHtml, viewCss } from './parts.ts'
 
 /**
@@ -110,14 +110,18 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     doc.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style>`
   }
 
-  /** A link from `from` to another file of the collection opens it here, by the shelf's location; one to a file it doesn't hold is refused. */
+  /**
+   * A link from `from` to another file of the collection opens it here, by the hash `kit.href` gives the shelf's location
+   * on it; one to a file it doesn't hold is refused, as is every one where the renderer lends no `href`.
+   */
   const placed = (from: string) => (href: string): LinkTo | undefined => {
     const target = new URL(href, `http://shelf/${from}`)
     if (target.host !== 'shelf' || target.protocol !== 'http:') return undefined
     const file = decoded(target.pathname.slice(1))
     if (file === undefined) return { t: 'refused', why: 'it holds a % that starts no escape' }
     if (!files.includes(file)) return { t: 'refused', why: `${file} is not in this collection` }
-    return { t: 'page', hash: shortHashOf({ view: ID, subject: subject.key, args: [file] })! }
+    if (!kit.href) return { t: 'refused', why: NO_HREF }
+    return { t: 'page', hash: kit.href({ view: ID, subject: subject.key, args: [file] }) }
   }
 
   /** The files of an `md` entry, the one the location names shown, else the first. */

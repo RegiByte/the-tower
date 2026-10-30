@@ -692,10 +692,12 @@ stand now, drawn in place, and a view without it is mounted afresh when they cha
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
 where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its
 location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
-`shell/<id>` with the renderer's xterm, font, scheme and keymap), `href(subject)` (the hash of the renderer's page
-that displays `subject` when a link takes the page there, for a link drawn in a frame where nothing runs, which can
-only navigate: the location the subject is displayed at when the board holds it there, which a reload reads again,
-else a hash the page holds while it is open, API 1.121), `region(host, id, subject, options?)` (one of the
+`shell/<id>` with the renderer's xterm, font, scheme and keymap), `href(to)` (the hash of the renderer's page
+that displays `to`, a subject, or goes to `to`, a location, when a link takes the page there, for a link drawn in a
+frame where nothing runs, which can only navigate: for a subject, the location it is displayed at when the board
+holds it there, which a reload reads again, else a hash the page holds while it is open; API 1.121, and optional: no
+view needs it, and in a renderer that doesn't lend it `tower/document` and `tower/shelf` draw the links they would
+place, to another file, as refused, the rest of each view as before), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
 tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
