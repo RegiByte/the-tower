@@ -1,6 +1,6 @@
 /**
  * The Changes panel: what changed in a worker's repos, each file's diff highlighted, unified or split, the changed files
- * as a tree, and the note box under picked lines. Bundled into `/panels.js`.
+ * as a tree, lines marked, and a place under picked lines for what acts on them. Bundled into `/panels.js`.
  */
 import type { RepoChanges } from '../changes.ts'
 import type { CheckoutState } from '../bridge/checkouts.ts'
@@ -9,27 +9,68 @@ import { esc, plural } from './cards.ts'
 import { ICON } from './icons.ts'
 import { highlightLines, highlightOpen } from './highlight.ts'
 import { markRanges, wordRanges } from './words.ts'
-import { langOf, repoName, type ReviewThread } from './reviews.ts'
+import type { AddedMark } from './extensions.ts'
+import { langOf, repoName } from './repos.ts'
 import { VIEWER_KEYS } from './viewer.ts'
 import { isCommitScope, type ChangesRead, type ChangesScope } from './changes-reads.ts'
-import { anchorWhere, changedFiles, fileKey, fileRows, isFolded, isViewed, livePick, notedLines, pickAnchor, pickRange, splitRows, viewedCount, type LinePick, type Row } from './changes-lines.ts'
+import { changedFiles, fileKey, fileRows, isFolded, isViewed, livePick, pickRange, splitRows, viewedCount, type LinePick, type Row } from './changes-lines.ts'
 import { fileButtonsHtml } from './file-acts.ts'
 import { failedHtml, settledHtml } from './panel-kit.ts'
 
 /**
- * The Changes panel: `folds` are the files folded or unfolded against what their viewed mark says, by `fileKey`;
- * `thread` is the thread whose anchors mark lines, `checkout` the one a note on picked lines is added to, `user` the
- * name it is signed with (`board.user.name`). `failed` is why the last read failed, drawn while nothing is read.
- * `picking` while the pick is being dragged: its lines show picked, and the note box waits for the drop. `state`: where
- * the worker's own checkout stands (`card.checkoutState`); `noting`: the worker offers `note`, so lines can be picked.
- * `layout`: each file's diff as one column of lines, or its old side and new side by side. `scope`: what the read
- * compares, the picker's choice; on a commit no lines are picked or marked noted. `tree`: the changed files drawn as a
- * tree beside the diffs, each going to its file; `treeFolds` its folders folded, by the `data-tree-fold` they were clicked on.
+ * What every Changes panel draws from: `folds` are the files folded or unfolded against what their viewed mark says, by
+ * `fileKey`; `checkout` the worker's own. `failed` is why the last read failed, drawn while nothing is read. `picking`
+ * while the pick is being dragged: its lines show picked, and what acts on them waits for the drop. `state`: where the
+ * worker's checkout stands (`card.checkoutState`). `layout`: each file's diff as one column of lines, or its old side
+ * and new side by side. `scope`: what the read compares, the picker's choice; on a commit no lines are picked or
+ * marked. `tree`: the changed files drawn as a tree beside the diffs, each going to its file; `treeFolds` its folders
+ * folded, by the `data-tree-fold` they were clicked on.
  */
-export type ChangesView = {
-  read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; thread: ReviewThread | undefined; checkout: string; user: string
-  state: CheckoutState; noting: boolean; layout: DiffLayout; scope: ChangesScope; tree: boolean; treeFolds: ReadonlySet<string>
+type ChangesBase = {
+  read: ChangesRead | undefined; failed: string | undefined; folds: ReadonlySet<string>; pick: LinePick | undefined; picking: boolean; checkout: string
+  state: CheckoutState; layout: DiffLayout; scope: ChangesScope; tree: boolean; treeFolds: ReadonlySet<string>
 }
+
+/**
+ * How a Changes panel marks lines and acts on a pick: `marked`, what each line of a file says it is marked with, by its
+ * number now; `pickable`, lines can be picked, a line number saying `pickTip`; `underPick`, the row drawn under the
+ * picked lines, `cols` wide.
+ */
+export type PanelMarks = {
+  marked: (repo: RepoChanges, f: DiffFile) => Map<number, string[]>
+  pickable: boolean
+  pickTip: string
+  underPick: (v: ReadView, cols: number) => string
+}
+
+/** A Changes panel, as `changesPanelHtml` draws it. */
+export type PanelView = ChangesBase & PanelMarks
+
+/**
+ * The Changes panel of a worker whose lines are marked by what extensions add to its card (`marksOf`), each line
+ * number saying its marks' hints. `pickable`: lines can be picked, for what the renderer offers on them, drawn in
+ * the element marked `data-pick-acts` under the pick, which the renderer fills (the `lines.acts` region). @since 1.114
+ */
+export type MarkedChangesView = ChangesBase & { marks: AddedMark[]; pickable: boolean }
+
+/** A mark's lines in a file, by number, each with what its marks say. */
+export function markedLines(marks: AddedMark[], repo: RepoChanges, f: DiffFile) {
+  const lines = new Map<number, string[]>()
+  for (const m of marks) {
+    if (m.repo !== repoName(repo.dir) || m.path !== f.path) continue
+    for (let n = m.line; n <= (m.to ?? m.line); n++) lines.set(n, [...(lines.get(n) ?? []), m.hint ?? m.label])
+  }
+  return lines
+}
+
+const PICK_TIP = 'click to pick this line, drag or ⇧-click for more'
+
+/** What a renderer offers on picked lines goes here, under them. */
+const pickActsHtml = (_: ReadView, cols: number) => `<tr class="note-row"><td colspan="${cols}"><div class="pick-acts" data-pick-acts></div></td></tr>`
+
+/** What changed in a worker's repos, its lines marked by what extensions add to its card. @since 1.114 */
+export const markedChangesHtml = (v: MarkedChangesView) =>
+  changesPanelHtml({ ...v, marked: (repo, f) => markedLines(v.marks, repo, f), pickTip: PICK_TIP, underPick: pickActsHtml })
 
 /** Where a viewer's choice to show the file tree beside the diffs is kept in `tower.store`; hidden while none is. */
 export const CHANGES_TREE_KEY = VIEWER_KEYS.changesTree
@@ -121,7 +162,7 @@ const CHANGE_MARK: Record<DiffFile['change'], string> = { added: 'A', deleted: '
 const countsHtml = (added: number, removed: number) => `<span class="add">+${added}</span> <span class="del">−${removed}</span>`
 
 /** What changed in a worker's repos: each repo since what it counts from, each file with its diff, folded once viewed. */
-export function changesHtml(v: ChangesView) {
+export function changesPanelHtml(v: PanelView) {
   const read = v.read
   const settled = settledHtml(v.state, v.checkout)
   if (!read) return `<div class="changes-panel">${settled}${v.failed ? failedHtml('what changed', v.failed, 'data-changes-read') : '<p class="none">reading what changed…</p>'}</div>`
@@ -132,9 +173,11 @@ export function changesHtml(v: ChangesView) {
     `<button type="button" class="${l === v.layout ? 'on' : ''}" data-changes-layout="${l}" aria-pressed="${l === v.layout}" data-tip="${esc(DIFF_LAYOUT_MEANS[l])}">${DIFF_LAYOUT_LABEL[l]}</button>`).join('')}</div>`
   const head = `<div class="changes-head"><span><b>${viewedCount(read).viewed} / ${files.length}</b> files viewed</span><span>${countsHtml(sum('added'), sum('removed'))}</span>
       <span>read <span translate="no" data-since="${read.at}"></span> ago</span>${scopeHtml(read.repos, v.scope)}${layouts}<button type="button" class="tree-toggle ${v.tree ? 'on' : ''}" data-changes-tree aria-pressed="${v.tree}" data-tip="${v.tree ? 'hide' : 'show'} the changed files as a tree beside the diffs">${ICON.sidebar} Files</button><button data-changes-read>${ICON.resume} Read again</button></div>`
-  const noting = v.noting && !isCommitScope(v.scope)
-  const repos = isCommitScope(v.scope) ? read.repos.filter((r) => r.commits.some((c) => c.sha === r.shows)) : read.repos
-  const diffs = repos.map((repo) => repoHtml({ ...v, read, noting, manyRepos: repos.filter((r) => r.files.length).length > 1, thread: isCommitScope(v.scope) ? undefined : v.thread, pick: noting ? livePick(read, v.pick) : undefined }, repo)).join('') || '<p class="none">not in a git repository</p>'
+  const commit = isCommitScope(v.scope)
+  const pickable = v.pickable && !commit
+  const repos = commit ? read.repos.filter((r) => r.commits.some((c) => c.sha === r.shows)) : read.repos
+  const view: ReadView = { ...v, read, pickable, manyRepos: repos.filter((r) => r.files.length).length > 1, marked: commit ? () => new Map() : v.marked, pick: pickable ? livePick(read, v.pick) : undefined }
+  const diffs = repos.map((repo) => repoHtml(view, repo)).join('') || '<p class="none">not in a git repository</p>'
   const drawn = v.tree && files.length ? treeHtml(read, repos, v.treeFolds) : ''
   return `<div class="changes-panel ${drawn ? 'with-tree' : ''}">${settled}${head}${drawn}<div class="changes-files">${diffs}</div></div>`
 }
@@ -215,7 +258,7 @@ function scopeHtml(repos: RepoChanges[], scope: ChangesScope) {
 }
 
 /** `manyRepos`: more than one repo has files, so each file's header names its repo. */
-type ReadView = ChangesView & { read: ChangesRead; manyRepos: boolean }
+export type ReadView = PanelView & { read: ChangesRead; manyRepos: boolean }
 
 /** What a repo's files are counted from, as its head says it. */
 function repoSince(repo: RepoChanges) {
@@ -250,33 +293,33 @@ function fileBodyHtml(v: ReadView, repo: RepoChanges, f: DiffFile) {
   if (!f.hunks.length) return `<p class="none">${f.change === 'renamed' ? 'renamed, same content' : 'mode changed'}</p>`
   const key = fileKey(repo, f)
   const range = v.pick?.key === key ? pickRange(v.pick) : undefined
-  const noted = notedLines(v.thread, repo, f)
+  const noted = v.marked(repo, f)
   const code = rowCode(f)
   if (v.layout === 'split') return splitBodyHtml(v, key, f, range, noted, code)
   const rows = fileRows(f).map((r, i) => {
     if (r.hunk) return `<tr class="hunk"><td colspan="3">@@ −${r.hunk.old} +${r.hunk.new} @@ ${esc(r.hunk.heading)}</td></tr>`
     const on = range && i >= range[0] && i <= range[1]
     const marks = r.now === undefined ? undefined : noted.get(r.now)
-    const tips = (notes: number[] | undefined) => [...(notes ? [`noted in ${notes.map((n) => `n${n}`).join(', ')}`] : []), ...(v.noting ? ['click to note on this line, drag or ⇧-click for more'] : [])].join('; ')
-    const ln = (n: number | undefined, notes: number[] | undefined) => `<td class="ln ${notes ? 'noted' : ''}" ${r.cls === 'eof' || !v.noting ? '' : `data-pick="${esc(key)}|${i}"`} ${
+    const tips = (notes: string[] | undefined) => [...(notes ?? []), ...(v.pickable ? [v.pickTip] : [])].join('; ')
+    const ln = (n: number | undefined, notes: string[] | undefined) => `<td class="ln ${notes ? 'noted' : ''}" ${r.cls === 'eof' || !v.pickable ? '' : `data-pick="${esc(key)}|${i}"`} ${
       tips(notes) ? `data-tip="${tips(notes)}"` : ''}>${n ?? ''}</td>`
     const line = `<tr class="${r.cls} ${on ? 'picked' : ''}">${ln(r.old, undefined)}${ln(r.now, marks)}<td><span class="m">${esc(r.line[0])}</span>${code[i]}</td></tr>`
-    return on && i === range[1] && !v.picking ? line + noteBoxHtml(v) : line
+    return on && i === range[1] && !v.picking ? line + v.underPick(v, 3) : line
   })
   return `<table>${rows.join('')}</table>`
 }
 
 /** A file's diff side by side: each side's line numbers pick lines as the unified table's do, by the same rows. */
-function splitBodyHtml(v: ReadView, key: string, f: DiffFile, range: readonly [number, number] | undefined, noted: Map<number, number[]>, code: string[]) {
+function splitBodyHtml(v: ReadView, key: string, f: DiffFile, range: readonly [number, number] | undefined, noted: Map<number, string[]>, code: string[]) {
   const rows = fileRows(f)
   const on = (i: number | undefined) => i !== undefined && !!range && i >= range[0] && i <= range[1]
   const side = (i: number | undefined, n: 'old' | 'now') => {
     if (i === undefined) return '<td class="ln empty"></td><td class="code empty"></td>'
     const r = rows[i] as Exclude<Row, { hunk: Hunk }>
     const notes = n === 'now' && r.now !== undefined ? noted.get(r.now) : undefined
-    const tip = [...(notes ? [`noted in ${notes.map((x) => `n${x}`).join(', ')}`] : []), ...(v.noting ? ['click to note on this line, drag or ⇧-click for more'] : [])].join('; ')
+    const tip = [...(notes ?? []), ...(v.pickable ? [v.pickTip] : [])].join('; ')
     const cls = `${r.cls} ${on(i) ? 'picked' : ''}`
-    return `<td class="ln ${cls} ${notes ? 'noted' : ''}" ${r.cls === 'eof' || !v.noting ? '' : `data-pick="${esc(key)}|${i}"`} ${tip ? `data-tip="${tip}"` : ''}>${r[n] ?? ''}</td>` +
+    return `<td class="ln ${cls} ${notes ? 'noted' : ''}" ${r.cls === 'eof' || !v.pickable ? '' : `data-pick="${esc(key)}|${i}"`} ${tip ? `data-tip="${tip}"` : ''}>${r[n] ?? ''}</td>` +
       `<td class="code ${cls}"><span class="m">${esc(r.line[0])}</span>${code[i]}</td>`
   }
   const pairs = splitRows(rows)
@@ -288,16 +331,10 @@ function splitBodyHtml(v: ReadView, key: string, f: DiffFile, range: readonly [n
       return `<tr class="hunk"><td colspan="4">@@ −${h.old} +${h.new} @@ ${esc(h.heading)}</td></tr>`
     }
     const line = `<tr>${side(s.old, 'old')}${side(s.now, 'now')}</tr>`
-    return k === boxAt && !v.picking ? line + noteBoxHtml(v, 4) : line
+    return k === boxAt && !v.picking ? line + v.underPick(v, 4) : line
   })
   return `<table class="split"><colgroup><col class="ln"><col><col class="ln"><col></colgroup>${html.join('')}</table>`
 }
-
-const noteBoxHtml = (v: ReadView, cols = 3) => `<tr class="note-row"><td colspan="${cols}"><div class="note-box">
-    <div class="where"><code>${esc(anchorWhere(pickAnchor(v.read.repos, v.pick!)))}</code><span>on the thread of <b>${esc(v.checkout)}</b>, as ${esc(v.user)}</span></div>
-    <textarea data-pick-text placeholder="a note on these lines (⌘⏎ adds it, Esc cancels)"></textarea>
-    <div class="actions"><button class="primary" data-pick-add>Add note</button><button data-pick-cancel>Cancel</button><span class="hint">drag across line numbers or ⇧-click one to extend, within a hunk</span></div>
-  </div></td></tr>`
 
 /** Whether the reader is inside a file's diff: its section scrolled above its header, which stays stuck to the top. */
 const readingInside = (file: Element) =>

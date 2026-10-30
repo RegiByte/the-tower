@@ -1,10 +1,10 @@
 /**
- * The lines of a worker's Changes: each file's rows, unified and side by side, which files are viewed, lines picked to
- * note on, and where a note's anchor stands among them. Bundled into `/panels.js`.
+ * The lines of a worker's Changes: each file's rows, unified and side by side, which files are viewed, lines picked,
+ * and where lines named by repo, path and number stand among them. Bundled into `/panels.js`.
  */
 import type { RepoChanges } from '../changes.ts'
 import type { DiffFile, Hunk } from '../bridge/diff.ts'
-import { langOf, repoName, type Anchor, type ReviewThread } from './reviews.ts'
+import { langOf, repoName } from './repos.ts'
 import type { ChangesRead, Viewed } from './changes-reads.ts'
 
 /**
@@ -160,8 +160,14 @@ export function watchPickDrag(el: HTMLElement, on: { drag: (from: string, to: st
 export const livePick = (read: ChangesRead, pick: LinePick | undefined) =>
   pick && changedFiles(read.repos).some(([r, f]) => fileKey(r, f) === pick.key && f.hash === pick.hash) ? pick : undefined
 
-/** The picked rows as an anchor: the file's lines now, or a `diff` with their marks when the rows hold a removal. */
-export function pickAnchor(repos: RepoChanges[], pick: LinePick): Anchor {
+/**
+ * Lines of a worker's changes by repo, path and number: `repo` named as the Changes name it (`repoName`), `from`–`to`
+ * the file's lines from 1, `quote` the lines as they read, a `diff` with git's marks when they hold a removal.
+ */
+export type NamedLines = { repo: string; path: string; from: number; to: number; quote: { lang: string; lines: string[] } }
+
+/** The picked rows as lines: the file's lines now, or a `diff` with their marks when the rows hold a removal. @since 1.114 */
+export function pickedLines(repos: RepoChanges[], pick: LinePick): NamedLines {
   const [repo, f] = changedFiles(repos).find(([r, f]) => fileKey(r, f) === pick.key)!
   const [lo, hi] = pickRange(pick)
   const rows = fileRows(f).slice(lo, hi + 1).flatMap((r) => (r.hunk || r.cls === 'eof' ? [] : [r]))
@@ -174,37 +180,19 @@ export function pickAnchor(repos: RepoChanges[], pick: LinePick): Anchor {
   }
 }
 
-export const anchorWhere = (a: Anchor) => `${a.repo}:${a.path}:${a.from === a.to ? a.from : `${a.from}-${a.to}`}`
-
-/** The lines of a file notes anchor to, by line number now, each with the notes. A quote of removed lines marks none. */
-export function notedLines(thread: ReviewThread | undefined, repo: RepoChanges, f: DiffFile) {
-  const lines = new Map<number, number[]>()
-  for (const m of thread?.messages ?? []) for (const a of m.anchors) {
-    if (a.repo !== repoName(repo.dir) || a.path !== f.path || a.quote?.lang === 'diff') continue
-    for (let n = a.from; n <= a.to; n++) lines.set(n, [...(lines.get(n) ?? []), m.n])
-  }
-  return lines
-}
-
 /**
- * Where an anchor's first line is in the Changes: its file, and the row holding the line now (else on the old side;
- * -1 when the diff doesn't show it). Undefined when its file has no changes now.
+ * Where lines' first line is in the Changes: its file, and the row holding the line now (else on the old side; -1 when
+ * the diff doesn't show it). Undefined when its file has no changes now. @since 1.114
  */
-export function anchorSpot(repos: RepoChanges[], a: Anchor) {
-  const found = changedFiles(repos).find(([repo, f]) => repoName(repo.dir) === a.repo && f.path === a.path)
+export function linesSpot(repos: RepoChanges[], lines: Pick<NamedLines, 'repo' | 'path' | 'from'>) {
+  const found = changedFiles(repos).find(([repo, f]) => repoName(repo.dir) === lines.repo && f.path === lines.path)
   if (!found) return undefined
   const [repo, file] = found
   const rows = fileRows(file)
-  const at = rows.findIndex((r) => !r.hunk && r.now === a.from)
-  return { repo, file, key: fileKey(repo, file), row: at === -1 ? rows.findIndex((r) => !r.hunk && r.old === a.from) : at }
+  const at = rows.findIndex((r) => !r.hunk && r.now === lines.from)
+  return { repo, file, key: fileKey(repo, file), row: at === -1 ? rows.findIndex((r) => !r.hunk && r.old === lines.from) : at }
 }
 
-/** The element an anchor's spot scrolls to: its line number, else its file. */
+/** The element a spot scrolls to: its line number, else its file. */
 export const spotSelector = (spot: { key: string; row: number }) =>
   spot.row === -1 ? `[data-file="${CSS.escape(spot.key)}"]` : `[data-pick="${CSS.escape(`${spot.key}|${spot.row}`)}"]`
-
-/** An anchor of a thread's note, by the `data-anchor` value its renderer was clicked on. */
-export function anchorOf(thread: ReviewThread, value: string): Anchor | undefined {
-  const [n, i] = value.split('|').map(Number)
-  return thread.messages.find((m) => m.n === n)?.anchors[i]
-}
