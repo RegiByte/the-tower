@@ -1,5 +1,5 @@
 {
-  "claude": "2.1.312",
+  "claude": "2.1.314",
   "recordings": {
     "api-error": {
       "prompt.submit": ["hook_event_name", "origin", "origin.kind", "text", "wait"],
@@ -51,7 +51,7 @@
       "prompt.submit": ["hook_event_name", "origin", "origin.kind", "text", "wait"],
       "session.compact": ["hook_event_name", "messageCount", "trigger"],
       "session.end": ["hook_event_name", "reason", "resume", "resume.id", "sessionId"],
-      "session.measure": ["changed", "context", "context.percent?", "context.tokens?", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
+      "session.measure": ["changed", "context", "context.percent", "context.tokens", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
       "session.start": ["cwd", "hook_event_name", "isInteractive", "surface"],
       "SessionEnd": ["cwd", "hook_event_name", "prompt_id", "reason", "scratchpad_dir", "session_id", "transcript_path"],
       "SessionStart": ["cwd", "hook_event_name", "model", "prompt_id?", "scratchpad_dir", "session_id", "session_title", "source", "transcript_path"],
@@ -69,7 +69,7 @@
       "prompt.submit": ["hook_event_name", "origin", "origin.kind", "text", "wait"],
       "session.compact": ["hook_event_name", "messageCount", "trigger"],
       "session.end": ["hook_event_name", "reason", "resume", "resume.id", "sessionId"],
-      "session.measure": ["changed", "context", "context.percent", "context.tokens", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
+      "session.measure": ["changed", "context", "context.percent?", "context.tokens?", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
       "session.start": ["cwd", "hook_event_name", "isInteractive", "surface"],
       "SessionEnd": ["cwd", "hook_event_name", "prompt_id", "reason", "scratchpad_dir", "session_id", "transcript_path"],
       "SessionStart": ["cwd", "hook_event_name", "model", "prompt_id?", "scratchpad_dir", "session_id", "session_title", "source", "transcript_path"],
@@ -107,7 +107,7 @@
       "prompt.submit": ["hook_event_name", "origin", "origin.kind", "text", "wait"],
       "session.compact": ["hook_event_name", "messageCount", "trigger"],
       "session.end": ["hook_event_name", "reason", "resume", "resume.id", "sessionId"],
-      "session.measure": ["changed", "context", "context.percent", "context.tokens", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
+      "session.measure": ["changed", "context", "context.percent?", "context.tokens?", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
       "session.start": ["cwd", "hook_event_name", "isInteractive", "surface"],
       "SessionEnd": ["cwd", "hook_event_name", "prompt_id", "reason", "scratchpad_dir", "session_id", "transcript_path"],
       "SessionStart": ["cwd", "hook_event_name", "model", "prompt_id?", "scratchpad_dir", "session_id", "session_title", "source", "transcript_path"],
@@ -167,6 +167,7 @@
     },
     "loop-cron": {
       "command.run": ["args", "command", "hook_event_name", "origin", "origin.kind", "presentation", "presentation.columns", "presentation.isFullscreen"],
+      "Notification": ["cwd", "hook_event_name", "message", "notification_type", "prompt_id", "scratchpad_dir", "session_id", "transcript_path"],
       "PostToolUse": ["cwd", "duration_ms", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "PreToolUse": ["cwd", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "prompt.submit": ["command.args?", "command.name?", "command?", "hook_event_name", "isMeta?", "origin", "origin.kind", "text", "wait"],
@@ -186,11 +187,10 @@
     "loop-wakeup": {
       "command.run": ["args", "command", "hook_event_name", "origin", "origin.kind", "presentation", "presentation.columns", "presentation.isFullscreen"],
       "PostToolUse": ["cwd", "duration_ms", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
-      "PostToolUseFailure": ["cwd", "duration_ms", "effort", "effort.level", "error", "hook_event_name", "is_interrupt", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "PreToolUse": ["cwd", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "prompt.submit": ["command", "command.args", "command.name", "hook_event_name", "isMeta?", "origin", "origin.kind", "text", "wait"],
       "session.end": ["hook_event_name", "reason", "resume", "resume.id", "sessionId"],
-      "session.measure": ["changed", "context", "context.percent?", "context.tokens?", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
+      "session.measure": ["changed", "context", "context.percent", "context.tokens", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
       "session.start": ["cwd", "hook_event_name", "isInteractive", "surface"],
       "SessionEnd": ["cwd", "hook_event_name", "prompt_id", "reason", "scratchpad_dir", "session_id", "transcript_path"],
       "SessionStart": ["cwd", "hook_event_name", "model", "scratchpad_dir", "session_id", "session_title", "source", "transcript_path"],
@@ -320,6 +320,8 @@
     },
     "skill-command": {
       "command.run": ["args", "command", "hook_event_name", "origin", "origin.kind", "presentation", "presentation.columns", "presentation.isFullscreen"],
+      "PostToolUse": ["cwd", "duration_ms", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
+      "PreToolUse": ["cwd", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "prompt.submit": ["command.args?", "command.name?", "command?", "hook_event_name", "origin", "origin.kind", "text", "wait"],
       "session.end": ["hook_event_name", "reason", "resume", "resume.id", "sessionId"],
       "session.measure": ["changed", "context", "context.percent?", "context.tokens?", "context.window", "cost", "cost.usd", "hook_event_name", "rateLimits"],
@@ -327,6 +329,8 @@
       "SessionEnd": ["cwd", "hook_event_name", "prompt_id", "reason", "scratchpad_dir", "session_id", "transcript_path"],
       "SessionStart": ["cwd", "hook_event_name", "model", "scratchpad_dir", "session_id", "session_title", "source", "transcript_path"],
       "Stop": ["background_tasks", "cwd", "effort", "effort.level", "hook_event_name", "last_assistant_message", "permission_mode", "prompt_id", "scratchpad_dir", "session_crons", "session_id", "stop_hook_active", "transcript_path"],
+      "tool.call": ["hook_event_name", "tool", "tool_use_id"],
+      "tool.check": ["hook_event_name", "result", "result.decision", "result.rule", "tool", "tool_use_id"],
       "turn.complete": ["answer", "durationMs", "hook_event_name", "isAborted", "reason", "turnId", "usage", "usage.cache_creation_input_tokens", "usage.cache_read_input_tokens", "usage.input_tokens", "usage.model", "usage.output_tokens"],
       "turn.start": ["hook_event_name", "text", "turnId"],
       "turn.step": ["effort", "hook_event_name", "index", "messageCount", "model", "result", "result.answer", "result.stopReason", "result.usage", "turnId"],
@@ -441,7 +445,6 @@
       "UserPromptSubmit": ["cwd", "hook_event_name", "permission_mode", "prompt", "prompt_id", "scratchpad_dir", "session_id", "session_title", "transcript_path"]
     },
     "tool-error": {
-      "PostToolUse": ["cwd", "duration_ms", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "PostToolUseFailure": ["cwd", "duration_ms", "effort", "effort.level", "error", "hook_event_name", "is_interrupt", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "PreToolUse": ["cwd", "effort", "effort.level", "hook_event_name", "permission_mode", "prompt_id", "scratchpad_dir", "session_id", "tool_input", "tool_name", "tool_use_id", "transcript_path"],
       "prompt.submit": ["hook_event_name", "origin", "origin.kind", "text", "wait"],
