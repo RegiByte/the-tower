@@ -3,11 +3,12 @@ import { documentCss } from '../shared/design.ts'
 import { base, esc, onDisk, rendererUrl, shelfKind, shelfPage, shelfPaths, shelfSource, tagOf } from '../shared/cards.ts'
 import { fileButtonsHtml, fileCall } from '../shared/file-acts.ts'
 import { ICON } from '../shared/icons.ts'
-import { documentHtml, safeHref } from '../shared/markdown.ts'
+import { documentHtml } from '../shared/markdown.ts'
 import type { ShelfEntry } from '../shared/model.ts'
 import { failedHtml } from '../shared/panel-kit.ts'
 import type { RelayedUi } from '../shared/shelf-page.ts'
 import type { Mount } from '../shared/views.ts'
+import { followLink } from './frame.ts'
 import { closeHtml, viewCss } from './parts.ts'
 
 /**
@@ -98,21 +99,21 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     const md = await tower.text(path(file)).catch((err: Error) => (kit.toast(err.message), undefined))
     const doc = body.querySelector<HTMLIFrameElement>('iframe.doc')
     if (md === undefined || closed || shown !== file || !doc) return
-    doc.onload = () => doc.contentDocument!.addEventListener('click', followLink)
+    doc.onload = () => {
+      const at = doc.contentDocument!
+      at.addEventListener('click', followLink(at, { here: openHere, toast: kit.toast }))
+    }
     doc.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style><article>${documentHtml(md, `/${path(file)}`)}</article>`
   }
 
-  /** A link to another file of the collection opens it here; a web or mail link opens in a new tab, any other is refused. */
-  const followLink = (e: MouseEvent) => {
-    const a = (e.target as Element).closest('a[href]')
-    const href = a?.getAttribute('href')
-    if (!href || href.startsWith('#')) return
-    e.preventDefault()
+  /** A link to another file of the collection opens it here; one to a file it doesn't hold is refused, said in a toast. */
+  const openHere = (href: string) => {
     const target = new URL(href, `http://shelf/${shown}`)
-    if (target.host !== 'shelf') return safeHref(href) ? void window.open(target.href, '_blank', 'noreferrer') : kit.toast(`${href} is not a link the tower opens`)
+    if (target.host !== 'shelf') return false
     const file = decodeURIComponent(target.pathname.slice(1))
-    if (files.includes(file)) return void showDoc(file)
-    kit.toast(`${file} is not in this collection`)
+    if (files.includes(file)) void showDoc(file)
+    else kit.toast(`${file} is not in this collection`)
+    return true
   }
 
   /** The files of an `md` entry, the one the location names shown, else the first. */
