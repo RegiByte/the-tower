@@ -3,7 +3,7 @@
   "type": "project",
   "name": "tower",
   "summary": "A local-first surface for managing many Claude Code sessions, where sessions are data and the presentation is swappable.",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/AGENTS.md", "hub/package.json", "hub/src/shared/model.ts"]
 }
 ---
@@ -33,5 +33,5 @@ capability is a primitive in the core, open to every renderer and every worker (
 and the tower's streams) and the collections (files kept for later). Everything else is computed from them ([[logs-are-facts]]); what is kept to skip
 computing it again lives in a cache that is never authoritative ([[fold-checkpoints]]).
 
-**Where to start.** `AGENTS.md` for the rules, then [[session-lifecycle]] for one session end to end, then
+**Where to start.** [[principles]] for the rules a change keeps, `AGENTS.md` for the map and the checks, then [[session-lifecycle]] for one session end to end, then
 [`model.ts`](ref:hub/src/shared/model.ts#LogEvent) for the log format everything is derived from.

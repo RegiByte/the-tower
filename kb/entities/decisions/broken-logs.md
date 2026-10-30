@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/facts.ts#Broken",
@@ -34,7 +34,7 @@ with editing the log by hand the only way out.
 
 **Why.** The user's call: one log failing is said clearly, and costs no other session. A log is a fact
 ([[logs-are-facts]]): the tower may not read past a line it can't follow, but it may not lose the rest of the system
-over it either. Guarding each payload field (`?? []`) instead would hide the bad event, scatter checks AGENTS.md
+over it either. Guarding each payload field (`?? []`) instead would hide the bad event, scatter checks [[fail-clearly]]
 rules out, and still leave the next unforeseen shape fatal.
 
 **How.** The guard is the fold step itself, the one every reader of facts takes:
@@ -67,7 +67,7 @@ same callsign. Off duty, Tidy archives it like any ended worker's log.
 [`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) resumes every fixture's fold before and after a break.
 
 **Alternatives considered.**
-- `?? []` at `stopStatus`: fixes the one shape found, leaves the next fatal, and AGENTS.md rules out defensive checks.
+- `?? []` at `stopStatus`: fixes the one shape found, leaves the next fatal, and [[fail-clearly]] rules out defensive checks.
 - Skipping the bad event and folding on: facts after it would be built on a step that never happened, silently.
 - A try/catch around each reader (`track`, `tower ls`, archiving): three guards, none knowing which line broke.
 - A `broken` status in `Status`: status also carries liveness (`drive`, `kill` and `submit` read it), and a broken
