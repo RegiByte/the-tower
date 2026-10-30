@@ -1,6 +1,7 @@
 /**
  * Narration's commands, run by renderers that import client modules: `speak` is offered on every markdown or text item
- * and file a worker showed, `stop` in the palette. Each reads through `window.tower`, as any renderer does, and speaks
+ * and file a worker showed, on each section of a markdown document and each prompt and answer of a brief, and `stop`
+ * in the palette. Each reads through `window.tower`, as any renderer does, and speaks
  * through `voice.js`.
  */
 import { textOf } from '/cards.js'

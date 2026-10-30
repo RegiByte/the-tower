@@ -1,15 +1,15 @@
 {
   "id": "narrate",
-  "version": "1.1",
+  "version": "1.2",
   "title": "Narration",
-  "description": "Listen to what workers write: any markdown or text item, drafts among them, and the markdown and text files they show.",
-  "requires": { "tower": "1.98" },
+  "description": "Listen to what workers write: any markdown or text item, drafts among them, the markdown and text files they show, each section of a markdown document, and each prompt and answer of a brief.",
+  "requires": { "tower": "1.117" },
   "client": "client",
   "commands": {
     "speak": {
       "module": "narrate.js",
       "export": "speak",
-      "on": ["item.*", "shown"],
+      "on": ["item.*", "shown", "section", "said"],
       "accepts": ["text/markdown", "text/plain"],
       "words": { "label": "Listen", "hint": "Read this aloud" }
     },
