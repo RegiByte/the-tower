@@ -227,13 +227,18 @@ export const upstreamOf = async (dir: string) => {
 }
 
 /**
- * The ref a checkout's work is counted from: its branch's recorded base (origin's default once that's gone), else its
- * upstream, so a commit not yet pushed is still work to review, else `HEAD`.
+ * The ref a checkout's work is counted from: its branch's recorded `base` while `commits` holds a commit for it, else
+ * origin's default, else its `upstream`, so a commit not yet pushed is still work to review, else `HEAD`.
  */
+export const againstChoice = (base: string | undefined, commits: Map<string, string | undefined>, originHead: string | undefined, upstream: string | undefined): string =>
+  (base && againstIn(commits, base, originHead)) || upstream || 'HEAD'
+
+/** The ref the checkout at `dir` counts its work from (`againstChoice`), as git reads it now. */
 export const againstFor = async (dir: string): Promise<string> => {
   const branch = (await run(dir, ['symbolic-ref', '-q', '--short', 'HEAD'])).stdout.trim()
-  const base = branch && (await run(dir, ['config', '--get', `branch.${branch}.towerBase`])).stdout.trim()
-  return (base && (await againstOf(dir, base, await originHeadOf(dir)))) || (await upstreamOf(dir)) || 'HEAD'
+  const base = (branch && (await run(dir, ['config', '--get', `branch.${branch}.towerBase`])).stdout.trim()) || undefined
+  const [commits, originHead, upstream] = await Promise.all([commitsOf(dir, [base]), originHeadOf(dir), upstreamOf(dir)])
+  return againstChoice(base, commits, originHead, upstream)
 }
 
 /** Origin's default branch as `origin/<x>`, as of the last fetch; `undefined` when origin/HEAD isn't set. */

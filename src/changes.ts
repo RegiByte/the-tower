@@ -8,11 +8,10 @@ import { constants } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { join } from 'node:path'
 import { beforeCount, linesThrough, MAX_BEFORE_LINES, parseDiff, withBefore, type DiffFile } from './bridge/diff.ts'
+import { DIFF, MAX_UNTRACKED, sinceOf, untrackedIn } from './changed-files.ts'
 import { git, gitBytes, run } from './git.ts'
 import { againstFor, isRepo } from './worktrees.ts'
 
-/** Untracked files diffed one by one past this many would be a forgotten ignore rule, not work. */
-const MAX_UNTRACKED = 300
 /** Commits listed since the base past this many are a branch that was never rebased, not a review. */
 const MAX_COMMITS = 200
 
@@ -29,9 +28,6 @@ export type Commit = { sha: string; subject: string; at: string }
  * `more`: untracked files left out past `MAX_UNTRACKED`.
  */
 export type RepoChanges = { dir: string; against: string; since: string; commits: Commit[]; shows: 'all' | 'uncommitted' | string; files: DiffFile[]; more: number }
-
-/** Every config of the user's that changes what `git diff` prints, set back to what the parser reads. */
-const DIFF = ['-c', 'core.quotepath=false', '-c', 'diff.suppressBlankEmpty=false', '-c', 'diff.submodule=short', '-c', 'diff.relative=false', 'diff', '-U3', '-M', '--no-color', '--no-ext-diff', '--no-textconv', '--src-prefix=a/', '--dst-prefix=b/']
 
 /** An untracked file as a diff against nothing: `--no-index` exits 1 when there is a difference, which there always is. */
 const untrackedDiff = async (dir: string, file: string): Promise<string> => {
@@ -191,7 +187,7 @@ const commitFiles = (dir: string, parent: string, commit: string) => async (want
 
 /** The working tree's diff from `from`, untracked files with it. */
 const treeDiff = async (dir: string, from: string) => {
-  const untracked = (await git(dir, ['ls-files', '-z', '--others', '--exclude-standard'])).split('\0').filter(Boolean)
+  const untracked = await untrackedIn(dir)
   const shown = untracked.slice(0, MAX_UNTRACKED)
   const outs = await Promise.all([git(dir, [...DIFF, from]), ...shown.map((file) => untrackedDiff(dir, file))])
   // git names tracked files from the repo's top, which a hub in a subdirectory of the repo isn't.
@@ -208,7 +204,8 @@ const parentOf = async (dir: string, sha: string): Promise<string> =>
 
 const repoChanges = async (dir: string, scope: ChangesScope): Promise<RepoChanges> => {
   const against = await againstFor(dir)
-  const since = (await git(dir, ['merge-base', against, 'HEAD'])).trim()
+  const since = await sinceOf(dir, against, 'HEAD')
+  if (since === undefined) throw new Error(`${dir} shares no history with ${against}: there is nothing to count its changes from`)
   const commits = await commitsSince(dir, since)
   const base = { dir, against, since, commits }
   if (scope === 'all') return { ...base, shows: 'all', ...(await treeDiff(dir, since)) }
