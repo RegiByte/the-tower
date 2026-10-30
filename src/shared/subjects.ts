@@ -36,6 +36,17 @@ export const shownSubject = (c: Card, s: CardShown): Subject => ({
   value: { ...s, card: c.id, project: c.project, ...(s.kind === 'file' && { text: shownHref(s).slice(1), type: mediaTypeOf(s.target) }) },
 })
 
+/** Lines of a file a worker changed, as a renderer holds them: a viewer subject of the card. @since 1.111 */
+export type Lines = { card: string; project: string; repo: string; path: string; from: number; to: number; quote?: { lang: string; lines: string[] } }
+
+/** Lines of a worker's changes, handed with its card and floor: a viewer subject, never on the board. @since 1.111 */
+export const linesSubject = (lines: Lines): Subject => ({
+  kind: 'lines',
+  key: `lines:${lines.card}/${lines.repo}/${lines.path}#${lines.from}-${lines.to}`,
+  project: lines.project,
+  value: lines,
+})
+
 /** The key of a floor's collection's item. */
 export const itemKey = (project: string, collection: string, id: string) => `item.${collection}:${project}/${id}`
 
@@ -101,7 +112,7 @@ const ownParts = (rest: string): { instance: string; entry: string } => {
 
 /**
  * The key of the subject `subject` belongs to: a floor's the board, a card's, a collection's and a shelf entry's its
- * floor, a conversation's and a showing's its card, an item's its collection, an own kind's the subject it was found
+ * floor, a conversation's, a showing's and lines' its card, an item's its collection, an own kind's the subject it was found
  * in. The board belongs to none. @since 1.98
  */
 export const parentOf = (subject: Subject): string | undefined => {
@@ -110,7 +121,7 @@ export const parentOf = (subject: Subject): string | undefined => {
   if (kind === 'board') return undefined
   if (kind === 'floor') return 'board'
   if (kind === 'card' || kind === 'collection' || kind === 'shelf') return `floor:${project}`
-  if (kind === 'conversation' || kind === 'shown') return `card:${value.card}`
+  if (kind === 'conversation' || kind === 'shown' || kind === 'lines') return `card:${value.card}`
   if (kind.startsWith('item.')) return `collection:${project}/${value.collection}`
   return ownParts(split(key).rest).instance
 }

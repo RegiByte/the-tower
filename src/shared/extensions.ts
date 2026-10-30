@@ -56,6 +56,8 @@ const SUBJECTS = '1.98'
 
 /** The minor views and regions were first read in, their shapes replaced, and commands and views took default chords. */
 export const VIEWS = '1.104'
+/** A view's tab export, since this minor. */
+export const TABS = '1.111'
 
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
@@ -255,6 +257,7 @@ export type ExtensionViewEntry = {
   options?: Record<string, unknown>
   words: Words
   keys?: string[]
+  tab?: string
 }
 
 /** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the board's, since 1.86. */
@@ -692,6 +695,7 @@ const triggers = sinceAt(TRIGGERS)
 const launch = sinceAt(LAUNCH)
 const kinds = sinceAt(KINDS)
 const views = sinceAt(VIEWS)
+const tabs = sinceAt(TABS)
 
 const Name = z
   .string()
@@ -883,6 +887,13 @@ const View = z.strictObject({
   options: views(Schema.optional().describe("Its options' JSON Schema, as a region's layout sets them.")),
   words: views(Words.describe('Its name, as a palette offers "Open <label>".')),
   keys: views(Chords.optional().describe("Default chords that display the subject in focus with it: the config's keys replace them.")),
+  tab: tabs(
+    z
+      .string()
+      .min(1)
+      .optional()
+      .describe("An export of its module, (board, subject) => { text?, tip?, tone?, hint? } | undefined, read from the board alone: in a tabs region, whether it has a tab on the subject and the tab's tally."),
+  ),
 })
 const RegionDecl = z.strictObject({
   subject: views(SubjectKind),

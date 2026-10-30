@@ -4792,6 +4792,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "tab": {
+          "type": "string"
         }
       },
       "required": [
