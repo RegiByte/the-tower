@@ -1,4 +1,4 @@
-import { cardSubject, esc } from '/cards.js'
+import { cardSubject, esc, lampOf, statusName } from '/cards.js'
 import { ICON } from '/icons.js'
 
 /**
@@ -7,7 +7,8 @@ import { ICON } from '/icons.js'
  * row of its callsign and tabs) over its tabs. Which workers fill the cells is the view's own state, kept per floor
  * (`cells.<floor key>`), so a reload opens the same cells; whether the cells show heads is kept beside it (`head`).
  * The grid's own controls go to each worker's head through its options: Open and ✕ as `acts`, and the callsign as a
- * `pick` of the floor's workers on duty, which puts the one picked in that cell (two cells swap when it has one). Three
+ * `pick` of the floor's workers on duty, which puts the one picked in that cell (two cells swap when it has one). The
+ * grid's bar adds a cell while it has room: Add worker, a menu of the floor's workers on duty not in a cell. Three
  * cells are two over one. A card displayed with this view joins its floor's grid.
  */
 
@@ -17,7 +18,15 @@ const STYLE = `
 :where([data-view="grid/grid"]) { display: flex; flex-direction: column; gap: var(--sp-s); }
 :where([data-view="grid/grid"]) .grid-bar { display: flex; align-items: center; gap: var(--sp-m); color: var(--muted); font-size: var(--fs-s); }
 :where([data-view="grid/grid"]) .grid-bar b { color: var(--ink); }
-:where([data-view="grid/grid"]) .grid-bar button { margin-left: auto; }
+:where([data-view="grid/grid"]) .grid-bar > span { margin-right: auto; }
+:where([data-view="grid/grid"]) .grid-add { margin: 0; position: fixed; inset: auto; height: auto; width: max-content; min-width: 14rem; max-height: 60vh; overflow: auto; padding: var(--sp-xs) 0;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); font-size: var(--fs-s); }
+:where([data-view="grid/grid"]) .grid-add h3 { margin: 0; padding: var(--sp-xs) var(--sp-m); color: var(--faint); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+:where([data-view="grid/grid"]) .grid-add button { display: flex; align-items: center; gap: var(--sp-s); width: 100%; min-height: 0; padding: var(--sp-xs) var(--sp-m); border: 0; border-radius: 0; background: none;
+  color: var(--ink); font-weight: 400; text-align: left; }
+:where([data-view="grid/grid"]) .grid-add button:hover, :where([data-view="grid/grid"]) .grid-add button:focus-visible { background: var(--panel-2); }
+:where([data-view="grid/grid"]) .grid-add small { margin-left: auto; padding-left: var(--sp-l); color: var(--muted); }
+:where([data-view="grid/grid"]) .grid-add .none { padding: var(--sp-xs) var(--sp-m); color: var(--muted); }
 :where([data-view="grid/grid"]) .grid-cells { flex: 1; min-height: 0; display: grid; gap: var(--sp-s); grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); }
 :where([data-view="grid/grid"]) .grid-cells.three > .grid-cell:nth-child(3) { grid-column: 1 / -1; }
 :where([data-view="grid/grid"]) .grid-cell { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
@@ -50,9 +59,29 @@ export async function mount(host, { board, subject, kit, state }) {
   const keep = () => state.set(`cells.${key}`, ids)
   const label = () => (key === 'board' ? 'every floor' : now.floors.find((f) => `floor:${f.id}` === key)?.name ?? key)
 
-  host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"></div><div class="grid-cells"></div>`
+  const pop = `grid-add-${crypto.randomUUID()}`
+  host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div>`
   const bar = host.querySelector('.grid-bar')
+  const adder = bar.querySelector('[data-grid-open-add]')
+  const menu = bar.querySelector('.grid-add')
   const grid = host.querySelector('.grid-cells')
+
+  /** The menu opens under Add worker, its right edge on the button's. */
+  menu.addEventListener('beforetoggle', (e) => {
+    if (e.newState !== 'open') return
+    const at = adder.getBoundingClientRect()
+    Object.assign(menu.style, { top: `${at.bottom + 4}px`, right: `${document.documentElement.clientWidth - at.right}px` })
+  })
+
+  let painted = ''
+
+  /** The menu of workers to add: the floor's on duty and in no cell, each by its lamp, callsign and status. */
+  const addMenuHtml = () => {
+    const rows = cardsOf(now, key)
+      .filter((c) => c.onDuty && !ids.includes(c.id))
+      .map((c) => `<button data-grid-add="${esc(c.id)}"><span class="lamp ${lampOf(c)}"></span>${esc(c.callsign)}<small>${esc(statusName(c))}</small></button>`)
+    return `<h3>Add a worker on duty</h3>${rows.join('') || '<div class="none">every worker on duty is in a cell</div>'}`
+  }
 
   /** What the worker in a cell is told: the heads toggle, the grid's controls, the floor's workers on duty to pick from, and no "Add to grid". */
   const optionsOf = (id) => ({
@@ -75,11 +104,16 @@ export async function mount(host, { board, subject, kit, state }) {
   }
 
   function draw() {
-    bar.innerHTML = `<b>Grid</b><span>${esc(label())} · ${ids.length} of ${MAX}</span><button data-grid-heads>${head ? 'Hide heads' : 'Show heads'}</button>`
+    bar.querySelector('span').textContent = `${label()} · ${ids.length} of ${MAX}`
+    bar.querySelector('[data-grid-heads]').textContent = head ? 'Hide heads' : 'Show heads'
+    adder.hidden = ids.length >= MAX
+    if (adder.hidden && menu.matches(':popover-open')) menu.hidePopover()
+    const items = addMenuHtml()
+    if (items !== painted) menu.innerHTML = painted = items
     grid.style.setProperty('--cols', String(ids.length >= 3 ? 2 : Math.max(ids.length, 1)))
     grid.classList.toggle('three', ids.length === 3)
     for (const [id, cell] of cells) if (!ids.includes(id)) (letGo(cell), cell.el.remove(), cells.delete(id))
-    if (!ids.length) grid.innerHTML = `<p class="grid-note">No worker on duty here. Add one with Add to grid on its bar.</p>`
+    if (!ids.length) grid.innerHTML = `<p class="grid-note">No worker here yet. Add one with Add worker, or Add to grid on its bar.</p>`
     else grid.querySelector('.grid-note')?.remove()
     ids.forEach((id, n) => {
       let cell = cells.get(id)
@@ -118,6 +152,8 @@ export async function mount(host, { board, subject, kit, state }) {
 
   host.addEventListener('click', (e) => {
     if (e.target.closest('[data-grid-drop]')) return drop(e.target.closest('[data-cell]').dataset.cell)
+    const added = e.target.closest('[data-grid-add]')
+    if (added) return (menu.hidePopover(), (ids = [...ids, added.dataset.gridAdd]), keep(), draw())
     if (!e.target.closest('[data-grid-heads]')) return
     head = !head
     state.set('head', head)
