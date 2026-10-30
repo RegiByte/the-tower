@@ -117,8 +117,9 @@ export const busOf = (): Bus => {
  * What a renderer lends a view: a terminal mounted with its xterm, font, scheme and keymap; `region`, one of the
  * renderer's regions inside the view, on `subject`, filled the renderer's way and run by its presses; `run` a keymap
  * command or an extension's `<cap>/<name>` on a subject or the one in focus; `display` a subject, or its key; `go` to
- * a location; `bus`, the page's viewer subjects (@since 1.118); a toast; a confirm whose button says `verb`. A renderer
- * lends what its `renderer.json` kit names.
+ * a location; `bus`, the page's viewer subjects (@since 1.118); a toast; a confirm whose button says `verb`; `href`, the
+ * hash of the renderer's page that displays a subject when a link takes the page there, for a link in a frame where
+ * nothing runs (@since 1.121). A renderer lends what its `renderer.json` kit names.
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
@@ -129,6 +130,7 @@ export type Kit = {
   bus: Bus
   toast(text: string, action?: { label: string; run(): void }): void
   confirm(text: string, verb: string): Promise<boolean>
+  href(subject: Subject): string
 }
 
 /**
