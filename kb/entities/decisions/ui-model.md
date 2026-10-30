@@ -29,7 +29,7 @@ and a framed document's section are the same thing.
 - *Views* ([`Manifest`](ref:hub/src/shared/extensions.ts#Manifest)'s `views`, since 1.104 in this shape): a module's
   export `mount(host, ctx)` returning `{ update, show?, visible?, close }`, on the kinds in `on`, handed those in
   `shows`, drawing those types it `accepts` at its `scales`, needing kit members. `ctx` is the tower, the board, the
-  subject, the kit, its own `state` in `tower.store` and its options. A view never imports another and calls verbs only
+  subject, the kit, its own `state` in `tower.store`, its options and the `scale` it is mounted at (since 1.112). A view never imports another and calls verbs only
   on a press inside it, wiring its own presses and bringing its styles in a `<style>` inside its host. A view's `on`
   may name `collection.<id>`, one collection alone ([`viewOn`](ref:hub/src/shared/views.ts#viewOn), since 1.108).
   The core's are [`CORE_VIEWS`](ref:hub/src/shared/views.ts#CORE_VIEWS), first in
@@ -102,9 +102,12 @@ and a framed document's section are the same thing.
   drawn and hidden, each told `visible(false)` and never a close it didn't get, so a worker is as it was left when
   gone back to (its tab, its panes' scroll, its pick, its terminal streaming); a showing's tab is kept across workers
   up to eight. A worker the board left is a read subject the page holds
-  ([`archive`](ref:hub/renderers/page/archive.js#archive)). The grid of
-  terminals ([`examples/extensions/grid`](ref:hub/examples/extensions/grid/extension.json)) proves it: reloaded at its
-  location, its cells and head toggle kept in its state.
+  ([`archive`](ref:hub/renderers/page/archive.js#archive)). The grid
+  ([`examples/extensions/grid`](ref:hub/examples/extensions/grid/extension.json)) proves it: reloaded at its
+  location, its cells and head toggle kept in its state, each cell (since 1.112) its own region `card.cell`, which
+  holds `tower/card` at cell scale with the `head` option the toggle sets, under a strip of the grid's own (whose cell,
+  Open, take it out). A view is told the `scale` of the region it is mounted in; `tower/card` draws no close at
+  `cell`, where leaving for the skyline would take the grid away.
 
 The model in one picture:
 
@@ -192,8 +195,9 @@ sequenceDiagram
   P->>G: mount(host, the floor, its key, the kit)
   G->>S: state.get(cells), state.get(head)
   S-->>G: the cells' card ids, the head toggle
-  G->>P: kit.terminal(cell, terminal/id) for each cell
-  P->>T: watch terminal/id for each cell
+  G->>P: kit.region(cell, card.cell, card, tower/card head) for each cell
+  P->>P: mount tower/card at cell scale, its card.panes tabs inside
+  P->>T: watch terminal/id for each cell's open Terminal tab
 ```
 
 A flow listed, where a verb's points of contact are read:
@@ -228,4 +232,5 @@ flowchart LR
 
 **Impact.** An extension's view is a place on screen any renderer hosting views mounts, reachable by location,
 display, the palette and a chord, with no renderer code of its own. The tower page's main pane hosts them; the worker
-view's tabs are views on that contract since 1.111; the sidebar's trays and the grid's cells follow on it.
+view's tabs are views on that contract since 1.111, and the grid's cells are worker views since 1.112; the sidebar's
+trays follow on it.

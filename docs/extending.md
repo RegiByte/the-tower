@@ -646,8 +646,8 @@ as `<cap>/<name>`:
 "views": {
   "grid": {
     "module": "grid.js", "export": "mount",
-    "on": ["floor", "board"], "shows": ["card"], "scales": ["pane"], "needs": ["terminal", "display"],
-    "words": { "label": "Grid", "hint": "Workers side by side" }, "keys": ["Meta+Shift+G"]
+    "on": ["floor", "board"], "shows": ["card"], "scales": ["pane"], "needs": ["region", "display"],
+    "regions": ["card.cell"], "words": { "label": "Grid", "hint": "Workers side by side" }, "keys": ["Meta+Shift+G"]
   }
 },
 "regions": { "card.cell": { "subject": "card", "holds": ["views"], "scale": "cell", "arity": "one" } }
@@ -665,13 +665,14 @@ as `<cap>/<name>`:
 - `keys`: default chords that display the subject in focus with it.
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
-visible?(on), tab?(), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options, args? }`:
-`state` is `tower.store` under `view.<id>.<key>`, the view's own; `args`, its location's (a shelf entry's file, API
-1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or `shell/<id>` with
-the renderer's xterm, font, scheme and keymap), `region(host, id, subject, options?)` (one of the renderer's regions
-inside the view, filled the renderer's way: what extensions add to the subject, run by its presses, such as
-`item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a tabs region's
-tabs among them, `options` by view id over the layout's, API 1.111; it answers `{ update(subject), show?(subject),
+visible?(on), tab?(), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options, scale, args? }`:
+`state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in
+(`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its location's (a shelf
+entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
+`shell/<id>` with the renderer's xterm, font, scheme and keymap), `region(host, id, subject, options?)` (one of the
+renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
+presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
+tabs region's tabs among them, `options` by view id over the layout's, API 1.111; it answers `{ update(subject), show?(subject),
 visible?(on), close() }`, passing `show` and `visible` on to the views it holds), `run(command, on?)` (a keymap
 command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `display(subject, { view? })`,
 `go(location)` (API 1.108), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
@@ -704,6 +705,13 @@ its tab. The tower page fills a region in the elements of the host marked `data-
 badges, lines and actions each where `tower/card` places them, `card.panes`' tab strip (`tabs`) and its views
 (`views`). It keeps the last four workers left drawn and hidden, told `visible(false)`, so one is as it was left when
 gone back to.
+
+**A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
+as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':
+{ head } })`. The renderer mounts `tower/card` there at cell scale, its tabs a tabs region of their own (their open tab
+the cell's, not the location's), and its head unless `head` is false; at `cell` it draws no close, which would leave
+your view for the skyline. `update` the handle with the card on each board and `close` it as the cell goes. A tab's
+chord acts on the worker whose cell holds the focus.
 
 **Views by type.** A kept item is drawn by the view that accepts its type (`value.type`, the media type of its file
 name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109): `tower/document` markdown (`documentHtml` in a
