@@ -12,7 +12,7 @@ import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
 import { RUNTIMES, type Runtime } from './model.ts'
 import { FACT_KINDS } from './rate-limits.ts'
 import { chordProblem } from './keymap.ts'
-import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Region } from './regions.ts'
+import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Layout, type Region } from './regions.ts'
 
 export type { StreamFact }
 
@@ -221,6 +221,8 @@ export type ExtensionView = {
   views: ExtensionViewEntry[]
   /** The regions its views declare inside them. @since 1.104 */
   regions: Region[]
+  /** The default layout of the regions it declares, by region id, when it gives one. @since 1.114 */
+  layout?: Layout
   /** What it adds to the spawn form, when it adds anything. @since 1.87 */
   spawn?: { fields: SpawnFieldView[] }
 }
@@ -921,6 +923,16 @@ const RegionDecl = z.strictObject({
   scale: views(z.enum(SCALES).optional()),
   arity: views(z.enum(['one', 'tabs']).optional()),
   description: views(z.string().min(1).optional()),
+  layout: files(
+    z
+      .strictObject({
+        order: files(z.array(z.string()).optional()),
+        hidden: files(z.array(z.string()).optional()),
+        options: files(z.record(z.string(), z.record(z.string(), z.unknown())).optional()),
+      })
+      .optional()
+      .describe("Its default layout, the bottom layer, under the renderer's own, the config's and the viewer's: `order` and `hidden` of view ids, and each view's `options`."),
+  ),
 })
 
 /** One of a manifest's views, by its name. */

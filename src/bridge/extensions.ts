@@ -864,14 +864,20 @@ const commandsOf = (manifest: Manifest | undefined): ExtensionView['commands'] =
     ...(c.deprecated && { deprecated: c.deprecated }),
   }))
 /** A region's fields in one order, compared across the manifests that declare it. */
-const regionShape = (r: NonNullable<Manifest['regions']>[string]) => ({ subject: r.subject, holds: [...r.holds].sort(), scale: r.scale, arity: r.arity, description: r.description })
+const regionShape = (r: NonNullable<Manifest['regions']>[string]) => ({ subject: r.subject, holds: [...r.holds].sort(), scale: r.scale, arity: r.arity, description: r.description, layout: r.layout })
 
 /** A manifest's views as the board shows them, qualified. */
 const viewsOf = (manifest: Manifest | undefined): ExtensionView['views'] =>
   Object.entries(manifest?.views ?? {}).map(([name, { module, export: exported, ...view }]) => ({ id: `${capabilityOf(manifest!)}/${name}`, module, export: exported, ...view }))
 
 /** The regions a manifest's views declare, by id. */
-const regionsOf = (manifest: Manifest | undefined): ExtensionView['regions'] => Object.entries(manifest?.regions ?? {}).map(([id, region]) => ({ id, ...region }))
+const regionsOf = (manifest: Manifest | undefined): ExtensionView['regions'] => Object.entries(manifest?.regions ?? {}).map(([id, { layout: _, ...region }]) => ({ id, ...region }))
+
+/** The default layout of the regions a manifest declares, by id: none when it gives none. */
+const layoutsOf = (manifest: Manifest | undefined): Pick<ExtensionView, 'layout'> => {
+  const given = Object.entries(manifest?.regions ?? {}).flatMap(([id, region]) => (region.layout ? [[id, region.layout] as const] : []))
+  return given.length ? { layout: Object.fromEntries(given) } : {}
+}
 
 /** A manifest's own subject kinds as the board shows them, qualified. */
 const subjectsOf = (manifest: Manifest | undefined): ExtensionView['subjects'] =>
@@ -997,6 +1003,7 @@ export const registry = (
       subjects: subjectsOf(a.manifest),
       views: viewsOf(a.manifest),
       regions: regionsOf(a.manifest),
+      ...layoutsOf(a.manifest),
       ...spawnOf(a.manifest),
     }
   })
@@ -1015,6 +1022,7 @@ export const registry = (
       subjects: subjectsOf(r.manifest),
       views: viewsOf(r.manifest),
       regions: regionsOf(r.manifest),
+      ...layoutsOf(r.manifest),
     }),
   )
   const stores = resolved.order.map((id) => {

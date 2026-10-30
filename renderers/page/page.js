@@ -9,7 +9,7 @@ import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
-import { displayed, layoutOf, openable, viewOn, viewsOf } from '/views.js'
+import { declaredLayout, displayed, layoutOf, openable, viewOn, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
 import { shells } from './shells.js'
@@ -445,7 +445,7 @@ const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ (re
 const LAYOUT_KEY = `layout.${RENDERER}`
 /** The viewer's own layout, over the config's and the renderer's. @type {Layout | undefined} */
 let storedLayout = /** @type {Layout | undefined} */ ((await tower.store.get(LAYOUT_KEY)) ?? undefined)
-const layout = () => layoutOf(declared.layout ?? {}, declared.configLayout, storedLayout)
+const layout = () => layoutOf(declaredLayout(board(), declared.layout ?? {}), declared.configLayout, storedLayout)
 const KIT = /** @type {readonly KitMember[]} */ (declared.kit ?? [])
 const MAIN = /** @type {Region} */ ((declared.regions ?? []).find((r) => r.id === 'board.main'))
 

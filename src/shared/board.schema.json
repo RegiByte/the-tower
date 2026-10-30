@@ -4411,6 +4411,10 @@
           },
           "description": "The regions its views declare inside them."
         },
+        "layout": {
+          "$ref": "#/definitions/Layout",
+          "description": "The default layout of the regions it declares, by region id, when it gives one."
+        },
         "spawn": {
           "type": "object",
           "properties": {
@@ -4866,6 +4870,50 @@
         "cell",
         "pane"
       ]
+    },
+    "Layout": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hidden": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "open": {
+            "type": "object",
+            "properties": {
+              "view": {
+                "type": "string"
+              },
+              "subject": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "view"
+            ],
+            "additionalProperties": false
+          },
+          "options": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {}
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "An arrangement of the views in a renderer's regions, by region id: `order` the views first, in this order; `hidden` those not offered there; `open` the tab a tabs region opens on; `options` each view's own settings there. A renderer's own (its `renderer.json`), the config's and the viewer's are laid one over the other by `layoutOf`."
     },
     "SpawnFieldView": {
       "type": "object",

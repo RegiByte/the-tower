@@ -4,7 +4,7 @@ import type { Board } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
 import { subjectAt, type Subject } from '../src/shared/subjects.ts'
-import { CORE_VIEWS, coreViewOf, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
+import { CORE_VIEWS, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ at: 100, target: 'a.md' }, { at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -90,6 +90,9 @@ test("views: the layout takes each field from the highest layer that sets it; hi
   assert.deepEqual(layout['floor.section'], { order: ['grid/grid'], hidden: ['policies/policies'] })
   assert.deepEqual(layout['card.panes'], { order: ['b/b'], options: { 'b/b': { x: 1 }, 'c/c': { y: 2 } } })
   assert.deepEqual(layoutOf({ r: { hidden: ['v/v'] } }, {}, { r: { order: ['v/v'] } }).r, { order: ['v/v'] })
+  const declaring = { extensions: [{ state: 'started', layout: { 'file.open': { order: ['files/code'], hidden: ['tower/text'] } } }, { state: 'failed', layout: { 'x.y': { order: ['x/x'] } } }] } as unknown as Board
+  assert.deepEqual(declaredLayout(declaring, { 'card.panes': { order: ['a/a'] } }), { 'file.open': { order: ['files/code'], hidden: ['tower/text'] }, 'card.panes': { order: ['a/a'] } }, "a started extension's region defaults lie under the renderer's own")
+  assert.deepEqual(layoutOf(declaredLayout(declaring, {}), { 'file.open': { order: ['tower/text'] } }, undefined)['file.open'], { order: ['tower/text'] }, 'a higher layer orders a view the default hid')
 })
 
 test('views: display places a card on its worker view, its children in its tabs, and a view showing cards on the floor', () => {

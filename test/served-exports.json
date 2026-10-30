@@ -242,6 +242,10 @@
       "regions.*.arity",
       "regions.*.description",
       "regions.*.holds",
+      "regions.*.layout",
+      "regions.*.layout.hidden",
+      "regions.*.layout.options",
+      "regions.*.layout.order",
       "regions.*.scale",
       "regions.*.subject",
       "requires",
@@ -1053,6 +1057,7 @@
     "/views.js": [
       "CORE_VIEWS",
       "coreViewOf",
+      "declaredLayout",
       "displayed",
       "hashOf",
       "layoutOf",
