@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-26",
   "reviewed": "2026-10-30",
-  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/regions.js#regions", "hub/src/views/card.ts#mount", "hub/src/views/terminal.ts#mount", "hub/src/views/brief.ts#mount", "hub/src/views/changes.ts#mount", "hub/src/views/shown.ts#mount", "hub/extensions/reviews/client/thread.ts#mount", "hub/src/shared/views.ts#RegionHandle", "hub/src/shared/views.ts#TabWords", "hub/src/shared/subjects.ts#linesSubject", "hub/renderers/page/archive.js#archive", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#itemView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
+  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/regions.js#regions", "hub/src/views/card.ts#mount", "hub/src/views/terminal.ts#mount", "hub/src/views/brief.ts#mount", "hub/src/views/changes.ts#mount", "hub/src/views/shown.ts#mount", "hub/extensions/reviews/client/thread.ts#mount", "hub/src/shared/views.ts#RegionHandle", "hub/src/shared/views.ts#RegionOptions", "hub/src/views/card.ts#CardOptions", "hub/src/shared/views.ts#TabWords", "hub/src/shared/subjects.ts#linesSubject", "hub/renderers/page/archive.js#archive", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#itemView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/test/views.test.ts", "hub/docs/extending.md"]
 }
 ---
 **Problem.** An extension could add actions and badges to the board's subjects, and run code in a renderer as a
@@ -27,9 +27,11 @@ and a framed document's section are the same thing.
   a time or as tabs. A view declares the regions inside it in its manifest's `regions`; one id has one meaning, and two
   extensions declaring it with other fields are both refused ([`resolve`](ref:hub/src/bridge/extensions.ts#resolve)).
 - *Views* ([`Manifest`](ref:hub/src/shared/extensions.ts#Manifest)'s `views`, since 1.104 in this shape): a module's
-  export `mount(host, ctx)` returning `{ update, show?, visible?, close }`, on the kinds in `on`, handed those in
+  export `mount(host, ctx)` returning `{ update, show?, visible?, options?, close }`, on the kinds in `on`, handed those in
   `shows`, drawing those types it `accepts` at its `scales`, needing kit members. `ctx` is the tower, the board, the
-  subject, the kit, its own `state` in `tower.store`, its options and the `scale` its region declares (since 1.112). A view never imports another and calls verbs only
+  subject, the kit, its own `state` in `tower.store`, its options and the `scale` its region declares (since 1.112).
+  A region handle's `options(next)` hands the view it holds new options, drawn in place by its `options`, a view
+  without one mounted afresh (since 1.113). A view never imports another and calls verbs only
   on a press inside it, wiring its own presses and bringing its styles in a `<style>` inside its host. A view's `on`
   may name `collection.<id>`, one collection alone ([`viewOn`](ref:hub/src/shared/views.ts#viewOn), since 1.108).
   The core's are [`CORE_VIEWS`](ref:hub/src/shared/views.ts#CORE_VIEWS), first in
@@ -105,9 +107,16 @@ and a framed document's section are the same thing.
   ([`archive`](ref:hub/renderers/page/archive.js#archive)). The grid
   ([`examples/extensions/grid`](ref:hub/examples/extensions/grid/extension.json)) proves it: reloaded at its
   location, its cells and head toggle kept in its state, each cell (since 1.112) its own region `card.cell`, which
-  holds `tower/card` at cell scale with the `head` option the toggle sets, under a strip of the grid's own (whose cell,
-  Open, take it out). A view is told the `scale` of the region it is mounted in; `tower/card` draws no close at
-  `cell`, where leaving for the skyline would take the grid away.
+  holds `tower/card` at cell scale with the `head` option the toggle sets. A view is told the `scale` of the region it
+  is mounted in; `tower/card` draws no close at `cell`, where leaving for the skyline would take the grid away. At
+  `cell` its head is compact (since 1.113), one row of lamp, callsign and tabs when hidden, and the view holding it
+  speaks to it through its options ([`CardOptions`](ref:hub/src/views/card.ts#CardOptions)): `acts`, the host's own
+  controls at the end of the head (the grid's Open and take it out), `pick`, the callsign as a menu of other workers
+  (the grid's swap), and `omit`, commands its head leaves out (the grid's own Add to grid), which a contributions
+  region takes as its options ([`RegionOptions`](ref:hub/src/shared/views.ts#RegionOptions)). The card answers with a
+  bubbling `act` or `pick` event on its host, as a view tells its tab with `tab`. So the host's controls are data the
+  card draws, and the grid's CSS never reaches into the card; the grid's toggle hands each cell new options in place,
+  keeping its tab and scroll.
 
 The model in one picture:
 
@@ -227,6 +236,9 @@ flowchart LR
   step 4, the worker's in 5a.
 - A `styles` field naming a served stylesheet per view: a view brings its styles in a `<style>` inside its host, as
   the grid does, so it still draws only inside its host and nothing new is served.
+- The grid's controls as commands on `card` drawn in `card.head` (1.113): take it out and swap act on the grid's own
+  state, which no command reaches; and a slot of the card's head that the host fills with its own elements would be
+  the host drawing inside another view.
 - A draft's new-worker form as a kit member: it is the keymap's `spawn` command, run on the draft, so a command or a
   chord reaches it the same way.
 

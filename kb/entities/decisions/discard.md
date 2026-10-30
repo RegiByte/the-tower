@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": [
     "hub/src/worktrees.ts#discardable",
     "hub/src/worktrees.ts#discard",
