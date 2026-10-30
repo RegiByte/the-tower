@@ -767,7 +767,8 @@ lands under every section (narrate's Listen reads that section alone) and `show(
 The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by
 sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs follows
 its links by one rule: a `#fragment` scrolls to the element or heading (by its GitHub slug) it names, a web or mail
-link opens a tab of its own, a file of a shelf entry opens in place, and any other link is refused, said in a toast.
+link opens a tab of its own, a file of a shelf entry opens in place, and any other link is refused, said in a toast:
+a link relative to a showing or a kept item among them.
 
 **A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
 as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':
