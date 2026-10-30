@@ -18,7 +18,7 @@
     },
     "tree/<project>/<id>": {
       "scope": "project",
-      "description": "One folder of a repo of the worker's checkout: folders first, each in name order, what git ignores marked; .git never listed.",
+      "description": "One folder of a repo of the worker's checkout: folders first, each in name order, what git ignores marked, a link out marked outside; .git never listed.",
       "query": {
         "type": "object",
         "required": ["repo"],
@@ -40,7 +40,8 @@
                 "name": { "type": "string" },
                 "kind": { "enum": ["dir", "file"], "description": "A link is the kind it points at." },
                 "ignored": { "const": true },
-                "link": { "const": true }
+                "link": { "const": true },
+                "outside": { "const": true, "description": "A link whose target is outside the checkout (or gone): listed, never read." }
               }
             }
           },

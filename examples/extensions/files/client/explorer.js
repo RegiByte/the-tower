@@ -37,6 +37,7 @@ const CSS = `:where([data-view="${ID}"]) {
   & .row .dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--working); }
   & :is(.m-M, .m-R) { color: var(--working-text); } & :is(.m-A, .m-U) { color: var(--ready-text); } & :is(.m-D, .m-C) { color: var(--broken-text); }
   & .row.more { color: var(--muted); cursor: default; }
+  & .row.outside { cursor: default; } & .row.outside:hover { background: none; } & .row.outside small { flex: none; color: var(--faint); font-size: var(--fs-xs); }
   & .fx-file { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
   & .fx-head { flex: none; display: flex; align-items: center; gap: var(--sp-m); min-height: 2.2rem; padding: var(--sp-xs) var(--sp-m); border-bottom: 1px solid var(--line); font-size: var(--fs-s); color: var(--muted); }
   & .fx-head .path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-family: var(--mono); direction: rtl; text-align: left; }
@@ -132,6 +133,8 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     const rows = listing.entries.map((e) => {
       const at = join(path, e.name)
       const cls = e.ignored ? ' ignored' : ''
+      if (e.outside)
+        return `<div class="row outside${cls}" style="--depth:${depth}" title="a link to outside the checkout: the explorer reads only the worker's own files"><span class="twist">↗</span><span class="name">${esc(e.name)}</span><small>outside the checkout</small>${markHtml(m[at])}</div>`
       if (e.kind === 'dir') {
         const key = keyOf(repo, at)
         const isOpen = opened.has(key)

@@ -34,7 +34,9 @@ helpers, and its client imports Shiki from the tower's `node_modules`.
   NUL byte in its first 8 KB is `text/plain`), and `files/raw/<project>/<id>/<repo>/<file...>` the file itself, a read
   that serves a file (`"serves": "file"`), sandboxed as a file a worker shows. A path is resolved through its links and
   refused (`refused`) when it is absolute, inside `.git`, or ends up outside the repo it names: `..`, or a link out
-  (the links a worktree's cut makes into the main checkout included). Files over 50 MB are not served.
+  (the links a worktree's cut makes into the main checkout included). The tree lists a link out as a row that says it
+  points outside the checkout, never opened: following the floor's configured link targets is a known limit, for a
+  later version. Files over 50 MB are not served.
 - **A file opened is a `file` subject**, `file:<card>/<repo>/<path>`, handed to `file.open`, a region the explorer
   declares. The view its type picks draws it. The region's default layout (`regions.file.open.layout`) puts
   `files/code` first for code; a config line takes it back, or puts a view of yours there:
