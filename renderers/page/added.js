@@ -24,8 +24,11 @@ const actionHtml = (board, key, action) => {
   return `<button class="added${words.destructive ? ' danger' : ''}" data-added="${esc(JSON.stringify({ subject: key, action }))}"${words.hint ? ` data-tip="${esc(words.hint)}"` : ''}>${esc(words.label)}</button>`
 }
 
+/** Actions on a subject as buttons. @param {Board} board @param {Subject} subject @param {Added<Action>[]} actions */
+export const actionsHtml = (board, subject, actions) => actions.map((a) => actionHtml(board, subject.key, a)).join('')
+
 /** A subject's added actions as buttons. @param {Board} board @param {Subject} subject */
-export const addedActionsHtml = (board, subject) => addedActions(board, subject).map((a) => actionHtml(board, subject.key, a)).join('')
+export const addedActionsHtml = (board, subject) => actionsHtml(board, subject, addedActions(board, subject))
 
 /** A subject's badges, then its added actions. @param {Board} board @param {Subject} subject */
 export const addsHtml = (board, subject) => `${badgesHtml(board, subject)}${addedActionsHtml(board, subject)}`

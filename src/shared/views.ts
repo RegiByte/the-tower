@@ -42,13 +42,15 @@ export type ViewCtx = {
 
 /**
  * A mounted view. `update`: each board while it is mounted, its subject as it stands now; `show`: display handed it a
- * subject below the one it is on, true when it took it; `visible`: another tab was shown over it, or it came back.
+ * subject below the one it is on, true when it took it; `visible`: another tab was shown over it, or it came back;
+ * `options`: its options as they stand now, drawn in place (@since 1.113). A view without `options` is mounted afresh.
  */
 export type Mounted = {
   update(board: Board, subject: Subject): void
   show?(subject: Subject): boolean
   visible?(on: boolean): void
   tab?(): TabWords | undefined
+  options?(options: Record<string, unknown>): void
   close(): void
 }
 
@@ -74,7 +76,7 @@ export type Mount = (host: HTMLElement, ctx: ViewCtx) => Mounted | Promise<Mount
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
-  region(host: HTMLElement, id: string, subject: Subject, options?: Record<string, Record<string, unknown>>): RegionHandle
+  region(host: HTMLElement, id: string, subject: Subject, options?: RegionOptions): RegionHandle
   run(command: string, on?: Subject): Promise<boolean>
   display(subject: Subject | string, opts?: { view?: string }): void
   go(location: Location): void
@@ -83,11 +85,18 @@ export type Kit = {
 }
 
 /**
- * A region a view asked the kit for: `update` with its subject as it stands; one holding views is handed `show`, a
- * subject below its own, true when a view in it took it (a tabs region opens that view's tab), and `visible`, whether
- * the view holding it is seen, which it passes to the views it shows. @since 1.111
+ * What a view asks a region for beside its subject: one holding views takes each view's options by view id, laid over
+ * the layout's; one holding contributions takes `omit`, the commands (`<cap>/<name>`) it leaves out. @since 1.113
  */
-export type RegionHandle = { update(subject: Subject): void; show?(subject: Subject): boolean; visible?(on: boolean): void; close(): void }
+export type RegionOptions = Record<string, Record<string, unknown>> | { omit: string[] }
+
+/**
+ * A region a view asked the kit for: `update` with its subject as it stands; one holding views is handed `show`, a
+ * subject below its own, true when a view in it took it (a tabs region opens that view's tab), `visible`, whether
+ * the view holding it is seen, which it passes to the views it shows (@since 1.111), and `options`, the options it
+ * was asked with as they stand now (@since 1.113).
+ */
+export type RegionHandle = { update(subject: Subject): void; show?(subject: Subject): boolean; visible?(on: boolean): void; options?(options: RegionOptions): void; close(): void }
 
 /** The part of the kit a command is lent, as `ctx.kit`: it has no host to draw a terminal in. */
 export type CommandKit = Pick<Kit, 'display' | 'toast' | 'confirm' | 'run'>

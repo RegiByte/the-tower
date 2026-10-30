@@ -16,7 +16,21 @@ import { keyedTip, paintOnce } from './parts.ts'
  * it in `card.head`, and Resume, Let go, Send home and the close) over its tabs, `card.panes`, which the renderer fills
  * with the views on the card and one per thing it showed. A worker that waits on you says so between them. The
  * `head` option, false, draws its tabs alone; at cell scale, inside another view, its head has no close.
+ *
+ * At cell scale the head is compact, and the view holding the card speaks to it through its options (`CardOptions`):
+ * `acts`, its own controls at the end of the head, a press dispatching a bubbling `act` event; `pick`, the callsign as
+ * a menu of other workers, a choice dispatching a bubbling `pick` event; and `omit`, the commands its head leaves out.
+ * With no head, the cell's one row holds the lamp, the callsign, the tabs and the acts.
  */
+
+/** A control of the view holding a card, at the end of the card's head: an `icon` from `/icons.js` draws in place of its label. */
+export type CardAct = { id: string; label: string; tip?: string; icon?: keyof typeof ICON }
+
+/** The callsign as a menu of other workers, by card id, each with a `note` beside it; `label` heads the menu. */
+export type CardPick = { label: string; tip?: string; choices: { id: string; note?: string }[] }
+
+/** `tower/card`'s options: `head`, false for its tabs alone; at cell scale, `acts`, `pick` and `omit` (`<cap>/<name>`). @since 1.113 */
+export type CardOptions = { head?: boolean; acts?: CardAct[]; pick?: CardPick; omit?: string[] }
 
 const ID = 'tower/card'
 
@@ -62,6 +76,31 @@ const CSS = `:where([data-view="${ID}"]) {
   & .ask .call { font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }
   & .ask button { margin-left: auto; flex: none; }
   & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--enamel); border-radius: var(--radius); }
+  &.cell { gap: 0; }
+  &.cell .bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m);
+    border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+  &.cell .bar-top { grid-column: 1 / 3; flex-wrap: nowrap; gap: var(--sp-m); min-width: 0; }
+  &.cell .bar-info { flex: 1 1 0; flex-wrap: nowrap; overflow: hidden; gap: var(--sp-m); }
+  &.cell .bar-info .call { font-size: var(--fs-l); }
+  &.cell .bar-actions { align-items: center; gap: var(--sp-2xs); }
+  &.cell :is(.bar-actions, .acts) button { min-height: 0; padding: 3px var(--sp-s); font-size: var(--fs-s); }
+  &.cell .bar-line { grid-column: 1 / -1; margin-top: var(--sp-xs); }
+  &.cell .acts { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: var(--sp-2xs); padding-left: var(--sp-s); border-left: 1px solid var(--line); }
+  &.cell .acts:empty { display: none; }
+  &.cell .mini { display: none; }
+  &.cell.bare .mini { display: flex; align-items: center; gap: var(--sp-xs); grid-column: 1; grid-row: 1; font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
+  &.cell.bare .bar-line { grid-column: 2; grid-row: 1; margin: 0; min-width: 0; overflow: hidden; }
+  &.cell .pick { min-height: 0; padding: 0 2px; background: none; border: 0; color: var(--muted); }
+  &.cell .pick svg { width: 12px; height: 12px; }
+  &.cell .bar-pick { margin: 0; position: fixed; inset: auto; height: auto; width: max-content; min-width: 14rem; max-height: 60vh; overflow: auto; padding: var(--sp-xs) 0;
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); font-size: var(--fs-s); }
+  &.cell .bar-pick h3 { margin: 0; padding: var(--sp-xs) var(--sp-m); color: var(--faint); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  &.cell .bar-pick button { display: flex; align-items: center; gap: var(--sp-s); width: 100%; min-height: 0; padding: var(--sp-xs) var(--sp-m); border: 0; border-radius: 0; background: none;
+    color: var(--ink); font-weight: 400; text-align: left; }
+  &.cell .bar-pick button:hover, &.cell .bar-pick button:focus-visible { background: var(--panel-2); }
+  &.cell .bar-pick small { margin-left: auto; padding-left: var(--sp-l); color: var(--muted); }
+  &.cell .bar-pick .none { padding: var(--sp-xs) var(--sp-m); color: var(--muted); }
+  &.cell .screen { border-radius: 0; }
 }`
 
 /** `Bash npm test` → the tool's name in bold, then what it acts on. */
@@ -78,22 +117,37 @@ let mounts = 0
 
 export const mount: Mount = (host, { tower, board: first, subject, kit, options, scale }) => {
   let board = first
+  let at = subject
   let card = subject.value as Card
-  const head = options.head !== false
+  let opts = options as CardOptions
+  let head = opts.head !== false
+  const cell = scale === 'cell'
   const pop = `card-${++mounts}`
   host.innerHTML = `<style>${CSS}</style><div class="bar">
-    <div class="bar-top"${head ? '' : ' hidden'}><div class="bar-info"><span class="part lead"></span><span data-holds="badges"></span><span class="part where-part"></span><span data-holds="lines"></span><span class="part stats-part"></span></div>
+    ${cell ? '<span class="mini"></span>' : ''}<div class="bar-top"${head ? '' : ' hidden'}><div class="bar-info"><span class="part lead"></span><span data-holds="badges"></span><span class="part where-part"></span><span data-holds="lines"></span><span class="part stats-part"></span></div>
       <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions"></span><span class="part own"></span></div></div>
-    <div class="tab-row bar-line" data-holds="tabs"></div></div>
-  <div class="bar-details" id="${pop}-details" popover></div><div class="bar-left" id="${pop}-left" popover></div>
+    <div class="tab-row bar-line" data-holds="tabs"></div>${cell ? '<span class="acts"></span>' : ''}</div>
+  <div class="bar-details" id="${pop}-details" popover></div><div class="bar-left" id="${pop}-left" popover></div>${cell ? `<div class="bar-pick" id="${pop}-pick" popover></div>` : ''}
   <div class="ask"></div>
   <div class="screen" data-holds="views"></div>`
+  host.classList.toggle('cell', cell)
   const $ = <E extends HTMLElement = HTMLElement>(selector: string) => host.querySelector<E>(selector)!
   const top = $('.bar-top')
   const details = $('.bar-details')
   const left = $('.bar-left')
-  const headRegion = head ? kit.region(top, 'card.head', subject) : undefined
+  /** What the head leaves out: nothing at pane scale. */
+  const omitted = () => ({ omit: cell ? (opts.omit ?? []) : [] })
+  let headRegion = head ? kit.region(top, 'card.head', subject, omitted()) : undefined
   const panes = kit.region(host, 'card.panes', subject)
+
+  /** The menu opens under the callsign that opened it, the one drawn now. */
+  const picker = cell ? $('.bar-pick') : undefined
+  picker?.addEventListener('beforetoggle', (e) => {
+    if ((e as ToggleEvent).newState !== 'open') return
+    const pick = [...host.querySelectorAll<HTMLElement>('.pick')].find((b) => b.offsetParent)
+    const at = pick?.getBoundingClientRect()
+    if (at) Object.assign(picker.style, { top: `${at.bottom + 4}px`, left: `${pick!.previousElementSibling!.getBoundingClientRect().left}px` })
+  })
 
   /** The details open over the top of the panes, clear of the head that opened them. */
   details.addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && (details.style.top = `${$('.screen').getBoundingClientRect().top + 6}px`))
@@ -130,14 +184,40 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     return `<h3>${c.callsign}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
   }
 
+  /** The ▾ that opens the menu of workers to pick, where the view holding the card gives one. */
+  const pickHtml = () => (opts.pick ? `<button class="pick" popovertarget="${pop}-pick" aria-label="${esc(opts.pick.label)}" data-tip="${esc(opts.pick.tip ?? opts.pick.label)}">${ICON.caret}</button>` : '')
+
+  /** The menu of workers to pick: each by its lamp and callsign, with its note, else its status. */
+  function pickMenuHtml(p: CardPick) {
+    const all = cards()
+    const rows = p.choices.flatMap(({ id, note }) => {
+      const c = all.find((d) => d.id === id)
+      return c ? [`<button data-pick="${esc(id)}"><span class="lamp ${lampOf(c)}"></span>${c.callsign}<small>${esc(note ?? statusName(c))}</small></button>`] : []
+    })
+    return `<h3>${esc(p.label)}</h3>${rows.join('') || '<div class="none">no other worker to pick</div>'}`
+  }
+
+  /** The cell's own row parts: the lamp and callsign while the head is hidden, and the acts of the view holding it. */
+  function drawCell(c: Card) {
+    paintOnce($('.mini'), `<span class="lamp ${lampOf(c)}" data-tip="${esc(statusName(c))}"></span><span role="heading" aria-level="2">${c.callsign}</span>${pickHtml()}`)
+    paintOnce(
+      $('.acts'),
+      (opts.acts ?? [])
+        .map((a) => `<button class="icon-btn" data-act="${esc(a.id)}"${a.icon ? ` aria-label="${esc(a.label)}"` : ''} data-tip="${esc(a.tip ?? a.label)}">${a.icon ? ICON[a.icon] : esc(a.label)}</button>`)
+        .join(''),
+    )
+    if (opts.pick) paintOnce($('.bar-pick'), pickMenuHtml(opts.pick))
+  }
+
   function draw() {
     const c = card
     const ports = c.resources.flatMap((r) => r.ports.map((p) => `:${p}`)).join(' ')
     const orphan = c.resources.some((r) => r.orphan)
     const ctx = c.context
+    if (cell) drawCell(c)
     paintOnce(
       $('.lead'),
-      `<span class="call" role="heading" aria-level="2">${c.callsign}</span>
+      `<span class="call" role="heading" aria-level="2">${c.callsign}</span>${cell ? pickHtml() : ''}
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span translate="no" data-since="${c.enteredAt}"></span></span>`,
     )
     paintOnce($('.where-part'), `<span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, reviewerOf(c))))}</span>`)
@@ -204,6 +284,11 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     if (!button) return
     const c = card
     if (button.matches('[data-home]')) return kit.display('board')
+    if (button.matches('[data-act]')) return void host.dispatchEvent(new CustomEvent('act', { bubbles: true, detail: { id: button.dataset.act } }))
+    if (button.matches('[data-pick]')) {
+      picker?.hidePopover()
+      return void host.dispatchEvent(new CustomEvent('pick', { bubbles: true, detail: { id: button.dataset.pick } }))
+    }
     if (button.matches('[data-drive]')) return void kit.run('pane-terminal', subject)
     if (button.matches('[data-resume]')) {
       const call = callOf(c, 'resume')
@@ -219,11 +304,27 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     if (button.matches('[data-reap]') && (await kit.confirm(reapAsk(c), 'End them'))) void told(pressing(button, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
   })
 
+  /** The options as they stand now: the head shown or hidden in place, its tabs, scroll and terminal kept. */
+  function retune(next: CardOptions) {
+    const omitWas = JSON.stringify(omitted())
+    opts = next
+    head = opts.head !== false
+    top.hidden = !head
+    host.classList.toggle('bare', cell && !head)
+    if (!head) (headRegion?.close(), (headRegion = undefined))
+    else if (!headRegion) headRegion = kit.region(top, 'card.head', at, omitted())
+    else if (JSON.stringify(omitted()) !== omitWas) headRegion.options?.(omitted())
+    draw()
+  }
+
+  host.classList.toggle('bare', cell && !head)
   draw()
 
   return {
+    options: (next) => retune(next as CardOptions),
     update(next: Board, now: Subject) {
       board = next
+      at = now
       card = now.value as Card
       draw()
       headRegion?.update(now)

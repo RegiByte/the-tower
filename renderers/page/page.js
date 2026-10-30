@@ -1,4 +1,4 @@
-import { actionWords, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, workerIn, linesOf, DISMISS_TITLE } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, workerIn, linesOf, DISMISS_TITLE } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss, keptOf } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -36,7 +36,7 @@ import { DRAFTS, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
-import { addedActionsHtml, asksHtml, badgesHtml } from './added.js'
+import { actionsHtml, asksHtml, badgesHtml } from './added.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -566,29 +566,38 @@ function dismissHtml(key) {
  * One of the page's regions inside a view that holds what extensions add, on `subject`: drawn the page's way, its
  * badges, lines and actions as its holds say, each in the element marked to hold it (`data-holds="badges"`, `lines`,
  * `actions`) when `el` has one, else together in `el`; their presses run by the page's own clicks. A worker's head
- * holds the page's own Dismiss beside its badges.
- * @param {HTMLElement} el @param {string} id @param {Subject} subject
+ * holds the page's own Dismiss beside its badges. The commands its options `omit` (`<cap>/<name>`) are left out.
+ * @param {HTMLElement} el @param {string} id @param {Subject} subject @param {{ omit?: string[] }} options
  * @returns {import('../../src/shared/views.ts').RegionHandle}
  */
-function kitRegion(el, id, subject) {
+function kitRegion(el, id, subject, options) {
+  let at = subject
+  let omit = options.omit ?? []
   const holds = placing().regions.find((r) => r.id === id)?.holds ?? []
   const actions = holds.includes('verbs') || holds.includes('commands')
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
   const marked = Object.values(slots).filter((s) => s !== undefined)
   /** @param {HTMLElement} at @param {Subject} s */
   const mark = (at, s) => ((at.dataset.region = id), (at.dataset.subject = s.key))
+  /** @param {Subject} s */
+  const shownActions = (s) => addedActions(board(), s).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`)))
   const draw = (/** @type {Subject} */ s) => {
+    at = s
     const parts = {
       badges: holds.includes('badges') ? `${id === 'card.head' ? dismissHtml(s.key) : ''}${badgesHtml(board(), s)}` : '',
       lines: holds.includes('lines') && s.kind === 'card' ? linesOf(board(), /** @type {Card} */ (s.value).id).map((l) => `<span class="adds-line" data-tip="${esc(l)}">${esc(l)}</span>`).join('') : '',
-      actions: actions ? addedActionsHtml(board(), s) : '',
+      actions: actions ? actionsHtml(board(), s, shownActions(s)) : '',
     }
     if (!marked.length) return (mark(el, s), paintOnce(el, `${parts.badges}${parts.actions}`))
     for (const [name, slot] of Object.entries(slots)) if (slot) (mark(slot, s), paintOnce(slot, parts[/** @type {keyof typeof parts} */ (name)]))
   }
   draw(subject)
   const clear = (/** @type {HTMLElement} */ at) => (at.replaceChildren(), delete at.dataset.region, delete at.dataset.subject)
-  return { update: draw, close: () => (marked.length ? marked : [el]).forEach(clear) }
+  return {
+    update: draw,
+    options: (next) => ((omit = /** @type {{ omit?: string[] }} */ (next).omit ?? []), draw(at)),
+    close: () => (marked.length ? marked : [el]).forEach(clear),
+  }
 }
 
 /** The tower the page lends its views: a worker one starts is one the page started, awaited as it arrives. */

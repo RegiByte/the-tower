@@ -10,7 +10,7 @@ import { addsHtml } from './added.js'
 /**
  * @import { Board, Card, CardShown } from '../../src/bridge/board.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
- * @import { Kit, CommandKit, Location, Mount, Mounted, RegionHandle, TabWords, Tab, View } from '../../src/shared/views.ts'
+ * @import { Kit, CommandKit, Location, Mount, Mounted, RegionHandle, RegionOptions, TabWords, Tab, View } from '../../src/shared/views.ts'
  * @import { Layout, Region, KitMember, Scale } from '../../src/shared/regions.ts'
  * @import { TermViewHandle } from '../../src/shared/term-view.ts'
  * @import { Tower, TerminalMsg } from '../../src/shared/shelf-page.ts'
@@ -42,7 +42,7 @@ import { addsHtml } from './added.js'
  *   run: (id: string, e: KeyboardEvent) => boolean,
  *   commandKit: CommandKit & { go: (location: Location) => void },
  *   tower: Tower,
- *   contributions: (el: HTMLElement, id: string, subject: Subject) => RegionHandle,
+ *   contributions: (el: HTMLElement, id: string, subject: Subject, options: { omit?: string[] }) => RegionHandle,
  *   subjectOf: (key: string) => Subject | undefined,
  *   unshown: () => ReadonlySet<string>,
  *   mainPane: () => Pane | undefined,
@@ -120,7 +120,7 @@ export function regions(deps) {
 
   /**
    * A view mounted into `el` on `subject`: its kit lends the page's terminals and regions, each closed with it; `show`
-   * handed before the mount settles waits for it.
+   * handed before the mount settles waits for it; new options are handed to its `options`, else it is mounted afresh.
    * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Scale | undefined} scale @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {string[] | undefined} [args]
    */
   function mountView(view, el, subject, scale, options, scope, args) {
@@ -209,6 +209,17 @@ export function regions(deps) {
       inner.clear()
     }
 
+    const remount = () => {
+      const was = mounted
+      mounted = undefined
+      try {
+        was?.close()
+      } finally {
+        letGo()
+        void settle()
+      }
+    }
+
     void settle()
 
     return {
@@ -234,6 +245,17 @@ export function regions(deps) {
         seen = on
         mounted?.visible?.(on)
       },
+      /** @param {Record<string, unknown>} next */
+      options(next) {
+        options = next
+        if (!mounted) return
+        if (!mounted.options) return remount()
+        try {
+          mounted.options(next)
+        } catch (err) {
+          fail(/** @type {Error} */ (err).message)
+        }
+      },
       tab: () => mounted?.tab?.(),
       /** The first terminal its kit opened, as a press of its tab's chord focuses it. */
       terminal: () => [...own][0]?.term(),
@@ -252,15 +274,17 @@ export function regions(deps) {
 
   /**
    * A region a view asks for: one holding views mounts them by the layout (a tabs region its tabs); any other draws what
-   * extensions add to it, each hold in the element marked with it (`data-holds`) or in `host`.
-   * @param {HTMLElement} host @param {string} id @param {Subject} subject @param {Record<string, Record<string, unknown>>} options @param {PaneScope | undefined} scope
+   * extensions add to it, each hold in the element marked with it (`data-holds`) or in `host`, less the commands its
+   * options `omit`.
+   * @param {HTMLElement} host @param {string} id @param {Subject} subject @param {RegionOptions} options @param {PaneScope | undefined} scope
    * @returns {RegionHandle}
    */
   function regionIn(host, id, subject, options, scope) {
     const region = declared().find((r) => r.id === id)
-    if (!region?.holds.includes('views')) return contributions(host, id, subject)
-    if (region.arity !== 'tabs') return one(host, region, subject, options)
-    const made = tabs(host, region, subject, options, scope)
+    if (!region?.holds.includes('views')) return contributions(host, id, subject, /** @type {{ omit?: string[] }} */ (options))
+    const byView = /** @type {Record<string, Record<string, unknown>>} */ (options)
+    if (region.arity !== 'tabs') return one(host, region, subject, byView)
+    const made = tabs(host, region, subject, byView, scope)
     const view = /** @type {HTMLElement | null} */ (host.closest('[data-view]'))
     if (view) regionsByHost.set(view, made)
     return made
@@ -283,9 +307,12 @@ export function regions(deps) {
       failed(el, region.id, `nothing here draws ${subject.key}`)
       return { update: () => {}, close: () => host.replaceChildren() }
     }
-    const hosted = mountView(view, el, subject, region.scale, { ...layout()[region.id]?.options?.[view.id], ...options[view.id] }, undefined)
+    /** @param {Record<string, Record<string, unknown>>} asked */
+    const optionsOf = (asked) => ({ ...layout()[region.id]?.options?.[view.id], ...asked[view.id] })
+    const hosted = mountView(view, el, subject, region.scale, optionsOf(options), undefined)
     return {
       update: (at) => ((host.dataset.subject = at.key), hosted.update(at)),
+      options: (next) => hosted.options(optionsOf(/** @type {Record<string, Record<string, unknown>>} */ (next))),
       show: (s) => hosted.show(s),
       visible: (on) => hosted.visible(on),
       close: () => (hosted.close(), host.replaceChildren(), delete host.dataset.region, delete host.dataset.subject),
@@ -321,6 +348,9 @@ export function regions(deps) {
     const mounted = new Map()
 
     /** @typedef {{ key: string, view: View, subject: Subject, showing?: CardShown, words?: TabWords }} TabOf */
+
+    /** A tab's view's options: the layout's, under those the region was asked with. @param {View} v */
+    const optionsOf = (v) => ({ ...layout()[region.id]?.options?.[v.id], ...options[v.id] })
 
     /** The tab a view's `tab` export gives on `at`, once its module is here; `undefined` for none. @param {View} v @param {Subject} at @returns {TabWords | undefined | 'waiting'} */
     const exported = (v, at) => {
@@ -419,7 +449,7 @@ export function regions(deps) {
       root.className = 'view-root'
       panel.append(root)
       panels.append(panel)
-      const hosted = mountView(t.view, root, t.subject, region.scale, { ...layout()[region.id]?.options?.[t.view.id], ...options[t.view.id] }, scope)
+      const hosted = mountView(t.view, root, t.subject, region.scale, optionsOf(t.view), scope)
       mounted.set(t.key, { hosted, panel })
       return mounted.get(t.key)
     }
@@ -505,6 +535,10 @@ export function regions(deps) {
         if (t.key !== open) pick(t)
         if (t.subject.key === s.key) return true
         return mounted.get(t.key)?.hosted.show(s) ?? false
+      },
+      options(next) {
+        options = /** @type {Record<string, Record<string, unknown>>} */ (next)
+        for (const { hosted } of mounted.values()) hosted.options(optionsOf(hosted.view))
       },
       visible(on) {
         seen = on
