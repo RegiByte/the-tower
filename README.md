@@ -122,8 +122,9 @@ The tower is meant to be shaped to your work, not to prescribe a workflow.
   tower's own pieces. An extension can add verbs and reads to the API, collections, streams of facts, scheduled slots,
   views in the tower page and parts of every card on the board. Much of the tower is built this way: drafts, review
   threads, policies, the quota probe and autotidy are bundled extensions. [`examples/extensions/`](examples/extensions/)
-  has ones to start from, such as `grid` (workers' terminals side by side); point `extensions.<id>.path` in the config
-  at a folder to run it, and copy it out of the checkout to make it your own.
+  has ones to start from, such as `grid` (workers' terminals side by side). Run one in place by pointing
+  `extensions.<id>.path` in the config at its folder in the checkout, so it follows `tower update` (`tower extensions
+  restart <id>` takes the new code), or copy it out of the checkout to make it your own.
 - **Renderers.** Your own view of the whole system, or a copy of one that ships, at `/r/<name>/`.
 - **The API and the `tower` command.** Every verb and read is on the HTTP API, described at `GET /schema`, and on the
   `tower` command. Workers hold the same command, so a worker can build a renderer, write a policy or check on its
