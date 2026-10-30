@@ -578,7 +578,7 @@ function kitRegion(el, id, subject, options) {
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
   const marked = Object.values(slots).filter((s) => s !== undefined)
   /** @param {HTMLElement} at @param {Subject} s */
-  const mark = (at, s) => ((at.dataset.region = id), (at.dataset.subject = s.key))
+  const mark = (at, s) => ((at.dataset.region = id), (at.dataset.subject = s.key), regionSubjects.set(at, s))
   /** @param {Subject} s */
   const shownActions = (s) => addedActions(board(), s).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`)))
   const draw = (/** @type {Subject} */ s) => {
@@ -598,6 +598,15 @@ function kitRegion(el, id, subject, options) {
     options: (next) => ((omit = /** @type {{ omit?: string[] }} */ (next).omit ?? []), draw(at)),
     close: () => (marked.length ? marked : [el]).forEach(clear),
   }
+}
+
+/** The subject each region of contributions is drawn on: a viewer subject (picked lines) is in no read but its region's. @type {WeakMap<HTMLElement, Subject>} */
+const regionSubjects = new WeakMap()
+
+/** The viewer subject `key` names, as the region holding `el` was drawn on it. @param {HTMLElement} el @param {string} key */
+const viewerSubjectAt = (el, key) => {
+  const at = regionSubjects.get(/** @type {HTMLElement} */ (el.closest('[data-region]')))
+  return at?.key === key ? at : undefined
 }
 
 /** The tower the page lends its views: a worker one starts is one the page started, awaited as it arrives. */
@@ -715,7 +724,7 @@ function goToSubject(key) {
  * @param {HTMLElement} el @param {{ subject: string, action: Added<Action> }} added
  */
 async function runAddedAt(el, { subject: key, action }) {
-  const subject = isCommand(action) ? subjectAt(board(), key) : undefined
+  const subject = isCommand(action) ? subjectAt(board(), key) ?? viewerSubjectAt(el, key) : undefined
   if (isCommand(action) && !subject) return toast('That is no longer on the board')
   const words = actionWords(board(), action)
   if (words.destructive && !(await ask(`${words.label}?`, words.label))) return
