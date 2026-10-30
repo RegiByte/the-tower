@@ -23,6 +23,16 @@ const RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
 const scrollOrSay = (doc: Document, fragment: string, kit: Kit) =>
   void (scrollToFragment(doc, fragment) || kit.toast(`#${fragment} names no heading in this document`))
 
+/** `linkedFile`, or `'malformed'` when `href` holds a % that starts no escape, which decoding it throws on. */
+const linkedOf = (from: CheckoutFile, href: string) => {
+  try {
+    return linkedFile(from, href)
+  } catch (err) {
+    if (err instanceof URIError) return 'malformed'
+    throw err
+  }
+}
+
 /**
  * A link relative to `from`, a file of a worker's checkout: another file or folder of its repo displayed, where the
  * page puts a file of a card (a view that `shows` it, such as a Files tab), at the link's fragment; a fragment of
@@ -30,8 +40,9 @@ const scrollOrSay = (doc: Document, fragment: string, kit: Kit) =>
  */
 const openLinked = (doc: Document, from: CheckoutFile, kit: Kit) => (href: string) => {
   if (!relativeHref(href)) return false
-  const to = linkedFile(from, href)
-  if (!to) kit.toast(`${href} leads out of the repo ${from.repo}: a link in a worker's file opens only what its checkout holds`)
+  const to = linkedOf(from, href)
+  if (to === 'malformed') kit.toast(`${href} isn't opened: it holds a % that starts no escape`)
+  else if (!to) kit.toast(`${href} leads out of the repo ${from.repo}: a link in a worker's file opens only what its checkout holds`)
   else if (to.path !== from.path) kit.display(fileSubject(to))
   else if (to.fragment) scrollOrSay(doc, to.fragment, kit)
   return true
