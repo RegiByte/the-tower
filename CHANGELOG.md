@@ -12,6 +12,34 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.70.0
+
+The UI model's step 5a: the worker view drawn by views, and a deadline on every hook answer. No restart beyond the
+tower's own (`tower down tower`, then `tower up tower`), the renderer API 1.109 → 1.111 (additive, no major).
+
+- **Hook answers have a deadline** (API 1.110): each answer to a core hook races the hook's deadline, 10 s per answer
+  for `tower/spawn.gate` and 30 s for every other hook. Past it the answer is a failed one, a `hook` problem on its
+  extension, so a gate that hangs no longer holds a spawn, resume or fork: the worker starts. A late answer is
+  ignored. `/schema`'s hooks and the flows' hook stages carry `deadline` in seconds, and `tower flows <verb>` prints
+  it (#264).
+- **The worker view as views** (API 1.111): the worker's head and its tabs are core views served at `/x/tower/`:
+  `tower/card` (the head, and `card.panes`, its tabs), `tower/terminal`, `tower/brief`, `tower/changes` and
+  `tower/shown`, with the Reviews tab the reviews extension's `reviews/thread`. `kit.region` hosts views: a tab mounts
+  the first time it is opened, then stays mounted and hidden, and `show` reaches the tab that takes a subject. A
+  view's optional `tab` export answers its tab's tally from the board (`undefined` for no tab on that worker). The
+  `lines` subject (`linesSubject` in `/cards.js`) lets Reviews' "show these lines" land in Changes, and an archived
+  worker is a read subject. The tower page hosts them through `regions.js`, and its fallback table is gone. The last
+  four workers left stay drawn, so a pane's scroll survives a switch between workers. The page remembers what it
+  started, in place of guessing a new session by its age. Addresses, reload behaviour and the four pane chords are
+  unchanged (#265).
+- Three visible changes in #265:
+  - The head's details popover no longer has a "terminal" row (the size and who types). The terminal's own mode chip
+    says the same ("in control · 120×40", "watching · type to take control").
+  - The Changes tally on its tab appears once Changes has been opened. Before, opening Reviews set it too.
+  - Each tab reads what it needs: Changes reads the review thread for its notes' marks and Reviews reads the Changes
+    against the default branch for its anchors, so while both are open the Changes are fetched twice. Reviews'
+    "changed since" marks now also show when the viewer's Changes are on another scope.
+
 ## v1.69.0
 
 The UI model's steps F2 to 4: the worker facts and the spawn gate through the dispatch, the main pane's routes and
