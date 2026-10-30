@@ -93,7 +93,7 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
   init: async (args) => {
     const [hub = process.cwd(), ...repos] = args
     const config = await init(paths.config, hub, repos)
-    console.log(`Wrote ${paths.config}:\n${JSON.stringify(config, null, 2)}\n\nNext: tower doctor, then tower up. The README shows the rest of the config.\nThen ask any worker: "give me a tour of the tower".`)
+    console.log(`Wrote ${paths.config}:\n${JSON.stringify(config, null, 2)}\n\nNext: tower doctor, then tower up. docs/config.md documents the rest of the config.\nThen ask any worker: "give me a tour of the tower".`)
   },
   doctor: async ([all]) => {
     if (all !== undefined && all !== '--all') throw new CliError(usageLine('doctor'))
