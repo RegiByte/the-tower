@@ -42,7 +42,7 @@ and a framed document's section are the same thing.
   The drafts editor and the Policies panel are their extensions' views,
   [`drafts/editor`](ref:hub/extensions/drafts/client/editor.ts#mount) (on `item.drafts` and `collection.drafts`) and
   [`policies/policies`](ref:hub/extensions/policies/client/view.ts#mount) (on a floor). A kept item and a thing a
-  worker showed are drawn by the views by type (on `item.*` since 1.109, on `shown` since 1.115, on `file` since 1.116), each accepting media
+  worker showed are drawn by the views by type (on `item.*` since 1.109, on `shown` since 1.115, on `file` since 1.117), each accepting media
   types: `tower/document` markdown ([`documentHtml`](ref:hub/src/views/document.ts#mount) in a frame where nothing
   runs), `tower/html`, `tower/image`, [`tower/video`](ref:hub/src/views/video.ts#mount), `tower/text` (`text/*`, JSON,
   NDJSON) and `tower/file`, the fallback accepting none; and, on `shown` alone,
@@ -100,7 +100,7 @@ and a framed document's section are the same thing.
   [`NO_KIT`](ref:hub/src/shared/adds.ts#NO_KIT).
 - *A file in a checkout* (1.114) is a viewer subject, `file:<card>/<repo>/<path>`
   ([`fileSubject`](ref:hub/src/shared/subjects.ts#fileSubject)), a child of its card like `lines`, carrying `text`, the
-  read path its content is served at, `type` and, when it has one, `file`, its absolute path (1.116), which the binary
+  read path its content is served at, `type` and, when it has one, `file`, its absolute path (1.117), which the binary
   fallback's Finder and editor buttons need. It is how a view that browses a worker's files (the files example)
   hands one to a region, where the layout picks among the views on `file` (the files example's `files/code` first for code,
   the core's views by type for the rest).
