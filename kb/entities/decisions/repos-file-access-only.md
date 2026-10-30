@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/model.ts#sessionDirs"]
 }
 ---
@@ -33,5 +33,5 @@ loaded (that takes `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1`), and still 
 `--add-dir` for directories outside the project's repos: the floor's collections directory, and in a [[worktree]] the
 directory sources of its links ([[tower-cuts-worktrees]]); a `.claude/` in one of those would load. The settings are the clients' ([[host-owns-ptys]]).
 
-The user-facing docs say it as well: [[docs-config]] (`repos`), [[readme]], [[docs-usage]] and `AGENTS.md`'s Data section; each refs
+The user-facing docs say it as well: [[docs-config]] (`repos`), [[readme]] and [[docs-usage]]; each refs
 [`settingsArgs`](ref:hub/src/shared/launch.ts#settingsArgs), so a change in how repos are granted re-checks them.

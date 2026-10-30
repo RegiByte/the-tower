@@ -1,1 +1,2 @@
+@PRINCIPLES.md
 @AGENTS.md
