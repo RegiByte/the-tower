@@ -151,13 +151,15 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   its part), keyed since 1.98 by the subject they were found in (an entry's own key needn't be unique across floors),
   its contributions copied to the old `<cap>.<kind>:<key>` until 2.0;
   [`subjects.ts`](ref:hub/src/shared/subjects.ts) spells every key, names each subject's parent (`parentOf`: an item's
-  collection, a showing's card, an own kind's instance) and resolves any key on the board (`subjectAt`, own kinds
+  collection, a showing's card, a prompt's or answer's conversation and a section's document since 1.117, an own
+  kind's instance) and resolves any key on the board (`subjectAt`, own kinds
   through `ExtensionView.subjects`). A subject whose content is text or a file says where it is, `value.text` a read
   path (an item's, a shown file's) or `value.body` the text, and `value.type` its media type
   ([`mediaTypeOf`](ref:hub/src/shared/media.ts#mediaTypeOf)); `textOf` reads either. A manifest's `folds` declare, per subject kind, the
   `x` schema of its part and the `adds` it contributes (`actions`, `badges`, `tidy` on a floor, `lines` on a card,
   `asks`); the loader refuses an own kind not declared, another's of a capability it doesn't declare, a subject list
-  that isn't a keyed array of its fold's `x`, an `x` on what holds none (an item's is its collection's extension's), a command's `accepts` with no `on` to narrow
+  that isn't a keyed array of its fold's `x`, an `x` on what holds none (an item's is its collection's extension's), a command's `accepts` with no `on` to narrow (a viewer kind in `on`, `lines`, `file`, `said` or `section`, is
+  undotted and so never read as another's own kind)
   ([`compileFolds`](ref:hub/src/bridge/extensions.ts#compileFolds)), and `start` must return a fold per kind. The core's
   board is built, then [`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard) runs, pure, over a frozen copy: each
   running extension in resolved order folds card, conversations, showings, items, collections, shelf entries, floor,
@@ -414,7 +416,8 @@ API 1.100: `/schema`'s `flows`, a core hook's `combine`, `required`, `absent` an
 API 1.89: drafts is the bundled `extensions/drafts` (its client the former
 `/drafts.js`, [[collections]]), a floor collection's `by`, `.ts` client modules served bundled, client exports in
 `contract.json`, and `LEGACY`'s first entry. `examples/extensions/` holds extensions to copy, `narrate` first (Listen
-on every markdown or text item and shown file since 1.98), each loaded by `npm test` as `tower extensions check` does. API 1.93: review threads are the bundled
+on every markdown or text item and shown file since 1.98, on each section of a document and each Brief message since
+1.117), each loaded by `npm test` as `tower extensions check` does. API 1.93: review threads are the bundled
 `extensions/reviews` (`/x/reviews/reviews.js`, `/x/reviews/panel.js`), `ctx.collections.put`, and `floor.main`;
 `review/append`, `GET /reviews/<project>`, `/reviews.js` and the old board fields kept by `LEGACY`.
 API 1.94: the hook `tower/discard.done` and `worktree/discard`'s reply `done`, a tidy entry's `does` and `kind`,

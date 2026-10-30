@@ -621,6 +621,8 @@ config declares; this table says it for the ones that ship, generated from their
 | `floor` | `floor.section`, the floor's section in the sidebar, its Tidy and the palette: badges, verbs, commands, asks, tidy<br>`floor.trays`, the floor's trays of kept items in the sidebar: views | `floor.console`, the floor's Tidy: tidy | not drawn | not drawn |
 | `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | not drawn | not drawn | not drawn |
+| `said` | `said.acts`, beside a prompt's or an answer's copy in the Brief: commands | not drawn | not drawn | not drawn |
+| `section` | `section.acts`, in a gutter beside a markdown document, level with each of its sections: commands | not drawn | not drawn | not drawn |
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands<br>`item.row`, the item's row in the floor's trays: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | not drawn | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
@@ -697,7 +699,7 @@ tabs region's tabs among them, `options` by view id over the layout's, API 1.111
 `options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out, API 1.113; it answers `{ update(subject), show?(subject),
 visible?(on), options?(options), close() }`, passing `show`, `visible` and new options on to the views it holds), `run(command, on?)` (a keymap
 command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `display(subject, { view? })`,
-`go(location)` (API 1.108), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
+`go(location)` (API 1.108), `bus` (below, API 1.117), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
 subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
 `:where([data-view="<id>"])` over `/design.css`'s tokens, brought in a `<style>` inside its host; it never imports
@@ -736,8 +738,36 @@ command `on: ["lines"]` runs on the lines, and a view `on: ["lines"]` is drawn t
 `reviews/composer` writes a note on them. A view there that is done with the lines (a note added, or cancelled)
 dispatches a bubbling `done` event on its host, and the Changes let the pick go. Lines can be picked while the
 worker's checkout is live and something is offered on lines, a view or a command; nothing else in the Changes knows
-what acts on them. A viewer kind, `lines` or `file`, is one a view, a command or a region may be on; a fold on one is
+what acts on them. A viewer kind, `lines`, `file`, `said` or `section`, is one a view, a command or a region may be on; a fold on one is
 refused, since the board never carries the subject to fold.
+
+**The bus** (API 1.117). What a view draws that the board never carries, and that a user can still point at, is a
+viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines
+picked in Changes. A view publishes one on `kit.bus`, `{ publish(subject, of), clear(key), at(key), under(of, kind?),
+on(kind, fn) }`, under the key of the subject it is of: the renderer holds one bus per page, so four grid cells each
+drawing a document hold four sets of sections, each under its own showing. The renderer resolves a key through it
+after the board, so a command pressed in a region on the subject, a chord pressed with the focus there, and
+`display(key)` all reach it; what a view published is cleared when it closes. `busOf()` in `/views.js` makes one for a
+renderer of your own.
+
+- `said`: `saidSubject` in `/cards.js`, keyed `said:<session>:<conversation>:<startedAt>:<side>`, of its
+  conversation, carrying its words as `body` and the type `text/markdown`. The Brief asks the kit for `said.acts`
+  beside each copy button, where anything is offered on `said`, and takes `show(said)`, scrolling to it.
+- `section`: `sectionSubject(of, section)` in `/cards.js`, keyed `section:<of key>#<n>`, of the showing or item the
+  document is (`value.of`), carrying `heading`, its markdown as `body` and the document's type. `sectionsOf(text)` in
+  `/markdown.js` splits a document before each heading of the shallowest level that occurs more than once (a
+  document under one `#` title splits at its `##`s), the text before the first such heading section 0 (left out when
+  it is blank), so every renderer splits one the same way; `sectionsHtml(text, url)` draws each section from the same
+  split, and `sectionLabels` names each one once ("Notes", "Notes · 2").
+
+`tower/document` draws each section in its frame and, beside the frame in the page's own document, a gutter of one
+row per section, level with it as the document scrolls or resizes and never over the row before it: each row is
+labelled with its section's heading from the source and is a `section.acts` region, so a command `on: ["section"]`
+lands under every section (narrate's Listen reads that section alone) and `show(section)` scrolls the frame to it.
+The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by
+sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs follows
+its links by one rule: a `#fragment` scrolls to the element or heading (by its GitHub slug) it names, a web or mail
+link opens a tab of its own, a file of a shelf entry opens in place, and any other link is refused, said in a toast.
 
 **A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
 as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':
@@ -761,8 +791,8 @@ same shape as `kit.region`'s): the card draws them in place, keeping its tab, sc
 
 **Views by type.** A kept item and a thing a worker showed are drawn by the view that accepts their type
 (`value.type`, the media type of the file's name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109),
-`shown` (API 1.115) and `file` (API 1.117): `tower/document` markdown (`documentHtml` in a frame where nothing runs: raw HTML kept, images
-read beside the file), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
+`shown` (API 1.115) and `file` (API 1.117): `tower/document` markdown (in a frame where nothing runs: raw HTML kept, images
+read beside the file, its sections taking commands beside it, API 1.118), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
 `video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is `text/plain`), and `tower/file`, which accepts
 nothing, the fallback that leaves a file to Finder and the editor. `tower/link`, on `shown` alone, takes
 `text/uri-list`, an address a worker showed: a url framed as it is, a link as a page whose one click opens it. An
