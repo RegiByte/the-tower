@@ -665,12 +665,14 @@ as `<cap>/<name>`:
 - `keys`: default chords that display the subject in focus with it.
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
-visible?(on), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options, args? }`:
+visible?(on), tab?(), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options, args? }`:
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `args`, its location's (a shelf entry's file, API
 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or `shell/<id>` with
-the renderer's xterm, font, scheme and keymap), `region(host, id, subject)` (one of the renderer's regions inside the
-view, such as `item.head`, filled with what extensions add to the subject the renderer's way and run by its presses:
-`{ update(subject), close() }`, contributions only until views mount in one, API 1.108), `run(command, on?)` (a keymap
+the renderer's xterm, font, scheme and keymap), `region(host, id, subject, options?)` (one of the renderer's regions
+inside the view, filled the renderer's way: what extensions add to the subject, run by its presses, such as
+`item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a tabs region's
+tabs among them, `options` by view id over the layout's, API 1.111; it answers `{ update(subject), show?(subject),
+visible?(on), close() }`, passing `show` and `visible` on to the views it holds), `run(command, on?)` (a keymap
 command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `display(subject, { view? })`,
 `go(location)` (API 1.108), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
@@ -685,7 +687,23 @@ draw, and the page goes on. A view that keeps something in the viewer's record (
 `tower/archive` on a floor, `tower/collection` on a collection and `tower/shelf` on a shelf entry, beside the drafts
 extension's `drafts/editor` and the policies extension's `policies/policies` on a floor. Each is `CORE_VIEWS`' entry
 with its `module`, `export` and `needs`, and a renderer whose kit lends those hosts it as it hosts any extension's.
-`tower/card` has no module yet: the tower page draws it by its own route.
+
+
+**The worker view** (API 1.111). `tower/card` on a card draws its head and declares `card.panes`, its tabs, which it
+asks the kit for as a region. A tabs region's tabs are (view, subject) pairs: the views on the card (`tower/terminal`,
+`tower/brief`, `tower/changes`, the reviews extension's `reviews/thread`, then any of yours on `card`, in the layout's
+`order`), then one per thing the worker showed, by the view its type picks (`tower/shown` draws them all for now).
+A tab mounts the first time it is opened and then stays mounted under the one shown, told `visible(false)`, so a
+view that reads only while seen (Changes' poll) stops there. A view on `card` has a tab where its `tab` export
+(named in its manifest, `"tab": "tab"`) answers, from the board alone, `{ text?, tip?, tone?, hint? }`: `text` the
+tally beside its label, `hint` the tab's tip; `undefined` is no tab on that worker (Reviews where reviews is off). A
+mounted view's `tab()` answers it from what it read, and it dispatches a bubbling `tab` event on its host when that
+changes. `show(subject)` reaches a tab through the card: `display` of a conversation opens the Brief, of lines
+(`linesSubject` in `/cards.js`, a viewer subject: a card's repo, path and line range) Changes at them, of a showing
+its tab. The tower page fills a region in the elements of the host marked `data-holds` when it has them: `card.head`'s
+badges, lines and actions each where `tower/card` places them, `card.panes`' tab strip (`tabs`) and its views
+(`views`). It keeps the last four workers left drawn and hidden, told `visible(false)`, so one is as it was left when
+gone back to.
 
 **Views by type.** A kept item is drawn by the view that accepts its type (`value.type`, the media type of its file
 name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109): `tower/document` markdown (`documentHtml` in a
@@ -720,7 +738,8 @@ collection's view, then the core's views first (`CORE_VIEWS`: the worker view on
 extensions' in order; with `view`, the deepest level that offers that view. A view given that is mounted and takes the
 subject through `show` stays mounted; when it is on that subject's kind, the location follows it there with no remount
 (the drafts editor's new draft, on its item once its first save is on the board). A worker the board doesn't carry is
-looked up in its floor's archive, and else awaited as one just started. `openable` lists the views a region holding commands draws as "Open <label>"
+held as read when a view hands the card whole (`kit.display(cardSubject)`, as the archive does), else looked up in
+the floors' archives, and else awaited when the renderer started it. `openable` lists the views a region holding commands draws as "Open <label>"
 beside what is on screen; the tower page draws them in a floor's section and its palette.
 
 **Keys.** `views.<v>.keys` and `commands.<c>.keys` give default chords, global, acting on the subject in focus (the
