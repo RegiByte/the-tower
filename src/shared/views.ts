@@ -27,7 +27,7 @@ export type Location = { view: string; subject?: string; pane?: { view: string; 
 
 /**
  * What a view is handed as it mounts. `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the
- * scale of the region it is mounted in (@since 1.112); `args`, its location's (a shelf entry's file).
+ * scale of the region it is mounted in, where that region declares one (@since 1.112); `args`, its location's (a shelf entry's file).
  */
 export type ViewCtx = {
   tower: Tower
@@ -36,7 +36,7 @@ export type ViewCtx = {
   kit: Kit
   state: { get(key: string): Promise<unknown>; set(key: string, value: unknown): void }
   options: Record<string, unknown>
-  scale: Scale
+  scale?: Scale
   args?: string[]
 }
 
