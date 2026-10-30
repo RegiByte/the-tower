@@ -47,6 +47,20 @@ export const linesSubject = (lines: Lines): Subject => ({
   value: lines,
 })
 
+/**
+ * A file in a worker's checkout, as a renderer holds it: its repo (named as an anchor names it, `repoName` of
+ * `/reviews.js`), its path in the repo, where its content is read (`text`, a read path) and its media type. @since 1.114
+ */
+export type CheckoutFile = { card: string; project: string; repo: string; path: string; text: string; type: string }
+
+/** A file of a worker's checkout, handed with its card and floor: a viewer subject, never on the board. @since 1.114 */
+export const fileSubject = (file: CheckoutFile): Subject => ({
+  kind: 'file',
+  key: `file:${file.card}/${file.repo}/${file.path}`,
+  project: file.project,
+  value: file,
+})
+
 /** The key of a floor's collection's item. */
 export const itemKey = (project: string, collection: string, id: string) => `item.${collection}:${project}/${id}`
 
@@ -121,7 +135,7 @@ export const parentOf = (subject: Subject): string | undefined => {
   if (kind === 'board') return undefined
   if (kind === 'floor') return 'board'
   if (kind === 'card' || kind === 'collection' || kind === 'shelf') return `floor:${project}`
-  if (kind === 'conversation' || kind === 'shown' || kind === 'lines') return `card:${value.card}`
+  if (kind === 'conversation' || kind === 'shown' || kind === 'lines' || kind === 'file') return `card:${value.card}`
   if (kind.startsWith('item.')) return `collection:${project}/${value.collection}`
   return ownParts(split(key).rest).instance
 }
