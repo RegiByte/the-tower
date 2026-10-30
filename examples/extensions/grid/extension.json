@@ -1,9 +1,9 @@
 {
   "id": "grid",
-  "version": "1.0",
+  "version": "2.0",
   "title": "Grid",
-  "description": "Up to four workers' live terminals side by side in the main pane, each typed into when focused.",
-  "requires": { "tower": "1.104" },
+  "description": "Up to four workers side by side in the main pane, each one's worker view: its tabs, and its head when shown.",
+  "requires": { "tower": "1.112" },
   "client": "client",
   "views": {
     "grid": {
@@ -12,17 +12,21 @@
       "on": ["floor", "board"],
       "shows": ["card"],
       "scales": ["pane"],
-      "needs": ["terminal", "display"],
-      "words": { "label": "Grid", "hint": "Workers side by side, each one's terminal live" },
+      "needs": ["region", "display"],
+      "regions": ["card.cell"],
+      "words": { "label": "Grid", "hint": "Workers side by side, each with its tabs" },
       "keys": ["Meta+Shift+G"]
     }
+  },
+  "regions": {
+    "card.cell": { "subject": "card", "holds": ["views"], "scale": "cell", "arity": "one", "description": "a grid's cell: one worker's view" }
   },
   "commands": {
     "add": {
       "module": "grid.js",
       "export": "add",
       "on": ["card"],
-      "words": { "label": "Add to grid", "hint": "Put this worker's terminal in its floor's grid" }
+      "words": { "label": "Add to grid", "hint": "Put this worker in its floor's grid" }
     }
   }
 }

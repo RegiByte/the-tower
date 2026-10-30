@@ -1,9 +1,11 @@
-import { modeText } from '/term-view.js'
+import { cardSubject, esc, lampOf, statusName } from '/cards.js'
 
 /**
- * The grid: a view on a floor (or the board) drawing up to four workers' terminals side by side. Which workers fill
- * the cells is the view's own state, kept per floor (`cells.<floor key>`), so a reload opens the same cells; whether
- * each cell shows its head is kept beside it (`head`). A card displayed with this view joins its floor's grid.
+ * The grid: a view on a floor (or the board) drawing up to four workers side by side, each cell the tower's `card.cell`
+ * region on its worker, which holds the worker's own view at cell scale: its tabs, and its head when the grid shows
+ * heads. Which workers fill the cells is the view's own state, kept per floor (`cells.<floor key>`), so a reload opens
+ * the same cells; whether the cells show heads is kept beside it (`head`). Above each cell is the grid's own strip:
+ * whose cell it is, Open and ✕. A card displayed with this view joins its floor's grid.
  */
 
 const MAX = 4
@@ -17,15 +19,11 @@ const STYLE = `
 :where([data-view="grid/grid"]) .grid-cell { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 :where([data-view="grid/grid"]) .grid-cell:focus-within { border-color: var(--ink); }
 :where([data-view="grid/grid"]) .grid-head { display: flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-s); border-bottom: 1px solid var(--line); font-size: var(--fs-xs); }
-:where([data-view="grid/grid"]) .grid-head[hidden] { display: none; }
 :where([data-view="grid/grid"]) .grid-head .mode { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 :where([data-view="grid/grid"]) .grid-head .acts { margin-left: auto; display: flex; gap: var(--sp-2xs); }
-:where([data-view="grid/grid"]) .grid-term { flex: 1; min-height: 0; padding: var(--sp-2xs); }
+:where([data-view="grid/grid"]) .grid-card { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: var(--sp-s); }
 :where([data-view="grid/grid"]) .grid-note { margin: auto; color: var(--muted); font-size: var(--fs-s); }
 `
-
-/** @param {string} s */
-const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 
 /** Every card of the floor `key` names, or of every floor for the board's grid. */
 const cardsOf = (board, key) => board.floors.filter((f) => key === 'board' || `floor:${f.id}` === key).flatMap((f) => f.cards)
@@ -39,7 +37,7 @@ export async function mount(host, { board, subject, kit, state }) {
   let ids = (await state.get(`cells.${key}`)) ?? seed(board, key)
   let head = (await state.get('head')) ?? true
   let now = board
-  /** Each cell's terminal, by worker. @type {Map<string, { el: HTMLElement, term: ReturnType<typeof kit.terminal> | undefined }>} */
+  /** Each cell's element and the `card.cell` region on its worker, by worker. @type {Map<string, { el: HTMLElement, region: ReturnType<typeof kit.region> | undefined }>} */
   const cells = new Map()
 
   const cardOf = (id) => now.floors.flatMap((f) => f.cards).find((c) => c.id === id)
@@ -50,23 +48,22 @@ export async function mount(host, { board, subject, kit, state }) {
   const bar = host.querySelector('.grid-bar')
   const grid = host.querySelector('.grid-cells')
 
-  /** How the cell's terminal holds its worker's PTY, in words. */
-  const modeOf = (id) => {
-    const view = cells.get(id)?.term?.state()
-    if (!view) return cardOf(id) ? 'not running' : 'no longer on the board'
-    return view.t === 'opening' ? 'opening' : modeText(view.t === 'owning' ? { t: 'owning', ...view.pty } : { t: view.t })
-  }
-
   const headHtml = (id) => {
     const c = cardOf(id)
-    return `<span class="lamp ${esc(c?.attention ?? 'quiet')}"></span><b>${esc(c?.callsign ?? id)}</b><span class="mode">${esc(modeOf(id))}</span>
+    return `<span class="lamp ${esc(c ? lampOf(c) : 'quiet')}"></span><b>${esc(c?.callsign ?? id)}</b><span class="mode">${esc(c ? statusName(c) : 'no longer on the board')}</span>
       <span class="acts"><button class="icon-btn" data-grid-open="${esc(id)}" title="Open this worker">Open</button><button class="icon-btn" data-grid-drop="${esc(id)}" title="Take it out of the grid">✕</button></span>`
+  }
+
+  /** @param {{ el: HTMLElement, region: ReturnType<typeof kit.region> | undefined }} cell */
+  const letGo = (cell) => {
+    cell.region?.close()
+    cell.region = undefined
   }
 
   function draw() {
     bar.innerHTML = `<b>Grid</b><span>${esc(label())} · ${ids.length} of ${MAX}</span><button data-grid-heads>${head ? 'Hide heads' : 'Show heads'}</button>`
     grid.style.setProperty('--cols', String(ids.length === 4 ? 2 : Math.max(ids.length, 1)))
-    for (const [id, cell] of cells) if (!ids.includes(id)) (cell.term?.close(), cell.el.remove(), cells.delete(id))
+    for (const [id, cell] of cells) if (!ids.includes(id)) (letGo(cell), cell.el.remove(), cells.delete(id))
     if (!ids.length) grid.innerHTML = `<p class="grid-note">No worker on duty here. Add one with Add to grid on its bar.</p>`
     else grid.querySelector('.grid-note')?.remove()
     ids.forEach((id, n) => {
@@ -74,21 +71,27 @@ export async function mount(host, { board, subject, kit, state }) {
       if (!cell) {
         const el = document.createElement('div')
         el.className = 'grid-cell'
-        el.innerHTML = `<div class="grid-head"></div><div class="grid-term"></div>`
-        cell = { el, term: undefined }
+        el.innerHTML = `<div class="grid-head"></div><div class="grid-card"></div>`
+        cell = { el, region: undefined }
         cells.set(id, cell)
       }
-      if (!cell.term && cardOf(id)?.live) cell.term = kit.terminal(cell.el.querySelector('.grid-term'), `terminal/${id}`)
+      const c = cardOf(id)
+      if (!c) letGo(cell)
+      else if (cell.region) cell.region.update(cardSubject(c))
+      else cell.region = kit.region(cell.el.querySelector('.grid-card'), 'card.cell', cardSubject(c), { 'tower/card': { head } })
       if (grid.children[n] !== cell.el) grid.insertBefore(cell.el, grid.children[n] ?? null)
-      const h = cell.el.querySelector('.grid-head')
-      h.hidden = !head
-      h.innerHTML = headHtml(id)
+      cell.el.querySelector('.grid-head').innerHTML = headHtml(id)
     })
   }
 
   host.addEventListener('click', (e) => {
     const t = e.target
-    if (t.closest('[data-grid-heads]')) return (head = !head, state.set('head', head), draw())
+    if (t.closest('[data-grid-heads]')) {
+      head = !head
+      state.set('head', head)
+      for (const cell of cells.values()) letGo(cell)
+      return draw()
+    }
     const open = t.closest('[data-grid-open]')?.dataset.gridOpen
     if (open) return kit.display(`card:${open}`)
     const drop = t.closest('[data-grid-drop]')?.dataset.gridDrop
@@ -96,12 +99,6 @@ export async function mount(host, { board, subject, kit, state }) {
   })
 
   draw()
-  const modes = setInterval(() => {
-    for (const id of ids) {
-      const el = cells.get(id)?.el.querySelector('.grid-head .mode')
-      if (el) el.textContent = modeOf(id)
-    }
-  }, 1000)
   return {
     update(next) {
       now = next
@@ -114,8 +111,7 @@ export async function mount(host, { board, subject, kit, state }) {
       return true
     },
     close() {
-      clearInterval(modes)
-      for (const cell of cells.values()) cell.term?.close()
+      for (const cell of cells.values()) letGo(cell)
       cells.clear()
     },
   }
