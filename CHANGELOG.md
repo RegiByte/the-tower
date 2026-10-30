@@ -12,6 +12,53 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.73.0
+
+A file explorer for each worker, and the UI model's steps 5b, 6 and 5c: shown files, files and sections drawn by the
+views by type, Changes and reviews meeting through data. Run `npm install` (shiki is new), then restart the tower
+(`tower down tower`, then `tower up tower`); no host restart, the renderer API 1.113 → 1.118 (additive, no major).
+**config**: one new optional line, `extensions.files.path`, turns the explorer on.
+
+- **The file explorer** (API 1.114): `examples/extensions/files`, run in place like the other examples
+  (`extensions.files.path`, the example's directory in the checkout), so `tower update` brings it. A Files tab on every
+  worker, its checkout as a tree with git's marks (`M` `A` `D` `R`, `U` untracked, `C` conflict, ignored dimmed), a file
+  opened read-only beside it with reveal-in-Finder and open-in-editor. Code is highlighted by Shiki with VS Code's
+  grammars and themes, following the viewer's scheme; reads are confined to the checkout, capped at 1 MB for the code
+  view, and nothing is edited. It is live while seen: one `git status` per repo every 2 s, slower when git is slow,
+  nothing while the tab is hidden. Three core additions came with it, each additive: a read may serve a file
+  (`serves: "file"`, and a read path may end in a rest param), a manifest region may carry its default layout, and the
+  `file` viewer subject (#278).
+- **Shown files are drawn by the views by type** (API 1.115): `tower/document`, `html`, `image`, `video`, `text` and
+  `file` draw a worker's showings, so a user's view for a type can take them over. Addresses are typed: `tower/link`
+  and `text/uri-list`. `tower/shown` is a `LEGACY` alias now, mapped to those views, so a layout naming it keeps
+  working. Markdown, html, images, video and links look as before; the visible changes (#279):
+  - text, code and JSON showings are drawn as written; a file of a type the tower draws nothing of gets the reveal and
+    open-in-editor page, where its frame was blank;
+  - `.htm`, `.markdown` and `.avif` are drawn as their types;
+  - a markdown read failure is drawn in the tab with Read again, where a toast was;
+  - the palette offers Open Text on a shown file in focus, and it survives a reload.
+- **Changes ↔ reviews** (API 1.116): step 6 gives the two views a contract, each reading only its own data. A card's
+  fold may add `marks` on lines, `lines` is a viewer subject that a view or command may be on, the page declares
+  `lines.acts` under the picked lines, the note box is the view `reviews/composer`, and where an anchor stands is a
+  read of the reviews extension (`anchors/<project>`). Viewer kinds (`file`, `lines`) are one set in the manifest
+  schema: views, commands and regions may be on one, no fold. The 1.113 panel shapes stay in `/panels.js` as
+  deprecated copies. What changes for a user (#280):
+  - the line tip reads "click to pick this line, drag or ⇧-click for more"; a line under two notes reads "noted in n3;
+    noted in n5"; the toast when a file changes under a pick reads "pick its lines again";
+  - the Changes tally appears once Changes has been opened, not from opening Reviews;
+  - a reviewer's Changes names its own checkout in the "settled" line.
+
+  Known limit: with both tabs live a worker's diff is read twice, by the Changes poll and by the anchors read.
+- **The explorer opens every type** (API 1.117): the views by type are on `file`, so markdown, images, html, video and
+  binaries opened from the explorer are drawn as a shown file is, and a user's view for a type takes over there too.
+  Text and code still go to the explorer's own view first (#281).
+- **Sections and the bus** (API 1.118, step 5c): `said` and `section` are viewer subjects, held on `kit.bus`, which a
+  page lends each view. A Brief's prompts and answers take commands (`said.acts`, beside the copy button), and
+  `tower/document` is sectioned, a gutter beside it drawing `section.acts` level with each section; with nothing
+  offered on sections a document looks as before. The narrate example (1.2) listens per section and per Brief message.
+  Document frames follow links by one rule: a `#fragment` scrolls, a shelf entry's file opens in place, an allowed link
+  opens a tab, anything else is refused and the toast says why. Tower 3D's logbook is unchanged (#282).
+
 ## v1.72.1
 
 "Add to grid" works again, and the grid can take a worker in from its own bar. No restart beyond the tower's own
