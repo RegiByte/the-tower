@@ -113,7 +113,7 @@ test('the served modules keep every export renderers may import, until the API m
 })
 
 /** The subject kinds the renderers table has a row for, in its order. */
-const TABLE_KINDS = ['card', 'conversation', 'floor', 'shown', 'item.*', 'collection', 'shelf', 'board']
+const TABLE_KINDS = ['card', 'conversation', 'floor', 'shown', 'lines', 'item.*', 'collection', 'shelf', 'board']
 
 /** A shipped renderer's regions, from its source's `renderer.json`. */
 function regionsAt(dir: string): Region[] {
