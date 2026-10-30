@@ -28,12 +28,7 @@ export const viewCss = (id: string, rules: string) => `:where([data-view="${id}"
 }`
 
 /** The close of a view in the main pane, back to the skyline, with the chords of the keymap's `home`: `data-home`. */
-export const closeHtml = (keys: Keys) => {
-  const what = 'back to the skyline'
-  const hint = keysHint(keys, 'home')
-  const tip = hint ? `data-tip="${esc(`${what} (${hint})`)}" aria-keyshortcuts="${keyshortcuts(keys, 'home')}"` : `data-tip="${esc(what)}"`
-  return `<button class="icon-btn" data-home aria-label="${what}" ${tip}>${ICON.close}</button>`
-}
+export const closeHtml = (keys: Keys) => `<button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(keys, 'back to the skyline', 'home')}>${ICON.close}</button>`
 
 const painted = new WeakMap<Element, string>()
 
@@ -46,3 +41,9 @@ export const paintOnce = (el: Element, html: string) => {
 
 /** A floor's colour as `--p`, for an element's styles to use. */
 export const paintOf = (color: string | undefined) => (color ? `--p:${esc(color)}` : '')
+
+/** A control's tip saying what it does with the chords of the keymap's command `id`, and those chords as its `aria-keyshortcuts`. */
+export const keyedTip = (keys: Keys, what: string, id: string) => {
+  const hint = keysHint(keys, id)
+  return hint ? `data-tip="${esc(`${what} (${hint})`)}" aria-keyshortcuts="${keyshortcuts(keys, id)}"` : `data-tip="${esc(what)}"`
+}
