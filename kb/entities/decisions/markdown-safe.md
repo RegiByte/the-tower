@@ -16,8 +16,8 @@
     "hub/src/tower/served.ts#MODULES",
     "hub/test/markdown.test.ts",
     "hub/src/views/shelf.ts#followLink",
-    "hub/renderers/page/worker.js#renderShown",
-    "hub/renderers/page/brief-pane.js",
+    "hub/src/views/shown.ts#mount",
+    "hub/src/views/brief.ts#mount",
     "hub/renderers/tower3d/src/ui.ts#docHtml",
     "hub/renderers/tower3d/src/showing.ts"
   ],
@@ -57,7 +57,7 @@ would reach for a markdown library's `parse` and draw it inline.
   resolves to `http:`. The href written is the string checked, escaped, so an entity (`&#106;avascript:`) reaches the
   browser as the text it was checked as.
 - No document frame runs scripts. Each frame the tower page writes a document into (a shown file and the page asking
-  to open a link, [`renderShown`](ref:hub/renderers/page/worker.js#renderShown); a shelf file; a kept markdown or text
+  to open a link, [`tower/shown`](ref:hub/src/views/shown.ts#mount); a shelf file; a kept markdown or text
   item, [`framedText`](ref:hub/src/views/item.ts#framedText)) is
   `allow-same-origin` without `allow-scripts`, so the renderer reaches its keys and geometry ([[keymap]]): beside
   `allow-same-origin`, a script there would run as the tower. A `javascript:` link it carries runs nowhere, in the
