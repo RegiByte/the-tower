@@ -88,6 +88,22 @@ const PartShape = z.strictObject({
     )
     .optional(),
   slots: z.array(z.strictObject({ key: z.string().min(1), when: WhenShape })).optional(),
+  marks: z
+    .array(
+      z
+        .strictObject({
+          repo: z.string().min(1),
+          path: z.string().min(1),
+          line: z.number().int().min(1),
+          to: z.number().int().min(1).optional(),
+          label: z.string().min(1),
+          tone: z.enum(BADGE_TONES).optional(),
+          hint: z.string().optional(),
+          display: z.string().min(1).optional(),
+        })
+        .refine((m) => m.to === undefined || m.to >= m.line, { message: 'a mark ends at or after the line it starts on' }),
+    )
+    .optional(),
 })
 
 const issuesLine = (issues: z.core.$ZodIssue[]) => issues.map((i) => `${i.path.join('.') || 'part'}: ${i.message}`).join('; ')
@@ -176,6 +192,7 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
     if (part.tidy?.length) into.tidy = [...(into.tidy ?? []), ...tagged(cap, part.tidy)]
     if (part.lines?.length) into.lines = [...(into.lines ?? []), ...part.lines.map((text) => ({ text, cap }))]
     if (part.slots?.length) into.slots = [...(into.slots ?? []), ...tagged(cap, part.slots)]
+    if (part.marks?.length) into.marks = [...(into.marks ?? []), ...tagged(cap, part.marks)]
     if (!Object.keys(into).length) delete adds[key]
   }
 
