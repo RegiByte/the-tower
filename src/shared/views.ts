@@ -125,7 +125,7 @@ export const CORE_VIEWS: readonly View[] = [
   served({ ...core('tower/card', ['card'], ['pane', 'cell'], { label: 'Worker', hint: "the worker's head and its tabs" }), regions: ['card.panes'] }, ['region', 'run', 'display', 'toast', 'confirm']),
   pane('terminal', [], { label: 'Terminal', hint: 'the session in its terminal' }, ['terminal']),
   { ...pane('brief', ['conversation'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'toast']), tab: 'tab' },
-  pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['toast', 'confirm']),
+  { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast', 'confirm']), regions: ['lines.acts'] },
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
