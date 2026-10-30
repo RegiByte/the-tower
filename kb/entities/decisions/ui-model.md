@@ -100,7 +100,8 @@ and a framed document's section are the same thing.
   [`NO_KIT`](ref:hub/src/shared/adds.ts#NO_KIT).
 - *A file in a checkout* (1.114) is a viewer subject, `file:<card>/<repo>/<path>`
   ([`fileSubject`](ref:hub/src/shared/subjects.ts#fileSubject)), a child of its card like `lines`, carrying `text`, the
-  read path its content is served at, and `type`. It is how a view that browses a worker's files (the files example)
+  read path its content is served at, `type` and, when it has one, `file`, its absolute path (1.116), which the binary
+  fallback's Finder and editor buttons need. It is how a view that browses a worker's files (the files example)
   hands one to a region, where the layout picks among the views on `file` (the files example's `files/code` first for code,
   the core's views by type for the rest).
   Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and

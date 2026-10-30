@@ -24,7 +24,7 @@ import { closeHtml, paintOnce, viewCss } from './parts.ts'
  * content's, where it has one; `docCss`, a document frame's styles beside the design's; `stale`, whether a newer draw
  * has begun since.
  */
-export type Body = { tower: Tower; kit: Kit; url: string; body?: string; title: string; name: string; file: string; version?: number; docCss: string; stale: () => boolean }
+export type Body = { tower: Tower; kit: Kit; url: string; body?: string; title: string; name: string; file?: string; version?: number; docCss: string; stale: () => boolean }
 
 /**
  * A view by type: `rules`, its own look; `draw`, its body into `el`; `restyled`, drawn again as the viewer's scheme or
@@ -40,7 +40,7 @@ const backOf = (board: Board, project: string, c: FloorCollection) =>
   c.by === undefined ? undefined : viewsOf(board).find((v) => v.cap === c.by && v.on.includes('floor') && !v.off?.includes(project))
 /** The empty body of a file the tower draws nothing of, left to Finder and the editor. */
 export const unshownHtml = ({ name, file }: Body) =>
-  `<div class="shelf-empty">the tower shows no ${esc(name.split('.').pop()!)} file<br><br>reveal it in Finder or open it in your editor ${fileButtonsHtml(file)}</div>`
+  `<div class="shelf-empty">the tower shows no ${esc(name.split('.').pop()!)} file<br><br>${file ? `reveal it in Finder or open it in your editor ${fileButtonsHtml(file)}` : ''}</div>`
 
 /**
  * A body's text, its own where it carries it, else read where it is served, drawn by `article` in a document frame
