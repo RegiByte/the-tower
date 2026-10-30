@@ -665,15 +665,17 @@ as `<cap>/<name>`:
 - `keys`: default chords that display the subject in focus with it.
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
-visible?(on), tab?(), close() }` (`Mount` in `/views.js`). `ctx` is `{ tower, board, subject, kit, state, options, scale?, args? }`:
+visible?(on), tab?(), options?(options), close() }` (`Mount` in `/views.js`); `options` takes its options as they
+stand now, drawn in place, and a view without it is mounted afresh when they change (API 1.113). `ctx` is `{ tower, board, subject, kit, state, options, scale?, args? }`:
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
 where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its
 location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
 `shell/<id>` with the renderer's xterm, font, scheme and keymap), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
-tabs region's tabs among them, `options` by view id over the layout's, API 1.111; it answers `{ update(subject), show?(subject),
-visible?(on), close() }`, passing `show` and `visible` on to the views it holds), `run(command, on?)` (a keymap
+tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
+`options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out, API 1.113; it answers `{ update(subject), show?(subject),
+visible?(on), options?(options), close() }`, passing `show`, `visible` and new options on to the views it holds), `run(command, on?)` (a keymap
 command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `display(subject, { view? })`,
 `go(location)` (API 1.108), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
@@ -712,6 +714,19 @@ as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(
 the cell's, not the location's), and its head unless `head` is false; at `cell` it draws no close, which would leave
 your view for the skyline. `update` the handle with the card on each board and `close` it as the cell goes. A tab's
 chord acts on the worker whose cell holds the focus.
+
+At `cell` the worker's head is compact, and with `head` false it is one row: the lamp, the callsign, the tabs. Your
+view speaks to it through the rest of `tower/card`'s options (API 1.113, `CardOptions` in `/x/tower/card.js`):
+
+- `acts`: `[{ id, label, tip?, icon? }]`, your own controls at the end of its head (`icon` a name in `/icons.js`,
+  drawn in place of the label). A press dispatches a bubbling `act` event on the card's host, `detail.id` the act's.
+- `pick`: `{ label, tip?, choices: [{ id, note? }] }`, the callsign as a menu of the workers whose card ids you list,
+  each with its lamp and its `note` (else its status). A choice dispatches a bubbling `pick` event, `detail.id` the
+  worker picked.
+- `omit`: commands (`<cap>/<name>`) its head leaves out, such as one of yours that would add the worker where it is.
+
+Listen for the events on the element you gave the region, and hand the handle new options with `options(next)` (the
+same shape as `kit.region`'s): the card draws them in place, keeping its tab, scroll and terminal.
 
 **Views by type.** A kept item is drawn by the view that accepts its type (`value.type`, the media type of its file
 name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109): `tower/document` markdown (`documentHtml` in a
