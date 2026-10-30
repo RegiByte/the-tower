@@ -1,16 +1,19 @@
 import type { Card } from '../bridge/board.ts'
 import type { Brief } from '../bridge/turns.ts'
-import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidText, type BriefMarkdown } from '../shared/brief.ts'
-import { can, conversationSubject } from '../shared/cards.ts'
+import { addedActions } from '../shared/adds.ts'
+import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, saidOf, saidText, type BriefMarkdown } from '../shared/brief.ts'
+import { can, conversationSubject, esc } from '../shared/cards.ts'
 import { fenceText, markdownCss, markdownHtml } from '../shared/markdown.ts'
 import { drawPanel } from '../shared/panel-kit.ts'
-import type { Subject } from '../shared/subjects.ts'
+import { saidSubject, type Subject } from '../shared/subjects.ts'
 import type { Mount, Tab } from '../shared/views.ts'
 
 /**
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt and answer, the
  * latest at the bottom, in the viewer's markdown. Read again as its conversations change; kept at the end while the
- * viewer reads there. Each conversation's heading holds what extensions add to it (`conversation.head`).
+ * viewer reads there. Each conversation's heading holds what extensions add to it (`conversation.head`). Each prompt
+ * and answer drawn is a viewer subject on the page's bus (`said`), and holds the commands offered on it beside its copy
+ * (`said.acts`).
  */
 
 const ID = 'tower/brief'
@@ -39,7 +42,13 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
   let readAt: string | undefined
   let markdown: BriefMarkdown = 'rendered'
   let regions: { update(subject: Subject): void; close(): void }[] = []
+  /** The prompts and answers drawn, by key: published on the bus while drawn. */
+  let said = new Map<string, Subject>()
+  /** Whether anything is offered on a prompt or an answer: commands on `said` are offered by kind and type alone. */
+  let saidActs = false
   let seen = true
+
+  const actsOn = (b: typeof board) => addedActions(b, saidSubject({ session: '', conversation: '', startedAt: 0, side: 'prompt', card: card.id, project: card.project, body: '' })).length > 0
 
   const keyOf = (c: Card) => `${c.status === 'working'} ${JSON.stringify(c.conversations)} ${JSON.stringify(c.conversations.map((v) => board.adds[`conversation:${v.id}`]))}`
 
@@ -50,18 +59,26 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     const open = same ? openFolds(body) : new Set<string>()
     const expanded = same ? expandedSaid(body) : new Set<string>()
     regions.forEach((r) => r.close())
+    for (const key of said.keys()) kit.bus.clear(key)
+    said = new Map(saidOf(threads).map(({ key, text, ...s }) => [key, saidSubject({ ...s, card: card.id, project: card.project, body: text })]))
+    for (const s of said.values()) kit.bus.publish(s, at.key)
+    saidActs = actsOn(board)
+    const acts = (key: string) => (saidActs ? `<span data-said-acts="${esc(key)}"></span>` : '')
     const promptBy = (id: string) => card.conversations.find((v) => v.id === id)?.promptBy
     const adds = (id: string) => {
       const added = board.adds[`conversation:${id}`]
       return added?.badges?.length || added?.actions?.length ? `<span data-conversation-head="${id}"></span>` : ''
     }
-    drawPanel(body, briefHtml({ briefs: threads, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds }), {})
+    drawPanel(body, briefHtml({ briefs: threads, said: markdownHtml, promptBy, open, expanded, markdown, working: card.status === 'working', adds, acts }), {})
     regions = [...body.querySelectorAll<HTMLElement>('[data-conversation-head]')].flatMap((slot) => {
       const conv = card.conversations.find((v) => v.id === slot.dataset.conversationHead)
       if (!conv) return []
       slot.style.display = 'contents'
       return [kit.region(slot, 'conversation.head', conversationSubject(card, conv))]
-    })
+    }).concat([...body.querySelectorAll<HTMLElement>('[data-said-acts]')].map((slot) => {
+      slot.style.display = 'contents'
+      return kit.region(slot, 'said.acts', said.get(slot.dataset.saidActs!)!)
+    }))
     if (atEnd) el.scrollTop = el.scrollHeight
   }
 
@@ -106,9 +123,16 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     update(next, now) {
       board = next
       card = now.value as Card
+      if (actsOn(next) !== saidActs) draw(true)
       read()
     },
-    show: (s) => s.kind === 'conversation',
+    show(s) {
+      if (s.kind === 'conversation') return true
+      const bubble = s.kind === 'said' && [...body.querySelectorAll<HTMLElement>('[data-copy-said]')].find((b) => `said:${b.dataset.copySaid}` === s.key)?.closest('.bubble')
+      if (!bubble) return false
+      bubble.scrollIntoView({ block: 'center' })
+      return true
+    },
     visible(on) {
       seen = on
       read()
@@ -116,6 +140,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     close() {
       offStore()
       regions.forEach((r) => r.close())
+      for (const key of said.keys()) kit.bus.clear(key)
     },
   }
 }

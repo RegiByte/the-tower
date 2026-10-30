@@ -89,6 +89,8 @@ export type BriefView = {
   working?: boolean
   /** What a renderer draws on a conversation's heading, by the conversation's id: html, empty for none. */
   adds?: (conversation: string) => string
+  /** What a renderer draws beside a prompt's or an answer's copy, by its key (`saidOf`): html, empty for none. @since 1.117 */
+  acts?: (said: string) => string
 }
 
 /** The earlier sessions unfolded in a drawn brief, by id. */
@@ -103,6 +105,20 @@ type Side = 'prompt' | 'answer'
 /** A prompt's or answer's key: a resumed conversation's turns are drawn again in the session that resumed it. */
 const saidKey = (t: Brief, turn: Turn, side: Side) => `${t.session.id}:${t.id}:${turn.startedAt}:${side}`
 
+/**
+ * Every prompt and answer of a brief, by the key it is drawn under: the session it is drawn in, its conversation, when
+ * its turn started, its side, and its text as written. @since 1.117
+ */
+export const saidOf = (briefs: Brief[]): { key: string; session: string; conversation: string; startedAt: number; side: Side; text: string }[] =>
+  briefs.flatMap((b) =>
+    b.turns.flatMap((turn) =>
+      (['prompt', 'answer'] as const).flatMap((side) => {
+        const text = turn[side]
+        return text === undefined ? [] : [{ key: saidKey(b, turn, side), session: b.session.id, conversation: b.id, startedAt: turn.startedAt, side, text }]
+      }),
+    ),
+  )
+
 /** The text of a prompt or answer of a brief by its key, as written. */
 export const saidText = (briefs: Brief[], key: string): string | undefined => {
   for (const b of briefs) for (const turn of b.turns) for (const side of ['prompt', 'answer'] as const)
@@ -110,7 +126,7 @@ export const saidText = (briefs: Brief[], key: string): string | undefined => {
 }
 
 /** `latest`: the brief's latest turn, whose answer never folds; `working` whether Claude works on it now. */
-type Drawing = { said: BriefView['said']; expanded: ReadonlySet<string>; raw: boolean; latest?: Turn; working: boolean; adds?: BriefView['adds'] }
+type Drawing = { said: BriefView['said']; expanded: ReadonlySet<string>; raw: boolean; latest?: Turn; working: boolean; adds?: BriefView['adds']; acts?: BriefView['acts'] }
 
 /** Who a bubble is: the user's prompt, another worker's message, or Claude's answer. */
 type Speaker = 'you' | 'peer' | 'claude'
@@ -118,7 +134,7 @@ type Speaker = 'you' | 'peer' | 'claude'
 const bubbleHtml = (side: Side, speaker: Speaker, key: string, text: string, who: string, d: Drawing, latest: boolean) => {
   const long = !(latest && side === 'answer') && isLong(text)
   const words = d.raw ? `<div class="raw">${esc(text)}</div>` : `<div class="md">${d.said(text)}</div>`
-  return `<div class="bubble ${speaker}${long ? ' long' : ''}"><header><span class="who">${who}</span><span class="acts"><button type="button" data-copy-said="${esc(key)}" aria-label="copy the ${side} as written">copy</button></span></header>${words}${
+  return `<div class="bubble ${speaker}${long ? ' long' : ''}"><header><span class="who">${who}</span><span class="acts">${d.acts?.(key) ?? ''}<button type="button" data-copy-said="${esc(key)}" aria-label="copy the ${side} as written">copy</button></span></header>${words}${
     long ? `<label class="more"><input type="checkbox" data-expand="${esc(key)}"${d.expanded.has(key) ? ' checked' : ''}><span class="show">show all</span><span class="hide">fold</span></label>` : ''}</div>`
 }
 
@@ -160,11 +176,11 @@ const markdownBar = (markdown: BriefMarkdown) =>
   `<div class="brief-bar"><div class="seg" role="group" aria-label="prompts and answers">${BRIEF_MARKDOWNS.map((m) =>
     `<button type="button" class="${m === markdown ? 'on' : ''}" data-brief-markdown="${m}" aria-pressed="${m === markdown}" data-tip="${esc(BRIEF_MARKDOWN_MEANS[m])}">${BRIEF_MARKDOWN_LABEL[m]}</button>`).join('')}</div></div>`
 
-export function briefHtml({ briefs, said, promptBy, open, expanded = new Set(), markdown = 'rendered', working = false, adds }: BriefView) {
+export function briefHtml({ briefs, said, promptBy, open, expanded = new Set(), markdown = 'rendered', working = false, adds, acts }: BriefView) {
   const parts = briefParts(briefs)
   const [current, ...earlier] = parts
   if (!current) return '<div class="brief-view"><p class="none">no conversation yet</p></div>'
-  const d: Drawing = { said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working, adds }
+  const d: Drawing = { said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working, adds, acts }
   const label = (p: BriefPart) => esc(sessionLabel(p.n, p.of, p.session.startedAt))
   const idle = (p: BriefPart) => resumedIdle(briefs, p.session, p.n) ? ` · <span class="idle" data-tip="${esc(RESUMED_IDLE.means)}">${RESUMED_IDLE.mark}</span>` : ''
   return `<div class="brief-view">${markdownBar(markdown)}
