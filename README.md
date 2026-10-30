@@ -57,7 +57,7 @@ the tower, so most things start as a sentence:
   project's default branch, over any window.
 - **Resume and carry on.** Every session's log is kept, so a worker that ended can be resumed from its floor's
   archive. Workers stopped mid-turn by a restart offer to carry on where they were.
-- **Tidy** lists what can go (landed worktrees, absorbed branches, leftover processes, old logs) and removes nothing
+- **Tidy** lists what can go (landed worktrees, absorbed branches, leftover processes, old logs to archive) and does nothing
   until you press.
 - **⌘K** opens a command palette over all of it: workers, floors, drafts, commands and what the selected worker
   offers.
