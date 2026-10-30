@@ -22,6 +22,7 @@ Installed by `npm ci`. Tower 3D's bundle embeds three.js; the tower serves the o
 | `marked` | MarkedJS; Christopher Jeffrey | MIT |
 | `croner` (in `/policies.js`) | Hexagon | MIT |
 | `diff` (in `/panels.js`) | Kevin Decker | BSD-3-Clause |
+| `shiki`, `@shikijs/*` (in the files example's `/x/files/` modules) | Pine Wu, Anthony Fu; its grammars and themes gathered from VS Code and their own projects by tm-grammars and tm-themes | MIT |
 | `@fontsource/atkinson-hyperlegible` (Atkinson Hyperlegible) | Braille Institute of America, Inc. | SIL Open Font License 1.1 |
 | `@fontsource/jetbrains-mono` (JetBrains Mono) | The JetBrains Mono Project Authors | SIL Open Font License 1.1 |
 | `@fontsource/overpass` (Overpass) | The Overpass Project Authors | SIL Open Font License 1.1 |
