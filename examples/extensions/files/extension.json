@@ -1,0 +1,132 @@
+{
+  "id": "files",
+  "version": "1.0",
+  "title": "Files",
+  "description": "A worker's checkout as a tree in its tabs, what git sees changed marked, and a file opened beside it, drawn by the view its type picks: code highlighted as VS Code draws it, the rest by the tower's views by type.",
+  "requires": { "tower": "1.114" },
+  "server": "server.ts",
+  "client": "client",
+  "reads": {
+    "repos/<project>/<id>": {
+      "scope": "project",
+      "description": "The repos of the worker's checkout, each named as a review anchor names it.",
+      "reply": {
+        "type": "object",
+        "required": ["repos"],
+        "properties": { "repos": { "type": "array", "items": { "type": "string" } } }
+      }
+    },
+    "tree/<project>/<id>": {
+      "scope": "project",
+      "description": "One folder of a repo of the worker's checkout: folders first, each in name order, what git ignores marked; .git never listed.",
+      "query": {
+        "type": "object",
+        "required": ["repo"],
+        "additionalProperties": false,
+        "properties": { "repo": { "type": "string" }, "path": { "type": "string", "description": "The folder, relative to the repo: its top when left out." } }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["repo", "path", "entries", "more"],
+        "properties": {
+          "repo": { "type": "string" },
+          "path": { "type": "string" },
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "kind"],
+              "properties": {
+                "name": { "type": "string" },
+                "kind": { "enum": ["dir", "file"], "description": "A link is the kind it points at." },
+                "ignored": { "const": true },
+                "link": { "const": true }
+              }
+            }
+          },
+          "more": { "type": "integer", "description": "How many entries past the first 2000 are not listed." }
+        }
+      }
+    },
+    "status/<project>/<id>": {
+      "scope": "project",
+      "description": "What git sees changed in each repo of the worker's checkout, a mark by path (M, A, D, R, U untracked, C in conflict; an untracked folder as its path and a slash), and a stamp that changes when any of it does.",
+      "reply": {
+        "type": "object",
+        "required": ["repos", "stamp"],
+        "properties": {
+          "repos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["repo", "marks"],
+              "properties": {
+                "repo": { "type": "string" },
+                "marks": { "type": "object", "additionalProperties": { "enum": ["M", "A", "D", "R", "U", "C"] } },
+                "problem": { "type": "string" }
+              }
+            }
+          },
+          "stamp": { "type": "string" }
+        }
+      }
+    },
+    "stat/<project>/<id>": {
+      "scope": "project",
+      "description": "One file of the worker's checkout: its size, when it last changed, its media type (a file of an unknown kind with no NUL in its first 8 KB is text/plain), and its absolute path, for the editor and Finder.",
+      "query": {
+        "type": "object",
+        "required": ["repo", "path"],
+        "additionalProperties": false,
+        "properties": { "repo": { "type": "string" }, "path": { "type": "string" } }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["repo", "path", "size", "mtime", "type", "file"],
+        "properties": {
+          "repo": { "type": "string" },
+          "path": { "type": "string" },
+          "size": { "type": "integer" },
+          "mtime": { "type": "number" },
+          "type": { "type": "string" },
+          "file": { "type": "string" }
+        }
+      }
+    },
+    "raw/<project>/<id>/<repo>/<file...>": {
+      "scope": "project",
+      "serves": "file",
+      "description": "One file of the worker's checkout, as written, sandboxed: up to 50 MB."
+    }
+  },
+  "views": {
+    "explorer": {
+      "module": "explorer.js",
+      "export": "mount",
+      "tab": "tab",
+      "on": ["card"],
+      "scales": ["pane", "cell"],
+      "needs": ["region"],
+      "regions": ["file.open"],
+      "words": { "label": "Files", "hint": "the worker's checkout as a tree, and a file opened beside it" }
+    },
+    "code": {
+      "module": "code.js",
+      "export": "mount",
+      "on": ["file"],
+      "accepts": ["text/plain", "text/javascript", "text/css", "text/yaml", "text/xml", "text/csv", "text/tab-separated-values", "application/json", "application/x-ndjson"],
+      "scales": ["pane"],
+      "words": { "label": "Code", "hint": "the file highlighted as VS Code draws it, read-only" }
+    }
+  },
+  "regions": {
+    "file.open": {
+      "subject": "file",
+      "holds": ["views"],
+      "scale": "pane",
+      "arity": "one",
+      "description": "the file opened in a worker's Files tab",
+      "layout": { "order": ["files/code"] }
+    }
+  }
+}
