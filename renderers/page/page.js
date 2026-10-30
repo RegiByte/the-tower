@@ -100,6 +100,8 @@ const viewer = () => page.state().viewer
 const keepViewer = (field, value) => page.dispatch(/** @type {PageEvent} */ ({ type: 'keep', field, value }))
 
 function render() {
+  // Reads started while the page boots can answer before it has finished declaring itself; the first board draws it.
+  if (!opened()) return
   const all = cards()
   const duty = all.filter(onDuty)
   /** @param {Attention} a */
