@@ -106,8 +106,8 @@ const core = (id: string, on: string[], scales: Scale[], words: Words): View => 
 /** A core view whose module the tower serves at `/x/tower/<name>.js`, its export `mount`, lent the kit members it `needs`. */
 const served = (view: View, needs: KitMember[]): View => ({ ...view, module: `${view.id.slice('tower/'.length)}.js`, export: 'mount', needs })
 
-/** The kinds the core's views by type draw: what a worker showed, and every collection's item. */
-const BY_TYPE_ON = ['shown', 'item.*']
+/** The kinds the core's views by type draw: what a worker showed, a file of its checkout and every collection's item. */
+const BY_TYPE_ON = ['shown', 'file', 'item.*']
 
 /** A core view on what a worker showed and every collection's item that draws the media types it `accepts`. */
 const byType = (name: string, accepts: string[], words: Words): View => served({ ...core(`tower/${name}`, BY_TYPE_ON, ['pane'], words), accepts }, ['region', 'display', 'toast', 'confirm'])

@@ -760,8 +760,8 @@ Listen for the events on the element you gave the region, and hand the handle ne
 same shape as `kit.region`'s): the card draws them in place, keeping its tab, scroll and terminal.
 
 **Views by type.** A kept item and a thing a worker showed are drawn by the view that accepts their type
-(`value.type`, the media type of the file's name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109) and
-`shown` (API 1.115): `tower/document` markdown (`documentHtml` in a frame where nothing runs: raw HTML kept, images
+(`value.type`, the media type of the file's name, `mediaTypeOf` in `/media.js`), each on `item.*` (API 1.109),
+`shown` (API 1.115) and `file`: `tower/document` markdown (`documentHtml` in a frame where nothing runs: raw HTML kept, images
 read beside the file), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
 `video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is `text/plain`), and `tower/file`, which accepts
 nothing, the fallback that leaves a file to Finder and the editor. `tower/link`, on `shown` alone, takes
@@ -770,7 +770,7 @@ address is text, its body: `tower/text` draws it as written (Open Text on a url)
 addresses with the rest. Each
 draws its body in its subject's frame: a kept item's under one head (the collection, the tag, the file, who kept it,
 `item.head`'s region, a new tab, Delete and the close, with a way back to the view of the floor the collection's
-extension declares, the policies extension's for a policy); a showing's alone, filling its tab, whose head is the tab
+extension declares, the policies extension's for a policy); a showing's or a checkout file's alone, filling its tab, whose head is the tab
 strip's `shown.head`. `pickView` decides among the views a region offers: the region's layout `order` among those
 accepting the type; else the view of the extension that declares the item's collection, on that exact kind
 (`drafts/editor` on `item.drafts`); else the core view whose `accepts` fits most specifically (`text/markdown` before
@@ -790,11 +790,12 @@ the region's whole list since `order` also places its tabs:
 layout naming it in `order` leaves showings to their type's pick, and in `hidden` hides each view that draws them now.
 
 A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:<card>/<repo>/<path>`, made by
-`fileSubject({ card, project, repo, path, text, type })` in `/cards.js`, a child of its card: `repo` named as a
-review anchor names it (`repoName`), `text` the read path its content is served at (an extension's read that serves
+`fileSubject({ card, project, repo, path, file, text, type })` in `/cards.js`, a child of its card: `repo` named as a
+review anchor names it (`repoName`), `file` its absolute path (API 1.116; the Finder and editor buttons of a file left to them), `text` the read path its content is served at (an extension's read that serves
 a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
-declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on
-`shown` and `item.*`, not yet `file`, so a view on `file` is an extension's (the files example's `files/code`).
+declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on `file` too, so
+it is drawn like a showing; a view of an extension's for a type (the files example's `files/code`) takes over where the
+layout names it first.
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).

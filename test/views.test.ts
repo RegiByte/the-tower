@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import type { Board, Card, CardShown } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
-import { ADDRESS_TYPE, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
+import { ADDRESS_TYPE, fileSubject, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
 import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'file', at: 200, target: 'a.md' }] }] }] } as unknown as Board
@@ -71,6 +71,21 @@ test('views: an item is drawn by the view accepting its type most specifically, 
   assert.equal(pick('notes', 'a.md', ['x/any']), 'x/any')
   assert.equal(coreViewOf('text/markdown').id, 'tower/document')
   assert.equal(coreViewOf('application/octet-stream').id, 'tower/file')
+})
+
+test('views: a file of a checkout is drawn by the views by type, a view for a type first in the order takes it over', () => {
+  const board = { floors: [{ id: 'p', collections: [] }] } as unknown as Board
+  const code: View = { id: 'files/code', cap: 'files', on: ['file'], accepts: ['text/plain'], scales: ['pane'], words: { label: 'Code' } }
+  const pick = (path: string, type: string, order?: string[]) => {
+    const at = fileSubject({ card: 'w1', project: 'p', repo: 'r', path, file: `/r/${path}`, text: `files/raw/${path}`, type })
+    return pickView(board, [...CORE_VIEWS, code].filter((v) => viewOn(v.on, at)), order, at)?.id
+  }
+  assert.equal(pick('a.md', 'text/markdown', ['files/code']), 'tower/document')
+  assert.equal(pick('a.ts', 'text/plain', ['files/code']), 'files/code')
+  assert.equal(pick('a.html', 'text/html', ['files/code']), 'tower/html')
+  assert.equal(pick('a.png', 'image/png', ['files/code']), 'tower/image')
+  assert.equal(pick('a.mp4', 'video/mp4', ['files/code']), 'tower/video')
+  assert.equal(pick('a.bin', 'application/octet-stream', ['files/code']), 'tower/file')
 })
 
 test("views: a worker's showing is drawn by the views by type, an address by tower/link; a user's view for a type takes it over by the order", () => {
