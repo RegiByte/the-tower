@@ -24,9 +24,14 @@ Copy this folder anywhere outside the checkout, then add it to the config by its
   (`docs/extending.md`, Views). The tower page mounts it at a location, `#v/grid/grid/floor%3A<project>`, so a reload,
   a link and Back keep it.
 - Each cell is a region the grid declares, `card.cell` (the manifest's `regions`), asked of the kit on its worker:
-  `kit.region(el, 'card.cell', card, { 'tower/card': { head } })`. The tower mounts the worker's own view there at cell
-  scale, its tabs and, unless `head` is false, its head; the grid updates the region on each board and closes it as
-  the cell goes. Above it, the grid draws a strip of its own: whose cell it is, Open and ✕.
+  `kit.region(el, 'card.cell', card, { 'tower/card': { head, acts, pick, omit } })`. The tower mounts the worker's own
+  view there at cell scale: its compact head over its tabs, or with `head` false one row of its lamp, callsign and
+  tabs. The grid updates the region on each board and closes it as the cell goes.
+- The grid draws nothing in a cell itself. Its controls go to the worker's head as data: Open and ✕ as `acts`, the
+  floor's workers on duty as the callsign's `pick` (one already in a cell swaps places with it), and its own Add to
+  grid in `omit`. The head answers with `act` and `pick` events, which the grid hears on the cell.
+- Hide heads and Show heads hand each cell new options (`region.options(...)`), so a cell keeps its tab and scroll.
+- Two cells sit side by side, three as two over one, four as four squares.
 - Which workers fill the cells, and whether each cell shows its head, is the view's own state (`ctx.state`, kept in
   `tower.store`), so the grid reloads as it was.
 - **Add to grid** is `kit.display(card, { view: 'grid/grid' })`: the open grid is handed the card (`show`), or its
