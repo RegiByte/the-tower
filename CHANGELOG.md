@@ -41,6 +41,8 @@ No restart beyond the tower's own (`tower down tower`, then `tower up tower`), t
 - **README**: rewritten for a reader who hasn't installed the tower, with fresh screenshots, a small config example,
   and running an example extension in place through `extensions.<id>.path`. `tower init` points at `docs/config.md`
   for the rest of the config (#269).
+- **Claude 2.1.314** is tested, the supported range raised, and the baseline is taken on it. Its check read as 2.1.312's
+  did, bar an `idle_prompt` notification in one scenario that depends on when in the minute a cron fires (#274).
 
 ## v1.71.0
 
