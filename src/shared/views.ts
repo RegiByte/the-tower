@@ -47,8 +47,20 @@ export type Mounted = {
   update(board: Board, subject: Subject): void
   show?(subject: Subject): boolean
   visible?(on: boolean): void
+  tab?(): TabWords | undefined
   close(): void
 }
+
+/**
+ * What a view's tab says beside its label in a tabs region: a tally (`text`, its own `tip`, `tone` `unseen` drawn
+ * louder) and the tab's tip (`hint`, over the view's words). A view's `tab` export answers it from the board alone, and
+ * `undefined` where the view has no tab on the subject; a mounted view's `tab()` answers it from what it read, and the
+ * view dispatches a bubbling `tab` event on its host when that changes, for the region to draw its tab again. @since 1.111
+ */
+export type TabWords = { text?: string; tip?: string; tone?: 'unseen'; hint?: string }
+
+/** A view's `tab` export. @since 1.111 */
+export type Tab = (board: Board, subject: Subject) => TabWords | undefined
 
 /** A view's module's export: mounts the view into `host`, the renderer's element, which the view draws only inside. */
 export type Mount = (host: HTMLElement, ctx: ViewCtx) => Mounted | Promise<Mounted>
@@ -61,13 +73,20 @@ export type Mount = (host: HTMLElement, ctx: ViewCtx) => Mounted | Promise<Mount
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
-  region(host: HTMLElement, id: string, subject: Subject, options?: Record<string, Record<string, unknown>>): { update(subject: Subject): void; close(): void }
+  region(host: HTMLElement, id: string, subject: Subject, options?: Record<string, Record<string, unknown>>): RegionHandle
   run(command: string, on?: Subject): Promise<boolean>
   display(subject: Subject | string, opts?: { view?: string }): void
   go(location: Location): void
   toast(text: string, action?: { label: string; run(): void }): void
   confirm(text: string, verb: string): Promise<boolean>
 }
+
+/**
+ * A region a view asked the kit for: `update` with its subject as it stands; one holding views is handed `show`, a
+ * subject below its own, true when a view in it took it (a tabs region opens that view's tab), and `visible`, whether
+ * the view holding it is seen, which it passes to the views it shows. @since 1.111
+ */
+export type RegionHandle = { update(subject: Subject): void; show?(subject: Subject): boolean; visible?(on: boolean): void; close(): void }
 
 /** The part of the kit a command is lent, as `ctx.kit`: it has no host to draw a terminal in. */
 export type CommandKit = Pick<Kit, 'display' | 'toast' | 'confirm' | 'run'>
@@ -80,14 +99,20 @@ const served = (view: View, needs: KitMember[]): View => ({ ...view, module: `${
 /** A core view on every collection's item that draws the media types it `accepts`. */
 const byType = (name: string, accepts: string[], words: Words): View => served({ ...core(`tower/${name}`, ['item.*'], ['pane'], words), accepts }, ['region', 'display', 'toast', 'confirm'])
 
+/** A core view drawn in a worker's tabs, on its card, handed the kinds in `shows`. */
+const pane = (name: string, shows: string[], words: Words, needs: KitMember[]): View => served({ ...core(`tower/${name}`, ['card'], ['pane'], words), ...(shows.length && { shows }) }, needs)
+
 /**
- * The core's views, in the order that picks among them: the worker view first among those on a card, the archive first
- * among those on a floor. One with no module is drawn by its renderer's own route until its module ships. The views by
- * type follow, `tower/file` the fallback, accepting none.
+ * The core's views, in the order that picks among them: the worker view first among those on a card, then its tabs,
+ * the archive first among those on a floor. The views by type follow, `tower/file` the fallback, accepting none.
  */
 export const CORE_VIEWS: readonly View[] = [
   served(core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }), ['display', 'run']),
-  core('tower/card', ['card'], ['pane', 'cell'], { label: 'Worker', hint: "the worker's head and its tabs" }),
+  served({ ...core('tower/card', ['card'], ['pane', 'cell'], { label: 'Worker', hint: "the worker's head and its tabs" }), regions: ['card.panes'] }, ['region', 'run', 'display', 'toast', 'confirm']),
+  pane('terminal', [], { label: 'Terminal', hint: 'the session in its terminal' }, ['terminal']),
+  { ...pane('brief', ['conversation'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'toast']), tab: 'tab' },
+  pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['toast', 'confirm']),
+  served(core('tower/shown', ['shown'], ['pane'], { label: 'Shown', hint: 'what the worker showed, as the tower draws its kind' }), []),
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
@@ -158,7 +183,8 @@ export const offeredIn = (views: View[], region: Region, layout: Layout, kit: re
       !(subject.project !== undefined && v.off?.includes(subject.project)),
   )
 
-const ordered = (views: View[], order: string[] | undefined) =>
+/** `views` in a region's layout `order`, the rest after in their own. */
+export const ordered = (views: View[], order: string[] | undefined) =>
   order ? [...order.flatMap((id) => views.filter((v) => v.id === id)), ...views.filter((v) => !order.includes(v.id))] : views
 
 /** The capability whose extension declares the collection `subject` is an item of, when its floor carries one. */
