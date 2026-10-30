@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-29",
-  "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/cli.ts", "hub/package.json", "hub/README.md"]
+  "reviewed": "2026-10-30",
+  "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/cli.ts", "hub/package.json", "hub/README.md", "hub/docs/config.md"]
 }
 ---
 **Problem.** A tower that starts only after writing `config.json` by hand and running each process in a terminal of
@@ -23,7 +23,7 @@ command should reach a running tower with a worker to spawn.
   one that exists: `argv: ["claude"]`, one project whose hub is the current directory or `hub` (its id the folder's
   name), `repos` beside it, the `drafts`, `reviews` ([[review-threads]]) and `policies` ([[policies]]) collections, and
   `user.name` from `git config user.name` when set ([`initialConfig`](ref:hub/src/init.ts#initialConfig)). The rest
-  keeps its defaults; the README shows it.
+  keeps its defaults; `docs/config.md` documents every key.
 - **`tower doctor`** ([`doctor`](ref:hub/src/doctor.ts#doctor)) checks and fixes nothing. Each check is `ok`, `warn`
   (the tower runs with less: no editor command, a Claude newer than tested
   ([`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange)) or one it cannot place, not signed in, a daemon not
@@ -46,7 +46,7 @@ command should reach a running tower with a worker to spawn.
 
 **Alternatives considered.**
 
-- *An interactive wizard.* One first project is all a config needs to run, and the README shows the rest.
+- *An interactive wizard.* One first project is all a config needs to run, and `docs/config.md` documents the rest.
   Questions in a terminal are a second way to edit the config.
 - *`doctor --fix`.* Every fix touches the user's machine (installing Node, signing in, the editor command), which is
   theirs to run.
