@@ -750,7 +750,7 @@ const Path = z
   .min(1)
   .regex(/^(?!\/)(?!.*\.\.)/, 'a path inside the folder: relative, without ".."')
 const Schema = z.record(z.string(), z.unknown()).describe('A JSON Schema 2020-12, as /schema serves the API\'s.')
-const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|collection|shelf|file|item\.[a-z][a-z0-9.-]*|collection\.[a-z][a-z0-9-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
+const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|collection|shelf|item\.[a-z][a-z0-9.-]*|collection\.[a-z][a-z0-9-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
 const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().optional()), destructive: since(z.literal(true).optional()) })
 /** A name in words as a manifest or a fold's action gives them. */
 export const WordsShape = Words
@@ -762,8 +762,13 @@ const Chords = z.array(
   }),
 )
 const MediaTypes = z.array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*')).min(1)
-/** A kind a view or a command is on: a board subject's, or a viewer subject's, which only a renderer page holds. */
-const OnKind = z.union([SubjectKind, z.literal('item.*'), viewer(z.literal('lines'))])
+/**
+ * A viewer subject's kind, which only a renderer page holds (a file of a worker's checkout, lines picked in its
+ * Changes): views, commands and regions are on one, and no fold is, since the board never carries one.
+ */
+const ViewerKind = z.union([files(z.literal('file')), viewer(z.literal('lines'))])
+/** A kind a view or a command is on: a board subject's or a viewer subject's. */
+const OnKind = z.union([SubjectKind, z.literal('item.*'), ViewerKind])
 const Kinds = z.array(OnKind).min(1)
 const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>, the last maybe a rest param, raw/<file...>')
 const Scope = z.enum(['system', 'project'])
@@ -945,7 +950,7 @@ const View = z.strictObject({
   ),
 })
 const RegionDecl = z.strictObject({
-  subject: views(SubjectKind),
+  subject: views(z.union([SubjectKind, ViewerKind])),
   holds: views(z.array(z.enum(HOLDS)).min(1)),
   scale: views(z.enum(SCALES).optional()),
   arity: views(z.enum(['one', 'tabs']).optional()),
