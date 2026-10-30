@@ -22,7 +22,13 @@ import { toast } from './kit.js'
 export function archive(deps) {
   const { cards, board, floorOf, render } = deps
   /** A card by id: on the board, else in an archive this page has read. @param {string | undefined} id */
-  const findCard = (id) => cards().find((c) => c.id === id) ?? [...archives.values()].flatMap((a) => a.cards ?? []).find((c) => c.id === id)
+  const findCard = (id) => cards().find((c) => c.id === id) ?? [...archives.values()].flatMap((a) => a.cards ?? []).find((c) => c.id === id) ?? (id === undefined ? undefined : held.get(id))
+
+  /** The past workers a view handed the page whole, read from an archive of its own: subjects the page holds. @type {Map<string, Card>} */
+  const held = new Map()
+
+  /** A past worker a view handed the page, held as a read. @param {Card} c */
+  const hold = (c) => void held.set(c.id, c)
 
   /**
    * The floors' archives this page has read, by project: the `archiveKey` each was read at, and its cards once read.
@@ -55,5 +61,5 @@ export function archive(deps) {
     return findCard(id)
   }
 
-  return { findCard, freshArchives, lookUp }
+  return { findCard, freshArchives, lookUp, hold }
 }

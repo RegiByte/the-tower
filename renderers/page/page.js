@@ -1,33 +1,30 @@
-import { actionWords, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine } from '/cards.js'
+import { actionWords, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, workerIn, linesOf, DISMISS_TITLE } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss, keptOf } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
-import { cardThread, threadWant } from '/x/reviews/panel.js'
+import { REVIEWS, threadId } from '/x/reviews/reviews.js'
 import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
 import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
-import { HOME, SKYLINE, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
-import { hosted } from './hosted.js'
+import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
+import { regions } from './regions.js'
 import { displayed, layoutOf, openable, viewOn, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
-import { worker } from './worker.js'
-import { review } from './review.js'
 import { shells } from './shells.js'
 import { tipStrip } from './tip.js'
 import { screen } from './screen.js'
 import { stats } from './stats.js'
 import { settingsPane } from './settings-pane.js'
 import { alerting } from './alerts.js'
-import { briefPane } from './brief-pane.js'
 import { keptViews } from './kept.js'
 import { draft } from './draft.js'
 import { archive } from './archive.js'
 import { boardKit } from './board.js'
 import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
-import { fenceText, markdownCss } from '/markdown.js'
+import { markdownCss } from '/markdown.js'
 import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, addedCommandOf, commandOf, frameCommandOf, isAddedId } from '/keymap.js'
 import { VIEWER_KEYS, readViewer } from '/viewer.js'
 import { settingsCss } from '/settings.js'
@@ -53,10 +50,10 @@ import { addedActionsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call } from '../../src/shared/api.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { DiffLayout, StatsRange } from '../../src/shared/panels.ts'
+ * @import { StatsRange } from '../../src/shared/panels.ts'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
  * @import { AttendEffect, AttendEvent, Attending } from '../../src/shared/attend.ts'
- * @import { MainView, Pane } from './view.js'
+ * @import { MainView } from './view.js'
  * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  * @import { Pick } from '../../src/shared/palette.ts'
@@ -88,10 +85,7 @@ const pageNow = () => lostAt() ?? Date.now()
 /** What the main pane shows (`./view.js`), as the page's machine holds it. */
 const view = () => page.state().view
 /** The worker the main pane is on. */
-const selected = () => {
-  const v = view()
-  return v.t === 'worker' ? v.id : undefined
-}
+const selected = () => cardIdOf(view())
 /** The main pane's view while it is a `t`. @template {MainView['t']} T @param {T} t */
 const viewing = (t) => {
   const v = view()
@@ -128,10 +122,7 @@ function render() {
   drawSideView()
   repaint($('rail'), railHtml(waiting))
   $('side-foot').innerHTML = board().config ? `<span>config</span><code data-tip="${esc(board().config)}"><bdi>${esc(board().config)}</bdi></code>${fileButtonsHtml(board().config)}` : ''
-  const c = selected() && findCard(selected())
-  followChanges(c || undefined)
-  if (c) barHtml(c)
-  if (viewing('view') || viewing('arriving')) hostedView.update()
+  mainRegion.update()
   renderDock()
   drawSettings()
   tick()
@@ -147,16 +138,20 @@ function tick() {
  * The page's machine: the board drawn, why there is none live and since when the tower is lost, the viewer's record,
  * what the main pane shows, what the viewer is told about waits and offers (`/attend.js`, which also holds whether the
  * window has their eye and the worker the view is on, told by the `focus`, `visible` and `watch` events) and the waits
- * and offers N visited this round (`Heed` in cards.ts). The view and the rings follow one selection because every
+ * and offers N visited this round (`Heed` in cards.ts), and the workers it started that the board doesn't carry yet
+ * (`started`), which it waits for as they arrive. The view and the rings follow one selection because every
  * handler that sets `view` does it through `viewed`, which tells attention.
- * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, view: MainView, attending: Attending, visited: ReadonlySet<string> }} PageState
+ * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, view: MainView, attending: Attending, visited: ReadonlySet<string>, started: ReadonlySet<string> }} PageState
  * @typedef {{ [K in keyof Viewer]: { type: 'keep', field: K, value: Viewer[K] } }[keyof Viewer]} ViewerKept
  * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
- *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'followed', location: import('../../src/shared/views.ts').Location }} PageEvent
+ *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'started', id: string } | { type: 'followed', location: import('../../src/shared/views.ts').Location }} PageEvent
  * @typedef {Exclude<AttendEffect, StateEffect<Attending>> | ViewerKept | StateEffect<PageState> | TimerEffect<PageEvent>
  *   | { type: 'leave', view: MainView } | { type: 'enter', view: MainView } | { type: 'hash', hash: string } | { type: 'draw' }
  *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string }} PageEffect
  */
+
+/** The workers started here that `b` doesn't carry yet. @param {ReadonlySet<string>} started @param {Board} b */
+const arrived = (started, b) => (started.size ? new Set([...started].filter((id) => !b.floors.some((f) => f.cards.some((c) => c.id === id)))) : started)
 
 /** @param {PageState} s @returns {Heed} */
 const heedOf = (s) => ({ dismissed: s.attending.dismissed, visited: s.visited })
@@ -188,22 +183,23 @@ const chain = (s, steps) => {
 const marked = (s, lost, at) => lost === (s.lostAt !== undefined) ? [into(s)] : attend({ ...s, lostAt: lost ? at : undefined }, { type: 'lost', lost })
 
 /** Leaves the view open for `view` and enters it, its hash in the address bar. @param {PageState} s @param {MainView} view @returns {PageEffect[]} */
-const moved = (s, view) => viewed(s, view, [{ type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view) }, { type: 'draw' }])
+const moved = (s, view) => viewed(s, view, [{ type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }])
 
 /** The one way a handler sets `view`: attention hears of the worker the view is on, then `effects` follow. @param {PageState} s @param {MainView} view @param {PageEffect[]} effects @returns {PageEffect[]} */
 const viewed = (s, view, effects) =>
-  chain({ ...s, view }, [(s) => attend(s, { type: 'watch', at: s.view.t === 'worker' ? s.view.id : undefined }), () => effects])
+  chain({ ...s, view }, [(s) => attend(s, { type: 'watch', at: cardIdOf(s.view) }), () => effects])
 
 /** @type {Handlers<PageState, PageEvent, PageEffect>} */
 const pageHandlers = {
-  board: (s, e) => chain({ ...s, board: e.board, error: undefined }, [(s) => marked(s, false, 0), (s) => attend(s, e)]),
+  board: (s, e) => chain({ ...s, board: e.board, error: undefined, started: arrived(s.started, e.board) }, [(s) => marked(s, false, 0), (s) => attend(s, e)]),
   'board-error': (s, { error, at }) => marked({ ...s, error }, error.code === 'disconnected', at),
   lost: attend,
   stored: (s, e) => attend({ ...s, viewer: { ...s.viewer, ...e.viewer } }, e),
   keep: (s, e) => [into({ ...s, viewer: { ...s.viewer, [e.field]: e.value } }), e],
+  started: (s, { id }) => [into({ ...s, started: new Set([...s.started, id]) })],
   'next-waiting': (s) => {
     const attended = attentionOrder(s.board ?? BLANK, heedOf(s))
-    const step = nextAttended(attended, s.visited, { id: s.view.t === 'worker' ? s.view.id : undefined, policies: located(s.view, POLICIES_VIEW)?.project })
+    const step = nextAttended(attended, s.visited, { id: cardIdOf(s.view), policies: located(s.view, POLICIES_VIEW)?.project })
     return [into({ ...s, visited: step.visited }), step.to ? { type: 'attend-to', to: step.to } : { type: 'toast', message: attended.length ? 'Nobody else is waiting on you' : 'Nobody is waiting on you' }]
   },
   dismiss: attend,
@@ -212,18 +208,18 @@ const pageHandlers = {
   focus: attend,
   visible: attend,
   watch: attend,
-  go: (s, { view }) => (sameRoom(s.view, view) ? viewed(s, view, [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }]) : moved(s, view)),
+  go: (s, { view }) => (sameRoom(s.view, view) ? viewed(s, view, [{ type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }]) : moved(s, view)),
   reopen: (s, { view }) => moved(s, view),
   followed: (s, { location }) => {
     if (s.view.t !== 'view') return []
     const view = /** @type {MainView} */ ({ t: 'view', location })
-    return viewed(s, view, [{ type: 'hash', hash: hashOf(view) }, { type: 'draw' }])
+    return viewed(s, view, [{ type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }])
   },
 }
 
 /** @type {Loop<PageState, PageEvent>} */
 const page = loop({
-  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), view: HOME, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }), visited: new Set() },
+  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), view: HOME, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }), visited: new Set(), started: new Set() },
   handlers: pageHandlers,
   execute: {
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
@@ -258,7 +254,10 @@ const go = (view) => page.dispatch({ type: 'go', view })
 const reopen = (view) => page.dispatch({ type: 'reopen', view })
 
 /** @param {string} id */
-const select = (id) => go({ t: 'worker', id, pane: undefined })
+const select = (id) => go(cardView(id))
+
+/** A worker's view on its default tab. @param {string} id @returns {MainView} */
+const cardView = (id) => ({ t: 'view', location: { view: WORKER, subject: `card:${id}` } })
 
 const goHome = () => go(HOME)
 
@@ -267,7 +266,10 @@ const goHome = () => go(HOME)
  * log, and until then there is no card to draw and no screen to stream. Any other way the viewer goes cancels it.
  * @param {string} id
  */
-const selectArriving = (id) => go(findCard(id) ? { t: 'worker', id, pane: undefined } : { t: 'arriving', id })
+const selectArriving = (id) => (page.dispatch({ type: 'started', id }), go(findCard(id) ? cardView(id) : { t: 'arriving', id }))
+
+/** The worker view. */
+const WORKER = 'tower/card'
 
 /**
  * The viewer's appearance, kept by tower.js in this browser for every page of theirs, on the root that the stylesheet
@@ -282,7 +284,7 @@ const { callsign, cards, paint, waitsOnYou, floorsTopDown, letGoHtml, unresumabl
 /** The colour of the floor `v` is on, for the element it draws in. @param {MainView} v @returns {string} */
 const floorPaint = (v) => paint(floorOfView(v, projectOfCard))
 
-const { findCard, freshArchives, lookUp } = archive({ cards, board, floorOf, render })
+const { findCard, freshArchives, lookUp, hold } = archive({ cards, board, floorOf, render })
 
 /** The views the page opens by name: a floor's archive and policies, a collection, a shelf entry. */
 const ARCHIVE_VIEW = 'tower/archive'
@@ -308,22 +310,55 @@ const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, openDraft, spawnOn,
 const { showLanding, showKeys, ask } = dialogs({ board })
 const { keptTitle, pruneKeptTitles, openItemIn, policyCall, openItem } = keptViews({ render, viewing, display: (key) => display(key), floorOf, board, selectArriving })
 
-const { showBrief, redrawBrief, copySaid, chooseBriefMarkdown } = briefPane({ findCard, viewer, keepViewer, drawSettings: () => drawSettings(), board })
 
-const { alerts, playSound, showShownAlert, showOfferAlert, showAskAlert, showAlert } = alerting({ callsign, select, showPane: (pane) => showPane(pane), floorOf, board, openPolicies, goToSubject: (key) => goToSubject(key) })
+
+const { alerts, playSound, showShownAlert, showOfferAlert, showAskAlert, showAlert } = alerting({ callsign, select, openShown: (c, s) => display(shownSubject(c, s)), floorOf, board, openPolicies, goToSubject: (key) => goToSubject(key) })
 
 const { drawSettings } = settingsPane({ page, viewer, playSound })
 
 const { floorInView, drawSideView, sideView } = await stats({ view, findCard, floorsTopDown, board, viewer, lostAt })
 
-const { showMode, termFont, openTerm, terminal, isOwner, closeTerminal, enterWorker, applyTermFont, leaveTerminal, rescheme } = screen({ board, scheme, run, reopen, refontShell: () => refontShell() })
+const { showMode, termFont, applyTermFont, leaveTerminal } = screen({ board, refont: () => (mainRegion.refont(), refontShell()) })
 
 const { shellFloor, renderDock, refontShell, reschemeShell, toggleShell, spawnShell, spawnShellAt, focusShell, focusedShell, openShellId, closeShell } = shells({ board, floorInView, paint, floorOf, termFont, scheme, run, showMode })
 const { paintTip } = tipStrip({ viewer, keys: () => board().keys, now: pageNow })
 
-const { changeReads, reviewing, followChanges, changesTally, toggleViewed, toggleFold, toggleTreeFold, gotoFile, dropPick, resetDesk, drawChanges, pickLine, keepsThreads, threadReads, followThread, reviewsTally, addPicked, addWritten, resolveNote, sendNotes, drawReviews, replyTo, showAnchor, clearReply, openThread } = review({ render, lostAt, paneOf: (c) => paneOf(c), selected, findCard, board, viewer, floorOf, callsign, showPane: (pane) => showPane(pane), openItem, select })
 
-const { barHtml, paneOf, PANE_COMMAND, unshow, forgetShown, showPane, noticeShown, sendHome } = await worker({ callsign, floorOf, heldWhy, heldHtml, letGoHtml, terminal, selected, openTerm, isOwner, board, heed, viewing, changesTally, keepsThreads, reviewsTally, render, reviewing, followThread, drawChanges, drawReviews, showBrief, go, watchedOf, page, showShownAlert, cards, selectArriving, ask })
+
+/** The showings this viewer closed, by `session|target|at`, kept in `tower.store`. */
+const UNSHOWN_KEY = 'shown.closed'
+const unshown = new Set(/** @type {string[] | undefined} */ (await tower.store.get(UNSHOWN_KEY)) ?? [])
+
+/** A showing closed by this viewer: its tab goes, and comes back if shown again. @param {string} key */
+function unshow(key) {
+  unshown.add(key)
+  tower.store.set(UNSHOWN_KEY, [...unshown].slice(-200))
+  render()
+}
+
+/** Every showing the page has seen: a new one opens its tab on the worker open, and alerts when you aren't looking at it. @type {Set<string>} */
+const seenShown = new Set()
+let shownPrimed = false
+
+/** @param {Card[]} all */
+function noticeShown(all) {
+  for (const c of all) for (const s of c.shown.filter((s) => !unshown.has(shownKey(s)))) {
+    const key = shownKey(s)
+    if (seenShown.has(key)) continue
+    seenShown.add(key)
+    if (!shownPrimed) continue
+    if (selected() === c.id) display(shownSubject(c, s))
+    if (watchedOf(page.state()) !== c.id && Notification.permission === 'granted') showShownAlert(c, s)
+  }
+  shownPrimed = true
+}
+
+/** A thread opened from the sidebar, on the worker most recently in its checkout; read as a kept item when no worker has been there. @param {string} project @param {string} checkout */
+function openThread(project, checkout) {
+  const c = workerIn(/** @type {Floor} */ (floorOf(project)), checkout)
+  if (!c) return openItem(project, REVIEWS, threadId(checkout))
+  go({ t: 'view', location: { view: WORKER, subject: `card:${c.id}`, pane: { view: 'reviews/thread' } } })
+}
 
 const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, openItemIn, at, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
 
@@ -425,16 +460,22 @@ const placing = () => ({
 })
 
 /** The subject the main pane is on. @param {MainView} v @returns {string} */
-function subjectKeyOf(v) {
-  switch (v.t) {
-    case 'arriving':
-      return 'board'
-    case 'worker':
-      return `card:${v.id}`
-    case 'view':
-      return v.location.subject ?? 'board'
-  }
+const subjectKeyOf = (v) => (v.t === 'arriving' ? 'board' : v.location.subject ?? 'board')
+
+/**
+ * A subject by its key: the board's, else one of a read the page holds, a worker of an archive (decision `ui-model`:
+ * read subjects).
+ * @param {string} key @returns {Subject | undefined}
+ */
+function subjectOf(key) {
+  const onBoard = subjectAt(board(), key)
+  if (onBoard || !key.startsWith('card:')) return onBoard
+  const c = findCard(key.slice('card:'.length))
+  return c && cardSubject(c)
 }
+
+/** Whether the page holds the subject `key` names. @param {string} key */
+const has = (key) => subjectOf(key) !== undefined
 
 /**
  * The subject in focus: that of the innermost region holding the document's focus, else the main pane's; the board
@@ -443,51 +484,44 @@ function subjectKeyOf(v) {
 function focusedSubject() {
   const region = /** @type {HTMLElement | null | undefined} */ (document.activeElement?.closest('[data-region]'))
   const key = region?.dataset.subject ?? subjectKeyOf(view())
-  return subjectAt(board(), key) ?? boardSubject(board())
+  return subjectOf(key) ?? boardSubject(board())
 }
 
 /**
  * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/views.js`): a view given stays when
- * it is the one mounted and takes it, on that subject when it is on its kind; a worker or a kept item opens the page's
- * route for it, a card's showing or conversation on its tab; a view mounted on a subject above `target` is handed it.
- * A worker the board doesn't carry is looked up in the floors' archives, and else awaited, as one the page started.
+ * it is the one mounted and takes it, on that subject when it is on its kind; a subject below the one the view at its
+ * location is on is handed to that view (a worker's showing, conversation or lines open its tab). A worker handed whole
+ * is held as a read; one the page doesn't hold is looked up in the floors' archives, or awaited when the page started it.
  * @param {Subject | string} target @param {{ view?: string }} [opts]
  */
 function display(target, opts = {}) {
-  const subject = typeof target === 'string' ? subjectAt(board(), target) : target
+  if (typeof target !== 'string' && target.kind === 'card' && !subjectAt(board(), target.key)) hold(/** @type {Card} */ (target.value))
+  const subject = typeof target === 'string' ? subjectOf(target) : target
   if (!subject && typeof target === 'string' && target.startsWith('card:')) return void awaitCard(target.slice('card:'.length))
   if (!subject) return toast(`${target} is no longer on the board`)
   const { view: given } = opts
   const mounted = viewing('view')?.location
-  if (given && mounted?.view === given && hostedView.show(subject)) {
+  if (given && mounted?.view === given && mainRegion.show(subject)) {
     const view = /** @type {import('../../src/shared/views.ts').View} */ (viewsOf(board()).find((v) => v.id === given))
-    if (subject.key !== (mounted.subject ?? 'board') && viewOn(view.on, subject)) (hostedView.follow(subject.key), page.dispatch({ type: 'followed', location: { view: given, subject: subject.key } }))
+    if (subject.key !== (mounted.subject ?? 'board') && viewOn(view.on, subject)) page.dispatch({ type: 'followed', location: { view: given, subject: subject.key } })
     return
   }
   const at = displayed(placing(), subject, given)
   if (!at) return toast(given ? `${viewsOf(board()).find((v) => v.id === given)?.words.label ?? given} isn't offered on ${subject.key}` : `Nothing here shows ${subject.key}`)
-  const next = mainViewOf(at, board())
+  const next = mainViewOf(at, has)
   if (next.t === 'lookup') return toast(`${subject.key} is no longer on the board`)
-  if (next.t === 'worker' && !next.pane && subject.kind === 'shown') return go({ ...next, pane: /** @type {Pane} */ (`shown:${/** @type {{ target: string }} */ (subject.value).target}`) })
-  if (next.t === 'worker' && !next.pane && subject.kind === 'conversation') return go({ ...next, pane: 'brief' })
   go(next)
-  if (next.t === 'view' && subject.key !== (at.subject ?? 'board') && !hostedView.show(subject)) toast(`${subject.key} isn't there any more`)
+  if (subject.key !== (at.subject ?? 'board') && !mainRegion.show(subject)) toast(`${subject.key} isn't there any more`)
 }
 
-/** How long after a worker's start, by its session id, the page waits for the board to carry it. */
-const ARRIVING_MS = 60_000
-
-/** When the session `id` started, read from the id itself (`20260930-141203-a1b2`, UTC). @param {string} id */
-const startedAt = (id) => Date.parse(id.replace(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2}).*$/, '$1-$2-$3T$4:$5:$6Z'))
-
 /**
- * A worker the board doesn't carry: one of an archive, read first; else one started within `ARRIVING_MS`, opened
- * once the board carries it; else it is gone.
+ * A worker the board doesn't carry: one this page started, opened once the board carries it; else one of an archive,
+ * read first; else it is gone.
  * @param {string} id
  */
 async function awaitCard(id) {
-  if (await lookUp(id)) return go({ t: 'worker', id, pane: undefined })
-  if (Date.now() - startedAt(id) < ARRIVING_MS) return go({ t: 'arriving', id })
+  if (page.state().started.has(id)) return go({ t: 'arriving', id })
+  if (await lookUp(id)) return go(cardView(id))
   toast(`card:${id} is no longer on the board`)
 }
 
@@ -519,23 +553,80 @@ const commandKit = {
   run: async (command, on) => (isAddedId(command) ? runAddedId(command, on ?? focusedSubject()) : command === 'spawn' ? spawnIn(on ?? focusedSubject()) : run(command, { repeat: false })),
 }
 
-/**
- * One of the page's regions inside a view, on `subject`: what extensions add to it drawn the page's way, its badges and
- * actions as its holds say, their presses run by the page's own clicks. Contributions only: no view is mounted in one.
- * @param {HTMLElement} el @param {string} id @param {Subject} subject
- */
-function kitRegion(el, id, subject) {
-  const holds = (declared.regions ?? []).find((r) => r.id === id)?.holds ?? []
-  const draw = (/** @type {Subject} */ s) => {
-    el.dataset.region = id
-    el.dataset.subject = s.key
-    paintOnce(el, `${holds.includes('badges') ? badgesHtml(board(), s) : ''}${holds.includes('verbs') || holds.includes('commands') ? addedActionsHtml(board(), s) : ''}`)
-  }
-  draw(subject)
-  return { update: draw, close: () => (el.replaceChildren(), delete el.dataset.region, delete el.dataset.subject) }
+/** The slot of `el` marked to hold `name` (`data-holds`), in the view `el` is in. @param {HTMLElement} el @param {string} name */
+const slotIn = (el, name) => /** @type {HTMLElement | undefined} */ ([...el.querySelectorAll(`[data-holds~="${name}"]`)].find((s) => s.closest('[data-view]') === el.closest('[data-view]')))
+
+/** Dismiss, beside a worker's status while it waits on you and you heed it. @param {string} key */
+function dismissHtml(key) {
+  const wait = key.startsWith('card:') && heededWaits(board(), heed()).find((w) => `card:${w.id}` === key)
+  return wait ? `<button class="dismiss" data-dismiss="${esc(wait.key)}" data-tip="${DISMISS_TITLE}">dismiss</button>` : ''
 }
 
-const hostedView = hosted({ board, views: () => viewsOf(board()), layout, termFont, scheme, run, kit: { ...commandKit, region: kitRegion, go: (location) => void goTo(location) }, gone: () => goHome() })
+/**
+ * One of the page's regions inside a view that holds what extensions add, on `subject`: drawn the page's way, its
+ * badges, lines and actions as its holds say, each in the element marked to hold it (`data-holds="badges"`, `lines`,
+ * `actions`) when `el` has one, else together in `el`; their presses run by the page's own clicks. A worker's head
+ * holds the page's own Dismiss beside its badges.
+ * @param {HTMLElement} el @param {string} id @param {Subject} subject
+ * @returns {import('../../src/shared/views.ts').RegionHandle}
+ */
+function kitRegion(el, id, subject) {
+  const holds = placing().regions.find((r) => r.id === id)?.holds ?? []
+  const actions = holds.includes('verbs') || holds.includes('commands')
+  const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
+  const marked = Object.values(slots).filter((s) => s !== undefined)
+  /** @param {HTMLElement} at @param {Subject} s */
+  const mark = (at, s) => ((at.dataset.region = id), (at.dataset.subject = s.key))
+  const draw = (/** @type {Subject} */ s) => {
+    const parts = {
+      badges: holds.includes('badges') ? `${id === 'card.head' ? dismissHtml(s.key) : ''}${badgesHtml(board(), s)}` : '',
+      lines: holds.includes('lines') && s.kind === 'card' ? linesOf(board(), /** @type {Card} */ (s.value).id).map((l) => `<span class="adds-line" data-tip="${esc(l)}">${esc(l)}</span>`).join('') : '',
+      actions: actions ? addedActionsHtml(board(), s) : '',
+    }
+    if (!marked.length) return (mark(el, s), paintOnce(el, `${parts.badges}${parts.actions}`))
+    for (const [name, slot] of Object.entries(slots)) if (slot) (mark(slot, s), paintOnce(slot, parts[/** @type {keyof typeof parts} */ (name)]))
+  }
+  draw(subject)
+  const clear = (/** @type {HTMLElement} */ at) => (at.replaceChildren(), delete at.dataset.region, delete at.dataset.subject)
+  return { update: draw, close: () => (marked.length ? marked : [el]).forEach(clear) }
+}
+
+/** The tower the page lends its views: a worker one starts is one the page started, awaited as it arrives. */
+const viewTower = /** @type {typeof tower} */ (Object.assign(Object.create(tower), {
+  /** @type {typeof tower.run} */
+  run: (...args) => tower.run(...args).then(started),
+  /** @type {typeof tower.call} */
+  call: (...args) => tower.call(...args).then(started),
+}))
+
+/** A reply that started a worker: the page awaits it. @template T @param {T} reply @returns {T} */
+function started(reply) {
+  const r = /** @type {{ t?: string, id?: string } | undefined} */ (reply)
+  if (r?.t === 'spawned' && r.id) page.dispatch({ type: 'started', id: r.id })
+  return reply
+}
+
+const mainRegion = regions({
+  board,
+  views: () => viewsOf(board()),
+  layout,
+  declared: () => placing().regions,
+  kit: KIT,
+  termFont,
+  scheme,
+  run,
+  commandKit: { ...commandKit, go: (location) => void goTo(location) },
+  tower: viewTower,
+  contributions: kitRegion,
+  subjectOf,
+  unshown: () => unshown,
+  mainPane: () => viewing('view')?.location.pane,
+  gone: () => goHome(),
+})
+mainRegion.onPick((key, pane) => {
+  const v = viewing('view')
+  if (v && (v.location.subject ?? 'board') === key) go({ t: 'view', location: { ...v.location, pane } })
+})
 
 /**
  * The new-worker form, on the floor `on` is or is of; on a draft, on that draft, deleted once a worker starts on it.
@@ -561,7 +652,8 @@ function opensHere() {
 /** The view on screen for `subject`: the one the main pane holds, when it is on that subject. @param {Subject} subject */
 const besideOn = (subject) => {
   const at = viewing('view')?.location
-  return at && (at.subject ?? 'board') === subject.key ? [at.view] : []
+  if (!at || (at.subject ?? 'board') !== subject.key) return []
+  return [at.view, ...(mainRegion.tabsAt(null)?.tabs().views ?? [])]
 }
 
 /** "Open <label>" for each view a floor's section offers, less those its layout hides there. @param {Subject} subject */
@@ -573,19 +665,14 @@ const opensHtml = (subject) =>
 
 /** What a view sets up as it opens, beside its class on the main pane and its colour; a worker awaited is drawn as the skyline. @type {{ [T in MainView['t']]: (v: Extract<MainView, { t: T }>) => void }} */
 const ENTER = {
-  arriving: () => void hostedView.enter(SKYLINE),
-  worker: (v) => (forgetFold(), resetDesk(), enterWorker(v.id)),
-  view: (v) => void hostedView.enter(v.location),
+  arriving: () => mainRegion.enter(SKYLINE),
+  view: (v) => (v.location.view === WORKER && forgetFold(), mainRegion.enter(v.location)),
 }
 
 /** What only the view open holds, let go as it closes. @type {{ [T in MainView['t']]: () => void }} */
 const LEAVE = {
-  arriving: () => hostedView.leave(),
-  worker: () => {
-    closeTerminal()
-    $('main').classList.remove('asking', 'on-brief', 'on-changes', 'on-reviews', 'on-shown')
-  },
-  view: () => hostedView.leave(),
+  arriving: () => mainRegion.leave(),
+  view: () => mainRegion.leave(),
 }
 
 addEventListener('focus', () => page.dispatch({ type: 'focus', focused: true }))
@@ -598,7 +685,6 @@ async function rereadViewer() {
   const was = viewer()
   page.dispatch({ type: 'stored', viewer: await readViewer(tower.store.get) })
   if (viewer().statsRange !== was.statsRange) sideView.dispatch({ type: 'range', range: viewer().statsRange })
-  if (viewer().briefMarkdown !== was.briefMarkdown) redrawBrief()
 }
 
 /** A wait's or an offer's key, dismissed for this viewer. @param {string} key */
@@ -697,6 +783,24 @@ async function tidyAll(button, f) {
 /** Opens one of a floor's dirs in the user's editor. @param {HTMLElement} button @param {Floor} f @param {string} dir */
 const openInEditor = (button, f, dir) => told(pressing(button, async () => tower.run(offeredCall(f, 'editor', f.name), { dir })))
 
+/** Ends a worker with everyone under it that runs, asked first; the toast offers the resume of one sent home alone. @param {HTMLElement} button @param {Card} c */
+async function sendHome(button, c) {
+  const sent = sentHome(cards(), c)
+  if (!(await ask(sendHomeAsk(c, sent), verbLabel('card', 'send-home')))) return
+  const ended = await pressing(button, async () => {
+    for (const call of callOf(c, 'send-home') ?? []) if (!(await told(tower.run(call)))) return false
+    return true
+  })
+  const resumeIt = async () => {
+    const dead = cards().find((d) => d.id === c.id) ?? (await told(tower.archive(c.project)))?.find((d) => d.id === c.id)
+    const call = dead && callOf(dead, 'resume')
+    if (!call) return toast(`${c.callsign} can't be resumed now`)
+    const reply = await told(tower.run(call))
+    if (reply?.t === 'spawned') selectArriving(reply.id)
+  }
+  if (ended) toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: verbLabel('card', 'resume'), run: () => void resumeIt() } : undefined)
+}
+
 /** @param {HTMLElement} button @param {Card} c */
 async function letGo(button, c) {
   if (!(await ask(letGoAsk(c), verbLabel('card', 'let-go')))) return
@@ -741,12 +845,8 @@ document.addEventListener('click', async (e) => {
   }
   const copy = target.closest('[data-copy]')?.dataset.copy
   if (copy) return copyText(copy, copy)
-  const said = target.closest('[data-copy-said]')?.dataset.copySaid
-  if (said) return copySaid(said)
-  const code = target.closest('[data-copy-code]')
-  if (code) return copyText(fenceText(code), 'the code')
   const markdown = /** @type {BriefMarkdown | undefined} */ (target.closest('[data-brief-markdown]')?.dataset.briefMarkdown)
-  if (markdown) return chooseBriefMarkdown(markdown)
+  if (markdown) return (keepViewer('briefMarkdown', markdown), drawSettings())
   const files = target.closest('[data-changes-files]')?.dataset.changesFiles
   if (files) return (keepViewer('changesTree', files === 'shown'), render())
   const tips = target.closest('[data-tips]')?.dataset.tips
@@ -784,24 +884,6 @@ document.addEventListener('click', async (e) => {
   if (tidyCall) return (await ask(/** @type {string} */ (tidyCall.dataset.tidyAsk), 'Tidy')) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
   const tidy = target.closest('[data-tidy]')
   if (tidy) return tidyAll(tidy, /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy))))
-  const picked = target.closest('[data-pick]')?.dataset.pick
-  if (picked) return pickLine(picked, e.shiftKey)
-  const pickAdd = target.closest('[data-pick-add]')
-  if (pickAdd) return addPicked(pickAdd)
-  if (target.closest('[data-pick-cancel]')) return (dropPick(), drawChanges())
-  const noteAdd = target.closest('[data-note-add]')
-  if (noteAdd) return addWritten(noteAdd)
-  const reply = target.closest('[data-reply]')?.dataset.reply
-  if (reply) return replyTo(Number(reply))
-  if (target.closest('[data-reply-clear]')) return clearReply()
-  const resolve = target.closest('[data-resolve]')
-  if (resolve) return resolveNote(resolve, Number(resolve.dataset.resolve))
-  const toNote = target.closest('[data-to-note]')?.dataset.toNote
-  if (toNote) return $('reviews').querySelector(`[data-note="${toNote}"]`)?.scrollIntoView({ block: 'center' })
-  const anchored = target.closest('[data-anchor]')?.dataset.anchor
-  if (anchored) return showAnchor(anchored)
-  const send = target.closest('[data-send]')
-  if (send) return sendNotes(send, /** @type {Card} */ (findCard(selected())))
   const thread = target.closest('[data-thread]')?.dataset.thread
   if (thread) return openThread(.../** @type {[string, string]} */ (thread.split('|')))
   const resumeAllButton = target.closest('[data-resume-all]')
@@ -840,26 +922,10 @@ document.addEventListener('click', async (e) => {
   if (unshowKey) return unshow(unshowKey)
   const out = target.closest('[data-out]')?.dataset.out
   if (out) return window.open(out, '_blank', 'noreferrer')
-  const pane = /** @type {Pane | undefined} */ (target.closest('[data-pane]')?.dataset.pane)
-  if (pane) return showPane(pane)
-  const viewed = target.closest('[data-viewed]')?.dataset.viewed
-  if (viewed) return toggleViewed(viewed)
-  const fold = target.closest('[data-fold]')?.dataset.fold
-  if (fold) return toggleFold(fold)
-  const layout = /** @type {DiffLayout | undefined} */ (target.closest('[data-changes-layout]')?.dataset.changesLayout)
-  if (layout) return (keepViewer('diffLayout', layout), drawChanges())
-  if (target.closest('[data-changes-tree]')) return (keepViewer('changesTree', !viewer().changesTree), drawChanges())
-  const treeFold = target.closest('[data-tree-fold]')?.dataset.treeFold
-  if (treeFold) return toggleTreeFold(treeFold)
-  const goto = target.closest('[data-goto-file]')?.dataset.gotoFile
-  if (goto) return gotoFile(goto)
-  if (target.closest('[data-changes-read]')) return (changeReads.dispatch({ type: 'retry', id: /** @type {string} */ (selected()) }), render())
   const open = target.closest('[data-open]')
   if (open) return openInEditor(open, /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.open))
   const shelved = target.closest('[data-shelf]')
   if (shelved) return openShelf(/** @type {string} */ (shelved.dataset.shelf), Number(shelved.dataset.n))
-  const reread = target.closest('[data-thread-read]') && threadWant(board().floors, cardThread(/** @type {Card} */ (findCard(selected()))))
-  if (reread) return (threadReads.dispatch({ ...reread, type: 'refresh' }), render())
   const newShell = target.closest('[data-shell-dir]')
   if (newShell) {
     if ($('shell-pick').matches(':popover-open')) $('shell-pick').hidePopover()
@@ -884,12 +950,7 @@ document.addEventListener('click', async (e) => {
   if (reapable) return reapAll(reapable, /** @type {Card} */ (findCard(reapable.dataset.reap)))
   const actor = target.closest('[data-act]')
   const act = actor?.dataset.act
-  if (act === 'send-home') return sendHome(/** @type {HTMLElement} */ (actor), /** @type {Card} */ (findCard(selected())))
   if (act === 'home') return goHome()
-  if (act === 'drive') {
-    showPane('screen')
-    return terminal()?.focus()
-  }
   const crewFolded = target.closest('[data-crew-fold]')?.dataset.crewFold
   if (crewFolded) return toggleCrewFold(crewFolded)
   const away = target.closest('[data-away]')?.dataset.away
@@ -899,40 +960,30 @@ document.addEventListener('click', async (e) => {
 })
 $('home').onclick = goHome
 
-function redrawDocs() {
-  forgetShown()
+function applyScheme() {
+  mainRegion.rescheme()
+  reschemeShell()
   render()
 }
 
-function applyScheme() {
-  rescheme()
-  hostedView.rescheme()
-  reschemeShell()
-  redrawDocs()
-}
-
 tower.onScheme(applyScheme)
-tower.prefs.on(() => (applyTermFont(), hostedView.refont(), redrawDocs(), drawSettings()))
+tower.prefs.on(() => (applyTermFont(), render(), drawSettings()))
 // A view or a framed page set a key the viewer's record keeps, such as a dismissal.
 tower.store.on(() => void rereadViewer().then(render))
 
 const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open || Boolean(document.querySelector('[data-view] dialog[open]'))
 
-/** Shows a pane the selected worker has, with focus in its terminal or on its tab, from where Tab enters it. */
-/** @param {Pane} pane */
-function toPane(pane) {
-  if (!selected() || !$('bar-line').querySelector(`[data-pane=${pane}]`)) return false
-  showPane(pane)
-  if (pane === 'screen') terminal()?.focus()
-  else /** @type {HTMLElement} */ ($('bar-line').querySelector(`[data-pane=${pane}]`)).focus()
-  return true
-}
+/** The keymap's command for each of the core's tabs of a worker, and the view each opens. */
+const PANE_COMMAND = /** @type {Partial<Record<string, string>>} */ ({ 'pane-terminal': 'tower/terminal', 'pane-brief': 'tower/brief', 'pane-changes': 'tower/changes', 'pane-reviews': 'reviews/thread' })
+
+/** Opens a tab of the worker focus is in, else the main pane's, with focus in its terminal or on its tab, from where Tab enters it. @param {string} view */
+const toPane = (view) => mainRegion.tabsAt(document.activeElement)?.toPane(view) ?? false
 
 /** From any shell, hides the dock's view of it and returns to the worker's terminal; else to the worker's shell, started when none runs there. */
 function shellHere() {
   const c = selected() && findCard(selected())
   if (!c) return false
-  if (focusedShell()) return (closeShell(), toPane('screen'))
+  if (focusedShell()) return (closeShell(), toPane('tower/terminal'))
   const there = board().shells.filter((sh) => sh.cwd === c.cwd)
   if (there.length) focusShell((there.find((sh) => sh.id === openShellId()) ?? there[0]).id)
   else void spawnShellAt(c.project, c.cwd)
@@ -1081,20 +1132,18 @@ tower.subscribe(async (next) => {
 })
 
 /** Opens a location (`/views.js`), as a link to its hash would: a worker of an archive read first. @param {import('../../src/shared/views.ts').Location} location */
-async function goTo(location) {
-  const named = mainViewOf(location, board())
-  if (named.t !== 'lookup') return go(named)
-  go(await lookUp(named.id) ? { t: 'worker', id: named.id, pane: named.pane } : HOME)
-}
+const goTo = (location) => opening(mainViewOf(location, has))
 
 /** Opens what a hash (without its `#`) names, a worker of an archive read first; the skyline when it names nothing. @param {string} wanted */
-async function route(wanted) {
-  const named = viewOf(wanted, board())
+const route = (wanted) => opening(viewOf(wanted, board(), has))
+
+/** Goes to `named`, a worker it names that the page doesn't hold looked up first. @param {MainView | import('./view.js').Lookup} named */
+async function opening(named) {
   if (named.t !== 'lookup') return go(named)
-  go(await lookUp(named.id) ? { t: 'worker', id: named.id, pane: named.pane } : HOME)
+  go((await lookUp(named.id)) ? { t: 'view', location: named.location } : HOME)
 }
 
 /** Every view writes its own hash in place, so the hash changes only by a link, the history or the address bar. */
-addEventListener('hashchange', () => opened() && location.hash !== hashOf(view()) && route(location.hash.slice(1)))
+addEventListener('hashchange', () => opened() && location.hash !== hashOf(view(), board()) && route(location.hash.slice(1)))
 setInterval(tick, 1000)
 sideView.dispatch({ type: 'side', side: sideView.state().side })
