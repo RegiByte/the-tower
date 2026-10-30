@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-26",
   "reviewed": "2026-10-30",
-  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#declaredLayout", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/regions.js#regions", "hub/src/views/card.ts#mount", "hub/src/views/terminal.ts#mount", "hub/src/views/brief.ts#mount", "hub/src/views/changes.ts#mount", "hub/src/views/link.ts#mount", "hub/src/shared/subjects.ts#shownSubject", "hub/renderers/page/view.js#hashOf", "hub/src/shared/views.ts#VIEW_ALIASES", "hub/src/shared/extensions.ts#LEGACY", "hub/extensions/reviews/client/thread.ts#mount", "hub/src/shared/views.ts#RegionHandle", "hub/src/shared/views.ts#RegionOptions", "hub/src/views/card.ts#CardOptions", "hub/src/shared/views.ts#TabWords", "hub/src/shared/subjects.ts#linesSubject", "hub/src/shared/subjects.ts#fileSubject", "hub/renderers/page/archive.js#archive", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#typeView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/examples/extensions/files/extension.json", "hub/examples/extensions/files/client/explorer.js", "hub/test/views.test.ts", "hub/docs/extending.md", "hub/extensions/reviews/client/anchors.ts#threadMarks", "hub/extensions/reviews/client/composer.ts#mount", "hub/src/shared/adds.ts#marksOf"]
+  "refs": ["hub/src/shared/views.ts#CORE_VIEWS", "hub/src/shared/views.ts#viewsOf", "hub/src/shared/views.ts#layoutOf", "hub/src/shared/views.ts#declaredLayout", "hub/src/shared/views.ts#offeredIn", "hub/src/shared/views.ts#pickView", "hub/src/shared/views.ts#displayed", "hub/src/shared/views.ts#openable", "hub/src/shared/views.ts#hashOf", "hub/src/shared/views.ts#locationOf", "hub/src/shared/views.ts#shortHashOf", "hub/src/shared/views.ts#viewOn", "hub/src/shared/views.ts#Kit", "hub/src/shared/views.ts#CommandKit", "hub/src/shared/extensions.ts#Manifest", "hub/src/shared/extensions.ts#ExtensionViewEntry", "hub/src/bridge/extensions.ts#resolve", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/bridge/board.ts#boardOf", "hub/src/shared/adds.ts#runCommandWith", "hub/src/shared/adds.ts#NO_KIT", "hub/src/shared/regions.ts#landing", "hub/src/shared/shelf-page.ts#TowerVerb", "hub/renderers/page/view.js#mainViewOf", "hub/renderers/page/regions.js#regions", "hub/src/views/card.ts#mount", "hub/src/views/terminal.ts#mount", "hub/src/views/brief.ts#mount", "hub/src/views/changes.ts#mount", "hub/src/views/link.ts#mount", "hub/src/shared/subjects.ts#shownSubject", "hub/renderers/page/view.js#hashOf", "hub/src/shared/views.ts#VIEW_ALIASES", "hub/src/shared/extensions.ts#LEGACY", "hub/extensions/reviews/client/thread.ts#mount", "hub/src/shared/views.ts#RegionHandle", "hub/src/shared/views.ts#RegionOptions", "hub/src/views/card.ts#CardOptions", "hub/src/shared/views.ts#TabWords", "hub/src/shared/subjects.ts#linesSubject", "hub/src/shared/subjects.ts#fileSubject", "hub/renderers/page/archive.js#archive", "hub/renderers/page/page.js#display", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#focusedSubject", "hub/src/views/skyline.ts#mount", "hub/src/views/archive.ts#mount", "hub/src/views/collection.ts#mount", "hub/src/views/shelf.ts#mount", "hub/src/views/item.ts#typeView", "hub/src/views/document.ts#mount", "hub/src/views/video.ts#mount", "hub/src/shared/views.ts#coreViewOf", "hub/src/shared/media.ts#MEDIA_TYPES", "hub/extensions/drafts/client/editor.ts#mount", "hub/extensions/policies/client/view.ts#mount", "hub/src/tower/served.ts#CORE_VIEWS_DIR", "hub/renderers/page/renderer.json", "hub/examples/extensions/grid/extension.json", "hub/examples/extensions/grid/client/grid.js", "hub/examples/extensions/files/extension.json", "hub/examples/extensions/files/client/explorer.js", "hub/test/views.test.ts", "hub/docs/extending.md", "hub/extensions/reviews/client/anchors.ts#threadMarks", "hub/extensions/reviews/client/composer.ts#mount", "hub/src/shared/adds.ts#marksOf", "hub/src/shared/views.ts#Bus", "hub/src/shared/views.ts#busOf", "hub/src/shared/subjects.ts#saidSubject", "hub/src/shared/subjects.ts#sectionSubject", "hub/src/shared/markdown.ts#sectionsOf", "hub/src/shared/markdown.ts#sectionsHtml", "hub/src/shared/markdown.ts#sectionLabels", "hub/src/shared/brief.ts#saidOf", "hub/src/views/document.ts#followSections", "hub/src/views/item.ts#Drawn", "hub/src/views/frame.ts#followLink", "hub/examples/extensions/narrate/extension.json"]
 }
 ---
 **Problem.** An extension could add actions and badges to the board's subjects, and run code in a renderer as a
@@ -43,8 +43,8 @@ and a framed document's section are the same thing.
   [`drafts/editor`](ref:hub/extensions/drafts/client/editor.ts#mount) (on `item.drafts` and `collection.drafts`) and
   [`policies/policies`](ref:hub/extensions/policies/client/view.ts#mount) (on a floor). A kept item and a thing a
   worker showed are drawn by the views by type (on `item.*` since 1.109, on `shown` since 1.115, on `file` since 1.117), each accepting media
-  types: `tower/document` markdown ([`documentHtml`](ref:hub/src/views/document.ts#mount) in a frame where nothing
-  runs), `tower/html`, `tower/image`, [`tower/video`](ref:hub/src/views/video.ts#mount), `tower/text` (`text/*`, JSON,
+  types: `tower/document` markdown ([`mount`](ref:hub/src/views/document.ts#mount) in a frame where nothing
+  runs, sectioned since 1.118, below), `tower/html`, `tower/image`, [`tower/video`](ref:hub/src/views/video.ts#mount), `tower/text` (`text/*`, JSON,
   NDJSON) and `tower/file`, the fallback accepting none; and, on `shown` alone,
   [`tower/link`](ref:hub/src/views/link.ts#mount) for `text/uri-list`, an address a worker showed (a url framed, a
   link as the page to open it from), whose subject carries the address as its body
@@ -84,7 +84,7 @@ and a framed document's section are the same thing.
   renderer: the thread subject it would name is of the floor, where no view lands, so the reviews extension leaves it
   out. Tower 3D keeps its desk's glue over `/panels.js`' deprecated copies until it hosts `card.panes`.
 - *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `region`, `run`,
-  `display`, `go`, `toast`, `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it
+  `display`, `go`, `bus` (since 1.117), `toast`, `confirm`, named in its `renderer.json`; a view is offered only where the kit holds what it
   needs. `region` (since 1.108) fills one of the renderer's regions inside a view, `item.head` in the drafts editor,
   with what extensions add to a subject, drawn and run the renderer's way
   ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), each hold in the element of the host marked to hold it
@@ -106,6 +106,39 @@ and a framed document's section are the same thing.
   the core's views by type for the rest).
   Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and
   no fold may (since 1.116), since the board never carries a viewer subject to fold.
+- *Viewer subjects and the bus* (step 5c, since 1.117). A prompt or an answer in the Brief
+  ([`saidSubject`](ref:hub/src/shared/subjects.ts#saidSubject), of its conversation) and a section of a markdown
+  document ([`sectionSubject`](ref:hub/src/shared/subjects.ts#sectionSubject), of the showing or item it is part of)
+  are viewer subjects, each carrying its own text as `body` and its type. The page holds one bus
+  ([`Bus`](ref:hub/src/shared/views.ts#Bus), [`busOf`](ref:hub/src/shared/views.ts#busOf)) and lends it as `kit.bus`;
+  a view publishes what it drew under the subject it is of, and what it published is cleared as it closes (each
+  publish cleared once, so one document in two grid cells stands until both close). The page resolves a key through
+  the bus after the board, so a press, a chord with the focus on a subject's region and `display(key)` reach one.
+  The Brief publishes every prompt and answer it draws ([`saidOf`](ref:hub/src/shared/brief.ts#saidOf)) and fills
+  `said.acts` beside each copy where anything is offered on `said`. `tower/document` splits its source with
+  [`sectionsOf`](ref:hub/src/shared/markdown.ts#sectionsOf) (pure, lexed once: before each heading of the shallowest
+  level that occurs more than once, a blank section 0 left out), draws each section with
+  [`sectionsHtml`](ref:hub/src/shared/markdown.ts#sectionsHtml) into an element made with the frame's document and
+  held by reference, and draws a gutter beside the frame in the page's document: one row per section, labelled by
+  [`sectionLabels`](ref:hub/src/shared/markdown.ts#sectionLabels) from the source (section 0 "Before the first
+  heading", or "The whole document" when alone; a repeated label numbered " · n"), each a `section.acts` region. The
+  gutter holds contributions only and is hidden while no row holds any.
+  [`followSections`](ref:hub/src/views/document.ts#followSections) keeps the rows level: the frame's load, one
+  `ResizeObserver` on its body and one capture-phase passive scroll listener on its document (which hears a scrolling
+  `body` too) schedule at most one animation frame, which reads every anchor and row, then writes every row, each at
+  the larger of its anchor's top and the previous row's bottom; it stops while the tab is hidden and reads once when
+  it comes back. A body by type returns what it keeps ([`Drawn`](ref:hub/src/views/item.ts#Drawn)), so both frames
+  forward `show(section)`, which scrolls the frame, and `visible`. Links in a document frame follow one rule
+  ([`followLink`](ref:hub/src/views/frame.ts#followLink), [[markdown-safe]]). The narrate example
+  ([`extension.json`](ref:hub/examples/extensions/narrate/extension.json)) is the proof: Listen on `section` and on
+  `said`, beside Listen on the whole file. Open: a chord on a viewer kind resolves only with the focus on that
+  subject's own region (a gutter row, a bubble), not the viewer subject under a subject in focus (`bus.under`, §10),
+  which is ambiguous with many sections standing; the palette doesn't yet list commands on the viewer subjects in
+  focus; `display` of a section of a `file` can't walk up, since [`displayed`](ref:hub/src/shared/views.ts#displayed)
+  resolves parents on the board and a file is on neither the board nor the bus; and a row follows its anchor exactly,
+  so it scrolls away while its section is still being read (a sticky row is a candidate refinement). The bus doesn't
+  change step 6's call on a mark's `display`: a mark must lead somewhere while no thread view is mounted, which the
+  bus, holding only what mounted views published, can't name.
 - *The layout* ([`layoutOf`](ref:hub/src/shared/views.ts#layoutOf)): three layers, the renderer's own, the config's
   `renderers.<r>.layout` and the viewer's in `tower.store`, each field from the highest that sets it, `hidden` the
   union less what a higher layer orders. Under them, since 1.114, the defaults an extension gives the regions it
@@ -133,7 +166,8 @@ and a framed document's section are the same thing.
   view hands it the card (the archive's), else after reading the floors' archives, else once the board carries it when
   the page started it: its own spawns and resumes, and any its views started through the `tower` it lends them.
 - *Focus* ([`focusedSubject`](ref:hub/renderers/page/page.js#focusedSubject)): the subject of the innermost region
-  holding the document's focus, else the main pane's; chords and `kit.run` resolve there.
+  holding the document's focus, else the main pane's, a viewer subject read from the bus (since 1.117); chords and
+  `kit.run` resolve there.
 - *Keys* (D5): `commands.<c>.keys` and `views.<v>.keys` give default chords, global, by `<cap>/<name>` in
   `board.keys` ([`addedKeys`](ref:hub/src/shared/keymap.ts#addedKeys), [[keymap]]). The config's choice wins; a
   default colliding with the keymap's, a renderer's `keeps`, a configured chord or another extension's default is
@@ -289,6 +323,10 @@ flowchart LR
 - The grid's controls as commands on `card` drawn in `card.head` (1.113): take it out and swap act on the grid's own
   state, which no command reaches; and a slot of the card's head that the host fills with its own elements would be
   the host drawing inside another view.
+- A frame reporting where its sections are, or the renderer's controls drawn inside a document frame with author CSS
+  stripped (D11's first option): the frame's document is the author's, and a deny list of what can paint over a
+  control in it would be kept forever. Sections come from the source the view holds, and their commands sit beside
+  the frame, where nothing in it can cover them.
 - A draft's new-worker form as a kit member: it is the keymap's `spawn` command, run on the draft, so a command or a
   chord reaches it the same way.
 

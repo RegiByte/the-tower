@@ -26,6 +26,7 @@
     "hub/src/shared/brief.ts#openFolds",
     "hub/src/shared/brief.ts#expandedSaid",
     "hub/src/shared/brief.ts#saidText",
+    "hub/src/shared/brief.ts#saidOf",
     "hub/src/shared/brief.ts#BRIEF_MARKDOWN_KEY",
     "hub/src/shared/settings.ts#markdownSection",
     "hub/src/shared/markdown.ts#markdownCss",
@@ -89,7 +90,9 @@ renderer can draw the brief alike, inline.
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText)),
   never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds.
   A renderer passes `adds` to draw what extensions contribute to a conversation (its badges, its actions) on that
-  conversation's heading: the view is pure and draws nothing when it is not given.
+  conversation's heading, and `acts` (since 1.117) what is offered on a prompt or answer (`said`, [[ui-model]]) beside
+  its copy, each by the key [`saidOf`](ref:hub/src/shared/brief.ts#saidOf) gives it: the view is pure and draws
+  nothing when they are not given.
 - *Rendered or raw* is a viewer's choice in `tower.store`
   ([`BRIEF_MARKDOWN_KEY`](ref:hub/src/shared/brief.ts#BRIEF_MARKDOWN_KEY),
   [`markdownSection`](ref:hub/src/shared/settings.ts#markdownSection)): view state, not config
