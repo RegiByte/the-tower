@@ -330,6 +330,9 @@ export function regions(deps) {
       return /** @type {Tab} */ (module[v.tab])(board(), at)
     }
 
+    /** Whether a view offered here still waits for its module to say whether it has a tab: no tab opens before, so the default can't pick one it would pass over. */
+    const waiting = () => offeredIn(views(), region, layout(), deps.kit, subject).some((v) => v.id !== hostView && v.module && v.tab && !modules.has(urlOf(v)))
+
     /** @returns {TabOf[]} */
     function tabsOf() {
       const offered = offeredIn(views(), region, layout(), deps.kit, subject).filter((v) => v.id !== hostView && v.module)
@@ -375,10 +378,10 @@ export function regions(deps) {
         `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`
     }
 
-    /** The tab to open: the location's while its worker is on screen, else the one picked here, else the default; kept while a location names none of it and its worker is hidden. @param {TabOf[]} all */
+    /** The tab to open: the location's while its worker is on screen, else the one picked here, else the default; none newly opened while its worker is hidden. @param {TabOf[]} all */
     function wanted(all) {
       const at = scope?.pane()
-      if (at && !at.on) return all.find((t) => t.key === open) ?? byDefault(all)
+      if (at && !at.on) return all.find((t) => t.key === open)
       return named(all, at ? at.pane : picked) ?? byDefault(all)
     }
 
@@ -396,6 +399,7 @@ export function regions(deps) {
       const m = mounted.get(key)
       if (!m) return
       mounted.delete(key)
+      if (key === open) open = undefined
       m.hosted.close()
       m.panel.remove()
       const at = shownKept.findIndex((k) => k.key === key)
@@ -424,7 +428,7 @@ export function regions(deps) {
     function draw() {
       const all = tabsOf()
       for (const key of [...mounted.keys()]) if (!all.some((t) => t.key === key)) closeTab(key)
-      const to = wanted(all)
+      const to = waiting() ? undefined : wanted(all)
       if (to && to.key !== open) {
         mounted.get(open ?? '')?.hosted.visible(false)
         open = to.key
@@ -505,6 +509,7 @@ export function regions(deps) {
       visible(on) {
         seen = on
         mounted.get(open ?? '')?.hosted.visible(on)
+        if (on && open && tabsOf().find((t) => t.key === open)?.showing) keptShown(open)
       },
       /** The view ids of its tabs, and of the tab open. */
       tabs: () => ({ views: tabsOf().map((t) => t.view.id), open: tabsOf().find((t) => t.key === open)?.view.id }),
