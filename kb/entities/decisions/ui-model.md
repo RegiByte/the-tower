@@ -106,8 +106,8 @@ and a framed document's section are the same thing.
   the core's views by type for the rest). A `fragment` (1.119) says where to open it, a link's `#fragment`. A
   relative link in a markdown file of a checkout is another file of its repo
   ([`linkedFile`](ref:hub/src/shared/subjects.ts#linkedFile), [[markdown-safe]]), which `tower/document` displays:
-  `displayed` walks up to its card, and the tabs region hands it to the tab whose view `shows` `file`, the files
-  example's explorer, which opens it there.
+  `displayed` walks up to its card, where a tab whose view `shows` `file` (the files example's explorer) is chosen
+  over the views by type on it, and the tabs region hands the file to that view, which opens it there.
   Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and
   no fold may (since 1.116), since the board never carries a viewer subject to fold.
 - *Viewer subjects and the bus* (step 5c, since 1.118). A prompt or an answer in the Brief
