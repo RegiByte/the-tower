@@ -249,14 +249,21 @@ const chainOf = (board: Board, subject: Subject): Subject[] => {
   return [subject, ...(up ? chainOf(board, up) : [])]
 }
 
-/** A tab of a tabs region in `host` on `level` that has a view for `below`, by `pick`: the region's own subject's, or `below`'s. */
+/**
+ * A tab of a tabs region in `host` on `level` that has a view for `below`, by `pick`: the region's own subject's, or
+ * `below`'s. `below` is `level` itself or a subject of it; a view showing a kind is a tab only for a subject below the
+ * level, so one showing the level's own kind (a grid showing cards) is never a tab of it.
+ */
 const tabFor = (p: Placing, host: View, level: Subject, below: Subject, pick: (offered: View[]) => View | undefined) =>
   (host.regions ?? [])
     .map((id) => p.regions.find((r) => r.id === id && r.arity === 'tabs' && onKind([r.subject], level.kind)))
     .flatMap((region) => {
       if (!region) return []
       const offered = p.views.filter(
-        (v) => (viewOn(v.on, below) || onKind(v.shows ?? [], below.kind)) && (!region.scale || v.scales.includes(region.scale)) && !p.layout[region.id]?.hidden?.includes(v.id),
+        (v) =>
+          (viewOn(v.on, below) || (below.key !== level.key && onKind(v.shows ?? [], below.kind))) &&
+          (!region.scale || v.scales.includes(region.scale)) &&
+          !p.layout[region.id]?.hidden?.includes(v.id),
       )
       const view = pick(ordered(offered, p.layout[region.id]?.order))
       return view ? [{ view: view.id, subject: viewOn(view.on, level) ? level.key : below.key }] : []
