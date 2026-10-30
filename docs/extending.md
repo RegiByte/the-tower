@@ -493,7 +493,7 @@ origin of its own and reaches nothing of the tower's. Which paths it serves is t
 what the request names, follow its links, and refuse anything outside the scope it means to serve. A read path's last
 segment may be a rest param, `raw/<id>/<file...>`, which takes every segment left (one at least) joined by `/`, so a
 page loads what lies beside it by relative URL; `/schema` lists the read as `/<capability>/raw/{id}/{file...}`, `kind`
-`file`. A view by type draws the file when a subject's `text` names the read's path.
+`file`. A subject's `text` names the read's path, and the view that draws it reads the file there.
 
 **Calls.** `ctx.call('tower/spawn', input)` and `ctx.read('tower/conversations/<id>', params, query)` take qualified
 names, the core's under `tower/`, and reach the core, the extension itself, and what it `requires` or `wants`;
@@ -763,7 +763,8 @@ A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:
 `fileSubject({ card, project, repo, path, text, type })` in `/cards.js`, a child of its card: `repo` named as a
 review anchor names it (`repoName`), `text` the read path its content is served at (an extension's read that serves
 a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
-declares, and the layout picks the view that draws it.
+declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on
+`item.*` alone for now, so a view on `file` is an extension's (the files example's `files/code`).
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).

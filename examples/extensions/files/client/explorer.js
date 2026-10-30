@@ -8,9 +8,10 @@ import { fileButtonsHtml, fileCall } from '/panels.js'
  * a folder holding any marked with a dot. The file opened is handed to the `file.open` region as a `file` subject,
  * so the view its type picks draws it: code by `files/code`, the rest by the tower's views by type. While the tab is
  * seen it polls: the status every `POLL_MS` (one read at a time, further apart when git is slow), the open folders
- * read again when it changed, and the open file drawn again when it changed on disk. The folders opened and the file
- * open are kept per worker (`ctx.state`), so the tab reopens as it was left. In a narrow room (a grid's cell) the tree
- * and the file share the space by turns.
+ * read again when it changed, and the open file drawn again when it changed on disk (past `FOLLOW_BYTES`, on
+ * Reload). It tells the file's view whether it is seen. The folders opened and the file open are kept per worker
+ * (`ctx.state`), so the tab reopens as it was left. In a narrow room (a grid's cell) the tree and the file share the
+ * space by turns.
  */
 
 const ID = 'files/explorer'
@@ -19,6 +20,11 @@ const ID = 'files/explorer'
 const POLL_MS = 2000
 /** The longest wait between two reads, however slow git is. */
 const MAX_POLL_MS = 30_000
+/**
+ * The largest file drawn again on its own when it changes: past it, a change is said in the head and drawn on Reload,
+ * since each draw has the tower read and send the whole file.
+ */
+const FOLLOW_BYTES = 1024 * 1024
 
 const CSS = `:where([data-view="${ID}"]) {
   container-type: inline-size; position: relative;
@@ -110,7 +116,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   let marks = new Map()
   let stamp = ''
   /** The file open: its repo, path, what `files/stat` said of it, and the region drawing it. */
-  let file = /** @type {{ repo: string, path: string, stat?: { size: number, mtime: number, type: string, file: string }, region?: { close(): void } } | undefined} */ (undefined)
+  let file = /** @type {{ repo: string, path: string, stat?: { size: number, mtime: number, type: string, file: string }, stale?: boolean, region?: { close(): void, visible?(on: boolean): void } } | undefined} */ (undefined)
 
   const keepOpened = () => state.set(`open.${card.id}`, [...opened])
 
@@ -196,13 +202,15 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     headPath.textContent = `${file.repo}/${file.path}`
     headPath.title = file.stat?.file ?? file.path
     const mark = marks.get(file.repo)?.[file.path]
-    headMeta.innerHTML = file.stat ? `${markHtml(mark)} ${sizeWords(file.stat.size)}` : 'gone from disk'
+    const stale = file.stale ? ' · changed on disk <button data-reload>Reload</button>' : ''
+    headMeta.innerHTML = file.stat ? `${markHtml(mark)} ${sizeWords(file.stat.size)}${stale}` : 'gone from disk'
     headActs.innerHTML = file.stat ? fileButtonsHtml(file.stat.file) : ''
   }
 
   /** The file open drawn again in `file.open`, by the view its type picks. */
   function drawFile() {
     file?.region?.close()
+    if (file) file.stale = false
     if (!file?.stat) return void (openEl.innerHTML = `<p class="empty">${esc(file?.path ?? '')} is gone from disk.</p>`)
     const text = `files/raw/${encodeURIComponent(card.project)}/${encodeURIComponent(card.id)}/${encodeURIComponent(file.repo)}/${urlPath(file.path)}`
     const at = fileSubject({ card: card.id, project: card.project, repo: file.repo, path: file.path, text, type: file.stat.type })
@@ -238,9 +246,11 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     if (!file) return
     const now = await read('stat', { repo: file.repo, path: file.path }).catch(() => undefined)
     const changed = now?.mtime !== file.stat?.mtime || now?.size !== file.stat?.size
+    const big = Math.max(now?.size ?? 0, file.stat?.size ?? 0) > FOLLOW_BYTES
     file.stat = now
+    if (changed && big) file.stale = true
     drawHead()
-    if (changed) drawFile()
+    if (changed && !big) drawFile()
   }
 
   let seen = true
@@ -264,6 +274,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     const call = fileCall(target)
     if (call) return void tower.run(call).catch(toast)
     if (target.closest('[data-back]')) return fx.classList.remove('reading')
+    if (target.closest('[data-reload]')) return drawFile(), drawHead()
     const dir = target.closest('[data-dir]')?.getAttribute('data-dir')
     if (dir) return void toggle(dir)
     const at = target.closest('[data-file]')?.getAttribute('data-file')
@@ -293,6 +304,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     },
     visible(on) {
       seen = on
+      file?.region?.visible?.(on)
       if (on) void tick()
       else clearTimeout(timer)
     },
