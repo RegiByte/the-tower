@@ -1,4 +1,4 @@
-import { itemView, unshownHtml } from './item.ts'
+import { typeView, unshownHtml } from './item.ts'
 
-/** `tower/file`, the fallback for an item of a type no view draws: left to Finder and the editor. */
-export const mount = itemView({ id: 'tower/file', rules: '', draw: (el, { c, item }) => void (el.innerHTML = unshownHtml(c, item)), restyled: false })
+/** `tower/file`, the fallback for a file of a type no view draws: left to Finder and the editor. */
+export const mount = typeView({ id: 'tower/file', rules: '', draw: (el, at) => void (el.innerHTML = unshownHtml(at)), restyled: false })

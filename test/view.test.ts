@@ -10,7 +10,7 @@ const board = {
     {
       id: 'p',
       shelf: [{ label: 'Docs', md: 'docs/*.md' }],
-      cards: [{ id: 'w1', shown: [{ at: 100, target: 'https://example.com/a b?x=1#y' }, { at: 200, target: 'docs/a b.md' }] }],
+      cards: [{ id: 'w1', shown: [{ kind: 'url', at: 100, target: 'https://example.com/a b?x=1#y' }, { kind: 'file', at: 200, target: 'docs/a b.md' }] }],
       collections: [{ id: 'drafts', items: [{ id: 'd 1.md' }] }, { id: 'notes', items: [{ id: 'n/1.md' }, { id: 'run.py' }, { id: 'clip.webm' }, { id: 'blob.bin' }] }],
     },
   ],
@@ -27,8 +27,9 @@ const views: MainView[] = [
   worker({ view: 'tower/changes' }),
   worker({ view: 'reviews/thread' }),
   worker({ view: 'tower/terminal' }),
-  worker({ view: 'tower/shown', subject: 'shown:w1/100' }),
-  worker({ view: 'tower/shown', subject: 'shown:w1/200' }),
+  worker({ view: 'tower/link', subject: 'shown:w1/100' }),
+  worker({ view: 'tower/document', subject: 'shown:w1/200' }),
+  worker({ view: 'tower/text', subject: 'shown:w1/200' }),
   { t: 'view', location: { view: 'tower/shelf', subject: 'shelf:p/0' } },
   { t: 'view', location: { view: 'tower/shelf', subject: 'shelf:p/0', args: ['docs/a b.md'] } },
   { t: 'view', location: { view: 'tower/archive', subject: 'floor:p' } },
@@ -57,6 +58,8 @@ test('view: a hash naming nothing on the board is the skyline; an unknown id is 
   assert.deepEqual(viewOf('w1/nonsense', board, has), worker())
   assert.equal(hashOf(worker(), board), '#w1')
   assert.equal(hashOf(worker({ view: 'tower/changes' }), board), '#w1/changes')
+  assert.equal(hashOf(worker({ view: 'tower/document', subject: 'shown:w1/200' }), board), '#w1/shown%3Adocs%2Fa%20b.md')
+  assert.equal(hashOf(worker({ view: 'tower/text', subject: 'shown:w1/200' }), board), '#v/tower/card/card%3Aw1;tower/text/shown%3Aw1%2F200', 'a showing opened by another view than its type picks keeps the long form')
   assert.equal(hashOf({ t: 'arriving', id: 'w9' }, board), '')
 })
 

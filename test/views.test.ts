@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { Board } from '../src/bridge/board.ts'
+import type { Board, Card, CardShown } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
-import { subjectAt, type Subject } from '../src/shared/subjects.ts'
+import { ADDRESS_TYPE, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
 import { CORE_VIEWS, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
-const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ at: 100, target: 'a.md' }, { at: 200, target: 'a.md' }] }] }] } as unknown as Board
+const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'file', at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
 test('views: a location is written by the grammar and read back, every key and arg one segment, ; only before the pane', () => {
   const locations: Location[] = [
@@ -31,7 +31,7 @@ test("views: the tower page's short forms name their core views, a showing by it
     ['#w1/changes', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/changes' } }],
     ['#w1/screen', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/terminal' } }],
     ['#w1/reviews', { view: 'tower/card', subject: 'card:w1', pane: { view: 'reviews/thread' } }],
-    ['#w1/shown%3Aa.md', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/shown', subject: 'shown:w1/200' } }],
+    ['#w1/shown%3Aa.md', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/document', subject: 'shown:w1/200' } }],
     ['#shelf/p/2/docs%2Fa.md', { view: 'tower/shelf', subject: 'shelf:p/2', args: ['docs/a.md'] }],
     ['#shelf/p/2', { view: 'tower/shelf', subject: 'shelf:p/2' }],
     ['#draft/p', { view: 'drafts/editor', subject: 'collection:p/drafts' }],
@@ -73,6 +73,30 @@ test('views: an item is drawn by the view accepting its type most specifically, 
   assert.equal(coreViewOf('application/octet-stream').id, 'tower/file')
 })
 
+test("views: a worker's showing is drawn by the views by type, an address by tower/link; a user's view for a type takes it over by the order", () => {
+  const board = { floors: [{ id: 'p', collections: [] }] } as unknown as Board
+  const card = { id: 'w1', project: 'p' } as unknown as Card
+  const mine: View = { id: 'mine/markdown', cap: 'mine', on: ['shown'], accepts: ['text/markdown'], scales: ['pane'], words: { label: 'Mine' } }
+  const wasm: View = { id: 'mine/wasm', cap: 'mine', on: ['shown'], accepts: ['application/wasm'], scales: ['pane'], words: { label: 'Wasm' } }
+  const offered = [...CORE_VIEWS, mine, wasm]
+  const pick = (s: Partial<CardShown>, order?: string[]) => {
+    const at = shownSubject(card, { at: 1, session: 'w1', ...s } as CardShown)
+    return pickView(board, offered.filter((v) => viewOn(v.on, at)), order, at)?.id
+  }
+  assert.equal(pick({ kind: 'file', target: '/r/a.md' }), 'tower/document')
+  assert.equal(pick({ kind: 'file', target: '/r/a.txt' }), 'tower/text')
+  assert.equal(pick({ kind: 'file', target: '/r/a.html' }), 'tower/html')
+  assert.equal(pick({ kind: 'file', target: '/r/a.svg' }), 'tower/image')
+  assert.equal(pick({ kind: 'file', target: '/r/a.mp4' }), 'tower/video')
+  assert.equal(pick({ kind: 'file', target: '/r/a.bin' }), 'tower/file')
+  assert.equal(pick({ kind: 'url', target: 'http://localhost:5173/' }), 'tower/link')
+  assert.equal(pick({ kind: 'link', target: 'https://example.com/' }), 'tower/link')
+  assert.equal(pick({ kind: 'file', target: '/r/a.md' }, ['tower/terminal', 'mine/markdown']), 'mine/markdown')
+  assert.equal(pick({ kind: 'url', target: 'http://localhost:5173/' }, ['mine/markdown']), 'tower/link', 'an order taking markdown leaves addresses alone')
+  assert.equal(pick({ kind: 'file', target: '/r/a.wasm' }), 'mine/wasm', 'a type only the fallback covered is taken by installing a view for it')
+  assert.deepEqual(shownSubject(card, { kind: 'url', at: 1, session: 'w1', target: 'http://localhost:5173/' }).value, { kind: 'url', at: 1, session: 'w1', target: 'http://localhost:5173/', card: 'w1', project: 'p', body: 'http://localhost:5173/', type: ADDRESS_TYPE })
+})
+
 test('views: a view on collection.<id> is on that one collection, as one on item.* is on every item', () => {
   const drafts = { kind: 'collection', value: { id: 'drafts' } }
   assert.ok(viewOn(['collection.drafts'], drafts))
@@ -96,7 +120,7 @@ test("views: the layout takes each field from the highest layer that sets it; hi
 })
 
 test('views: display places a card on its worker view, its children in its tabs, and a view showing cards on the floor', () => {
-  const card = { id: 'w1', project: 'p', conversations: [{ id: 'c1' }], shown: [{ at: 100, target: 'a.md' }] }
+  const card = { id: 'w1', project: 'p', conversations: [{ id: 'c1' }], shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'url', at: 200, target: 'http://localhost:5173/' }, { kind: 'file', at: 300, target: 'notes.txt' }] }
   const board = { floors: [{ id: 'p', cards: [card], collections: [] }], extensions: [] } as unknown as Board
   const grid: View = { id: 'grid/grid', cap: 'grid', on: ['floor', 'board'], shows: ['card'], scales: ['pane'], words: { label: 'Grid' } }
   const main: Region = { id: 'board.main', subject: 'board', holds: ['views'], scale: 'pane', arity: 'one' }
@@ -106,6 +130,9 @@ test('views: display places a card on its worker view, its children in its tabs,
   assert.deepEqual(at('card:w1'), { view: 'tower/card', subject: 'card:w1' })
   assert.deepEqual(at('card:w1', 'tower/changes'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/changes', subject: 'card:w1' } })
   assert.deepEqual(at('conversation:c1'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/brief', subject: 'card:w1' } })
-  assert.deepEqual(at('shown:w1/100'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/shown', subject: 'shown:w1/100' } })
+  assert.deepEqual(at('shown:w1/100'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/document', subject: 'shown:w1/100' } })
+  assert.deepEqual(at('shown:w1/200'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/link', subject: 'shown:w1/200' } })
+  assert.deepEqual(at('shown:w1/300'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/text', subject: 'shown:w1/300' } })
+  assert.deepEqual(at('shown:w1/100', 'tower/text'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/text', subject: 'shown:w1/100' } })
   assert.deepEqual(at('card:w1', 'grid/grid'), { view: 'grid/grid', subject: 'floor:p' })
 })
