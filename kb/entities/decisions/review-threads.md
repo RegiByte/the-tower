@@ -18,6 +18,12 @@
     "hub/extensions/reviews/client/reviews.ts",
     "hub/extensions/reviews/client/reviews.ts#parseThread",
     "hub/extensions/reviews/client/reviews.ts#anchorState",
+    "hub/extensions/reviews/client/reviews.ts#anchorStates",
+    "hub/extensions/reviews/server.ts#anchors",
+    "hub/extensions/reviews/threads.ts#threadFileOf",
+    "hub/extensions/reviews/client/anchors.ts#threadMarks",
+    "hub/extensions/reviews/client/composer.ts#mount",
+    "hub/extensions/reviews/client/panel.ts#threadViewAt",
     "hub/extensions/reviews/client/reviews.ts#sendText",
     "hub/src/shared/model.ts#checkoutOf",
     "hub/extensions/reviews/threads.ts#floorThreads",
@@ -80,7 +86,16 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   `cat`. Each message is a heading `## <author> · <time> · n<k>[ · re n<j>]`, then optional anchors as
   `` `repo:path:lines` `` each followed by the quoted lines as they were, then the body. The quote keeps a note
   readable once the code moves on; [`anchorState`](ref:hub/extensions/reviews/client/reviews.ts#anchorState) looks for those
-  lines in the reader's current Changes to say whether they changed or left the diff. The format is a pure parser
+  lines in a worker's current Changes to say whether they changed or left the diff. The extension answers it for every
+  anchor of a card's thread with its read `anchors/<project>?card=<id>`
+  ([`anchors`](ref:hub/extensions/reviews/server.ts#anchors)), against the core's `changes/<id>` (since 1.114), so a
+  renderer's Reviews read no diff of their own.
+- *Marks on the Changes* (since 1.114): each card's fold adds a mark per anchor of the thread it reads
+  ([`threadFileOf`](ref:hub/extensions/reviews/threads.ts#threadFileOf),
+  [`threadMarks`](ref:hub/extensions/reviews/client/anchors.ts#threadMarks)): `n3` on the lines it is about, saying
+  "noted in n3"; a quote of removed lines marks none. Changes draw them as any extension's marks ([[changes-view]]).
+  Lines picked there are noted through [`reviews/composer`](ref:hub/extensions/reviews/client/composer.ts#mount), a
+  view on `lines` in the `lines.acts` region under them ([[ui-model]]). The format is a pure parser
   and printer ([`reviews.ts`](ref:hub/extensions/reviews/client/reviews.ts), the extension's client, served as
   `/x/reviews/reviews.js` and as `/reviews.js` through `LEGACY` until 2.0), total over hand edits. The names the
   core still uses (the collection's name, a thread's file and a filed thread's, the reviewer's prompt, a repo's name)
@@ -149,14 +164,15 @@ reviewer iterate on one thread, so in the reviewer's view the author's notes sin
 and the reverse. [`cardThread`](ref:hub/extensions/reviews/client/panel.ts#cardThread) gives a card's thread with that worker as
 its reader; [`floorThread`](ref:hub/extensions/reviews/client/panel.ts#floorThread) a thread opened where no worker's view is (a
 floor's list of threads), read as the worker on duty in its checkout, else nobody.
-[`threadViewOf`](ref:hub/extensions/reviews/client/panel.ts#threadViewOf) builds the panel's view from that place, the board and
-what the viewer holds (the thread as read, the reader's Changes, its Send pick, the note it answers): anchors are
-looked for in the reader's Changes, Send's targets come from [`sendTargets`](ref:hub/src/shared/checkouts.ts#sendTargets)
+[`threadViewAt`](ref:hub/extensions/reviews/client/panel.ts#threadViewAt) builds the panel's view from that place, the board and
+what the viewer holds (the thread as read, its anchors' states as read, its Send pick, the note it answers;
+[`threadViewOf`](ref:hub/extensions/reviews/client/panel.ts#threadViewOf) the same from the reader's Changes, as
+Tower 3D's desk holds them), Send's targets come from [`sendTargets`](ref:hub/src/shared/checkouts.ts#sendTargets)
 (the workers at their composer in the checkout, most recently active first, then the floor's others) and
 [`sendTarget`](ref:hub/src/shared/checkouts.ts#sendTarget), and a settled thread draws read only, under a line saying it
 landed or was removed. Renderers sign the user's notes with `board.user.name` ([[the-user]]); bodies are drawn
 through `markdownHtml`, raw HTML escaped ([[markdown-safe]]). The tower page draws it as a Reviews tab beside
-Changes, where picking lines starts a note; Tower 3D as papers on a worker's desk, a pigeonhole per floor (beside the nook under the loft's
+Changes, where picking lines opens `reviews/composer` under them; Tower 3D as papers on a worker's desk, a pigeonhole per floor (beside the nook under the loft's
 deck, on the game room's outer wall, [`pigeonholeFor`](ref:hub/renderers/tower3d/src/layout.ts#pigeonholeFor)) and
 the desk panel's Reviews tab ([[tower3d]]).
 

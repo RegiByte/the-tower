@@ -9,7 +9,9 @@
   "reviewed": "2026-10-30",
   "refs": [
     "hub/src/shared/panels.ts",
-    "hub/src/shared/changes-panel.ts#changesHtml",
+    "hub/src/shared/changes-panel.ts#markedChangesHtml",
+    "hub/src/shared/changes-panel.ts#changesPanelHtml",
+    "hub/src/shared/anchors-legacy.ts#changesHtml",
     "hub/extensions/reviews/client/panel.ts#reviewsHtml",
     "hub/extensions/reviews/client/panel.ts#threadViewOf",
     "hub/src/shared/stats-panel.ts#statsHtml",
@@ -47,7 +49,7 @@ are the same view in every renderer; only where they sit, their state and a few 
 **How.**
 - *One served module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts), served as `/panels.js`) holds four panels,
   each in a module of its own that it gathers and bundles:
-  Changes ([`changesHtml`](ref:hub/src/shared/changes-panel.ts#changesHtml), [[changes-view]]), Reviews
+  Changes ([`markedChangesHtml`](ref:hub/src/shared/changes-panel.ts#markedChangesHtml), [[changes-view]]), Reviews
   ([`reviewsHtml`](ref:hub/src/shared/reviews-panel.ts#reviewsHtml) over the board's old fields, deprecated since 1.93
   for the reviews extension's own panel, `/x/reviews/panel.js`
   ([`reviewsHtml`](ref:hub/extensions/reviews/client/panel.ts#reviewsHtml) over `x.reviews`, [[review-threads]], whose
@@ -59,8 +61,14 @@ are the same view in every renderer; only where they sit, their state and a few 
   [[policies]]; deprecated since 1.91 for the policies extension's own panel, `/x/policies/panel.js`, which the tower
   page draws). Each takes a view model and reads nothing global. The logic of rows, picks, anchors and marks lives
   beside them as pure functions. The tower page draws all four; Tower 3D draws Changes, Reviews and Stats. The Changes
-  panel knows nothing of review threads: a renderer passes it the thread whose anchors mark lines and whether a note
-  can be picked (`thread`, `noting`), and passes neither where reviews is off, so it draws nothing about notes.
+  panel knows nothing of review threads (since 1.114): it draws the card's `marks` on their lines, picks lines where a
+  renderer says something acts on them, and leaves an element under the pick (`data-pick-acts`) the renderer fills
+  with the `lines.acts` region ([[ui-model]]). Both draw through one core,
+  [`changesPanelHtml`](ref:hub/src/shared/changes-panel.ts#changesPanelHtml), which takes what each line says it is
+  marked with and the row drawn under a pick. The panel as it stood at 1.113, over a thread and with the note box
+  under the pick ([`changesHtml`](ref:hub/src/shared/anchors-legacy.ts#changesHtml)), and its anchor helpers stay
+  exported from `/panels.js` as deprecated copies until 2.0, for Tower 3D's desk and any renderer written against
+  them; the reviews extension's client holds its own (`/x/reviews/anchors.js`).
 - *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
   File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]); a
   policy's presses are calls the board offered (`data-policy-call`). Text boxes are named by attribute, not id, so
@@ -80,7 +88,7 @@ are the same view in every renderer; only where they sit, their state and a few 
 - *Line picks* stop at the edge of the first line's hunk (`picked`, `spanned`): an anchor is a span of the file's
   lines, and a range over a gap would claim lines its quote doesn't hold. The drag is DOM wiring, shared as
   [`watchPickDrag`](ref:hub/src/shared/changes-lines.ts#watchPickDrag); the renderer keeps the pick and a `picking` flag,
-  and the note box waits for the drop.
+  and what acts on the lines (the note box) waits for the drop.
 - *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels-css.ts#panelsCss)), scoped under the views' own roots. Each
   renderer adds it as a `<style>` and sizes the element the panel is drawn in. It also lays out a worker's tab row,
   its showings kept in place across redraws by [`keepShownTabs`](ref:hub/src/shared/panel-kit.ts#keepShownTabs).
