@@ -4,7 +4,7 @@
   "name": "tower",
   "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
   "in": "cli",
-  "reviewed": "2026-10-29",
+  "reviewed": "2026-10-30",
   "refs": ["hub/src/cli.ts", "hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/cli.ts#USER_RUNS", "hub/src/directory.ts#WORKER_RUNS", "hub/src/shared/api.ts#callerHeaders", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "write, resize, kill, live and fact (a worker's submit or kill named in the target's log) over control.sock" },
