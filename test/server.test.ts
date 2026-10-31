@@ -54,6 +54,8 @@ const PULSE = path.join(EXTENSIONS, 'pulse')
 const CHIME = path.join(EXTENSIONS, 'chime')
 const TALLY = path.join(EXTENSIONS, 'tally')
 const ROLES = path.join(EXTENSIONS, 'roles')
+/** The shipped example of a writable fact and a projected fold, run in place. */
+const TABLINE = path.join(REPO, 'examples', 'extensions', 'tabline')
 const BUILDER = '# Builder\n\nBuilds what it is asked, and tests it.\n'
 
 const BOOT_MS = 15_000
@@ -235,7 +237,7 @@ function writeConfig(port: number) {
     probes: { quota: { every: '1h' } },
     retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
-    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES } },
+    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES }, tabline: { path: TABLINE } },
     projects: {
       lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }], hiring: { live: 0 } },
       desk: { name: 'desk', hub: DESK, repos: [] },
@@ -604,6 +606,12 @@ test('server: an extension the config adds is started as x:<cap>, after the core
       { name: 'pulse/pong', scope: 'system', deprecated: { since: '1.0', use: 'pulse/ping', why: 'a ping names its floor' } },
       { name: 'pulse/beat', scope: 'project', words: { label: 'Beat', hint: 'keeps a beat on the floor, and as a fact of the session when one is named' } },
     ],
+    reads: [
+      { path: 'page/<project>/<file...>', scope: 'project', description: 'A page of its own, below its pages folder.' },
+      { path: 'beats/<project>', scope: 'project', description: 'How often it beats on the floor, and the word it beats with.' },
+      { path: 'kept/<project>', scope: 'project', description: "What it keeps on the floor as the tower folds it: its beats stream reduced, its items parsed, and a session's beat facts." },
+    ],
+    facts: [{ name: 'beat', description: 'A beat a session took.' }],
     commands: [{ name: 'listen', module: 'pulse.js', export: 'listen', words: { label: 'Listen', hint: 'reads the beat aloud' }, on: ['item.pulse'] }],
     slots: [{ name: 'hour', scope: 'system', when: { every: '1h' } }],
     subjects: [],
@@ -685,6 +693,36 @@ test("server: an extension's folds put its part on the board's subjects, its bad
   assert.match(client.body, /export async function listen/)
   assert.equal(errorCode(await get('/x/pulse/missing.js')), 'not_found')
   assert.equal(errorCode(await get('/x/chime/pulse.js')), 'not_found')
+})
+
+test("server: a writable fact's door logs the value for the writers its manifest names, and the projected fold puts the newest on the card", async () => {
+  const linesOn = async (holds: (lines: string[]) => boolean) =>
+    settled(
+      async () => {
+        const msg = (await firstEvent('/board')) as BoardMsg
+        assert.ok('board' in msg)
+        return (msg.board.adds[`card:${SESSION}`]?.lines ?? []).filter((l) => l.cap === 'tabline').map((l) => l.text)
+      },
+      holds,
+    )
+  const byUser = await post('tabline/facts/line', { session: SESSION, value: 'the user named it' })
+  assert.equal(byUser.status, 200, byUser.body)
+  assert.deepEqual(JSON.parse(byUser.body), { session: SESSION, value: 'the user named it' })
+  assert.deepEqual(await linesOn((l) => l.length > 0), ['the user named it'])
+  const asWorker = { 'tower-session': SESSION, 'tower-client': 'cli' }
+  const bySelf = await post('tabline/facts/line', { value: 'writing the migration' }, asWorker)
+  assert.deepEqual(JSON.parse(bySelf.body), { session: SESSION, value: 'writing the migration' })
+  assert.deepEqual(await linesOn((l) => l[0] === 'writing the migration'), ['writing the migration'])
+  assert.equal(errorCode(await post('tabline/facts/line', { session: LAB_AUTHOR, value: 'not mine' }, asWorker)), 'refused')
+  assert.equal(errorCode(await post('tabline/facts/line', { value: 'whose?' })), 'invalid')
+  assert.equal(errorCode(await post('tabline/facts/line', { session: SESSION, value: 'x'.repeat(81) })), 'invalid')
+  assert.equal(errorCode(await post('tabline/facts/line', { session: SESSION, value: 'a', extra: true })), 'invalid')
+  assert.equal(errorCode(await post('tabline/facts/line', { session: 'nobody', value: 'a' })), 'not_found')
+  assert.equal(errorCode(await post('tabline/facts/nothing', { session: SESSION, value: 'a' })), 'not_found')
+  assert.equal(errorCode(await post('pulse/facts/beat', { session: SESSION, value: 2 })), 'not_found', 'a fact its manifest makes no door for')
+  const cleared = await post('tabline/facts/line', { session: SESSION, value: null })
+  assert.deepEqual(JSON.parse(cleared.body), { session: SESSION, value: null })
+  assert.deepEqual(await linesOn((l) => l.length === 0), [])
 })
 
 test("server: an extension's verb is called for the caller the CLI's headers claim, its own calls one step deeper", async () => {

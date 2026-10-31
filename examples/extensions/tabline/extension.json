@@ -1,0 +1,26 @@
+{
+  "id": "tabline",
+  "version": "1.0",
+  "title": "Tab line",
+  "description": "A short line under a worker's card, like a named terminal tab: written by the user or by the worker itself.",
+  "requires": { "tower": "1.123" },
+  "client": "client",
+  "facts": {
+    "line": {
+      "description": "The worker's tab line as last written; an empty one or null clears it.",
+      "schema": { "type": "string", "maxLength": 80 },
+      "writable": ["user", "self"]
+    }
+  },
+  "folds": {
+    "card": { "project": { "lines": { "from": "fact:line", "pick": "last" } } }
+  },
+  "commands": {
+    "set": {
+      "module": "tabline.js",
+      "export": "set",
+      "on": ["card"],
+      "words": { "label": "Name tab", "hint": "A short line of your own under this worker's card" }
+    }
+  }
+}
