@@ -55,7 +55,7 @@ export const linesSubject = (lines: Lines): Subject => ({
 
 /**
  * The lines a `lines` key names, read from the key alone (a location hands a view its key): its card, repo, path and
- * range. Undefined for a key of another kind. @since 1.123
+ * range. Undefined for a key of another kind. @since 1.124
  */
 export const linesAt = (key: string): Pick<Lines, 'card' | 'repo' | 'path' | 'from' | 'to'> | undefined => {
   const match = /^lines:([^/]+)\/([^/]+)\/(.+)#(\d+)-(\d+)$/.exec(key)

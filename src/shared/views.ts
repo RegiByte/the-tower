@@ -28,7 +28,7 @@ export type Location = { view: string; subject?: string; pane?: Pane; args?: str
 /**
  * A tab of a view's tabs region, as a location names it: its view and the subject it is on; `shows`, the key of a
  * subject below that one the tab shows (a file in a worker's Files tab), and `args`, where in it (a link's fragment).
- * `shows` and `args` @since 1.123
+ * `shows` and `args` @since 1.124
  */
 export type Pane = { view: string; subject?: string; shows?: string; args?: string[] }
 
@@ -128,7 +128,7 @@ export const busOf = (): Bus => {
  * hash of the renderer's page that displays a subject, or goes to a location, when a link takes the page there, for a
  * link in a frame where nothing runs (@since 1.121); `showing`, told by a view that shows a subject below its own (a
  * file its Files tab opened), which the renderer's location then names, so a reload or a link lands on it (@since
- * 1.123). A renderer lends what its `renderer.json` kit names; a view uses `href` and `showing` when they are lent, so
+ * 1.124). A renderer lends what its `renderer.json` kit names; a view uses `href` and `showing` when they are lent, so
  * a renderer without them still hosts the views that do.
  */
 export type Kit = {
@@ -374,7 +374,7 @@ export const paneShows = (subject: Subject): Pick<Pane, 'shows' | 'args'> => {
 
 /**
  * The subject a pane `shows`, as the location names it, for the tab's view's `show`: its key, and `value` holding only
- * its `fragment`. A view that shows a kind reads what it needs from the key. @since 1.123
+ * its `fragment`. A view that shows a kind reads what it needs from the key. @since 1.124
  */
 export const shownOf = (pane: Pane & { shows: string }, project: string | undefined): Subject => ({
   kind: pane.shows.slice(0, pane.shows.indexOf(':')),

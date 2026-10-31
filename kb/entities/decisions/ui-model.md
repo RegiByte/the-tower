@@ -84,7 +84,7 @@ and a framed document's section are the same thing.
   renderer: the thread subject it would name is of the floor, where no view lands, so the reviews extension leaves it
   out. Tower 3D keeps its desk's glue over `/panels.js`' deprecated copies until it hosts `card.panes`.
 - *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `region`, `run`,
-  `display`, `go`, `bus` (since 1.118), `toast`, `confirm`, `href` (since 1.121), `showing` (since 1.123), named in its `renderer.json`; a view is offered only where the kit holds what it
+  `display`, `go`, `bus` (since 1.118), `toast`, `confirm`, `href` (since 1.121), `showing` (since 1.124), named in its `renderer.json`; a view is offered only where the kit holds what it
   needs. `region` (since 1.108) fills one of the renderer's regions inside a view, `item.head` in the drafts editor,
   with what extensions add to a subject, drawn and run the renderer's way
   ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), each hold in the element of the host marked to hold it
@@ -159,7 +159,7 @@ and a framed document's section are the same thing.
   `{ view, subject?, pane?, args? }` in the URL as
   `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>[/<shows>[/<arg>…]]]]`, each key and arg one encoded segment,
   so `;` only starts the pane. A pane ([`Pane`](ref:hub/src/shared/views.ts#Pane)) names its tab's view and subject;
-  since 1.123 also `shows`, the key of a subject below that one the tab shows (a checkout file in the files example's
+  since 1.124 also `shows`, the key of a subject below that one the tab shows (a checkout file in the files example's
   explorer), and `args`, where in it (a link's fragment): additive, so `pane.subject` keeps naming the tab's own
   subject. The tower page's older hashes are short forms read as the
   core views they name, and the page keeps writing them ([`shortHashOf`](ref:hub/src/shared/views.ts#shortHashOf)).
@@ -183,7 +183,7 @@ and a framed document's section are the same thing.
   never holds it. Reading one, the page's tabs region hands the open tab `show` with a subject built from the key
   ([`shownOf`](ref:hub/src/shared/views.ts#shownOf): `value` holds only `fragment`), a step after drawing it so a
   subject `display` hands whole in the same step is handed first; a view that shows a kind reads what it needs from
-  the key. The other way, a view tells the kit what it shows (`kit.showing`, since 1.123): in the tab the location
+  the key. The other way, a view tells the kit what it shows (`kit.showing`, since 1.124): in the tab the location
   names, the location follows in place, as a view writing its own hash does, so a tree click replaces the entry and a
   followed link pushes one, and Back returns to the file left. Picking the tab again names what it showed last. Each
   hosted kind's view reads a subject by its key: the brief a `said`, Changes a `lines`

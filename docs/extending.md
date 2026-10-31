@@ -704,7 +704,7 @@ reads again; API 1.121, and optional: no view needs it, and in a renderer that d
 `tower/shelf` draw the links they would place, to another file, as refused, the rest of each view as before),
 `showing(subject)` (told by a view that shows a subject below its own, such as a file its tree opened: in a tab the
 location names, the location then names it in the pane's `shows`, so a reload, the history and a copied link land on
-it; API 1.123, and optional, called as `kit.showing?.(…)`), `region(host, id, subject, options?)` (one of the
+it; API 1.124, and optional, called as `kit.showing?.(…)`), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
 tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
@@ -850,7 +850,7 @@ layout names it first. `fragment` (API 1.120) is where to open it, a heading's s
 `linkedFile(from, href)` in `/cards.js` resolves it (undefined when it climbs out of the repo), and `tower/document`
 links it to the hash `kit.href` gives it. Display walks up to its card, whose tabs hand it to a view that `shows:
 ["file"]`, as the files example's explorer does to open it in its tree; the location names the file in its pane
-(`shows`, the link's fragment its arg), so the link is an address a reload or another tab reads again (API 1.123).
+(`shows`, the link's fragment its arg), so the link is an address a reload or another tab reads again (API 1.124).
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).
@@ -858,7 +858,7 @@ source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view
 **Locations.** Where a renderer is, `{ view, subject?, pane?, args? }`, is written in its URL by one grammar,
 `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>[/<shows>[/<arg>…]]]]`, each key and arg one
 `encodeURIComponent` segment: `#v/grid/grid/floor%3Alab`. The pane, `{ view, subject?, shows?, args? }`, is the tab
-open; `shows` (API 1.123) is the key of a subject below the tab's that it shows, a file in a Files tab, and `args`
+open; `shows` (API 1.124) is the key of a subject below the tab's that it shows, a file in a Files tab, and `args`
 where in it, a link's fragment. Reading a location, the renderer hands the tab `show(subject)` with that key and
 `value` holding only `fragment` (`shownOf` in `/views.js`), so a view that shows a kind reads what it needs from the
 key. `hashOf` and `locationOf(hash, board)` in `/views.js` write and read it, and read the
