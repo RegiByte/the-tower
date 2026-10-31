@@ -54,8 +54,9 @@ line the title). The Week draws none of it.
 
 ## Add it
 
-It ships with the tower and is on by default on every floor. Off, the files under `collections/<project>/drafts/` stay
-on disk, but nothing edits them.
+It ships with the tower and is on by default on every floor. `"extensions": { "drafts": { "off": true } }` turns it off
+everywhere, `"capabilities": { "drafts": { "off": true } }` in a project's entry on one floor. Off, the files under
+`collections/<project>/drafts/` stay on disk, but nothing edits them.
 
 ## What it needs from you
 
