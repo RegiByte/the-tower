@@ -1,15 +1,16 @@
-import { ago, can, commandUrl, esc, findCard, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
+import { addedActions, ago, can, commandUrl, esc, findCard, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
 import { mountTermView } from '/term-view.js'
 import { offeredIn, ordered, paneShows, pickView, shownOf } from '/views.js'
 import { shownFrom } from '/brief.js'
 import { ICON } from '/icons.js'
 import { fileSpansHtml, keepShownTabs } from '/panels.js'
 import { keyedTip, paintOnce } from './kit.js'
-import { addsHtml } from './added.js'
+import { actionsHtml, badgesHtml, heldActions, iconActionsHtml } from './added.js'
 
 /**
  * @import { Board, Card, CardShown } from '../../src/bridge/board.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
+ * @import { Action, Added } from '../../src/shared/extensions.ts'
  * @import { Bus, Kit, CommandKit, Location, Mount, Mounted, Pane, RegionHandle, RegionOptions, TabWords, Tab, View } from '../../src/shared/views.ts'
  * @import { Layout, Region, KitMember, Scale } from '../../src/shared/regions.ts'
  * @import { TermViewHandle } from '../../src/shared/term-view.ts'
@@ -464,9 +465,19 @@ export function regions(deps) {
       const what = `${card.callsign} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`
       return `<button class="pane-tab shown-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
         `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
+        (on ? heldHtml('shown.tab', shownSubject(card, s), iconActionsHtml) : '') +
         (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
         (on && s.kind === 'file' ? fileSpansHtml(s.target) : '') +
         `<span class="icon-btn" data-unshow="${esc(shownKey(s))}" aria-hidden="true" data-tip="close: it comes back if shown again">${ICON.close}</span></button>`
+    }
+
+    /**
+     * What extensions add to a showing that the page's region `id` holds: its badges, and its actions drawn by `drawn`.
+     * @param {string} id @param {Subject} on @param {(board: Board, subject: Subject, actions: Added<Action>[]) => string} drawn
+     */
+    function heldHtml(id, on, drawn) {
+      const holds = declared().find((r) => r.id === id)?.holds ?? []
+      return `${holds.includes('badges') ? badgesHtml(board(), on) : ''}${drawn(board(), on, heldActions(holds, addedActions(board(), on)))}`
     }
 
     /** The tab to open: the location's while its worker is on screen, else the one picked here, else the default; none newly opened while its worker is hidden. @param {TabOf[]} all */
@@ -534,7 +545,7 @@ export function regions(deps) {
       }
       handOpen(all)
       const showing = all.find((t) => t.key === open)?.showing
-      const adds = showing ? addsHtml(board(), shownSubject(card, showing)) : ''
+      const adds = showing ? heldHtml('shown.head', shownSubject(card, showing), actionsHtml) : ''
       const own = all.filter((t) => !t.showing)
       const shown = all.filter((t) => t.showing)
       paintOnce(
@@ -588,7 +599,7 @@ export function regions(deps) {
 
     strip.addEventListener('click', (e) => {
       const target = /** @type {Element} */ (e.target)
-      if (target.closest('[data-unshow], [data-out], [data-file-call], .shown-adds')) return
+      if (target.closest('[data-unshow], [data-out], [data-file-call], [data-added], .shown-adds')) return
       const key = /** @type {HTMLElement | null} */ (target.closest('[data-tab]'))?.dataset.tab
       const t = key && tabsOf().find((t) => t.key === key)
       if (t) pick(t)

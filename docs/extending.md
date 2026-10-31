@@ -623,7 +623,12 @@ an extension whose folds take over 50 ms of one board is `slow`. Calling `ctx.bo
 has its `ctx.board`.
 
 `client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`. Each
-of `commands` is one of its modules' exports, with `words`. Its `on` offers it on every subject of those kinds with
+of `commands` is one of its modules' exports, with `words`, which may name its `icon` (API 1.130): one of the core's
+icons by name (`ICON` in `/icons.js`, `"play"`), or an SVG of its client folder by its path there (`"speaker.svg"`),
+which renderers draw as a mask in the ink of the control, so one glyph serves both palettes; a path to no file there
+refuses the extension. A region drawing commands as glyphs alone (the tower page's `shown.tab`, inside an open shown
+tab) takes the label and hint as the tip, and draws the label of one without an icon; `glyphOf(board, action)` in
+`/cards.js` answers `{t: 'core', name}` or `{t: 'svg', href}`. Its `on` offers it on every subject of those kinds with
 no fold needed (`"on": ["item.drafts"]`, or `"item.*"` for every collection's items, or `"lines"`, lines picked in a
 worker's Changes, since API 1.116), whether the extension folds or not; one with no `on` is the palette's alone. Its `accepts` (API 1.98) narrows that to the subjects whose
 `value.type` it lists: media types, `"text/markdown"`, or a top-level type's every subtype, `"image/*"`; a subject
@@ -667,7 +672,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `card` | `card.row`, the worker's row in the sidebar: badges, lines<br>`card.head`, the worker's header, and the palette: badges, lines, verbs, commands<br>`card.panes`, the worker's tabs (terminal, brief, changes, reviews, shown files): views | `card.desk`, the worker's panel at its desk: badges, lines, verbs | not drawn | `card.whoami`, under the worker in `tower whoami`: lines |
 | `conversation` | `conversation.head`, the conversation's heading in the Brief: badges, verbs, commands | `conversation.head`, the conversation's heading in the logbook: badges | not drawn | not drawn |
 | `floor` | `floor.section`, the floor's section in the sidebar, its Tidy and the palette: badges, verbs, commands, asks, tidy | `floor.console`, the floor's Tidy: tidy | not drawn | not drawn |
-| `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs, commands | not drawn | not drawn | not drawn |
+| `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs<br>`shown.tab`, inside the showing's tab while it is open, beside its own icons: each command its icon alone, its label and hint the tip: commands | not drawn | not drawn | not drawn |
 | `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | not drawn | not drawn | not drawn |
 | `said` | `said.acts`, beside a prompt's or an answer's copy in the Brief: commands | not drawn | not drawn | not drawn |
 | `section` | `section.acts`, in a gutter beside a markdown document, level with each of its sections: commands | not drawn | not drawn | not drawn |
@@ -903,7 +908,7 @@ addresses with the rest. Each
 draws its body in its subject's frame: a kept item's under one head (the collection, the tag, the file, who kept it,
 `item.head`'s region, a new tab, Delete and the close, with a way back to the view of the floor the collection's
 extension declares, the policies extension's for a policy); a showing's or a checkout file's alone, filling its tab, whose head is the tab
-strip's `shown.head`. `pickView` decides among the views a region offers: the region's layout `order` among those
+strip's `shown.head` and the tab's own `shown.tab`. `pickView` decides among the views a region offers: the region's layout `order` among those
 accepting the type; else the view of the extension that declares the item's collection, on that exact kind
 (`drafts/editor` on `item.drafts`); else the core view whose `accepts` fits most specifically (`text/markdown` before
 `text/*`); else the most specific of the rest; else a fallback. So a view of yours for a type no core view takes

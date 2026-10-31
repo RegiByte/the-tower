@@ -48,7 +48,8 @@ them.
   ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), and Start's `aria-busy` is drawn from it; a start
   that fails after the browser closed the form anyway (a second Esc) opens it again on its error.
 - [`designCss`](ref:hub/src/shared/design.ts#designCss) draws every button's states whatever the renderer's look:
-  pressed, held (`disabled` or `aria-disabled`, which stays focusable) and busy, still under reduced motion.
+  pressed, held (`disabled` or `aria-disabled`, which stays focusable) and busy, still under reduced motion; an
+  `.icon-btn` drawn inside another control (a command's glyph in a shown tab) is busy as a button is.
 - [`toaster(element)`](ref:hub/src/shared/toasts.ts#toaster) makes an element a polite live region of stacked toasts
   that time out, pause while the pointer or focus is on them, and may carry one action that closes its toast and
   runs. A toast told again while it shows ([`sameToast`](ref:hub/src/shared/toasts.ts#sameToast)) moves to the end

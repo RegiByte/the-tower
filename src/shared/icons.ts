@@ -50,6 +50,9 @@ export const ICON = {
   tower: stroke('<path d="M4 14.5V2.5h8v12M2.5 14.5h11"/><path d="M6 5h1M9 5h1M6 8h1M9 8h1M6 11h1M9 11h1"/>', 1.4),
 }
 
+/** An extension's own glyph, by its path below its client folder: an SVG file, named relative, without "..". */
+export const SVG_PATH = /^(?!\/)(?!.*\.\.)[A-Za-z0-9._/-]+\.svg$/
+
 /** A remote's icon: GitHub's mark for github.com, an outward arrow for any other host. */
 export const originIcon = (url: string) => (new URL(url).hostname === 'github.com' ? ICON.github : ICON.remote)
 

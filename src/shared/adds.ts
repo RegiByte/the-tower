@@ -1,6 +1,7 @@
 import type { Board, Card } from '../bridge/board.ts'
 import { exemptionWords } from './crews.ts'
 import type { Action, Added, AddedMark, Badge, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
+import { SVG_PATH, type ICON } from './icons.ts'
 import type { Tower } from './shelf-page.ts'
 import { accepted } from './media.ts'
 import { onKind, type Subject, type Text } from './subjects.ts'
@@ -70,6 +71,17 @@ export const actionWords = (board: Board, action: Added<Action>): Words => {
 
 /** Where a client command's module is served. */
 export const commandUrl = (cap: string, module: string) => `/x/${cap}/${module}`
+
+/** A command's glyph: one of the core's icons by name (`/icons.js`), or an SVG its extension serves at `href`. @since 1.130 */
+export type Glyph = { t: 'core'; name: keyof typeof ICON } | { t: 'svg'; href: string }
+
+/** The glyph an action's words name: a command's, while its extension runs; none for a verb, or a command that names none. */
+export const glyphOf = (board: Board, action: Added<Action>): Glyph | undefined => {
+  if (!isCommand(action)) return undefined
+  const icon = commandOf(board, action)?.words.icon
+  if (!icon) return undefined
+  return SVG_PATH.test(icon) ? { t: 'svg', href: commandUrl(action.cap, icon) } : { t: 'core', name: icon as keyof typeof ICON }
+}
 
 /**
  * Runs a client command on `subject` with what the renderer running it lends (`kit`, since 1.104): imports its module

@@ -331,7 +331,8 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * `aria-disabled`, which keeps it focusable) it fades, and busy (`aria-busy`, while what it asks is in flight:
  * `pressing` in `/press.js`) a bar sweeps along its foot in its text colour, which stays at full contrast.
  * An `.icon` (icons.ts) sits on the text beside it; an `.icon-btn` is a control that is only an icon, every close
- * included: at least `--control` square, quiet until hovered.
+ * included: at least `--control` square, quiet until hovered, busy as a button is. A `.glyph` is an extension's SVG
+ * (`--glyph: url(…)`) drawn as a mask in the ink around it, so it follows the palette as the core's icons do.
  */
 const COMPONENTS = `
 .icon { width: var(--icon-s); height: var(--icon-s); flex: none; vertical-align: -.125em; }
@@ -339,6 +340,8 @@ const COMPONENTS = `
   background: none; color: var(--muted); cursor: pointer; }
 .icon-btn .icon { width: var(--icon-m); height: var(--icon-m); }
 .icon-btn:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
+.icon-btn small { padding-inline: var(--sp-xs); font-size: var(--fs-xs); }
+.glyph { display: inline-block; background: currentColor; mask: var(--glyph) center / contain no-repeat; }
 .eyebrow { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
 .working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
@@ -361,12 +364,12 @@ const COMPONENTS = `
 .chip.waits.some .lamp { background: var(--c); }
 button:active:not(:disabled, [aria-disabled='true'], [aria-busy='true']) { translate: 0 1px; }
 button:is(:disabled, [aria-disabled='true']) { opacity: .45; cursor: not-allowed; }
-button[aria-busy='true'] { position: relative; cursor: progress; }
-button[aria-busy='true']::after { content: ''; position: absolute; left: 3px; right: 3px; bottom: 2px; height: 2px; border-radius: 1px;
+button[aria-busy='true'], .icon-btn[aria-busy='true'] { position: relative; cursor: progress; }
+button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after { content: ''; position: absolute; left: 3px; right: 3px; bottom: 2px; height: 2px; border-radius: 1px;
   background: linear-gradient(90deg, transparent, currentColor, transparent) 0 0 / 50% 100% no-repeat; animation: busy 1s ease-in-out infinite; }
 @keyframes busy { from { background-position: -100% 0; } to { background-position: 200% 0; } }
 ${reduced(':is(*, ::before, ::after)', 'animation-iteration-count: 1 !important;')}
-${reduced("button[aria-busy='true']::after", 'animation: none; background-size: 100% 100%;')}
+${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after", 'animation: none; background-size: 100% 100%;')}
 .meter { position: relative; height: 6px; border-radius: var(--radius-pill); background: var(--sunk); }
 .meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--fill, var(--ink)); }
 .meter s { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); box-shadow: 0 0 0 1px var(--panel); }
