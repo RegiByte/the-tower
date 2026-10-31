@@ -91,7 +91,7 @@ export type CompiledFold = { x?: z.ZodType; adds: Add[]; projected?: Fold }
 
 /**
  * A card's fold that the manifest projects: each kind the newest value of its fact over the card's lineage, none when
- * that is empty, null or never written.
+ * that is blank (empty or only whitespace), null or never written.
  */
 export const projectedFold =
   (project: Projected): Fold =>
@@ -99,7 +99,7 @@ export const projectedFold =
     Object.fromEntries(
       Object.entries(project).flatMap(([kind, { from }]) => {
         const value = own.facts?.findLast((f) => f.name === from.slice('fact:'.length))?.value
-        return value === undefined || value === null || value === '' ? [] : [[kind, [value]]]
+        return value === undefined || value === null || (typeof value === 'string' && !value.trim()) ? [] : [[kind, [value]]]
       }),
     )
 
