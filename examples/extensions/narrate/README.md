@@ -13,8 +13,7 @@ Hear what workers write, and the short memos they say to you, read aloud in a vo
 | ![The speaker icon in a shown file's tab](shots/tab-light.png) | ![The speaker icon in a shown file's tab](shots/tab-dark.png) |
 
 **Listen and From here beside each section of a markdown document** (a kept item, a shown file, a shelf page).
-Listen reads that section; From here reads from it to the end. While it reads, the section being read is lit and its
-row says "Listening".
+Listen reads that section; From here reads from it to the end, the section being read lit.
 
 | Light | Dark |
 | --- | --- |
@@ -27,14 +26,14 @@ row says "Listening".
 | ![The Listening notice](shots/notice-light.png) | ![The Listening notice](shots/notice-dark.png) |
 
 **The memo strip at the top of the sidebar**: the latest memo a worker said and the rest of today's, each with
-**Hear again**. **Clear** puts them away on that browser.
+**Hear again**.
 
 | Light | Dark |
 | --- | --- |
 | ![The memo strip](shots/memos-light.png) | ![The memo strip](shots/memos-dark.png) |
 
-Listen also appears on every markdown or text kept item (a draft, say), beside each prompt and answer in a worker's
-Brief, and in the palette, which also holds **Stop listening**.
+Listen also appears on every markdown or text kept item, beside each prompt and answer in a worker's Brief, and in
+the palette.
 
 ### The workers
 
@@ -44,20 +43,17 @@ Every worker's `tower whoami` carries narrate's one-line guidance:
   narrate  ·  Say a short memo aloud to the user: when they asked to be told, a long task finished, or something needs them.
 ```
 
-`tower x narrate` prints the whole of it: when to speak and how to write for listening. A worker says a memo with
+A worker says a memo with
 
 ```sh
 tower x narrate memo '{"text": "The search fix is ready for your review."}'
 ```
 
-A memo over the limit (300 characters unless the settings say otherwise) is refused with its length and the limit.
-The tower page you used last (clicked, typed in or switched to, on any machine reading the tower) says it aloud
-as "GAGARIN-40 says: …" (the words before it are yours to set), in the same voice as Listen. If that page is reading a document, the memo waits for the part
-being read to end, is said, and the document goes on. Every other page lists it silently. A page you haven't pressed
-or typed on since it loaded can't play sound, so there the memo stands as a notice with **Hear**.
+The tower page you used last says it aloud as "GAGARIN-40 says: …", in the same voice as Listen, waiting its turn if
+it is reading a document; every other page lists it silently. A page you haven't pressed or typed on since it loaded
+can't play sound, so there the memo stands as a notice with **Hear**.
 
-Tower 3D, The Week and the CLI draw none of it: they import no client modules. The memos are on each worker's card
-(`x.narrate.memos`) for any renderer to draw.
+Tower 3D, The Week and the CLI draw none of it.
 
 ## Add it
 
@@ -70,8 +66,7 @@ by its absolute path:
 }
 ```
 
-The tower picks it up without a restart. `tower extensions` lists it as started, and `tower extensions check
-/abs/path/to/narrate` reads it as the tower would.
+The tower picks it up without a restart.
 
 ## What it needs from you
 
@@ -104,8 +99,7 @@ The contract is plain Unix:
   output.
 - Exit 0 means it worked. Any other exit is a failure, and what it wrote on stderr is shown as the toast.
 
-The audio files are the command's own: narration serves only the files its command printed since the tower started,
-each under a token, and never deletes them. Write them to a temporary folder.
+Narration serves only the files its command printed, and never deletes them: write them to a temporary folder.
 
 **How a memo is limited and spoken** is `settings.memo`, both keys optional:
 
@@ -113,10 +107,8 @@ each under a token, and never deletes them. Write them to a temporary folder.
 "settings": { "memo": { "maxLength": 200, "prefix": "{callsign} reports: " } }
 ```
 
-- `maxLength`: the most characters a memo may have (1 to 2000, default 300). The `memo` verb refuses a longer one,
-  saying its length and this limit.
-- `prefix`: what is said, and shown in the notice, before the memo; `{callsign}` stands for the worker's. Default
-  `"{callsign} says: "`; an empty string says nothing before it.
+`maxLength` is the most characters a memo may have (1 to 2000, default 300); the `memo` verb refuses a longer one.
+`prefix` is said before the memo, `{callsign}` standing for the worker's (default `"{callsign} says: "`).
 
 **What workers say** is narrate's guidance, which you can change for your workers in the config,
 `extensions.narrate.guidance`: `brief` and `full` replace narrate's, `also` adds to it ("never between 22:00 and
@@ -124,48 +116,20 @@ each under a token, and never deletes them. Write them to a temporary folder.
 
 ## How it works
 
-A narration reads parts in order. Listen on a section or a prompt reads it alone; From here reads that section and
-each one after it; Listen on a document the page draws by sections (a kept item's head, a shown file's tab) reads it
-section by section from the first, and anything else as one text.
-
-- `extension.json`: `commands` with `on: ["item.*", "shown", "section", "said"]`, which offers a command on every item
-  of any collection, everything a worker showed, and two viewer subjects a page draws (a document's sections, a
-  brief's prompts and answers, each carrying its own text as `body`), and `accepts`, which narrows that to the subjects
-  whose media type is markdown or plain text. `words.icon` names `client/speaker.svg`, which a page draws where a
-  command shows as an icon (a shown file's tab). Its `settings` schema, the `say` verb and two reads, `voice` and
-  `audio/<token>`, the latter `serves: "file"`.
-- `server.ts`: a verb that runs the voice command with `ctx.run` (argv, stdin, a timeout) and a read that serves only
-  the files it was given, by token.
-- `client/narrate.js`: a command's export takes `{ tower, board, target, subject, args, kit }`; `target` is the
-  subject (`{ kind, key, project, value }`), `tower` the page's `window.tower`, the same API every renderer drives,
-  `textOf(tower, target)` reads a subject's text wherever it is, and `kit.toast` says something to the user.
-  `kit.bus` is the page's viewer subjects: `bus.under(of, 'section')` finds a document's sections, and
-  `bus.mark(key, 'narrate', { label })` marks the one being read, for the document to draw. `kit.notice` is a toast
-  that stands until it is closed: "Listening", with Stop.
-- `client/voice.js` holds both voices. With a command, it voices the first chunk (Listen stays busy, and a toast says
-  it is voicing), plays it in an `<audio>` element while the next chunk is voiced, and so on in order, across the
-  parts; Stop, or another Listen, pauses it and drops what is still being voiced. The audio is fetched whole into a
-  Blob URL, which plays in Chrome and in WebKit (Safari, Tower.app) alike.
-- `verbs.memo` and `facts.memo`: the verb is the only way a memo is written. It takes the worker's own session from
-  the call, refuses a text over `settings.memo.maxLength`, and logs the fact with `ctx.facts.append`, so a worker's memo
-  is one fact in its own log. The card fold in `server.ts` puts its latest memos on its card (`x.narrate.memos`), each
-  keyed by session and time.
-- `reads.memo-settings`: the limit and prefix in force, which is how the client and a worker learn them.
-- `views.memos` (`client/memos.js`): a view on the board at `row` scale, which the tower page mounts in its
-  `board.strip` for as long as the page is open. It says a memo that arrives while `board.viewers.last.<renderer>`
-  is its page's `tower.viewer` (`tower.renderer()` names it), never one already on the board as it mounted, through
-  `voice.interject`: at once when nothing reads, else after the chunk sounding.
-- `guidance`: what narrate tells the workers about memos, when to speak and how to write for listening.
+Listen reads a subject's text through `client/voice.js`, which voices it in chunks with the command and plays each
+while the next is voiced. A memo is written only by the `memo` verb, one fact in the worker's own log; a card fold
+puts the latest on its card (`x.narrate.memos`), and the `memos` view in the sidebar's strip says the ones that
+arrive while its page is the one you used last.
 
 ## Make it yours
 
 - **The voice**: copy a script from `voices/`, or write your own around any program (a local model, a voice
   service's CLI) in the same shape: read stdin, write a file, print its path.
-- **What workers say, and when**: `guidance` in `extension.json`, or the config's `extensions.narrate.guidance`.
-- **Where Listen appears**: `commands.speak.on` and `accepts` in `extension.json`.
-- **How a memo is drawn and said**: `client/memos.js`.
+- **What workers say, and when**: the config's `extensions.narrate.guidance`, as above.
+- **In your copy**: where Listen appears is `commands.speak.on` and `accepts` in `extension.json`, and how a memo is
+  drawn and said is `client/memos.js`.
 
 ## Pictures
 
-`npm run tool:extension-shots -- examples/extensions/narrate` retakes them from the scenes in
-[`shots.json`](shots.json), voiced by `voices/say.sh`.
+`npm run tool:extension-shots -- examples/extensions/narrate` retakes them from [`shots.json`](shots.json),
+voiced by `voices/say.sh`.

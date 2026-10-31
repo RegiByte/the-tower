@@ -42,17 +42,14 @@ writing the migration
   tabline  ·  Set a short line under your card saying what you are on, when that changes.
 ```
 
-`tower x tabline` prints the whole guidance: set the line when a task starts or changes, keep it short and plain,
-clear it when idle, and leave a line the user set unless the task changed. A worker writes its own with
+A worker writes its own line with
 
 ```sh
 tower x tabline facts/line '{"value": "writing the migration"}'
 ```
 
-and clears it with `'{"value": null}'`.
-
-The Week and the CLI's other commands (`tower agents`, `tower sessions`) don't show the line. It is on each worker's
-card (`adds["card:<id>"].lines`) for any renderer to draw.
+and clears it with `'{"value": null}'`. The Week and the CLI's other commands don't show it; it is on each worker's
+card for any renderer to draw.
 
 ## Add it
 
@@ -65,43 +62,25 @@ by its absolute path:
 }
 ```
 
-The tower picks it up without a restart. `tower extensions` lists it as started, and `tower extensions check
-/abs/path/to/tabline` reads it as the tower would.
+The tower picks it up without a restart.
 
 ## What it needs from you
 
-Nothing: it has no settings and runs no command. What workers are told about their line is tab line's guidance,
-which you can change for your workers in the config, `extensions.tabline.guidance`: `brief` and `full` replace its
-own, `also` adds to it ("set it only when the user asks").
+Nothing. What workers are told about their line is its guidance, which the config's `extensions.tabline.guidance`
+changes for your workers: `brief` and `full` replace it, `also` adds to it ("set it only when the user asks").
 
 ## How it works
 
-Tab line is the manifest-only form of a card line: one writable fact and a fold the manifest declares, with no
-server code.
-
-- `extension.json`
-  - `facts.line`: the line, a string of at most 80 characters, checked by the fact's schema. `writable: ["user",
-    "self"]` gives it a door, `POST /tabline/facts/line {session?, value}`: `user` lets a caller with no session write
-    any worker's line (it names the `session`), as [Name tab](#the-tower-page) does; `self` lets a worker write its
-    own (it leaves `session` out), as [`tower x tabline facts/line`](#the-workers) does. Each write is one fact in
-    the worker's log, and nothing else is stored. A blank string or `null` clears the line.
-  - `folds.card.project.lines`: the card's line is the newest value of `line` over the worker's lineage, so a
-    resumed worker keeps its line. No code runs for it: the tower projects the fold from the manifest, and every
-    surface above draws the card's `lines`.
-  - `guidance`: what it tells the workers.
-  - `commands.set`: Name tab, offered on every card.
-- `client/tabline.js`: Name tab's code. It asks for the line in a `<dialog>` and writes it through the door with
-  `tower.call`, as any renderer can.
+Tab line is the manifest-only form of a card line, with no server code. `facts.line` is a string of at most 80
+characters, `writable` by `user` (Name tab, naming the worker) and `self` (a worker, its own); each write is one fact
+in the worker's log. `folds.card.project.lines` makes the card's line the newest value over the worker's lineage, so
+a resumed worker keeps its line.
 
 ## Make it yours
 
-- **What workers write, and when**: `guidance` in `extension.json`, or the config's `extensions.tabline.guidance`.
-- **How long a line can be**: `facts.line.schema`, and `maxlength` in `client/tabline.js`'s dialog.
-- **Who can write it**: `facts.line.writable`: drop `self` for lines only you set, or `user` for lines only workers
-  set.
-- **The dialog**: `askLine` in `client/tabline.js`.
+In your copy: drop `self` or `user` from `facts.line.writable` in `extension.json` to say who may write a line.
 
 ## Pictures
 
-`npm run tool:extension-shots -- examples/extensions/tabline` retakes them from the scenes in
-[`shots.json`](shots.json); the desk needs Tower 3D built first (`npm run tower3d`).
+`npm run tool:extension-shots -- examples/extensions/tabline` retakes them from [`shots.json`](shots.json); the desk
+needs Tower 3D built first (`npm run tower3d`).
