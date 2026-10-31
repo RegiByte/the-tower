@@ -141,7 +141,7 @@ export function regions(deps) {
       const [stream, id] = /** @type {['terminal' | 'shell', string]} */ (path.split('/'))
       const shell = stream === 'shell'
       host.classList.toggle('claude-term', !shell)
-      const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon }, {
+      const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
         watch: (on) => tower.watch(path, (msg) => on(/** @type {TerminalMsg | ShellStream} */ (msg))),
         resize: (size) => (shell ? tower.call('shell/resize', { id, ...size }) : tower.call('resize', { id, ...size })),
         send: (data) => (shell ? tower.shellKeys(id, data) : tower.keys(id, data)),

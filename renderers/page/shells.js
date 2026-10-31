@@ -66,7 +66,7 @@ export function shells(deps) {
     closeShell()
     $('shell-pane').style.cssText = paint(board().shells.find((sh) => sh.id === id)?.project)
     $('main').classList.add('shell-open')
-    const view = mountTermView($('s-screen'), { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon }, {
+    const view = mountTermView($('s-screen'), { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
       watch: (on) => tower.watch(`shell/${id}`, (msg) => on(/** @type {ShellStream} */ (msg))),
       resize: (size) => tower.call('shell/resize', { id, ...size }),
       send: (data) => tower.shellKeys(id, data),
