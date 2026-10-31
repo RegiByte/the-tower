@@ -135,8 +135,8 @@ export const CLI_VERBS = {
   },
   x: {
     of: 'worker',
-    usage: 'x [<capability> <verb> [input]]',
-    help: "call an extension's verb with [input] as JSON ({} when left out) and print its reply; alone, every running extension's verbs with their words",
+    usage: 'x [<capability> <name> [input]]',
+    help: "call an extension's writable fact's door (facts/<fact>), verb or read with [input] as JSON ({} when left out; a read's query) and print its reply; alone, every running extension's doors, verbs and reads with their words",
   },
 } satisfies Record<string, CliVerb>
 
