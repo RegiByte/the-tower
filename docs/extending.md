@@ -484,9 +484,11 @@ requires `project`, a project-scoped read names it as a `<project>` param or in 
 floor where the capability is off. A handler that throws, or answers off its reply schema, fails that call as
 `internal` and lists a problem on the extension; to refuse, it answers an error, `{t: 'error', code, message}`. A
 verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry `Deprecation` and a `Link` to `use`.
-`tower x` lists every running extension's verbs, and `tower x <capability> <verb> '<json>'` calls one. It calls verbs
-only: a read is a `GET`, such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's
-`port`, which `tower whoami` names).
+`tower x` lists every running extension's doors, verbs and reads, and `tower x <capability> <name> '<json>'` calls one
+(API 1.123): `facts/<fact>` is the door of a writable fact (below), then a verb by its name, then the read whose path
+the name matches (`tower x policies runs/app '{"policy": "nightly"}'`), the JSON its query. A read is a `GET` too,
+such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's `port`, which `tower
+whoami` names).
 
 **A read that serves a file** (API 1.114) declares `"serves": "file"` and no `reply`: its handler answers `{ file }`, an
 absolute path, and the tower serves that file as it serves a file a worker showed, through the same path: by its media
@@ -519,6 +521,32 @@ tower folds of them: a stream's `reduce` state, a collection's items with their 
 its lineage, all read-only. A `reduce`'s `step` gets the state frozen and returns a new one; a step that throws stops
 the fold before that fact, and an item whose `parse` throws is held with `parsed` undefined until it changes, each
 said in the tower's log.
+
+**Writable facts** (API 1.123) put a value on a card with no server code. A fact that declares `writable` has a door,
+`POST /<cap>/facts/<name> { session?, value }`, which logs the value as the fact on the session through the host, as
+`ctx.facts.append` does. `value` holds to the fact's schema, or is `null`; `writable` names who may write it: `user`,
+a caller with no `tower-session`, which names the `session`; `self`, a worker writing its own, which leaves `session`
+out or names its own. Both are claims, as every caller is. The door refuses a write on a floor where the capability is
+off; its errors are `invalid` (the body or the value off its schema, a user naming no session), `refused` (a caller
+`writable` doesn't name, a worker naming another session, any other caller: an extension logs its own facts with
+`ctx.facts.append`), `not_found` (no capability, no such writable fact, no session) and `unavailable` (the capability
+starting or down). It answers `{ session, value }`. No `around` link wraps a door: `around` names verbs and hooks, and
+a door is neither. A worker writes through it with `tower x <cap> facts/<name> '{"value": "…"}'`. A verb's name holds
+no `/`, so no verb takes a door's name; a read whose path matches `facts/<name>` of a writable fact is a `conflict`
+warning, reached by `GET` and never by `tower x`.
+
+`folds.card.project` is the fold that shows it, written in the manifest: `{ "lines": { "from": "fact:<name>", "pick":
+"last" } }` puts one line on the card, the newest value of that fact over the worker's lineage, and none when that is
+`""`, `null` or never written. It is one rule: a card's (where the lineage is), the fact a string, the kind holding no
+`x` or `adds` beside it and `start` returning no fold for it; anything that computes is a fold of the server's. The
+line lands wherever a renderer draws a card's `lines`: the page's sidebar row and worker header, Tower 3D's desk panel,
+`tower whoami`. [`examples/extensions/tabline`](../examples/extensions/tabline/) is one: a fact, its projection and a
+command that asks for the line.
+
+```json
+"facts": { "line": { "schema": { "type": "string", "maxLength": 80 }, "writable": ["user", "self"] } },
+"folds": { "card": { "project": { "lines": { "from": "fact:line", "pick": "last" } } } }
+```
 
 **Fact kinds** (API 1.90). A stream's fact code may declare a `kind` the core folds, its facts then holding to the
 kind's schema as well as their own. The one kind is `tower/rate-limits`, a reading of the account's rate limits
@@ -559,7 +587,7 @@ collection and a shelf entry to their floor, a conversation and a showing to the
 own kind's entry to the subject it was found in; `subjectAt(board, key)` finds any of them on the board now. `folds`
 declares, per subject kind, the `x` schema of its own part and the `adds` it contributes (`actions`, `badges`, `tidy`
 on a floor, `lines` and `marks` on a card, `asks`), both optional: a fold that only contributes declares `adds` alone, with no
-part of its own, and is the common case. `start` returns a fold for each, `(subject, ctx) => part`, pure and synchronous
+part of its own, and is the common case. `start` returns a fold for each but a card's the manifest projects ([writable facts](#extensions)), `(subject, ctx) => part`, pure and synchronous
 over frozen inputs, `ctx` holding `now`, the floor's `settings`, the core's `board`, `callsignOf(session)` (the callsign of the worker any session the tower has known ran as, archived ones too, `undefined` for an id no log holds) and `own`, its stores as `ctx.own`
 reads them (on a card, its facts over the worker's lineage). After the core's board is built, each running extension
 folds in dependency order (card, conversations, showings, items, collections, shelf entries, floor, its own kinds,
@@ -1057,7 +1085,8 @@ brings its own with `plugins.claude`.
 
 `tower` is on the PATH of every session the tower runs (`npm link` puts it on yours). The user's verbs start and stop
 the system and drive sessions (`up`, `down`, `spawn`, `submit`, `kill`, `ls`…); the workers' verbs read the board and
-act on it (`whoami`, `agents`, `show`, `keep`, `hire`, `note`, `api`…), and `tower x` calls the extensions' verbs. It
+act on it (`whoami`, `agents`, `show`, `keep`, `hire`, `note`, `api`…), and `tower x` calls the extensions' doors,
+verbs and reads. It
 is a client of the same API: what it does, a script does with curl, and it claims its caller in headers
 (`tower-client: cli`, and a worker's `tower-session`), which a request without them is the user's. `tower` alone, or an unknown verb, lists every verb.
 
