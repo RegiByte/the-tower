@@ -11,8 +11,10 @@ import { fileButtonsHtml, fileCall } from '/panels.js'
  * read again when it changed, and the open file drawn again when it changed on disk (past `FOLLOW_BYTES`, on
  * Reload). It tells the file's view whether it is seen. The folders opened and the file open are kept per worker
  * (`ctx.state`), so the tab reopens as it was left. In a narrow room (a grid's cell) the tree and the file share the
- * space by turns. A `file` subject of its worker displayed elsewhere (a link followed in a document) is handed to it
- * (`show`): its folders opened, a folder scrolled to, a file opened at the link's fragment.
+ * space by turns. A `file` subject of its worker displayed elsewhere (a link followed in a document) or named by the
+ * location is handed to it (`show`), read by its key: its folders opened, a folder scrolled to, a file opened at the
+ * link's fragment. Each file it opens it tells the renderer (`kit.showing`), whose location then names it, so a reload,
+ * the history and a copied link land on it; the file kept from before opens only when none was handed.
  */
 
 const ID = 'files/explorer'
@@ -214,6 +216,12 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     headActs.innerHTML = file.stat ? fileButtonsHtml(file.stat.file) : ''
   }
 
+  /** The file `path` of `repo` as a `file` subject, as `files/stat` describes it, at `fragment` when one is named. */
+  const subjectOf = (repo, path, stat, fragment) => {
+    const text = `files/raw/${encodeURIComponent(card.project)}/${encodeURIComponent(card.id)}/${encodeURIComponent(repo)}/${urlPath(path)}`
+    return fileSubject({ card: card.id, project: card.project, repo, path, file: stat.file, text, type: stat.type, ...(fragment && { fragment }) })
+  }
+
   /** The file open drawn again in `file.open`, by the view its type picks, at the fragment a link named the first time. */
   function drawFile() {
     file?.region?.close()
@@ -221,16 +229,18 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     if (!file?.stat) return void (openEl.innerHTML = `<p class="empty">${esc(file?.path ?? '')} is gone from disk.</p>`)
     const { fragment } = file
     delete file.fragment
-    const text = `files/raw/${encodeURIComponent(card.project)}/${encodeURIComponent(card.id)}/${encodeURIComponent(file.repo)}/${urlPath(file.path)}`
-    const at = fileSubject({ card: card.id, project: card.project, repo: file.repo, path: file.path, file: file.stat.file, text, type: file.stat.type, ...(fragment && { fragment }) })
-    file.region = kit.region(openEl, 'file.open', at)
+    file.region = kit.region(openEl, 'file.open', subjectOf(file.repo, file.path, file.stat, fragment))
   }
 
-  /** The file `path` of `repo` open, as `files/stat` describes it, at `fragment` when a link named one. */
+  /**
+   * The file `path` of `repo` open, as `files/stat` describes it, at `fragment` when a link named one; the renderer
+   * told, so its location names it.
+   */
   function show(repo, path, stat, fragment) {
     file?.region?.close()
     file = { repo, path, stat, ...(fragment && { fragment }) }
     state.set(`file.${card.id}`, { repo, path })
+    kit.showing?.(subjectOf(repo, path, stat, fragment))
     fx.classList.add('reading')
     drawHead()
     drawFile()
@@ -328,15 +338,22 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     if (path && repos.includes(repo)) await list(repo, path).catch(() => opened.delete(key))
   }
   paint()
-  const kept = await state.get(`file.${card.id}`)
-  const keptStat = kept && repos.includes(kept.repo) ? await read('stat', kept).catch(() => undefined) : undefined
-  if (keptStat) show(kept.repo, kept.path, keptStat)
+  /** Whether a file was handed to it (`show`): the file kept from before is opened only when none was. */
+  let handed = false
+  void (async () => {
+    const kept = await state.get(`file.${card.id}`)
+    const keptStat = kept && repos.includes(kept.repo) ? await read('stat', kept).catch(() => undefined) : undefined
+    if (keptStat && !handed && !closed) show(kept.repo, kept.path, keptStat)
+  })()
   void tick()
 
   return {
     show(at) {
-      if (at.kind !== 'file' || at.value.card !== card.id) return false
-      void reveal(at.value)
+      const own = `file:${card.id}/`
+      if (at.kind !== 'file' || !at.key.startsWith(own)) return false
+      const [repo, path] = partsOf(at.key.slice(own.length))
+      handed = true
+      void reveal({ repo, path, fragment: at.value.fragment })
       return true
     },
     update(next, at) {

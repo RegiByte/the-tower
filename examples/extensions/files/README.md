@@ -62,9 +62,14 @@ helpers, and its client imports Shiki from the tower's `node_modules`.
   fragment; a link to a folder opens it. A link that climbs out of the repo, or names what the repo doesn't hold, is
   refused in a toast. The explorer `shows` `file` subjects: any file of its worker displayed elsewhere opens here
   the same way, and a markdown view of yours gets the links by displaying `linkedFile(file, href)` (`/cards.js`).
+- **The open file is in the address.** Each file it opens the explorer tells the page (`kit.showing`), and while it
+  is the worker's tab in the main pane the location names it, the link's fragment beside it:
+  `#v/tower/card/card%3A<id>;files/explorer/card%3A<id>/file%3A<id>%2F<repo>%2F<path>[/<fragment>]`. A reload, Back
+  and Forward, a middle-click and a copied link land on that file, at that heading. A click in the tree replaces the
+  address; a link followed in a document adds a step, so Back returns to the file you left.
 - **The tree** indents as VS Code's does: 8px a level and a 16px chevron column, so a file lines up with the folders
   beside it.
 - **View state** (the folders open and the file open, per worker) is the view's own (`ctx.state`), so the tab opens
-  as it was left.
+  as it was left; a file the address names opens over the one kept.
 
 Editing is out on purpose: a worker owns its checkout.
