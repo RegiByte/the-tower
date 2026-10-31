@@ -800,6 +800,8 @@ export function regions(deps) {
         }
         return subjects.map((s) => ({ s, n: at(s) })).sort((a, b) => a.n - b.n).map(({ s }) => s)
       },
+      /** Whether a view the region offers draws `subject`. @param {Subject} subject */
+      draws: (subject) => pick(subject)?.module !== undefined,
       /** Where a paint puts `subject`'s row. @param {Subject} subject */
       slotHtml: (subject) => `<div data-row-of="${esc(id)}" data-row="${esc(subject.key)}"></div>`,
       /** Moves each row into the place a paint of `root` left for it, and closes those whose subject left the board. @param {HTMLElement} root */
