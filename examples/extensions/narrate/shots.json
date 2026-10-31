@@ -2,7 +2,7 @@
   "settings": { "voice": { "command": ["$EXT/voices/say.sh"] } },
   "seed": [
     "cp $EXT/shots/seed/field-notes.md $TOWER_SANDBOX/lab/ && tower show $TOWER_SANDBOX/lab/field-notes.md",
-    "tower x narrate facts/memo '{\"value\": \"The search fix is ready for your review.\"}'"
+    "tower x narrate memo '{\"text\": \"The search fix is ready for your review.\"}'"
   ],
   "scenes": [
     {

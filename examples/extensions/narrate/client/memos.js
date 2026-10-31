@@ -19,6 +19,12 @@ const memosOf = (board) => {
     .sort((a, b) => b.at - a.at)
 }
 
+/** What is said for a memo: the user's prefix (`settings.memo.prefix`) with the worker's callsign in it, then the memo. */
+const spokenOf = async (tower, memo) => {
+  const { prefix } = await tower.get('narrate/memo-settings')
+  return `${prefix.replaceAll('{callsign}', memo.callsign)}${memo.text}`
+}
+
 const timeOf = (at) => new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 const STYLE = `
@@ -87,21 +93,21 @@ export function mount(host, { tower, board, kit, state }) {
 
   /** Says `memo` aloud, after the chunk sounding when something is being read: its row marked and a notice standing meanwhile. */
   const hear = async (memo) => {
-    const text = `${memo.callsign} says: ${memo.text}`
     let notice
-    const track = {
-      at() {
-        sounding = memo.key
-        draw()
-        notice ??= kit.notice(text, { label: 'Stop', run: voice.stop })
-      },
-      end() {
-        if (sounding === memo.key) sounding = undefined
-        draw()
-        notice?.close()
-      },
-    }
     try {
+      const text = await spokenOf(tower, memo)
+      const track = {
+        at() {
+          sounding = memo.key
+          draw()
+          notice ??= kit.notice(text, { label: 'Stop', run: voice.stop })
+        },
+        end() {
+          if (sounding === memo.key) sounding = undefined
+          draw()
+          notice?.close()
+        },
+      }
       const { command } = await tower.get('narrate/voice')
       await voice.interject({ tower, text, track, toast: kit.toast }, command)
     } catch (err) {
@@ -113,8 +119,12 @@ export function mount(host, { tower, board, kit, state }) {
    * A browser plays nothing on a page the user hasn't pressed or typed on since it loaded: there, a memo stands as a
    * notice whose Hear says it.
    */
-  const offer = (memo) => {
-    const notice = kit.notice(`${memo.callsign} says: ${memo.text}`, { label: 'Hear', run: () => (notice.close(), hear(memo)) })
+  const offer = async (memo) => {
+    try {
+      const notice = kit.notice(await spokenOf(tower, memo), { label: 'Hear', run: () => (notice.close(), hear(memo)) })
+    } catch (err) {
+      kit.toast(err.message)
+    }
   }
 
   /** The renderer this page is: a memo is said by the page of it the user acted on last (`viewers.last`). */
