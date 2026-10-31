@@ -143,7 +143,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
       rows[i].label.dataset.tip = label
       anchors[i]?.classList.toggle('tower-marked', marks.length > 0)
     })
-  const unheard = kit.bus.on('section', drawMarks)
+  const unheard = kit.bus.onMark('section', drawMarks)
   drawMarks()
 
   const scrollTo = (s: Subject) => {
