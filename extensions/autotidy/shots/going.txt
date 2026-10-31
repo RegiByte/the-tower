@@ -1,0 +1,18 @@
+{
+  "x": {
+    "autotidy": {
+      "reap": true,
+      "worktrees": true,
+      "branches": true,
+      "extensions": true,
+      "going": [
+        {
+          "sessions": [
+            "20261031-162819-08f2"
+          ],
+          "checkout": "main"
+        }
+      ]
+    }
+  }
+}
