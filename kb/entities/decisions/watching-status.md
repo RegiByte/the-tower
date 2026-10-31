@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-31",
   "refs": [
     "hub/src/bridge/status.ts#nextState",
     "hub/src/bridge/status.ts#waitsOnSomeone",
@@ -25,10 +25,9 @@ rings, though the worker had not finished and needed nothing.
 
 **Why.** `done` means only you can move it on. A worker that set something to wake it is still on its task.
 
-**How.** Claude's `Stop` (2.1.292) carries `background_tasks` (`id`, `type`: `subagent` or `shell`, `status`, …) and
+**How.** Claude's `Stop` carries `background_tasks` (`id`, `type`: `subagent` or `shell`, `status`, …) and
 `session_crons`. A `Stop` with a running task or any cron makes the session `watching`, one with neither `done`. Every
-wake runs a turn and ends in its own `Stop`, which decides again, so the status needs no stored state. Recorded on
-Haiku 4.5, one fixture each:
+wake runs a turn and ends in its own `Stop`, which decides again, so the status needs no stored state ([`stopStatus`](ref:hub/src/bridge/status.ts#stopStatus)). One fixture each:
 
 | Started by | In `Stop` | Wakes as `prompt.submit` origin |
 |---|---|---|
@@ -50,9 +49,9 @@ session stays `watching` until its next turn or its exit. Claude's mods API has 
 `TaskCompleted` hook is about todo tasks, and `idle_prompt` comes 60 s after a `Stop` whether a task still runs or not:
 nothing in the log can end it.
 
-**Alternatives considered.** Keeping `done` between wakes (the behaviour before): every wake rang as an answer. A
+**Alternatives considered.** Keeping `done` between wakes: every wake rings as an answer. A
 `watching` attention of its own: a fifth colour every renderer and tally would carry, for a state that asks nothing of
 you. Ending a watch on a timer: a guess, wrong for a cron an hour away.
 
-**Impact.** A new `Status` value on the board. `waitsOnSomeone`, `board.waiting` and rings are unchanged:
+**Impact.** `watching` is a `Status` of its own on the board. `waitsOnSomeone`, `board.waiting` and rings are unchanged:
 `watching` is in none of them.
