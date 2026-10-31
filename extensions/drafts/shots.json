@@ -1,0 +1,101 @@
+{
+  "seed": [
+    "tower keep drafts < $EXT/shots/seed/release-notes.md",
+    "tower keep drafts < $EXT/shots/seed/flaky-test.md",
+    "tower keep drafts < $EXT/shots/seed/migrate-settings.md"
+  ],
+  "scenes": [
+    {
+      "name": "tray",
+      "size": "1180x860",
+      "steps": [
+        {
+          "click": "[data-view=\"drafts/tray\"] [data-tray]"
+        },
+        {
+          "until": "[data-view=\"drafts/tray\"] .kept-row",
+          "text": "Move the settings page"
+        }
+      ],
+      "crop": [
+        ".new-draft",
+        "[data-view=\"drafts/tray\"] .tray-open"
+      ],
+      "open": "#$WORKER_1"
+    },
+    {
+      "name": "editor",
+      "size": "1180x560",
+      "steps": [
+        {
+          "click": "[data-view=\"drafts/tray\"] [data-tray]"
+        },
+        {
+          "click": "[data-view=\"drafts/tray\"] .kept-row",
+          "text": "Move the settings page"
+        },
+        {
+          "until": "[data-view=\"drafts/editor\"] .shelf-head",
+          "text": "saved"
+        }
+      ],
+      "crop": "[data-view=\"drafts/editor\"]",
+      "open": "#$WORKER_1"
+    },
+    {
+      "name": "send",
+      "size": "1180x640",
+      "steps": [
+        {
+          "click": "[data-view=\"drafts/tray\"] [data-tray]"
+        },
+        {
+          "click": "[data-view=\"drafts/tray\"] .kept-row",
+          "text": "Move the settings page"
+        },
+        {
+          "click": "[data-view=\"drafts/editor\"] button",
+          "text": "Send to worker"
+        },
+        {
+          "until": "[data-view=\"drafts/editor\"] dialog[open] .targets button"
+        }
+      ],
+      "crop": "[data-view=\"drafts/editor\"] dialog[open]",
+      "open": "#$WORKER_1"
+    },
+    {
+      "name": "palette",
+      "size": "1180x640",
+      "steps": [
+        {
+          "until": "[data-view=\"drafts/tray\"] [data-tray]"
+        },
+        {
+          "key": "Meta+k"
+        },
+        {
+          "until": "dialog#palette[open]"
+        },
+        {
+          "type": "release"
+        },
+        {
+          "eval": "(async () => { const input = document.querySelector('#palette-input'); for (let i = 0; i < 150 && !document.querySelector('#palette').textContent.includes('Draft the release notes'); i++) { input.dispatchEvent(new Event('input')); await new Promise((r) => setTimeout(r, 200)) } })()"
+        },
+        {
+          "until": "dialog#palette",
+          "text": "Draft the release notes"
+        }
+      ],
+      "crop": "dialog#palette",
+      "open": "#$WORKER_1"
+    }
+  ],
+  "text": [
+    {
+      "name": "whoami",
+      "run": "tower whoami | grep 'drafts  '"
+    }
+  ]
+}
