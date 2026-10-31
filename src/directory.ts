@@ -142,6 +142,7 @@ const whoami = (board: Board, me: string | undefined): string[] => {
     `The tower answers at ${towerAt()}: the user's page, and the API (\`tower api\` lists it).`,
     shelfLine(floor),
     ...collectionsLines(floor),
+    ...guidanceLines(board, floor),
     `The tower's config is ${board.config}: \`tower config check\` checks it.`,
   ]
 }
@@ -160,6 +161,12 @@ const collectionsLines = (floor: Floor): string[] =>
   floor.collections.length
     ? ["The floor's collections, files kept for later (`tower kept` counts them and shows the latest of each):", ...floor.collections.map(collectionLine)]
     : ['The floor keeps no collections.']
+
+/** The brief of each running extension on the floor that guides the workers, one line each. */
+const guidanceLines = (board: Board, floor: Floor): string[] => {
+  const guiding = board.extensions.filter((e) => e.state === 'started' && e.guidance && !e.off?.includes(floor.id))
+  return guiding.length ? ['Extensions you can use (`tower x <name>` says when and how):', ...guiding.map((e) => `  ${e.provides}  ·  ${e.guidance!.brief}`)] : []
+}
 
 const worktreeLines = (floor: Floor, { name, branch, from }: NonNullable<Card['worktree']>): string[] => {
   const paths = floor.worktrees.find((w) => w.name === name)?.repos.map((r) => r.path) ?? []
@@ -731,7 +738,14 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
       console.log(calling.length ? calling.flatMap(extensionCallLines).join('\n') : 'No running extension has doors, verbs or reads: `tower extensions` lists every extension and its state.')
       return
     }
-    if (!verb || rest.length) throw new CliError(usageLine('x'))
+    if (!verb) {
+      const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
+      const e = read.extensions.find((x) => x.provides === cap && x.state === 'started')
+      if (!e) throw new CliError(`No running extension provides ${cap}: \`tower x\` lists the ones that do`)
+      console.log([...(e.guidance ? [e.guidance.full ?? e.guidance.brief, ''] : []), ...extensionCallLines(e)].join('\n'))
+      return
+    }
+    if (rest.length) throw new CliError(usageLine('x'))
     let body: unknown
     try {
       body = input === undefined ? {} : JSON.parse(input)

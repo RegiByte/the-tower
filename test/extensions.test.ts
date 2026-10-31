@@ -313,3 +313,34 @@ test("a projection is refused off a card, beside x or adds, from a fact not decl
   assert.deepEqual(r.accepted.get('shadowed')!.problems.map((p) => [p.level, p.code, p.path]), [['warn', 'conflict', 'reads.facts/<name>']])
   assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'facts.line.writable']])
 })
+
+const GUIDE = { brief: 'Say a short memo aloud to the user', full: 'Speak only when it is worth their ears.' }
+const atGuidance = (found: Found[], extensions: Config['extensions'] = {}) =>
+  resolve(found, config({ extensions: Object.fromEntries(Object.entries(added(found)!).map(([id, entry]) => [id, { ...entry, ...extensions[id] }])) }), '1.128')
+const guided = (id: string, fields: Fields = {}) => ext(id, { ...fields, requires: { tower: '1.128' } })
+
+test("an extension's guidance is its manifest's, the config's brief and full over it and its also after the full text", () => {
+  const r = atGuidance([guided('plain', { guidance: GUIDE }), guided('replaced', { guidance: GUIDE }), guided('added', { guidance: GUIDE }), guided('given'), guided('silent')], {
+    replaced: { guidance: { brief: 'Mine', full: 'All mine.' } },
+    added: { guidance: { also: 'Never after midnight.' } },
+    given: { guidance: { brief: 'Only a brief' } },
+  })
+  const guidanceOf = (id: string) => r.accepted.get(id)!.guidance
+  assert.deepEqual(guidanceOf('plain'), GUIDE)
+  assert.deepEqual(guidanceOf('replaced'), { brief: 'Mine', full: 'All mine.' })
+  assert.deepEqual(guidanceOf('added'), { brief: GUIDE.brief, full: `${GUIDE.full}\n\nThe user adds: Never after midnight.` })
+  assert.deepEqual(guidanceOf('given'), { brief: 'Only a brief' })
+  assert.equal(guidanceOf('silent'), undefined)
+})
+
+test('guidance is refused with no brief to list it by, with a brief over a line or a key it does not take; requiring a tower before guidance warns', () => {
+  const r = atGuidance([guided('briefless'), guided('long', { guidance: { brief: 'two\nlines' } }), guided('typo', { guidance: GUIDE }), ext('early', { guidance: GUIDE, requires: { tower: '1.110' } })], {
+    briefless: { guidance: { also: 'More.' } },
+    typo: { guidance: { breif: 'x' } as never },
+  })
+  assert.deepEqual(codes(r, 'briefless'), ['invalid'])
+  assert.match(r.refused.get('briefless')!.problems[0].message, /give one/)
+  assert.deepEqual(r.refused.get('long')!.problems.map((p) => p.path), ['guidance.brief'])
+  assert.match(r.refused.get('typo')!.problems[0].message, /^extensions\.typo\.guidance/)
+  assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'guidance']])
+})

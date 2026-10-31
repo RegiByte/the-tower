@@ -87,10 +87,20 @@ depends on it. A code edit is not an edit here: restart the tower for it (`tower
 | `path` | The absolute folder holding a new extension's `extension.json`, whose `id` must be the key. Read only for an id no bundled extension has. | required for a new id |
 | `off` | `true` turns it off everywhere: what requires its capability doesn't start. | `false` |
 | `settings` | Its settings, parsed by its manifest's `settings` schema, defaults filled in; an extension without one takes none. | its schema's defaults |
+| `guidance` | What it tells the workers, over its manifest's `guidance`: `brief` (one line, at most 200 characters, listed by `tower whoami`) and `full` (at most 4000, printed by `tower x <capability>`) replace the manifest's; `also` is added after the full text as "The user adds: …". Without a brief of its own or the manifest's, it is refused. | the manifest's |
 
 ```json
 "extensions": {
   "roles": { "path": "/abs/path/to/tower-roles", "settings": { "default": "builder" } }
+}
+```
+
+A worker reads guidance when it runs `tower whoami` or `tower x <capability>`, so an edit reaches a worker that already
+read it only when it reads it again: the brief at its next `whoami`, the full text at its next `tower x`.
+
+```json
+"extensions": {
+  "narrate": { "path": "/abs/path/to/narrate", "guidance": { "also": "Never speak between 22:00 and 8:00." } }
 }
 ```
 

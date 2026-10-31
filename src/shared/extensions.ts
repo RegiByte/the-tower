@@ -74,6 +74,9 @@ const SECTIONS = '1.118'
 /** The minor writable facts arrived in: a fact's door and the manifest-only projection of a card's fold. */
 export const WRITABLE = '1.126'
 
+/** The minor an extension's guidance for agents arrived in: its manifest's, the config's over it, and where workers read it. */
+export const GUIDANCE = '1.128'
+
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
 
@@ -249,6 +252,8 @@ export type ExtensionView = {
   layout?: Layout
   /** What it adds to the spawn form, when it adds anything. @since 1.87 */
   spawn?: { fields: SpawnFieldView[] }
+  /** What it tells the workers, the config's over its manifest's, when either says anything. @since 1.128 */
+  guidance?: Guided
 }
 
 /**
@@ -755,6 +760,7 @@ const tabs = sinceAt(TABS)
 const viewer = sinceAt(VIEWER)
 const sections = sinceAt(SECTIONS)
 const writable = sinceAt(WRITABLE)
+const guided = sinceAt(GUIDANCE)
 
 const Name = z
   .string()
@@ -768,6 +774,20 @@ const Path = z
   .min(1)
   .regex(/^(?!\/)(?!.*\.\.)/, 'a path inside the folder: relative, without ".."')
 const Schema = z.record(z.string(), z.unknown()).describe('A JSON Schema 2020-12, as /schema serves the API\'s.')
+
+const Brief = z.string().min(1).max(200).regex(/^[^\n]*$/, 'one line')
+const Full = z.string().min(1).max(4000)
+const Guidance = z.strictObject({
+  brief: guided(Brief.describe('One line a worker reads in `tower whoami`: what the extension is for and when to reach for it.')),
+  full: guided(Full.optional().describe('What `tower x <capability>` prints: when to use it, when not, and how, with the exact commands. Markdown.')),
+})
+
+/** What the config sets over an extension's guidance: `brief` and `full` replace the manifest's, `also` is added after the full text. */
+export const GuidanceConfig = z.strictObject({ brief: Brief.optional(), full: Full.optional(), also: Full.optional() })
+export type GuidanceConfig = z.infer<typeof GuidanceConfig>
+
+/** An extension's guidance for agents as the tower serves it: the manifest's, with the config's over it. */
+export type Guided = { brief: string; full?: string }
 const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|collection|shelf|item\.[a-z][a-z0-9.-]*|collection\.[a-z][a-z0-9-]*|[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9-]*)$/)
 const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().optional()), destructive: since(z.literal(true).optional()) })
 /** A name in words as a manifest or a fold's action gives them. */
@@ -1073,6 +1093,7 @@ export const Manifest = z
         .describe("What teaches a session of a runtime the extension, by runtime: for claude, a Claude plugin's folder, passed with --plugin-dir on floors where it is on."),
     ),
     views: since(z.record(Word, View).optional().describe('Its views by name, `<capability>/<name>`: modules a renderer mounts into a region it gives them.')),
+    guidance: guided(Guidance.optional().describe('What it tells the workers: when to use its doors, verbs and reads, and how. The config may replace or add to it.')),
     regions: since(
       z
         .record(z.string().regex(REGION_ID, 'a subject kind and a place: card.cell, reviews.thread.head'), RegionDecl)

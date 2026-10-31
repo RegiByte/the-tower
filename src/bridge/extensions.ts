@@ -6,7 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { RUNTIMES } from '../shared/model.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
@@ -137,6 +137,8 @@ export type Accepted = {
   chain: string[]
   off: string[]
   problems: LoadProblem[]
+  /** What it tells the workers, the config's over its manifest's. */
+  guidance?: Guided
 }
 
 /** A manifest's store schemas as zod: each session fact's by name, each stream's codes by stream. */
@@ -478,6 +480,7 @@ export type Read = {
   schemas?: StoreSchemas
   folds?: Map<string, CompiledFold>
   fields?: Map<string, CompiledField>
+  guidance?: Guided
 }
 
 /** Whether a JSON Schema takes an object that must hold `project`, a string. */
@@ -597,6 +600,17 @@ const viewProblems = (manifest: Manifest): LoadProblem[] => [
   ),
 ]
 
+/**
+ * What an extension tells the workers: the config's `brief` and `full` over the manifest's, its `also` added after the
+ * full text as the user's. `undefined` when neither says anything; why, when the config adds to guidance with no brief to list it by.
+ */
+export const guidanceOf = (manifest: Manifest['guidance'], config: GuidanceConfig | undefined): Guided | undefined | string => {
+  const brief = config?.brief ?? manifest?.brief
+  const full = [config?.full ?? manifest?.full, config?.also && `The user adds: ${config.also}`].filter((text) => text !== undefined).join('\n\n')
+  if (brief === undefined) return full ? 'the extension gives no brief, so give one: the line workers read in `tower whoami`' : undefined
+  return { brief, ...(full && { full }) }
+}
+
 /** One extension's config entry, manifest and settings, read in that order; the first that refuses it ends the read. */
 export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower: string): Read => {
   const at = `extensions.${found.id}`
@@ -631,6 +645,10 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   if (!schema && entry?.settings !== undefined) return { found, claims, manifest, problems: [error('invalid', `${at}.settings: ${found.id} takes no settings`)] }
   const settings = schema && parseSettings(schema, entry?.settings ?? {}, `${at}.settings`)
   if (settings && !settings.ok) return { found, claims, manifest, problems: settings.problems.map((p) => error('invalid', `${p.path}: ${p.message}`)) }
+  const guidance = entry?.guidance === undefined ? { success: true as const, data: undefined } : GuidanceConfig.safeParse(entry.guidance)
+  if (!guidance.success) return { found, claims, manifest, problems: issuesOf(guidance.error.issues).map((i) => error('invalid', `${at}.guidance${i.path ? `.${i.path}` : ''}: ${i.message}`)) }
+  const guided = guidanceOf(manifest.guidance, guidance.data)
+  if (typeof guided === 'string') return { found, claims, manifest, problems: [error('invalid', `${at}.guidance: ${guided}`)] }
   const calls = compileCalls(manifest)
   if (calls.problems.length) return { found, claims, manifest, problems: calls.problems }
   const targets = targetProblems(manifest, capabilityOf(manifest))
@@ -648,7 +666,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
     ...addsUnderDeclared(manifest, 'slots', SLOTS_ADD_SINCE),
     ...addsUnderDeclared(manifest, 'marks', MARKS_ADD_SINCE),
   ]
-  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds, fields: fields.fields }
+  return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds, fields: fields.fields, ...(guided && { guidance: guided }) }
 }
 
 /**
@@ -854,6 +872,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           chain,
           off: Object.keys(config.projects).filter((project) => offOn(config, project, chain)),
           problems: [...r.problems, ...without],
+          ...(r.guidance && { guidance: r.guidance }),
         },
       ]
     }),
@@ -1073,6 +1092,7 @@ export const registry = (
       regions: regionsOf(a.manifest),
       ...layoutsOf(a.manifest),
       ...spawnOf(a.manifest),
+      ...(a.guidance && { guidance: a.guidance }),
     }
   })
   const held = [...resolved.refused.values()].map(
