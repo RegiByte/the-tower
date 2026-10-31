@@ -1,6 +1,6 @@
 {
   "id": "narrate",
-  "version": "1.6",
+  "version": "1.7",
   "title": "Narration",
   "description": "Hear workers' short memos as they say them, and listen to what workers write: any markdown or text item, drafts among them, the markdown and text files they show, each section of a markdown document or a document from a section to its end, and each prompt and answer of a brief, voiced by a command of your choosing or the browser's own speech.",
   "requires": { "tower": "1.130" },
@@ -10,6 +10,15 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
+      "memo": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "How a memo is limited and spoken.",
+        "properties": {
+          "maxLength": { "type": "integer", "minimum": 1, "maximum": 2000, "description": "The most characters a memo may have. Default 300." },
+          "prefix": { "type": "string", "description": "What is said before a memo, {callsign} standing for the worker's. Default \"{callsign} says: \"; an empty string says none." }
+        }
+      },
       "voice": {
         "type": "object",
         "additionalProperties": false,
@@ -35,9 +44,24 @@
         "properties": { "audio": { "type": "string", "description": "The read path the audio is served at: narrate/audio/<token>." } }
       },
       "scope": "system"
+    },
+    "memo": {
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text"],
+        "properties": { "text": { "type": "string", "minLength": 1 } }
+      },
+      "reply": { "type": "object" },
+      "scope": "system"
     }
   },
   "reads": {
+    "memo-settings": {
+      "scope": "system",
+      "description": "The memo limit and the words said before one, as the settings say them.",
+      "reply": { "type": "object", "required": ["maxLength", "prefix"], "properties": { "maxLength": { "type": "integer" }, "prefix": { "type": "string" } } }
+    },
     "voice": {
       "scope": "system",
       "description": "Whether a voice command is set: without one, narration speaks through the browser.",
@@ -52,8 +76,7 @@
   "facts": {
     "memo": {
       "description": "A memo the worker says aloud to the user: one or two short spoken sentences.",
-      "schema": { "type": "string", "minLength": 1, "maxLength": 300 },
-      "writable": ["self"]
+      "schema": { "type": "string", "minLength": 1 }
     }
   },
   "folds": {
@@ -89,7 +112,7 @@
   },
   "guidance": {
     "brief": "Say a short memo aloud to the user: when they asked to be told, a long task finished, or something needs them.",
-    "full": "Speak to the user only when it is worth their ears: they asked to be told when something is done, a long task finished, or something needs them (a decision, a review, a blocker). Don't speak for routine progress, for what they are reading or watching anyway, or more than once for the same thing.\n\nWrite for listening: one or two short sentences, the subject first, in plain spoken words. No markdown, paths, code, URLs or lists. Say what it is and what you need, not how you got there. The tower page says your callsign before it.\n\n`tower x narrate facts/memo '{\"value\": \"The search fix is ready for your review.\"}'`\n\nOnly the tower page the user used last plays it aloud, waiting for a sentence break if it is reading a document; every page lists it under your name to hear again."
+    "full": "Speak to the user only when it is worth their ears: they asked to be told when something is done, a long task finished, or something needs them (a decision, a review, a blocker). Don't speak for routine progress, for what they are reading or watching anyway, or more than once for the same thing.\n\nWrite for listening: one or two short sentences, the subject first, in plain spoken words. No markdown, paths, code, URLs or lists. Say what it is and what you need, not how you got there. The tower page says what the user's settings put before it.\n\n`tower x narrate memo '{\"text\": \"The search fix is ready for your review.\"}'`\n\nA memo over the user's limit is refused, saying the limit and how long yours was; `tower x narrate memo-settings` (a read) says the limit in force and the words said before a memo. Only the tower page the user used last plays it aloud, waiting for a sentence break if it is reading a document; every page lists it under your name to hear again."
   },
   "commands": {
     "speak": {
