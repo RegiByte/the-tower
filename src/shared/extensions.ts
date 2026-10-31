@@ -72,7 +72,7 @@ const VIEWER = '1.116'
 const SECTIONS = '1.118'
 
 /** The minor writable facts arrived in: a fact's door and the manifest-only projection of a card's fold. */
-export const WRITABLE = '1.123'
+export const WRITABLE = '1.124'
 
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
@@ -231,9 +231,9 @@ export type ExtensionView = {
   problems: ExtensionProblem[]
   /** Its manifest's verbs, by qualified name. @since 1.82 */
   verbs: ExtensionVerb[]
-  /** Its manifest's reads, by path below its capability. @since 1.123 */
+  /** Its manifest's reads, by path below its capability. @since 1.124 */
   reads: ExtensionRead[]
-  /** Its manifest's session facts, the writable ones with their door at `facts/<name>`. @since 1.123 */
+  /** Its manifest's session facts, the writable ones with their door at `facts/<name>`. @since 1.124 */
   facts: ExtensionFact[]
   /** Its manifest's client commands, by name: what renderers that import modules run. @since 1.84 */
   commands: ExtensionCommand[]

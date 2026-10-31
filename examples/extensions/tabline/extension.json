@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Tab line",
   "description": "A short line under a worker's card, like a named terminal tab: written by the user or by the worker itself.",
-  "requires": { "tower": "1.123" },
+  "requires": { "tower": "1.124" },
   "client": "client",
   "facts": {
     "line": {

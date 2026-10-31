@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Extensions: a manifest that declares, code that implements, resolved before anything runs",
-  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x. Its folds put its part and contributions on the board after the core's is built, each failure costing only its part on that subject; renderers draw them through /cards.js. Since 1.85 every call runs through the chain of links extensions wrap around its verb, and a provider raises its hooks for others to answer, the core's discard.record among them. Since 1.87 extensions shape the workers the tower starts: spawn fields logged as facts before the PTY, launch contributors whose parts the runtime places, a plugin per runtime, and the core facts tower.exempt and tower.reports-to. Since 1.123 a writable fact has a door and a card's fold can be written in the manifest, so a value on a card needs no server code.",
+  "summary": "An extension is a folder holding extension.json and optionally a server module whose default export is start; it provides one capability, and the core is the capability tower at API_VERSION. The tower reads every manifest strictly, resolves them into an acyclic, fully met graph (refusing and skipping what can't load, each with a problem), starts the rest as braided resources x:<cap> beside the core's, reconciles them when the config changes, and shows every extension on the board, at GET /extensions, in tower extensions and in tower doctor. An extension's verbs and reads are dispatched by qualified name through the one dispatch, with a caller on every call, at POST and GET /<cap>/…, through ctx.call, ctx.read and ctx.deps, and with tower x. Its folds put its part and contributions on the board after the core's is built, each failure costing only its part on that subject; renderers draw them through /cards.js. Since 1.85 every call runs through the chain of links extensions wrap around its verb, and a provider raises its hooks for others to answer, the core's discard.record among them. Since 1.87 extensions shape the workers the tower starts: spawn fields logged as facts before the PTY, launch contributors whose parts the runtime places, a plugin per runtime, and the core facts tower.exempt and tower.reports-to. Since 1.124 a writable fact has a door and a card's fold can be written in the manifest, so a value on a card needs no server code.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-22",
@@ -101,7 +101,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   `Deprecation` (`@0`: a manifest names the version, not a date) and a `Link` to its `use`
   ([`deprecate`](ref:hub/src/tower/http.ts#deprecate)); an extension that calls one gets a `deprecated` warning.
 - **`tower x`.** Every word after `tower` stays the core's; `tower x <cap> <name> [input]` calls what the capability
-  offers by that name ([`xTarget`](ref:hub/src/directory.ts#xTarget), 1.123): `facts/<fact>`, a writable fact's door,
+  offers by that name ([`xTarget`](ref:hub/src/directory.ts#xTarget), 1.124): `facts/<fact>`, a writable fact's door,
   then a verb, then the read whose path matches, the input its query. `tower x` alone lists every running one's doors,
   verbs and reads in their words ([`extensionCallLines`](ref:hub/src/directory.ts#extensionCallLines)), from
   `ExtensionView.verbs`, `reads` and `facts`.
@@ -312,7 +312,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   `extraUsage?`, `runtime?`, Claude's when it names none), which the core folds per started extension's stream beside
   the sessions' turns' ([[probes]]), from every manifest resolved, started, off or failed, but one refused as
   `invalid` ([`readingStreams`](ref:hub/src/bridge/rate-limits.ts#readingStreams)).
-- **Writable facts (1.123): a value with no server code.** A fact declaring `writable` (`user`, `self`) has a door,
+- **Writable facts (1.124): a value with no server code.** A fact declaring `writable` (`user`, `self`) has a door,
   `POST /<cap>/facts/<name> {session?, value}`, dispatched beside the verbs by
   [`call`](ref:hub/src/tower/dispatch.ts#call) and answered by the core
   ([`extensionCalls`](ref:hub/src/tower/calls.ts#extensionCalls)'s `door`): the value checked by the fact's schema or
@@ -443,6 +443,6 @@ API 1.94: the hook `tower/discard.done` and `worktree/discard`'s reply `done`, a
 `item`, and `reviews/resolve`; Tidy and discard file threads only through the reviews extension's answers,
 `floor.tidy.threads`, `plan.threads`, `tidy`'s reply `threads` and `worktree/discard`'s reply `thread` kept through
 `LEGACY` until 2.0 ([[tidy]], [[discard]], [[review-threads]]).
-API 1.123: a fact's `writable` and its door `POST /<cap>/facts/<name>`, `folds.card.project`, `ExtensionView.reads`
+API 1.124: a fact's `writable` and its door `POST /<cap>/facts/<name>`, `folds.card.project`, `ExtensionView.reads`
 and `facts`, and `tower x` reaching doors and reads.
 No host change. The bundled ones move in one at a time.
