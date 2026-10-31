@@ -47,11 +47,12 @@ Every worker's `tower whoami` carries narrate's one-line guidance:
 `tower x narrate` prints the whole of it: when to speak and how to write for listening. A worker says a memo with
 
 ```sh
-tower x narrate facts/memo '{"value": "The search fix is ready for your review."}'
+tower x narrate memo '{"text": "The search fix is ready for your review."}'
 ```
 
-and the tower page you used last (clicked, typed in or switched to, on any machine reading the tower) says it aloud
-as "GAGARIN-40 says: …", in the same voice as Listen. If that page is reading a document, the memo waits for the part
+A memo over the limit (300 characters unless the settings say otherwise) is refused with its length and the limit.
+The tower page you used last (clicked, typed in or switched to, on any machine reading the tower) says it aloud
+as "GAGARIN-40 says: …" (the words before it are yours to set), in the same voice as Listen. If that page is reading a document, the memo waits for the part
 being read to end, is said, and the document goes on. Every other page lists it silently. A page you haven't pressed
 or typed on since it loaded can't play sound, so there the memo stands as a notice with **Hear**.
 
@@ -106,6 +107,17 @@ The contract is plain Unix:
 The audio files are the command's own: narration serves only the files its command printed since the tower started,
 each under a token, and never deletes them. Write them to a temporary folder.
 
+**How a memo is limited and spoken** is `settings.memo`, both keys optional:
+
+```json
+"settings": { "memo": { "maxLength": 200, "prefix": "{callsign} reports: " } }
+```
+
+- `maxLength`: the most characters a memo may have (1 to 2000, default 300). The `memo` verb refuses a longer one,
+  saying its length and this limit.
+- `prefix`: what is said, and shown in the notice, before the memo; `{callsign}` stands for the worker's. Default
+  `"{callsign} says: "`; an empty string says nothing before it.
+
 **What workers say** is narrate's guidance, which you can change for your workers in the config,
 `extensions.narrate.guidance`: `brief` and `full` replace narrate's, `also` adds to it ("never between 22:00 and
 8:00").
@@ -134,8 +146,11 @@ section by section from the first, and anything else as one text.
   it is voicing), plays it in an `<audio>` element while the next chunk is voiced, and so on in order, across the
   parts; Stop, or another Listen, pauses it and drops what is still being voiced. The audio is fetched whole into a
   Blob URL, which plays in Chrome and in WebKit (Safari, Tower.app) alike.
-- `facts.memo`: a writable fact, `self` its only writer, so a worker's memo is one fact in its own log. The card fold
-  in `server.ts` puts its latest memos on its card (`x.narrate.memos`), each keyed by session and time.
+- `verbs.memo` and `facts.memo`: the verb is the only way a memo is written. It takes the worker's own session from
+  the call, refuses a text over `settings.memo.maxLength`, and logs the fact with `ctx.facts.append`, so a worker's memo
+  is one fact in its own log. The card fold in `server.ts` puts its latest memos on its card (`x.narrate.memos`), each
+  keyed by session and time.
+- `reads.memo-settings`: the limit and prefix in force, which is how the client and a worker learn them.
 - `views.memos` (`client/memos.js`): a view on the board at `row` scale, which the tower page mounts in its
   `board.strip` for as long as the page is open. It says a memo that arrives while `board.viewers.last.<renderer>`
   is its page's `tower.viewer` (`tower.renderer()` names it), never one already on the board as it mounted, through
