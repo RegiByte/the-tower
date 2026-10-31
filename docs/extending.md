@@ -814,6 +814,14 @@ after the board, so a command pressed in a region on the subject, a chord presse
 `display(key)` all reach it; what a view published is cleared when it closes. `busOf()` in `/views.js` makes one for a
 renderer of your own.
 
+A mark (API 1.128) says what is happening to a viewer subject now, as one capability sees it: `bus.mark(key, cap,
+{ label })` puts it, `bus.mark(key, cap, undefined)` lifts it, and `bus.marks(key)` answers each capability's, `{
+label, cap }`. Marks are held by key, apart from the subjects, so a view that draws its subject again (a document
+opened anew) draws its marks too; `on(kind, fn)` of the key's kind is told as one is put or lifted. Whoever puts a mark
+lifts it.
+`tower/document` draws a marked section marked, its row lit and labelled with its marks, its part of
+the frame lit; other views draw no marks yet.
+
 - `said`: `saidSubject` in `/cards.js`, keyed `said:<session>:<conversation>:<startedAt>:<side>`, of its
   conversation, carrying its words as `body` and the type `text/markdown`. The Brief asks the kit for `said.acts`
   beside each copy button, where anything is offered on `said`, and takes `show(said)`, scrolling to it.
