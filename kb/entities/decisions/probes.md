@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Probes: periodic readings of the account's rate limits, kept as facts in a stream, by the bundled quota extension",
-  "summary": "The quota probe reads the account's rate limits from Claude while no session's turn does: since 1.90 the bundled extension quota, whose tick slot decides each read with a pure due(every, its stream, the board's turnLimits, now), appends each read to its stream (kept in the folder streams/system/probe.quota/), an answer as a reading of the core's fact kind tower/rate-limits, which the core folds beside the sessions' readings, so the rate limits, the weekly budget and its pace have no holes while no session runs; how it stands is its board part x.quota, drawn by renderers, tower probes and its doctor check, and its old names answer through LEGACY until 2.0.",
+  "summary": "The bundled extension quota reads the account's rate limits from Claude while no session's turn does, decided each minute from its own stream, and appends each answer as a reading of the core's fact kind tower/rate-limits, which the core folds beside the sessions' readings, so the limits, the weekly budget and its pace have no holes while no session runs.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-10-26",
+  "reviewed": "2026-10-31",
   "refs": [
     "hub/extensions/quota/extension.json",
     "hub/extensions/quota/server.ts",
@@ -46,8 +46,8 @@ desktop app, a phone) or when the user is away: the moment standing work would n
 **Why.** The readings are facts about the account the system can observe on its own, at no cost: Claude Code answers
 the `get_usage` control request with `/usage`'s data at no cost and no API time (`test/fixtures/probe-usage.out`). Facts go in a log ([[logs-are-facts]]); what they mean is folded.
 
-**How.** The quota probe was core code from 1.29 to 1.89; at 1.90 it moved into the bundled extension `quota`
-([[extensions]]), the first built-in to move, keeping its behaviour, its stream and its old names.
+**How.** The probe is the bundled extension `quota` ([[extensions]]); it was core code once, and keeps that code's
+stream and old names.
 - *Settings.* `extensions.quota.settings.every` (`10m`, at least a minute) and `extensions.quota.off`
   ([`extension.json`](ref:hub/extensions/quota/extension.json)). The old spelling, `probes.quota.every` and `.off`, is
   read there by one pure function at config-read time ([`respelled`](ref:hub/src/bridge/legacy.ts#respelled)) until
@@ -75,10 +75,10 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
 - *A stream, one writer.* Its stream `reads` is kept in the folder `streams/system/probe.quota/YYYY-MM.jsonl`, the one
   the core wrote ([[extensions]], `LEGACY`): a header `{stream, startedAt, version}`, then `[t, code, fact]` events:
   `u` an answered read (`ms`, Claude's answer as it came, nulls dropped, and the reading made of it), of the core's
-  kind `tower/rate-limits`; `f` a read with no answer (`ms`, `error`); and `p`, a read as the core wrote it before
-  1.90 (`{reads: "claude.usage", ms, ok, answer | error}`), kept and never written again. Skipped reads are not
+  kind `tower/rate-limits`; `f` a read with no answer (`ms`, `error`); and `p`, a read as the core wrote it
+  (`{reads: "claude.usage", ms, ok, answer | error}`), kept and never written again. Skipped reads are not
   logged. Each read stands alone, so a line that is no JSON costs that read only. Project streams live at
-  `streams/projects/<project>/<stream>/`: the first are a floor's policies' `runs` and `approvals` ([[policies]]).
+  `streams/projects/<project>/<stream>/` (a floor's policies' `runs` and `approvals`, [[policies]]).
 - *Folded beside the sessions.* A stream fact code declaring `tower/rate-limits`
   ([`RateLimitsReading`](ref:hub/src/shared/rate-limits.ts#RateLimitsReading): `limits`, `extraUsage?`, `runtime?`,
   Claude's when it names none) in a system stream any resolved manifest declares, its extension started, off or failed
@@ -99,8 +99,8 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   wait after its last read, or later while a session's newer reading holds it (`held`). Times, never "due now".
 - *Where it shows.* Renderers draw it under the limits from the same words
   ([`quotaOf`](ref:hub/extensions/quota/client/quota.ts#quotaOf), [`probeLine`](ref:hub/extensions/quota/client/quota.ts#probeLine),
-  [`probeTitle`](ref:hub/extensions/quota/client/quota.ts#probeTitle), the extension's client at `/x/quota/quota.js`
-  since 1.97, their copies in `/cards.js` deprecated until 2.0). `GET /quota/reads?last` answers its latest
+  [`probeTitle`](ref:hub/extensions/quota/client/quota.ts#probeTitle), the extension's client at `/x/quota/quota.js`;
+  their copies in `/cards.js`, [`src/shared/limits.ts`](ref:hub/src/shared/limits.ts#probeLine), are deprecated until 2.0). `GET /quota/reads?last` answers its latest
   reads, newest first. `tower probes` prints what the read `quota/said` says (its line, and after `run` the latest
   read in words), and
   `tower doctor` runs its check `reading`, the read `quota/status`: it answers while the probe reads, else refuses with
@@ -108,18 +108,17 @@ the `get_usage` control request with `/usage`'s data at no cost and no API time 
   `nextAt`).
 - *A read now.* `quota/read-now` reads at once through the same path a tick takes, its read appended like any, and
   answers when it ends (when it started, how long it took, whether it answered, why not). Refused while a read is in
-  flight, or within the 60 s floor of the last start. "Read now" in either renderer, `tower probes run quota` and
-  `tower x quota read-now` call it. (`read`, the spec's name, is refused for a verb: `ctx.deps.<cap>.read` holds a
-  capability's reads.)
+  flight, or within the 60 s floor of the last start. `tower probes run quota`, `tower x quota read-now` and the renderers'
+  "Read now" call it. Its name is not `read`, which `ctx.deps.<cap>.read` holds for a capability's reads.
 - *Old names, until 2.0.* `POST /probe/run {name: "quota"}` answers through `quota/read-now`, `GET /probe/quota`
-  through `quota/reads` and the board, both deprecated (RFC 9745); `board.probes` is copied from `x.quota` as it stood
-  at 1.89, with its `run` offer, and holds none while the extension doesn't run ([[extensions]], `LEGACY`).
+  through `quota/reads` and the board, both deprecated (RFC 9745); `board.probes` is copied from `x.quota` in the core's
+  old shape, with its `run` offer, and holds none while the extension doesn't run ([[extensions]], `LEGACY`).
 - *Closed months archived.* Tidy offers a stream's months closed more than `retention.days` ago, gzipped in place
   and read the same ([[log-retention]]).
 
-**Alternatives considered.** At the move: a kind whose facts are Claude's raw answer (the core would parse each
+**Alternatives considered.** A kind whose facts are Claude's raw answer (the core would parse each
 runtime's answer for good; a reading of `RateLimit[]` keeps the core runtime-neutral, and only the old `p` code is
-parsed by it); rewriting the old folder into the new codes (a rollback would find nothing). Before it: a timer in the host: it must stay small, its changes kill sessions, and it knows no
+parsed by it); rewriting the old folder into the new codes (a rollback would find nothing). A timer in the host: it must stay small, its changes kill sessions, and it knows no
 Claude flags ([[host-owns-ptys]]). A mod hook: runs only while a session runs, the gap itself. A daemon of its
 own, cron or launchd: another process to supervise, blind to the board. Calling the OAuth usage endpoint: the tower
 would handle the user's tokens. Readings in memory: no history. Readings in a pseudo-session's log: it would show on
