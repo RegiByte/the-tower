@@ -23,7 +23,14 @@ export type View = Omit<ExtensionViewEntry, 'module' | 'export'> & { cap: string
  * Where a renderer is: the view in its main region and the subject it is on, by key; `pane`, the tab open in that
  * view's tabs region; `args`, the view's own (a shelf entry's file).
  */
-export type Location = { view: string; subject?: string; pane?: { view: string; subject?: string }; args?: string[] }
+export type Location = { view: string; subject?: string; pane?: Pane; args?: string[] }
+
+/**
+ * A tab of a view's tabs region, as a location names it: its view and the subject it is on; `shows`, the key of a
+ * subject below that one the tab shows (a file in a worker's Files tab), and `args`, where in it (a link's fragment).
+ * `shows` and `args` @since 1.123
+ */
+export type Pane = { view: string; subject?: string; shows?: string; args?: string[] }
 
 /**
  * What a view is handed as it mounts. `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the
@@ -119,8 +126,10 @@ export const busOf = (): Bus => {
  * command or an extension's `<cap>/<name>` on a subject or the one in focus; `display` a subject, or its key; `go` to
  * a location; `bus`, the page's viewer subjects (@since 1.118); a toast; a confirm whose button says `verb`; `href`, the
  * hash of the renderer's page that displays a subject, or goes to a location, when a link takes the page there, for a
- * link in a frame where nothing runs (@since 1.121). A renderer lends what its `renderer.json` kit names; a view uses
- * `href` when it is lent, so a renderer without it still hosts the views that do.
+ * link in a frame where nothing runs (@since 1.121); `showing`, told by a view that shows a subject below its own (a
+ * file its Files tab opened), which the renderer's location then names, so a reload or a link lands on it (@since
+ * 1.123). A renderer lends what its `renderer.json` kit names; a view uses `href` and `showing` when they are lent, so
+ * a renderer without them still hosts the views that do.
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
@@ -132,6 +141,7 @@ export type Kit = {
   toast(text: string, action?: { label: string; run(): void }): void
   confirm(text: string, verb: string): Promise<boolean>
   href?(to: Subject | Location): string
+  showing?(subject: Subject): void
 }
 
 /**
@@ -337,7 +347,7 @@ const chainOf = (board: Board, subject: Subject): Subject[] => {
  * views showing `below`'s kind first, a tab that hosts it (the files example's explorer for a `file`), and among the
  * rest when none answers.
  */
-const tabFor = (p: Placing, host: View, level: Subject, below: Subject, pick: (offered: View[]) => View | undefined) =>
+const tabFor = (p: Placing, host: View, level: Subject, below: Subject, pick: (offered: View[]) => View | undefined): Pane | undefined =>
   (host.regions ?? [])
     .map((id) => p.regions.find((r) => r.id === id && r.arity === 'tabs' && onKind([r.subject], level.kind)))
     .flatMap((region) => {
@@ -351,13 +361,32 @@ const tabFor = (p: Placing, host: View, level: Subject, below: Subject, pick: (o
       const all = ordered(offered, p.layout[region.id]?.order)
       const hosting = all.filter((v) => below.key !== level.key && onKind(v.shows ?? [], below.kind))
       const view = (hosting.length ? pick(hosting) : undefined) ?? pick(all)
-      return view ? [{ view: view.id, subject: viewOn(view.on, level) ? level.key : below.key }] : []
+      if (!view) return []
+      if (!viewOn(view.on, level)) return [{ view: view.id, subject: below.key }]
+      return [{ view: view.id, subject: level.key, ...(hosting.includes(view) && paneShows(below)) }]
     })[0]
+
+/** What a tab hosting `subject` below its own shows, as its pane names it: its key, and where in it, its `fragment`. */
+export const paneShows = (subject: Subject): Pick<Pane, 'shows' | 'args'> => {
+  const { fragment } = subject.value as { fragment?: string }
+  return { shows: subject.key, ...(fragment && { args: [fragment] }) }
+}
+
+/**
+ * The subject a pane `shows`, as the location names it, for the tab's view's `show`: its key, and `value` holding only
+ * its `fragment`. A view that shows a kind reads what it needs from the key. @since 1.123
+ */
+export const shownOf = (pane: Pane & { shows: string }, project: string | undefined): Subject => ({
+  kind: pane.shows.slice(0, pane.shows.indexOf(':')),
+  key: pane.shows,
+  ...(project !== undefined && { project }),
+  value: { ...(pane.args?.[0] !== undefined && { fragment: pane.args[0] }) },
+})
 
 /**
  * Where display puts `subject` (§9 of the UI model): up its chain, itself first, to the nearest level whose main view
  * hosts the level below as a tab, else the first level with a main view of its own; that view mounted on that level,
- * the tab opened. `view` narrows the walk: the deepest level offering it, as a tab before as the main view. `undefined`
+ * the tab opened, on the subject it shows when it hosts it (`shows`). `view` narrows the walk: the deepest level offering it, as a tab before as the main view. `undefined`
  * when no level offers what was asked. A renderer hands the main view `show(subject)` when it is on a subject above it.
  */
 export const displayed = (p: Placing, subject: Subject, view?: string): Location | undefined => {
@@ -403,12 +432,14 @@ export const openable = (p: Placing, subject: Subject, beside: readonly string[]
 const segment = (part: string) => encodeURIComponent(part)
 
 /**
- * The hash naming `location`, by its grammar: `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>]]`, every key
- * and arg one encoded segment, so `;` never appears in one.
+ * The hash naming `location`, by its grammar: `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>[/<shows>[/<arg>…]]]]`,
+ * every key and arg one encoded segment, so `;` never appears in one.
  */
 export const hashOf = (location: Location): string => {
   const main = [location.view, ...(location.subject === undefined ? [] : [segment(location.subject), ...(location.args ?? []).map(segment)])].join('/')
-  const pane = location.pane && [location.pane.view, ...(location.pane.subject === undefined ? [] : [segment(location.pane.subject)])].join('/')
+  const at = location.pane
+  const shows = at?.shows === undefined ? [] : [at.shows, ...(at.args ?? [])]
+  const pane = at && [at.view, ...(at.subject === undefined ? [] : [at.subject, ...shows].map(segment))].join('/')
   return `#v/${main}${pane ? `;${pane}` : ''}`
 }
 
@@ -492,11 +523,19 @@ export const locationOf = (hash: string, board: Board): Location | undefined => 
   const [main, pane] = body.slice(2).split(';')
   const [cap, name, key, ...args] = main.split('/')
   if (!cap || !name) return undefined
-  const [paneCap, paneName, paneKey] = pane?.split('/') ?? []
+  const [paneCap, paneName, paneKey, shows, ...paneArgs] = pane?.split('/') ?? []
   return {
     view: `${cap}/${name}`,
     ...(key !== undefined && { subject: decodeURIComponent(key) }),
-    ...(paneCap && paneName && { pane: { view: `${paneCap}/${paneName}`, ...(paneKey !== undefined && { subject: decodeURIComponent(paneKey) }) } }),
+    ...(paneCap &&
+      paneName && {
+        pane: {
+          view: `${paneCap}/${paneName}`,
+          ...(paneKey !== undefined && { subject: decodeURIComponent(paneKey) }),
+          ...(shows !== undefined && { shows: decodeURIComponent(shows) }),
+          ...(paneArgs.length && { args: paneArgs.map(decodeURIComponent) }),
+        },
+      }),
     ...(args.length && { args: args.map(decodeURIComponent) }),
   }
 }

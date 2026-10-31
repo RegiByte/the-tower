@@ -1166,7 +1166,6 @@ const goTo = (location) => opening(mainViewOf(location, has))
  * @param {string} wanted
  */
 function route(wanted) {
-  if (wanted.startsWith('to/')) return followLinked(wanted)
   const named = viewOf(wanted, board(), has)
   const at = view()
   if (named.t === 'view' && at.t === 'view' && sameRoom(at, named) && String(named.location.args) !== String(at.location.args)) return reopen(named)
@@ -1174,34 +1173,12 @@ function route(wanted) {
 }
 
 /**
- * What links in document frames named that no location holds (a file of a worker's checkout), each by its number in
- * the hash `#to/<n>` that displays it. They last as long as the page: a `#to/<n>` read after a reload names nothing.
- * @type {Subject[]}
- */
-const linked = []
-
-/**
- * The hash a link to `subject` takes the page to (the kit's `href`): the location `display` puts it at when the board
- * holds it there, which a reload or another tab reads again; else `#to/<n>`. @param {Subject} subject
+ * The hash a link to `subject` takes the page to (the kit's `href`): the location `display` puts it at, which names it
+ * as its subject, or as what a tab on a subject above it shows; `#` where nothing here shows it. @param {Subject} subject
  */
 function linkHash(subject) {
-  const at = subjectAt(board(), subject.key) && displayed(placing(), subject)
-  if (at && (at.subject ?? 'board') === subject.key) return hashOf({ t: 'view', location: at }, board()) || '#'
-  const same = JSON.stringify(subject)
-  const n = linked.findIndex((s) => JSON.stringify(s) === same)
-  return `#to/${n < 0 ? linked.push(subject) - 1 : n}`
-}
-
-/**
- * Displays what `#to/<n>` names, then writes the hash of where the page is, so the address never keeps the number.
- * @param {string} wanted
- */
-function followLinked(wanted) {
-  const subject = linked[Number(wanted.slice('to/'.length))]
-  if (subject) display(subject)
-  else toast('That link was followed in a document this page no longer holds: open the document again and follow it there')
-  const hash = hashOf(view(), board())
-  if (location.hash !== hash) history.replaceState(null, '', hash || location.pathname)
+  const at = displayed(placing(), subject)
+  return at ? hashOf({ t: 'view', location: at }, board()) || '#' : '#'
 }
 
 /** Goes to `named`, a worker it names that the page doesn't hold looked up first. @param {MainView | import('./view.js').Lookup} named */

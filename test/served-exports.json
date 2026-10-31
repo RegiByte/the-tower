@@ -1086,8 +1086,10 @@
       "offeredIn",
       "openable",
       "ordered",
+      "paneShows",
       "pickView",
       "shortHashOf",
+      "shownOf",
       "viewOn",
       "viewsOf"
     ],

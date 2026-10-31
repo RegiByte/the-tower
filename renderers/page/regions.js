@@ -1,6 +1,6 @@
 import { ago, can, commandUrl, esc, findCard, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
 import { mountTermView } from '/term-view.js'
-import { offeredIn, ordered, pickView } from '/views.js'
+import { offeredIn, ordered, paneShows, pickView, shownOf } from '/views.js'
 import { shownFrom } from '/brief.js'
 import { ICON } from '/icons.js'
 import { fileSpansHtml, keepShownTabs } from '/panels.js'
@@ -10,18 +10,13 @@ import { addsHtml } from './added.js'
 /**
  * @import { Board, Card, CardShown } from '../../src/bridge/board.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
- * @import { Bus, Kit, CommandKit, Location, Mount, Mounted, RegionHandle, RegionOptions, TabWords, Tab, View } from '../../src/shared/views.ts'
+ * @import { Bus, Kit, CommandKit, Location, Mount, Mounted, Pane, RegionHandle, RegionOptions, TabWords, Tab, View } from '../../src/shared/views.ts'
  * @import { Layout, Region, KitMember, Scale } from '../../src/shared/regions.ts'
  * @import { TermViewHandle } from '../../src/shared/term-view.ts'
  * @import { Tower, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
  * @import { Scheme } from '../../src/shared/design.ts'
  * @import { TermFont } from '../../src/shared/terminal.ts'
- */
-
-/**
- * A tab of a worker's tabs region as a location names it: its view, and its subject's key when that is a showing.
- * @typedef {{ view: string, subject?: string }} Pane
  */
 
 /**
@@ -120,11 +115,12 @@ export function regions(deps) {
   })
 
   /**
-   * A view mounted into `el` on `subject`: its kit lends the page's terminals and regions, each closed with it; `show`
-   * handed before the mount settles waits for it; new options are handed to its `options`, else it is mounted afresh.
-   * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Scale | undefined} scale @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {string[] | undefined} [args]
+   * A view mounted into `el` on `subject`: its kit lends the page's terminals and regions, each closed with it, and
+   * `showing`, told what it shows below its subject; `show` handed before the mount settles waits for it; new options
+   * are handed to its `options`, else it is mounted afresh.
+   * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Scale | undefined} scale @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {(s: Subject) => void} showing @param {string[] | undefined} [args]
    */
-  function mountView(view, el, subject, scale, options, scope, args) {
+  function mountView(view, el, subject, scale, options, scope, showing, args) {
     el.dataset.view = view.id
     /** @type {Set<TermViewHandle>} */
     const own = new Set()
@@ -171,6 +167,7 @@ export function regions(deps) {
     /** @type {Kit} */
     const kit = {
       ...commandKit,
+      showing,
       terminal,
       region: (host, id, at, opts) => {
         const handle = regionIn(host, id, at, opts ?? {}, scope)
@@ -332,7 +329,7 @@ export function regions(deps) {
     }
     /** @param {Record<string, Record<string, unknown>>} asked */
     const optionsOf = (asked) => ({ ...layout()[region.id]?.options?.[view.id], ...asked[view.id] })
-    const hosted = mountView(view, el, subject, region.scale, optionsOf(options), undefined)
+    const hosted = mountView(view, el, subject, region.scale, optionsOf(options), undefined, () => {})
     return {
       update: (at) => ((host.dataset.subject = at.key), hosted.update(at)),
       options: (next) => hosted.options(optionsOf(/** @type {Record<string, Record<string, unknown>>} */ (next))),
@@ -396,6 +393,8 @@ export function regions(deps) {
     let seen = true
     /** @type {Map<string, { hosted: Hosted, panel: HTMLElement }>} */
     const mounted = new Map()
+    /** What each tab shows below its subject, by key, as last handed to it or told by it. @type {Map<string, Pick<Pane, 'shows' | 'args'>>} */
+    const below = new Map()
 
     /** @typedef {{ key: string, view: View, subject: Subject, showing?: CardShown, words?: TabWords }} TabOf */
 
@@ -491,6 +490,7 @@ export function regions(deps) {
       const m = mounted.get(key)
       if (!m) return
       mounted.delete(key)
+      below.delete(key)
       if (key === open) open = undefined
       m.hosted.close()
       m.panel.remove()
@@ -511,7 +511,7 @@ export function regions(deps) {
       root.className = 'view-root'
       panel.append(root)
       panels.append(panel)
-      const hosted = mountView(t.view, root, t.subject, region.scale, optionsOf(t.view), scope)
+      const hosted = mountView(t.view, root, t.subject, region.scale, optionsOf(t.view), scope, (s) => told(t.key, s))
       mounted.set(t.key, { hosted, panel })
       return mounted.get(t.key)
     }
@@ -532,6 +532,7 @@ export function regions(deps) {
         m.panel.classList.toggle('on', key === open)
         m.panel.inert = key !== open
       }
+      handOpen(all)
       const showing = all.find((t) => t.key === open)?.showing
       const adds = showing ? addsHtml(board(), shownSubject(card, showing)) : ''
       const own = all.filter((t) => !t.showing)
@@ -546,12 +547,43 @@ export function regions(deps) {
       keepShownTabs(strip, card.id)
     }
 
+    /** The pane naming tab `t`: on a showing's subject, or on its own with what it shows below it. @param {TabOf} t @returns {Pane} */
+    function paneOf(t) {
+      const shows = below.get(t.key)
+      return { view: t.view.id, ...((t.showing || shows) && { subject: t.subject.key }), ...shows }
+    }
+
     /** Opens the tab `key`: through the location for the main pane's worker. @param {TabOf} t */
     function pick(t) {
-      const pane = { view: t.view.id, ...(t.showing && { subject: t.subject.key }) }
+      const pane = paneOf(t)
       if (scope) return scope.pick(pane)
       picked = pane
       draw()
+    }
+
+    /** Tab `key` told what it shows below its subject: the location names it while that tab is open. @param {string} key @param {Subject} s */
+    function told(key, s) {
+      below.set(key, paneShows(s))
+      const t = key === open ? tabsOf().find((t) => t.key === key) : undefined
+      if (t) pick(t)
+    }
+
+    /**
+     * The open tab handed what the location's pane `shows` when that isn't what the tab shows: a reload, the history or
+     * a link reached it. A microtask later, so a subject display hands whole in the same step is handed first.
+     * @param {TabOf[]} all
+     */
+    function handOpen(all) {
+      const at = scope?.pane()
+      const pane = at ? (at.on ? at.pane : undefined) : picked
+      const t = all.find((t) => t.key === open)
+      if (!t || pane?.shows === undefined || named(all, pane) !== t) return
+      queueMicrotask(() => {
+        const was = below.get(t.key)
+        if (open !== t.key || (was?.shows === pane.shows && String(was?.args) === String(pane.args))) return
+        below.set(t.key, { shows: pane.shows, ...(pane.args && { args: pane.args }) })
+        mounted.get(t.key)?.hosted.show(shownOf(/** @type {Pane & { shows: string }} */ (pane), card.project))
+      })
     }
 
     strip.addEventListener('click', (e) => {
@@ -595,6 +627,7 @@ export function regions(deps) {
         const handed = all.filter((t) => t.view.on.includes(s.kind) || t.view.shows?.includes(s.kind))
         const t = all.find((t) => t.subject.key === s.key) ?? handed.find((t) => t.subject.key === parentOf(s)) ?? handed[0]
         if (!t) return false
+        if (t.subject.key !== s.key) below.set(t.key, paneShows(s))
         if (t.key !== open) pick(t)
         if (t.subject.key === s.key) return true
         return mounted.get(t.key)?.hosted.show(s) ?? false
@@ -687,7 +720,7 @@ export function regions(deps) {
     if (!subject) return (el.remove(), gone())
     /** @type {PaneScope | undefined} */
     const scope = view.id === WORKER ? { pane: () => ({ on: open?.key === key, pane: mainPane() }), pick: (pane) => pickMain(key, pane) } : undefined
-    const hosted = mountView(view, el, subject, 'pane', layout()['board.main']?.options?.[view.id] ?? {}, scope, location.args)
+    const hosted = mountView(view, el, subject, 'pane', layout()['board.main']?.options?.[view.id] ?? {}, scope, () => {}, location.args)
     open = { key, view: view.id, el, hosted }
   }
 
