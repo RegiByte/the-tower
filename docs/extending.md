@@ -485,7 +485,7 @@ floor where the capability is off. A handler that throws, or answers off its rep
 `internal` and lists a problem on the extension; to refuse, it answers an error, `{t: 'error', code, message}`. A
 verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry `Deprecation` and a `Link` to `use`.
 `tower x` lists every running extension's doors, verbs and reads, and `tower x <capability> <name> '<json>'` calls one
-(API 1.123): `facts/<fact>` is the door of a writable fact (below), then a verb by its name, then the read whose path
+(API 1.124): `facts/<fact>` is the door of a writable fact (below), then a verb by its name, then the read whose path
 the name matches (`tower x policies runs/app '{"policy": "nightly"}'`), the JSON its query. While the capability isn't running, the name goes to the tower as a verb, which says why it can't answer. A read is a `GET` too,
 such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's `port`, which `tower
 whoami` names).
@@ -522,7 +522,7 @@ its lineage, all read-only. A `reduce`'s `step` gets the state frozen and return
 the fold before that fact, and an item whose `parse` throws is held with `parsed` undefined until it changes, each
 said in the tower's log.
 
-**Writable facts** (API 1.123) put a value on a card with no server code. A fact that declares `writable` has a door,
+**Writable facts** (API 1.124) put a value on a card with no server code. A fact that declares `writable` has a door,
 `POST /<cap>/facts/<name> { session?, value }`, which logs the value as the fact on the session through the host, as
 `ctx.facts.append` does. `value` holds to the fact's schema, or is `null`; `writable` names who may write it: `user`,
 a caller with no `tower-session`, which names the `session`; `self`, a worker writing its own, which leaves `session`
