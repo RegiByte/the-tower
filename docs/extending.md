@@ -843,7 +843,7 @@ row per section, level with it as the document scrolls or resizes and never over
 labelled with its section's heading from the source and is a `section.acts` region, so a command `on: ["section"]`
 lands under every section (narrate's Listen reads that section alone, its From here that section and the rest) and
 `show(section)` scrolls the frame to it. `tower/shelf` draws an `md` entry's file the same way, its sections of the
-shelf entry (one file of it shown at a time), API 1.128.
+file, keyed `shelf:<project>/<n>/<file>`, API 1.128.
 The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by
 sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs hears
 nothing: WebKit (Safari, Tower.app) calls no listener in a document that can't run scripts, even one the page added.

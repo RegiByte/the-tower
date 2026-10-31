@@ -92,8 +92,8 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
   }
 
   /**
-   * The file drawn by sections, of the entry as a subject whose text is that file, its links written where they go.
-   * Its sections are keyed by the entry: one file of it is shown at a time.
+   * The file drawn by sections, its links written where they go: its sections are of the entry's file, a subject keyed
+   * `<entry key>/<file>` whose text is that file, so each file's sections and their marks are its own.
    */
   const showDoc = async (file: string) => {
     shown = file
@@ -107,7 +107,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     const el = body.querySelector<HTMLElement>('.shelf-doc')
     if (md === undefined || closed || shown !== file || !el) return
     drawn?.close()
-    const of = { ...subject, value: { ...(subject.value as object), text: path(file), type: 'text/markdown' } }
+    const of = { ...subject, key: `${subject.key}/${file}`, value: { ...(subject.value as object), text: path(file), type: 'text/markdown' } }
     drawn = drawSections(el, { tower, kit, of, text: md, url: `/${path(file)}`, title: fileName(entry, file), docCss: '', links: () => placed(file) })
   }
 
