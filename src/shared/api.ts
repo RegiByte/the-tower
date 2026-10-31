@@ -16,6 +16,9 @@ import type { Words } from './extensions.ts'
 export const API_VERSION = '1.128'
 
 const id = z.string().min(1)
+
+/** A viewer's id: one renderer page, which makes its own and names it on its board stream and in `viewer/active`. */
+export const VIEWER_ID = /^[A-Za-z0-9-]{8,64}$/
 const absolute = z.string().regex(/^\//, 'an absolute path')
 const size = { cols: z.int().positive(), rows: z.int().positive() }
 
@@ -166,6 +169,14 @@ export const VERBS = {
   },
   resize: { input: z.object({ id, ...size }).describe("Resize the session's PTY; whoever resizes it owns its size."), reply: ok },
   kill: { input: z.object({ id, by: actor("named in the session's log as `tower.kill` before it ends.") }).describe('End the session.'), reply: ok },
+  'viewer/active': {
+    input: z
+      .object({ viewer: z.string().regex(VIEWER_ID, 'a viewer id: 8 to 64 letters, digits and dashes').describe('The viewer its board stream named, `GET /board?viewer=<id>`.') })
+      .describe(
+        "Say the user acted on this viewer (a page's tab): it becomes the board's `viewers.active` while its board stream stays open and no other viewer acts after it. Held in the tower's memory, never logged. A renderer calls it when it gains focus and as the user acts, at most every few seconds. @since 1.128",
+      ),
+    reply: ok,
+  },
   'let-go': {
     input: z.object({ id }).describe("Take a stranded worker (stopped, killed or lost, waiting to be resumed) off duty: a fact in its log, appended by the host. Its conversation stays resumable from the floor's archive."),
     reply: ok,

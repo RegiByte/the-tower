@@ -264,6 +264,11 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 - **Verbs**: `POST /<verb>` with a JSON body: `spawn`, `resume`, `submit`, `keys`, `kill`, `collection/create`,
   `tidy` and the rest, and the extensions' verbs by their names (`reviews/append`). Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
   the tower answers 403, its guard against other web pages.
+- **Which page the user is at** (API 1.128): a page names itself on its board stream, `GET /board?viewer=<id>` (its
+  own id, 8 to 64 letters, digits and dashes, one per tab), and calls `POST /viewer/active {viewer}` when it gains
+  focus and as the user acts, at most every few seconds. The board's `viewers.active` is the viewer the user acted on
+  last among those whose stream is open: one page, across every machine reading the tower, for what only one should do
+  (play a sound, speak). The tower holds it in memory and never logs it.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
   `/conversations/<id>`, `/archive/<project>`, `/collection/<project>/<collection>/<item>`, `/reviews/<project>`
   (deprecated since 1.93: the reviews extension's `/reviews/history/<project>`),

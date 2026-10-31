@@ -8,7 +8,7 @@ import { defineResource, type StartedResource } from 'braided'
 import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, type Board, type Card, type SystemView } from '../bridge/board.ts'
 import { foldBoard, SLOW_MS } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
-import { API_VERSION } from '../shared/api.ts'
+import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import type { Config } from '../shared/model.ts'
 import { renderersOf } from '../renderers.ts'
@@ -53,6 +53,33 @@ export const publisher = defineResource({
       return kept.keeps
     }
 
+    /** The viewer each open board stream belongs to, when it named one (`GET /board?viewer=<id>`). */
+    const viewerOf = new Map<http.ServerResponse, string>()
+    /** When the user last acted on each viewer whose board stream is open (`viewer/active`): the tower's memory alone. */
+    const actedAt = new Map<string, number>()
+
+    /** The viewer the user acted on last among those with an open board stream. */
+    const activeViewer = (): string | undefined => [...actedAt].reduce<[string, number] | undefined>((last, at) => (!last || at[1] > last[1] ? at : last), undefined)?.[0]
+
+    /** The user acted on `viewer`: it is active from now until another acts after it or its last stream closes. */
+    const viewerActive = (viewer: string): { t: 'ok' } | ApiError => {
+      if (![...viewerOf.values()].includes(viewer)) return apiError('not_found', `No open board stream belongs to viewer ${viewer}: open GET /board?viewer=${viewer} first`)
+      const was = activeViewer()
+      actedAt.set(viewer, Date.now())
+      if (activeViewer() !== was) schedulePublish()
+      return { t: 'ok' }
+    }
+
+    /** A board stream closed: its viewer is forgotten once no open stream belongs to it. */
+    const viewerGone = (res: http.ServerResponse) => {
+      const viewer = viewerOf.get(res)
+      viewerOf.delete(res)
+      if (viewer === undefined || [...viewerOf.values()].includes(viewer)) return
+      const was = activeViewer()
+      actedAt.delete(viewer)
+      if (activeViewer() !== was) schedulePublish()
+    }
+
     const viewOf = (): SystemView => viewAt(readConfig())
     const viewAt = (config: Config): SystemView => ({
       config,
@@ -70,6 +97,7 @@ export const publisher = defineResource({
       stores: extensions.registry().stores,
       paths,
       keeps: keepsOf(config),
+      viewers: ((active) => (active === undefined ? {} : { active }))(activeViewer()),
       now: Date.now(),
     })
 
@@ -161,13 +189,15 @@ export const publisher = defineResource({
     const clock = setInterval(schedulePublish, CLOCK_PUBLISH_MS)
 
     /** A board client observes the machine while it holds the board, so its first board already says what runs. */
-    async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse) {
+    async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse, viewer: string | undefined) {
       let gone = false
       const observing = system.observe()
+      if (viewer !== undefined) viewerOf.set(res, viewer)
       req.on('close', () => {
         gone = true
         boardClients.delete(res)
         behind.delete(res)
+        viewerGone(res)
         void observing.then((release) => release())
       })
       await observing
@@ -188,6 +218,8 @@ export const publisher = defineResource({
       for (const res of boardClients) res.end()
       boardClients.clear()
       boardListeners.clear()
+      viewerOf.clear()
+      actedAt.clear()
     }
 
     /** Calls `listener` with the board now, then with each board built that differs from the last, until the returned function is called. */
@@ -198,7 +230,7 @@ export const publisher = defineResource({
       return () => void boardListeners.delete(listener)
     }
 
-    return { board: boardOf, everyCard, archivedCards, streamBoard, onBoard, stop }
+    return { board: boardOf, everyCard, archivedCards, streamBoard, onBoard, viewerActive, stop }
   },
   halt: ({ stop }) => stop(),
 })

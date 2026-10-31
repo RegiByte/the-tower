@@ -216,6 +216,10 @@
           },
           "description": "Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`)."
         },
+        "viewers": {
+          "$ref": "#/definitions/Viewers",
+          "description": "The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on last among those whose board stream is open (`viewer/active`), none while no open one has said so."
+        },
         "adds": {
           "type": "object",
           "additionalProperties": {
@@ -320,6 +324,7 @@
         "rateLimits",
         "probes",
         "extensions",
+        "viewers",
         "adds",
         "asks",
         "today",
@@ -5031,6 +5036,16 @@
       ],
       "additionalProperties": false,
       "description": "An extension's guidance for agents as the tower serves it: the manifest's, with the config's over it."
+    },
+    "Viewers": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "The renderer pages reading the board (`Board.viewers`)."
     },
     "Adds": {
       "type": "object",

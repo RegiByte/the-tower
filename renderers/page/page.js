@@ -71,7 +71,7 @@ watchTips(document)
 const offerOf = (a) => (a.cap === POLICIES ? board().floors.flatMap((f) => floorPolicies(f).offers).find((o) => offerAskKey(o) === a.key) : undefined)
 
 /** The board drawn until the first arrives: one with nothing on it. */
-const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], asks: [], adds: {}, rateLimits: [], probes: [], extensions: [], hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
+const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], asks: [], adds: {}, rateLimits: [], probes: [], extensions: [], viewers: {}, hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false }))
 /** The floor a worker on the board is on. @param {string} id @returns {string | undefined} */
 const projectOfCard = (id) => board().floors.find((f) => f.cards.some((c) => c.id === id))?.id
 /** The board drawn, as the page's machine holds it. */
