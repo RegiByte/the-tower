@@ -823,7 +823,7 @@ A mark (API 1.128) says what is happening to a viewer subject now, as one capabi
 { label })` puts it, `bus.mark(key, cap, undefined)` lifts it, and `bus.marks(key)` answers each capability's, `{
 label, cap }`. Marks are held by key, apart from the subjects, so a view that draws its subject again (a document
 opened anew) draws its marks too; `on(kind, fn)` of the key's kind is told as one is put or lifted. Whoever puts a mark
-lifts it.
+lifts it: narrate marks the section it reads `Listening`, moves it as it reads on, and lifts it as it stops.
 `tower/document` and `tower/shelf` draw a marked section marked, its row lit and labelled with its marks, its part of
 the frame lit; other views draw no marks yet.
 
@@ -840,7 +840,7 @@ the frame lit; other views draw no marks yet.
 `tower/document` draws each section in its frame and, beside the frame in the page's own document, a gutter of one
 row per section, level with it as the document scrolls or resizes and never over the row before it: each row is
 labelled with its section's heading from the source and is a `section.acts` region, so a command `on: ["section"]`
-lands under every section (narrate's Listen reads that section alone) and
+lands under every section (narrate's Listen reads that section alone, its From here that section and the rest) and
 `show(section)` scrolls the frame to it. `tower/shelf` draws an `md` entry's file the same way, its sections of the
 shelf entry (one file of it shown at a time), API 1.128.
 The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by

@@ -1,8 +1,8 @@
 # Narration
 
 An example extension: **Listen** on every markdown or text item (a draft, say), every markdown or text file a worker
-shows, each section of a markdown document and each prompt and answer in a worker's Brief reads it aloud, and **Stop
-listening** in the palette stops it. It reads through the browser's own speech, or through a voice command you set: any
+shows, each section of a markdown document and each prompt and answer in a worker's Brief reads it aloud; **From
+here** on a section reads the document from that section to its end; and **Stop listening** in the palette stops it. It reads through the browser's own speech, or through a voice command you set: any
 text-to-speech program, run by a little server code. Copy the folder and make it yours.
 
 ## Add it
@@ -18,8 +18,9 @@ by its absolute path:
 
 The tower picks it up without a restart. `tower extensions` lists it as started, and `tower extensions check
 /abs/path/to/narrate` reads it as the tower would. The tower page shows **Listen** on every draft, beside the tab of a
-markdown or text file a worker showed, in the gutter beside each section of a markdown document, beside the copy of
-each prompt and answer in the Brief, and in the palette; the CLI and Tower 3D, which don't import client modules,
+markdown or text file a worker showed, in the gutter beside each section of a markdown document (a kept item, a
+shown file, a shelf page) with **From here** next to it, beside the copy of each prompt and answer in the Brief, and in
+the palette; the CLI and Tower 3D, which don't import client modules,
 leave it out.
 
 ## A voice command
@@ -60,9 +61,15 @@ other program (a local model, a voice service's CLI) follows the same shape: rea
 
 ## How it plays
 
+A narration reads parts in order. Listen on a section or a prompt reads it alone; From here reads that section and
+each one after it; Listen on a document the page draws by sections (a kept item's head, a shown file's tab) reads it
+section by section from the first, and anything else as one text. While it reads, the section being read is marked in
+the document (its row in the gutter says "Listening", its part of the page is lit) and a notice at the bottom of the
+page says what is read, with **Stop**, wherever you go on the page.
+
 `client/voice.js` holds both voices. With a command, it voices the first chunk (Listen stays busy, and a toast says
-it is voicing), plays it in an `<audio>` element while the next chunk is voiced, and so on in order; Stop, or another
-Listen, pauses it and drops what is still being voiced. The audio is fetched whole into a Blob URL, which plays in
+it is voicing), plays it in an `<audio>` element while the next chunk is voiced, and so on in order, across the parts; Stop, or
+another Listen, pauses it and drops what is still being voiced. The audio is fetched whole into a Blob URL, which plays in
 Chrome and in WebKit (Safari, Tower.app) alike.
 
 ## What it shows
@@ -77,3 +84,6 @@ Chrome and in WebKit (Safari, Tower.app) alike.
 - `client/narrate.js`: a command's export takes `{ tower, board, target, subject, args, kit }`; `target` is the
   subject (`{ kind, key, project, value }`), `tower` the page's `window.tower`, the same API every renderer drives,
   `textOf(tower, target)` reads a subject's text wherever it is, and `kit.toast` says something to the user.
+  `kit.bus` is the page's viewer subjects: `bus.under(of, 'section')` finds a document's sections, and
+  `bus.mark(key, 'narrate', { label })` marks the one being read, for the document to draw. `kit.notice` is a toast
+  that stands until it is closed: "Listening", with Stop.
