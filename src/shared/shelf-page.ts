@@ -196,6 +196,12 @@ export type StreamMsg = ScreenMsg | TerminalMsg | ShellStream
 export type Tower = {
   framed: boolean
   version: typeof API_VERSION
+  /**
+   * This page's viewer id, one per tab, which its board stream names and which it says the user acted on
+   * (`viewer/active`) as they focus it, press or type: the page whose id is the board's `viewers.active` is the one the
+   * user is at. Undefined in a framed shelf page, which is its framing page's. @since 1.128
+   */
+  viewer: string | undefined
   subscribe(fn: (board: Board, self: ShelfSelf | undefined) => void): () => void
   /** Why there is no live board, `code` config, internal or disconnected, until `subscribe` hands a board again. */
   onBoardError(fn: (err: Error & { code: BoardError['code'] }) => void): () => void
