@@ -43,8 +43,9 @@ Every request the command makes of the tower claims its caller in headers ([`cal
 `tower-client: cli`, and `tower-session` with the session's `TOWER_SESSION_ID` when a worker runs it, which the tower
 reads as the call's caller, not authenticated ([[extensions]]). Every word after `tower` is the core's; an extension's
 doors, verbs and reads are reached under one of them, `tower x <capability> <name> [input]` (a writable fact's door
-`facts/<fact>`, then a verb, then a read whose path matches), and `tower x` alone lists every running extension's doors,
-verbs and reads in their words.
+`facts/<fact>`, then a verb, then a read whose path matches), `tower x <capability>` prints what it tells the workers
+and its calls, and `tower x` alone lists every running extension's doors, verbs and reads in their words. `tower whoami`
+ends with the brief of each extension on the worker's floor that gives guidance ([[extensions]]).
 
 `submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`. `kill` takes
 a session id or a running worker's callsign. Run by a worker (`TOWER_SESSION_ID` set), each first has the host append

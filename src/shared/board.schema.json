@@ -4453,6 +4453,10 @@
           ],
           "additionalProperties": false,
           "description": "What it adds to the spawn form, when it adds anything."
+        },
+        "guidance": {
+          "$ref": "#/definitions/Guided",
+          "description": "What it tells the workers, the config's over its manifest's, when either says anything."
         }
       },
       "required": [
@@ -5011,6 +5015,22 @@
       ],
       "additionalProperties": false,
       "description": "A spawn field the form draws, by name: its value goes in a spawn's `x.<cap>.<name>`. `options`: where its choices are, a path into the extension's own floor part (`floor.x.roles.options`), each `{value, label, hint?}`; without one, it is typed."
+    },
+    "Guided": {
+      "type": "object",
+      "properties": {
+        "brief": {
+          "type": "string"
+        },
+        "full": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "brief"
+      ],
+      "additionalProperties": false,
+      "description": "An extension's guidance for agents as the tower serves it: the manifest's, with the config's over it."
     },
     "Adds": {
       "type": "object",

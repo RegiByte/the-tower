@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "unknown",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-10-31",
   "refs": [
     "hub/PRINCIPLES.md",
     "hub/src/bridge/facts.ts#factsOf",

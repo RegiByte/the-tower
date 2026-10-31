@@ -484,7 +484,7 @@ requires `project`, a project-scoped read names it as a `<project>` param or in 
 floor where the capability is off. A handler that throws, or answers off its reply schema, fails that call as
 `internal` and lists a problem on the extension; to refuse, it answers an error, `{t: 'error', code, message}`. A
 verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry `Deprecation` and a `Link` to `use`.
-`tower x` lists every running extension's doors, verbs and reads, and `tower x <capability> <name> '<json>'` calls one
+`tower x` lists every running extension's doors, verbs and reads, `tower x <capability>` one extension's guidance and its calls, and `tower x <capability> <name> '<json>'` calls one
 (API 1.126): `facts/<fact>` is the door of a writable fact (below), then a verb by its name, then the read whose path
 the name matches (`tower x policies runs/app '{"policy": "nightly"}'`), the JSON its query. While the capability isn't running, the name goes to the tower as a verb, which says why it can't answer. A read is a `GET` too,
 such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's `port`, which `tower
@@ -534,6 +534,14 @@ starting or down). It answers `{ session, value }`. No `around` link wraps a doo
 a door is neither. A worker writes through it with `tower x <cap> facts/<name> '{"value": "…"}'`. A verb's name holds
 no `/`, so no verb takes a door's name; a read whose path matches `facts/<name>` of a writable fact is a `conflict`
 warning, reached by `GET` and never by `tower x`.
+
+**Guidance** (API 1.128) tells the workers when to use an extension and how. A manifest's `guidance` holds `brief`,
+one line of at most 200 characters, and optionally `full`, markdown of at most 4000: when to use its doors, verbs and
+reads, when not to, and how, with the exact commands. `tower whoami` lists the brief of each running extension on the
+worker's floor, one line each, and `tower x <capability>` prints the full text before its doors, verbs and reads, so a
+worker carries one line until it asks for more. The user's config replaces either and adds to the full text
+(`extensions.<id>.guidance`, [config](config.md)); `ExtensionView.guidance` is the result, on the board and at
+`GET /extensions`. A config edit changes it without a restart; workers pick it up the next time they read it.
 
 `folds.card.project` is the fold that shows it, written in the manifest: `{ "lines": { "from": "fact:<name>", "pick":
 "last" } }` puts one line on the card, the newest value of that fact over the worker's lineage, and none when that is

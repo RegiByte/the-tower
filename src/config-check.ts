@@ -6,13 +6,13 @@
  */
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
+import { guidanceOf, manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
 import { respelled, type Respelled } from './bridge/legacy.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
 import { defaultRenderer, renderersOf } from './renderers.ts'
 import type { Layout } from './shared/regions.ts'
-import type { ViewDecl } from './shared/extensions.ts'
+import { GuidanceConfig, type ViewDecl } from './shared/extensions.ts'
 import { SHELF_KINDS, shelfProblem } from './shelf.ts'
 import {
   BRIEF_KEYS,
@@ -183,6 +183,14 @@ const settingsProblems = (at: string, found: Found | undefined, settings: unknow
   return parsed.ok ? [] : parsed.problems.map((p) => fail(p.path, p.message))
 }
 
+/** An extension's guidance in the config: its shape, and a brief to list it by, its manifest's or its own. */
+const guidanceProblems = (at: string, found: Found | undefined, guidance: unknown): ConfigProblem[] => {
+  const parsed = GuidanceConfig.safeParse(guidance)
+  if (!parsed.success) return parsed.error.issues.map((i) => fail([at, ...i.path].join('.'), i.message))
+  const guided = guidanceOf(found && manifestOf(found)?.guidance, parsed.data)
+  return typeof guided === 'string' ? [fail(at, guided)] : []
+}
+
 /** A bundled extension's folder is the checkout's; a new one's is the absolute `path` holding its extension.json. */
 const folderProblems = (at: string, found: Found, dir: unknown): ConfigProblem[] => {
   if (found.bundled) return dir === undefined ? [] : [{ level: 'warn', key: `${at}.path`, problem: `${found.id} is bundled, in the checkout: path is read only for a new extension` }]
@@ -197,13 +205,14 @@ const extensionEntries = (config: Config, { found }: Extensions): ConfigProblem[
   if (!isObject(config.extensions)) return [fail('extensions', 'takes an object of extensions by id, such as { "roles": { "path": "/an/absolute/folder" } }')]
   return Object.entries(config.extensions).flatMap(([id, entry]) => {
     const at = `extensions.${id}`
-    if (!isObject(entry)) return [fail(at, `takes an object: path, off and settings, not ${JSON.stringify(entry)}`)]
+    if (!isObject(entry)) return [fail(at, `takes an object: path, off, settings and guidance, not ${JSON.stringify(entry)}`)]
     const one = found.find((f) => f.id === id)!
     return [
       ...unknownKeys(`${at}.`, entry, EXTENSION_KEYS),
       ...folderProblems(at, one, entry.path),
       ...(entry.off === undefined || typeof entry.off === 'boolean' ? [] : [fail(`${at}.off`, 'takes true or false')]),
       ...(entry.settings === undefined ? [] : isObject(entry.settings) ? settingsProblems(`${at}.settings`, one, entry.settings) : [fail(`${at}.settings`, 'takes an object')]),
+      ...(entry.guidance === undefined ? [] : guidanceProblems(`${at}.guidance`, one, entry.guidance)),
     ]
   })
 }

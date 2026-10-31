@@ -26,9 +26,9 @@ export type Project = {
 /**
  * An extension the system runs (decision `extensions`), by id: a bundled one's fields overridden, or a new one in the
  * absolute folder `path`, which holds its `extension.json`. `off` turns it off everywhere; `settings` are parsed by its
- * manifest's settings schema.
+ * manifest's settings schema; `guidance` replaces or adds to what its manifest tells the workers.
  */
-export type ExtensionConfig = { path?: string; off?: boolean; settings?: Record<string, unknown> }
+export type ExtensionConfig = { path?: string; off?: boolean; settings?: Record<string, unknown>; guidance?: { brief?: string; full?: string; also?: string } }
 
 /** An extension's settings on one floor. */
 export type FloorExtensionConfig = { settings?: Record<string, unknown> }
@@ -332,7 +332,7 @@ export const RETENTION_KEYS = keysOf<RetentionConfig>()(['days'])
 export const USER_KEYS = keysOf<UserConfig>()(['name'])
 export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
 export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings', 'layout'])
-export const EXTENSION_KEYS = keysOf<ExtensionConfig>()(['path', 'off', 'settings'])
+export const EXTENSION_KEYS = keysOf<ExtensionConfig>()(['path', 'off', 'settings', 'guidance'])
 export const FLOOR_EXTENSION_KEYS = keysOf<FloorExtensionConfig>()(['settings'])
 export const CAPABILITY_KEYS = keysOf<CapabilityConfig>()(['off'])
 
