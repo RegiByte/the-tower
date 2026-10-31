@@ -740,11 +740,10 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     }
     const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
     const e = read.extensions.find((x) => x.provides === cap && x.state === 'started')
-    if (!e) throw new CliError(`No running extension provides ${cap}`, '`tower extensions` lists every extension and its state')
-    const target = xTarget(e, verb)
-    if (!target) throw new CliError(`${cap} offers no "${verb}": ${offeredLine(e)}`)
-    if (target.t === 'call') {
-      console.log(JSON.stringify(await command(target.verb, body), null, 2))
+    const target = e && xTarget(e, verb)
+    if (e && !target) throw new CliError(`${cap} offers no "${verb}": ${offeredLine(e)}`)
+    if (!target || target.t === 'call') {
+      console.log(JSON.stringify(await command(target?.verb ?? `${cap}/${verb}`, body), null, 2))
       return
     }
     if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new CliError(`A read's input is its query, an object: ${input}`, `${usageLine('x')}, the input one argument: '{"project": "app"}'`)
