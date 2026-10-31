@@ -1,0 +1,21 @@
+{
+  "seed": [
+    "tower keep policies < $EXT/shots/seed/morning-triage.md && tower keep policies < $EXT/shots/seed/dependency-updates.md && tower keep policies < $EXT/shots/seed/release-notes.md",
+    "id=$(ls $TOWER_SANDBOX/collections/lab/policies | grep release-notes) && tower policies approve $id && echo 'Link each entry to its pull request.' >> $TOWER_SANDBOX/collections/lab/policies/$id",
+    "id=$(ls $TOWER_SANDBOX/collections/lab/policies | grep morning-triage) && slot=$(node -e 'const d = new Date(); d.setUTCHours(0, 0, 0, 0); console.log(+d)') && tower x policies pass \"{\\\"project\\\": \\\"lab\\\", \\\"policy\\\": \\\"$id\\\", \\\"slot\\\": $slot, \\\"outcome\\\": \\\"offered\\\"}\"",
+    "tower policies run $(ls $TOWER_SANDBOX/collections/lab/policies | grep dependency-updates)"
+  ],
+  "scenes": [
+    {
+      "name": "panel", "open": "#policies/lab", "size": "1180x720",
+      "steps": [{ "until": ".policy", "text": "Dependency updates" }, { "until": ".offer", "text": "Morning triage" }],
+      "crop": "[data-view=\"policies/policies\"]", "pad": 0
+    },
+    {
+      "name": "floor", "open": "#$WORKER_1", "size": "1180x720",
+      "steps": [{ "until": ".offers .offer-row" }, { "until": ".sess .run" }, { "until": ".tray", "text": "policies" }],
+      "crop": "section.floor"
+    }
+  ],
+  "text": [{ "name": "policies", "run": "tower policies" }]
+}

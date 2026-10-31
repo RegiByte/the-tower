@@ -1,0 +1,9 @@
+sour-thrush   Morning triage       daily at 00:00 (UTC)
+              ask · live 0/1
+              now: today 00:00 UTC is offered, until tomorrow 00:00 UTC
+silent-cello  Dependency updates   Mondays at 06:00 (UTC)
+              auto · not approved: its slots are offered · live 1/1 · last: run 1, by hand, HOLMES-93 working
+              now: Mon 06:00 UTC will be held: run 1 (HOLMES-93) still runs
+lone-pelican  Release notes draft  Fridays at 16:00 (UTC)
+              auto · NOT approved (edited since 8cae1d45) · live 0/1
+              now: Fri 16:00 UTC will be offered
