@@ -1,0 +1,110 @@
+{
+  "workers": 5,
+  "scenes": [
+    {
+      "name": "floor",
+      "open": "#$WORKER_1",
+      "size": "1180x640",
+      "steps": [
+        {
+          "until": ".floor .adds button",
+          "text": "Open Grid"
+        }
+      ],
+      "crop": [
+        ".floor .sign",
+        ".floor .adds"
+      ]
+    },
+    {
+      "name": "add-to-grid",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "until": ".bar-top button",
+          "text": "Add to grid"
+        },
+        {
+          "until": ".bar-top .pill [data-since]",
+          "text": "s"
+        }
+      ],
+      "crop": ".bar-top"
+    },
+    {
+      "name": "grid",
+      "open": "#v/grid/grid/floor%3Alab",
+      "size": "1280x800",
+      "steps": [
+        {
+          "until": ".grid-cell:nth-child(4) .bar-info .call"
+        },
+        {
+          "until": ".grid-cell:nth-child(4) .pill [data-since]",
+          "text": "s"
+        }
+      ],
+      "crop": "[data-view=\"grid/grid\"]"
+    },
+    {
+      "name": "pick",
+      "open": "#v/grid/grid/floor%3Alab",
+      "size": "1280x800",
+      "steps": [
+        {
+          "click": ".grid-cell:first-child .lead .pick"
+        },
+        {
+          "until": ".bar-pick:popover-open [data-pick]"
+        }
+      ],
+      "crop": [
+        ".grid-cell:first-child .bar-top",
+        ".bar-pick:popover-open"
+      ]
+    },
+    {
+      "name": "add",
+      "open": "#v/grid/grid/floor%3Alab",
+      "size": "1280x800",
+      "steps": [
+        {
+          "until": ".grid-cell:nth-child(3) .bar-info .call"
+        },
+        {
+          "eval": "document.querySelectorAll('.grid-cell').length === 4 && document.querySelector('.grid-cell:last-child [aria-label=\"Take it out of the grid\"]').click()"
+        },
+        {
+          "click": "[data-grid-open-add]",
+          "text": "Add worker"
+        },
+        {
+          "until": ".grid-add:popover-open [data-grid-add]"
+        }
+      ],
+      "crop": [
+        ".grid-bar",
+        ".grid-add"
+      ]
+    },
+    {
+      "name": "headless",
+      "open": "#v/grid/grid/floor%3Alab",
+      "size": "1280x560",
+      "steps": [
+        {
+          "until": ".grid-cell:nth-child(3) .call"
+        },
+        {
+          "eval": "document.querySelector('[data-grid-heads]').textContent === 'Hide heads' && document.querySelector('[data-grid-heads]').click()"
+        },
+        {
+          "until": "[data-grid-heads]",
+          "text": "Show heads"
+        }
+      ],
+      "crop": "[data-view=\"grid/grid\"]"
+    }
+  ]
+}
