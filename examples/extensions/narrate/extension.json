@@ -1,9 +1,9 @@
 {
   "id": "narrate",
-  "version": "1.3",
+  "version": "1.4",
   "title": "Narration",
-  "description": "Listen to what workers write: any markdown or text item, drafts among them, the markdown and text files they show, each section of a markdown document, and each prompt and answer of a brief, voiced by a command of your choosing or the browser's own speech.",
-  "requires": { "tower": "1.123" },
+  "description": "Listen to what workers write: any markdown or text item, drafts among them, the markdown and text files they show, each section of a markdown document or a document from a section to its end, and each prompt and answer of a brief, voiced by a command of your choosing or the browser's own speech.",
+  "requires": { "tower": "1.128" },
   "server": "server.ts",
   "client": "client",
   "settings": {
@@ -56,6 +56,13 @@
       "on": ["item.*", "shown", "section", "said"],
       "accepts": ["text/markdown", "text/plain"],
       "words": { "label": "Listen", "hint": "Read this aloud" }
+    },
+    "from-here": {
+      "module": "narrate.js",
+      "export": "fromHere",
+      "on": ["section"],
+      "accepts": ["text/markdown"],
+      "words": { "label": "From here", "hint": "Read this section and the ones after it aloud" }
     },
     "stop": { "module": "narrate.js", "export": "stop", "words": { "label": "Stop listening" } }
   }
