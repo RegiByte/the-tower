@@ -537,7 +537,10 @@ export const httpServer = defineResource({
       if (!dir) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
       const source = clientSource(dir, file)
       if (!source) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
-      if (path.extname(source) === '.ts') return res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN, ...headers }).end(bundledFile(source).text)
+      if (path.extname(source) === '.ts') {
+        const { text } = bundledFile(source)
+        return res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN, ...headers }).end(text)
+      }
       serveFile(res, source, { ...ANY_ORIGIN, ...headers })
     }
 
@@ -545,7 +548,8 @@ export const httpServer = defineResource({
     function coreViewFile(res: http.ServerResponse, file: string) {
       const source = clientSource(CORE_VIEWS_DIR, file)
       if (!source) return fail(res, 'not_found', `The core serves no view module "${file}"`)
-      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN }).end(bundledFile(source).text)
+      const { text } = bundledFile(source)
+      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN }).end(text)
     }
 
     /** A served module from before it moved into its bundled extension: what it is now, said deprecated (RFC 9745), with a `Link` to it. */
