@@ -62,7 +62,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   with the `edit` verb, at its `:line`. Its width rule is Claude Code's (`Bun.stringWidth`): given xterm's
   unicode-graphemes addon (`/addon-unicode-graphemes.js`, API 1.127), an emoji takes two cells and a grapheme cluster
   (a variation selector, a ZWJ sequence, a skin tone) is one character. Under xterm's default Unicode 6 widths most
-  emoji take one cell, and Claude's differential redraws after an emoji land a column off.
+  emoji take one cell, and Claude's differential redraws after an emoji land a column off. The bridge's headless
+  screens follow the same rule ([[log-reductions]]), so a snapshot draws as the live stream does.
 - `tips.ts`: the one tooltip every renderer shows for any `data-tip`, and the placement it shares with popovers
   ([[viewer-prefs]]).
 - `capabilities.ts`: what the tower lets a user do, as data: [`CAPABILITIES`](ref:hub/src/shared/capabilities.ts#CAPABILITIES),

@@ -1,5 +1,6 @@
 import headless from '@xterm/headless'
 import serialize from '@xterm/addon-serialize'
+import graphemes from '@xterm/addon-unicode-graphemes'
 import type { LogEvent, SessionLog } from '../shared/model.ts'
 
 export type Terminal = InstanceType<typeof headless.Terminal>
@@ -58,8 +59,18 @@ const sizeOf = (size: string): [number, number] => {
   return [cols, rows]
 }
 
-const terminalFor = ({ header }: SessionLog): Terminal =>
-  new headless.Terminal({ cols: header.cols, rows: header.rows, allowProposedApi: true })
+/**
+ * A headless terminal that gives a character the cells Claude Code does (`Bun.stringWidth`): an emoji two, a grapheme
+ * cluster one character. A screen it serializes then draws in a viewer's terminal (`/term-view.js`) as the live stream
+ * does; under xterm's default Unicode 6 widths, most emoji take one cell and Claude's redraws after one land a column off.
+ */
+export function headlessTerminal(options: { cols: number; rows: number; scrollback?: number }): Terminal {
+  const term = new headless.Terminal({ ...options, allowProposedApi: true })
+  term.loadAddon(new graphemes.UnicodeGraphemesAddon())
+  return term
+}
+
+const terminalFor = ({ header }: SessionLog): Terminal => headlessTerminal({ cols: header.cols, rows: header.rows })
 
 /**
  * How much output a replay writes before waiting for xterm to parse it: xterm throws away writes once ~50 MB wait
