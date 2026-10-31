@@ -16,10 +16,9 @@ floor.
 | ![Open Grid under a floor](shots/floor-light.png) | ![Open Grid under a floor](shots/floor-dark.png) |
 
 **The grid in the main pane**: up to four of the floor's workers, two side by side, three as two over one, four as
-four squares. Each cell is the worker's own view at cell size: its head over its tabs (Terminal, Brief, Changes,
-Reviews, and any an extension adds), its terminal typed into when the cell has focus. **Open** opens the worker on
-its own; ✕ takes it out of the grid. The grid opens with the floor's workers on duty, and keeps which workers it
-holds, so a reload, a link or Back opens it as it was.
+four squares. Each cell is the worker's own view at cell size, its head over its tabs, its terminal typed into when
+the cell has focus. **Open** opens the worker on its own; ✕ takes it out of the grid. A reload, a link or Back opens
+the grid as it was.
 
 | Light | Dark |
 | --- | --- |
@@ -53,8 +52,7 @@ closed. With four cells already, it takes the place of the first.
 | --- | --- |
 | ![Add to grid on a worker's head](shots/add-to-grid-light.png) | ![Add to grid on a worker's head](shots/add-to-grid-dark.png) |
 
-Tower 3D, The Week, the CLI and the workers have none of it: the grid is a view of the tower page, and it tells the
-workers nothing.
+Tower 3D, The Week, the CLI and the workers have none of it.
 
 ## Add it
 
@@ -67,50 +65,24 @@ by its absolute path:
 }
 ```
 
-The tower picks it up without a restart. `tower extensions` lists it as started, and `tower extensions check
-/abs/path/to/grid` reads it as the tower would.
+The tower picks it up without a restart.
 
 ## What it needs from you
 
-Nothing: it has no settings and runs no command. The one config key it reads is its chord, which the config's
-`keys` replaces:
-
-```json
-"keys": { "grid/grid": ["Meta+Shift+K"] }
-```
+Nothing. Its chord is the config's to change: `"keys": { "grid/grid": ["Meta+Shift+K"] }`.
 
 ## How it works
 
-Grid is client code only: a view, a region and a command, with no server.
-
-- `extension.json`
-  - `views.grid`: the view, `on` a floor or the whole board, at `pane` scale, showing cards. It `needs` the kit's
-    `region` and `display`. `keys` is its chord.
-  - `regions.card.cell`: a region the grid declares, one worker's view at `cell` scale. The grid asks the tower for
-    it on each cell, and the tower mounts the worker's own view there.
-  - `commands.add`: [Add to grid](#the-tower-page), offered on every card.
-- `client/grid.js`
-  - `mount(host, ctx)` draws the grid into `host` and returns `{ update, show, close }` (`docs/extending.md`, Views).
-    The tower page mounts it at a location, `#v/grid/grid/floor%3A<floor>`, so a reload, a link and Back keep it.
-  - Each cell is `kit.region(el, 'card.cell', card, { 'tower/card': { head, acts, pick, omit } })`. The grid draws
-    nothing in a cell itself: Open and ✕ go to the worker's head as `acts`, the floor's workers on duty as its
-    `pick`, and its own Add to grid in `omit`. The head answers with `act` and `pick` events, which the grid hears on
-    the cell. Hide heads hands each cell new options (`region.options(...)`), which keeps its tab and scroll.
-  - Add worker's menu is the grid's own, drawn with the same served parts the head draws its pick with (`lampOf`,
-    `statusName` from `/cards.js`).
-  - Which workers fill the cells, by floor, and whether heads show, are the view's own state (`ctx.state`, kept in
-    `tower.store`).
-  - `add` is Add to grid: `kit.display(card, { view: 'grid/grid' })` hands the card to the open grid (`show`), or
-    opens its floor's grid and then hands it over.
+Grid is client code only, a view, a region and a command. Each cell is the region `card.cell`, which the tower fills
+with the worker's own view at `cell` scale; the grid draws nothing in a cell itself, but hands the worker's head its
+Open and ✕ (`acts`) and the swap menu (`pick`). Which workers fill the cells, and whether heads show, are the view's
+own state, kept in `tower.store`.
 
 ## Make it yours
 
-- **How many cells, and how they sit**: `MAX` and the `.grid-cells` rules in `STYLE`, in `client/grid.js`.
-- **What a cell's head offers**: `ACTS` and `optionsOf` in `client/grid.js`.
-- **Which workers a new grid opens with**: `seed` in `client/grid.js`.
-- **The chord**: `views.grid.keys` in `extension.json`, or the config's `keys."grid/grid"`.
+In your copy, `client/grid.js` holds it all: `MAX` and `STYLE` for how many cells and how they sit, `ACTS` for what a
+cell's head offers, `seed` for which workers a new grid opens with.
 
 ## Pictures
 
-`npm run tool:extension-shots -- examples/extensions/grid` retakes them from the scenes in
-[`shots.json`](shots.json).
+`npm run tool:extension-shots -- examples/extensions/grid` retakes them from [`shots.json`](shots.json).
