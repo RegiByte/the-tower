@@ -490,9 +490,11 @@ a copy at run time.
 Types: inside the tower's checkout, `tsconfig.json` maps `tower:*` to `src/shared/*`, so `npm run typecheck` checks
 the examples' server code against what it imports (the mapping also admits shared modules that aren't served, which
 then fail at import: keep to the table). A copy elsewhere gets no types from the tower yet: no package of its
-declarations is published. To type one, point the same mapping at a tower checkout in the copy's own `tsconfig.json`
-(`"paths": { "tower:*": ["<tower>/src/shared/*"] }`, and `<tower>/src/shared/extensions.ts` for `Start` and its ctx);
-without it, the editor reports the imports unresolved and the extension still runs.
+declarations is published. To type one against a tower checkout, map the lent names in the copy's own
+`tsconfig.json` (`"paths": { "tower:*": ["<tower>/src/shared/*"] }`), and rewrite its `import type` lines, which
+name the checkout by relative path, to that checkout's absolute path: `<tower>/src/shared/extensions.ts` for
+`Start` and its ctx, `<tower>/src/bridge/board.ts` for `Card` and `Floor`. Without that, the editor reports those
+imports unresolved and the extension still runs.
 
 An extension with npm dependencies of its own declares them in its own `package.json` and installs them in its
 folder: its server code and its client's TypeScript, which the tower bundles at serve time, resolve packages from the
