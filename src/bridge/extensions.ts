@@ -6,6 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
+import { SVG_PATH } from '../shared/icons.ts'
 import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { RUNTIMES } from '../shared/model.ts'
@@ -22,9 +23,9 @@ export type Found = { id: string; bundled: boolean; dir?: string; text?: string;
 
 /**
  * A client folder's modules as discovery read them: each by the path it is served at below `/x/<cap>/` (a `.ts` as
- * `.js`), with the names it exports, and each module that couldn't be read, with why.
+ * `.js`), with the names it exports, and each module that couldn't be read, with why; `svgs`, its SVG files' paths.
  */
-export type ClientRead = { exports: Record<string, string[]>; unreadable: Record<string, string> }
+export type ClientRead = { exports: Record<string, string[]>; unreadable: Record<string, string>; svgs: string[] }
 
 /** What `contract.json` holds: the names of a capability's contract at a major, which leave only when the major moves. */
 export type Contract = { provides: string; major: number; names: string[] }
@@ -394,6 +395,14 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
   return { folds, problems }
 }
 
+/** The commands whose icon names an SVG its client folder doesn't hold. */
+const iconProblems = (manifest: Manifest, client: ClientRead | undefined): LoadProblem[] =>
+  Object.entries(manifest.commands ?? {}).flatMap(([name, c]) => {
+    const icon = c.words.icon
+    if (!icon || !SVG_PATH.test(icon) || client?.svgs.includes(icon)) return []
+    return [error('invalid', `${icon} is no SVG of its client folder: add the file, or name one of the core's icons`, `commands.${name}.words.icon`)]
+  })
+
 /**
  * Why a projected fold can't be read: it is a card's, alone on its kind (no x, no adds), and each kind it projects
  * names one of the manifest's facts, a string for `lines`.
@@ -656,7 +665,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
   const fields = compileFields(manifest, capabilityOf(manifest))
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems, ...viewProblems(manifest)]
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...iconProblems(manifest, found.client)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),

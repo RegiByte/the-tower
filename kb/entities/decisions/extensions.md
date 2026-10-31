@@ -201,11 +201,14 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   each. Every renderer draws through `/cards.js`:
   [`actionsOf`](ref:hub/src/shared/adds.ts#actionsOf) (the core's, then `adds`, then the commands offered),
   `badgesOf`, `actionWords` (an action's own `words` a fold gave it since 1.98, else a verb's words from its provider's
-  `ExtensionView.verbs` or a command's), and
+  `ExtensionView.verbs` or a command's), [`glyphOf`](ref:hub/src/shared/adds.ts#glyphOf) (since 1.130, the glyph a
+  command's `words.icon` names: one of the core's icons by name, or an SVG of its client folder served at
+  `/x/<cap>/<path>`, which renderers draw as a mask in the control's ink; a path to no file there refuses the
+  extension as it loads, [`iconProblems`](ref:hub/src/bridge/extensions.ts#iconProblems)), and
   [`runCommand`](ref:hub/src/shared/adds.ts#runCommand), which imports the module and calls its export with
   `{tower, board, subject, target, args}`: `subject` the subject's value until 2.0, `target` the subject itself. Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
   prints a card's lines. The tower page draws a card's, a floor's and an item's badges and actions where it draws
-  their own ([`added.js`](ref:hub/renderers/page/added.js)), a showing's beside its tabs while it is open, asks with the offers, and the palette lists them
+  their own ([`added.js`](ref:hub/renderers/page/added.js)), a showing's badges and verbs beside its tabs while it is open and its commands inside its tab, each its glyph alone (`shown.tab`, since 1.130), asks with the offers, and the palette lists them
   ([[command-palette]]); Tower 3D draws a desk's badges and verbs, and leaves commands out, as the CLI does.
 - **Middleware (1.85).** A manifest's `around` wraps verbs and hooks by qualified name, each the core's, its own, or
   of a capability it requires or wants, and existing there: the core's and its own checked as it is read

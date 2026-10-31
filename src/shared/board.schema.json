@@ -4718,7 +4718,7 @@
           "type": "string"
         },
         "words": {
-          "$ref": "#/definitions/Words"
+          "$ref": "#/definitions/CommandWords"
         },
         "on": {
           "type": "array",
@@ -4750,6 +4750,29 @@
       ],
       "additionalProperties": false,
       "description": "One of an extension's client commands as the board shows it: the export of a module served at `/x/<cap>/<module>`, and `on`, the subject kinds every subject of which is offered it (`item.*`: every collection's items), those whose `value.type` is one of `accepts` (since 1.98) when it has one."
+    },
+    "CommandWords": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "icon": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "destructive": {
+          "type": "boolean",
+          "const": true
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "description": "A command's words: `icon`, where a renderer draws it as a glyph alone, is one of the core's icons by name (`/icons.js`) or an SVG of its client folder, a path ending `.svg` below it."
     },
     "ExtensionSlot": {
       "type": "object",

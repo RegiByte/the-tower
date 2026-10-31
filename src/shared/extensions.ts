@@ -13,6 +13,7 @@ import { RUNTIMES, type Runtime } from './model.ts'
 import { FACT_KINDS } from './rate-limits.ts'
 import { chordProblem } from './keymap.ts'
 import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Layout, type Region } from './regions.ts'
+import { ICON, SVG_PATH } from './icons.ts'
 
 export type { StreamFact }
 
@@ -76,6 +77,9 @@ export const WRITABLE = '1.126'
 
 /** The minor an extension's guidance for agents arrived in: its manifest's, the config's over it, and where workers read it. */
 export const GUIDANCE = '1.129'
+
+/** The minor a command's words took an icon in, and the tower page its region inside an open shown tab. */
+export const ICONS = '1.130'
 
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
@@ -198,6 +202,12 @@ export type Scope = 'system' | 'project'
 /** A name in words, as a menu or the CLI offers it. */
 export type Words = { label: string; hint?: string; destructive?: true }
 
+/**
+ * A command's words: `icon`, where a renderer draws it as a glyph alone, is one of the core's icons by name (`/icons.js`)
+ * or an SVG of its client folder, a path ending `.svg` below it. @since 1.130
+ */
+export type CommandWords = Words & { icon?: string }
+
 /** A name on its way out: since its provider's version `since`, with what to `use` instead, qualified, and `why`. */
 export type Deprecated = { since: string; use?: string; why?: string }
 
@@ -271,7 +281,7 @@ export type SpawnOption = { value: string; label: string; hint?: string }
  * and `on`, the subject kinds every subject of which is offered it (`item.*`: every collection's items), those whose
  * `value.type` is one of `accepts` (since 1.98) when it has one.
  */
-export type ExtensionCommand = { name: string; module: string; export: string; words: Words; on?: string[]; accepts?: string[]; keys?: string[]; deprecated?: Deprecated }
+export type ExtensionCommand = { name: string; module: string; export: string; words: CommandWords; on?: string[]; accepts?: string[]; keys?: string[]; deprecated?: Deprecated }
 
 /**
  * One of an extension's views as the board shows it: `id`, `<provides>/<name>`, the export of a module served at
@@ -761,6 +771,7 @@ const viewer = sinceAt(VIEWER)
 const sections = sinceAt(SECTIONS)
 const writable = sinceAt(WRITABLE)
 const guided = sinceAt(GUIDANCE)
+const icons = sinceAt(ICONS)
 
 const Name = z
   .string()
@@ -792,6 +803,11 @@ const SubjectKind = z.string().regex(/^(card|floor|board|conversation|shown|coll
 const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().optional()), destructive: since(z.literal(true).optional()) })
 /** A name in words as a manifest or a fold's action gives them. */
 export const WordsShape = Words
+const Icon = z.union([
+  z.enum(Object.keys(ICON) as [keyof typeof ICON, ...(keyof typeof ICON)[]]).describe("One of the core's icons, by name: /icons.js's ICON."),
+  z.string().regex(SVG_PATH, 'a core icon name, or a path ending .svg below the client folder').describe('An SVG of its client folder, below it: drawn as a mask in the ink of the control it marks.'),
+])
+const CommandWordsShape = Words.extend({ icon: icons(Icon.optional().describe('Its glyph, where a renderer draws the command as an icon alone, its label and hint the tip.')) })
 const Word = z.string().regex(/^[a-z][a-z0-9.-]{0,47}$/, 'a lowercase word of letters, digits, dots and dashes, at most 48 long')
 const Chords = z.array(
   z.string().superRefine((chord, ctx) => {
@@ -966,7 +982,7 @@ const FoldSpec = z.strictObject({
 const Command = z.strictObject({
   module: folds(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
   export: folds(z.string().min(1)),
-  words: folds(Words),
+  words: folds(CommandWordsShape),
   on: folds(z.array(OnKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items, lines those picked in a worker\'s Changes, said a brief\'s prompts and answers, section a document\'s sections.')),
   accepts: sinceAt(SUBJECTS)(
     z

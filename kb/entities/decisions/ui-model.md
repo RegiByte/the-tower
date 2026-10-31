@@ -53,7 +53,7 @@ and a framed document's section are the same thing.
   body by `tower/text`. Each view draws one body per type in its subject's frame
   ([`typeView`](ref:hub/src/views/item.ts#typeView)): a kept item's under one head, with the way back to the floor's
   view of the extension declaring the item's collection; a showing's alone, filling its tab, whose head is the tab
-  strip's `shown.head`. An item's type is its file name's
+  strip's `shown.head`, its commands drawn as glyphs inside the open tab (`shown.tab`). An item's type is its file name's
   ([`MEDIA_TYPES`](ref:hub/src/shared/media.ts#MEDIA_TYPES): code as `text/plain`, so nothing a framed page loads
   from it runs as a script). The worker view is views since 1.111: [`tower/card`](ref:hub/src/views/card.ts#mount)
   draws a worker's head and declares `card.panes`, its tabs, where the renderer mounts the views on the card,

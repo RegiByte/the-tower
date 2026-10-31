@@ -1,4 +1,4 @@
-import { DISMISS_ASK_TITLE, actionWords, addedActions, badgesOf, esc, span } from '/cards.js'
+import { DISMISS_ASK_TITLE, actionWords, addedActions, badgesOf, esc, glyphOf, isCommand, span } from '/cards.js'
 import { ICON } from '/icons.js'
 
 /**
@@ -6,6 +6,8 @@ import { ICON } from '/icons.js'
  * press the page runs through `runAdded` (`/cards.js`); and the asks, as rows beside the offers.
  * @import { Board } from '../../src/bridge/board.ts'
  * @import { Action, Added, BoardAsk } from '../../src/shared/extensions.ts'
+ * @import { Glyph } from '../../src/shared/adds.ts'
+ * @import { Hold } from '../../src/shared/regions.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  */
 
@@ -26,6 +28,27 @@ const actionHtml = (board, key, action) => {
 
 /** Actions on a subject as buttons. @param {Board} board @param {Subject} subject @param {Added<Action>[]} actions */
 export const actionsHtml = (board, subject, actions) => actions.map((a) => actionHtml(board, subject.key, a)).join('')
+
+/** The actions a region holding `holds` draws: a command where it holds commands, a verb where it holds verbs. @param {Hold[]} holds @param {Added<Action>[]} actions */
+export const heldActions = (holds, actions) => actions.filter((a) => holds.includes(isCommand(a) ? 'commands' : 'verbs'))
+
+/** A glyph as the page draws it: a core icon inline, an extension's SVG as a mask in the ink around it. @param {Glyph} glyph */
+const glyphHtml = (glyph) => (glyph.t === 'core' ? ICON[glyph.name] : `<span class="icon glyph" style="--glyph: url(&quot;${esc(glyph.href)}&quot;)"></span>`)
+
+/**
+ * Actions inside a control that is itself pressed (a tab): each its glyph alone, its label when it names none, its
+ * words the tip; hidden from assistive tech as the control's own icons are, the palette running each by keyboard.
+ * @param {Board} board @param {Subject} subject @param {Added<Action>[]} actions
+ */
+export const iconActionsHtml = (board, subject, actions) =>
+  actions
+    .map((a) => {
+      const words = actionWords(board, a)
+      const glyph = glyphOf(board, a)
+      const tip = words.hint ? `${words.label} · ${words.hint}` : words.label
+      return `<span class="icon-btn added${words.destructive ? ' danger' : ''}" data-added="${esc(JSON.stringify({ subject: subject.key, action: a }))}" aria-hidden="true" data-tip="${esc(tip)}">${glyph ? glyphHtml(glyph) : `<small>${esc(words.label)}</small>`}</span>`
+    })
+    .join('')
 
 /** A subject's added actions as buttons. @param {Board} board @param {Subject} subject */
 export const addedActionsHtml = (board, subject) => actionsHtml(board, subject, addedActions(board, subject))

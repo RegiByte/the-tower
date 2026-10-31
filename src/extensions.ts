@@ -41,9 +41,15 @@ export const clientModules = (dir: string): Map<string, string> =>
       .map((file) => [servedAs(file.split(path.sep).join('/')), path.join(dir, file)]),
   )
 
-/** What a client folder exports, module by module, and why a module that doesn't parse can't be read. */
+/** The SVG files of the client folder `dir`, by their paths below it. */
+const clientSvgs = (dir: string): string[] =>
+  readdirSync(dir, { recursive: true, encoding: 'utf8' })
+    .filter((file) => file.endsWith('.svg'))
+    .map((file) => file.split(path.sep).join('/'))
+
+/** What a client folder exports, module by module, why a module that doesn't parse can't be read, and its SVGs. */
 const clientRead = (dir: string): ClientRead => {
-  const read: ClientRead = { exports: {}, unreadable: {} }
+  const read: ClientRead = { exports: {}, unreadable: {}, svgs: clientSvgs(dir) }
   for (const [module, file] of clientModules(dir)) {
     try {
       read.exports[module] = exportsOf(file)
