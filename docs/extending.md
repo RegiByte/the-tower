@@ -330,7 +330,8 @@ curl -sN -m 2 $B/board | grep -m1 '^data:'      # the board, once: /board is a s
 ## Served modules
 
 The tower serves what its own renderers draw alike, for yours to import. Each is TypeScript from `src/shared`,
-served as one ES module bundled with what it imports, readable from a framed page too:
+served as one ES module bundled with what it imports, readable from a framed page too, and lent to
+extensions' server code as `tower:<name>.js` ([Extensions](#extensions)):
 
 | URL | What it holds |
 |---|---|
@@ -367,6 +368,8 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/viewer.js` | what a viewer keeps in `tower.store` that every renderer reads alike, as one record (`Viewer`): dismissals, the ring, the brief rendered or raw, the diff layout, unfolded crews and the Stats range, read whole by `readViewer(tower.store.get)`, each under its key in `VIEWER_KEYS` |
 | `/spawn.js` | the new-worker dialog as a machine on `loop`: `spawnHandlers` its steps (open, editing, starting, closed), and `wireSpawn(dialog, io)` running it in your `<dialog>` with the form of `/cards.js`, keeping a prompt it closes on as a draft (`keepUnsent`, from the drafts client your renderer passes as `io.drafts`) and handing you the worker it started |
 | `/attend.js` | what a viewer is told about the waits and offers asking for them, as a machine on `loop`: `attendHandlers` over the state `attending(eye)`, or `attendNext(state, event)` to run one event by hand. What the viewer looks at reaches it as events: the window's `focus` and `visible`, and `watch` with the worker their view is on (`watchedIn(state)` is the one they watch: the view's, while the window has their eye): what begins is said (`announce`), notified (`notify`, `unnotify` once over or dismissed) and rung (`sound`, a score of `SOUNDS` in `/cards.js`), a `remind` ring re-armed as a timer, dismissals and the ring setting kept (`keep`, a field of the viewer's record of `/viewer.js`, fed back as `stored` when read again); your executors play, notify and keep, or drop what you don't do |
+| `/media.js` | media types by file extension (API 1.131): `mediaTypeOf(path)` (what the tower serves a file as, `UNKNOWN_TYPE` for an extension it doesn't name), `MEDIA_TYPES`, and `accepted(accepts, type)` (whether a view's `accepts` takes a type, `image/*` included) |
+| `/repos.js` | a floor's checkouts and how the core names their repos (API 1.131): `projectDirs` (the hub, then the repos), `checkoutDirs(floor, checkout)` (a checkout's dir in each, `MAIN_CHECKOUT` or a worktree's, `worktreePath`), `repoName` (a repo as the Changes and review anchors name it) and `langOf` (a file's fence language) |
 
 Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml`, never with a markdown library's own
 `parse`: those words can carry what a web page Claude read put in them, and your renderer runs at the tower's origin,
@@ -476,6 +479,25 @@ per `around` and an answer per `answers` entry, `launch` when it says `spawn.lau
 floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `signal` aborted at halt, the `board`, its
 calls, its stores, `raise` and `run`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
 the served modules: removing one is a major.
+
+Server code reaches the tower's helpers by name, never by a path into its checkout, so a folder copied anywhere still
+loads: `import { mediaTypeOf } from 'tower:media.js'` imports the [served module](#served-modules) `/media.js`, the
+same instance the tower runs (since 1.131). Every served module is lent as `tower:<name>.js`, and a name the tower
+doesn't serve fails at import, saying which it lends. Only lent names cross over: a relative import into the tower's
+`src/` works only from inside the checkout. `import type` lines are erased before the module runs, so they never break
+a copy at run time.
+
+Types: inside the tower's checkout, `tsconfig.json` maps `tower:*` to `src/shared/*`, so `npm run typecheck` checks
+the examples' server code against what it imports (the mapping also admits shared modules that aren't served, which
+then fail at import: keep to the table). A copy elsewhere gets no types from the tower yet: no package of its
+declarations is published. To type one, point the same mapping at a tower checkout in the copy's own `tsconfig.json`
+(`"paths": { "tower:*": ["<tower>/src/shared/*"] }`, and `<tower>/src/shared/extensions.ts` for `Start` and its ctx);
+without it, the editor reports the imports unresolved and the extension still runs.
+
+An extension with npm dependencies of its own declares them in its own `package.json` and installs them in its
+folder: its server code and its client's TypeScript, which the tower bundles at serve time, resolve packages from the
+folder up, so in place they may find the tower's `node_modules`, and a copy finds only its own (`files` imports Shiki
+this way).
 
 `requires` names the capabilities it can't run without, each at the version it is written for, the core's `tower`
 among them: it is refused while one is missing, and off on a floor where one is off. `wants` takes the same form

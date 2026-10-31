@@ -11,14 +11,17 @@
       "node"
     ],
     "allowImportingTsExtensions": true,
-    "allowJs": true
+    "allowJs": true,
+    "paths": {
+      "tower:*": ["./src/shared/*"]
+    }
   },
   "include": [
     "extensions",
     "scripts",
     "spikes",
     "src",
-    "extensions",
+    "examples/extensions/*/*.ts",
     "test"
   ],
   "exclude": [

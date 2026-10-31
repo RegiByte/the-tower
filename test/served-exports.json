@@ -1113,6 +1113,21 @@
       "viewOn",
       "viewsOf"
     ],
+    "/media.js": [
+      "MEDIA_TYPES",
+      "UNKNOWN_TYPE",
+      "accepted",
+      "mediaTypeOf"
+    ],
+    "/repos.js": [
+      "MAIN_CHECKOUT",
+      "WORKTREES_DIR",
+      "checkoutDirs",
+      "langOf",
+      "projectDirs",
+      "repoName",
+      "worktreePath"
+    ],
     "/drafts.js": [
       "AUTOSAVE_MS",
       "DRAFTS",

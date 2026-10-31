@@ -40,6 +40,8 @@ export const MODULES: Record<string, string> = {
   '/attend.js': path.join(SHARED, 'attend.ts'),
   '/term-view.js': path.join(SHARED, 'term-view.ts'),
   '/views.js': path.join(SHARED, 'views.ts'),
+  '/media.js': path.join(SHARED, 'media.ts'),
+  '/repos.js': path.join(SHARED, 'repos.ts'),
 }
 
 /** The core's view modules (`CORE_VIEWS`), served at `/x/tower/<name>.js`, the core being the capability `tower`. */

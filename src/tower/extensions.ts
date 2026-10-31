@@ -13,6 +13,7 @@ import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProbl
 import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
 import { importFresh } from '../fresh-imports.ts'
+import '../lent-modules.ts'
 import { runProcess } from '../run.ts'
 import { API_VERSION, apiError, COMPOSITES, type ApiError } from '../shared/api.ts'
 import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
