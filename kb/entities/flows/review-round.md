@@ -20,7 +20,7 @@ sequenceDiagram
   M->>T: GET /board: the author's card
   M->>T: POST /reviews/hire {project, of: CALLSIGN, by: hirer, tell?}
   T->>T: reviews: tower/spawn {cut: {from: checkout}, prompt: /tower:review <CALLSIGN> [tell], x: {reviews: {of}}, by, hire: true}
-  T->>T: reviews' launch: reportsTo CALLSIGN, exempt hiring; the limits skip it
+  T->>T: reviews' launch: reportsTo CALLSIGN, exempt hiring, so the limits skip it
   T->>T: fork: a worktree per repo from a snapshot of the author's checkout
   T->>H: spawn in the fork, its facts first (tower.x.reviews.of, tower.exempt, tower.reports-to), started on the review skill
   T->>H: fact tower.hire {id: reviewer} in the hirer's log
