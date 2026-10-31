@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import type { Board, Card, CardShown } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
-import { ADDRESS_TYPE, fileSubject, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
+import { ADDRESS_TYPE, fileSubject, linesAt, linesSubject, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
 import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, shownOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'file', at: 200, target: 'a.md' }] }] }] } as unknown as Board
@@ -166,4 +166,11 @@ test('views: display places a card on its worker view, its children in its tabs,
   const atHeading = fileSubject({ ...(file.value as Parameters<typeof fileSubject>[0]), fragment: 'install' })
   assert.deepEqual(displayed(withExplorer, atHeading)?.pane, { view: 'files/explorer', subject: 'card:w1', shows: file.key, args: ['install'] }, "a link's fragment rides as the pane's arg")
   assert.deepEqual(displayed(withExplorer, file, 'tower/document')?.pane, { view: 'tower/document', subject: file.key }, 'a view asked for is still found among the rest')
+})
+
+test('views: a lines subject a location names by its key alone is read back from the key, a # in its path kept', () => {
+  const lines = { card: 'w1', project: 'p', repo: 'r', path: 'docs/a#b.md', from: 3, to: 12 }
+  const { project, ...named } = lines
+  assert.deepEqual(linesAt(linesSubject(lines).key), named)
+  assert.equal(linesAt('file:w1/r/a.md'), undefined)
 })
