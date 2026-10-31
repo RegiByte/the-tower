@@ -38,7 +38,8 @@
     "tool:claude-check": "tsx scripts/claude-check.ts",
     "served:update": "UPDATE_SERVED=1 node --import tsx --test test/served.test.ts",
     "schema:board": "tsx scripts/board-schema.ts",
-    "tool:webkit": "tsx scripts/webkit.ts"
+    "tool:webkit": "tsx scripts/webkit.ts",
+    "tool:extension-shots": "tsx scripts/extension-shots.ts"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",

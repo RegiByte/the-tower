@@ -125,6 +125,8 @@ const describe = (details: any) => details.exception?.description ?? details.tex
 export type Page = {
   eval(expression: string): Promise<unknown>
   shot(file: string): Promise<void>
+  /** A PNG of one region of the page, in CSS pixels from its top left, at the page's scale. */
+  clip(file: string, rect: { x: number; y: number; width: number; height: number }): Promise<void>
   mouse(x: number, y: number): Promise<void>
   /** At the pointer, where `mouse` last moved it. */
   wheel(deltaY: number): Promise<void>
@@ -138,9 +140,9 @@ export type Page = {
 
 /**
  * Opens `url` in a fresh headless Chrome, runs `use` on it, and closes everything after. Page errors go to stderr.
- * `flags` are Chrome's own, after the driver's.
+ * `flags` are Chrome's own, after the driver's. `scale` is the device pixel ratio: 2 draws as a retina display does.
  */
-export async function withPage<T>(url: string, { width = 1280, height = 800, scheme, motion, flags = [] }: { width?: number; height?: number; scheme?: string; motion?: string; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
+export async function withPage<T>(url: string, { width = 1280, height = 800, scale = 1, scheme, motion, flags = [] }: { width?: number; height?: number; scale?: number; scheme?: string; motion?: string; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
   const port = await freePort()
   const profile = mkdtempSync(path.join(os.tmpdir(), 'tower-drive-'))
   const chrome = spawn(CHROME, [
@@ -158,7 +160,7 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sch
     await cdp.send('Runtime.enable')
     await cdp.send('Log.enable')
     await cdp.send('Page.enable')
-    await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile: false })
     const features = [scheme && { name: 'prefers-color-scheme', value: scheme }, motion && { name: 'prefers-reduced-motion', value: motion }].filter(Boolean)
     if (features.length) await cdp.send('Emulation.setEmulatedMedia', { features })
     const loaded = new Promise((resolve) => cdp.on('Page.loadEventFired', resolve))
@@ -175,6 +177,10 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sch
       },
       async shot(file) {
         const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' })
+        writeFileSync(file, Buffer.from(data, 'base64'))
+      },
+      async clip(file, rect) {
+        const { data } = await cdp.send('Page.captureScreenshot', { format: 'png', clip: { ...rect, scale: 1 } })
         writeFileSync(file, Buffer.from(data, 'base64'))
       },
       async mouse(x, y) {
