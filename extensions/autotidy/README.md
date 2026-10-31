@@ -67,7 +67,7 @@ or on one floor with `"capabilities": { "autotidy": { "off": true } }` in that p
 | Setting | Tidies | Unset |
 | --- | --- | --- |
 | `reap` | The processes the worker left, unless someone on duty works in its checkout (main's included): a process names no checkout, and may serve a worker sharing it. A server it started for you ends too, though you may still have it open: leave `reap` off where workers start servers you keep using. | `false` |
-| `worktrees` | Its worktree, once nobody is in it, it is clean and its branch is absorbed into its base: landed, not only pushed. One with an open pull request stays, though Tidy lists it. | `false` |
+| `worktrees` | Its worktree, once nobody is in it, it is clean and its branch is absorbed into its base: landed, not only pushed. One whose branch is pushed but not merged yet (an open pull request, say) stays, though Tidy lists it. | `false` |
 | `branches` | The kept branch its worktree held, once absorbed. | `false` |
 | `extensions` | The extensions' Tidy entries that name its checkout, unless someone on duty works in it: the reviews extension's landed thread, filed. | `false` |
 
