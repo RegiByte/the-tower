@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-10-31",
   "refs": ["hub/src/directory.ts#shownOf", "hub/src/tower/dispatch.ts#logFact", "hub/src/shared/api.ts#VERBS", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/views/item.ts#typeView", "hub/src/views/link.ts#mount", "hub/src/shared/subjects.ts#shownSubject", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
 }
 ---
@@ -40,7 +40,7 @@ worker that made it.
 - `GET /shown/<id>/<path>` serves a file the session showed, anything beside or below an html file it showed
   (the shelf's rule), or an image beside or below a markdown one ([[blob-reads]]), none of it hidden: no file whose
   path below the page's folder has a part starting with `.` ([`shownServes`](ref:hub/src/shelf.ts#shownServes)).
-  It is served with the shelf's CSP `sandbox` (a video with `nosniff` instead, which both renderers play in a
+  It is served with the shelf's CSP `sandbox` (a video or a sound with `nosniff` instead; a video both renderers play in a
   `<video>` with controls).
 - Who can read it bounds the route, more than what it serves. The answer carries no CORS header, so a page at
   another origin can load it as an `<img>` or a frame but never read it; the tower answers only its own Host names,
