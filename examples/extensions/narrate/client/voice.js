@@ -45,27 +45,31 @@ const voiced = async (tower, text) => {
   return URL.createObjectURL(await tower.blob(read))
 }
 
-/** Plays `url` to its end, or until it is paused; rejects when it can't play. */
-const play = (url) =>
+/**
+ * Plays `url` for narration `mine`, calling `onStart` once it sounds: to its end, or until a halt pauses it. A pause
+ * from elsewhere (a media key) stays a pause. Rejects when it can't play.
+ */
+const play = (url, mine, onStart) =>
   new Promise((resolve, reject) => {
     const done = (err) => {
       audio.onended = audio.onpause = audio.onerror = null
       URL.revokeObjectURL(url)
       err ? reject(err) : resolve()
     }
-    audio.onended = audio.onpause = () => done()
+    audio.onended = () => done()
+    audio.onpause = () => mine !== current && done()
     audio.onerror = () => done(new Error(`the voice's audio won't play: ${audio.error?.message || `media error ${audio.error?.code}`}`))
     audio.src = url
-    audio.play().catch(done)
+    audio.play().then(onStart, (err) => done(mine === current ? err : undefined))
   })
 
 /** Plays `first`, then each of `rest` voiced while the one before it plays, while narration `mine` is current. */
-const playAll = async (tower, mine, first, rest) => {
+const playAll = async (tower, mine, first, rest, onStart) => {
   let url = first
   for (let i = 0; ; i++) {
     const next = i < rest.length ? voiced(tower, rest[i]) : undefined
     next?.catch(() => {})
-    await play(url)
+    await play(url, mine, onStart)
     if (!next || mine !== current) return next?.then(URL.revokeObjectURL, () => {})
     url = await next
     if (mine !== current) return URL.revokeObjectURL(url)
@@ -74,7 +78,7 @@ const playAll = async (tower, mine, first, rest) => {
 
 /**
  * Reads `text` aloud through the voice command, cutting off whatever is being read. It settles once the first chunk
- * plays; a later chunk that fails is toasted.
+ * sounds, rejecting when it can't, or once the narration is stopped; a later chunk that fails is toasted.
  */
 export async function speakCommand(tower, text, toast) {
   const mine = halt()
@@ -83,7 +87,11 @@ export async function speakCommand(tower, text, toast) {
   toast(rest.length ? `Voicing ${rest.length + 1} parts…` : 'Voicing…')
   const url = await voiced(tower, first)
   if (mine !== current) return URL.revokeObjectURL(url)
-  playAll(tower, mine, url, rest).catch((err) => mine === current && toast(err.message))
+  let sounded = false
+  await new Promise((sounding, failed) => {
+    const onStart = () => ((sounded = true), sounding())
+    playAll(tower, mine, url, rest, onStart).then(sounding, (err) => (sounded ? mine === current && toast(err.message) : failed(err)))
+  })
 }
 
 /** Reads `text` aloud through the browser's own speech, cutting off whatever is being read. */
