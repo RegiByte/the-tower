@@ -111,6 +111,13 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     return lists.get(at)!
   }
 
+  /** A session fact of its own logged through the host, its value as given: whoever calls checks it. */
+  const writeFact = async (session: string, name: string, value: unknown) => {
+    if (!live.session(session)) throw new Error(`no session ${session}`)
+    const reply = await hostRequest(paths, { t: 'fact', id: session, fact: { hook_event_name: extensionFactName(provides, name), value } })
+    if (reply.t === 'error') throw new Error(reply.message)
+  }
+
   const ctx: StoresCtx = {
     streams: {
       append: async (name, at, code, fact) => {
@@ -139,9 +146,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
       append: async (session, name, value) => {
         const schema = a.schemas.facts.get(name)
         if (!schema) throw new Error(`${provides} declares no fact ${name}`)
-        if (!live.session(session)) throw new Error(`no session ${session}`)
-        const reply = await hostRequest(paths, { t: 'fact', id: session, fact: { hook_event_name: extensionFactName(provides, name), value: checked(schema, value, name) } })
-        if (reply.t === 'error') throw new Error(reply.message)
+        await writeFact(session, name, checked(schema, value, name))
       },
     },
     collections: {
@@ -205,6 +210,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
 
   return {
     ctx,
+    writeFact,
     /** Folds each stream `started` returns a `reduce` for, and keeps its `parse`. */
     attach: (started: Started) => {
       parse = started.parse

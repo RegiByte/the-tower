@@ -71,6 +71,9 @@ const VIEWER = '1.116'
 /** The minor a brief's prompts and answers (`said`) and a document's sections (`section`) became viewer subjects in. */
 const SECTIONS = '1.118'
 
+/** The minor writable facts arrived in: a fact's door and the manifest-only projection of a card's fold. */
+export const WRITABLE = '1.123'
+
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
 
@@ -198,6 +201,12 @@ export type Deprecated = { since: string; use?: string; why?: string }
 /** One of an extension's verbs as the board shows it: its qualified name, scope and words. */
 export type ExtensionVerb = { name: string; scope: Scope; description?: string; words?: Words; deprecated?: Deprecated }
 
+/** One of an extension's reads as the board shows it: its path below the capability, `GET /<capability>/<path>`. */
+export type ExtensionRead = { path: string; scope: Scope; description?: string; deprecated?: Deprecated }
+
+/** One of an extension's session facts as the board shows it: `writable`, who writes it through its door, when it has one. */
+export type ExtensionFact = { name: string; description?: string; writable?: Writer[] }
+
 /**
  * One of an extension's own subject kinds as the board shows it: `kind`, qualified (`reviews.thread`), its entries the
  * keyed ones at `list` in its own part of each subject of kind `in`.
@@ -222,6 +231,10 @@ export type ExtensionView = {
   problems: ExtensionProblem[]
   /** Its manifest's verbs, by qualified name. @since 1.82 */
   verbs: ExtensionVerb[]
+  /** Its manifest's reads, by path below its capability. @since 1.123 */
+  reads: ExtensionRead[]
+  /** Its manifest's session facts, the writable ones with their door at `facts/<name>`. @since 1.123 */
+  facts: ExtensionFact[]
   /** Its manifest's client commands, by name: what renderers that import modules run. @since 1.84 */
   commands: ExtensionCommand[]
   /** Its manifest's slots. @since 1.86 */
@@ -741,6 +754,7 @@ const files = sinceAt(FILES)
 const tabs = sinceAt(TABS)
 const viewer = sinceAt(VIEWER)
 const sections = sinceAt(SECTIONS)
+const writable = sinceAt(WRITABLE)
 
 const Name = z
   .string()
@@ -838,7 +852,24 @@ const Stream = z.strictObject({
   ),
   doors: stores(z.strictObject({ read: stores(Door), append: stores(Door) }).optional().describe('How others read it and append to it, through its owner.')),
 })
-const Fact = z.strictObject({ schema: stores(Schema), description: stores(z.string().optional()) })
+/** What a writable fact's door is named by below its capability, before the fact's name: `tabline/facts/line`. A verb's name holds no `/`, so none takes it. */
+export const FACT_DOOR = 'facts/'
+
+/** Who may write a fact through its door: `user`, a caller with no session; `self`, a worker writing its own. */
+export const WRITERS = ['user', 'self'] as const
+export type Writer = (typeof WRITERS)[number]
+const Fact = z.strictObject({
+  schema: stores(Schema),
+  description: stores(z.string().optional()),
+  writable: writable(
+    z
+      .array(z.enum(WRITERS))
+      .min(1)
+      .refine((by) => new Set(by).size === by.length, { message: 'each writer once' })
+      .optional()
+      .describe('Who writes it through its door, POST /<capability>/facts/<name>: user, a caller with no session; self, a worker writing its own.'),
+  ),
+})
 const Hook = z.strictObject({
   payload: around(Schema.describe('What the provider raises it with.')),
   answer: around(Schema.describe('What each answerer answers.')),
@@ -898,7 +929,17 @@ const SubjectDecl = z.strictObject({
   in: folds(z.enum(['board', 'floor', 'card']).describe('Where its subjects sit: in its own part of the board, a floor or a card.')),
   list: folds(z.string().min(1).describe('The array in its own x at `in` whose entries are the subjects; each has a `key`.')),
 })
+const Projection = z.strictObject({
+  from: writable(z.string().regex(/^fact:[a-z][a-z0-9.-]{0,47}$/, 'fact:<name>, one of its facts').describe('The fact it shows: fact:<name>.')),
+  pick: writable(z.literal('last').describe('Its newest value over the card\'s lineage: an empty string or null shows none.')),
+})
 const FoldSpec = z.strictObject({
+  project: writable(
+    z
+      .strictObject({ lines: writable(Projection) })
+      .optional()
+      .describe("A card's fold with no code: each contribution kind the newest value of one of its facts. A kind it projects holds no x or adds, and start returns no fold for it."),
+  ),
   x: folds(Schema.optional().describe("Its own part's JSON Schema, at subject.x.<capability>: on a card, a floor, the board, or an item of a collection it declares.")),
   adds: folds(z.array(z.enum(ADDS)).refine((adds) => new Set(adds).size === adds.length, { message: 'each add once' }).optional().describe('What it contributes beside its part.')),
 })

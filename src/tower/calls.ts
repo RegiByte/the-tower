@@ -8,7 +8,7 @@ import { z } from 'zod'
 import type { Accepted, CompiledRead, CompiledVerb } from '../bridge/extensions.ts'
 import { offOn } from '../bridge/stores.ts'
 import { apiError, isApiError, type ApiError } from '../shared/api.ts'
-import { matchRead, paramsOf, type Caller, type Deprecated, type ProblemLane } from '../shared/extensions.ts'
+import { matchRead, paramsOf, type Caller, type Deprecated, type ProblemLane, type Writer } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'
 import type { ExtensionsResource, Instance } from './extensions.ts'
 
@@ -32,7 +32,20 @@ const floorRefusal = (config: Config, a: Accepted, project: string): ApiError | 
   return apiError('refused', off === a.provides ? `${a.provides} is off on ${project}` : `${a.provides} is off on ${project}: it requires ${off}, off there`)
 }
 
-export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Config) => {
+/** Who a caller writes a fact as, and on which session, or why it writes none: a worker its own, a user the one it names. */
+const writerOf = (caller: Caller, session: string | undefined): { writer: Writer; session: string } | ApiError => {
+  if (caller.t === 'worker') {
+    if (session !== undefined && session !== caller.id) return apiError('refused', 'a worker writes its own fact: leave session out')
+    return { writer: 'self', session: caller.id! }
+  }
+  if (caller.t === 'user') return session === undefined ? apiError('invalid', 'name the worker by its session') : { writer: 'user', session }
+  return apiError('refused', `a caller of kind ${caller.t} writes no fact through a door: an extension logs its own with ctx.facts.append`)
+}
+
+/** What each writer of a door is, in words. */
+const WRITER_WORDS: Record<Writer, string> = { user: 'the user (a caller with no session)', self: 'a worker writing its own' }
+
+export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Config, projectOf: (session: string) => string | undefined) => {
   /** What a handler answered, as the caller gets it: an `ApiError` it chose, or its reply once its schema takes it. */
   const answered = async (a: Accepted, lane: ProblemLane, name: string, reply: z.ZodType, handle: () => unknown): Promise<Reply> => {
     const qualified = `${a.provides}/${name}`
@@ -102,6 +115,29 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     return apiError('not_found', `${cap} has no read at "${path}"`)
   }
 
+  /**
+   * The door of `cap`'s writable fact `name`: `{ session?, value }`, the value by the fact's schema or null for none,
+   * logged on the session for a caller its manifest's `writable` names, on a floor where `cap` is on.
+   */
+  const door = async (cap: string, name: string, input: unknown, caller: Caller): Promise<Reply> => {
+    const found = reach(holder, cap)
+    if ('t' in found) return found
+    const { a, instance } = found
+    const writers = a.manifest.facts?.[name]?.writable
+    if (!writers) return apiError('not_found', `${cap} declares no writable fact "${name}": facts/<name> is the door of a fact its manifest says is writable`)
+    const parsed = z.strictObject({ session: z.string().min(1).optional(), value: a.schemas.facts.get(name)!.nullable() }).safeParse(input)
+    if (!parsed.success) return apiError('invalid', z.prettifyError(parsed.error))
+    const by = writerOf(caller, parsed.data.session)
+    if ('t' in by) return by
+    if (!writers.includes(by.writer)) return apiError('refused', `${cap}'s ${name} is written by ${writers.map((w) => WRITER_WORDS[w]).join(' and ')}, not ${WRITER_WORDS[by.writer]}`)
+    const project = projectOf(by.session)
+    if (project === undefined) return apiError('not_found', `No session "${by.session}"`)
+    const refused = floorRefusal(readConfig(), a, project)
+    if (refused) return refused
+    await instance.writeFact(by.session, name, parsed.data.value)
+    return { session: by.session, value: parsed.data.value }
+  }
+
   /** A verb or read of an extension that is on its way out, as its manifest says. */
   const deprecationOf = (cap: string, name: string): Deprecated | undefined => {
     const live = holder.live(cap)
@@ -109,5 +145,5 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     return live.a.verbs.get(name)?.spec.deprecated ?? live.a.reads.get(name)?.spec.deprecated
   }
 
-  return { verb, verbOf, read, readAt, deprecationOf }
+  return { verb, verbOf, read, readAt, door, deprecationOf }
 }

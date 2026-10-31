@@ -6,7 +6,7 @@
  */
 import path from 'node:path'
 import { z } from 'zod'
-import { BUNDLED, capabilityOf, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { RUNTIMES } from '../shared/model.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
@@ -86,8 +86,24 @@ export type CompiledRead = { spec: NonNullable<Manifest['reads']>[string]; query
 /** What a read that serves a file answers: the file, by its absolute path. */
 export const FILE_SERVED = z.strictObject({ file: z.string().refine((file) => path.isAbsolute(file), 'an absolute path') })
 
-/** A fold a manifest declares: the zod of the `x` it makes, and what it adds. */
-export type CompiledFold = { x?: z.ZodType; adds: Add[] }
+/** A fold a manifest declares: the zod of the `x` it makes, what it adds, and the fold itself when the manifest projects it. */
+export type CompiledFold = { x?: z.ZodType; adds: Add[]; projected?: Fold }
+
+/**
+ * A card's fold that the manifest projects: each kind the newest value of its fact over the card's lineage, none when
+ * that is empty, null or never written.
+ */
+export const projectedFold =
+  (project: Projected): Fold =>
+  (_card, { own }) =>
+    Object.fromEntries(
+      Object.entries(project).flatMap(([kind, { from }]) => {
+        const value = own.facts?.findLast((f) => f.name === from.slice('fact:'.length))?.value
+        return value === undefined || value === null || value === '' ? [] : [[kind, [value]]]
+      }),
+    )
+
+type Projected = NonNullable<NonNullable<Manifest['folds']>[string]['project']>
 /** A hook of a manifest, its payload and answer schemas as zod. */
 export type CompiledHook = { spec: NonNullable<Manifest['hooks']>[string]; payload: z.ZodType; answer: z.ZodType }
 
@@ -354,6 +370,11 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
         error('invalid', kind.startsWith('item.') ? `an item's x is its collection's: ${provides} declares no collection ${kind.slice('item.'.length)}` : `a ${kind} holds no x of its own: its fold adds only`, `${at}.x`),
       )
     }
+    if (spec.project) {
+      problems.push(...projectionProblems(manifest, kind, spec))
+      folds.set(kind, { adds: Object.keys(spec.project) as Add[], projected: projectedFold(spec.project) })
+      continue
+    }
     const x = spec.x && zodOf(spec.x)
     if (typeof x === 'string') problems.push(error('invalid', `no JSON Schema the tower reads: ${x}`, `${at}.x`))
     else folds.set(kind, { ...(x && { x }), adds })
@@ -370,6 +391,33 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
   if (manifest.commands && !manifest.client) problems.push(error('invalid', 'commands are modules of its client folder: declare client', 'commands'))
   return { folds, problems }
 }
+
+/**
+ * Why a projected fold can't be read: it is a card's, alone on its kind (no x, no adds), and each kind it projects
+ * names one of the manifest's facts, a string for `lines`.
+ */
+const projectionProblems = (manifest: Manifest, kind: string, spec: NonNullable<Manifest['folds']>[string]): LoadProblem[] => {
+  const at = `folds.${kind}.project`
+  if (kind !== 'card') return [error('invalid', "a projection reads facts over a card's lineage: only folds.card projects", at)]
+  if (spec.x || spec.adds) return [error('invalid', 'a projected kind holds no x or adds: its fold is the projection, and start returns none for it', at)]
+  return Object.entries(spec.project!).flatMap(([add, { from }]) => {
+    const name = from.slice('fact:'.length)
+    const fact = manifest.facts?.[name]
+    if (!fact) return [error('invalid', `${from} names no fact of its manifest: declare facts.${name}`, `${at}.${add}.from`)]
+    return fact.schema.type === 'string' ? [] : [error('invalid', `${add} are text: facts.${name}.schema is a string's`, `${at}.${add}.from`)]
+  })
+}
+
+/**
+ * The reads `tower x <capability> facts/<name>` can't reach, a writable fact's door taking that name: they stay reachable
+ * by `GET`.
+ */
+const shadowedReads = (manifest: Manifest): LoadProblem[] =>
+  Object.keys(manifest.reads ?? {}).flatMap((path) =>
+    Object.entries(manifest.facts ?? {})
+      .filter(([name, f]) => f.writable && matchRead(path, `facts/${name}`))
+      .map(([name]) => warn('conflict', `tower x ${capabilityOf(manifest)} facts/${name} names the door of the writable fact ${name}, which this read's path takes too: the read is reached by GET only`, `reads.${path}`)),
+  )
 
 /** The stores' schemas as zod, or each that the tower can't read as a problem at its path. */
 const storeSchemas = (manifest: Manifest): { schemas: StoreSchemas; problems: LoadProblem[] } => {
@@ -595,6 +643,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const warnings = [
     ...ownContractProblems(found, manifest),
     ...Object.entries(found.client?.unreadable ?? {}).map(([module, why]) => warn('invalid', `client module ${module} doesn't parse: ${why}`, 'client')),
+    ...shadowedReads(manifest),
     ...underDeclared(raw, manifest.requires.tower),
     ...addsUnderDeclared(manifest, 'slots', SLOTS_ADD_SINCE),
     ...addsUnderDeclared(manifest, 'marks', MARKS_ADD_SINCE),
@@ -842,6 +891,23 @@ const verbsOf = (manifest: Manifest | undefined): ExtensionView['verbs'] =>
     ...(v.deprecated && { deprecated: v.deprecated }),
   }))
 
+/** A manifest's reads as the board shows them, by path below its capability. */
+const readsOf = (manifest: Manifest | undefined): ExtensionView['reads'] =>
+  Object.entries(manifest?.reads ?? {}).map(([path, r]) => ({
+    path,
+    scope: r.scope,
+    ...(r.description !== undefined && { description: r.description }),
+    ...(r.deprecated && { deprecated: r.deprecated }),
+  }))
+
+/** A manifest's session facts as the board shows them. */
+const factsOf = (manifest: Manifest | undefined): ExtensionView['facts'] =>
+  Object.entries(manifest?.facts ?? {}).map(([name, f]) => ({
+    name,
+    ...(f.description !== undefined && { description: f.description }),
+    ...(f.writable && { writable: f.writable }),
+  }))
+
 /**
  * Problems of the calls an extension answered or made, newest first, kept by the tower as they happen: one already
  * listed (the same lane, code, path and message) counts once more, dated by its latest.
@@ -998,6 +1064,8 @@ export const registry = (
       ...(a.off.length && { off: a.off }),
       problems: [...(calls.get(id) ?? []), ...startProblems, ...stamp(a.problems, now)].slice(0, PROBLEMS_SHOWN),
       verbs: verbsOf(a.manifest),
+      reads: readsOf(a.manifest),
+      facts: factsOf(a.manifest),
       commands: commandsOf(a.manifest),
       slots: slotsOf(a.manifest),
       subjects: subjectsOf(a.manifest),
@@ -1017,6 +1085,8 @@ export const registry = (
       state: r.state,
       problems: [...haltProblems(outcomes.get(r.id)), ...stamp(r.problems, now)].slice(0, PROBLEMS_SHOWN),
       verbs: verbsOf(r.manifest),
+      reads: readsOf(r.manifest),
+      facts: factsOf(r.manifest),
       commands: commandsOf(r.manifest),
       slots: slotsOf(r.manifest),
       subjects: subjectsOf(r.manifest),
@@ -1093,7 +1163,10 @@ export const mismatchOf = (started: unknown, manifest: Manifest): string | undef
   if (manifest.spawn?.launch === true && typeof started.launch !== 'function') return 'its manifest says spawn.launch, and start returned no launch function'
   if (manifest.spawn?.launch !== true && started.launch !== undefined) return "start returned launch, and its manifest doesn't say spawn.launch"
   const folds = isObject(started.folds) ? started.folds : {}
-  const unfolded = Object.keys(manifest.folds ?? {}).filter((kind) => typeof folds[kind] !== 'function')
+  const projected = Object.keys(manifest.folds ?? {}).filter((kind) => manifest.folds![kind].project)
+  const both = projected.filter((kind) => Object.hasOwn(folds, kind))
+  if (both.length) return `start returned folds for ${both.join(', ')}, which its manifest projects: a projected kind's fold is the manifest's`
+  const unfolded = Object.keys(manifest.folds ?? {}).filter((kind) => !projected.includes(kind) && typeof folds[kind] !== 'function')
   if (unfolded.length && (started.folds === undefined || isObject(started.folds))) return `its manifest declares folds ${unfolded.join(', ')}, and start returned no function for each`
   const lanes = [
     { key: 'folds', declared: manifest.folds, what: 'folds', is: (f: unknown) => typeof f === 'function', shape: 'a function (subject, ctx)' },

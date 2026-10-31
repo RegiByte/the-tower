@@ -4385,6 +4385,20 @@
           },
           "description": "Its manifest's verbs, by qualified name."
         },
+        "reads": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionRead"
+          },
+          "description": "Its manifest's reads, by path below its capability."
+        },
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionFact"
+          },
+          "description": "Its manifest's session facts, the writable ones with their door at `facts/<name>`."
+        },
         "commands": {
           "type": "array",
           "items": {
@@ -4450,6 +4464,8 @@
         "state",
         "problems",
         "verbs",
+        "reads",
+        "facts",
         "commands",
         "slots",
         "subjects",
@@ -4627,6 +4643,58 @@
       ],
       "additionalProperties": false,
       "description": "A name on its way out: since its provider's version `since`, with what to `use` instead, qualified, and `why`."
+    },
+    "ExtensionRead": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/Scope"
+        },
+        "description": {
+          "type": "string"
+        },
+        "deprecated": {
+          "$ref": "#/definitions/Deprecated"
+        }
+      },
+      "required": [
+        "path",
+        "scope"
+      ],
+      "additionalProperties": false,
+      "description": "One of an extension's reads as the board shows it: its path below the capability, `GET /<capability>/<path>`."
+    },
+    "ExtensionFact": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "writable": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Writer"
+          }
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "description": "One of an extension's session facts as the board shows it: `writable`, who writes it through its door, when it has one."
+    },
+    "Writer": {
+      "type": "string",
+      "enum": [
+        "user",
+        "self"
+      ]
     },
     "ExtensionCommand": {
       "type": "object",
