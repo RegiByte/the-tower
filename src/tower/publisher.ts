@@ -5,7 +5,7 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
-import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, type Board, type Card, type SystemView } from '../bridge/board.ts'
+import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, type Board, type Card, type SystemView, type Viewers } from '../bridge/board.ts'
 import { foldBoard, SLOW_MS } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
@@ -53,31 +53,43 @@ export const publisher = defineResource({
       return kept.keeps
     }
 
-    /** The viewer each open board stream belongs to, when it named one (`GET /board?viewer=<id>`). */
-    const viewerOf = new Map<http.ServerResponse, string>()
+    /** The viewer each open board stream belongs to, and the renderer it is a page of, when it named them. */
+    const streamsOf = new Map<http.ServerResponse, { viewer: string; renderer?: string }>()
     /** When the user last acted on each viewer whose board stream is open (`viewer/active`): the tower's memory alone. */
     const actedAt = new Map<string, number>()
 
-    /** The viewer the user acted on last among those with an open board stream. */
-    const activeViewer = (): string | undefined => [...actedAt].reduce<[string, number] | undefined>((last, at) => (!last || at[1] > last[1] ? at : last), undefined)?.[0]
+    /** The viewers as the board says them: the one the user acted on last, and each renderer's. */
+    const viewersNow = (): Viewers => {
+      const rendererOf = new Map([...streamsOf.values()].map((s) => [s.viewer, s.renderer]))
+      const latest = [...actedAt].sort((a, b) => b[1] - a[1]).map(([viewer]) => viewer)
+      const last: Record<string, string> = {}
+      for (const viewer of latest) {
+        const renderer = rendererOf.get(viewer)
+        if (renderer !== undefined && !(renderer in last)) last[renderer] = viewer
+      }
+      return { ...(latest.length && { active: latest[0] }), ...(Object.keys(last).length && { last }) }
+    }
+
+    /** Runs `change` on the viewers, publishing the board when what it says of them moved. */
+    const changingViewers = (change: () => void) => {
+      const was = JSON.stringify(viewersNow())
+      change()
+      if (JSON.stringify(viewersNow()) !== was) schedulePublish()
+    }
 
     /** The user acted on `viewer`: it is active from now until another acts after it or its last stream closes. */
     const viewerActive = (viewer: string): { t: 'ok' } | ApiError => {
-      if (![...viewerOf.values()].includes(viewer)) return apiError('not_found', `No open board stream belongs to viewer ${viewer}: open GET /board?viewer=${viewer} first`)
-      const was = activeViewer()
-      actedAt.set(viewer, Date.now())
-      if (activeViewer() !== was) schedulePublish()
+      if (![...streamsOf.values()].some((s) => s.viewer === viewer)) return apiError('not_found', `No open board stream belongs to viewer ${viewer}: open GET /board?viewer=${viewer} first`)
+      changingViewers(() => actedAt.set(viewer, Date.now()))
       return { t: 'ok' }
     }
 
     /** A board stream closed: its viewer is forgotten once no open stream belongs to it. */
     const viewerGone = (res: http.ServerResponse) => {
-      const viewer = viewerOf.get(res)
-      viewerOf.delete(res)
-      if (viewer === undefined || [...viewerOf.values()].includes(viewer)) return
-      const was = activeViewer()
-      actedAt.delete(viewer)
-      if (activeViewer() !== was) schedulePublish()
+      const viewer = streamsOf.get(res)?.viewer
+      streamsOf.delete(res)
+      if (viewer === undefined || [...streamsOf.values()].some((s) => s.viewer === viewer)) return
+      changingViewers(() => actedAt.delete(viewer))
     }
 
     const viewOf = (): SystemView => viewAt(readConfig())
@@ -97,7 +109,7 @@ export const publisher = defineResource({
       stores: extensions.registry().stores,
       paths,
       keeps: keepsOf(config),
-      viewers: ((active) => (active === undefined ? {} : { active }))(activeViewer()),
+      viewers: viewersNow(),
       now: Date.now(),
     })
 
@@ -189,10 +201,10 @@ export const publisher = defineResource({
     const clock = setInterval(schedulePublish, CLOCK_PUBLISH_MS)
 
     /** A board client observes the machine while it holds the board, so its first board already says what runs. */
-    async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse, viewer: string | undefined) {
+    async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse, viewer: { viewer: string; renderer?: string } | undefined) {
       let gone = false
       const observing = system.observe()
-      if (viewer !== undefined) viewerOf.set(res, viewer)
+      if (viewer !== undefined) streamsOf.set(res, viewer)
       req.on('close', () => {
         gone = true
         boardClients.delete(res)
@@ -218,7 +230,7 @@ export const publisher = defineResource({
       for (const res of boardClients) res.end()
       boardClients.clear()
       boardListeners.clear()
-      viewerOf.clear()
+      streamsOf.clear()
       actedAt.clear()
     }
 

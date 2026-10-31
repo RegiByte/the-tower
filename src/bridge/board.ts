@@ -359,8 +359,11 @@ export type WaitReason = 'blocked' | 'asks' | 'failed' | 'done'
  */
 export type Wait = { id: string; key: string; reason: WaitReason; since: number; detail?: string }
 
-/** The renderer pages reading the board (`Board.viewers`). */
-export type Viewers = { active?: string }
+/**
+ * The renderer pages reading the board (`Board.viewers`): `active`, the viewer the user acted on last; `last`, by
+ * renderer, the viewer of it the user acted on last, for what one renderer's page alone does (@since 1.129).
+ */
+export type Viewers = { active?: string; last?: Record<string, string> }
 
 export type Board = {
   /** The person running the tower: `name` signs the notes renderers write for them (`user.name` in the config). */
@@ -407,7 +410,8 @@ export type Board = {
   extensions: ExtensionView[]
   /**
    * The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on
-   * last among those whose board stream is open (`viewer/active`), none while no open one has said so. @since 1.129
+   * last among those whose board stream is open (`viewer/active`), none while no open one has said so; `last`, the same
+   * for each renderer whose pages named it on their stream. @since 1.129
    */
   viewers: Viewers
   /**

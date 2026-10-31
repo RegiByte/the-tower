@@ -1331,29 +1331,33 @@ test("server: tower/spawn.gate is answered by the core's hiring limits first, th
 })
 
 /** A board stream held open as `viewer`, closed by the function it answers once the tower took it. */
-const holdBoard = (viewer: string): Promise<() => void> =>
+const holdBoard = (viewer: string, renderer: string): Promise<() => void> =>
   new Promise((resolve, reject) => {
-    const req = http.get(`${base}/board?viewer=${viewer}`, { agent: false }, (res) => {
+    const req = http.get(`${base}/board?viewer=${viewer}&renderer=${renderer}`, { agent: false }, (res) => {
       res.setEncoding('utf8').once('data', () => resolve(() => req.destroy()))
     })
     req.on('error', (err) => (req.destroyed ? undefined : reject(err)))
   })
 
-test('server: the active viewer is the one the user acted on last among those whose board stream is open, held in memory alone', async () => {
-  const [mini, laptop] = ['viewer-mini-01', 'viewer-laptop-01']
-  const closeMini = await holdBoard(mini)
-  const closeLaptop = await holdBoard(laptop)
+test("server: the active viewer is the one the user acted on last among those whose board stream is open, and each renderer's its own, held in memory alone", async () => {
+  const [mini, laptop, world] = ['viewer-mini-01', 'viewer-laptop-01', 'viewer-world-01']
+  const closeMini = await holdBoard(mini, 'page')
+  const closeLaptop = await holdBoard(laptop, 'page')
+  const closeWorld = await holdBoard(world, 'tower3d')
   try {
     await command('viewer/active', { viewer: mini })
     await boardWhere((b) => b.viewers.active === mini)
     await command('viewer/active', { viewer: laptop })
     await boardWhere((b) => b.viewers.active === laptop)
+    await command('viewer/active', { viewer: world })
+    await boardWhere((b) => b.viewers.active === world && b.viewers.last?.page === laptop && b.viewers.last?.tower3d === world)
     closeLaptop()
-    await boardWhere((b) => b.viewers.active === mini)
+    closeWorld()
+    await boardWhere((b) => b.viewers.active === mini && b.viewers.last?.page === mini && b.viewers.last?.tower3d === undefined)
     assert.equal(errorCode(await post('viewer/active', { viewer: 'viewer-gone-01' })), 'not_found')
     assert.equal(errorCode(await post('viewer/active', { viewer: 'no' })), 'invalid')
-    const bad = await get('/board?viewer=no%20id')
-    assert.equal(errorCode(bad), 'invalid')
+    assert.equal(errorCode(await get('/board?viewer=no%20id')), 'invalid')
+    assert.equal(errorCode(await get('/board?renderer=page')), 'invalid')
   } finally {
     closeMini()
   }

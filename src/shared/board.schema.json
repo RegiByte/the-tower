@@ -218,7 +218,7 @@
         },
         "viewers": {
           "$ref": "#/definitions/Viewers",
-          "description": "The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on last among those whose board stream is open (`viewer/active`), none while no open one has said so."
+          "description": "The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on last among those whose board stream is open (`viewer/active`), none while no open one has said so; `last`, the same for each renderer whose pages named it on their stream."
         },
         "adds": {
           "type": "object",
@@ -5042,10 +5042,16 @@
       "properties": {
         "active": {
           "type": "string"
+        },
+        "last": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false,
-      "description": "The renderer pages reading the board (`Board.viewers`)."
+      "description": "The renderer pages reading the board (`Board.viewers`): `active`, the viewer the user acted on last; `last`, by renderer, the viewer of it the user acted on last, for what one renderer's page alone does (@since 1.129)."
     },
     "Adds": {
       "type": "object",

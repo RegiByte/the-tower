@@ -100,7 +100,7 @@ import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
-import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, VIEWER_ID, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, exemptionsBy, shelfKind, shelfPage } from '../shared/cards.ts'
@@ -774,11 +774,15 @@ export const httpServer = defineResource({
       plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
       streamRead({
         description: 'The whole system as one view, again whenever it changes.',
-        read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. A page names itself with `?viewer=<id>`, which `viewer/active` then takes (1.129). One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
+        read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. A page names itself with `?viewer=<id>`, which `viewer/active` then takes, and its renderer with `&renderer=<name>` (1.129). One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
         message: boardSchema,
       }, { path: /^\/board$/, serve: ({ req, res, search }) => {
-        const viewer = new URLSearchParams(search).get('viewer') ?? undefined
-        return viewer === undefined || VIEWER_ID.test(viewer) ? streamBoard(req, res, viewer) : fail(res, 'invalid', `viewer ${JSON.stringify(viewer)} is no viewer id: 8 to 64 letters, digits and dashes`)
+        const query = new URLSearchParams(search)
+        const viewer = query.get('viewer') ?? undefined
+        const renderer = query.get('renderer') ?? undefined
+        if (viewer !== undefined && !VIEWER_ID.test(viewer)) return fail(res, 'invalid', `viewer ${JSON.stringify(viewer)} is no viewer id: 8 to 64 letters, digits and dashes`)
+        if (renderer !== undefined && (viewer === undefined || !VIEWER_RENDERER.test(renderer))) return fail(res, 'invalid', `renderer ${JSON.stringify(renderer)} names no renderer of a viewer: give viewer too, and a renderer's name`)
+        return streamBoard(req, res, viewer === undefined ? undefined : { viewer, ...(renderer !== undefined && { renderer }) })
       } }),
       streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
       plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema()) }),
