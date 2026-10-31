@@ -124,7 +124,8 @@ and a framed document's section are the same thing.
   published subjects so a view drawing its subject again draws them, told through `on` of the key's kind; whoever puts
   one lifts it.
   The Brief publishes every prompt and answer it draws ([`saidOf`](ref:hub/src/shared/brief.ts#saidOf)) and fills
-  `said.acts` beside each copy where anything is offered on `said`. `tower/document` draws through
+  `said.acts` beside each copy where anything is offered on `said`. `tower/document`, and `tower/shelf` for an `md`
+  entry's file (since 1.128, its sections of the entry, one file shown at a time), draw through
   [`drawSections`](ref:hub/src/views/sections.ts#drawSections), which splits its source with
   [`sectionsOf`](ref:hub/src/shared/markdown.ts#sectionsOf) (pure, lexed once: before each heading of the shallowest
   level that occurs more than once, a blank section 0 left out), draws each section with
