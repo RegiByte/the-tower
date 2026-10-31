@@ -42,8 +42,9 @@ log only for its latest saved conversation.
 Every request the command makes of the tower claims its caller in headers ([`callerHeaders`](ref:hub/src/shared/api.ts#callerHeaders)):
 `tower-client: cli`, and `tower-session` with the session's `TOWER_SESSION_ID` when a worker runs it, which the tower
 reads as the call's caller, not authenticated ([[extensions]]). Every word after `tower` is the core's; an extension's
-verbs are reached under one of them, `tower x <capability> <verb> [input]`, and `tower x` alone lists every running
-extension's verbs in their words.
+doors, verbs and reads are reached under one of them, `tower x <capability> <name> [input]` (a writable fact's door
+`facts/<fact>`, then a verb, then a read whose path matches), and `tower x` alone lists every running extension's doors,
+verbs and reads in their words.
 
 `submit` types its prompt with [`submitText`](ref:hub/src/machine.ts#submitText), the tower's `submit`. `kill` takes
 a session id or a running worker's callsign. Run by a worker (`TOWER_SESSION_ID` set), each first has the host append
