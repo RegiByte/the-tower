@@ -6,8 +6,9 @@
  *
  * Each run starts a sandbox of its own (`/tmp/tower-shots-<pid>`, a free port), adds the extension to its config, seeds
  * it, takes every scene in light and dark, writes `<folder>/shots/<scene>-<scheme>.png` and `<folder>/shots/<text>.txt`
- * (the old ones removed, `shots/seed/` kept), then stops that sandbox and removes it, a scene failing or not. Nothing here
- * reaches the real system.
+ * in place of the old ones once every scene is taken (`shots/seed/` kept; a failed run leaves the old ones as they were,
+ * and a picture of the page as the step failed in the system's temp folder), then stops that sandbox and removes it, a
+ * scene failing or not. Nothing here reaches the real system.
  *
  * `shots.json`, every key but `scenes` optional:
  *
@@ -32,21 +33,23 @@
  *                                                the sandbox's root reads as ~/.tower in it
  *   }
  *
- * Steps: `{"click": css}`, `{"hover": css}` and `{"until": css}` (waits up to 10 s for it) find the first element the
- * selector matches whose text holds `text`, when given (`{"click": "button", "text": "plan.md"}`), waiting for it as `until` does; `{"key": chord}`
- * and `{"type": text}` as `npm run drive` takes them; `{"eval": js}`, awaited; `{"wait": ms}`.
+ * Steps: `{"click": css}`, `{"hover": css}` and `{"until": css}` find the first element the selector matches whose text
+ * holds `text`, when given (`{"click": "button", "text": "plan.md"}`), waiting for it up to `ms` (default 30000);
+ * `{"key": chord}` and `{"type": text}` as `npm run drive` takes them; `{"eval": js}`, awaited; `{"wait": ms}`. Wait for
+ * what the picture needs with `until`, not with `wait`: a machine running many sessions is slow.
  *
  * Seed made-up content only: no real names, paths or numbers, since the pictures are published with the extension.
  * Pictures are taken at scale 2 (crisp on a retina display) and cropped, so they stay small.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { type Page, sleep, withPage } from './drive.ts'
 
 const REPO = path.join(import.meta.dirname, '..')
 
-type Target = { text?: string }
+type Target = { text?: string; ms?: number }
 type Step =
   | ({ click: string } & Target)
   | ({ hover: string } & Target)
@@ -91,9 +94,11 @@ async function enable(folder: string, settings: unknown): Promise<string> {
   const bundled = path.dirname(folder) === path.join(REPO, 'extensions')
   config.extensions = { ...config.extensions, [id]: { ...(!bundled && { path: folder }), ...(settings !== undefined && { settings }) } }
   writeFileSync(file, JSON.stringify(config, null, 2))
-  await until(`${id} to start`, async () => {
-    const { extensions } = (await fetch(`${tower()}/extensions`).then((r) => r.json())) as { extensions: { id: string; state: string }[] }
-    return extensions.find((e) => e.id === id && e.state === 'started')
+  type Listed = { id: string; state: string; problems: { message: string }[] }
+  const listed = async () => ((await fetch(`${tower()}/extensions`).then((r) => r.json())) as { extensions: Listed[] }).extensions.find((e) => e.id === id)
+  await until(`${id} to start`, async () => ((await listed())?.state === 'started' ? true : undefined)).catch(async (err: Error) => {
+    const ext = await listed()
+    throw new Error(`${err.message}: ${ext ? `${ext.state}, ${ext.problems.map((p) => p.message).join('; ') || 'no problems listed'}` : 'the tower lists no such extension'} (\`tower extensions check ${folder}\` says more)`)
   })
   return id
 }
@@ -124,20 +129,34 @@ const expand = (s: string, vars: Record<string, string>) => s.replace(/\$([A-Z_]
 const find = (css: string, text: string | undefined) =>
   `[...document.querySelectorAll(${JSON.stringify(css)})].find((e) => ${JSON.stringify(text ?? '')} === '' || e.textContent.includes(${JSON.stringify(text ?? '')}))`
 
-/** Moves the pointer to the middle of the element a step names, once it is there. */
-async function centre(page: Page, css: string, text: string | undefined) {
-  const box = `(() => { const e = ${find(css, text)}; if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`
-  const at = await until(`${css}${text ? ` holding "${text}"` : ''}`, async () => ((await page.eval(box)) as [number, number] | null) ?? undefined, 10000)
+const STEP_MS = 30000
+const named = (css: string, { text }: Target) => `${css}${text ? ` holding "${text}"` : ''}`
+
+/**
+ * Moves the pointer to the middle of the element a step names, once it has settled: the same node in the same place on
+ * two looks 250 ms apart, so a press doesn't land on a node the page is about to draw again.
+ */
+async function centre(page: Page, css: string, target: Target) {
+  const box = `(async () => {
+    const look = () => { const e = ${find(css, target.text)}; return e && [e, e.getBoundingClientRect()] }
+    const first = look()
+    if (!first) return null
+    await new Promise((r) => setTimeout(r, 250))
+    const second = look()
+    if (!second || second[0] !== first[0] || ['x', 'y', 'width', 'height'].some((k) => second[1][k] !== first[1][k])) return null
+    return [second[1].x + second[1].width / 2, second[1].y + second[1].height / 2]
+  })()`
+  const at = await until(named(css, target), async () => ((await page.eval(box)) as [number, number] | null) ?? undefined, target.ms ?? STEP_MS)
   await page.mouse(...at)
 }
 
 async function run(page: Page, step: Step) {
   if ('click' in step) {
-    await centre(page, step.click, step.text)
+    await centre(page, step.click, step)
     await page.press('left', true)
     await page.press('left', false)
-  } else if ('hover' in step) await centre(page, step.hover, step.text)
-  else if ('until' in step) await until(`${step.until}${step.text ? ` holding "${step.text}"` : ''}`, async () => ((await page.eval(`!!${find(step.until, step.text)}`)) ? true : undefined), 10000)
+  } else if ('hover' in step) await centre(page, step.hover, step)
+  else if ('until' in step) await until(named(step.until, step), async () => ((await page.eval(`!!${find(step.until, step.text)}`)) ? true : undefined), step.ms ?? STEP_MS)
   else if ('key' in step) await page.key(step.key)
   else if ('type' in step) await page.type(step.type)
   else if ('eval' in step) await page.eval(step.eval)
@@ -166,17 +185,36 @@ async function shoot(folder: string, shots: Shots) {
   const asWorker = (line: string) => sandbox(['run', 'sh', '-c', `export TOWER_SESSION_ID="$WORKER_1"\n${line}`], seedEnv)
   for (const line of shots.seed ?? []) asWorker(line)
   const out = path.join(folder, 'shots')
-  mkdirSync(out, { recursive: true })
-  for (const old of readdirSync(out).filter((f) => /\.(png|txt)$/.test(f))) rmSync(path.join(out, old))
+  const next = mkdtempSync(path.join(os.tmpdir(), `extension-shots-${id}-`))
+  try {
+    await take(id, shots, vars, asWorker, next)
+    mkdirSync(out, { recursive: true })
+    for (const old of readdirSync(out).filter(isShot)) rmSync(path.join(out, old))
+    for (const shot of readdirSync(next)) copyFileSync(path.join(next, shot), path.join(out, shot))
+  } finally {
+    rmSync(next, { recursive: true, force: true })
+  }
+}
+
+const isShot = (file: string) => /\.(png|txt)$/.test(file)
+
+/** Every text block and scene of `shots`, written into `out`. */
+async function take(id: string, shots: Shots, vars: Record<string, string>, asWorker: (line: string) => string, out: string) {
   for (const { name, run: line } of shots.text ?? []) {
-    writeFileSync(path.join(out, `${name}.txt`), asWorker(line).replaceAll(ROOT, '~/.tower').replaceAll(`/private${ROOT}`, '~/.tower'))
+    writeFileSync(path.join(out, `${name}.txt`), asWorker(line).replaceAll(`/private${ROOT}`, '~/.tower').replaceAll(ROOT, '~/.tower'))
     console.log(`${id}: shots/${name}.txt`)
   }
   for (const scene of shots.scenes) {
     const [width, height] = (scene.size ?? '1280x800').split('x').map(Number)
     for (const scheme of scene.schemes ?? ['light', 'dark']) {
       await withPage(`${tower()}/${expand(scene.open ?? '', vars)}`, { width, height, scale: 2, scheme }, async (page) => {
-        for (const step of scene.steps ?? []) await run(page, step)
+        for (const step of scene.steps ?? []) {
+          await run(page, step).catch(async (err: Error) => {
+            const seen = path.join(os.tmpdir(), `extension-shots-${id}-${scene.name}-${scheme}.png`)
+            await page.shot(seen)
+            throw new Error(`${scene.name} (${scheme}): ${err.message}. The page as it failed: ${seen}`)
+          })
+        }
         const file = path.join(out, `${scene.name}-${scheme}.png`)
         await page.clip(file, await region(page, [scene.crop].flat(), scene.pad ?? 8, width, height))
         if (page.errors.length) throw new Error(`${scene.name} (${scheme}): the page reported errors, above`)
@@ -193,7 +231,12 @@ try {
       sandbox(['up'])
       await shoot(folder, JSON.parse(readFileSync(path.join(folder, 'shots.json'), 'utf8')) as Shots)
     } finally {
-      sandbox(['down'])
+      /** A down that fails after a half-finished up must not hide why the run failed. */
+      try {
+        sandbox(['down'])
+      } catch (err) {
+        console.error(`the sandbox at ${ROOT} did not stop cleanly: ${(err as Error).message}`)
+      }
     }
   }
 } finally {
