@@ -14,7 +14,8 @@
 Started by `tower up` or `npm run terms`. A shell is `$SHELL -l` in a project dir or a [[worktree]] of one, its
 `cwd` checked by `sessionDirs` as the host checks a session's ([[tower-cuts-worktrees]]), its environment scrubbed of
 the parent session and the launching terminal ([[env-scrub]]). Its output is mirrored into a headless xterm with
-`SHELL_SCROLLBACK` lines of scrollback, the snapshot a viewer gets.
+`SHELL_SCROLLBACK` lines of scrollback, the snapshot a viewer gets, measuring characters as the viewers' terminals do
+([`headlessTerminal`](ref:hub/src/bridge/screen.ts#headlessTerminal), [[log-reductions]]).
 
 `terms.sock` takes newline-delimited JSON: `spawn | write | resize | kill | list | attach`. A line that isn't a JSON
 object, an unknown message, or one whose handling throws is answered `error` with the reason (`code: 'not_found'` for
