@@ -2,7 +2,8 @@
 
 An example extension: **Listen** on every markdown or text item (a draft, say), every markdown or text file a worker
 shows, each section of a markdown document and each prompt and answer in a worker's Brief reads it aloud; **From
-here** on a section reads the document from that section to its end; and **Stop listening** in the palette stops it. It reads through the browser's own speech, or through a voice command you set: any
+here** on a section reads the document from that section to its end; and **Stop listening** in the palette stops it.
+Workers can say short memos to you, which the tower page you used last says aloud (below). It reads through the browser's own speech, or through a voice command you set: any
 text-to-speech program, run by a little server code. Copy the folder and make it yours.
 
 ## Add it
@@ -72,6 +73,25 @@ it is voicing), plays it in an `<audio>` element while the next chunk is voiced,
 another Listen, pauses it and drops what is still being voiced. The audio is fetched whole into a Blob URL, which plays in
 Chrome and in WebKit (Safari, Tower.app) alike.
 
+## Memos
+
+A worker can say something to you: a short memo, such as "the thing you asked for is ready". It writes one with
+
+```sh
+tower x narrate facts/memo '{"value": "The search fix is ready for your review."}'
+```
+
+and the tower page you used last (clicked, typed in or switched to, on any machine reading the tower) says it aloud
+as "GAGARIN-40 says: …", in the same voice as Listen. If that page is reading a document, the memo waits for the
+part being read to end, is said, and the document goes on. Every other page lists it silently. The strip at the top
+of the tower page's sidebar shows the latest memo and the rest of today's, each with **Hear again**, and **Clear**
+puts them away on that browser. A page you haven't pressed or typed on since it loaded can't play sound, so there
+the memo stands as a notice with **Hear**.
+
+What a worker should say, and when, is in narrate's guidance: `tower whoami` lists its one-line brief, and `tower x
+narrate` prints the whole of it. Change it for your workers in the config, `extensions.narrate.guidance`: `brief` and
+`full` replace narrate's, `also` adds to it ("never between 22:00 and 8:00").
+
 ## What it shows
 
 - `extension.json`: `commands` with `on: ["item.*", "shown", "section", "said"]`, which offers a command on every item
@@ -87,3 +107,10 @@ Chrome and in WebKit (Safari, Tower.app) alike.
   `kit.bus` is the page's viewer subjects: `bus.under(of, 'section')` finds a document's sections, and
   `bus.mark(key, 'narrate', { label })` marks the one being read, for the document to draw. `kit.notice` is a toast
   that stands until it is closed: "Listening", with Stop.
+- `facts.memo`: a writable fact, `self` its only writer, so a worker's memo is one fact in its own log. The card fold
+  in `server.ts` puts its latest memos on its card (`x.narrate.memos`), each keyed by session and time.
+- `views.memos` (`client/memos.js`): a view on the board at `row` scale, which the tower page mounts in its
+  `board.strip` for as long as the page is open. It says a memo that arrives while `board.viewers.active` is its
+  page's `tower.viewer`, never one already on the board as it mounted, through `voice.interject`: at once when
+  nothing reads, else after the chunk sounding.
+- `guidance`: what narrate tells the workers about memos, when to speak and how to write for listening.
