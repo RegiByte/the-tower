@@ -80,7 +80,8 @@ which the tower starts beside its own pieces. Bundled ones live in the checkout'
 turned off; the config adds others by id. `tower extensions` lists each with its state and problems, `tower doctor`
 says what keeps one from starting, and `GET /schema` serves the manifest's JSON Schema as `extension`. An edit here is
 taken without a restart: an extension the edit leaves unchanged keeps running, and a changed one restarts with what
-depends on it. A code edit is not an edit here: restart the tower for it (`tower down tower`, then `tower up tower`).
+depends on it. A code edit is not an edit here: `tower extensions restart <id>` takes it, restarting the extension with what
+depends on it; a page already open keeps its client modules until it reloads.
 
 | Key | Takes | Unset |
 |---|---|---|
