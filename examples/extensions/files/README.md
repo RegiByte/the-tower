@@ -11,7 +11,7 @@ to the tower's own views by type, or to any view of yours that takes their type 
 
 ## Add it
 
-It runs in place, from the tower's checkout, so `tower update` brings it with the tower it works with:
+Run it in place, from the tower's checkout, so `tower update` brings it with the tower it works with:
 
 ```json
 "extensions": {
@@ -19,16 +19,18 @@ It runs in place, from the tower's checkout, so `tower update` brings it with th
 }
 ```
 
-`realpath $(which tower)` is `<the tower's checkout>/src/mod/bin/tower`. `tower extensions check <that folder>`
-reads it as the tower would. A copy elsewhere needs the checkout beside it: its server imports the tower's own
-helpers, and its client imports Shiki from the tower's `node_modules`.
+`realpath $(which tower)` is `<the tower's checkout>/src/mod/bin/tower`. Or copy the folder anywhere outside the
+checkout to make it your own, run `npm install` in the copy (its `package.json` names Shiki, which the code view
+imports), and add it by the copy's absolute path. Its server imports the tower's helpers by name (`tower:media.js`,
+`tower:repos.js`), so a copy needs nothing of the checkout. `tower extensions check <the folder>` reads it as the
+tower would.
 
 ## How it works
 
 - **A view on `card`, `files/explorer`**, a tab in the worker's tabs (`card.panes`) and in a grid's cell. In a room
   under 40rem wide (a cell) the tree and the file take turns, `‹ Files` going back to the tree.
-- **Reads, each confined to the worker's checkout**, which the server finds on the board (`checkoutDirs` of the card's
-  floor and checkout): `files/repos/<project>/<id>` its repos, `files/tree/<project>/<id>?repo&path` one folder (2000
+- **Reads, each confined to the worker's checkout**, which the server finds on the board (`checkoutDirs` of `tower:repos.js`, of the
+  card's floor and checkout): `files/repos/<project>/<id>` its repos, `files/tree/<project>/<id>?repo&path` one folder (2000
   entries at most), `files/status/<project>/<id>` git's marks and a stamp that changes with them,
   `files/stat/<project>/<id>?repo&path` one file's size, change time and media type (a file of an unknown kind with no
   NUL byte in its first 8 KB is `text/plain`), and `files/raw/<project>/<id>/<repo>/<file...>` the file itself, a read
