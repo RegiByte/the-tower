@@ -1,0 +1,35 @@
+{
+  "settings": { "voice": { "command": ["$EXT/voices/say.sh"] } },
+  "seed": [
+    "cp $EXT/shots/seed/field-notes.md $TOWER_SANDBOX/lab/ && tower show $TOWER_SANDBOX/lab/field-notes.md",
+    "tower x narrate facts/memo '{\"value\": \"The search fix is ready for your review.\"}'"
+  ],
+  "scenes": [
+    {
+      "name": "tab", "open": "#$WORKER_1", "size": "1180x560",
+      "steps": [{ "click": "button", "text": "field-notes.md" }, { "until": ".doc-gutter" }],
+      "crop": ".tab-row"
+    },
+    {
+      "name": "sections", "open": "#$WORKER_1", "size": "1180x640",
+      "steps": [
+        { "click": "button", "text": "field-notes.md" },
+        { "click": ".doc-row button", "text": "From here" },
+        { "until": ".doc-row", "text": "Listening" }, { "wait": 6000 },
+        { "eval": "document.querySelector('.toasts').style.visibility = 'hidden'" }
+      ],
+      "crop": ".doc-split", "pad": 0
+    },
+    {
+      "name": "notice", "open": "#$WORKER_1", "size": "1180x640",
+      "steps": [
+        { "click": "button", "text": "field-notes.md" },
+        { "click": ".doc-row button", "text": "From here" },
+        { "until": ".toasts", "text": "Stop" }, { "wait": 6000 }
+      ],
+      "crop": ".toasts > *", "pad": 0
+    },
+    { "name": "memos", "open": "#$WORKER_1", "steps": [{ "until": ".memos .memo" }], "crop": ".memos" }
+  ],
+  "text": [{ "name": "whoami", "run": "tower whoami | grep narrate" }]
+}

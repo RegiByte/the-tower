@@ -1,0 +1,1 @@
+  narrate  ·  Say a short memo aloud to the user: when they asked to be told, a long task finished, or something needs them.
