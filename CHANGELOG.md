@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.78.0
+
+Text after an emoji is drawn where Claude Code placed it. Run `npm install` after updating (a new dependency). No
+restart beyond the tower's own (`tower down tower`, then `tower up tower`), the renderer API 1.126 → 1.127 (additive,
+no major), no config change.
+
+- **Emoji measured as Claude Code does** (API 1.127): xterm used Unicode 6 widths, where most emoji take one cell, while
+  Claude measures two, so its partial redraws after an emoji landed shifted and left stray characters until a scroll
+  (#299).
+  - Every xterm loads `@xterm/addon-unicode-graphemes`: the page, Tower 3D's panels and desk monitors, the bridge's
+    screen snapshots and the terms daemon's shells, with `allowProposedApi` set. The tower serves it at
+    `/addon-unicode-graphemes.js`; `/term-view.js`'s `Xterm` takes it as an optional `UnicodeGraphemesAddon`, like
+    `WebLinksAddon`. A renderer that leaves it out draws emoji-heavy TUIs misaligned.
+  - The tower's restart fixes snapshots and `tower screen`. Shell snapshots follow only when the terms daemon restarts,
+    which ends open shells (not Claude sessions): the user picks when. No host change.
+
 ## v1.77.0
 
 Narrate speaks through a command the user configures, the explorer's open file lives in the address, a floor's trays
