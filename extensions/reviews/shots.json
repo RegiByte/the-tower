@@ -1,0 +1,37 @@
+{
+  "seed": ["sh $EXT/shots/seed/thread.sh"],
+  "scenes": [
+    {
+      "name": "card", "open": "#$WORKER_1", "size": "1180x400",
+      "steps": [{ "until": ".bar .pane-tab", "text": "new" }, { "until": ".bar .pill span", "text": "s" }],
+      "crop": ".bar"
+    },
+    {
+      "name": "thread", "open": "#$WORKER_1", "size": "1400x1000",
+      "steps": [{ "click": ".pane-tab", "text": "Reviews" }, { "until": "[data-view=\"reviews/thread\"] [data-note=\"4\"]" }],
+      "crop": "[data-view=\"reviews/thread\"]", "pad": 0
+    },
+    {
+      "name": "composer", "open": "#$WORKER_1", "size": "1180x800",
+      "steps": [
+        { "click": ".pane-tab", "text": "Changes" },
+        { "click": "td.ln.noted", "text": "6" },
+        { "until": "[data-view=\"reviews/composer\"] textarea" },
+        { "type": "Half a cent rounds up here: is that what the invoices expect?" },
+        { "hover": ".changes-head" },
+        { "eval": "document.head.append(Object.assign(document.createElement('style'), { textContent: '.tower-tip { visibility: hidden !important }' }))" }
+      ],
+      "crop": ".changes-files section.file", "pad": 0
+    },
+    {
+      "name": "sidebar", "open": "#$WORKER_1", "size": "1180x800",
+      "steps": [
+        { "until": "section.floor .sess", "text": "reviews" },
+        { "click": "section.floor .tray", "text": "thread" },
+        { "until": "section.floor .thread-row" }
+      ],
+      "crop": ["section.floor .sessions", "section.floor .trays"], "pad": 4
+    }
+  ],
+  "text": [{ "name": "thread", "run": "tower thread" }]
+}

@@ -1,0 +1,30 @@
+# main
+
+## user · 2026-10-31 13:38 · n1
+`lab:src/rates.js:5-7`
+```js
+export function round(value) {
+  return Math.round(value * 100) / 100
+}
+```
+Rounding after every conversion drifts by a cent over a chain. Round once, at the end?
+
+## PATHFINDER-56 · 2026-10-31 13:38 · n2 · re n1
+Rounding now happens once, after the last conversion. A chain of three gives the expected total.
+
+## user · 2026-10-31 13:38 · n3
+**Resolved:** n1
+
+Thanks.
+
+## user · 2026-10-31 13:38 · n4
+`lab:src/rates.js:1-3`
+```js
+export function convert(amount, rate) {
+  return amount * rate
+}
+```
+What should a negative rate do? Refuse it, I think.
+
+(~/.tower/collections/lab/reviews/main.md) New to you since your last note: n3, n4.
+A note's anchors name one of the checkout's repos: lab:<path>:<from>-<to>, lab-api:<path>:<from>-<to>.
