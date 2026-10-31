@@ -35,7 +35,7 @@ import { addsHtml } from './added.js'
  *   termFont: () => TermFont,
  *   scheme: () => Scheme,
  *   run: (id: string, e: KeyboardEvent) => boolean,
- *   commandKit: CommandKit & { go: (location: Location) => void, href: (to: Subject | Location) => string },
+ *   commandKit: CommandKit & { go: (location: Location) => void, href: (to: Subject | Location) => string, location: () => Location | undefined },
  *   tower: Tower,
  *   contributions: (el: HTMLElement, id: string, subject: Subject, options: { omit?: string[] }) => RegionHandle,
  *   subjectOf: (key: string) => Subject | undefined,

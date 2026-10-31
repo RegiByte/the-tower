@@ -84,7 +84,8 @@ and a framed document's section are the same thing.
   renderer: the thread subject it would name is of the floor, where no view lands, so the reviews extension leaves it
   out. Tower 3D keeps its desk's glue over `/panels.js`' deprecated copies until it hosts `card.panes`.
 - *The kit* ([`Kit`](ref:hub/src/shared/views.ts#Kit)): what a renderer lends, `terminal`, `region`, `run`,
-  `display`, `go`, `bus` (since 1.118), `toast`, `confirm`, `href` (since 1.121), `showing` (since 1.124), named in its `renderer.json`; a view is offered only where the kit holds what it
+  `display`, `go`, `bus` (since 1.118), `toast`, `confirm`, `href` (since 1.121), `showing` (since 1.124), `location` (since 1.125: where the
+  renderer is, read-only, for a view that marks what is open, told again through `update` as it changes), named in its `renderer.json`; a view is offered only where the kit holds what it
   needs. `region` (since 1.108) fills one of the renderer's regions inside a view, `item.head` in the drafts editor,
   with what extensions add to a subject, drawn and run the renderer's way
   ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), each hold in the element of the host marked to hold it

@@ -128,8 +128,9 @@ export const busOf = (): Bus => {
  * hash of the renderer's page that displays a subject, or goes to a location, when a link takes the page there, for a
  * link in a frame where nothing runs (@since 1.121); `showing`, told by a view that shows a subject below its own (a
  * file its Files tab opened), which the renderer's location then names, so a reload or a link lands on it (@since
- * 1.124). A renderer lends what its `renderer.json` kit names; a view uses `href` and `showing` when they are lent, so
- * a renderer without them still hosts the views that do.
+ * 1.124); `location`, where the renderer is now, read-only, for a view that marks what is open (a tray's row), told
+ * again through `update` as it changes (@since 1.125). A renderer lends what its `renderer.json` kit names; a view uses
+ * `href`, `showing` and `location` when they are lent, so a renderer without them still hosts the views that do.
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
@@ -142,6 +143,7 @@ export type Kit = {
   confirm(text: string, verb: string): Promise<boolean>
   href?(to: Subject | Location): string
   showing?(subject: Subject): void
+  location?(): Readonly<Location> | undefined
 }
 
 /**

@@ -76,7 +76,8 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
   holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`. Only
   `regions` is required. `tower extensions check` and the table under [Extensions](#extensions) are read from them.
-- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `confirm`, `href`, `showing`): a
+- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `confirm`, `href`, `showing`,
+  `location`): a
   view is offered only where the kit holds every member it `needs` ([Views](#views)).
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
@@ -704,7 +705,9 @@ reads again; API 1.121, and optional: no view needs it, and in a renderer that d
 `tower/shelf` draw the links they would place, to another file, as refused, the rest of each view as before),
 `showing(subject)` (told by a view that shows a subject below its own, such as a file its tree opened: in a tab the
 location names, the location then names it in the pane's `shows`, so a reload, the history and a copied link land on
-it; API 1.124, and optional, called as `kit.showing?.(…)`), `region(host, id, subject, options?)` (one of the
+it; API 1.124, and optional, called as `kit.showing?.(…)`), `location()` (where the renderer is now, the
+`Location` its main view is at, read-only, for a view that marks what is open, such as a tray's row; the renderer
+calls `update` again as it changes; API 1.125, and optional as `href` is), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
 tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
