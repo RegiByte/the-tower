@@ -54,6 +54,17 @@ export const linesSubject = (lines: Lines): Subject => ({
 })
 
 /**
+ * The lines a `lines` key names, read from the key alone (a location hands a view its key): its card, repo, path and
+ * range. Undefined for a key of another kind. @since 1.123
+ */
+export const linesAt = (key: string): Pick<Lines, 'card' | 'repo' | 'path' | 'from' | 'to'> | undefined => {
+  const match = /^lines:([^/]+)\/([^/]+)\/(.+)#(\d+)-(\d+)$/.exec(key)
+  if (!match) return undefined
+  const [, card, repo, path, from, to] = match
+  return { card, repo, path, from: Number(from), to: Number(to) }
+}
+
+/**
  * A file in a worker's checkout, as a renderer holds it: its repo (named as an anchor names it, `repoName` of
  * `/reviews.js`), its path in the repo, its absolute path where it has one (`file`, for Finder and the editor), where its content is read
  * (`text`, a read path), its media type, and where in it to show first, a link's `#fragment`. @since 1.114; `file`

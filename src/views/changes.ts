@@ -11,7 +11,7 @@ import {
 import { panelsCss } from '../shared/panels-css.ts'
 import { reading } from '../shared/reads.ts'
 import { changedIn } from '../shared/checkouts.ts'
-import { linesSubject, type Lines } from '../shared/subjects.ts'
+import { linesAt, linesSubject, type Lines } from '../shared/subjects.ts'
 import { viewsOf, type Mount, type RegionHandle, type Tab } from '../shared/views.ts'
 
 /**
@@ -250,8 +250,9 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
       draw()
     },
     show(s) {
-      if (s.kind !== 'lines') return false
-      goTo(s.value as Lines)
+      const lines = linesAt(s.key)
+      if (!lines) return false
+      goTo(lines)
       return true
     },
     visible(on) {
