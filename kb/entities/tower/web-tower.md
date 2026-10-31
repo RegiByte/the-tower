@@ -36,7 +36,8 @@ then carries its waits on you, its offers and its workers on duty lamped by thei
 ([`loudest`](ref:hub/src/shared/status-words.ts#loudest)); which floors a viewer opened or folded is view state in
 `tower.store`, and a floor never chosen is open while a worker on it needs you.
 
-Every collection a floor declares has a tray under its workers ([[collection-trays]]), an item opened in the main
+Every collection a floor declares has a tray under its workers ([[collection-trays]]), each a view in the page's
+`floor.trays` region, `tower/tray` or its extension's own (since 1.125, [[ui-model]]), an item opened in the main
 pane read as its type. Drafts are the drafts extension's over the `drafts` collection ([[collections]]): its editor, a
 view in the main pane that saves as you type, built on `/x/drafts/drafts.js` as Tower 3D's is ([[corkboard]]); a draft
 starts a worker through the page's new-worker dialog (the keymap's `spawn` on the draft) or is submitted to a running
