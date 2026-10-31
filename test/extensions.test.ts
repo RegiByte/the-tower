@@ -281,8 +281,8 @@ test('a cycle of before and after leaves out every link in it, named in order; t
 
 const LINE = { schema: { type: 'string', maxLength: 80 }, writable: ['user', 'self'] }
 const PROJECTED = { card: { project: { lines: { from: 'fact:line', pick: 'last' } } } }
-const atWritable = (found: Found[]) => resolve(found, config({ extensions: added(found) }), '1.124')
-const lined = (id: string, fields: Fields) => ext(id, { ...fields, requires: { tower: '1.124' } })
+const atWritable = (found: Found[]) => resolve(found, config({ extensions: added(found) }), '1.126')
+const lined = (id: string, fields: Fields) => ext(id, { ...fields, requires: { tower: '1.126' } })
 
 test("a projected card fold is the newest value of its fact over the lineage, none when empty or null; start returns no fold for it", () => {
   const tabline = atWritable([lined('tabline', { facts: { line: LINE }, folds: PROJECTED })]).accepted.get('tabline')!
