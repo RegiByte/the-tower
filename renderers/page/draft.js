@@ -1,9 +1,8 @@
-import { ICON } from '/icons.js'
 import { toast } from './kit.js'
 import { DRAFTS, discard, draftItem, draftPath, draftTitles, openDraft as loadDraft } from '/x/drafts/drafts.js'
 
 /**
- * @import { Board, Floor } from '../../src/bridge/board.ts'
+ * @import { Board } from '../../src/bridge/board.ts'
  * @import { Location } from '../../src/shared/views.ts'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  */
@@ -39,9 +38,6 @@ export function draft(deps) {
 
   const { title: draftTitle, prune: pruneDraftTitles } = draftTitles(draftIo.read, () => render())
 
-  /** @param {Floor} f */
-  const newDraftHtml = (f) => `<button data-new-draft="${f.id}" aria-label="new draft" data-tip="new draft">${ICON.plus}</button>`
-
   /** A new draft in the editor, or the one kept as `id`. @param {string} project @param {string} [id] */
   const openDraft = (project, id) => goTo({ view: EDITOR, subject: id === undefined ? `collection:${project}/${DRAFTS}` : `item.${DRAFTS}:${project}/${id}` })
 
@@ -57,5 +53,5 @@ export function draft(deps) {
   /** @param {Draft} d */
   const deleteSent = (d) => discard(draftIo, d)
 
-  return { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, openDraft, spawnOn, deleteSent }
+  return { draftIo, draftTitle, pruneDraftTitles, openDraft, spawnOn, deleteSent }
 }

@@ -1,4 +1,6 @@
 import type { FloorCollection, FloorItem } from '../bridge/board.ts'
+import { itemKey, itemSubject } from './subjects.ts'
+import type { Mounted, ViewCtx } from './views.ts'
 import { esc, span } from './cards.ts'
 import { markdownHtml } from './markdown.ts'
 import { itemTitles, titled, titleIn } from './titles.ts'
@@ -144,4 +146,110 @@ export const itemsCss = `
 .kept-row.sel { box-shadow: inset 3px 0 0 var(--p, var(--ink)); }
 .kept-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .item-text { margin: 0; white-space: pre-wrap; font: var(--fs-m)/1.5 var(--mono); }
+.tray { max-width: 100%; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tray b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.tray i { font-style: normal; font-weight: 700; color: var(--broken-text); }
+.tray i.needs { color: var(--needs-text); }
+.tray:hover { color: var(--ink); }
+.tray.on { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
+.tray-open { order: 1; flex-basis: 100%; min-width: 0; }
+.kept-more { display: block; min-height: var(--control); padding: 0 var(--sp-m); border: none; background: none; color: var(--muted); font-size: var(--fs-xs); font-weight: 700; }
+.kept-more:hover { color: var(--ink); }
 `
+
+/**
+ * A tray's button, one collection folded to a count in a row of them: `label` its words as HTML, `tip` what it holds.
+ * One that unfolds under the row says whether it is (`foldTrayHtml`); one that opens a view says whether that view is
+ * open (`pressTrayHtml`). Its unfolded part is drawn in `.tray-open`, which a row laid out as a wrapping flex places
+ * under every tray of the row.
+ */
+const trayButtonHtml = (state: string, on: boolean, label: string, tip: string) =>
+  `<button class="tray${on ? ' on' : ''}" ${state}="${on}" data-tray data-tip="${esc(tip)}">${label}</button>`
+
+export const foldTrayHtml = (unfolded: boolean, label: string, tip: string) => trayButtonHtml('aria-expanded', unfolded, label, tip)
+
+export const pressTrayHtml = (open: boolean, label: string, tip: string) => trayButtonHtml('aria-pressed', open, label, tip)
+
+/** The id of the item of `collection` on the floor `project` that a location is on, if it is on one. */
+export const openItemOf = (location: { subject?: string } | undefined, project: string, collection: string) => {
+  const prefix = itemKey(project, collection, '')
+  return location?.subject?.startsWith(prefix) ? location.subject.slice(prefix.length) : undefined
+}
+
+/**
+ * What a floor's tray of one collection draws its own way: its `icon`, and its items' `titles`, made from a read of an
+ * item's text and what to call once a text arrives. `actions`, buttons beside its label once unfolded, each a
+ * `data-act` that `act` is handed. `keptTrayTitles` titles items as every collection's are.
+ */
+export type KeptTray = {
+  icon: string
+  titles: (collection: string, read: (project: string, id: string) => Promise<string>, onText: () => void) => (project: string, item: FloorItem) => string
+  actions?: string
+  act?: (name: string) => void
+}
+
+/** An item's title as every collection's are titled (`keptTitles`): its text's first line or `<title>`, else its tag. */
+export const keptTrayTitles: KeptTray['titles'] = (collection, read, onText) => {
+  const titles = itemTitles(collection, read, (item, text) => titleIn(item.id, text) ?? item.tag, onText)
+  return (project, item) => (titled(item.id) ? titles.title(project, item) : item.tag)
+}
+
+/**
+ * A collection as a tray in a floor's row of them, the shape of `tower/tray` and of an extension's tray for its own
+ * collection: its count, unfolding to its newest items (`collectionPeekHtml`), the one the renderer has open marked,
+ * then a way to every item in `tower/collection`. A collection with no items draws nothing. A row opens its item where
+ * the renderer displays it; whether it is unfolded is kept in the view's state, by the collection's key.
+ */
+export function mountKeptTray(host: HTMLElement, ctx: ViewCtx, id: string, tray: KeptTray): Mounted {
+  const { tower, kit, state } = ctx
+  let subject = ctx.subject
+  const collection = () => subject.value as FloorCollection & { project: string }
+  const unfoldedKey = `unfolded.${subject.key}`
+  let unfolded = false
+  const title = tray.titles(collection().id, (project, item) => tower.text(itemPath(project, collection().id, item)), () => draw())
+  let painted = ''
+  const paint = (html: string) => void (html !== painted && (host.innerHTML = painted = html))
+
+  const draw = () => {
+    const c = collection()
+    if (!c.items.length) return paint('')
+    const label = `${tray.icon} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`
+    const more = (rest: number) => `<button class="kept-more" data-more data-tip="all ${c.items.length} in ${esc(c.label.toLowerCase())}, in the main pane">+${rest} more</button>`
+    const open = openItemOf(kit.location?.(), c.project, c.id)
+    paint(
+      `<style>:where([data-view="${id}"]) { ${itemsCss} }</style>${foldTrayHtml(unfolded, label, `${c.label}: ${c.description ?? 'items kept for later'}`)}` +
+        (unfolded ? `<div class="tray-open">${collectionPeekHtml(c.project, c, (item) => title(c.project, item), open, Date.now(), more, tray.actions)}</div>` : ''),
+    )
+  }
+
+  host.addEventListener('click', (e) => {
+    const target = e.target as Element
+    const c = collection()
+    if (target.closest('[data-tray]')) {
+      unfolded = !unfolded
+      state.set(unfoldedKey, unfolded)
+      return draw()
+    }
+    if (target.closest('[data-more]')) return kit.display(subject, { view: 'tower/collection' })
+    const act = target.closest<HTMLElement>('[data-act]')?.dataset.act
+    if (act) return tray.act?.(act)
+    const kept = target.closest<HTMLElement>('[data-kept]')?.dataset.kept
+    const item = kept && c.items.find((i) => i.id === keptOf(kept).id)
+    if (item) kit.display(itemSubject(c.project, c.id, item))
+  })
+
+  void state.get(unfoldedKey).then((v) => {
+    unfolded = v === true
+    draw()
+  })
+  draw()
+
+  return {
+    update(_board, next) {
+      subject = next
+      draw()
+    },
+    close() {},
+  }
+}
+

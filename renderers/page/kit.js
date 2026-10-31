@@ -90,14 +90,12 @@ const sightAnchorOf = (list, key) => {
 }
 
 /**
- * Replaces a scrolled list's content with the `anchor` row kept where it was: a browser's scroll anchoring holds a list
- * still while rows above change height, and loses its anchor when the rows are replaced.
+ * Keeps the `anchor` row of a scrolled list where it was before the list's content was replaced: a browser's scroll
+ * anchoring holds a list still while rows above change height, and loses its anchor when the rows are replaced.
  * @param {HTMLElement} list
- * @param {string} html
  * @param {{ key: string, offset: number } | null | undefined} anchor
  */
-function redrawHeld(list, html, anchor) {
-  list.innerHTML = html
+function holdRow(list, anchor) {
   const row = anchor && list.querySelector(`[data-hold="${CSS.escape(anchor.key)}"]`)
   if (!row) return
   const scroller = scrollerOf(list)
@@ -128,4 +126,4 @@ const toast = toaster($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, told }

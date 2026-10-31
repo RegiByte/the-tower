@@ -749,6 +749,70 @@ export function regions(deps) {
     open.hosted.update(at)
   }
 
+  /**
+   * A region the page draws once for each of many subjects inside a list it paints whole (`floor.trays`: one row per
+   * collection of a floor). Each subject's view, the one the layout picks among those the region offers, lives in a
+   * host of its own, kept mounted while its subject stands: a paint writes `slotHtml` where it goes, and `place` moves
+   * the host there, updated. A host no paint places (its floor folded) stays mounted unseen; one whose subject left
+   * the board, or whose pick changed, is closed. The layout's `order` also places the rows: those drawn by a view it
+   * names first, in its order, the rest after in theirs.
+   * @param {string} id
+   */
+  function rows(id) {
+    /** @type {Map<string, { view: string | undefined, el: HTMLElement, hosted: Hosted | undefined }>} */
+    const held = new Map()
+    const region = () => /** @type {Region} */ (declared().find((r) => r.id === id))
+    /** @param {Subject} subject */
+    const pick = (subject) => pickView(board(), offeredIn(views(), region(), layout(), deps.kit, subject), layout()[id]?.order, subject)
+
+    /** @param {string} key */
+    const drop = (key) => {
+      held.get(key)?.hosted?.close()
+      held.delete(key)
+    }
+
+    /** The host of `subject`'s row, mounted when it has none or its pick changed, else updated. @param {Subject} subject */
+    const hostOf = (subject) => {
+      const view = pick(subject)
+      const was = held.get(subject.key)
+      if (was && was.view === view?.id) return (was.hosted?.update(subject), was.el)
+      drop(subject.key)
+      const el = Object.assign(document.createElement('div'), { className: 'region-row' })
+      el.dataset.region = id
+      el.dataset.subject = subject.key
+      if (!view?.module) {
+        failed(el, id, `nothing here draws ${subject.key}`)
+        held.set(subject.key, { view: view?.id, el, hosted: undefined })
+        return el
+      }
+      const hosted = mountView(view, el, subject, region().scale, layout()[id]?.options?.[view.id] ?? {}, undefined, () => {})
+      held.set(subject.key, { view: view.id, el, hosted })
+      return el
+    }
+
+    return {
+      /** `subjects` in the order the region places them. @param {Subject[]} subjects */
+      ordered: (subjects) => {
+        const order = layout()[id]?.order ?? []
+        const at = (/** @type {Subject} */ s) => {
+          const n = order.indexOf(/** @type {string} */ (pick(s)?.id))
+          return n < 0 ? order.length : n
+        }
+        return subjects.map((s) => ({ s, n: at(s) })).sort((a, b) => a.n - b.n).map(({ s }) => s)
+      },
+      /** Where a paint puts `subject`'s row. @param {Subject} subject */
+      slotHtml: (subject) => `<div data-row-of="${esc(id)}" data-row="${esc(subject.key)}"></div>`,
+      /** Moves each row into the place a paint of `root` left for it, and closes those whose subject left the board. @param {HTMLElement} root */
+      place(root) {
+        for (const slot of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(`[data-row-of="${CSS.escape(id)}"]`))) {
+          const subject = subjectOf(/** @type {string} */ (slot.dataset.row))
+          if (subject) slot.replaceWith(hostOf(subject))
+        }
+        for (const key of [...held.keys()]) if (!subjectOf(key)) drop(key)
+      },
+    }
+  }
+
   /** The tabs region of the worker in `el`'s card, or of the main pane's: where a tab's chord acts. @param {Element | null} el @returns {TabsRegion | undefined} */
   const tabsAt = (el) => {
     const panels = /** @type {HTMLElement | null | undefined} */ (el?.closest('[data-view="tower/card"]'))
@@ -765,6 +829,7 @@ export function regions(deps) {
     /** @param {(key: string, pane: Pane) => void} fn */
     onPick: (fn) => void (pickMain = fn),
     tabsAt,
+    rows,
     mountedView: () => open?.view,
     refont: () => terminals.forEach((t) => void t.refont()),
     rescheme: () => terminals.forEach((t) => t.rescheme()),

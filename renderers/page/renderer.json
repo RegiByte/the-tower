@@ -3,7 +3,7 @@
     { "id": "board.main", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "one", "description": "the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry)" },
     { "id": "board.notes", "subject": "board", "holds": ["asks"], "description": "the notes at the top of the sidebar, for asks about no floor" },
     { "id": "floor.section", "subject": "floor", "holds": ["badges", "verbs", "commands", "asks", "tidy"], "description": "the floor's section in the sidebar, its Tidy and the palette" },
-    { "id": "floor.trays", "subject": "floor", "holds": ["views"], "scale": "row", "description": "the floor's trays of kept items in the sidebar" },
+    { "id": "floor.trays", "subject": "collection", "holds": ["views"], "scale": "row", "arity": "one", "description": "a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection" },
     { "id": "card.row", "subject": "card", "holds": ["badges", "lines"], "description": "the worker's row in the sidebar" },
     { "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header, and the palette" },
     { "id": "card.panes", "subject": "card", "holds": ["views"], "scale": "pane", "arity": "tabs", "description": "the worker's tabs (terminal, brief, changes, reviews, shown files)" },
@@ -17,5 +17,5 @@
   ],
   "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "confirm", "href", "showing", "location"],
   "keeps": [],
-  "layout": { "floor.section": { "hidden": ["policies/policies"] } }
+  "layout": { "floor.section": { "hidden": ["policies/policies"] }, "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] } }
 }

@@ -67,14 +67,16 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
 }
 
 /**
- * Runs `write`, which may replace the html inside `el`, and gives focus back to the control that had it: the one element
- * of the same tag and the same attributes naming what it does (`data-` ones but a tip, a time or a hold, an `href`, a
- * `popovertarget`), so a keyboard keeps its place through a redraw. A control nothing names, or that two now match, loses focus.
+ * Runs `write`, which may replace the html inside `el`, and gives focus back to the control that had it: itself when
+ * `write` put it back in `el` (a view's host the redraw moved), else the one element of the same tag and the same
+ * attributes naming what it does (`data-` ones but a tip, a time or a hold, an `href`, a `popovertarget`), so a keyboard
+ * keeps its place through a redraw. A control nothing names, or that two now match, loses focus.
  */
 export function keepingFocus(el: HTMLElement, write: () => void) {
   const had = document.activeElement
   const id = had && had !== el && el.contains(had) ? identityOf(had) : undefined
   write()
+  if (id && had !== document.activeElement && el.contains(had)) return (had as HTMLElement).focus({ preventScroll: true })
   if (!id || id === had!.localName || el.contains(document.activeElement)) return
   const again = el.querySelectorAll<HTMLElement>(id)
   if (again.length === 1) again[0].focus({ preventScroll: true })

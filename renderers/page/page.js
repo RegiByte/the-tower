@@ -1,8 +1,7 @@
-import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, workerIn, linesOf, DISMISS_TITLE } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, linesOf, DISMISS_TITLE } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
-import { itemsCss, keptOf } from '/items.js'
+import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
-import { REVIEWS, threadId } from '/x/reviews/reviews.js'
 import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
 import { loop, timers } from '/loop.js'
 import { wireSpawn } from '/spawn.js'
@@ -18,11 +17,11 @@ import { screen } from './screen.js'
 import { stats } from './stats.js'
 import { settingsPane } from './settings-pane.js'
 import { alerting } from './alerts.js'
-import { keptViews } from './kept.js'
+import { policyCalls } from './policy-call.js'
 import { draft } from './draft.js'
 import { archive } from './archive.js'
 import { boardKit } from './board.js'
-import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, redrawHeld, paintOnce, repaint, announce, toast, told } from './kit.js'
+import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { markdownCss } from '/markdown.js'
 import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, addedCommandOf, commandOf, frameCommandOf, isAddedId } from '/keymap.js'
@@ -120,7 +119,12 @@ function render() {
   paintLimits()
   const floors = $('floors')
   // The selected worker's row stays where a move or a click left it while in sight, so a move key's target stays in view.
-  keepingFocus(floors, () => redrawHeld(floors, floorsTopDown().map(floorHtml).join(''), sightAnchorOf(floors, selected()) ?? topAnchorOf(floors)))
+  const anchor = sightAnchorOf(floors, selected()) ?? topAnchorOf(floors)
+  keepingFocus(floors, () => {
+    floors.innerHTML = floorsTopDown().map(floorHtml).join('')
+    floorTrays.place(floors)
+    holdRow(floors, anchor)
+  })
   drawSideView()
   repaint($('rail'), railHtml(waiting))
   $('side-foot').innerHTML = board().config ? `<span>config</span><code data-tip="${esc(board().config)}"><bdi>${esc(board().config)}</bdi></code>${fileButtonsHtml(board().config)}` : ''
@@ -288,18 +292,15 @@ const floorPaint = (v) => paint(floorOfView(v, projectOfCard))
 
 const { findCard, freshArchives, lookUp, hold } = archive({ cards, board, floorOf, render })
 
-/** The views the page opens by name: a floor's archive and policies, a collection, a shelf entry. */
+/** The views the page opens by name: a floor's archive and policies, a shelf entry. */
 const ARCHIVE_VIEW = 'tower/archive'
 const POLICIES_VIEW = 'policies/policies'
-const COLLECTION_VIEW = 'tower/collection'
 const SHELF_VIEW = 'tower/shelf'
 
 /** A floor's past workers in the main pane. @param {string} project */
 const openArchive = (project) => goTo({ view: ARCHIVE_VIEW, subject: `floor:${project}` })
 /** A floor's policies in the main pane. @param {string} project */
 const openPolicies = (project) => goTo({ view: POLICIES_VIEW, subject: `floor:${project}` })
-/** A floor's collection listed whole in the main pane, newest first: its tray in the sidebar lists only the newest. @param {string} project @param {string} collection */
-const openCollection = (project, collection) => goTo({ view: COLLECTION_VIEW, subject: `collection:${project}/${collection}` })
 /** A floor's shelf entry in the main pane, on the file of it shown last while it stays open. @param {string} project @param {number} n */
 const openShelf = (project, n) => {
   const open = at(SHELF_VIEW)
@@ -307,10 +308,10 @@ const openShelf = (project, n) => {
   goTo({ view: SHELF_VIEW, subject: `shelf:${project}/${n}`, ...(args && { args }) })
 }
 
-const { draftIo, draftTitle, pruneDraftTitles, newDraftHtml, openDraft, spawnOn, deleteSent } = draft({ render, board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
+const { draftIo, draftTitle, pruneDraftTitles, openDraft, spawnOn, deleteSent } = draft({ render, board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
 
 const { showLanding, showKeys, ask } = dialogs({ board })
-const { keptTitle, pruneKeptTitles, openItemIn, policyCall, openItem } = keptViews({ render, viewing, display: (key) => display(key), floorOf, board, selectArriving })
+const { policyCall } = policyCalls({ floorOf, selectArriving })
 
 
 
@@ -355,14 +356,7 @@ function noticeShown(all) {
   shownPrimed = true
 }
 
-/** A thread opened from the sidebar, on the worker most recently in its checkout; read as a kept item when no worker has been there. @param {string} project @param {string} checkout */
-function openThread(project, checkout) {
-  const c = workerIn(/** @type {Floor} */ (floorOf(project)), checkout)
-  if (!c) return openItem(project, REVIEWS, threadId(checkout))
-  go({ t: 'view', location: { view: WORKER, subject: `card:${c.id}`, pane: { view: 'reviews/thread' } } })
-}
-
-const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, openItemIn, at, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
+const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml: (f) => trayRowsHtml(f), heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
 
 
 /** A floor in the sidebar: shown, unfolded and scrolled to, its name focused. @param {string} project */
@@ -647,6 +641,16 @@ const mainRegion = regions({
   gone: () => goHome(),
   bus,
 })
+/** A floor's trays, a view per collection (`floor.trays`), mounted by the main pane's region code and placed in the sidebar's paint. */
+const floorTrays = mainRegion.rows('floor.trays')
+
+/** Where each of a floor's collections goes in its row of trays, in the order the region places them. @param {Floor} f */
+const trayRowsHtml = (f) =>
+  floorTrays
+    .ordered(f.collections.map((c) => /** @type {Subject} */ (subjectAt(board(), `collection:${f.id}/${c.id}`))))
+    .map(floorTrays.slotHtml)
+    .join('')
+
 mainRegion.onPick((key, pane) => {
   const v = viewing('view')
   if (v && (v.location.subject ?? 'board') === key) go({ t: 'view', location: { ...v.location, pane } })
@@ -857,16 +861,6 @@ document.addEventListener('click', async (e) => {
   if (spawn) return openSpawn(/** @type {string} */ (spawn.dataset.spawn))
   const newDraft = target.closest('[data-new-draft]')
   if (newDraft) return openDraft(/** @type {string} */ (newDraft.dataset.newDraft))
-  const kept = target.closest('[data-kept]')?.dataset.kept
-  const listed = target.closest('[data-collection]')?.dataset.collection
-  if (listed) {
-    const { project, collection } = keptOf(listed)
-    return openCollection(project, collection)
-  }
-  if (kept) {
-    const { project, collection, id } = keptOf(kept)
-    return openItem(project, collection, id)
-  }
   const copy = target.closest('[data-copy]')?.dataset.copy
   if (copy) return copyText(copy, copy)
   const markdown = /** @type {BriefMarkdown | undefined} */ (target.closest('[data-brief-markdown]')?.dataset.briefMarkdown)
@@ -908,8 +902,6 @@ document.addEventListener('click', async (e) => {
   if (tidyCall) return (await ask(/** @type {string} */ (tidyCall.dataset.tidyAsk), 'Tidy')) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
   const tidy = target.closest('[data-tidy]')
   if (tidy) return tidyAll(tidy, /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy))))
-  const thread = target.closest('[data-thread]')?.dataset.thread
-  if (thread) return openThread(.../** @type {[string, string]} */ (thread.split('|')))
   const resumeAllButton = target.closest('[data-resume-all]')
   if (resumeAllButton) return resumeAll(resumeAllButton, /** @type {Floor} */ (floorOf(/** @type {string} */ (resumeAllButton.dataset.resumeAll))))
   const letGoButton = target.closest('[data-let-go]')
@@ -1148,7 +1140,6 @@ tower.subscribe(async (next) => {
   noticeShown(cards())
   freshArchives()
   pruneDraftTitles(board().floors)
-  pruneKeptTitles(board().floors)
   const arriving = viewing('arriving')
   if (arriving && findCard(arriving.id)) return select(arriving.id)
   const wanted = first && location.hash.slice(1)
