@@ -16,8 +16,8 @@ from [`QUERIES`](ref:hub/src/shared/api.ts#QUERIES), errors from
 [`STATIC`](ref:hub/src/tower/http.ts#STATIC)) and their exports, `tower.js`'s members, collections, plugins, the
 `tower` command and the logs.
 
-It also holds the standard every extension's `README.md` keeps (its headings in order, a picture per surface it
-reaches), whose pictures [`tool:extension-shots`](ref:hub/scripts/extension-shots.ts) takes from a throwaway sandbox
+It also holds the standard every extension's `README.md` keeps (a title line and what it adds, a picture per surface
+it reaches, and the other headings only where they say something true and recommended), whose pictures [`tool:extension-shots`](ref:hub/scripts/extension-shots.ts) takes from a throwaway sandbox
 by the scenes in the extension's own `shots.json`, into its own `shots/`.
 
 Its table of which renderer draws which subject kind is generated from the shipped renderers' `renderer.json` and

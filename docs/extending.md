@@ -1136,24 +1136,31 @@ folder in the extension, loaded into every session on floors where it is on.
 
 Every extension, bundled or an example, carries a `README.md` that lets a reader decide in a minute whether it does
 what they want, and its pictures in its own folder, so a copy of the folder carries both. A pull request that adds or
-changes an extension keeps its README to this checklist. [`narrate`](../examples/extensions/narrate/README.md) is the
+changes an extension keeps its README to this standard. [`narrate`](../examples/extensions/narrate/README.md) is the
 one to copy.
 
-Headings, in this order:
+A README says what is true of this extension and what we would recommend, and no more: 40 to 70 lines is the aim. Two
+parts are required:
 
 1. **`# <Title>`**, then one line: what it does for the user.
 2. **`## What it adds`**: one entry per surface it reaches, each with its picture: the tower page by region (the
    sidebar's strip, a card, a worker's tabs, a document's gutter, the palette, the main pane), the CLI (`tower x
    <id>`, its commands), Tower 3D, and the workers (its guidance in `tower whoami`). A text block stands in for a
    picture of the terminal. Then the surfaces it leaves out, in one line.
+
+The rest come in this order, each only when it says something true and useful for this extension; a heading with
+nothing to say is left out:
+
 3. **`## Add it`**: the config entry. An example: copy the folder outside the checkout and name its path. A bundled
-   one: on by default, and how to turn it off.
-4. **`## What it needs from you`**: every setting, command and config key it reads, with an example value. Say
-   plainly what works out of the box only as a placeholder, and what makes it good (narrate: the browser's speech is
-   the placeholder, a voice command is what makes it sound good).
-5. **`## How it works`**: the manifest's pieces it uses (verbs, reads, facts, folds, views, commands, guidance, slots),
-   what its server and its client each do, and the facts it writes, with links to the sections above.
-6. **`## Make it yours`**: the first things to change and where they live.
+   one: on by default, and how to turn it off when that is worth knowing.
+4. **`## What it needs from you`**: the settings and config keys it reads, with an example value. Say plainly what
+   works out of the box only as a placeholder, and what makes it good (narrate: the browser's speech is the
+   placeholder, a voice command is what makes it sound good).
+5. **`## How it works`**: the manifest's pieces it uses and what its server and client do, as much as a reader needs
+   to copy or adapt it, not a tour of every file.
+6. **`## Make it yours`**: only real extension points: its settings, a guidance `also` in the config, and for an
+   example, copying the folder and changing its own files. Never advise editing the core, the mod or its skills, or
+   a bundled extension in place: `tower update` moves those.
 7. **`## Pictures`**: one line, how to retake them.
 
 Pictures come from `npm run tool:extension-shots -- <folder>`, never from the real system: it runs the scenes in
