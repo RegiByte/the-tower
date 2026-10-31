@@ -144,7 +144,7 @@ and a framed document's section are the same thing.
   so it scrolls away while its section is still being read (a sticky row is a candidate refinement). The bus doesn't
   change step 6's call on a mark's `display`: a mark must lead somewhere while no thread view is mounted, which the
   bus, holding only what mounted views published, can't name.
-- *Values without code* (step 7, since 1.124). A value on a card needs no server and no renderer code: an extension
+- *Values without code* (step 7, since 1.126). A value on a card needs no server and no renderer code: an extension
   declares a writable fact and projects it into the card's `lines` in its manifest ([[extensions]], writable facts),
   and the line lands in every region holding `lines` on a card, the page's `card.row` and `card.head`, Tower 3D's
   `card.desk` and the CLI's `card.whoami`, each drawing a card's `lines` as it already did. The card line
