@@ -12,6 +12,59 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.79.0
+
+Narrate reads a whole document and says workers' memos aloud, extensions guide the workers that use them, commands draw
+as icons, and every bundled extension has a README with pictures. No restart beyond the tower's own (`tower down
+tower`, then `tower up tower`), the renderer API 1.127 → 1.131 (additive, no major), no config change (every new
+setting is optional). One changed call: narrate's `facts/memo` door is gone (see its entry).
+
+- **Narrate plays a whole document** (API 1.128): **Listen** and **From here** in each section's gutter read that
+  section, or it and the rest; the section playing is marked and a standing notice, **Listening · Stop**, stays up
+  (#302).
+  - The bus gains marks: `bus.mark(key, cap, { label })`, `bus.marks(key)` and `onMark`, held by key apart from the
+    published subjects, so a document drawn again draws them. A marked section's gutter row is lit and labelled.
+  - `kit.notice` is a toast that stands until its command closes it (`{ say, close }`); `/toasts.js` serves `noticer`.
+    A command is lent `bus` and `notice` (`CommandKit` gains both).
+  - Shelf `md` pages are drawn by sections, keyed by the shelf entry, so the gutter and everything offered on sections
+    reaches them.
+- **Extension guidance for agents** (API 1.129): a manifest's `guidance { brief, full }` tells a worker when and how
+  to use an extension (#303).
+  - `extensions.<id>.guidance { brief, full, also }` in the config replaces either text, and `also` is appended as
+    "The user adds: …". A guidance with no brief is refused.
+  - `tower whoami` lists one line per running extension; `tower x <id>` prints the full text. Narrate and tabline
+    carry guidance.
+  - `viewer/active` and `board.viewers`: a page names itself on its board stream and tells the tower when the user
+    acts on it, so the board says which page was used last, overall and per renderer. Held in memory, never logged.
+  - The page's `board.strip` is a new region at the top of the sidebar whose view stays mounted.
+  - Narrate's memos: a worker says a short memo and the tower page used last says it aloud, waiting for a reading's
+    current chunk to end. The `memos` view in the strip lists today's with Hear again and Clear.
+- **Commands as icons** (API 1.130): a command's `words.icon` is a core icon by name or an SVG of the extension's own
+  client folder; a name that is neither is refused when the extension loads (#304).
+  - The page's `shown.tab` region holds commands inside an open shown tab, drawn as their glyph beside the tab's own
+    icons. `shown.head` no longer holds commands, so every extension's command on a shown file lands in the tab, and
+    those glyphs reach the keyboard through ⌘K only.
+  - Narrate's Listen is a speaker icon.
+- **Served modules for extension servers** (API 1.131): server code imports a served module by name, `import … from
+  'tower:media.js'`, the core's own instance (#306).
+  - `/media.js` and `/repos.js` are served. A name the tower doesn't serve fails at import and lists what it lends.
+  - The examples load when copied outside the checkout; `files` names Shiki in its own `package.json`, so a copy runs
+    `npm install` in its folder.
+  - A client module that fails to bundle says its error (`500`) instead of an empty `200`.
+- **Extension READMEs** (#305, #307, #308): `docs/extending.md` sets the standard for an extension's README, and `npm
+  run tool:extension-shots` takes its pictures, in light and dark, from each extension's `shots.json` in a throwaway
+  sandbox.
+  - Every bundled extension and the files, grid and tabline examples have a README with its pictures.
+  - Narrate's README is the exemplar, with two sample voice commands in `voices/`: `say.sh` (macOS `say`) and
+    `elevenlabs.sh` (curl; key and voice from the environment). They are examples of the contract, not integrations.
+- **Narrate's memo settings** (#310): `settings.memo.maxLength` (default 300) and `settings.memo.prefix` (default
+  `{callsign} says: `, empty says none), with a `memo-settings` read that gives the limit and prefix in force.
+  - **Changed call:** the `memo` verb replaces the writable `facts/memo` door. A script that wrote the door gets
+    `not_found`; call the verb, which takes the calling worker's own session and refuses a text over the limit.
+  - `tower extensions check` says a server that fails at import as an error (`unloadable`) with the real message.
+- **Card lines on the page**: an extension's lines (the tab line) are drawn above the status line as a tinted note
+  (#301).
+
 ## v1.78.0
 
 Text after an emoji is drawn where Claude Code placed it. Run `npm install` after updating (a new dependency). No
