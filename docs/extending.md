@@ -1139,8 +1139,8 @@ what they want, and its pictures in its own folder, so a copy of the folder carr
 changes an extension keeps its README to this standard. [`narrate`](../examples/extensions/narrate/README.md) is the
 one to copy.
 
-A README says what is true of this extension and what we would recommend, and no more: 40 to 70 lines is the aim. Two
-parts are required:
+A README says what is true of this extension and what we would recommend, and no more: 40 to 70 lines is the aim, and a
+contract or settings a user must write may run longer. Two parts are required:
 
 1. **`# <Title>`**, then one line: what it does for the user.
 2. **`## What it adds`**: one entry per surface it reaches, each with its picture: the tower page by region (the
@@ -1151,8 +1151,9 @@ parts are required:
 The rest come in this order, each only when it says something true and useful for this extension; a heading with
 nothing to say is left out:
 
-3. **`## Add it`**: the config entry. An example: copy the folder outside the checkout and name its path. A bundled
-   one: on by default, and how to turn it off when that is worth knowing.
+3. **`## Add it`**: the config entry. An example: copy the folder outside the checkout and name its path, or run it
+   in place when it depends on the tower's own packages (files). A bundled one: on by default, and how to turn it
+   off when that is worth knowing.
 4. **`## What it needs from you`**: the settings and config keys it reads, with an example value. Say plainly what
    works out of the box only as a placeholder, and what makes it good (narrate: the browser's speech is the
    placeholder, a voice command is what makes it sound good).
