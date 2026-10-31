@@ -50,7 +50,7 @@ The tower command's `thread`, `note`, `send` and `review` are its words. `tower 
 worker's checkout (a reviewer's is its author's) and what is new to it:
 
 ````
-## user · 2026-10-31 13:32 · n4
+## user · 2026-10-31 13:38 · n4
 `lab:src/rates.js:1-3`
 ```js
 export function convert(amount, rate) {
