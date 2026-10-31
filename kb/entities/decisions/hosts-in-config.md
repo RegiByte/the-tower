@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-29",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-10-31",
   "refs": ["hub/src/shared/model.ts#towerHosts", "hub/src/tower/http.ts#namedHostOrigins", "hub/src/tower/http.ts#isFromTower", "hub/src/config-check.ts#configProblems", "hub/docs/config.md"]
 }
 ---
