@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Tab line",
   "description": "A short line under a worker's card, like a named terminal tab: written by the user or by the worker itself.",
-  "requires": { "tower": "1.126" },
+  "requires": { "tower": "1.128" },
   "client": "client",
   "facts": {
     "line": {
@@ -14,6 +14,10 @@
   },
   "folds": {
     "card": { "project": { "lines": { "from": "fact:line", "pick": "last" } } }
+  },
+  "guidance": {
+    "brief": "Set a short line under your card saying what you are on, when that changes.",
+    "full": "Your tab line is a few words under your card, like a named terminal tab, so the user can tell at a glance what you are on. Set it when you start a task and when the task changes, not for every step: `tower x tabline facts/line '{\"value\": \"writing the migration\"}'`. Keep it under 80 characters, plain words, no paths. Clear it with `'{\"value\": null}'` when you go idle. The user may set it too: if they did, leave theirs unless your task changed."
   },
   "commands": {
     "set": {
