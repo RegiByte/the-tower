@@ -1,12 +1,13 @@
 import * as THREE from 'three'
 import { Terminal, type IBufferCell } from '@xterm/xterm'
+import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import { terminalTheme, type } from '../../../src/shared/design.ts'
 import { watchStream } from './fixtures.ts'
 
 /**
  * Live monitors: each stream (`screen/<id>`, `shell/<id>`) feeds a terminal nobody sees, painted onto a canvas
  * texture while it changes, more often the nearer its monitor. xterm parses with no DOM, so the buffer is read cell by
- * cell.
+ * cell. It measures characters as the snapshot did and Claude does (the unicode-graphemes addon: an emoji two cells).
  */
 
 const W = 1024
@@ -64,6 +65,7 @@ function open(path: string): Screen {
     if (msg.t === 'snapshot') {
       screen.term?.dispose()
       screen.term = new Terminal({ cols: msg.cols, rows: msg.rows, scrollback: 0, allowProposedApi: true })
+      screen.term.loadAddon(new UnicodeGraphemesAddon())
       screen.term.onWriteParsed(() => (screen.dirty = true))
       screen.term.write(msg.data)
     }
