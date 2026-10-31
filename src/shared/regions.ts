@@ -59,9 +59,15 @@ export type Drawer = { name: string; regions?: Region[]; why?: string; kit?: rea
  */
 export type Landing = { what: string; hold: Hold; on: string[]; at: { drawer: string; regions: string[] | undefined; why?: string; palette?: true }[] }
 
-/** Whether a region for subjects of `region` draws one of `kind`: the same kind, or `item.*` against any collection's items. */
+/**
+ * Whether a region for subjects of `region` draws one of `kind`: the same kind, `item.*` against any collection's items,
+ * or a `collection` region against one collection (`collection.<id>`).
+ */
 const forKind = (region: string, kind: string) =>
-  region === kind || (region === 'item.*' && kind.startsWith('item.')) || (kind === 'item.*' && region.startsWith('item.'))
+  region === kind ||
+  (region === 'item.*' && kind.startsWith('item.')) ||
+  (kind === 'item.*' && region.startsWith('item.')) ||
+  (region === 'collection' && kind.startsWith('collection.'))
 
 /**
  * An ask is listed by the floor or the board its subject belongs to. One folded on the board may be about anything, so
