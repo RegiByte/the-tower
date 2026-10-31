@@ -50,7 +50,7 @@ const DRAWN = `({
 type Drawn = { floors: number; floor: string | null; buildings: number; welcome: boolean }
 
 /** In the page: the drafts its floor's tray counts, once unfolded. */
-const DRAFTS = `document.querySelector('#floors .floor [data-section^="drafts:"]')?.textContent.match(/(\\d+) in drafts/)?.[1] ?? null`
+const DRAFTS = `document.querySelector('#floors .floor [data-view="drafts/tray"] .tray')?.textContent.match(/(\\d+) in drafts/)?.[1] ?? null`
 
 /** What a booted page fails to show, in words. */
 const problems = (d: Drawn, drafts: string | null, errors: string[]) => [
@@ -71,7 +71,7 @@ async function main() {
         await page.mouse(...((await page.eval(FOLD)) as [number, number]))
         await page.press('left', true)
         await page.press('left', false)
-        await page.eval(until('#floors .floor [data-section^="drafts:"]'))
+        await page.eval(until('#floors .floor [data-view="drafts/tray"] .tray'))
       }
       return { drawn, drafts: (await page.eval(DRAFTS)) as string | null, errors: page.errors }
     })
