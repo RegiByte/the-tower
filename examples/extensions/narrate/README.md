@@ -81,7 +81,8 @@ A worker can say something to you: a short memo, such as "the thing you asked fo
 tower x narrate facts/memo '{"value": "The search fix is ready for your review."}'
 ```
 
-and the tower page you used last (clicked, typed in or switched to, on any machine reading the tower) says it aloud
+and the tower page you used last (clicked, typed in or switched to, on any machine reading the tower, even while you
+are in a Tower 3D or Week tab since) says it aloud
 as "GAGARIN-40 says: …", in the same voice as Listen. If that page is reading a document, the memo waits for the
 part being read to end, is said, and the document goes on. Every other page lists it silently. The strip at the top
 of the tower page's sidebar shows the latest memo and the rest of today's, each with **Hear again**, and **Clear**
@@ -110,7 +111,7 @@ narrate` prints the whole of it. Change it for your workers in the config, `exte
 - `facts.memo`: a writable fact, `self` its only writer, so a worker's memo is one fact in its own log. The card fold
   in `server.ts` puts its latest memos on its card (`x.narrate.memos`), each keyed by session and time.
 - `views.memos` (`client/memos.js`): a view on the board at `row` scale, which the tower page mounts in its
-  `board.strip` for as long as the page is open. It says a memo that arrives while `board.viewers.active` is its
-  page's `tower.viewer`, never one already on the board as it mounted, through `voice.interject`: at once when
+  `board.strip` for as long as the page is open. It says a memo that arrives while `board.viewers.last.<renderer>`
+  is its page's `tower.viewer` (`tower.renderer()` names it), never one already on the board as it mounted, through `voice.interject`: at once when
   nothing reads, else after the chunk sounding.
 - `guidance`: what narrate tells the workers about memos, when to speak and how to write for listening.

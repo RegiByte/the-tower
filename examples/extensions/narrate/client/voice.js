@@ -21,7 +21,7 @@ let ending = () => {}
 
 /** @typedef {{ at(part: number): void, end(): void }} Track */
 
-/** @typedef {{ tower: unknown, text: string, track: Track, toast(message: string): void }} Memo */
+/** @typedef {{ tower: unknown, text: string, track: Track, toast(message: string): void, command?: boolean }} Memo */
 
 /** Whether a narration reads: from its start until it ends or is stopped. */
 let reading = false
@@ -119,13 +119,19 @@ const once = (fn) => {
   return () => called || ((called = true), fn())
 }
 
-/** Narration `mine` has ended on its own: its track is told, while it is current. */
+/**
+ * Narration `mine` has ended on its own: its track is told, while it is current, and the memos it left waiting (it
+ * failed before their turn) are said now.
+ */
 const finish = (mine) => {
   if (mine !== current) return
   reading = false
   const end = ending
   ending = () => {}
   end()
+  const left = waiting
+  waiting = []
+  for (const memo of left) Promise.resolve(interject(memo, memo.command)).catch((err) => memo.toast(err.message))
 }
 
 /**
@@ -148,7 +154,7 @@ const sayWaiting = async (mine) => {
  * something reads, after the chunk sounding, in the voice it reads with. @param {Memo} memo @param {boolean} command
  */
 export function interject(memo, command) {
-  if (reading) return void waiting.push(memo)
+  if (reading) return void waiting.push({ ...memo, command })
   return command ? speakCommand(memo.tower, [memo.text], memo.toast, memo.track) : speakBrowser([memo.text], memo.track)
 }
 
