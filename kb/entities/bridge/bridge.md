@@ -4,7 +4,7 @@
   "name": "Bridge",
   "summary": "Everything a renderer needs and nothing it draws: the data model, pure reductions over session logs, and a live store kept current as the host appends.",
   "in": "tower",
-  "reviewed": "2026-10-23"
+  "reviewed": "2026-10-31"
 }
 ---
 A renderer subscribes to [[live-system]], reads [[session]]s with their facts from it, and draws. The facts

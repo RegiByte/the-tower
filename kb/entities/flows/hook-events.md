@@ -2,17 +2,18 @@
 {
   "type": "flow",
   "name": "Hook events",
-  "summary": "How what Claude does inside a session reaches its log: classic hooks over curl and mod events over fetch, both declared by the tower mod, both into the host's hooks socket.",
+  "summary": "How what Claude does inside a session reaches its log: classic hooks over curl and mod events over fetch, both declared by the tower mod, both into the host's hooks socket; the tower command's facts about its own session through the tower's fact verb.",
   "in": "tower",
-  "reviewed": "2026-10-24",
-  "involves": ["claude-code", "tower-mod", "host-daemon", "system-root", "log-reductions"],
-  "refs": ["hub/src/mod/hooks/hooks.json", "hub/src/mod/hooks/register.js#forward", "hub/src/host/main.ts#hooks", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy"]
+  "reviewed": "2026-10-31",
+  "involves": ["claude-code", "tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
+  "refs": ["hub/src/directory.ts", "hub/src/host/main.ts#appendFact", "hub/src/mod/hooks/hooks.json", "hub/src/mod/hooks/register.js#forward", "hub/src/host/main.ts#hooks", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy"]
 }
 ---
 ```mermaid
 sequenceDiagram
   participant C as [[claude-code]]
   participant M as [[tower-mod]]
+  participant T as [[tower-server]]
   participant H as [[host-daemon]]
   participant R as [[system-root]]
   participant F as [[log-reductions]]
@@ -20,7 +21,8 @@ sequenceDiagram
   C->>M: mod event (turn.start, tool.call, turn.step, session.measure, ...)
   M->>H: POST /hooks/<id> {...payload, hook_event_name}
   M->>H: tower.tool.result / tower.tool.abandoned / tower.claude (derived)
-  C->>H: tower.show / tower.keep / tower.leave from the tower command in Bash (tower show / open / keep / home on itself)
+  C->>T: tower show / open / keep / home on itself, from the tower command in Bash: the fact verb
+  T->>H: control.sock fact: tower.show / tower.keep / tower.leave
   H->>R: h event
   R-->>F: folded: status, facts, conversations
 ```
