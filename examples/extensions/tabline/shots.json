@@ -1,0 +1,78 @@
+{
+  "seed": [
+    "tower x tabline facts/line '{\"value\": \"writing the migration\"}'"
+  ],
+  "scenes": [
+    {
+      "name": "row",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "until": ".sess .adds-line",
+          "text": "writing the migration"
+        }
+      ],
+      "crop": ".sess.sel"
+    },
+    {
+      "name": "head",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "until": ".bar-top .adds-line",
+          "text": "writing the migration"
+        },
+        {
+          "until": ".bar-top .pill [data-since]",
+          "text": "s"
+        }
+      ],
+      "crop": ".bar-top"
+    },
+    {
+      "name": "name-tab",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "click": ".bar-top button",
+          "text": "Name tab"
+        },
+        {
+          "until": "dialog[open] input"
+        }
+      ],
+      "crop": "dialog[open]"
+    },
+    {
+      "name": "desk",
+      "open": "r/tower3d/",
+      "size": "1180x560",
+      "schemes": [
+        "dark"
+      ],
+      "steps": [
+        {
+          "eval": "(async () => { await tower3d.ready(); const [desk] = tower3d.acts('desk'); const at = tower3d.locate(desk); tower3d.teleport({ level: at.level, x: at.x + 1.2, z: at.z }); tower3d.aimAt(desk); tower3d.press('use') })()"
+        },
+        {
+          "until": "#desk-head .adds-line",
+          "text": "writing the migration"
+        },
+        {
+          "eval": "new Promise((done) => { const look = () => { const cover = document.getElementById('loading'); !cover || getComputedStyle(cover).display === 'none' || getComputedStyle(cover).opacity === '0' ? done() : setTimeout(look, 100) }; look() })"
+        }
+      ],
+      "crop": "#desk-head",
+      "pad": 0
+    }
+  ],
+  "text": [
+    {
+      "name": "whoami",
+      "run": "tower whoami | sed -E -n '1,3p;/tabline  \u00b7/p' | sed -E 's/session [0-9a-f-]+/session <id>/'"
+    }
+  ]
+}

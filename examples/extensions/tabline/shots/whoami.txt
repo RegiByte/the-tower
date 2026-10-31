@@ -1,0 +1,4 @@
+You are MARCO-06, session <id>, a worker on lab (floor "lab").
+Your Claude session name is not known to the tower yet.
+writing the migration
+  tabline  ·  Set a short line under your card saying what you are on, when that changes.
