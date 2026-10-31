@@ -421,7 +421,8 @@ module it imports inside the folder afresh (its `node_modules` aside); meanwhile
 state is `restarting`. `tower extensions` and `GET /extensions` say how each stands.
 
 To start from a working one, copy a folder of [`examples/extensions/`](../examples/extensions/) (`narrate`: Listen on
-every markdown or text item and file a worker shows, its voice one function to swap) and add it to the config by its path. `npm test` loads every example as
+every markdown or text item and file a worker shows, through the browser's speech or a text-to-speech command its
+settings name, which its server runs with `ctx.run` and whose audio it serves with a `serves: "file"` read) and add it to the config by its path. `npm test` loads every example as
 `tower extensions check` does, so each works with the tower it ships with.
 
 ```json

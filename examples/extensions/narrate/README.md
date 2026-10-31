@@ -1,8 +1,9 @@
 # Narration
 
 An example extension: **Listen** on every markdown or text item (a draft, say), every markdown or text file a worker
-shows, each section of a markdown document and each prompt and answer in a worker's Brief reads it aloud in the browser, and **Stop listening** in the palette stops it. It is client code only, two
-commands and no server: copy the folder and make it yours.
+shows, each section of a markdown document and each prompt and answer in a worker's Brief reads it aloud, and **Stop
+listening** in the palette stops it. It reads through the browser's own speech, or through a voice command you set: any
+text-to-speech program, run by a little server code. Copy the folder and make it yours.
 
 ## Add it
 
@@ -21,18 +22,58 @@ markdown or text file a worker showed, in the gutter beside each section of a ma
 each prompt and answer in the Brief, and in the palette; the CLI and Tower 3D, which don't import client modules,
 leave it out.
 
-## Swap the voice
+## A voice command
 
-The voice is `client/voice.js`: `speak(text)` and `stop()`, over the browser's `speechSynthesis`. To use another
-provider, replace those two functions with calls to it and keep their names; `client/narrate.js` reads the subject's
-text (`textOf` from `/cards.js`) and hands it to `speak`.
+Without settings, narration speaks through the browser's `speechSynthesis`. Set a voice command and it speaks through
+that instead:
+
+```json
+"narrate": {
+  "path": "/abs/path/to/narrate",
+  "settings": { "voice": { "command": ["/abs/path/to/voice-line", "an-argument"] } }
+}
+```
+
+The contract is plain Unix:
+
+- The command is the program's absolute path and its arguments. It runs without a shell, in this folder, with the
+  tower's environment minus a Claude session's variables, and is killed after 120 s.
+- It reads the text on stdin: at most 2000 characters, since narration voices a long text in chunks of up to 1800,
+  cut at paragraphs, then sentences.
+- It writes an audio file (`.mp3`, `.m4a`, `.aiff` or `.wav`) and prints its absolute path as the last line of its
+  output.
+- Exit 0 means it worked. Any other exit is a failure, and what it wrote on stderr is shown as the toast.
+
+The audio files are the command's own: narration serves only the files its command printed since the tower started,
+each under a token, and never deletes them. Write them to a temporary folder.
+
+On macOS, `say` makes a voice command in three lines:
+
+```sh
+#!/bin/sh
+out="${TMPDIR:-/tmp}/narrate-$$.m4a"
+say --data-format=aac -o "$out" -f - && echo "$out"
+```
+
+Make it executable, name its absolute path as `command`, and Listen speaks in the system's voice. A wrapper around any
+other program (a local model, a voice service's CLI) follows the same shape: read stdin, write a file, print its path.
+
+## How it plays
+
+`client/voice.js` holds both voices. With a command, it voices the first chunk (Listen stays busy, and a toast says
+it is voicing), plays it in an `<audio>` element while the next chunk is voiced, and so on in order; Stop, or another
+Listen, pauses it and drops what is still being voiced. The audio is fetched whole into a Blob URL, which plays in
+Chrome and in WebKit (Safari, Tower.app) alike.
 
 ## What it shows
 
 - `extension.json`: `commands` with `on: ["item.*", "shown", "section", "said"]`, which offers a command on every item
   of any collection, everything a worker showed, and two viewer subjects a page draws (a document's sections, a
-  brief's prompts and answers, each carrying its own text as `body`) with no server code, and `accepts`, which narrows that to the subjects whose media
-  type is markdown or plain text.
-- `client/narrate.js`: a command's export takes `{ tower, board, target, subject, args }`; `target` is the subject
-  (`{ kind, key, project, value }`), `tower` the page's `window.tower`, the same API every renderer drives, and
-  `textOf(tower, target)` reads a subject's text wherever it is.
+  brief's prompts and answers, each carrying its own text as `body`), and `accepts`, which narrows that to the subjects
+  whose media type is markdown or plain text. Its `settings` schema, the `say` verb and two reads, `voice` and
+  `audio/<token>`, the latter `serves: "file"`.
+- `server.ts`: a verb that runs a command with `ctx.run` (argv, stdin, a timeout) and a read that serves only the
+  files it was given, by token.
+- `client/narrate.js`: a command's export takes `{ tower, board, target, subject, args, kit }`; `target` is the
+  subject (`{ kind, key, project, value }`), `tower` the page's `window.tower`, the same API every renderer drives,
+  `textOf(tower, target)` reads a subject's text wherever it is, and `kit.toast` says something to the user.
