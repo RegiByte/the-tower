@@ -76,7 +76,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
   holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`. Only
   `regions` is required. `tower extensions check` and the table under [Extensions](#extensions) are read from them.
-- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `confirm`, `href`): a
+- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `confirm`, `href`, `showing`): a
   view is offered only where the kit holds every member it `needs` ([Views](#views)).
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
@@ -699,10 +699,12 @@ where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a 
 location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
 `shell/<id>` with the renderer's xterm, font, scheme and keymap), `href(to)` (the hash of the renderer's page
 that displays `to`, a subject, or goes to `to`, a location, when a link takes the page there, for a link drawn in a
-frame where nothing runs, which can only navigate: for a subject, the location it is displayed at when the board
-holds it there, which a reload reads again, else a hash the page holds while it is open; API 1.121, and optional: no
-view needs it, and in a renderer that doesn't lend it `tower/document` and `tower/shelf` draw the links they would
-place, to another file, as refused, the rest of each view as before), `region(host, id, subject, options?)` (one of the
+frame where nothing runs, which can only navigate: for a subject, the location it is displayed at, which a reload
+reads again; API 1.121, and optional: no view needs it, and in a renderer that doesn't lend it `tower/document` and
+`tower/shelf` draw the links they would place, to another file, as refused, the rest of each view as before),
+`showing(subject)` (told by a view that shows a subject below its own, such as a file its tree opened: in a tab the
+location names, the location then names it in the pane's `shows`, so a reload, the history and a copied link land on
+it; API 1.123, and optional, called as `kit.showing?.(…)`), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
 tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
@@ -846,16 +848,20 @@ it is drawn like a showing; a view of an extension's for a type (the files examp
 layout names it first. `fragment` (API 1.120) is where to open it, a heading's slug or an element's id, which
 `tower/document` scrolls to. A relative link in a markdown file of a checkout names another file of its repo:
 `linkedFile(from, href)` in `/cards.js` resolves it (undefined when it climbs out of the repo), and `tower/document`
-links it to the hash `kit.href` gives it. No location names a file, so that hash is the page's while it is open: a
-reload on it says the link is gone. Display walks up to its card, whose tabs hand it to a view that `shows: ["file"]`, as the files
-example's explorer does to open it in its tree.
+links it to the hash `kit.href` gives it. Display walks up to its card, whose tabs hand it to a view that `shows:
+["file"]`, as the files example's explorer does to open it in its tree; the location names the file in its pane
+(`shows`, the link's fragment its arg), so the link is an address a reload or another tab reads again (API 1.123).
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type (`coreViewOf`).
 
 **Locations.** Where a renderer is, `{ view, subject?, pane?, args? }`, is written in its URL by one grammar,
-`#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>]]`, each key and arg one `encodeURIComponent` segment:
-`#v/grid/grid/floor%3Alab`. `hashOf` and `locationOf(hash, board)` in `/views.js` write and read it, and read the
+`#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>[/<shows>[/<arg>…]]]]`, each key and arg one
+`encodeURIComponent` segment: `#v/grid/grid/floor%3Alab`. The pane, `{ view, subject?, shows?, args? }`, is the tab
+open; `shows` (API 1.123) is the key of a subject below the tab's that it shows, a file in a Files tab, and `args`
+where in it, a link's fragment. Reading a location, the renderer hands the tab `show(subject)` with that key and
+`value` holding only `fragment` (`shownOf` in `/views.js`), so a view that shows a kind reads what it needs from the
+key. `hashOf` and `locationOf(hash, board)` in `/views.js` write and read it, and read the
 tower page's older hashes (`#<id>/changes`, `#shelf/<p>/<n>`, …) as the core views they name; `shortHashOf(location)`
 writes a location's older hash when it has one, as the tower page keeps doing (API 1.108).
 

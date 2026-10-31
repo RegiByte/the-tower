@@ -4,7 +4,7 @@ import type { Board, Card, CardShown } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
 import { ADDRESS_TYPE, fileSubject, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
-import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
+import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, shownOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'file', at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -16,11 +16,15 @@ test('views: a location is written by the grammar and read back, every key and a
     { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/changes' } },
     { view: 'tower/shelf', subject: 'shelf:tower/2', args: ['research/spec.html'] },
     { view: 'x/y', subject: 'item.notes:p/a;b#c/d e.md', args: ['1', 'two/;three'] },
+    { view: 'tower/card', subject: 'card:w1', pane: { view: 'files/explorer', subject: 'card:w1', shows: 'file:w1/r/docs/a;b#c.md' } },
+    { view: 'tower/card', subject: 'card:w1', pane: { view: 'files/explorer', subject: 'card:w1', shows: 'file:w1/r/a.md', args: ['install/;x'] } },
   ]
   for (const l of locations) assert.deepEqual(locationOf(hashOf(l), board), l, hashOf(l))
   assert.equal(hashOf({ view: 'grid/grid', subject: 'floor:lab' }), '#v/grid/grid/floor%3Alab')
   assert.equal(hashOf(locations[2]), '#v/tower/card/card%3A20261027-014724-52e9;tower/document/shown%3A20261027-014724-52e9%2F1761529200000')
   assert.equal(hashOf(locations[4]), '#v/tower/shelf/shelf%3Atower%2F2/research%2Fspec.html')
+  assert.equal(hashOf(locations[7]), '#v/tower/card/card%3Aw1;files/explorer/card%3Aw1/file%3Aw1%2Fr%2Fa.md/install%2F%3Bx')
+  assert.deepEqual(shownOf(locations[7].pane as { view: string; shows: string; args?: string[] }, 'p'), { kind: 'file', key: 'file:w1/r/a.md', project: 'p', value: { fragment: 'install/;x' } })
   assert.equal(locationOf('', board), undefined)
   assert.equal(locationOf('#v/grid', board), undefined)
 })
@@ -149,7 +153,7 @@ test('views: display places a card on its worker view, its children in its tabs,
   const at = (key: string, view?: string) => displayed(p, subjectAt(board, key)!, view)
   assert.deepEqual(at('card:w1'), { view: 'tower/card', subject: 'card:w1' })
   assert.deepEqual(at('card:w1', 'tower/changes'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/changes', subject: 'card:w1' } })
-  assert.deepEqual(at('conversation:c1'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/brief', subject: 'card:w1' } })
+  assert.deepEqual(at('conversation:c1'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/brief', subject: 'card:w1', shows: 'conversation:c1' } })
   assert.deepEqual(at('shown:w1/100'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/document', subject: 'shown:w1/100' } })
   assert.deepEqual(at('shown:w1/200'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/link', subject: 'shown:w1/200' } })
   assert.deepEqual(at('shown:w1/300'), { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/text', subject: 'shown:w1/300' } })
@@ -158,6 +162,8 @@ test('views: display places a card on its worker view, its children in its tabs,
   const explorer: View = { id: 'files/explorer', cap: 'files', on: ['card'], shows: ['file'], scales: ['pane', 'cell'], needs: ['region', 'toast'], words: { label: 'Files' } }
   const withExplorer: Placing = { ...p, views: [...CORE_VIEWS, explorer] }
   const file = fileSubject({ card: 'w1', project: 'p', repo: 'r', path: 'PRINCIPLES.md', text: 'files/raw/p/w1/r/PRINCIPLES.md', type: 'text/markdown' })
-  assert.deepEqual(displayed(withExplorer, file), { view: 'tower/card', subject: 'card:w1', pane: { view: 'files/explorer', subject: 'card:w1' } }, 'a file goes to the tab that shows files, over a view by type on it')
+  assert.deepEqual(displayed(withExplorer, file), { view: 'tower/card', subject: 'card:w1', pane: { view: 'files/explorer', subject: 'card:w1', shows: file.key } }, 'a file goes to the tab that shows files, over a view by type on it, which the pane names it in')
+  const atHeading = fileSubject({ ...(file.value as Parameters<typeof fileSubject>[0]), fragment: 'install' })
+  assert.deepEqual(displayed(withExplorer, atHeading)?.pane, { view: 'files/explorer', subject: 'card:w1', shows: file.key, args: ['install'] }, "a link's fragment rides as the pane's arg")
   assert.deepEqual(displayed(withExplorer, file, 'tower/document')?.pane, { view: 'tower/document', subject: file.key }, 'a view asked for is still found among the rest')
 })
