@@ -21,7 +21,7 @@ import { callerHeaders, type Replies } from './shared/api.ts'
 import type { Flow, OpenStage, Stage } from './shared/flows.ts'
 import { POLICIES, shortHash, type CardRun, type InvalidPolicy, type OfferFields, type PolicyFields, type ValidPolicy } from './shared/policies-legacy.ts'
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
-import { capabilityOf, type ExtensionView } from './shared/extensions.ts'
+import { capabilityOf, FACT_DOOR, matchRead, type Deprecated, type ExtensionView } from './shared/extensions.ts'
 import { renderersOf } from './renderers.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 // `reviewerOf` and `threadCheckoutOf` are the core's deprecated copies of the reviews client's: the CLI says them until extensions say their own CLI words.
@@ -251,15 +251,42 @@ const extensionCliLines = (e: Reads['extensions']['extensions'][number]): string
   ...e.problems.map((p) => `  ${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`),
 ]
 
-/** An extension's verbs, each as `tower x` calls it, in its words. */
-const extensionVerbLines = (e: ExtensionView): string[] => [
+const deprecatedWords = (deprecated: Deprecated | undefined) => (deprecated ? ` · deprecated since ${deprecated.since}${deprecated.use ? `: use ${deprecated.use}` : ''}` : '')
+
+/** An extension's doors, verbs and reads, each as `tower x` calls it, in its words. */
+const extensionCallLines = (e: ExtensionView): string[] => [
   `${e.provides}  ${extensionLine(e)}`,
+  ...doorsOf(e).map((f) => `  tower x ${e.provides} ${FACT_DOOR}${f.name}  ${f.description ?? `writes its fact ${f.name}`} (written by ${f.writable!.join(', ')}; input {"value": …})`),
   ...e.verbs.map((v) => {
     const words = v.words ? `${v.words.label}${v.words.hint ? `: ${v.words.hint}` : ''}` : (v.description ?? '')
-    const deprecated = v.deprecated ? ` · deprecated since ${v.deprecated.since}${v.deprecated.use ? `: use ${v.deprecated.use}` : ''}` : ''
-    return `  tower x ${v.name.replace('/', ' ')}  ${words}${v.scope === 'project' ? ' (its input names the project)' : ''}${deprecated}`
+    return `  tower x ${v.name.replace('/', ' ')}  ${words}${v.scope === 'project' ? ' (its input names the project)' : ''}${deprecatedWords(v.deprecated)}`
   }),
+  ...e.reads.map((r) => `  tower x ${e.provides} ${r.path}  ${r.description ?? 'a read'}${r.scope === 'project' ? ' (it names the project)' : ''}${deprecatedWords(r.deprecated)}`),
 ]
+
+/** An extension's writable facts: each a door, `facts/<name>`. */
+const doorsOf = (e: ExtensionView) => e.facts.filter((f) => f.writable)
+
+/**
+ * What `tower x <capability> <name>` calls: a writable fact's door, `facts/<name>`; else a verb; else the read whose path
+ * `name` matches. `undefined` when the capability offers none of them by that name.
+ */
+export const xTarget = (e: ExtensionView, name: string): { t: 'call'; verb: string } | { t: 'read'; path: string } | undefined => {
+  if (name.startsWith(FACT_DOOR) && doorsOf(e).some((f) => `${FACT_DOOR}${f.name}` === name)) return { t: 'call', verb: `${e.provides}/${name}` }
+  if (e.verbs.some((v) => v.name === `${e.provides}/${name}`)) return { t: 'call', verb: `${e.provides}/${name}` }
+  if (e.reads.some((r) => matchRead(r.path, name))) return { t: 'read', path: `/${e.provides}/${name}` }
+  return undefined
+}
+
+/** What an extension offers `tower x`, by kind, for a name it doesn't offer. */
+const offeredLine = (e: ExtensionView): string => {
+  const kinds = [
+    ['doors', doorsOf(e).map((f) => `${FACT_DOOR}${f.name}`)],
+    ['verbs', e.verbs.map((v) => v.name.slice(e.provides.length + 1))],
+    ['reads', e.reads.map((r) => r.path)],
+  ].filter(([, names]) => names.length)
+  return kinds.length ? `it offers ${kinds.map(([kind, names]) => `${kind} ${(names as string[]).join(', ')}`).join('; ')}` : 'it offers no door, verb or read'
+}
 
 const isUrl = (target: string) => /^https?:\/\//.test(target)
 
@@ -700,8 +727,8 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   x: async ([cap, verb, input, ...rest]) => {
     if (!cap) {
       const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
-      const calling = read.extensions.filter((e) => e.state === 'started' && e.verbs.length)
-      console.log(calling.length ? calling.flatMap(extensionVerbLines).join('\n') : 'No running extension has verbs: `tower extensions` lists every extension and its state.')
+      const calling = read.extensions.filter((e) => e.state === 'started' && (e.verbs.length || e.reads.length || doorsOf(e).length))
+      console.log(calling.length ? calling.flatMap(extensionCallLines).join('\n') : 'No running extension has doors, verbs or reads: `tower extensions` lists every extension and its state.')
       return
     }
     if (!verb || rest.length) throw new CliError(usageLine('x'))
@@ -711,7 +738,25 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     } catch {
       throw new CliError(`The input is no JSON: ${input}`, `${usageLine('x')}, the input one argument: '{"project": "app"}'`)
     }
-    console.log(JSON.stringify(await command(`${cap}/${verb}`, body), null, 2))
+    const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
+    const e = read.extensions.find((x) => x.provides === cap && x.state === 'started')
+    if (!e) throw new CliError(`No running extension provides ${cap}`, '`tower extensions` lists every extension and its state')
+    const target = xTarget(e, verb)
+    if (!target) throw new CliError(`${cap} offers no "${verb}": ${offeredLine(e)}`)
+    if (target.t === 'call') {
+      console.log(JSON.stringify(await command(target.verb, body), null, 2))
+      return
+    }
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new CliError(`A read's input is its query, an object: ${input}`, `${usageLine('x')}, the input one argument: '{"project": "app"}'`)
+    const query = new URLSearchParams(Object.entries(body).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])).toString()
+    const res = await towerGet(`${target.path}${query ? `?${query}` : ''}`)
+    if (!res.headers.get('content-type')?.includes('json')) {
+      process.stdout.write(Buffer.from(await res.arrayBuffer()))
+      return
+    }
+    const reply: unknown = await res.json()
+    if (isFailure(reply)) throw new CliError(refusedLine(`${cap}/${verb}`, reply))
+    console.log(JSON.stringify(reply, null, 2))
   },
   policies: async ([sub, tagOrId]) => {
     const board = await readBoard()
