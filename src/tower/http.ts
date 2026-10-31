@@ -207,11 +207,11 @@ export const httpServer = defineResource({
     )
 
     /**
-     * A served file's guard against running as the tower: the CSP sandbox, or for a video, which runs no script and which
-     * Chrome won't play as a sandboxed document, a type the browser may not second-guess.
+     * A served file's guard against running as the tower: the CSP sandbox, or for a video or a sound, which runs no
+     * script and which Chrome won't play as a sandboxed document, a type the browser may not second-guess.
      */
     const sandboxed = (file: string): http.OutgoingHttpHeaders =>
-      path.extname(file) === '.mp4' || path.extname(file) === '.webm' ? { 'x-content-type-options': 'nosniff' } : { 'content-security-policy': SHELF_SANDBOX }
+      /^(video|audio)\//.test(mediaTypeOf(file)) ? { 'x-content-type-options': 'nosniff' } : { 'content-security-policy': SHELF_SANDBOX }
 
     /**
      * A viewer that stops reading (a suspended tab, a frozen web view) is closed once it has read nothing of what waits

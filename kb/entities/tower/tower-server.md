@@ -4,7 +4,7 @@
   "name": "Tower server",
   "summary": "The HTTP server whose routes are the renderer API, and which serves the renderers at /r/<name>/: the board from the live system, commands relayed to the daemons, streams multiplexed per client.",
   "in": "tower-core",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-10-31",
   "refs": ["hub/src/tower/spine.ts#tower", "hub/src/tower/http.ts#sandboxed", "hub/src/tower/http.ts#handle", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#describeReads", "hub/src/tower/http.ts#describeStreams", "hub/src/tower/http.ts#route", "hub/src/tower/http.ts#readBody", "hub/src/tower/dispatch.ts#HANDLERS", "hub/src/tower/dispatch.ts#inCollection", "hub/src/bridge/board.ts#board", "hub/src/tower/tower.js", "hub/src/tower/http.ts#screenStream", "hub/src/tower/screens.ts#screenMirrors", "hub/src/tower/screens.ts#lastFrames", "hub/src/tower/http.ts#openMux", "hub/src/tower/publisher.ts#sendBoard", "hub/src/tower/http.ts#sse", "hub/src/tower/http.ts#run", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#clientFile", "hub/src/tower/publisher.ts#boardOf", "hub/src/tower/http.ts#home", "hub/src/renderers.ts#renderersOf", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/test/server.test.ts"],
   "links": [
     { "to": "live-system", "verb": "uses", "carries": "watchSystem: sessions with facts, live set, shells, leftovers; onChange publishes the board" },
@@ -92,8 +92,10 @@ The design system's `/design.css` and faces, `/tower.js` and the shared modules
 ([[renderer-api-contract]]).
 
 Shelf entries are served only when declared in the config, with a CSP `sandbox` header
-([`sandboxed`](ref:hub/src/tower/http.ts#sandboxed)); a video (`.mp4`, `.webm`) gets `nosniff` instead: it runs no
-script, and Chrome plays no video document under a sandbox. An html one gets `<script src="/frame-keys.js">` appended,
+([`sandboxed`](ref:hub/src/tower/http.ts#sandboxed)); a video or a sound (a `video/*` or `audio/*` media type) gets
+`nosniff` instead: it runs no script, and Chrome plays no media document under a sandbox. Files are sent whole, with no
+Range answers, so WebKit refuses one as a media element's `src` (`NotSupportedError`): a page plays audio by fetching it
+into a Blob URL, as the narrate example does. An html one gets `<script src="/frame-keys.js">` appended,
 which sends its keys, and nothing else, to the tower framing it ([[keymap]]). So are collection items
 (`/collection/<project>/<collection>/<item>`), and [`inCollection`](ref:hub/src/tower/dispatch.ts#inCollection)
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
