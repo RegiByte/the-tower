@@ -29,7 +29,8 @@ collection and a shelf entry are the core's views too, the drafts editor and the
 
 Each project directory in the sidebar links the web page of its origin remote, read once from `GET /origins`
 ([`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar)). The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
-([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)) and time in state, and a worker's running subagents as
+([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)) and time in state, the lines extensions add to it above its
+live status line and set apart from it as a quiet note, and a worker's running subagents as
 satellites under it ([`satellitesOf`](ref:hub/src/shared/subagents.ts#satellitesOf)). The rate limits fold into one chip
 naming the tightest limit, whose popover holds the meters and the probes ([[probes]]). A floor folds to its sign, which
 then carries its waits on you, its offers and its workers on duty lamped by their loudest attention

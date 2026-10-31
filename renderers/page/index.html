@@ -125,7 +125,9 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess:is(.needs, .broken, .working, .ready) .st { color: var(--c-text); }
 .sess .st.stuck { color: var(--needs-text); }
 .pill.stuck { --c: var(--needs); --on: var(--on-needs); }
-.sess .adds-line { color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
+.sess .adds-line { margin-top: var(--sp-xs); padding: var(--sp-2xs) var(--sp-s); border-left: 2px solid var(--deco); border-radius: var(--radius-s); background: color-mix(in oklab, var(--ink) 6%, var(--panel));
+  color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
+.sess .adds-line + .adds-line { margin-top: var(--sp-2xs); }
 .sess .line { margin-top: var(--sp-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
 .tool { color: var(--ink); } .tool b { font-weight: 700; }
 .subs { display: grid; gap: var(--sp-2xs); margin-top: var(--sp-xs); }
