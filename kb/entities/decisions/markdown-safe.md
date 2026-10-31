@@ -25,7 +25,7 @@
     "hub/renderers/page/page.js#linkHash",
     "hub/scripts/webkit.ts",
     "hub/src/views/document.ts#mount",
-    "hub/src/views/document.ts#followSections",
+    "hub/src/views/sections.ts#followSections",
     "hub/src/shared/markdown.ts#sectionsHtml",
     "hub/src/views/link.ts#mount",
     "hub/src/views/brief.ts#mount",
@@ -99,7 +99,7 @@ would reach for a markdown library's `parse` and draw it inline.
   would navigate the frame away. Raw HTML otherwise stays as written.
 - *The gutter* (D11 of the UI model). Nothing of the renderer's that paints or takes a click lives in a document
   frame: a section's commands (`section.acts`) are drawn in a gutter beside the frame, in the page's own document,
-  each row kept level with its section ([`followSections`](ref:hub/src/views/document.ts#followSections): each
+  each row kept level with its section ([`followSections`](ref:hub/src/views/sections.ts#followSections): each
   animation frame while the view is seen it reads the frame's `scrollY`, and when that or the body's size changed
   reads every anchor and writes every row), so a
   file's CSS, SVG, top layer or `inert` can't cover, move or click through one: an iframe paints only inside its own
