@@ -56,7 +56,8 @@ closes; the worker stays at its keyboard, posed for its status
 ([`poseDesk`](ref:hub/renderers/tower3d/src/desk.ts#poseDesk)). How the terminal claims the PTY is [[tower3d-desk]]
 ([`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) over `/term-view.js`). Monitors stream while the card
 is `live`, a changing one repainted less often the farther its nearest monitor in sight
-([`paintScreens`](ref:hub/renderers/tower3d/src/screens.ts#paintScreens)). With reduced motion
+([`paintScreens`](ref:hub/renderers/tower3d/src/screens.ts#paintScreens)), their xterm measuring characters as the
+desk terminal does ([[renderer-shared-modules]]). With reduced motion
 ([`reducedMotion`](ref:hub/src/shared/prefs.ts#reducedMotion)) the camera cuts where it would fly and waiting lights
 pulse once, then hold. Waiting lights take the colour of the loudest wait they light for
 ([`loudest`](ref:hub/src/shared/status-words.ts#loudest)), and only one that needs you pulses. A wait that begins rings
