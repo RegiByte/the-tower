@@ -175,7 +175,7 @@ and a framed document's section are the same thing.
   before, the owner of a collection subject was never found), then the first offered, the core's first. So the
   untyped `display` of the drafts collection opens a new draft in `drafts/editor`, and what means the whole listing
   names `tower/collection`, as the page's `#kept/<p>/<c>` already did.
-- *The strip* (1.128). The tower page's `board.strip`, at the top of the sidebar, is a `row` region on the board drawn
+- *The strip* (1.129). The tower page's `board.strip`, at the top of the sidebar, is a `row` region on the board drawn
   by the same [`rows`](ref:hub/renderers/page/regions.js#regions) with one subject, the board: the one view the layout
   picks stays mounted for as long as the page is open, whatever the main pane shows, so an extension can keep
   something in sight or play it (narration's memos). The page paints it only when a view draws it

@@ -316,8 +316,8 @@ test("a projection is refused off a card, beside x or adds, from a fact not decl
 
 const GUIDE = { brief: 'Say a short memo aloud to the user', full: 'Speak only when it is worth their ears.' }
 const atGuidance = (found: Found[], extensions: Config['extensions'] = {}) =>
-  resolve(found, config({ extensions: Object.fromEntries(Object.entries(added(found)!).map(([id, entry]) => [id, { ...entry, ...extensions[id] }])) }), '1.128')
-const guided = (id: string, fields: Fields = {}) => ext(id, { ...fields, requires: { tower: '1.128' } })
+  resolve(found, config({ extensions: Object.fromEntries(Object.entries(added(found)!).map(([id, entry]) => [id, { ...entry, ...extensions[id] }])) }), '1.129')
+const guided = (id: string, fields: Fields = {}) => ext(id, { ...fields, requires: { tower: '1.129' } })
 
 test("an extension's guidance is its manifest's, the config's brief and full over it and its also after the full text", () => {
   const r = atGuidance([guided('plain', { guidance: GUIDE }), guided('replaced', { guidance: GUIDE }), guided('added', { guidance: GUIDE }), guided('given'), guided('silent')], {

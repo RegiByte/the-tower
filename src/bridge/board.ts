@@ -407,7 +407,7 @@ export type Board = {
   extensions: ExtensionView[]
   /**
    * The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on
-   * last among those whose board stream is open (`viewer/active`), none while no open one has said so. @since 1.128
+   * last among those whose board stream is open (`viewer/active`), none while no open one has said so. @since 1.129
    */
   viewers: Viewers
   /**
