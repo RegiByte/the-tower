@@ -1,0 +1,6 @@
+files  Files 1.0 · running
+  tower x files repos/<project>/<id>  The repos of the worker's checkout, each named as a review anchor names it. (it names the project)
+  tower x files tree/<project>/<id>  One folder of a repo of the worker's checkout: folders first, each in name order, what git ignores marked, a link out marked outside; .git never listed. (it names the project)
+  tower x files status/<project>/<id>  What git sees changed in each repo of the worker's checkout, a mark by path (M, A, D, R, U untracked, C in conflict; an untracked folder as its path and a slash), and a stamp that changes when any of it does. (it names the project)
+  tower x files stat/<project>/<id>  One file of the worker's checkout: its size, when it last changed, its media type (a file of an unknown kind with no NUL in its first 8 KB is text/plain), and its absolute path, for the editor and Finder. (it names the project)
+  tower x files raw/<project>/<id>/<repo>/<file...>  One file of the worker's checkout, as written, sandboxed: up to 50 MB. (it names the project)

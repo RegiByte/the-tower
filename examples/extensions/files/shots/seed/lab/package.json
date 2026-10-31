@@ -1,0 +1,6 @@
+{
+  "name": "field-notes",
+  "version": "0.3.0",
+  "type": "module",
+  "scripts": { "start": "node src/server.ts" }
+}

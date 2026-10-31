@@ -1,0 +1,77 @@
+{
+  "seed": [
+    "$EXT/shots/seed/seed.sh"
+  ],
+  "scenes": [
+    {
+      "name": "tab",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "until": ".pane-tab",
+          "text": "Files3"
+        }
+      ],
+      "crop": ".bar"
+    },
+    {
+      "name": "code",
+      "open": "#$WORKER_1",
+      "size": "1440x720",
+      "steps": [
+        {
+          "click": ".pane-tab",
+          "text": "Files"
+        },
+        {
+          "click": "[data-view=\"files/explorer\"] .row",
+          "text": "docs"
+        },
+        {
+          "click": "[data-view=\"files/explorer\"] .row",
+          "text": "src"
+        },
+        {
+          "click": "[data-view=\"files/explorer\"] .row.file",
+          "text": "notes.ts"
+        },
+        {
+          "until": "[data-view=\"files/code\"] pre.shiki",
+          "text": "tagsOf"
+        }
+      ],
+      "crop": "[data-view=\"files/explorer\"]",
+      "pad": 0
+    },
+    {
+      "name": "markdown",
+      "open": "#$WORKER_1",
+      "size": "1440x720",
+      "steps": [
+        {
+          "click": ".pane-tab",
+          "text": "Files"
+        },
+        {
+          "click": "[data-view=\"files/explorer\"] .row.file",
+          "text": "README.md"
+        },
+        {
+          "until": "[data-view=\"files/explorer\"] .fx-open iframe[title=\"README.md\"]"
+        },
+        {
+          "eval": "new Promise((done) => { const look = () => { const doc = document.querySelector('.fx-open iframe').contentDocument; doc?.body?.textContent.includes('Field notes') && doc.fonts.status === 'loaded' ? done() : setTimeout(look, 100) }; look() })"
+        }
+      ],
+      "crop": "[data-view=\"files/explorer\"]",
+      "pad": 0
+    }
+  ],
+  "text": [
+    {
+      "name": "cli",
+      "run": "tower x files"
+    }
+  ]
+}
