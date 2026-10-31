@@ -77,7 +77,8 @@ are the same view in every renderer; only where they sit, their state and a few 
   html only when it changed, keeps the element's scroll and that of each `data-keep-scroll` inside it (WebKit drops
   the element's when the swap flips a `:has` rule it matches, as the Changes' file tree does), sets each text box from
   the renderer's text, and gives focus and caret back
-  ([`keepingFocus`](ref:hub/src/shared/panel-kit.ts#keepingFocus), which a renderer also wraps around its own redraws).
+  ([`keepingFocus`](ref:hub/src/shared/panel-kit.ts#keepingFocus), which a renderer also wraps around its own redraws:
+  a control the redraw put back, inside a view's host it moved, keeps its focus itself).
   A time is an empty `data-since` span each renderer fills on its own clock, so the clock never forces a redraw that
   would drop a text selection.
 - *A fold keeps the reader's place.* Folding or marking viewed a file the reader is inside redraws through

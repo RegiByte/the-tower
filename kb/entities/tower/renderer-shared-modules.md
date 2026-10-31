@@ -4,7 +4,7 @@
   "name": "Renderer shared modules",
   "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, review threads, icons, terminal keys), served by the tower bundled as /<name>.js.",
   "in": "tower-core",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-10-31",
   "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/extensions/drafts/client/drafts.ts", "hub/src/shared/items.ts", "hub/extensions/reviews/client/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/checkouts.ts#sendTargets", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/shared/anchors-legacy.ts#changesHtml", "hub/extensions/reviews/client/panel.ts#reviewsHtml", "hub/extensions/drafts/client/drafts.ts#readDraft", "hub/extensions/reviews/client/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/src/shared/capabilities.ts#parsePattern", "hub/src/shared/capabilities.ts#tipAt", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/extensions/policies/client/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/extensions/reviews/client/panel.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/spawn.ts#SpawnDrafts", "hub/src/shared/palette.ts#PaletteContext", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#fileMentions"]
 }
 ---
@@ -37,7 +37,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   `Deprecation` header, until 2.0 (`LEGACY`). No served module bundles it: `wireSpawn` takes its `draftsOf`, `keepUnsent` and `titleOf` as `io.drafts`, and the
   palette its `draftsOf` in its context, from the renderer, so a page runs only the drafts client its provider serves.
 - `items.ts`: any collection's items as rows and trays (title, tag, keeper, age), whole or bounded to the newest, how an item is read by its type,
-  and what to ask before deleting one ([[collection-trays]]).
+  and what to ask before deleting one ([[collection-trays]]); a collection's tray as a view (`mountKeptTray`, the shape of
+  `tower/tray` and `drafts/tray`, [[ui-model]]).
 - `reviews.ts`: the thread format, its parse and append, anchors and their state against a diff (`anchorStates`, by
   `<n>|<i>`, which the extension's `anchors/<project>` read answers), the
   text that sends notes ([[review-round]], [[review-threads]]); the reviewer's prompt helpers stay, deprecated, until
