@@ -27,7 +27,7 @@ it. Name tab is also in the palette, on every worker.
 
 ### Tower 3D
 
-The line in the head of a worker's desk panel. Tower 3D offers no Name tab: it imports no client modules.
+The line in the head of a worker's desk panel. Tower 3D offers no Name tab: it runs no extension commands or views.
 
 ![A desk panel with its tab line](shots/desk-dark.png)
 
