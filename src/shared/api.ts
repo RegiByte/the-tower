@@ -13,7 +13,7 @@ import type { Words } from './extensions.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.128'
+export const API_VERSION = '1.129'
 
 const id = z.string().min(1)
 
@@ -173,7 +173,7 @@ export const VERBS = {
     input: z
       .object({ viewer: z.string().regex(VIEWER_ID, 'a viewer id: 8 to 64 letters, digits and dashes').describe('The viewer its board stream named, `GET /board?viewer=<id>`.') })
       .describe(
-        "Say the user acted on this viewer (a page's tab): it becomes the board's `viewers.active` while its board stream stays open and no other viewer acts after it. Held in the tower's memory, never logged. A renderer calls it when it gains focus and as the user acts, at most every few seconds. @since 1.128",
+        "Say the user acted on this viewer (a page's tab): it becomes the board's `viewers.active` while its board stream stays open and no other viewer acts after it. Held in the tower's memory, never logged. A renderer calls it when it gains focus and as the user acts, at most every few seconds. @since 1.129",
       ),
     reply: ok,
   },

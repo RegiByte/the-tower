@@ -774,7 +774,7 @@ export const httpServer = defineResource({
       plain('page', { path: /^\/$/, serve: ({ res, search }) => home(res, search) }),
       streamRead({
         description: 'The whole system as one view, again whenever it changes.',
-        read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. A page names itself with `?viewer=<id>`, which `viewer/active` then takes (1.128). One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
+        read: "GET /board is SSE, one `data:` line per change, each a `message`: an envelope, the board is its `board` field. A page names itself with `?viewer=<id>`, which `viewer/active` then takes (1.129). One event: `curl -sN -m 2 <address>/board | grep -m1 '^data:' | cut -c7-`",
         message: boardSchema,
       }, { path: /^\/board$/, serve: ({ req, res, search }) => {
         const viewer = new URLSearchParams(search).get('viewer') ?? undefined

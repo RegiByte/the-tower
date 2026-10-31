@@ -264,7 +264,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 - **Verbs**: `POST /<verb>` with a JSON body: `spawn`, `resume`, `submit`, `keys`, `kill`, `collection/create`,
   `tidy` and the rest, and the extensions' verbs by their names (`reviews/append`). Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
   the tower answers 403, its guard against other web pages.
-- **Which page the user is at** (API 1.128): a page names itself on its board stream, `GET /board?viewer=<id>` (its
+- **Which page the user is at** (API 1.129): a page names itself on its board stream, `GET /board?viewer=<id>` (its
   own id, 8 to 64 letters, digits and dashes, one per tab), and calls `POST /viewer/active {viewer}` when it gains
   focus and as the user acts, at most every few seconds. The board's `viewers.active` is the viewer the user acted on
   last among those whose stream is open: one page, across every machine reading the tower, for what only one should do
@@ -540,7 +540,7 @@ a door is neither. A worker writes through it with `tower x <cap> facts/<name> '
 no `/`, so no verb takes a door's name; a read whose path matches `facts/<name>` of a writable fact is a `conflict`
 warning, reached by `GET` and never by `tower x`.
 
-**Guidance** (API 1.128) tells the workers when to use an extension and how. A manifest's `guidance` holds `brief`,
+**Guidance** (API 1.129) tells the workers when to use an extension and how. A manifest's `guidance` holds `brief`,
 one line of at most 200 characters, and optionally `full`, markdown of at most 4000: when to use its doors, verbs and
 reads, when not to, and how, with the exact commands. `tower whoami` lists the brief of each running extension on the
 worker's floor, one line each, and `tower x <capability>` prints the full text before its doors, verbs and reads, so a

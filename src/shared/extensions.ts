@@ -75,7 +75,7 @@ const SECTIONS = '1.118'
 export const WRITABLE = '1.126'
 
 /** The minor an extension's guidance for agents arrived in: its manifest's, the config's over it, and where workers read it. */
-export const GUIDANCE = '1.128'
+export const GUIDANCE = '1.129'
 
 /** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
 const GATE = '1.107'
@@ -252,7 +252,7 @@ export type ExtensionView = {
   layout?: Layout
   /** What it adds to the spawn form, when it adds anything. @since 1.87 */
   spawn?: { fields: SpawnFieldView[] }
-  /** What it tells the workers, the config's over its manifest's, when either says anything. @since 1.128 */
+  /** What it tells the workers, the config's over its manifest's, when either says anything. @since 1.129 */
   guidance?: Guided
 }
 
