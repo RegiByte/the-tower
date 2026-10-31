@@ -50,8 +50,9 @@ earlier runs left. Tower 3D and The Week draw none of it.
 
 ## Add it
 
-It ships with the tower and is on for every floor. Off, nothing runs on a schedule, but its files and facts stay: on
-again, every policy, run and approval is back.
+It ships with the tower and is on for every floor. `"extensions": { "policies": { "off": true } }` turns it off
+everywhere, `"capabilities": { "policies": { "off": true } }` in a project's entry on one floor. Off, nothing runs on a schedule, but its files and facts
+stay: on again, every policy, run and approval is back.
 
 ## What it needs from you
 
