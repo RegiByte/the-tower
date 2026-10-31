@@ -1,0 +1,9 @@
+{
+  "name": "tower-extension-files",
+  "private": true,
+  "type": "module",
+  "description": "The files example extension's own dependencies: in the tower's checkout they resolve from its node_modules; a copy elsewhere runs npm install here.",
+  "dependencies": {
+    "shiki": "^4.5.0"
+  }
+}

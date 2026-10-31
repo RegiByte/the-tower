@@ -7,8 +7,8 @@
 import { randomUUID } from 'node:crypto'
 import { stat } from 'node:fs/promises'
 import path from 'node:path'
+import { mediaTypeOf } from 'tower:media.js'
 import type { FoldCtx, StartCtx } from '../../../src/shared/extensions.ts'
-import { mediaTypeOf } from '../../../src/shared/media.ts'
 
 type Settings = { voice?: { command: string[] } }
 type Refusal = { t: 'error'; code: 'not_found' | 'refused'; message: string }

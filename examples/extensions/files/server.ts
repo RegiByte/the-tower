@@ -7,11 +7,10 @@
 import { createHash } from 'node:crypto'
 import { open, readdir, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
+import { mediaTypeOf } from 'tower:media.js'
+import { checkoutDirs, repoName } from 'tower:repos.js'
 import type { Card, Floor } from '../../../src/bridge/board.ts'
 import type { CallCtx, StartCtx } from '../../../src/shared/extensions.ts'
-import { mediaTypeOf } from '../../../src/shared/media.ts'
-import { checkoutDirs } from '../../../src/shared/model.ts'
-import { repoName } from '../../../src/shared/reviews.ts'
 
 type Refusal = { t: 'error'; code: 'not_found' | 'refused' | 'invalid'; message: string }
 type Repo = { repo: string; dir: string }
