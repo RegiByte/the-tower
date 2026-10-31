@@ -397,7 +397,7 @@ deletes them (`collection/create`, `collection/write`, `collection/delete`), and
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
 `drafts` itself is declared by the bundled drafts extension; a config line of that name overrides its label and
 description.
-`/items.js` lists and reads any collection without a meaning, as the tower page's trays do.
+`/items.js` lists and reads any collection without a meaning, as `tower/tray`, the tower page's tray of a collection, does ([Views](#views)).
 Workers add with `tower keep <collection>`. `reviews` is the bundled reviews extension's, owned: one markdown thread
 per checkout, written only through `reviews/append`. Each card carries its thread as `x.reviews` (the checkout it is
 about, where that work stands, the notes new to it, and its note call while the work is live) and each floor its
@@ -620,13 +620,13 @@ config declares; this table says it for the ones that ship, generated from their
 |---|---|---|---|---|
 | `card` | `card.row`, the worker's row in the sidebar: badges, lines<br>`card.head`, the worker's header, and the palette: badges, lines, verbs, commands<br>`card.panes`, the worker's tabs (terminal, brief, changes, reviews, shown files): views | `card.desk`, the worker's panel at its desk: badges, lines, verbs | not drawn | `card.whoami`, under the worker in `tower whoami`: lines |
 | `conversation` | `conversation.head`, the conversation's heading in the Brief: badges, verbs, commands | `conversation.head`, the conversation's heading in the logbook: badges | not drawn | not drawn |
-| `floor` | `floor.section`, the floor's section in the sidebar, its Tidy and the palette: badges, verbs, commands, asks, tidy<br>`floor.trays`, the floor's trays of kept items in the sidebar: views | `floor.console`, the floor's Tidy: tidy | not drawn | not drawn |
+| `floor` | `floor.section`, the floor's section in the sidebar, its Tidy and the palette: badges, verbs, commands, asks, tidy | `floor.console`, the floor's Tidy: tidy | not drawn | not drawn |
 | `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | not drawn | not drawn | not drawn |
 | `said` | `said.acts`, beside a prompt's or an answer's copy in the Brief: commands | not drawn | not drawn | not drawn |
 | `section` | `section.acts`, in a gutter beside a markdown document, level with each of its sections: commands | not drawn | not drawn | not drawn |
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands<br>`item.row`, the item's row in the floor's trays: badges, verbs, commands | not drawn | not drawn | not drawn |
-| `collection` | not drawn | not drawn | not drawn | not drawn |
+| `collection` | `floor.trays`, a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection: views | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
 | `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
 <!-- /regions -->
@@ -724,10 +724,28 @@ draw, and the page goes on. A view that keeps something in the viewer's record (
 `tower.store.set`, and every renderer that keeps that record hears it through `tower.store.on` (API 1.108).
 
 **The core's views** are modules too, served at `/x/tower/<name>.js` (API 1.108): `tower/skyline` on the board,
-`tower/archive` on a floor, `tower/collection` on a collection and `tower/shelf` on a shelf entry, beside the drafts
+`tower/archive` on a floor, `tower/collection` on a collection, `tower/tray` on one at `row` (API 1.125) and
+`tower/shelf` on a shelf entry, beside the drafts
 extension's `drafts/editor` and the policies extension's `policies/policies` on a floor. Each is `CORE_VIEWS`' entry
 with its `module`, `export` and `needs`, and a renderer whose kit lends those hosts it as it hosts any extension's.
 
+
+**Trays** (API 1.125). The tower page draws a floor's collections in `floor.trays`, a row of trays under its workers:
+a region whose subject is the collection (its id names where it sits, on the floor), at `row` scale, drawn once for
+each collection of an open floor. `tower/tray`, on `collection`, draws any collection: its count, unfolding to its
+newest items and a way to all of them in `tower/collection`. An extension draws its own collection's tray with a view
+on that one collection, `collection.<id>` at `row`, and it is picked over `tower/tray` there with no layout line: a
+subject that bears no type is drawn by the layout's `order` first, then the view of the extension declaring its
+collection when that view is on its exact kind (`collection.<id>` for a collection, `item.<id>` for an item), then the
+first offered, the core's first. The same rule holds in the main pane: `display` of the drafts collection with no
+view opens a new draft in `drafts/editor`, so what means the whole listing names `tower/collection`. The drafts, reviews and policies extensions ship `drafts/tray` (with a `+` for a new
+draft), `reviews/tray` (the threads by checkout) and `policies/tray` (counts, opening Policies). A tray draws its
+button, and its unfolded part in an element of class `tray-open`, which the page lays under every tray of the row;
+one with nothing to show draws nothing. The page's `renderer.json` orders the row (`floor.trays`' `order`: the
+rows drawn by a view it names first, in its order, the rest in the floor's collection order), and its own trays
+(worktrees, stranded workers, the archive, Tidy) come after the collections'. `/items.js`' `mountKeptTray` is
+`tower/tray`'s shape, for an extension that draws its collection's tray as any collection's with its own icon,
+titles and actions.
 
 **The worker view** (API 1.111). `tower/card` on a card draws its head and declares `card.panes`, its tabs, which it
 asks the kit for as a region. A tabs region's tabs are (view, subject) pairs: the views on the card (`tower/terminal`,

@@ -4,7 +4,7 @@ import type { Board, Card, CardShown } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
 import { ADDRESS_TYPE, fileSubject, linesAt, linesSubject, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
-import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, pickView, shortHashOf, shownOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
+import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, offeredIn, pickView, shortHashOf, shownOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'file', at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -123,6 +123,25 @@ test('views: a view on collection.<id> is on that one collection, as one on item
   assert.ok(!viewOn(['collection.drafts'], { kind: 'collection', value: { id: 'games' } }))
   assert.ok(viewOn(['collection'], drafts))
   assert.ok(viewOn(['item.*'], { kind: 'item.games', value: {} }))
+})
+
+test("views: a floor's trays offer views at row only, the collection's owner's on that one collection first, tower/tray the rest", () => {
+  const collection = (id: string, by?: string) => ({ id, label: id, dir: `/c/${id}`, items: [], ...(by && { by }) })
+  const board = { floors: [{ id: 'p', cards: [], collections: [collection('drafts', 'drafts'), collection('games')] }], extensions: [] } as unknown as Board
+  const tray: View = { id: 'drafts/tray', cap: 'drafts', on: ['collection.drafts'], scales: ['row'], words: { label: 'Drafts' } }
+  const editor: View = { id: 'drafts/editor', cap: 'drafts', on: ['item.drafts', 'collection.drafts'], accepts: ['text/markdown'], scales: ['pane'], words: { label: 'Draft' } }
+  const views = [...CORE_VIEWS, editor, tray]
+  const trays: Region = { id: 'floor.trays', subject: 'collection', holds: ['views'], scale: 'row', arity: 'one' }
+  const main: Region = { id: 'board.main', subject: 'board', holds: ['views'], scale: 'pane', arity: 'one' }
+  const pick = (region: Region, key: string, order?: string[]) => {
+    const at = subjectAt(board, key)!
+    return pickView(board, offeredIn(views, region, {}, KIT_MEMBERS, at), order, at)?.id
+  }
+  assert.equal(pick(trays, 'collection:p/drafts'), 'drafts/tray', "the owner's view on its own collection beats the core's")
+  assert.equal(pick(trays, 'collection:p/games'), 'tower/tray')
+  assert.equal(pick(trays, 'collection:p/drafts', ['tower/tray']), 'tower/tray', 'an order takes the owner over')
+  assert.equal(pick(main, 'collection:p/drafts'), 'drafts/editor', 'the main pane offers no tray, and picks the owner there too')
+  assert.equal(pick(main, 'collection:p/games'), 'tower/collection')
 })
 
 test("views: the layout takes each field from the highest layer that sets it; hidden is the union less what a higher layer orders", () => {

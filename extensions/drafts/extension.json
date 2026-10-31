@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Drafts",
   "description": "Prompts kept for later: edited in a renderer, then sent to a new session or typed into a worker, and deleted.",
-  "requires": { "tower": "1.108" },
+  "requires": { "tower": "1.125" },
   "client": "client",
   "views": {
     "editor": {
@@ -14,6 +14,14 @@
       "scales": ["pane"],
       "needs": ["region", "display", "run", "toast"],
       "words": { "label": "Draft", "hint": "a prompt kept for later, open to edit, start a worker on or send to one" }
+    },
+    "tray": {
+      "module": "tray.js",
+      "export": "mount",
+      "on": ["collection.drafts"],
+      "scales": ["row"],
+      "needs": ["display"],
+      "words": { "label": "Drafts", "hint": "the floor's drafts, the newest unfolded, and a new one" }
     }
   },
   "collections": {

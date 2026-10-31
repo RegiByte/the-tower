@@ -1,9 +1,7 @@
 import { badgesOf, cardSubject, linesOf, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTree, hiresBy, goneHome, goneHomeLine, loudest, lampOf, DISMISS_OFFER_TITLE, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
-import { REVIEWS, landedThreads, reviewerOf } from '/x/reviews/reviews.js'
-import { floorThreadsOf } from '/x/reviews/panel.js'
-import { collectionPeekHtml, keptKey } from '/items.js'
+import { reviewerOf } from '/x/reviews/reviews.js'
 import { offerWords, policyZone } from '/x/policies/panel.js'
 import { floorPolicies, offerAskKey, POLICIES, runOf, slotWords } from '/x/policies/policies.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
@@ -14,7 +12,7 @@ import { verbLabel } from '/verb-words.js'
 import { addsHtml, asksHtml, badgesHtml } from './added.js'
 
 /**
- * @import { Board, Card, Floor, FloorCollection, FloorItem, Unresumable } from '../../src/bridge/board.ts'
+ * @import { Board, Card, Floor, Unresumable } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
  * @import { CardRun } from '../../extensions/policies/policies.ts'
  * @import { FloorBranch, FloorWorktree } from '../../src/bridge/worktrees.ts'
@@ -22,7 +20,6 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
- * @import { Titled } from '../../src/shared/titles.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  */
 
@@ -44,11 +41,8 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  *   viewer: () => Viewer,
  *   keepViewer: <K extends keyof Viewer>(field: K, value: Viewer[K]) => void,
  *   findCard: (id: string | undefined) => Card | undefined,
- *   openItemIn: (project: string, collection: string) => string | undefined,
  *   at: (id: string) => { kind: string, project: string, name: string } | undefined,
- *   draftTitle: (project: string, item: Titled) => string,
- *   newDraftHtml: (f: Floor) => string,
- *   keptTitle: (project: string, collection: string, item: FloorItem) => string,
+ *   trayRowsHtml: (f: Floor) => string,
  *   heed: () => Heed,
  *   withKeys: (what: string, id: string) => string,
  *   opensHtml: (subject: Subject) => string,
@@ -62,7 +56,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @param {SidebarDeps} deps
  */
 export async function sidebar(deps) {
-  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, openItemIn, at, draftTitle, newDraftHtml, keptTitle, heed, withKeys, opensHtml } = deps
+  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml, heed, withKeys, opensHtml } = deps
   /** The web page of each project directory's origin remote. @type {Record<string, string>} */
   let origins = {}
 
@@ -206,22 +200,6 @@ export async function sidebar(deps) {
     <div class="drafts-head eyebrow">Worktrees</div>
     ${f.worktrees.map((w) => worktreeHtml(f, w)).join('')}${f.branches.map((b) => keptBranchHtml(f, b)).join('')}</div>`
 
-  /** A floor's review threads, each named by its checkout beside its tag, and the threads Tidy filed once their work landed, folded. @param {Floor} f */
-  const threadsHtml = (f) => {
-    const rows = floorThreadsOf(f).map((t) => {
-      const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
-      return `<button class="draft thread" data-thread="${esc(f.id)}|${esc(t.checkout)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}">${ICON.thread}<span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
-    })
-    const landed = landedOf(f)
-    const fold = `landed:${f.id}`
-    const filed = !landed.length ? '' : `<button class="kept-fold" data-section="${fold}" aria-expanded="${unfolded.has(fold)}" data-tip="threads Tidy filed once their work landed: read them here">${ICON.caret} ${landed.length} landed</button>
-    ${unfolded.has(fold) ? landed.map((t) => `<button class="kept-row ${openItemIn(f.id, REVIEWS) === t.id ? 'sel' : ''}" data-kept="${esc(keptKey(f.id, REVIEWS, t.id))}" data-tip="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
-    return `<div class="drafts"><div class="drafts-head eyebrow">Review threads</div>${rows.join('') || '<div class="empty">none open</div>'}${filed}</div>`
-  }
-
-  /** The threads Tidy filed in the floor's reviews collection, the one filed last first. @param {Floor} f */
-  const landedOf = (f) => landedThreads(f.collections.find((c) => c.id === REVIEWS)?.items ?? [])
-
   /**
    * Everything the floor's Tidy would do, listed before the press, which applies the list as shown; then what landed
    * edited, each removed by its own press only.
@@ -249,33 +227,6 @@ export async function sidebar(deps) {
   /** @param {Floor} f */
   const shelfHtml = (f) => !f.shelf?.length ? '' : `<div class="shelf">${f.shelf.map((entry, n) => shelfEntryHtml(f, entry, n)).join('')}</div>`
 
-  /** Where a floor's tray leads past its newest items: the whole collection in the main pane. @param {Floor} f @param {FloorCollection} c */
-  const moreHtml = (f, c) => /** @param {number} rest */ (rest) =>
-    `<button class="kept-more" data-collection="${esc(keptKey(f.id, c.id, ''))}" data-tip="all ${c.items.length} in ${esc(c.label.toLowerCase())}, in the main pane">+${rest} more</button>`
-
-  /** @param {Floor} f */
-  const draftsHtml = (f) => {
-    const drafts = /** @type {FloorCollection} */ (draftsOf(f))
-    return collectionPeekHtml(f.id, drafts, (item) => draftTitle(f.id, item), at('drafts/editor')?.kind === 'item.drafts' && at('drafts/editor')?.project === f.id ? at('drafts/editor')?.name : undefined, Date.now(), moreHtml(f, drafts), newDraftHtml(f))
-  }
-
-  /** @param {Floor} f @param {FloorCollection} c */
-  const keptHtml = (f, c) => collectionPeekHtml(f.id, c, (item) => keptTitle(f.id, c.id, item), openItemIn(f.id, c.id), Date.now(), moreHtml(f, c))
-
-  /** The collections a floor shows as trays of their own: drafts and review threads have theirs. @param {Floor} f */
-  const keptCollections = (f) => f.collections.filter((c) => c !== draftsOf(f) && c.id !== REVIEWS && c.id !== POLICIES && c.items.length)
-
-  /** The floor's policies, folded to a count with what is offered and what needs you: the panel opens in the main pane. @param {Floor} f */
-  function policiesTrayHtml(f) {
-    const { policies, offers } = floorPolicies(f)
-    if (!policies.length) return ''
-    const offered = offers.length
-    const needs = policies.filter((p) => p.needs).length
-    const invalid = policies.filter((p) => !p.header && !p.needs).length
-    const on = at('policies/policies')?.project === f.id
-    return `<button class="tray ${on ? 'on' : ''}" data-policies="${f.id}" aria-pressed="${on}" data-tip="standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane">${ICON.resume} <b>${policies.length}</b> ${policies.length === 1 ? 'policy' : 'policies'}${offered ? `, ${offered} offered` : ''}${needs ? ` <i class="needs">${needs} need${needs === 1 ? 's' : ''} you</i>` : ''}${invalid ? ` <i>${invalid} invalid</i>` : ''}</button>`
-  }
-
   /** The floor's offers this viewer heeds, in the attention order: Accept starts the run, ✕ dismisses it for this viewer. @param {Floor} f */
   const offersHtml = (f) => {
     const offers = floorPolicies(f).offers.filter((o) => !heed().dismissed.has(offerAskKey(o)))
@@ -285,36 +236,31 @@ export async function sidebar(deps) {
   }
 
   /**
-   * What a floor keeps beside its workers, folded to one row of counts so the workers stay in sight: drafts,
-   * worktrees, threads and what Tidy would do unfold under it, the archive opens in the main pane. Worktrees that would lose work say so folded.
+   * What a floor keeps beside its workers, folded to one row of counts so the workers stay in sight: first its
+   * collections, each a view in the floor's trays (`floor.trays`), then the floor's own: worktrees and what Tidy would
+   * do unfold under the row, the archive opens in the main pane. Worktrees that would lose work say so folded. A
+   * collection's view draws its unfolded part in the row, laid out under every tray (`.tray-open`).
    * @param {Floor} f
    */
   function traysHtml(f) {
-    const drafts = draftsOf(f)
     const trees = f.worktrees.length + f.branches.length
     const atRisk = risky(f)
     const past = pastCount(f)
-    const threads = floorThreadsOf(f).length
-    const landed = landedOf(f).length
-    const kept = keptCollections(f)
     const edited = editedRows(f).length
     const tidy = can(f, 'tidy') || edited > 0
     const stranded = strandedOf(f).length
     /** @param {string} key @param {string} label @param {string} title */
     const tray = (key, label, title) => `<button class="tray ${unfolded.has(`${key}:${f.id}`) ? 'on' : ''}" data-section="${key}:${f.id}" aria-expanded="${unfolded.has(`${key}:${f.id}`)}" data-tip="${title}">${label}</button>`
     const trays = [
-      drafts?.items.length && tray('drafts', `${ICON.draft} <b>${drafts.items.length}</b> in ${esc(drafts.label.toLowerCase())}`, esc(`${drafts.label}: ${drafts.description ?? 'prompts kept for later'}`)),
+      trayRowsHtml(f),
       trees && tray('worktrees', `${ICON.branch} <b>${trees}</b> ${noun(trees, 'worktree')}${atRisk ? ` <i>${atRisk} at risk</i>` : ''}`, 'worktrees and the branches the tower kept'),
-      (threads || landed) && tray('threads', `${ICON.thread} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers'),
-      policiesTrayHtml(f),
-      ...kept.map((c) => tray(`kept-${c.id}`, `${ICON.collection} <b>${c.items.length}</b> in ${esc(c.label.toLowerCase())}`, esc(`${c.label}: ${c.description ?? 'items kept for later'}`))),
       stranded && (heldWhy('resume') ? heldHtml('resume', `resume all ${stranded} stranded`, `${ICON.resume} resume all <b>${stranded}</b> stranded`, 'tray') : `<button class="tray" data-resume-all="${f.id}" data-tip="resume every worker stopped, killed or lost before it was sent home: asked first, listing them">${ICON.resume} resume all <b>${stranded}</b> stranded</button>`),
       past && `<button class="tray ${at('tower/archive')?.project === f.id ? 'on' : ''}" data-archive="${f.id}" aria-pressed="${at('tower/archive')?.project === f.id}" data-tip="past workers and their conversations, in the main pane">${ICON.archive} <b>${past}</b> archived</button>`,
       tidy && tray('tidy', `${ICON.tidy} ${esc(can(f, 'tidy') ? tidyLine(f.tidy, addedTidyOf(board(), f)) : 'Tidy')}${edited ? `, ${edited} landed edited` : ''}`, 'what Tidy would do: unfold it to see the list before you press'),
     ].filter(Boolean)
     if (!trays.length) return ''
     return `<div class="trays">${trays.join('')}</div>
-    ${drafts?.items.length && unfolded.has(`drafts:${f.id}`) ? draftsHtml(f) : ''}${kept.filter((c) => unfolded.has(`kept-${c.id}:${f.id}`)).map((c) => keptHtml(f, c)).join('')}${trees && unfolded.has(`worktrees:${f.id}`) ? worktreesHtml(f) : ''}${(threads || landed) && unfolded.has(`threads:${f.id}`) ? threadsHtml(f) : ''}${tidy && unfolded.has(`tidy:${f.id}`) ? tidyHtml(f) : ''}`
+    ${trees && unfolded.has(`worktrees:${f.id}`) ? worktreesHtml(f) : ''}${tidy && unfolded.has(`tidy:${f.id}`) ? tidyHtml(f) : ''}`
   }
 
   /**

@@ -190,6 +190,7 @@ export const CORE_VIEWS: readonly View[] = [
   { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast', 'confirm']), regions: ['lines.acts'], tab: 'tab' },
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
+  served(core('tower/tray', ['collection'], ['row'], { label: 'Tray', hint: "a collection's count, unfolding to its newest items" }), ['display']),
   served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['display', 'go', 'toast']),
   { ...byType('document', ['text/markdown'], { label: 'Document', hint: 'the markdown drawn as a document' }), shows: ['section'], regions: ['section.acts'], needs: ['region', 'bus', 'display', 'toast', 'confirm'] },
   byType('html', ['text/html'], { label: 'Page', hint: 'the page, running framed at an origin of its own' }),

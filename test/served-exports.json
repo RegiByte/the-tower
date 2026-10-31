@@ -506,6 +506,7 @@
       "collectionPeekHtml",
       "collectionTrayHtml",
       "deleteAsk",
+      "foldTrayHtml",
       "itemFile",
       "itemKind",
       "itemMeta",
@@ -516,7 +517,11 @@
       "keptKey",
       "keptOf",
       "keptTitles",
+      "keptTrayTitles",
+      "mountKeptTray",
       "newestFirst",
+      "openItemOf",
+      "pressTrayHtml",
       "readsText"
     ],
     "/cards.js": [
