@@ -1,9 +1,9 @@
 {
   "id": "narrate",
-  "version": "1.5",
+  "version": "1.6",
   "title": "Narration",
   "description": "Hear workers' short memos as they say them, and listen to what workers write: any markdown or text item, drafts among them, the markdown and text files they show, each section of a markdown document or a document from a section to its end, and each prompt and answer of a brief, voiced by a command of your choosing or the browser's own speech.",
-  "requires": { "tower": "1.129" },
+  "requires": { "tower": "1.130" },
   "server": "server.ts",
   "client": "client",
   "settings": {
@@ -97,7 +97,7 @@
       "export": "speak",
       "on": ["item.*", "shown", "section", "said"],
       "accepts": ["text/markdown", "text/plain"],
-      "words": { "label": "Listen", "hint": "Read this aloud" }
+      "words": { "label": "Listen", "hint": "Read this aloud", "icon": "speaker.svg" }
     },
     "from-here": {
       "module": "narrate.js",

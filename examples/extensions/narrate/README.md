@@ -18,7 +18,7 @@ by its absolute path:
 ```
 
 The tower picks it up without a restart. `tower extensions` lists it as started, and `tower extensions check
-/abs/path/to/narrate` reads it as the tower would. The tower page shows **Listen** on every draft, beside the tab of a
+/abs/path/to/narrate` reads it as the tower would. The tower page shows **Listen** on every draft, as a speaker icon inside the tab of a
 markdown or text file a worker showed, in the gutter beside each section of a markdown document (a kept item, a
 shown file, a shelf page) with **From here** next to it, beside the copy of each prompt and answer in the Brief, and in
 the palette; the CLI and Tower 3D, which don't import client modules,
