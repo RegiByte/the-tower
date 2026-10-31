@@ -5,7 +5,7 @@
  * stacked twice: the one showing moves to the end with its time anew, its action the newest, and counts the times
  * (`×2`). An action is one button that follows up what the toast tells (Resume after a kill, Undo after a delete):
  * pressing it closes the toast and runs it. The stack is a polite live region, so a screen reader says each toast as it
- * comes. The tower serves this module as `/toasts.js`. Every toast in the stack is as wide as the widest, so their
+ * comes. A notice (`noticer`) stands in the same stack until it is closed. The tower serves this module as `/toasts.js`. Every toast in the stack is as wide as the widest, so their
  * edges and their actions line up.
  */
 
@@ -81,6 +81,33 @@ export function toaster(stack: HTMLElement) {
     shown.set(el, s)
     if (!(held.pointer || held.focus)) run(el, s)
     while (shown.size > TOAST_MAX) close(shown.keys().next().value!)
+  }
+}
+
+/**
+ * A notice: a toast that stays while what it tells goes on (Listening, with Stop), standing in the stack above the
+ * toasts that leave, until `close`. `say` tells it anew; its action's button runs the action and leaves the notice
+ * standing, for whoever opened it to close. @since 1.128
+ */
+export type Notice = { say(msg: string): void; close(): void }
+
+/** Turns `stack`, the element `toaster` was given, into a stack that holds notices too, answering the function that opens one. */
+export function noticer(stack: HTMLElement) {
+  return (msg: string, action?: ToastAction): Notice => {
+    const el = document.createElement('div')
+    el.className = 'toast notice'
+    const words = Object.assign(document.createElement('span'), { textContent: msg })
+    el.append(words)
+    if (action) {
+      const button = Object.assign(document.createElement('button'), { textContent: action.label })
+      button.dataset.toastAction = action.label
+      button.onclick = () => void action.run()
+      el.append(button)
+    }
+    const after = [...stack.children].findLast((c) => c.classList.contains('notice'))
+    if (after) after.after(el)
+    else stack.prepend(el)
+    return { say: (next) => void (words.textContent = next), close: () => el.remove() }
   }
 }
 

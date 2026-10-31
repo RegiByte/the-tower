@@ -15,7 +15,7 @@
     { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette" },
     { "id": "item.row", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's row in the floor's trays" }
   ],
-  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "confirm", "href", "showing", "location"],
+  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location"],
   "keeps": [],
   "layout": { "floor.section": { "hidden": ["policies/policies"] }, "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] } }
 }

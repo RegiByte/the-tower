@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-10-31",
   "refs": [
     "hub/src/shared/press.ts#pressing",
     "hub/renderers/page/dialogs.js#dialogs",
@@ -52,7 +52,10 @@ them.
 - [`toaster(element)`](ref:hub/src/shared/toasts.ts#toaster) makes an element a polite live region of stacked toasts
   that time out, pause while the pointer or focus is on them, and may carry one action that closes its toast and
   runs. A toast told again while it shows ([`sameToast`](ref:hub/src/shared/toasts.ts#sameToast)) moves to the end
-  and counts the times. Tower 3D draws its toasts through it too.
+  and counts the times. Tower 3D draws its toasts through it too. A notice
+  ([`noticer`](ref:hub/src/shared/toasts.ts#noticer), since 1.128) stands in the same stack, above the toasts that
+  leave, until whoever opened it closes it: what goes on after a press (narration, with Stop), its action run without
+  closing it.
 - Send home still asks, saying what it costs ([`sendHomeAsk`](ref:hub/src/shared/duty.ts#sendHomeAsk)): a turn in
   flight is lost. A worker sent home alone gets a toast offering Resume: the card's own `resume` call, read when
   pressed from the board or its floor's archive ([[board-archive]]), so no renderer builds a call.

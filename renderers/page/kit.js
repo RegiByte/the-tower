@@ -1,7 +1,7 @@
 import { esc, gistOf, shownHref, shownKey, when } from '/cards.js'
 import { GIST_ICON, ICON } from '/icons.js'
 import { keepingFocus } from '/panels.js'
-import { toaster } from '/toasts.js'
+import { noticer, toaster } from '/toasts.js'
 import { keysHint, keyshortcuts } from '/keymap.js'
 
 /**
@@ -118,6 +118,9 @@ const announce = (msg) => $('announce').replaceChildren(Object.assign(document.c
 /** Tells what just happened, with an action that follows it up when given (`/toasts.js`, a live region of its own). */
 const toast = toaster($('toasts'))
 
+/** Tells what goes on until it is closed, in the toasts' stack (`/toasts.js`' `noticer`). */
+const notice = noticer($('toasts'))
+
 /**
  * A request whose failure is told in a toast, answering `undefined`.
  * @template T
@@ -126,4 +129,4 @@ const toast = toaster($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, told }

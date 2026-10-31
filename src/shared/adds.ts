@@ -89,7 +89,14 @@ const unlent = (member: string) => () => {
 }
 
 /** The kit of a renderer that lends a command nothing: every member fails, naming itself. */
-export const NO_KIT: CommandKit = { display: unlent('display'), toast: unlent('toast'), confirm: unlent('confirm'), run: unlent('run') }
+export const NO_KIT: CommandKit = {
+  display: unlent('display'),
+  toast: unlent('toast'),
+  notice: unlent('notice'),
+  confirm: unlent('confirm'),
+  run: unlent('run'),
+  bus: { publish: unlent('bus'), clear: unlent('bus'), at: unlent('bus'), under: unlent('bus'), on: unlent('bus'), mark: unlent('bus'), marks: unlent('bus') },
+}
 
 /** Runs a client command on `subject` in a renderer that lends it no kit (`runCommandWith`). */
 export const runCommand = (board: Board, action: Added<CommandAction>, subject: Subject): Promise<unknown> => runCommandWith(board, action, subject, NO_KIT)
