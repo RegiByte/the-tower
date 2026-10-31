@@ -2,15 +2,19 @@
  * Narration's voice command: `say` runs the command the settings name, the text on its stdin, and keeps the audio file
  * it printed under a token; `audio/<token>` serves that file, and only files this server was given so. `voice` says
  * whether a command is set, so the client picks its voice: the command's, or the browser's own speech without one.
+ * A worker's card carries its latest memos, the facts it wrote through the `memo` door.
  */
 import { randomUUID } from 'node:crypto'
 import { stat } from 'node:fs/promises'
 import path from 'node:path'
-import type { StartCtx } from '../../../src/shared/extensions.ts'
+import type { FoldCtx, StartCtx } from '../../../src/shared/extensions.ts'
 import { mediaTypeOf } from '../../../src/shared/media.ts'
 
 type Settings = { voice?: { command: string[] } }
 type Refusal = { t: 'error'; code: 'not_found' | 'refused'; message: string }
+
+/** How many of a worker's memos its card carries: the latest. */
+const MEMOS = 20
 
 /** How long one line may take to voice before its command is killed. */
 const SAY_MS = 120_000
@@ -36,6 +40,13 @@ export default (ctx: StartCtx) => {
   }
 
   return {
+    folds: {
+      /** A worker's latest memos over its lineage, each keyed by the session that said it and when. */
+      card: (_card: unknown, { own }: FoldCtx) => {
+        const memos = (own.facts ?? []).filter((f) => f.name === 'memo').slice(-MEMOS)
+        return memos.length ? { x: { memos: memos.map((f) => ({ key: `${f.session}/${f.at}`, at: f.at, text: f.value as string })) } } : {}
+      },
+    },
     reads: {
       voice: () => ({ command: voice !== undefined }),
       'audio/<token>': ({ params }: { params: { token: string } }) => {

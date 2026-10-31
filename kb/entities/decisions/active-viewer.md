@@ -17,7 +17,8 @@
     "hub/src/tower/tower.js#viewerId",
     "hub/src/tower/tower.js#acted",
     "hub/src/shared/shelf-page.ts#Tower",
-    "hub/test/server.test.ts"
+    "hub/test/server.test.ts",
+    "hub/examples/extensions/narrate/client/memos.js"
   ],
   "links": [
     { "to": "logs-are-facts", "verb": "follows", "carries": "an observation of the pages, like the host's live set: memory, never a store" },
@@ -53,5 +54,6 @@ any one capability. Keeping it in the browser (`tower.store`): it is per browser
 other. A timeout after which nobody is active: a memo then plays nowhere while the user steps away and comes back to
 the same page; the last page acted on is the best guess of where they will be.
 
-**Impact.** Any renderer can do one-page-only work by comparing `viewers.active` with its own id. Narration plays a
-worker's memo only there, and the page's rings, which today sound on every open page, can take it up later.
+**Impact.** Any renderer can do one-page-only work by comparing `viewers.active` with its own id. Narration's memos
+view ([`memos.js`](ref:hub/examples/extensions/narrate/client/memos.js)) says a worker's memo only there, and the
+page's rings, which today sound on every open page, can take it up later.

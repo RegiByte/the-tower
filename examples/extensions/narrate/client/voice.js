@@ -3,7 +3,8 @@
  * text), each cut into chunks. With a voice command set (narrate's settings), each chunk is voiced by `narrate/say`
  * and played in order through one audio element, the next voiced while one plays; without one, the browser's own
  * speech (`speechSynthesis`) reads them. A narration is told through its track: `at(part)` as a part starts sounding,
- * and `end()` once, as it ends or is stopped.
+ * and `end()` once, as it ends or is stopped. A memo (`interject`) is said at once when nothing reads; while something
+ * does, it waits for the chunk sounding to end, is said, and the reading goes on.
  */
 
 /** The most characters voiced in one call: a chunk is cut at a paragraph, else a sentence, else a space. */
@@ -19,6 +20,17 @@ let current = 0
 let ending = () => {}
 
 /** @typedef {{ at(part: number): void, end(): void }} Track */
+
+/** @typedef {{ tower: unknown, text: string, track: Track, toast(message: string): void }} Memo */
+
+/** Whether a narration reads: from its start until it ends or is stopped. */
+let reading = false
+
+/** Memos waiting for the chunk sounding to end, in the order they came. @type {Memo[]} */
+let waiting = []
+
+/** The track of the memo sounding between chunks, ended by a stop. @type {Track | undefined} */
+let saying
 
 /** The current narration's utterances, held while they are read: WebKit fires no event on one nothing holds. */
 let utterances = []
@@ -86,6 +98,7 @@ const playAll = async (tower, mine, first, chunks, started) => {
     const next = i + 1 < chunks.length ? voiced(tower, chunks[i + 1].text) : undefined
     next?.catch(() => {})
     await play(url, mine, () => started(i))
+    await sayWaiting(mine)
     if (!next || mine !== current) return next?.then(URL.revokeObjectURL, () => {})
     url = await next
     if (mine !== current) return URL.revokeObjectURL(url)
@@ -95,17 +108,48 @@ const playAll = async (tower, mine, first, chunks, started) => {
 /** Starts a narration told through `track`, cutting off whatever is being read: its number. @param {Track} track */
 const begin = (track) => {
   const mine = halt()
-  let ended = false
-  ending = () => ended || ((ended = true), track.end())
+  reading = true
+  ending = once(track.end)
   return mine
+}
+
+/** `fn`, called at most once. @param {() => void} fn */
+const once = (fn) => {
+  let called = false
+  return () => called || ((called = true), fn())
 }
 
 /** Narration `mine` has ended on its own: its track is told, while it is current. */
 const finish = (mine) => {
   if (mine !== current) return
+  reading = false
   const end = ending
   ending = () => {}
   end()
+}
+
+/**
+ * Says each memo waiting through the voice command, one after another, while narration `mine` is current; one that
+ * can't be voiced is toasted and the next said.
+ */
+const sayWaiting = async (mine) => {
+  for (let memo = waiting.shift(); memo && mine === current; memo = waiting.shift()) {
+    const url = await voiced(memo.tower, memo.text).catch((err) => (memo.toast(err.message), undefined))
+    if (!url) continue
+    if (mine !== current) return URL.revokeObjectURL(url)
+    const said = sayingNow(memo)
+    await play(url, mine, () => memo.track.at(0)).catch((err) => memo.toast(err.message))
+    said()
+  }
+}
+
+/**
+ * Says `memo`: at once when nothing reads, through the command when `command`, else the browser's speech; while
+ * something reads, after the chunk sounding, in the voice it reads with. @param {Memo} memo @param {boolean} command
+ */
+export function interject(memo, command) {
+  if (reading) return void waiting.push(memo)
+  return command ? speakCommand(memo.tower, [memo.text], memo.toast, memo.track) : speakBrowser([memo.text], memo.track)
 }
 
 /**
@@ -148,14 +192,44 @@ export async function speakCommand(tower, parts, toast, track) {
 export function speakBrowser(parts, track) {
   const mine = begin(track)
   const chunks = chunked(parts)
-  if (!chunks.length) return finish(mine)
-  utterances = chunks.map(({ text, part }, i) => {
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.onstart = () => mine === current && track.at(part)
-    if (i === chunks.length - 1) utterance.onend = () => finish(mine)
-    return utterance
-  })
-  utterances.forEach((u) => speechSynthesis.speak(u))
+  const next = (i) => {
+    if (mine !== current) return
+    if (i === chunks.length) return finish(mine)
+    const { text, part } = chunks[i]
+    say(text, () => mine === current && track.at(part), () => sayWaitingAloud(mine, () => next(i + 1)))
+  }
+  next(0)
+}
+
+/**
+ * Speaks `text` through the browser, held until it ends: WebKit fires no event on an utterance nothing holds. One the
+ * browser can't say ends as one said, so what follows it is read.
+ */
+const say = (text, onStart, onEnd) => {
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.onstart = onStart
+  utterance.onend = utterance.onerror = () => ((utterances = utterances.filter((u) => u !== utterance)), onEnd())
+  utterances.push(utterance)
+  speechSynthesis.speak(utterance)
+}
+
+/** Says each memo waiting through the browser's speech, one after another, while narration `mine` is current, then `then`. */
+const sayWaitingAloud = (mine, then) => {
+  if (mine !== current) return
+  const memo = waiting.shift()
+  if (!memo) return then()
+  const said = sayingNow(memo)
+  say(memo.text, () => memo.track.at(0), () => (said(), sayWaitingAloud(mine, then)))
+}
+
+/** `memo` is sounding between chunks: a stop ends its track, as does the function answered, once it is said. @param {Memo} memo */
+const sayingNow = (memo) => {
+  const track = { ...memo.track, end: once(memo.track.end) }
+  saying = track
+  return () => {
+    track.end()
+    if (saying === track) saying = undefined
+  }
 }
 
 /** Stops whichever voice reads, ends its track, and answers the number of a narration started now. */
@@ -163,13 +237,17 @@ const halt = () => {
   speechSynthesis.cancel()
   utterances = []
   audio.pause()
+  reading = false
+  saying?.end()
+  saying = undefined
   const end = ending
   ending = () => {}
   end()
   return ++current
 }
 
-/** Stops reading. */
+/** Stops reading, and drops the memos waiting: they stay listed, to hear again. */
 export function stop() {
+  waiting = []
   halt()
 }
