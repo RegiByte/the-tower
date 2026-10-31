@@ -1,3 +1,5 @@
+/** Media types by file extension. Served as `/media.js`, and lent to extensions' server code as `tower:media.js`. */
+
 /** Code, configuration and logs: served as plain text, so nothing a framed page loads from them runs as a script. */
 const SOURCES = ['.ts', '.tsx', '.py', '.rb', '.go', '.rs', '.sh', '.sql', '.edn', '.clj', '.cljs', '.toml', '.log']
 

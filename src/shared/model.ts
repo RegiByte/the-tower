@@ -1,6 +1,9 @@
 import { CALLSIGN_NAME, CALLSIGNS, callsigns } from './callsign.ts'
 import { keymapOf, keysProblems, type Keys } from './keymap.ts'
 import type { Declared, Layout } from './regions.ts'
+import { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreePath, WORKTREES_DIR } from './repos.ts'
+
+export { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreePath, WORKTREES_DIR }
 
 /** A unit of work spanning one or more repositories. Sessions start in `hub`; `repos` are granted file access only (`additionalDirectories`). */
 export type Project = {
@@ -64,16 +67,8 @@ export const shelfItem = (entry: { item: string }): { collection: string; id: st
   return { collection: entry.item.slice(0, slash), id: entry.item.slice(slash + 1) }
 }
 
-/** The main checkouts of a project: the hub first, then its repos. */
-export const projectDirs = (project: Pick<Project, 'hub' | 'repos'>): string[] => [project.hub, ...project.repos]
-
-/** Where the tower cuts a project dir's worktrees: inside the repo, which Claude's workspace trust covers. */
-export const WORKTREES_DIR = '.worktrees'
-
 /** A worktree's name is its folder name: one path segment, and a valid part of a branch name. */
 export const WORKTREE_NAME = /^[a-z0-9][a-z0-9._-]*$/i
-
-export const worktreePath = (dir: string, name: string): string => `${dir}/${WORKTREES_DIR}/${name}`
 
 /** The name of the worktree `cwd` is, `d/.worktrees/<name>` for a project dir `d`; `undefined` for anything else. */
 export const worktreeName = (project: Project, cwd: string): string | undefined =>
@@ -81,16 +76,7 @@ export const worktreeName = (project: Project, cwd: string): string | undefined 
     .map((dir) => cwd.startsWith(`${dir}/${WORKTREES_DIR}/`) && cwd.slice(dir.length + WORKTREES_DIR.length + 2))
     .find((name): name is string => !!name && WORKTREE_NAME.test(name))
 
-/**
- * A checkout is a worktree name across every dir of a project, or `main` for the main checkouts, as `git worktree list`
- * names them: what review threads are kept for. A cut refuses the name `main`.
- */
-export const MAIN_CHECKOUT = 'main'
-
 export const checkoutOf = (project: Project, cwd: string): string => worktreeName(project, cwd) ?? MAIN_CHECKOUT
-
-export const checkoutDirs = (project: Pick<Project, 'hub' | 'repos'>, checkout: string): string[] =>
-  checkout === MAIN_CHECKOUT ? projectDirs(project) : projectDirs(project).map((dir) => worktreePath(dir, checkout))
 
 /** The project's dirs, or the same worktree of each of them when `cwd` is a worktree of one. */
 const checkoutDirsAt = (project: Project, cwd: string): string[] => {

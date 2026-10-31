@@ -6,6 +6,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import './lent-modules.ts'
 import { mismatchOf } from './bridge/extensions.ts'
 import type { StartVerdict } from './extension-check.ts'
 import { MANIFEST_FILE } from './extensions.ts'
