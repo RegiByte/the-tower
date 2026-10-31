@@ -1,7 +1,7 @@
 /**
  * `tower extensions check`'s throwaway process: an extension's server module imported and its `start` called with a ctx
  * that reaches nothing, to say whether what it returns matches its manifest. Run as `extension-start.ts <dir> <settings>`;
- * its one line on stdout is the verdict, `{mismatch?}` or `{threw}`. What the extension logs goes to stderr.
+ * its one line on stdout is the verdict, `{mismatch?}`, `{unloadable}` or `{threw}`. What the extension logs goes to stderr.
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -62,13 +62,18 @@ const ctx: StartCtx = {
 /** What `start` returned, held to the manifest; the verdict once its halt ran. */
 const verdict = async (): Promise<StartVerdict> => {
   if (!manifest.server) return {}
-  const module = await import(pathToFileURL(path.join(dir, manifest.server)).href)
+  let module: { default?: unknown }
+  try {
+    module = await import(pathToFileURL(path.join(dir, manifest.server)).href)
+  } catch (err) {
+    return { unloadable: (err as Error).message ?? String(err) }
+  }
   if (typeof module.default !== 'function') return { mismatch: `${manifest.server} has no default export: its start` }
   let timer: NodeJS.Timeout | undefined
   const late = new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error(`start didn't settle within ${START_MS / 1000} s`)), START_MS)))
   let started: unknown
   try {
-    started = await Promise.race([Promise.resolve().then(() => module.default(ctx)), late])
+    started = await Promise.race([Promise.resolve().then(() => (module.default as (ctx: unknown) => unknown)(ctx)), late])
   } catch (err) {
     return { threw: (err as Error).message ?? String(err) }
   } finally {

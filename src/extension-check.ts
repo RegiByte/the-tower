@@ -13,8 +13,8 @@ import { API_VERSION } from './shared/api.ts'
 import { BUNDLED, capabilityOf, Manifest, meets, type ExtensionView } from './shared/extensions.ts'
 import type { Config } from './shared/model.ts'
 
-/** What the throwaway start says: `{mismatch?}`, or why start threw. */
-export type StartVerdict = { mismatch?: string } | { threw: string }
+/** What the throwaway start says: `{mismatch?}`, why its server module can't be imported, or why start threw. */
+export type StartVerdict = { mismatch?: string } | { unloadable: string } | { threw: string }
 
 const REPO = path.join(import.meta.dirname, '..')
 const START_SCRIPT = path.join(import.meta.dirname, 'extension-start.ts')
@@ -51,6 +51,7 @@ const startProblems = async (dir: string, settings: unknown): Promise<LoadProble
   const line = ran.stdout.trim().split('\n').at(-1)
   if (ran.exit !== 0 || !line) return [problem('error', 'failed', `its start couldn't be checked: ${ran.timedOut ? 'timed out' : `exit ${ran.exit}`}: ${ran.stderr.trim().split('\n').at(-1) ?? ''}`)]
   const verdict: StartVerdict = JSON.parse(line)
+  if ('unloadable' in verdict) return [problem('error', 'unloadable', `its server can't be imported, so the tower can't start it: ${verdict.unloadable}`)]
   if ('threw' in verdict) return [problem('warn', 'threw', `start threw with a ctx that reaches nothing, so its names are unchecked: ${verdict.threw}`)]
   return verdict.mismatch ? [problem('error', 'mismatch', verdict.mismatch)] : []
 }
