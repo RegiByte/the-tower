@@ -197,9 +197,10 @@ export type Tower = {
   framed: boolean
   version: typeof API_VERSION
   /**
-   * This page's viewer id, one per tab, which its board stream names and which it says the user acted on
-   * (`viewer/active`) as they focus it, press or type: the page whose id is the board's `viewers.active` is the one the
-   * user is at. Undefined in a framed shelf page, which is its framing page's. @since 1.129
+   * This page's viewer id, new on every load, which its board stream names with the renderer it is, and which it says
+   * the user acted on (`viewer/active`) as they focus it, press or type: the page whose id is the board's
+   * `viewers.active` is the one the user is at, and `viewers.last[<renderer>]` the one of that renderer. Undefined in a
+   * framed shelf page, which is its framing page's. @since 1.129
    */
   viewer: string | undefined
   subscribe(fn: (board: Board, self: ShelfSelf | undefined) => void): () => void

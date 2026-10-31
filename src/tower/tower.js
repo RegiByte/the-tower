@@ -64,7 +64,7 @@
  *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included; returns unsubscribe
  *   tower.framed                                    whether the page runs inside the tower
  *   tower.version                                   the API version this script speaks, `"<major>.<minor>"`, checked on every board
- *   tower.viewer                                    this tab's viewer id: its board stream names it, and it says the user acted
+ *   tower.viewer                                    this page's viewer id: its board stream names it, and it says the user acted
  *                                                   on it (`viewer/active`) as they focus it, press or type; it is the page the
  *                                                   user is at while it is the board's `viewers.active` (undefined when framed)
  *
@@ -230,18 +230,12 @@
   /** @param {Response} res @returns {Promise<Blob>} */
   const blobOf = (res) => (res.ok ? res.blob() : answer(res))
 
-  const VIEWER_KEY = 'tower.viewer'
   /**
-   * This tab's viewer id, made once and kept in `sessionStorage`: a reload is the same viewer, another tab another.
-   * `getRandomValues`, since `randomUUID` needs a secure context and a tower may be reached by a host name over http.
+   * This page's viewer id, new on every load: a frame at the tower's origin, a reload and a duplicated tab are viewers
+   * of their own. `getRandomValues`, since `randomUUID` needs a secure context and a tower may be reached by a host
+   * name over http.
    */
-  const viewerId = () => {
-    const kept = sessionStorage.getItem(VIEWER_KEY)
-    if (kept) return kept
-    const made = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, '0')).join('')
-    sessionStorage.setItem(VIEWER_KEY, made)
-    return made
-  }
+  const viewerId = () => [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, '0')).join('')
 
   /** At the tower's origin: the board on first subscribe, and every stream on one connection (`/mux`). @returns {Api} */
   const viaRoutes = () => {
@@ -295,15 +289,19 @@
         })
         .finally(() => (saying = false))
     }
-    /** Focus, a press and a key are the user acting on this page; its first board says so when it opens focused. */
+    /**
+     * Focus, a press and a key are the user acting on this page. A board with no active viewer, as the first one, or
+     * the first after the tower restarted, finds the page the user is at by its focus.
+     */
     const watchActing = () => {
       addEventListener('focus', acted)
       addEventListener('pointerdown', acted, true)
       addEventListener('keydown', acted, true)
       document.addEventListener('visibilitychange', () => document.hasFocus() && acted())
-      const first = () => (subscribers.delete(first), document.hasFocus() && acted())
-      subscribers.add(first)
+      subscribers.add((/** @type {Board} */ board) => !board.viewers.active && document.hasFocus() && acted())
     }
+    /** The renderer this page is, which its board stream names: a renderer is served at `/r/<name>/`. */
+    const renderer = kind === 'r' ? `&renderer=${encodeURIComponent(name)}` : ''
     /** A new mux id means the connection came back, as after a tower restart: every stream starts over with a snapshot. */
     const connect = () => {
       source = stream('/mux', (/** @type {MuxMsg} */ msg) => {
@@ -312,7 +310,7 @@
       }, () => (mux = undefined))
     }
     return {
-      board: () => (stream(`/board?viewer=${viewer}`, (/** @type {BoardMsg} */ msg) => publish(msg, self), lost), watchActing()),
+      board: () => (stream(`/board?viewer=${viewer}${renderer}`, (/** @type {BoardMsg} */ msg) => publish(msg, self), lost), watchActing()),
       viewer,
       call,
       get: (path) => fetch(`/${path}`).then(answer),

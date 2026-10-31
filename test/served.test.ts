@@ -32,7 +32,6 @@ function towerMembers(): string[] {
     location: { origin: 'http://127.0.0.1', pathname: '/r/test/', search: '' },
     matchMedia: () => ({ matches: false, ...listener }),
     localStorage: { getItem: () => null },
-    sessionStorage: { getItem: () => null, setItem: () => {} },
     crypto: globalThis.crypto,
     ...listener,
   }

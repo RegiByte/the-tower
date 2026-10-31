@@ -19,6 +19,8 @@ const id = z.string().min(1)
 
 /** A viewer's id: one renderer page, which makes its own and names it on its board stream and in `viewer/active`. */
 export const VIEWER_ID = /^[A-Za-z0-9-]{8,64}$/
+/** The renderer a viewer names on its board stream: its name, as the config declares it. */
+export const VIEWER_RENDERER = /^[A-Za-z0-9._-]{1,64}$/
 const absolute = z.string().regex(/^\//, 'an absolute path')
 const size = { cols: z.int().positive(), rows: z.int().positive() }
 
