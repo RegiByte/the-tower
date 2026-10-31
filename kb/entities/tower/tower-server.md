@@ -68,7 +68,7 @@ Every command goes through [`command`](ref:hub/src/tower/http.ts#command): the b
 schema in [`api.ts`](ref:hub/src/shared/api.ts), handled by its entry in
 [`HANDLERS`](ref:hub/src/tower/dispatch.ts#HANDLERS) with the caller the request claims, and the reply checked against
 the verb's reply schema, all through the dispatch's [`call`](ref:hub/src/tower/dispatch.ts#call), by which an
-extension's `POST /<cap>/<verb>` is answered too; a path no entry of `READS` matches is an extension's read when its
+extension's `POST /<cap>/<verb>` is answered too, and a writable fact's door `POST /<cap>/facts/<name>`; a path no entry of `READS` matches is an extension's read when its
 first segment is a running capability ([[extensions]]). Handlers
 return a reply or an error as a value; a daemon that answers no becomes `refused` (`not_found` when the terms daemon
 holds no such shell), one that doesn't answer `unavailable`. A spawn, a resume or a fork answers once the system tracks the new session's log, or
