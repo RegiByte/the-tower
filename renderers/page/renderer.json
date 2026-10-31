@@ -1,6 +1,7 @@
 {
   "regions": [
     { "id": "board.main", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "one", "description": "the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry)" },
+    { "id": "board.strip", "subject": "board", "holds": ["views"], "scale": "row", "arity": "one", "description": "a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows" },
     { "id": "board.notes", "subject": "board", "holds": ["asks"], "description": "the notes at the top of the sidebar, for asks about no floor" },
     { "id": "floor.section", "subject": "floor", "holds": ["badges", "verbs", "commands", "asks", "tidy"], "description": "the floor's section in the sidebar, its Tidy and the palette" },
     { "id": "floor.trays", "subject": "collection", "holds": ["views"], "scale": "row", "arity": "one", "description": "a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection" },

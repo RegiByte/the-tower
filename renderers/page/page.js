@@ -114,6 +114,7 @@ function render() {
       .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
   const host = lostAt() ? 'unknown' : hostState(board())
   paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
+  paintStrip()
   $('notes').innerHTML = `${claudeUntestedHtml(board()) ?? ''}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`
   paintKeys()
   paintLimits()
@@ -645,6 +646,19 @@ const mainRegion = regions({
 })
 /** A floor's trays, a view per collection (`floor.trays`), mounted by the main pane's region code and placed in the sidebar's paint. */
 const floorTrays = mainRegion.rows('floor.trays')
+
+/** The strip at the top of the sidebar (`board.strip`): a view on the board, mounted for as long as the page is open. */
+const boardStrip = mainRegion.rows('board.strip')
+
+/** The strip's view in its place, when a view draws it: its focus kept across the paint, as the floors' is. */
+const paintStrip = () => {
+  const strip = $('strip')
+  const subject = /** @type {Subject} */ (subjectAt(board(), 'board'))
+  keepingFocus(strip, () => {
+    strip.innerHTML = boardStrip.draws(subject) ? boardStrip.slotHtml(subject) : ''
+    boardStrip.place(strip)
+  })
+}
 
 /** Where each of a floor's collections goes in its row of trays, in the order the region places them. @param {Floor} f */
 const trayRowsHtml = (f) =>

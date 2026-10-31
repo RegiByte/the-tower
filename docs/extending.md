@@ -673,7 +673,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands<br>`item.row`, the item's row in the floor's trays: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | `floor.trays`, a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection: views | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
-| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
+| `board` | `board.main`, the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry): views<br>`board.strip`, a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows: views<br>`board.notes`, the notes at the top of the sidebar, for asks about no floor: asks | not drawn | not drawn | not drawn |
 <!-- /regions -->
 
 An extension's own kinds are drawn by none of them (`subjectAt` finds one, for a renderer of your own). A renderer
