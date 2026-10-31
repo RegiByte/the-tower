@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { chainOrder, registry, resolve, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
+import { chainOrder, mismatchOf, registry, resolve, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
 import { matchRead, MAX_DEPTH, nestedIn, qualifiedOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
 import { extensionFactOf, type Session } from '../src/bridge/facts.ts'
 import { floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
@@ -277,4 +277,39 @@ test('a cycle of before and after leaves out every link in it, named in order; t
   const { order, cycles } = chainOrder([link('a', { before: ['b'] }), link('b', { before: ['a'] }), link('c'), link('d', { before: ['d'] })], () => false)
   assert.deepEqual(order, ['c'])
   assert.deepEqual(cycles.sort(), ['a → b → a', 'd → d'])
+})
+
+const LINE = { schema: { type: 'string', maxLength: 80 }, writable: ['user', 'self'] }
+const PROJECTED = { card: { project: { lines: { from: 'fact:line', pick: 'last' } } } }
+const atWritable = (found: Found[]) => resolve(found, config({ extensions: added(found) }), '1.123')
+const lined = (id: string, fields: Fields) => ext(id, { ...fields, requires: { tower: '1.123' } })
+
+test("a projected card fold is the newest value of its fact over the lineage, none when empty or null; start returns no fold for it", () => {
+  const tabline = atWritable([lined('tabline', { facts: { line: LINE }, folds: PROJECTED })]).accepted.get('tabline')!
+  assert.deepEqual(tabline.problems, [])
+  const { adds, projected } = tabline.folds.get('card')!
+  assert.deepEqual(adds, ['lines'])
+  const own = (...values: unknown[]) => ({ own: { streams: {}, collections: {}, facts: values.map((value, at) => ({ name: 'line', value, at, session: 's' })) } }) as never
+  assert.deepEqual(projected!({}, own('first', 'then')), { lines: ['then'] })
+  assert.deepEqual([projected!({}, own('first', '')), projected!({}, own('first', null)), projected!({}, own())], [{}, {}, {}])
+  assert.equal(mismatchOf({}, tabline.manifest), undefined)
+  assert.match(mismatchOf({ folds: { card: () => ({}) } }, tabline.manifest)!, /which its manifest projects/)
+})
+
+test("a projection is refused off a card, beside x or adds, from a fact not declared or not a string; a read a door shadows is a conflict; requiring a tower before writable facts warns", () => {
+  const r = atWritable([
+    lined('floored', { facts: { line: LINE }, folds: { floor: { project: { lines: { from: 'fact:line', pick: 'last' } } } } }),
+    lined('mixed', { facts: { line: LINE }, folds: { card: { ...PROJECTED.card, adds: ['lines'] } } }),
+    lined('unnamed', { folds: PROJECTED }),
+    lined('counted', { facts: { line: { schema: { type: 'integer' } } }, folds: PROJECTED }),
+    lined('shadowed', { facts: { line: LINE }, reads: { 'facts/<name>': { scope: 'system', reply: { type: 'object' } } } }),
+    ext('early', { facts: { line: LINE }, requires: { tower: '1.110' } }),
+  ])
+  const refusedAt = (id: string) => r.refused.get(id)?.problems.map((p) => [p.code, p.path])
+  assert.deepEqual(refusedAt('floored'), [['invalid', 'folds.floor.project']])
+  assert.deepEqual(refusedAt('mixed'), [['invalid', 'folds.card.project']])
+  assert.deepEqual(refusedAt('unnamed'), [['invalid', 'folds.card.project.lines.from']])
+  assert.deepEqual(refusedAt('counted'), [['invalid', 'folds.card.project.lines.from']])
+  assert.deepEqual(r.accepted.get('shadowed')!.problems.map((p) => [p.level, p.code, p.path]), [['warn', 'conflict', 'reads.facts/<name>']])
+  assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'facts.line.writable']])
 })

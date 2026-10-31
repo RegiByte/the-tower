@@ -52,6 +52,8 @@ const started = (provides: string, over: Partial<ExtensionView>): ExtensionView 
   state: 'started',
   problems: [],
   verbs: [],
+  reads: [],
+  facts: [],
   commands: [],
   slots: [],
   subjects: [],

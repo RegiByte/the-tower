@@ -24,7 +24,7 @@ import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/calls
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
 import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
-import { nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
+import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
   callsignsOf,
   ConfigError,
@@ -876,15 +876,16 @@ export const dispatch = defineResource({
       return answer.t === 'error' ? answer : ROUTES[verb].reply.parse(answer)
     }
 
-    const extension = extensionCalls(holder, readConfig)
+    const extension = extensionCalls(holder, readConfig, (id) => system.session(id)?.header.project)
     const chains = chainCalls(holder, readConfig, hookDeadline)
 
-    /** A verb by its qualified name, through the chain around it: the core's, or a running extension's. */
+    /** A verb by its qualified name, through the chain around it: the core's, or a running extension's; a writable fact's door, which no link wraps. */
     const wrapped = async (name: string, q: { cap: string; name: string }, input: unknown, caller: Caller): Promise<Answer> => {
       if (q.cap === 'tower') {
         if (!isVerb(q.name)) return apiError('not_found', `No verb "${q.name}"`)
         return (await chains.wrap(name, ROUTES[q.name], input, caller, (value) => callCore(q.name, value, caller))).reply as Answer
       }
+      if (q.name.startsWith(FACT_DOOR)) return (await extension.door(q.cap, q.name.slice(FACT_DOOR.length), input, caller)) as Answer
       const verb = extension.verbOf(q.cap, q.name)
       if ('t' in verb) return verb
       return (await chains.wrap(name, verb, input, caller, (value) => extension.verb(q.cap, q.name, value, caller))).reply as Answer

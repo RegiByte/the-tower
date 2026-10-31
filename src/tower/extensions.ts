@@ -68,6 +68,8 @@ export type Instance = {
   /** Its folds by subject kind, what each gets as `own` at a subject, and its settings on a floor. */
   folds: Record<string, Fold>
   foldOwn(at: OwnAt): FoldCtx['own']
+  /** Logs one of its facts on a session through the host, its value already checked: what a writable fact's door does. */
+  writeFact(session: string, name: string, value: unknown): Promise<void>
   settingsOf(project: string): unknown
   /** Each of its stream folds stopped before a fact its step threw on, and why. */
   threw(): { stream: string; project?: string; message: string }[]
@@ -304,6 +306,10 @@ export class UnsettledError extends Error {
  * The extension's `start`: its server module's default export, imported afresh for each hash with every module it
  * imports inside its folder; none without a server.
  */
+/** The folds its manifest projects, by kind. */
+const projectedFolds = (a: Accepted): Record<string, Fold> =>
+  Object.fromEntries([...a.folds].flatMap(([kind, compiled]) => (compiled.projected ? [[kind, compiled.projected]] : [])))
+
 const startOf = async (a: Accepted, hash: string): Promise<Start> => {
   if (!a.manifest.server) return () => ({})
   const module = await importFresh(a.dir, a.manifest.server, hash)
@@ -470,8 +476,9 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     const instance: Instance = {
       manifest: a.manifest,
       halting: false,
-      folds: started.folds ?? {},
+      folds: { ...projectedFolds(a), ...started.folds },
       foldOwn: stores.foldOwn,
+      writeFact: stores.writeFact,
       settingsOf: ctx.settingsOf,
       threw: stores.threw,
       ...(started.launch && {
