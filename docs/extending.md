@@ -486,7 +486,7 @@ floor where the capability is off. A handler that throws, or answers off its rep
 verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry `Deprecation` and a `Link` to `use`.
 `tower x` lists every running extension's doors, verbs and reads, and `tower x <capability> <name> '<json>'` calls one
 (API 1.123): `facts/<fact>` is the door of a writable fact (below), then a verb by its name, then the read whose path
-the name matches (`tower x policies runs/app '{"policy": "nightly"}'`), the JSON its query. A read is a `GET` too,
+the name matches (`tower x policies runs/app '{"policy": "nightly"}'`), the JSON its query. While the capability isn't running, the name goes to the tower as a verb, which says why it can't answer. A read is a `GET` too,
 such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's `port`, which `tower
 whoami` names).
 
@@ -537,7 +537,7 @@ warning, reached by `GET` and never by `tower x`.
 
 `folds.card.project` is the fold that shows it, written in the manifest: `{ "lines": { "from": "fact:<name>", "pick":
 "last" } }` puts one line on the card, the newest value of that fact over the worker's lineage, and none when that is
-`""`, `null` or never written. It is one rule: a card's (where the lineage is), the fact a string, the kind holding no
+blank (`""` or only whitespace), `null` or never written. It is one rule: a card's (where the lineage is), the fact a string, the kind holding no
 `x` or `adds` beside it and `start` returning no fold for it; anything that computes is a fold of the server's. The
 line lands wherever a renderer draws a card's `lines`: the page's sidebar row and worker header, Tower 3D's desk panel,
 `tower whoami`. [`examples/extensions/tabline`](../examples/extensions/tabline/) is one: a fact, its projection and a
