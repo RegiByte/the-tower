@@ -1,20 +1,20 @@
 import type { Board, Floor } from '../bridge/board.ts'
-import { documentCss } from '../shared/design.ts'
 import { base, esc, onDisk, rendererUrl, shelfKind, shelfPage, shelfPaths, shelfSource, tagOf } from '../shared/cards.ts'
 import { fileButtonsHtml, fileCall } from '../shared/file-acts.ts'
 import { ICON } from '../shared/icons.ts'
-import { documentHtml } from '../shared/markdown.ts'
 import type { ShelfEntry } from '../shared/model.ts'
 import { failedHtml } from '../shared/panel-kit.ts'
 import type { RelayedUi } from '../shared/shelf-page.ts'
 import type { Mount } from '../shared/views.ts'
-import { contain, decoded, DOCUMENT_SANDBOX, NO_HREF, writeLinks, type LinkTo } from './frame.ts'
+import { decoded, NO_HREF, type LinkTo } from './frame.ts'
+import type { Drawn } from './item.ts'
 import { closeHtml, viewCss } from './parts.ts'
+import { drawSections, SECTIONS_RULES } from './sections.ts'
 
 /**
  * `tower/shelf`, a shelf entry's view, by its kind: a page framed with the relay at an origin of its own (an `html`
  * entry's, a declared renderer's), a url framed when something answers there, or a markdown collection's files listed
- * and drawn in a document frame where nothing runs. Its location's `args` name the file of the collection shown.
+ * and drawn by sections (`drawSections`), each a viewer subject of the entry. Its location's `args` name the file of the collection shown.
  */
 
 const ID = 'tower/shelf'
@@ -33,7 +33,9 @@ const STYLE = viewCss(
   & .shelf-file { display: flex; align-items: center; padding-right: var(--sp-s); }
   & .shelf-file > button { flex: 1; min-width: 0; }
   & .shelf-files .file-act { display: grid; place-items: center; width: var(--control); padding: 0; }
-  & .shelf-files button.sel { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--p, var(--ink)); background: var(--panel); }`,
+  & .shelf-files button.sel { color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--p, var(--ink)); background: var(--panel); }
+  & .shelf-doc { flex: 1; min-width: 0; display: flex; }
+  ${SECTIONS_RULES}`,
 )
 
 /** A kept item by its tag, as every renderer calls it; any other file by its name. */
@@ -50,6 +52,8 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
   let files: string[] = []
   let shown = args?.[0]
   let closed = false
+  /** The file drawn by sections, while one is. */
+  let drawn: Drawn | undefined
   const offs: (() => void)[] = []
 
   const own = ({ html: `/run/${project}/${n}`, url: named.url, renderer: named.renderer && rendererUrl(named.renderer) } as Record<string, string | undefined>)[kind]
@@ -87,7 +91,10 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     body.querySelector('iframe')?.addEventListener('load', sendScheme)
   }
 
-  /** The document renders in a frame where its scripts can't run, its links written where they go. */
+  /**
+   * The file drawn by sections, of the entry as a subject whose text is that file, its links written where they go.
+   * Its sections are keyed by the entry: one file of it is shown at a time.
+   */
   const showDoc = async (file: string) => {
     shown = file
     kit.go({ view: ID, subject: subject.key, args: [file] })
@@ -97,17 +104,11 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
       else el.removeAttribute('aria-current')
     }
     const md = await tower.text(path(file)).catch((err: Error) => (kit.toast(err.message), undefined))
-    const doc = body.querySelector<HTMLIFrameElement>('iframe.doc')
-    if (md === undefined || closed || shown !== file || !doc) return
-    doc.onload = () => {
-      const at = doc.contentDocument!
-      const article = at.createElement('article')
-      article.innerHTML = documentHtml(md, `/${path(file)}`)
-      contain(article)
-      at.body.append(article)
-      writeLinks(at, placed(file))
-    }
-    doc.srcdoc = `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}</style>`
+    const el = body.querySelector<HTMLElement>('.shelf-doc')
+    if (md === undefined || closed || shown !== file || !el) return
+    drawn?.close()
+    const of = { ...subject, value: { ...(subject.value as object), text: path(file), type: 'text/markdown' } }
+    drawn = drawSections(el, { tower, kit, of, text: md, url: `/${path(file)}`, title: fileName(entry, file), docCss: '', links: () => placed(file) })
   }
 
   /**
@@ -133,11 +134,13 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     if (!read.length) return void (body.innerHTML = `<div class="shelf-empty">no file matches ${esc(shelfSource(entry))}</div>`)
     files = read
     body.innerHTML = `<div class="shelf-files">${files.map((file) => `<div class="shelf-file"><button data-doc="${esc(file)}" data-tip="${esc(file)}">${esc(fileName(entry, file))}</button>${fileButtonsHtml(onDisk(f.hub, file))}</div>`).join('')}</div>
-    <iframe class="doc" sandbox="${DOCUMENT_SANDBOX}"></iframe>`
+    <div class="shelf-doc"></div>`
     void showDoc(shown !== undefined && files.includes(shown) ? shown : files[0])
   }
 
   const open = () => {
+    drawn?.close()
+    drawn = undefined
     body.innerHTML = ''
     if (kind === 'html') showPage(`/${path(shelfPage(entry))}`)
     if (kind === 'renderer') showPage(rendererUrl(named.renderer!))
@@ -165,9 +168,14 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
   open()
 
   return {
-    update(_: Board) {},
+    update(_: Board) {
+      drawn?.update?.()
+    },
+    show: (s) => !!drawn?.show?.(s),
+    visible: (on) => drawn?.visible?.(on),
     close() {
       closed = true
+      drawn?.close()
       offs.forEach((off) => off())
     },
   }

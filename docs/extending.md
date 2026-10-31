@@ -824,7 +824,7 @@ A mark (API 1.128) says what is happening to a viewer subject now, as one capabi
 label, cap }`. Marks are held by key, apart from the subjects, so a view that draws its subject again (a document
 opened anew) draws its marks too; `on(kind, fn)` of the key's kind is told as one is put or lifted. Whoever puts a mark
 lifts it.
-`tower/document` draws a marked section marked, its row lit and labelled with its marks, its part of
+`tower/document` and `tower/shelf` draw a marked section marked, its row lit and labelled with its marks, its part of
 the frame lit; other views draw no marks yet.
 
 - `said`: `saidSubject` in `/cards.js`, keyed `said:<session>:<conversation>:<startedAt>:<side>`, of its
@@ -840,7 +840,9 @@ the frame lit; other views draw no marks yet.
 `tower/document` draws each section in its frame and, beside the frame in the page's own document, a gutter of one
 row per section, level with it as the document scrolls or resizes and never over the row before it: each row is
 labelled with its section's heading from the source and is a `section.acts` region, so a command `on: ["section"]`
-lands under every section (narrate's Listen reads that section alone) and `show(section)` scrolls the frame to it.
+lands under every section (narrate's Listen reads that section alone) and
+`show(section)` scrolls the frame to it. `tower/shelf` draws an `md` entry's file the same way, its sections of the
+shelf entry (one file of it shown at a time), API 1.128.
 The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by
 sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs hears
 nothing: WebKit (Safari, Tower.app) calls no listener in a document that can't run scripts, even one the page added.
