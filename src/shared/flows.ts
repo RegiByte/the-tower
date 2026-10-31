@@ -103,6 +103,7 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
     sealed('fork facts copied', 'a fork is a new worker'),
     HOST_SPAWN,
   ]),
+  'viewer/active': single('Viewer active', 'Say the user acted on this page: only the tower holds it, in memory.', 'noted'),
   kill: flow('End a worker', 'Kill its PTY: it can be resumed.', [sealed('named, then killed', 'the log says who ended it')]),
   'let-go': flow('Let go', 'Take a worker stranded by the host off duty, still resumable.', [sealed('only a stranded card', "the board's rule")]),
   fact: flow('Log a fact', "A fact about the caller's own session: show, keep or leave.", [

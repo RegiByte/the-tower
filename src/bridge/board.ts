@@ -359,6 +359,9 @@ export type WaitReason = 'blocked' | 'asks' | 'failed' | 'done'
  */
 export type Wait = { id: string; key: string; reason: WaitReason; since: number; detail?: string }
 
+/** The renderer pages reading the board (`Board.viewers`). */
+export type Viewers = { active?: string }
+
 export type Board = {
   /** The person running the tower: `name` signs the notes renderers write for them (`user.name` in the config). */
   user: { name: string }
@@ -402,6 +405,11 @@ export type Board = {
   extraUsage?: ExtraUsage
   /** Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`). */
   extensions: ExtensionView[]
+  /**
+   * The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on
+   * last among those whose board stream is open (`viewer/active`), none while no open one has said so. @since 1.128
+   */
+  viewers: Viewers
   /**
    * What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no
    * answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`,
@@ -816,6 +824,8 @@ export type SystemView = {
   paths: Pick<SystemPaths, 'config' | 'collections'>
   /** The chords the renderers keep for themselves (their `renderer.json`'s `keeps`): no extension's default takes one. */
   keeps: string[]
+  /** The renderer pages reading the board, as the tower last heard from them. */
+  viewers: Viewers
   now: number
 }
 
@@ -855,7 +865,7 @@ export const board = (view: SystemView): Board => boardOf(view, allCards(view))
 
 /** The board of `view` from its cards (`allCards`), built once by a caller that reads them too. */
 export const boardOf = (view: SystemView, cards: Card[]): Board => {
-  const { config, sessions, host, shells, items, repos, logFiles, readings, streams, stores, paths, keeps, now } = view
+  const { config, sessions, host, shells, items, repos, logFiles, readings, streams, stores, paths, keeps, viewers, now } = view
   const { keys, extensions } = keysOf(config, view.extensions, keeps, now)
   const continued = continuations(sessions)
   const kept = onBoard(bucketStart(now, 'day'))
@@ -867,6 +877,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     user: { name: userName(config) },
     keys,
     config: paths.config,
+    viewers,
     floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)
       const { read, worktrees, branches, main } = git

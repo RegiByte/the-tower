@@ -241,6 +241,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     probes: [],
     ...(extra.quota && { x: { quota: extra.quota } }),
     extensions: [],
+    viewers: {},
     adds: {},
     asks: [],
     ...(extra.extraUsage && { extraUsage: extra.extraUsage }),

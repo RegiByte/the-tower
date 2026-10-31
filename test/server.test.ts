@@ -1326,3 +1326,33 @@ test("server: tower/spawn.gate is answered by the core's hiring limits first, th
     await command('extension/restart', { id: 'tally' })
   }
 })
+
+/** A board stream held open as `viewer`, closed by the function it answers once the tower took it. */
+const holdBoard = (viewer: string): Promise<() => void> =>
+  new Promise((resolve, reject) => {
+    const req = http.get(`${base}/board?viewer=${viewer}`, { agent: false }, (res) => {
+      res.setEncoding('utf8').once('data', () => resolve(() => req.destroy()))
+    })
+    req.on('error', (err) => (req.destroyed ? undefined : reject(err)))
+  })
+
+test('server: the active viewer is the one the user acted on last among those whose board stream is open, held in memory alone', async () => {
+  const [mini, laptop] = ['viewer-mini-01', 'viewer-laptop-01']
+  const closeMini = await holdBoard(mini)
+  const closeLaptop = await holdBoard(laptop)
+  try {
+    await command('viewer/active', { viewer: mini })
+    await boardWhere((b) => b.viewers.active === mini)
+    await command('viewer/active', { viewer: laptop })
+    await boardWhere((b) => b.viewers.active === laptop)
+    closeLaptop()
+    await boardWhere((b) => b.viewers.active === mini)
+    assert.equal(errorCode(await post('viewer/active', { viewer: 'viewer-gone-01' })), 'not_found')
+    assert.equal(errorCode(await post('viewer/active', { viewer: 'no' })), 'invalid')
+    const bad = await get('/board?viewer=no%20id')
+    assert.equal(errorCode(bad), 'invalid')
+  } finally {
+    closeMini()
+  }
+  await boardWhere((b) => b.viewers.active === undefined)
+})
