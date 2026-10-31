@@ -1,0 +1,7 @@
+{
+  "settings": { "reap": true, "worktrees": true, "branches": true, "extensions": true },
+  "workers": 2,
+  "seed": ["tower home \"$(node $EXT/shots/seed/board.mjs callsign $WORKER_2)\""],
+  "scenes": [],
+  "text": [{ "name": "going", "run": "node $EXT/shots/seed/board.mjs part" }]
+}
