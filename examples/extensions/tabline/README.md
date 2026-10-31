@@ -30,5 +30,7 @@ its desk in Tower 3D and under it in `tower whoami`.
   in the worker's log, and nothing else is stored.
 - `folds.card.project.lines`: the card's fold is the newest value of `line` over the worker's lineage, so a resumed
   worker keeps its line. No code runs for it.
+- `guidance`: what it tells the workers. `tower whoami` lists its brief, and `tower x tabline` prints the full text
+  before its door. Change it for your workers in the config, `extensions.tabline.guidance`.
 - `client/tabline.js`: the one command, offered on every card. It asks for the line and calls the door with
   `tower.call`, as any renderer can; the line it shows is read from the board's `lines`.

@@ -586,6 +586,9 @@ test('server: policies kept before the policies extension keep their approvals, 
     '`tower runs` lists its earlier runs and what each left; `tower read warm-lily` is the policy. When the policy says nobody watches, end with `tower home <your callsign>`.',
     'Its check found: two to do',
   ])
+  const guided = whoami.indexOf('Extensions you can use (`tower x <name>` says when and how):')
+  assert.ok(guided > 0, whoami.join('\n'))
+  assert.equal(whoami[guided + 1], '  tabline  ·  Set a short line under your card saying what you are on, when that changes.')
 })
 
 test('server: an extension the config adds is started as x:<cap>, after the core and what it requires, and shown on the board and at GET /extensions', async () => {
