@@ -377,7 +377,7 @@ announced, but are not frozen. A name on its way out stays, marked `@deprecated`
 (`RING_MARK` and `RING_NAME` in `/cards.js`), until a major removes it. `test/served-exports.json` lists every name they serve today, and `npm test` holds the
 tower to it: any difference fails, and `npm run served:update` rewrites the list for a change you meant (commit it).
 
-The tower also serves the libraries its own page uses (`/xterm.js`, `/xterm.css`, `/addon-fit.js`, `/addon-web-links.js`, `/marked.js`) at
+The tower also serves the libraries its own page uses (`/xterm.js`, `/xterm.css`, `/addon-fit.js`, `/addon-web-links.js`, `/addon-unicode-graphemes.js`, `/marked.js`) at
 the version it depends on. Those are the libraries' APIs, outside the contract: vendor your own copy when you need
 one to stay put.
 
@@ -677,9 +677,12 @@ extension can't declare a renderer or a shelf entry, so the user adds both to th
 
 To show a worker's terminal, `mountTermView(host, xterm, io)` from `/term-view.js` runs one on a
 `terminal/<id>` stream. In the tower page, xterm.js is loaded as globals: pass `{ Terminal, FitAddon:
-FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon }`. Elsewhere, load `/xterm.js`, `/addon-fit.js`,
-`/addon-web-links.js` and `/xterm.css` first, or a copy of your own; without `WebLinksAddon`, only hyperlinks a
-program marks (OSC 8) are links, not the addresses it writes. A link opens in a new tab, if it is http(s) (API 1.122). Given
+FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon:
+UnicodeGraphemesAddon.UnicodeGraphemesAddon }`. Elsewhere, load `/xterm.js`, `/addon-fit.js`, `/addon-web-links.js`,
+`/addon-unicode-graphemes.js` and `/xterm.css` first, or a copy of your own; without `WebLinksAddon`, only hyperlinks
+a program marks (OSC 8) are links, not the addresses it writes. Without `UnicodeGraphemesAddon`, xterm.js gives most
+emoji one cell where Claude Code gives them two, and an emoji-heavy screen draws misaligned: stray characters after an
+emoji until the next full redraw (API 1.127). The view turns on xterm.js's `allowProposedApi`, which the addon needs. A link opens in a new tab, if it is http(s) (API 1.122). Given
 `io.files`, the file paths written in the terminal are links too, read from its `cwd()` and opened with its `edit`
 (the tower page calls the `edit` verb, which opens the user's editor at the path's `:line`). `io`
 is `TermViewIo` in `src/shared/term-view.ts`, which the tower page's `renderers/page/screen.js` fills. Its `keymap`

@@ -1,4 +1,5 @@
 import type { FitAddon } from '@xterm/addon-fit'
+import type { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import type { WebLinksAddon } from '@xterm/addon-web-links'
 import type { ILink, Terminal } from '@xterm/xterm'
 import { terminalTheme, type Scheme } from './design.ts'
@@ -117,8 +118,13 @@ export const termHandlers = (): Handlers<TermView, TermEvent, TermEffect> => ({
   },
 })
 
-/** xterm.js's constructors, as the renderer loads them: globals on a plain page, bundled in another. Given `WebLinksAddon`, addresses written in the terminal are links too. */
-export type Xterm = { Terminal: typeof Terminal; FitAddon: typeof FitAddon; WebLinksAddon?: typeof WebLinksAddon }
+/**
+ * xterm.js's constructors, as the renderer loads them: globals on a plain page, bundled in another. Given
+ * `WebLinksAddon`, addresses written in the terminal are links too. Given `UnicodeGraphemesAddon`, a character takes as
+ * many cells as Claude Code gives it (an emoji two, a grapheme cluster one character): without it, Claude's redraws
+ * after an emoji land a column off and leave stray characters.
+ */
+export type Xterm = { Terminal: typeof Terminal; FitAddon: typeof FitAddon; WebLinksAddon?: typeof WebLinksAddon; UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon }
 
 /** A link clicked in a terminal, written as an address or as a hyperlink (OSC 8), opens in a new tab: only the web's. */
 const openLink = (_: MouseEvent, uri: string) => {
@@ -222,10 +228,11 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       open: ({ data, cols, rows, exited }) => {
         term?.dispose()
         const font = io.font()
-        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: terminalTheme(io.scheme()), linkHandler: { activate: openLink } })
+        term = new xterm.Terminal({ cols, rows, fontSize: fitSize(host, cols, rows, font), fontFamily: font.family, cursorBlink: false, scrollback: io.scrollback, theme: terminalTheme(io.scheme()), linkHandler: { activate: openLink }, allowProposedApi: true })
         fit = new xterm.FitAddon()
         term.loadAddon(fit)
         if (xterm.WebLinksAddon) term.loadAddon(new xterm.WebLinksAddon(openLink))
+        if (xterm.UnicodeGraphemesAddon) term.loadAddon(new xterm.UnicodeGraphemesAddon())
         const files = io.files
         if (files) {
           const edit = (file: string, line?: number) => void files.edit(resolvePath(files.cwd(), file), line).catch(io.error)

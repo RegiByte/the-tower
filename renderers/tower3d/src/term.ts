@@ -1,6 +1,7 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import { modeText, mountTermView, type TermViewHandle } from '../../../src/shared/term-view.ts'
 import type { Keys } from '../../../src/shared/keymap.ts'
 import { terminalFont } from '../../../src/shared/terminal.ts'
@@ -43,7 +44,7 @@ const termFont = () => terminalFont(tower.prefs.get())
 
 export function mountTerm(host: HTMLElement, t: Target) {
   closeTerm(host)
-  open = mountTermView(host, { Terminal, FitAddon, WebLinksAddon }, {
+  open = mountTermView(host, { Terminal, FitAddon, WebLinksAddon, UnicodeGraphemesAddon }, {
     watch: (on) => watchStream(t.path, on),
     resize: (size) => tower.call(t.resizeVerb, { id: t.id, ...size }),
     send: (data) => t.sendKeys(t.id, data),

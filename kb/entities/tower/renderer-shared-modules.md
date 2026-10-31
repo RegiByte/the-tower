@@ -59,7 +59,10 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   ([[machines]], [[tower3d-desk]]). A web address it writes (given xterm's web-links addon) or a hyperlink a program
   marks (OSC 8) opens in a new tab, http(s) only; given `io.files`, a file path a line writes
   ([`fileMentions`](ref:hub/src/shared/term-view.ts#fileMentions)) is read from the terminal's directory and opened
-  with the `edit` verb, at its `:line`.
+  with the `edit` verb, at its `:line`. Its width rule is Claude Code's (`Bun.stringWidth`): given xterm's
+  unicode-graphemes addon (`/addon-unicode-graphemes.js`, API 1.127), an emoji takes two cells and a grapheme cluster
+  (a variation selector, a ZWJ sequence, a skin tone) is one character. Under xterm's default Unicode 6 widths most
+  emoji take one cell, and Claude's differential redraws after an emoji land a column off.
 - `tips.ts`: the one tooltip every renderer shows for any `data-tip`, and the placement it shares with popovers
   ([[viewer-prefs]]).
 - `capabilities.ts`: what the tower lets a user do, as data: [`CAPABILITIES`](ref:hub/src/shared/capabilities.ts#CAPABILITIES),
