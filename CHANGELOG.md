@@ -12,6 +12,51 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.77.0
+
+Narrate speaks through a command the user configures, the explorer's open file lives in the address, a floor's trays
+are views, and an extension can put a value on a card with a manifest alone. No restart beyond the tower's own (`tower
+down tower`, then `tower up tower`), the renderer API 1.122 → 1.126 (additive, no major), no config change (narrate's
+`voice` is optional).
+
+- **Narrate's voice** (API 1.123): Listen speaks through any text-to-speech program the user configures, as
+  `extensions.narrate.settings.voice.command` (an argv); with none it speaks through `speechSynthesis` as before (#294).
+  - The command gets the text on stdin and prints the absolute path of an audio file (`.mp3`, `.m4a`, `.aiff`,
+    `.wav`) as its last line; another exit is a failure whose stderr is the toast. It runs through `ctx.run`: no shell,
+    a scrubbed environment, killed at 120 s and at halt.
+  - The server serves only the audio it produced, by a token it keeps in memory; a URL never carries a path.
+  - A long text is cut into chunks, the next one voiced while the current plays, from Blob URLs (WebKit refuses media
+    from a server that answers no Range requests).
+  - The tower serves `.mp3`, `.m4a`, `.aiff` and `.wav` by their media type, with `nosniff` like video.
+  - A pause from elsewhere stays a pause, and Listen stays busy until the voice sounds.
+- **The explorer's open file in the location** (API 1.124): reload, Back/Forward, a middle-click and a copied link land
+  on the open file, at a followed link's heading (#295).
+  - A pane gains `shows` (the key of the subject the tab shows below its own) and `args` (where in it);
+    `pane.subject` keeps its meaning. `kit.showing` is optional: a view tells the renderer what it shows. `/views.js`
+    gains `paneShows` and `shownOf`, `/cards.js` gains `linesAt`.
+  - `#to/<n>` is gone: a link between checkout files is a real hash now. An old one in a history falls to the
+    skyline.
+  - Changes reads a `lines` subject by its key, so a hash naming those lines scrolls to them.
+- **Trays as views** (API 1.125): `floor.trays` holds views of `collection` at row scale, so the tower page's trays name
+  no extension (#297).
+  - `tower/tray` draws any collection; `drafts/tray`, `policies/tray` and `reviews/tray` are their extensions' own,
+    chosen by the owner rule, which now finds a collection's owner (a collection's kind is `collection.<id>`).
+    `kit.location()` is optional: it lends a view where the renderer is, so a tray marks what is open.
+  - Visible: the worktrees tray now sits after the collection trays, and so do the unfolded panels; trays unfolded
+    before come back folded once (the state moved into each tray view); an unfolded panel sits 4px lower.
+  - `display` of a collection with no view now picks its owner's (`drafts/editor` for drafts); every caller on screen
+    names its view, so nothing changes there.
+- **Writable facts** (API 1.126): values without code (#296).
+  - A manifest fact with `writable: ["user"|"self"]` gets a door, `POST /<cap>/facts/<n>`, taking `{ session?, value }`.
+    The value is checked by the fact's schema (or is `null`) and logged as the fact. A user names the session; a worker
+    writes its own. HTTP, `ctx.call` and `tower x` all reach it.
+  - `folds.card.project.lines: { from: "fact:<name>", pick: "last" }` puts the newest value of a string fact on the
+    card as its line, with no server code; a blank value shows no line.
+  - `tower x <cap> <name> [json]` reaches a writable fact's door, a verb or a read, in that order; `tower x` alone
+    lists them. A name no running provider offers gets an error listing what it does.
+  - `ExtensionView` gains `reads` and `facts`. The `tabline` example gives a worker's own line, with **Name tab** on
+    the page.
+
 ## v1.76.0
 
 Links in a terminal are clickable, contributed by Vinicius Borges (#287). No restart beyond the tower's own (`tower down
