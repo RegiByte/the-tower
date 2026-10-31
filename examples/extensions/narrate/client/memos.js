@@ -2,18 +2,22 @@
  * Narration's memos view, mounted on the board in a strip a renderer keeps for as long as its page is open
  * (`board.strip` on the tower page). It lists what workers said aloud today (each worker's card carries its latest
  * memos), the newest first, each to hear again. A memo that arrives while the view is mounted is said aloud by the
- * page the user acted on last (`board.viewers.active` is this page's `tower.viewer`); every other page lists it
+ * page of this renderer the user acted on last (`board.viewers.last[<renderer>]` is this page's `tower.viewer`), so a
+ * tab of another renderer the user is at leaves it to the tower page they used last; every other page lists it
  * silently, and one the user hasn't pressed or typed on yet, which the browser lets play nothing, shows it as a notice
  * to hear. What was on the board when the view mounted is never said on its own.
  */
 import * as voice from './voice.js'
 
-/** A memo as the view lists it: its worker's callsign beside what its card carries. */
-const memosOf = (board) =>
-  board.floors
+/** Today's memos, the newest first, each with its worker's callsign beside what its card carries. */
+const memosOf = (board) => {
+  const today = new Date().setHours(0, 0, 0, 0)
+  return board.floors
     .flatMap((f) => f.cards)
     .flatMap((card) => (card.x?.narrate?.memos ?? []).map((m) => ({ ...m, callsign: card.callsign })))
+    .filter((m) => m.at >= today)
     .sort((a, b) => b.at - a.at)
+}
 
 const timeOf = (at) => new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
@@ -45,8 +49,14 @@ export function mount(host, { tower, board, kit, state }) {
 
   const listed = () => memos.filter((m) => m.at > cleared)
 
+  /** What the view last drew from: it draws again only when that moves, so a press's focus stays through boards. */
+  let drawn
+
   const draw = () => {
     const shown = listed()
+    const from = JSON.stringify([shown.map((m) => m.key), open, sounding])
+    if (from === drawn) return
+    drawn = from
     if (!shown.length) return host.replaceChildren()
     const list = el('div', 'memos')
     for (const memo of open ? shown : shown.slice(0, 1)) {
@@ -107,6 +117,10 @@ export function mount(host, { tower, board, kit, state }) {
     const notice = kit.notice(`${memo.callsign} says: ${memo.text}`, { label: 'Hear', run: () => (notice.close(), hear(memo)) })
   }
 
+  /** The renderer this page is: a memo is said by the page of it the user acted on last (`viewers.last`). */
+  let renderer
+  tower.renderer().then((r) => (renderer = r?.name))
+
   state.get('cleared').then((at) => {
     cleared = typeof at === 'number' ? at : 0
     draw()
@@ -119,9 +133,10 @@ export function mount(host, { tower, board, kit, state }) {
       const fresh = memos.filter((m) => !heard.has(m.key)).reverse()
       for (const m of fresh) heard.add(m.key)
       draw()
-      if (next.viewers.active === tower.viewer) for (const m of fresh) (navigator.userActivation.hasBeenActive ? hear(m) : offer(m))
+      if (renderer !== undefined && next.viewers.last?.[renderer] === tower.viewer) for (const m of fresh) (navigator.userActivation.hasBeenActive ? hear(m) : offer(m))
     },
     close() {
+      drawn = undefined
       host.replaceChildren()
     },
   }
