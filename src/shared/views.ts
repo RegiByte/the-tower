@@ -288,11 +288,15 @@ export const offeredIn = (views: View[], region: Region, layout: Layout, kit: re
 export const ordered = (views: View[], order: string[] | undefined) =>
   order ? [...order.flatMap((id) => views.filter((v) => v.id === id)), ...views.filter((v) => !order.includes(v.id))] : views
 
-/** The capability whose extension declares the collection `subject` is an item of, when its floor carries one. */
+/** The capability whose extension declares the collection `subject` is, or is an item of, when its floor carries one. */
 const ownerOf = (board: Board, subject: Subject): string | undefined => {
+  if (subject.kind === 'collection') return (subject.value as { by?: string }).by
   const { collection, project } = subject.value as { collection?: string; project?: string }
   return board.floors.find((f) => f.id === project)?.collections.find((c) => c.id === collection)?.by
 }
+
+/** The kind a view is on when it is on `subject` alone: an item's own collection's (`item.<id>`), a collection's `collection.<id>`. */
+const exactKind = (subject: Subject) => (subject.kind === 'collection' ? `collection.${(subject.value as { id: string }).id}` : subject.kind)
 
 /** A media type's specificity in `accepts`: 2 exact, 1 by its top-level type's wildcard, 0 none. */
 const fit = (accepts: string[] | undefined, type: string) => (accepts?.includes(type) ? 2 : accepted(accepts ?? [], type) ? 1 : 0)
@@ -304,12 +308,12 @@ const bestFit = (views: View[], type: string) => [...views].sort((a, b) => fit(b
  * The view that draws `subject` among those a region offers (`offered`, in `viewsOf` order), by `order`, the region's
  * layout order. A subject bearing a type: the first in order that accepts it; else the view of the extension declaring
  * the subject's collection, on that exact kind; else the core view accepting it most specifically; else the most specific `accepts`; else
- * a fallback, a view accepting nothing. One bearing none: the first in order; the owner's on that exact kind; the first.
+ * a fallback, a view accepting nothing. One bearing none (a floor, a collection): the first in order; the owner's on its exact kind (`exactKind`); the first.
  */
 export const pickView = (board: Board, offered: View[], order: string[] | undefined, subject: Subject): View | undefined => {
   const type = (subject.value as Text).type
   const owner = ownerOf(board, subject)
-  const owned = offered.find((v) => v.cap === owner && v.on.includes(subject.kind))
+  const owned = offered.find((v) => v.cap === owner && v.on.includes(exactKind(subject)))
   const firstIn = (views: View[]) => order?.map((id) => views.find((v) => v.id === id)).find((v) => v !== undefined)
   if (type === undefined) return firstIn(offered) ?? owned ?? offered[0]
   const accepting = offered.filter((v) => fit(v.accepts, type))
