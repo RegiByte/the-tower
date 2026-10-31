@@ -14,6 +14,9 @@
     "hub/src/tower/publisher.ts#activeViewer",
     "hub/src/bridge/board.ts#Viewers",
     "hub/src/tower/http.ts#READS",
+    "hub/src/tower/tower.js#viewerId",
+    "hub/src/tower/tower.js#acted",
+    "hub/src/shared/shelf-page.ts#Tower",
     "hub/test/server.test.ts"
   ],
   "links": [
@@ -31,7 +34,11 @@ gathered where every page reports: the tower. It is an observation of the pages 
 happened worth keeping, so it lives in memory like the host's live set and is gone on restart ([[logs-are-facts]]). A
 verb and a board field keep it open to any renderer ([[renderer-is-disposable]]).
 
-**How.** A page makes its own viewer id (one per tab) and names it on its board stream, `GET /board?viewer=<id>`
+**How.** `tower.js` does a page's part for every renderer at the tower's origin, so none wires it: it makes the tab's
+viewer id ([`viewerId`](ref:hub/src/tower/tower.js#viewerId), kept in `sessionStorage`, so a reload is the same viewer),
+serves it as `tower.viewer`, and says the user acted ([`acted`](ref:hub/src/tower/tower.js#acted)) on focus, a
+pointer press or a key while the page is visible and the board doesn't already have it active, one call at a time. A
+framed shelf page has none: it is its framing page's. A page makes its own viewer id (one per tab) and names it on its board stream, `GET /board?viewer=<id>`
 (`VIEWER_ID`; a malformed one is `invalid`). When the user acts on it (it gains focus while visible, a key or a
 pointer press), it calls [`viewer/active`](ref:hub/src/tower/publisher.ts#viewerActive) `{viewer}`, which notes the
 time; a viewer with no open stream is `not_found`. [`activeViewer`](ref:hub/src/tower/publisher.ts#activeViewer) is

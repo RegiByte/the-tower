@@ -64,6 +64,9 @@
  *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included; returns unsubscribe
  *   tower.framed                                    whether the page runs inside the tower
  *   tower.version                                   the API version this script speaks, `"<major>.<minor>"`, checked on every board
+ *   tower.viewer                                    this tab's viewer id: its board stream names it, and it says the user acted
+ *                                                   on it (`viewer/active`) as they focus it, press or type; it is the page the
+ *                                                   user is at while it is the board's `viewers.active` (undefined when framed)
  *
  * A version is `<major>.<minor>`: a minor adds (a field, a verb, a read, a stream) and a major breaks (a rename, a
  * removal, a changed meaning). A board from a tower of another major, or of an older minor than this script's, stops
@@ -110,6 +113,7 @@
    *   remember(value: unknown): void,
    *   recall(): Promise<unknown>,
    *   store: Omit<Tower['store'], 'on'>,
+   *   viewer: string | undefined,
    * }} Api
    */
   /** A message of `/mux`: the connection's id, then each watched stream's messages by key. @typedef {{ t: 'mux', id: string } | { t?: undefined, key: string, data: StreamMsg }} MuxMsg */
@@ -226,6 +230,19 @@
   /** @param {Response} res @returns {Promise<Blob>} */
   const blobOf = (res) => (res.ok ? res.blob() : answer(res))
 
+  const VIEWER_KEY = 'tower.viewer'
+  /**
+   * This tab's viewer id, made once and kept in `sessionStorage`: a reload is the same viewer, another tab another.
+   * `getRandomValues`, since `randomUUID` needs a secure context and a tower may be reached by a host name over http.
+   */
+  const viewerId = () => {
+    const kept = sessionStorage.getItem(VIEWER_KEY)
+    if (kept) return kept
+    const made = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, '0')).join('')
+    sessionStorage.setItem(VIEWER_KEY, made)
+    return made
+  }
+
   /** At the tower's origin: the board on first subscribe, and every stream on one connection (`/mux`). @returns {Api} */
   const viaRoutes = () => {
     const [, kind, name, n] = location.pathname.split('/')
@@ -265,6 +282,28 @@
       }
       return open()
     }
+    const viewer = viewerId()
+    /** Whether a `viewer/active` is on its way: the board says the answer, so one at a time is enough. */
+    let saying = false
+    /** The user acted on this page: say so, unless the board already has it active or it is hidden. */
+    const acted = () => {
+      if (saying || document.visibilityState !== 'visible' || latest?.board?.viewers.active === viewer) return
+      saying = true
+      call('viewer/active', { viewer })
+        .catch((/** @type {Failure} */ err) => {
+          if (err.code !== 'not_found') throw err
+        })
+        .finally(() => (saying = false))
+    }
+    /** Focus, a press and a key are the user acting on this page; its first board says so when it opens focused. */
+    const watchActing = () => {
+      addEventListener('focus', acted)
+      addEventListener('pointerdown', acted, true)
+      addEventListener('keydown', acted, true)
+      document.addEventListener('visibilitychange', () => document.hasFocus() && acted())
+      const first = () => (subscribers.delete(first), document.hasFocus() && acted())
+      subscribers.add(first)
+    }
     /** A new mux id means the connection came back, as after a tower restart: every stream starts over with a snapshot. */
     const connect = () => {
       source = stream('/mux', (/** @type {MuxMsg} */ msg) => {
@@ -273,7 +312,8 @@
       }, () => (mux = undefined))
     }
     return {
-      board: () => stream('/board', (/** @type {BoardMsg} */ msg) => publish(msg, self), lost),
+      board: () => (stream(`/board?viewer=${viewer}`, (/** @type {BoardMsg} */ msg) => publish(msg, self), lost), watchActing()),
+      viewer,
       call,
       get: (path) => fetch(`/${path}`).then(answer),
       text: (path) => fetch(`/${path}`).then(textOf),
@@ -348,6 +388,7 @@
     send({ t: 'hello' })
     return {
       board: () => {},
+      viewer: undefined,
       call: (verb, body) => request({ t: 'call', verb, body }),
       get: (path) => request({ t: 'get', path }),
       text: (path) => request({ t: 'text', path }),
@@ -581,6 +622,7 @@
   window.tower = {
     framed,
     version: VERSION,
+    viewer: api.viewer,
     subscribe(fn) {
       subscribers.add(fn)
       listen()
