@@ -85,8 +85,8 @@ export type Mount = (host: HTMLElement, ctx: ViewCtx) => Mounted | Promise<Mount
  *
  * `mark` a key with what is happening to it now, as one capability says it (`cap`), or `undefined` to lift that mark;
  * `marks` of a key, each capability's in the order they were put. A mark is held by key, whether or not a subject of it
- * stands, so a view that draws the subject again draws its marks; `on` of the key's kind is told as a mark is put or
- * lifted, with the subject at the key where one stands. @since 1.128
+ * stands, so a view that draws the subject again draws its marks; `onMark` of the key's kind is told the key as a mark
+ * on it is put or lifted, until the function it returns is called. @since 1.128
  */
 export type Bus = {
   publish(subject: Subject, of: string): void
@@ -96,6 +96,7 @@ export type Bus = {
   on(kind: string, fn: (subject: Subject | undefined) => void): () => void
   mark(key: string, cap: string, mark: Mark | undefined): void
   marks(key: string): (Mark & { cap: string })[]
+  onMark(kind: string, fn: (key: string) => void): () => void
 }
 
 /** What a capability says is happening to a viewer subject now, drawn by the view that draws it: "Listening". @since 1.128 */
@@ -109,6 +110,7 @@ export const busOf = (): Bus => {
   const held = new Map<string, { subject: Subject; of: string; count: number }>()
   const marked = new Map<string, Map<string, Mark>>()
   const heard = new Map<string, Set<(subject: Subject | undefined) => void>>()
+  const markHeard = new Map<string, Set<(key: string) => void>>()
   const tell = (kind: string, subject: Subject | undefined) => heard.get(kind)?.forEach((fn) => fn(subject))
   return {
     publish(subject, of) {
@@ -136,9 +138,14 @@ export const busOf = (): Bus => {
       if (by.size) marked.set(key, by)
       else marked.delete(key)
       const at = key.indexOf(':')
-      tell(at < 0 ? key : key.slice(0, at), held.get(key)?.subject)
+      markHeard.get(at < 0 ? key : key.slice(0, at))?.forEach((fn) => fn(key))
     },
     marks: (key) => [...(marked.get(key) ?? [])].map(([cap, mark]) => ({ ...mark, cap })),
+    onMark(kind, fn) {
+      const fns = markHeard.get(kind) ?? new Set()
+      markHeard.set(kind, fns.add(fn))
+      return () => void fns.delete(fn)
+    },
   }
 }
 

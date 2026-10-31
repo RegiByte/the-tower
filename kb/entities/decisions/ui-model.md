@@ -121,7 +121,7 @@ and a framed document's section are the same thing.
   the bus after the board, so a press, a chord with the focus on a subject's region and `display(key)` reach one.
   Since 1.128 a command is lent the bus and `notice` too, and the bus holds marks
   ([`Mark`](ref:hub/src/shared/views.ts#Mark)): what one capability says is happening to a key now, held apart from the
-  published subjects so a view drawing its subject again draws them, told through `on` of the key's kind; whoever puts
+  published subjects so a view drawing its subject again draws them, told through `onMark` of the key's kind; whoever puts
   one lifts it.
   The Brief publishes every prompt and answer it draws ([`saidOf`](ref:hub/src/shared/brief.ts#saidOf)) and fills
   `said.acts` beside each copy where anything is offered on `said`. `tower/document`, and `tower/shelf` for an `md`

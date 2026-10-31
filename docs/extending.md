@@ -822,7 +822,8 @@ renderer of your own.
 A mark (API 1.128) says what is happening to a viewer subject now, as one capability sees it: `bus.mark(key, cap,
 { label })` puts it, `bus.mark(key, cap, undefined)` lifts it, and `bus.marks(key)` answers each capability's, `{
 label, cap }`. Marks are held by key, apart from the subjects, so a view that draws its subject again (a document
-opened anew) draws its marks too; `on(kind, fn)` of the key's kind is told as one is put or lifted. Whoever puts a mark
+opened anew) draws its marks too; `onMark(kind, fn)` tells `fn` the key as a mark on a key of that kind is put or
+lifted, until the function it answers is called. Whoever puts a mark
 lifts it: narrate marks the section it reads `Listening`, moves it as it reads on, and lifts it as it stops.
 `tower/document` and `tower/shelf` draw a marked section marked, its row lit and labelled with its marks, its part of
 the frame lit; other views draw no marks yet.

@@ -95,7 +95,7 @@ export const NO_KIT: CommandKit = {
   notice: unlent('notice'),
   confirm: unlent('confirm'),
   run: unlent('run'),
-  bus: { publish: unlent('bus'), clear: unlent('bus'), at: unlent('bus'), under: unlent('bus'), on: unlent('bus'), mark: unlent('bus'), marks: unlent('bus') },
+  bus: { publish: unlent('bus'), clear: unlent('bus'), at: unlent('bus'), under: unlent('bus'), on: unlent('bus'), mark: unlent('bus'), marks: unlent('bus'), onMark: unlent('bus') },
 }
 
 /** Runs a client command on `subject` in a renderer that lends it no kit (`runCommandWith`). */
