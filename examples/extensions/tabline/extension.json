@@ -7,7 +7,7 @@
   "client": "client",
   "facts": {
     "line": {
-      "description": "The worker's tab line as last written; an empty one or null clears it.",
+      "description": "The worker's tab line as last written; a blank one or null clears it.",
       "schema": { "type": "string", "maxLength": 80 },
       "writable": ["user", "self"]
     }

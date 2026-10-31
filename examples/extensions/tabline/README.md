@@ -26,7 +26,7 @@ its desk in Tower 3D and under it in `tower whoami`.
 
 - `facts.line.writable`: the fact has a door, `POST /tabline/facts/line {session?, value}`. `user` lets a caller with
   no session write any worker's line (it names the `session`); `self` lets a worker write its own (it leaves `session`
-  out). The value is checked by the fact's schema; an empty string or `null` clears the line. Each write is one fact
+  out). The value is checked by the fact's schema; a blank string or `null` clears the line. Each write is one fact
   in the worker's log, and nothing else is stored.
 - `folds.card.project.lines`: the card's fold is the newest value of `line` over the worker's lineage, so a resumed
   worker keeps its line. No code runs for it.

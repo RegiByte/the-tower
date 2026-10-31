@@ -291,7 +291,7 @@ test("a projected card fold is the newest value of its fact over the lineage, no
   assert.deepEqual(adds, ['lines'])
   const own = (...values: unknown[]) => ({ own: { streams: {}, collections: {}, facts: values.map((value, at) => ({ name: 'line', value, at, session: 's' })) } }) as never
   assert.deepEqual(projected!({}, own('first', 'then')), { lines: ['then'] })
-  assert.deepEqual([projected!({}, own('first', '')), projected!({}, own('first', null)), projected!({}, own())], [{}, {}, {}])
+  assert.deepEqual([projected!({}, own('first', '')), projected!({}, own('first', '  ')), projected!({}, own('first', null)), projected!({}, own())], [{}, {}, {}, {}])
   assert.equal(mismatchOf({}, tabline.manifest), undefined)
   assert.match(mismatchOf({ folds: { card: () => ({}) } }, tabline.manifest)!, /which its manifest projects/)
 })

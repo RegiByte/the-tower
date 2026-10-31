@@ -323,7 +323,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   on that extension, never a refusal. No `around` link wraps a door: `around` names verbs and hooks, and a door is
   neither, a stated limit. `folds.card.project.lines: {from: 'fact:<name>', pick: 'last'}` is the fold the manifest
   writes ([`projectedFold`](ref:hub/src/bridge/extensions.ts#projectedFold)): the newest value of that fact over the
-  card's lineage, none when it is `""` or `null`, as one line. It is one rule and nothing more: a card's, its fact a
+  card's lineage, none when it is blank (empty or only whitespace) or `null`, as one line. It is one rule and nothing more: a card's, its fact a
   string, its kind holding no `x` or `adds` and given no fold by `start`; anything that computes is a server fold.
   The card line (`examples/extensions/tabline`) is the proof: a manifest, and a client command that asks for the line.
 - **Stored facts fold from the manifest, never from running code.** What an extension stored is folded by what its

@@ -931,7 +931,7 @@ const SubjectDecl = z.strictObject({
 })
 const Projection = z.strictObject({
   from: writable(z.string().regex(/^fact:[a-z][a-z0-9.-]{0,47}$/, 'fact:<name>, one of its facts').describe('The fact it shows: fact:<name>.')),
-  pick: writable(z.literal('last').describe('Its newest value over the card\'s lineage: an empty string or null shows none.')),
+  pick: writable(z.literal('last').describe('Its newest value over the card\'s lineage: a blank string or null shows none.')),
 })
 const FoldSpec = z.strictObject({
   project: writable(
