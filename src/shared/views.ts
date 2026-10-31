@@ -2,6 +2,7 @@ import type { Board } from '../bridge/board.ts'
 import type { ExtensionViewEntry, Words } from './extensions.ts'
 import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
+import type { Notice } from './toasts.ts'
 import { accepted, mediaTypeOf } from './media.ts'
 import type { KitMember, Layout, Region, Scale } from './regions.ts'
 import { ADDRESS_TYPE, onKind, parentOf, shownSubject, subjectAt, type Subject, type Text } from './subjects.ts'
@@ -161,6 +162,7 @@ export type Kit = {
   go(location: Location): void
   bus: Bus
   toast(text: string, action?: { label: string; run(): void }): void
+  notice(text: string, action?: { label: string; run(): void }): Notice
   confirm(text: string, verb: string): Promise<boolean>
   href?(to: Subject | Location): string
   showing?(subject: Subject): void
@@ -182,7 +184,7 @@ export type RegionOptions = Record<string, Record<string, unknown>> | { omit: st
 export type RegionHandle = { update(subject: Subject): void; show?(subject: Subject): boolean; visible?(on: boolean): void; options?(options: RegionOptions): void; close(): void }
 
 /** The part of the kit a command is lent, as `ctx.kit`: it has no host to draw a terminal in. */
-export type CommandKit = Pick<Kit, 'display' | 'toast' | 'confirm' | 'run'>
+export type CommandKit = Pick<Kit, 'display' | 'toast' | 'notice' | 'confirm' | 'run' | 'bus'>
 
 const core = (id: string, on: string[], scales: Scale[], words: Words): View => ({ id, cap: 'tower', on, scales, words })
 

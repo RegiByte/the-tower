@@ -1010,6 +1010,7 @@
       "ACTION_TOAST_MS",
       "TOAST_MAX",
       "TOAST_MS",
+      "noticer",
       "sameToast",
       "toaster",
       "toastsCss",

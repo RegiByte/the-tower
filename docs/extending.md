@@ -76,8 +76,8 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
   holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`. Only
   `regions` is required. `tower extensions check` and the table under [Extensions](#extensions) are read from them.
-- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `confirm`, `href`, `showing`,
-  `location`): a
+- `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `notice`, `confirm`, `href`,
+  `showing`, `location`): a
   view is offered only where the kit holds every member it `needs` ([Views](#views)).
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
@@ -349,7 +349,7 @@ served as one ES module bundled with what it imports, readable from a framed pag
 | `/verb-words.js` | every verb the board offers in words, keyed `<subject>/<verb>` (`card/send-home`, `worktree/recut`): its `label`, `hint`, whether it asks first (`destructive`), the API verb its call makes (`api`, whose description and schema are at `/schema`) and the keymap command that does the same (`command`); `verbLabel(subject, verb)` |
 | `/palette.js` | the command palette as data: `paletteEntries(ctx)` lists what a viewer can go to (workers on duty, floors, shelf entries, drafts, through the drafts client's `draftsOf` your renderer passes in `ctx`), do (the keymap's global commands with their chords, what the selected worker, its conversations and processes and every floor offer) and learn (capabilities that name no command, and the patterns), each with a tagged `does` your renderer runs through its own handlers; `rankPalette(entries, query, rankingOf(ctx))` groups them for what was typed, by `matchScore` (a prefix over a word start over a substring over letters in order) and small boosts for the selected worker, its floor and recent picks (`WEIGHTS`) |
 | `/press.js` | a control busy while what it asks is in flight (`pressing(control, request)`: `aria-busy` on it and on every control drawn with the same identity, a second press ignored), and a control's identity in html drawn anew (`identityOf`) |
-| `/toasts.js` | toasts that stack, time out and may carry one action button (`toaster(element)` answers `toast(msg, { label, run })`), a polite live region, with their stylesheet (`toastsCss`) |
+| `/toasts.js` | toasts that stack, time out and may carry one action button (`toaster(element)` answers `toast(msg, { label, run })`), a polite live region, with their stylesheet (`toastsCss`); notices that stand in the same stack until closed (`noticer(element)` answers `notice(msg, { label, run }?)`, which answers `{ say(msg), close() }`, API 1.128) |
 | `/markdown.js` | markdown as html: `markdownHtml` for words nobody vetted (raw HTML escaped, links in a tab of their own, fences highlighted with a copy button, safe in any element) drawn in an element of class `md` with `markdownCss`, `documentHtml` for a file in a frame without scripts, `safeHref`, and `fenceText` (a fence's code, to copy) |
 | `/x/policies/policies.js` | the bundled policies extension's client: a rule and its slots in words (`ruleWords`, `slotWords`), where a policy stands (`standing`, `standingWords`), the cron checks a policy file's header gets (`cronProblem`), and its parts of the board (`floorPolicies`, a floor's policies and offers; `runOf`, the run a card is; `offerAskKey`, an offer's ask). `/policies.js` serves it too, deprecated, until 2.0 |
 | `/x/policies/panel.js` | the policies extension's Policies panel (`policiesHtml`, `offerWords`, `policyZone`, `policyDoneLine`) over its part of the floor; `/panels.js` keeps the old one over `floor.policies` and `board.offers`, deprecated, until 2.0 |
@@ -619,9 +619,13 @@ item)`, `collectionSubject(project, collection)`, `shelfSubject(project, entry, 
 `actionsOf(board, subject)` (the core's, then `addedActions`), `badgesOf`, `actionWords` for a label, and `runAdded`
 to press one: a verb is called with its call, a command's module imported from `/x/<cap>/` and its export called with
 `{ tower, board, target, subject, args, kit }` (`runCommandWith`, API 1.104): `kit` is what the renderer running it
-lends, `display`, `toast`, `confirm` and `run` (`CommandKit` in `/views.js`), so "Add to grid" is
-`kit.display(target, { view: 'grid/grid' })`. `runCommand` runs one with `NO_KIT`, whose every member throws naming
-itself, for a renderer that lends none. A renderer that can't import modules leaves commands out (`isCommand`).
+lends, `display`, `toast`, `notice`, `confirm`, `run` and `bus` (`CommandKit` in `/views.js`; `notice` and `bus`
+API 1.128), so "Add to grid" is `kit.display(target, { view: 'grid/grid' })`. `notice(text, action?)` is a toast that
+stays while what it tells goes on, standing above the toasts that leave until the command closes it: it answers
+`{ say(text), close() }`, and its action's button runs the action and leaves the notice for the command to close
+(narrate's "Listening · Notes" with Stop). `bus` is the page's viewer subjects ([the bus](#views)): a command on a
+section reads its document's other sections with `bus.under(target.value.of, 'section')`, and marks what it acts on.
+`runCommand` runs one with `NO_KIT`, whose every member throws naming itself, for a renderer that lends none. A renderer that can't import modules leaves commands out (`isCommand`).
 A command's `keys` (API 1.104) are its default chords: see [Views](#views), keys.
 
 `target` (API 1.98) is the subject, `{ kind, key, project?, value }`. `subject` on a command is the subject's value
@@ -745,7 +749,8 @@ tabs region's tabs among them, `options` by view id over the layout's, API 1.111
 `options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out, API 1.113; it answers `{ update(subject), show?(subject),
 visible?(on), options?(options), close() }`, passing `show`, `visible` and new options on to the views it holds), `run(command, on?)` (a keymap
 command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `display(subject, { view? })`,
-`go(location)` (API 1.108), `bus` (below, API 1.118), `toast(text, action?)` and `confirm(text, verb)`. The renderer calls `update` on each
+`go(location)` (API 1.108), `bus` (below, API 1.118), `toast(text, action?)`, `notice(text, action?)` (a toast standing
+until closed, API 1.128) and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
 subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
 `:where([data-view="<id>"])` over `/design.css`'s tokens, brought in a `<style>` inside its host; it never imports

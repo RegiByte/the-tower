@@ -21,7 +21,7 @@ import { policyCalls } from './policy-call.js'
 import { draft } from './draft.js'
 import { archive } from './archive.js'
 import { boardKit } from './board.js'
-import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, told } from './kit.js'
+import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, told } from './kit.js'
 import { briefCss } from '/brief.js'
 import { markdownCss } from '/markdown.js'
 import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, addedCommandOf, commandOf, frameCommandOf, isAddedId } from '/keymap.js'
@@ -548,6 +548,8 @@ function runAddedId(id, subject) {
 const commandKit = {
   display: (subject, opts) => display(subject, opts),
   toast: (text, action) => toast(text, action),
+  notice: (text, action) => notice(text, action),
+  bus,
   confirm: (text, verb) => ask(text, verb),
   run: async (command, on) => (isAddedId(command) ? runAddedId(command, on ?? focusedSubject()) : command === 'spawn' ? spawnIn(on ?? focusedSubject()) : run(command, { repeat: false })),
 }
