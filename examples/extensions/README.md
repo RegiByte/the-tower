@@ -10,4 +10,5 @@ each one as `tower extensions check` does, so every example here works with the 
 - [`files`](files/): a Files tab on every worker, its checkout as a tree with git's marks, a file opened beside it by
   the view its type picks, code highlighted as VS Code draws it. Runs in place from the checkout.
 
-How extensions work: [docs/extending.md](../../docs/extending.md#extensions).
+How extensions work: [docs/extending.md](../../docs/extending.md#extensions). What an extension's README holds, and how
+its pictures are taken: [An extension's README](../../docs/extending.md#an-extensions-readme).

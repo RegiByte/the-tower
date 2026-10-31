@@ -1108,6 +1108,42 @@ carries its fields, and otherwise is left out with a `launch` problem. `exempt` 
 starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `plugins.claude` names a Claude plugin
 folder in the extension, loaded into every session on floors where it is on.
 
+### An extension's README
+
+Every extension, bundled or an example, carries a `README.md` that lets a reader decide in a minute whether it does
+what they want, and its pictures in its own folder, so a copy of the folder carries both. A pull request that adds or
+changes an extension keeps its README to this checklist. [`narrate`](../examples/extensions/narrate/README.md) is the
+one to copy.
+
+Headings, in this order:
+
+1. **`# <Title>`**, then one line: what it does for the user.
+2. **`## What it adds`**: one entry per surface it reaches, each with its picture: the tower page by region (the
+   sidebar's strip, a card, a worker's tabs, a document's gutter, the palette, the main pane), the CLI (`tower x
+   <id>`, its commands), Tower 3D, and the workers (its guidance in `tower whoami`). A text block stands in for a
+   picture of the terminal. Then the surfaces it leaves out, in one line.
+3. **`## Add it`**: the config entry. An example: copy the folder outside the checkout and name its path. A bundled
+   one: on by default, and how to turn it off.
+4. **`## What it needs from you`**: every setting, command and config key it reads, with an example value. Say
+   plainly what works out of the box only as a placeholder, and what makes it good (narrate: the browser's speech is
+   the placeholder, a voice command is what makes it sound good).
+5. **`## How it works`**: the manifest's pieces it uses (verbs, reads, facts, folds, views, commands, guidance, slots),
+   what its server and its client each do, and the facts it writes, with links to the sections above.
+6. **`## Make it yours`**: the first things to change and where they live.
+7. **`## Pictures`**: one line, how to retake them.
+
+Pictures come from `npm run tool:extension-shots -- <folder>`, never from the real system: it runs the scenes in
+the folder's `shots.json` against a throwaway sandbox seeded with made-up content, and writes
+`<folder>/shots/<scene>-<light|dark>.png`, cropped to the region that matters, and `<folder>/shots/<name>.txt` for
+text blocks. The script's header documents `shots.json`; narrate's is a short one to start from. Take light and dark
+when the look differs, and show them side by side:
+
+```md
+| Light | Dark |
+| --- | --- |
+| ![The memo strip](shots/memos-light.png) | ![The memo strip](shots/memos-dark.png) |
+```
+
 ## Claude plugins
 
 `plugins`, at the top level or under a project, lists absolute plugin directories every session the tower starts
