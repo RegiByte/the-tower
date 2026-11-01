@@ -19,6 +19,8 @@
     "hub/src/shared/brief.ts#toolCallHtml",
     "hub/src/shared/brief.ts#openTools",
     "hub/src/shared/brief.ts#withWhole",
+    "hub/src/shared/brief.ts#wholeHolds",
+    "hub/src/shared/brief.ts#toolCallSettled",
     "hub/src/shared/brief.ts#saidWhat",
     "hub/src/tower/http.ts#conversation",
     "hub/src/tower/http.ts#toolCall",
@@ -115,9 +117,13 @@ renderer can draw the brief alike, inline.
   answers are bubbles of their own kind; a hired worker's launch prompt is headed by its hirer. A turn's steps sit
   between its prompt and its answer: Claude's words as quiet text, a message it sent as a bubble to its recipient, a
   tool call as a `<details>` line that, opened, the renderer reads once and draws with
-  [`toolCallHtml`](ref:hub/src/shared/brief.ts#toolCallHtml); a run of five or more calls folds to its count, naming
+  [`toolCallHtml`](ref:hub/src/shared/brief.ts#toolCallHtml), kept once it ended
+  ([`toolCallSettled`](ref:hub/src/shared/brief.ts#toolCallSettled): one still running is read again as it is drawn
+  open); a run of five or more calls folds to its count, naming
   those that failed, were denied or stopped. "earlier turns" on a conversation reads it whole, drawn in place
-  ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)). Each bubble copies
+  ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)) until a read moves its latest turn
+  ([`wholeHolds`](ref:hub/src/shared/brief.ts#wholeHolds)). A message to a subagent is its `SendMessage` call, its
+  address no worker's. Each bubble copies
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText),
   [`saidWhat`](ref:hub/src/shared/brief.ts#saidWhat) naming it),
   never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds.
