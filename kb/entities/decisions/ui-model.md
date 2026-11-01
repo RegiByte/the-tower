@@ -112,7 +112,7 @@ and a framed document's section are the same thing.
   Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and
   no fold may (since 1.116), since the board never carries a viewer subject to fold.
 - *Viewer subjects and the bus* (step 5c, since 1.118). A prompt, an answer, or Claude's words or message on the way
-  (side `step.<n>`, since 1.132) in the Brief ([`saidSubject`](ref:hub/src/shared/subjects.ts#saidSubject), of its conversation) and a section of a markdown
+  (side `step.<n>`, since 1.133) in the Brief ([`saidSubject`](ref:hub/src/shared/subjects.ts#saidSubject), of its conversation) and a section of a markdown
   document ([`sectionSubject`](ref:hub/src/shared/subjects.ts#sectionSubject), of the showing or item it is part of)
   are viewer subjects, each carrying its own text as `body` and its type. The page holds one bus
   ([`Bus`](ref:hub/src/shared/views.ts#Bus), [`busOf`](ref:hub/src/shared/views.ts#busOf)) and lends it as `kit.bus`;

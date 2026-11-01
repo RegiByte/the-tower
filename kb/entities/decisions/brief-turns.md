@@ -85,7 +85,7 @@ renderer can draw the brief alike, inline.
   its source session's log only while the count falls short.
   [`wholeConversation`](ref:hub/src/bridge/turns.ts#wholeConversation) gives every turn of one conversation, at
   `GET /conversations/<id>/<conversation>` ([`conversation`](ref:hub/src/tower/http.ts#conversation)).
-- *Steps, since 1.132.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between
+- *Steps, since 1.133.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between
   its prompt and its answer, read from the log by [`stepsOf`](ref:hub/src/bridge/turns.ts#stepsOf): its words between
   tool calls (`turn.step`'s `answer`), each main-loop tool call in one line
   ([`toolLine`](ref:hub/src/bridge/turns.ts#toolLine): its telling field, a path relative to the session's folder)
@@ -129,7 +129,7 @@ renderer can draw the brief alike, inline.
   never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds.
   A renderer passes `adds` to draw what extensions contribute to a conversation (its badges, its actions) on that
   conversation's heading, and `acts` (since 1.118) what is offered on a prompt, an answer, or Claude's words or message
-  on the way (`said`, side `step.<n>` since 1.132, [[ui-model]]) beside
+  on the way (`said`, side `step.<n>` since 1.133, [[ui-model]]) beside
   its copy, each by the key [`saidOf`](ref:hub/src/shared/brief.ts#saidOf) gives it: the view is pure and draws
   nothing when they are not given.
 - *Rendered or raw* is a viewer's choice in `tower.store`
