@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-01",
-  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#home", "hub/src/tower/http.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/shelf-words.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName", "hub/src/renderers.ts#declaredAt", "hub/src/shared/regions.ts#Region", "hub/src/shared/regions.ts#landing", "hub/src/shared/regions.ts#CLI_REGIONS", "hub/renderers/page/renderer.json", "hub/renderers/tower3d/renderer.json", "hub/renderers/week/renderer.json"]
+  "refs": ["hub/src/shared/model.ts#ShelfEntry", "hub/src/renderers.ts#BUILT_INS", "hub/src/renderers.ts#renderersOf", "hub/src/renderers.ts#defaultRenderer", "hub/src/renderers.ts#rendererFile", "hub/src/shelf.ts#hiddenBelow", "hub/src/shared/model.ts#RendererConfig", "hub/src/tower/http.ts#rendered", "hub/src/tower/http.ts#home", "hub/src/tower/http.ts#renderersRead", "hub/src/tower/tower.js", "hub/src/shared/shelf-words.ts#renderersHtml", "hub/renderers/tower3d/src/acts.ts#catName", "hub/src/renderers.ts#declaredAt", "hub/src/shared/regions.ts#Region", "hub/src/shared/regions.ts#landing", "hub/src/shared/regions.ts#CLI_REGIONS", "hub/renderers/page/renderer.json", "hub/renderers/tower3d/renderer.json", "hub/renderers/week/renderer.json", "hub/src/renderers.ts#layoutProblems", "hub/src/renderers.ts#withLayoutProblems", "hub/src/renderers.ts#rendererRegions", "hub/src/shared/regions.ts#landingLine"]
 }
 ---
 **Problem.** A renderer living only on a project's shelf reaches the user only if their config puts a path into
@@ -53,6 +53,16 @@ update of the core never touches it.
   `renderers.<name>.layout` over its own and the viewer's over both ([[ui-model]]); `GET /renderers` serves the
   config's as `configLayout`. `landing` places a view in the regions holding views of its kinds at its scales, where
   the renderer's kit lends what it needs.
+- *Overflow forms* (since 1.138, [[region-overflow]]). A region lists in `overflows` the forms the renderer draws it in
+  when full, its default first; the page declares `wrap` where it draws it and its layout defaults for the budgets
+  later forms read. [`layoutProblems`](ref:hub/src/renderers.ts#layoutProblems) checks the config's layout for a
+  renderer against its regions and those of the extensions that would start: a form not offered, a budget for what a
+  region doesn't hold or doesn't read, a pin where nothing pins or of nothing offered, an unpin of nothing pinned
+  below, a region nobody declares. `GET /renderers` serves it per renderer as `layoutProblems`
+  ([`withLayoutProblems`](ref:hub/src/renderers.ts#withLayoutProblems)) and `tower config check` lists it. `landing`
+  carries each region's form under the renderer's and the config's layout, so `tower extensions check` says when a
+  contribution goes behind a menu and how to pin it. [`rendererRegions`](ref:hub/src/renderers.ts#rendererRegions)
+  reads every renderer's region ids, the config's included, for the warning on an extension laying one out.
 - *Settings* are the renderer's own configuration, passed through unread. A renderer reads its own with
   `await tower.renderer()` ([`tower.js`](ref:hub/src/tower/tower.js)), which takes its name from its `/r/<name>/` path,
   framed or not; null for any other page. Tower 3D reads `settings.cats`, its cats' names

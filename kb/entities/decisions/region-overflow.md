@@ -4,7 +4,7 @@
   "name": "When a region is full: overflow forms the user picks, pins, and ranking in shared code",
   "summary": "A region says which overflow forms it can be drawn in (menu, count, wrap, scroll) and the user picks one per region through the layout's layers; what is drawn in place is a prefix of one ranked list, computed by pure shared code from the layout's pins and hides, never from a priority an extension declares; an extension lays out only the regions it declares; the user pins through a union over the layers with an unpinned list; and what is new to the viewer is kept as a seen set in tower.store, marked with a dot, and never reorders anything.",
   "in": "tower",
-  "status": "proposed",
+  "status": "accepted",
   "date": "2026-11-01",
   "reviewed": "2026-11-01",
   "refs": [
@@ -14,7 +14,22 @@
     "hub/src/shared/views.ts#declaredLayout",
     "hub/src/shared/adds.ts#addedActions",
     "hub/src/shared/viewer.ts",
-    "hub/renderers/page/renderer.json"
+    "hub/renderers/page/renderer.json",
+    "hub/src/shared/regions.ts#OVERFLOWS",
+    "hub/src/shared/regions.ts#LayoutEntry",
+    "hub/src/shared/regions.ts#overflowOf",
+    "hub/src/shared/adds.ts#actionId",
+    "hub/src/shared/adds.ts#rankedActions",
+    "hub/src/shared/adds.ts#rankedBadges",
+    "hub/src/shared/adds.ts#rankedLines",
+    "hub/src/shared/adds.ts#headRanked",
+    "hub/src/shared/adds.ts#isFresh",
+    "hub/src/shared/fill.ts#fill",
+    "hub/src/shared/viewer.ts#seenOf",
+    "hub/src/shared/viewer.ts#sawAll",
+    "hub/src/renderers.ts#layoutProblems",
+    "hub/src/bridge/extensions.ts#rendererLayoutProblems",
+    "hub/test/ranking.test.ts"
   ]
 }
 ---
