@@ -1,6 +1,6 @@
 import { CALLSIGN_NAME, CALLSIGNS, callsigns } from './callsign.ts'
 import { keymapOf, keysProblems, type Keys } from './keymap.ts'
-import type { Declared, Layout } from './regions.ts'
+import type { Declared, Layout, LayoutProblem } from './regions.ts'
 import { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreePath, WORKTREES_DIR } from './repos.ts'
 
 export { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreePath, WORKTREES_DIR }
@@ -332,9 +332,20 @@ export type RendererConfig = { root?: string; entry?: string; settings?: Record<
 /**
  * A renderer as the tower serves it: `available` while its entry exists, which for a built renderer means it was built;
  * what its `renderer.json` declares (`Declared`, since 1.101) when it has one for its entry, or `problem`, why that
- * file declares nothing; `configLayout`, the config's `layout` for it (since 1.104), `{}` when it sets none.
+ * file declares nothing; `configLayout`, the config's `layout` for it (since 1.104), `{}` when it sets none;
+ * `layoutProblems`, what is wrong with that layout against the regions it and the extensions that would start declare,
+ * when it declares regions (since 1.138): a region with a failing key is drawn by its default.
  */
-export type Renderer = { name: string; root: string; entry: string; available: boolean; settings: Record<string, unknown>; problem?: string; configLayout: Layout } & Partial<Declared>
+export type Renderer = {
+  name: string
+  root: string
+  entry: string
+  available: boolean
+  settings: Record<string, unknown>
+  problem?: string
+  configLayout: Layout
+  layoutProblems?: LayoutProblem[]
+} & Partial<Declared>
 
 /** A project's collections: every project's, then its own. A collection declared in both is a config error. */
 export const projectCollections = (config: Config, projectId: string): Record<string, CollectionType> => {

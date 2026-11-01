@@ -97,6 +97,9 @@ export const BUDGETS = { lines: ['lines'], badges: ['badges'], actions: ['verbs'
 export const overflowOf = (region: Region & { overflows: Overflow[] }, entry: LayoutEntry | undefined): Overflow =>
   entry?.overflow && region.overflows.includes(entry.overflow) ? entry.overflow : region.overflows[0]
 
+/** A problem of a renderer's layout in the config, at its key, as `tower config check` says it and `GET /renderers` serves it. @since 1.138 */
+export type LayoutProblem = { level: 'fail' | 'warn'; key: string; problem: string }
+
 /** The regions each renderer declares, by id: what no extension lays out. */
 export type RendererRegions = { name: string; regions: string[] }[]
 

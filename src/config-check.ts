@@ -10,7 +10,7 @@ import { guidanceOf, manifestOf, parseSettings, resolve, zodOf, type Found, type
 import { respelled, type Respelled } from './bridge/legacy.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
-import { defaultRenderer, renderersOf } from './renderers.ts'
+import { declaredOf, defaultRenderer, layoutProblems, layoutReachOf, renderersOf } from './renderers.ts'
 import type { Layout } from './shared/regions.ts'
 import { GuidanceConfig, type ViewDecl } from './shared/extensions.ts'
 import { SHELF_KINDS, shelfProblem } from './shelf.ts'
@@ -316,6 +316,10 @@ export const configProblems = (read: Config): ConfigProblem[] => {
     ...(renderers ?? []).flatMap((r): ConfigProblem[] => (r.problem ? [{ level: 'warn', key: `renderers.${r.name}`, problem: `${r.root}/${r.problem}: it declares no regions` }] : [])),
     ...(renderers ? checked('renderer', () => defaultRenderer(config, renderers)) : []),
     ...(renderers ?? []).flatMap((r) => layoutOptionProblems(r.name, r.configLayout, extensions.resolved)),
+    ...(renderers ?? []).flatMap((r) => {
+      const declared = declaredOf(r)
+      return declared ? layoutProblems(r.name, r.configLayout, declared, layoutReachOf([...extensions.resolved.accepted.values()].map((a) => a.manifest))) : []
+    }),
     ...unknownKeysAt('editor', config.editor, EDITOR_KEYS),
     ...(config.editor === undefined ? [] : (Object.keys(EDITOR_VALUES) as EditorAction[]).flatMap((action) => checked(`editor.${action}`, () => editorArgv(config, action, EDITOR_VALUES[action])))),
     ...collections('collections', config.collections),

@@ -8,7 +8,8 @@
  *                          its commands' modules, a `.ts` served bundled as `.js`, with CORS as a renderer's; `/x/tower/`
  *                          the core's view modules (`CORE_VIEWS`), bundled from src/views/
  *   GET  /renderers     {default, renderers}: every renderer, with its root, entry, settings, whether it is built, and what its
- *                       renderer.json declares: regions, kit, keeps and layout, and the config's layout for it, configLayout (src/renderers.ts)
+ *                       renderer.json declares: regions, kit, keeps and layout, and the config's layout for it, configLayout, with
+ *                       its problems, layoutProblems (src/renderers.ts)
  *   GET  /board         SSE: {v, board}, the API's version and the board, again whenever the board changes, or {v, error: {code, message}}
  *                       while the tower can't build it (`config` until the config is fixed)
  *   GET  /schema        every verb's input and reply and every hook's payload and answer, the core's and each running extension's,
@@ -101,7 +102,7 @@ import { readLanded } from '../landed.ts'
 import { originUrl } from '../machine.ts'
 import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
-import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
+import { defaultRenderer, layoutReachOf, rendererFile, renderersOf, withLayoutProblems } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
@@ -585,7 +586,8 @@ export const httpServer = defineResource({
     function renderersRead(res: http.ServerResponse) {
       const config = readConfig()
       const renderers = renderersOf(config)
-      const read: Reads['renderers'] = { default: defaultRenderer(config, renderers).name, renderers }
+      const reach = layoutReachOf(extensions.accepted().map((a) => a.manifest))
+      const read: Reads['renderers'] = { default: defaultRenderer(config, renderers).name, renderers: withLayoutProblems(renderers, reach) }
       res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(read))
     }
 
