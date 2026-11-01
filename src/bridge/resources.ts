@@ -2,16 +2,15 @@
  * What a session leaves running on the machine. Claude runs each Bash command in a session of its own with no
  * controlling terminal, and a command's `&` children are orphaned as soon as its shell exits, so neither the PTY
  * nor the process tree bounds a session's processes. The environment does: every descendant inherits
- * `TOWER_SESSION_ID`, even after it is re-parented to launchd. Apple platform binaries hide their environment and
- * are never listed.
+ * `TOWER_SESSION_ID`, even after it is re-parented out of the host's tree. Apple platform binaries hide their
+ * environment and are never listed.
  */
 
 export type Process = { pid: number; ppid: number; command: string; session: string | undefined }
 
-/** `orphan`: re-parented to launchd, so nothing will end it with its session. */
+/** `orphan`: re-parented out of the host's tree, so nothing will end it with its session. */
 export type Resource = { pid: number; session: string; command: string; ports: number[]; orphan: boolean }
 
-const LAUNCHD = 1
 const SESSION_MARKER = / TOWER_SESSION_ID=([\w-]+)/
 
 const COMMAND_LINE = /^\s*(\d+)\s+(\d+)\s+(.*)$/
@@ -48,13 +47,32 @@ export const parseListening = (lsof: string): Map<number, number[]> => {
   return new Map([...ports].map(([pid, set]) => [pid, [...set].sort((a, b) => a - b)]))
 }
 
+/**
+ * The hosts and every process under them. An orphan's parent is outside: whatever adopted it, launchd on macOS, WSL's
+ * init relay, or a subreaper, is no descendant of a host. Read from the tree, not the environment, which Apple
+ * platform binaries such as a session's shell hide.
+ */
+const underHosts = (procs: Process[], hosts: Set<number>): Set<number> => {
+  const children = Map.groupBy(procs, (proc) => proc.ppid)
+  const under = new Set<number>()
+  const visit = (pid: number): void => {
+    if (under.has(pid)) return
+    under.add(pid)
+    for (const child of children.get(pid) ?? []) visit(child.pid)
+  }
+  hosts.forEach(visit)
+  return under
+}
+
 /** `hosts` are the pids of running hosts: a session's own Claude is the host's child, not one of its resources. */
-export const resources = (procs: Process[], listening: Map<number, number[]>, hosts: Set<number>): Resource[] =>
-  procs.flatMap((proc) =>
+export const resources = (procs: Process[], listening: Map<number, number[]>, hosts: Set<number>): Resource[] => {
+  const under = underHosts(procs, hosts)
+  return procs.flatMap((proc) =>
     proc.session === undefined || hosts.has(proc.ppid)
       ? []
-      : [{ pid: proc.pid, session: proc.session, command: proc.command, ports: listening.get(proc.pid) ?? [], orphan: proc.ppid === LAUNCHD }],
+      : [{ pid: proc.pid, session: proc.session, command: proc.command, ports: listening.get(proc.pid) ?? [], orphan: !under.has(proc.ppid) }],
   )
+}
 
 /** What Claude Code registers for each running Claude in `~/.claude/sessions/<pid>.json`, read for its name. */
 export type ClaudeRegistration = { pid: number; name: string }
