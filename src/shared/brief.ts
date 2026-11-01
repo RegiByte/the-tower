@@ -101,9 +101,9 @@ export type BriefView = {
   adds?: (conversation: string) => string
   /** What a renderer draws beside a prompt's or an answer's copy, by its key (`saidOf`): html, empty for none. @since 1.118 */
   acts?: (said: string) => string
-  /** The tool calls and runs of them the viewer opened, by key (`openTools`). @since 1.132 */
+  /** The tool calls and runs of them the viewer opened, by key (`openTools`). @since 1.133 */
   openTools?: ReadonlySet<string>
-  /** A tool call read, by its key, as `toolCallHtml` draws it; `undefined` for one not read yet. @since 1.132 */
+  /** A tool call read, by its key, as `toolCallHtml` draws it; `undefined` for one not read yet. @since 1.133 */
   tools?: (key: string) => string | undefined
 }
 
@@ -115,7 +115,7 @@ export const openFolds = (root: ParentNode | null | undefined): Set<string> =>
 export const expandedSaid = (root: ParentNode | null | undefined): Set<string> =>
   new Set([...(root?.querySelectorAll<HTMLInputElement>('input[data-expand]:checked') ?? [])].map((el) => el.dataset.expand!))
 
-/** The tool calls and runs of them a viewer opened in a drawn brief, by key. @since 1.132 */
+/** The tool calls and runs of them a viewer opened in a drawn brief, by key. @since 1.133 */
 export const openTools = (root: ParentNode | null | undefined): Set<string> =>
   new Set([...(root?.querySelectorAll<HTMLElement>('details[data-tool][open], details[data-tool-run][open]') ?? [])].map((el) => el.dataset.tool ?? el.dataset.toolRun!))
 
@@ -143,30 +143,30 @@ export const saidOf = (briefs: Brief[]): { key: string; session: string; convers
 /** The text of a prompt, answer or step of a brief by its key, as written. */
 export const saidText = (briefs: Brief[], key: string): string | undefined => saidOf(briefs).find((s) => s.key === key)?.text
 
-/** What a prompt, answer or step of a brief is, in words, by its key: "the prompt", "the message". @since 1.132 */
+/** What a prompt, answer or step of a brief is, in words, by its key: "the prompt", "the message". @since 1.133 */
 export const saidWhat = (briefs: Brief[], key: string): string | undefined => saidOf(briefs).find((s) => s.key === key)?.what
 
-/** A tool call's key, `<session>:<call>`: the session whose log holds it and its id (`tower.toolCall`). @since 1.132 */
+/** A tool call's key, `<session>:<call>`: the session whose log holds it and its id (`tower.toolCall`). @since 1.133 */
 export const toolKey = (turn: Turn, call: Extract<Step, { t: 'tool' }>) => `${turn.session}:${call.id}`
 
 /** A conversation's key in a drawn brief, `<session>:<conversation>`: the session it is drawn in, and its id (`tower.conversation`). */
 const conversationKey = (b: Brief) => `${b.session.id}:${b.id}`
 
-/** A brief with the conversation `whole` read whole in place of its last turns. @since 1.132 */
+/** A brief with the conversation `whole` read whole in place of its last turns. @since 1.133 */
 export const withWhole = (briefs: Brief[], whole: Brief): Brief[] => briefs.map((b) => (conversationKey(b) === conversationKey(whole) ? whole : b))
 
 const turnMark = (turn: Turn | undefined) => turn && `${turn.startedAt} ${turn.answeredAt} ${turn.steps.length}`
 
 /**
  * Whether a conversation read whole still holds what a later brief gives of it: its latest turn is the same, unmoved.
- * One that moved is read again, or let go. @since 1.132
+ * One that moved is read again, or let go. @since 1.133
  */
 export const wholeHolds = (briefs: Brief[], whole: Brief): boolean => {
   const now = briefs.find((b) => conversationKey(b) === conversationKey(whole))
   return now !== undefined && turnMark(now.turns.at(-1)) === turnMark(whole.turns.at(-1))
 }
 
-/** Whether a tool call read is how it ended, to keep for every draw after: one still running is read again when opened. @since 1.132 */
+/** Whether a tool call read is how it ended, to keep for every draw after: one still running is read again when opened. @since 1.133 */
 export const toolCallSettled = (call: ToolCall) => call.outcome !== 'running'
 
 const OUTCOME_WORDS: Record<ToolOutcome, string> = { running: 'running', ok: '', error: 'failed', denied: 'denied', abandoned: 'stopped' }
@@ -176,7 +176,7 @@ const duration = (ms: number) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixe
 const fieldHtml = (name: string, value: unknown) =>
   `<dt>${esc(name)}</dt><dd><pre>${esc(typeof value === 'string' ? value : JSON.stringify(value, null, 2))}</pre></dd>`
 
-/** A tool call read (`tool/<id>/<call>`): each field of its input as given, the check it met, and how it ended. @since 1.132 */
+/** A tool call read (`tool/<id>/<call>`): each field of its input as given, the check it met, and how it ended. @since 1.133 */
 export const toolCallHtml = (call: ToolCall) => {
   const check = call.check && [call.check.decision, call.check.rule && `rule ${call.check.rule}`, call.check.reason].filter(Boolean).join(' · ')
   const ended = [OUTCOME_WORDS[call.outcome] || 'done', call.ms !== undefined && duration(call.ms)].filter(Boolean).join(' · ')

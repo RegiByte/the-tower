@@ -14,7 +14,7 @@ export type ToolOutcome = 'running' | 'ok' | 'error' | 'denied' | 'abandoned'
  * What Claude did between a turn's prompt and its answer, in reading order, each at when it was logged (epoch ms):
  * its words between tool calls (`text`), a tool call folded to one line (`line`, `ms` how long it ran, `agentSteps` the
  * steps of the subagent it started), and a message it sent another worker (`sent`). The turn's answer is not one of
- * them. @since 1.132
+ * them. @since 1.133
  */
 export type Step =
   | { t: 'text'; at: number; text: string }
@@ -24,7 +24,7 @@ export type Step =
 /**
  * What the user asked, or another worker sent (`from`), and Claude's latest answer in the turn that followed, with when
  * each was given (epoch ms); no answer while Claude still works on it. `session` is the session whose log holds it and
- * `steps` what Claude did on the way to its answer (both @since 1.132).
+ * `steps` what Claude did on the way to its answer (both @since 1.133).
  */
 export type Turn = { startedAt: number; prompt: string; from?: PeerFrom; answer?: string; answeredAt?: number; session: string; steps: Step[] }
 
@@ -33,7 +33,7 @@ export type BriefSession = SessionRef & { startedAt: number }
 
 /**
  * A saved conversation with its last turns, oldest first, and the session that holds it; `earlier`, whether it holds
- * turns before them (@since 1.132), read whole at `conversations/<id>/<conversation>`.
+ * turns before them (@since 1.133), read whole at `conversations/<id>/<conversation>`.
  */
 export type Brief = Thread & { turns: Turn[]; earlier: boolean; session: BriefSession }
 
@@ -195,7 +195,7 @@ export const turnsByConversation = ({ header, events }: SessionLog): Record<stri
     [id, turns.map(({ work: _, ...turn }, i) => ({ ...turn, steps: stepsOf(turns[i], header.cwd, agents) }))]))
 }
 
-/** One tool call as its session logged it: its input, the permission check it met, how it ended, and how long it ran. @since 1.132 */
+/** One tool call as its session logged it: its input, the permission check it met, how it ended, and how long it ran. @since 1.133 */
 export type ToolCall = { tool: string; input: Record<string, unknown>; check?: Record<string, unknown>; outcome: ToolOutcome; error?: string; ms?: number }
 
 /** The tool call `id` of a session's log, `undefined` when it logged none. */
@@ -281,7 +281,7 @@ export const briefOf = (session: Session, sessions: Session[], logOf: (id: strin
 
 /**
  * A saved conversation of `session`, as `briefOf` draws it there, with every one of its turns: those of the sessions it
- * resumed first. `undefined` when the session holds no such conversation. @since 1.132
+ * resumed first. `undefined` when the session holds no such conversation. @since 1.133
  */
 export const wholeConversation = (session: Session, sessions: Session[], logOf: (id: string) => SessionLog, conversation: string, callsign: (id: string) => string): Brief | undefined => {
   const held = threadsOf(session, sessions, callsign).find((t) => t.session === session && t.thread.id === conversation)

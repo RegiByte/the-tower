@@ -101,7 +101,7 @@ export const linkedFile = (from: CheckoutFile, href: string): CheckoutFile | und
 
 /**
  * A prompt or an answer of a worker's conversation, or Claude's words or a message it sent on the way (`step.<n>`, its
- * place among the turn's steps, @since 1.132), as a renderer drew it in a brief: the session it was drawn in (a
+ * place among the turn's steps, @since 1.133), as a renderer drew it in a brief: the session it was drawn in (a
  * resumed conversation's turns are drawn again in the session that resumed it), its conversation, when its turn
  * started, its side, and its words as written. @since 1.118
  */
