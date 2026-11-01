@@ -57,6 +57,7 @@ export function mountTerm(host: HTMLElement, t: Target) {
     mode: (m) => t.onMode(modeText(m), m.t === 'owning'),
     end: t.onEnd,
     error: t.onError,
+    upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
     files: { cwd: t.cwd, edit: (path, line) => tower.call('edit', { path, line }) },
   })
 }

@@ -155,6 +155,7 @@ export function regions(deps) {
         mode: () => {},
         end: () => {},
         error: (err) => commandKit.toast(err.message),
+        upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
         files: {
           cwd: () => /** @type {string} */ (shell ? board().shells.find((sh) => sh.id === id)?.cwd : findCard(board(), id)?.cwd),
           edit: (path, line) => tower.call('edit', { path, line }),

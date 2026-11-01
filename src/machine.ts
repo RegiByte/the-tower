@@ -1,6 +1,7 @@
 /** The machine outside the logs: the host's live sessions, the terms daemon's shells, processes, git remotes, and the editor. */
 import { execFile, execFileSync, spawn } from 'node:child_process'
-import { closeSync, existsSync, openSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
@@ -171,6 +172,30 @@ export const originUrl = async (dir: string): Promise<string | undefined> => {
 
 /** Shows `target` selected in the desktop's file manager: Finder, or Windows' Explorer under WSL. */
 export const reveal = (target: string): Promise<void> => platform().reveal(target)
+
+/**
+ * Where files handed to a browser page land (`upload`): the user's own folder in the machine's temp folder, which the
+ * machine clears, not the tower. On Linux the temp folder is every account's `/tmp`, so the folder is the user's alone:
+ * one another account made first, or a link, is refused, never written into.
+ */
+const uploadsDir = (): string => {
+  const dir = path.join(os.tmpdir(), `tower-uploads-${process.getuid!()}`)
+  mkdirSync(dir, { recursive: true, mode: 0o700 })
+  const at = lstatSync(dir)
+  if (!at.isDirectory() || at.uid !== process.getuid!() || (at.mode & 0o077) !== 0)
+    throw new Error(`${dir} is not a folder only this user can reach: remove it, and the tower makes it again`)
+  return dir
+}
+
+/** Writes `bytes` to the uploads folder, named by their hash and `ext`, and answers the file's path. Written aside and renamed in, so a reader never sees half a file. */
+export const writeUpload = (bytes: Buffer, ext: string): string => {
+  const dir = uploadsDir()
+  const file = path.join(dir, `${createHash('sha256').update(bytes).digest('hex').slice(0, 16)}${ext && `.${ext}`}`)
+  const aside = `${file}.${process.pid}.${Date.now()}`
+  writeFileSync(aside, bytes, { mode: 0o600, flag: 'wx' })
+  renameSync(aside, file)
+  return file
+}
 
 /** Runs one of the user's editor commands, an argv, to its end. */
 export const runEditor = async ([command, ...args]: string[]): Promise<void> => {

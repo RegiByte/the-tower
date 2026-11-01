@@ -131,6 +131,7 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   open: single('Open', 'Open a project directory in the editor.', 'opened'),
   reveal: single('Reveal', 'Show a file or folder in Finder.', 'revealed'),
   edit: single('Edit', 'Open a file in the editor.', 'opened'),
+  upload: single('Upload', "Copy a file a page was handed to the machine's temp folder.", 'written'),
   'shell/spawn': single('Open a shell', "A shell in a project's directory.", 'started'),
   'shell/keys': single('Type in a shell', 'Write keys to a shell.', 'written'),
   'shell/resize': single('Resize a shell', 'Resize a shell.', 'resized'),
