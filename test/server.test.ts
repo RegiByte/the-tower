@@ -1072,8 +1072,8 @@ test("server: a name in the config's hosts reaches the tower, and its POSTs carr
 })
 
 /** Only the length is sent: the tower refuses on it and closes, and a body sent after would race that close. */
-test('server: a body declared past 8 MiB is refused as invalid', async () => {
-  const reply = await request('/collection/create', { method: 'POST', headers: { origin: base, 'content-type': 'application/json', 'content-length': 8 * 1024 * 1024 + 1 } })
+test('server: a body declared past 28 MB is refused as invalid', async () => {
+  const reply = await request('/collection/create', { method: 'POST', headers: { origin: base, 'content-type': 'application/json', 'content-length': 28_000_001 } })
   assert.equal(reply.status, 400)
   assert.equal(errorCode(reply), 'invalid')
 })

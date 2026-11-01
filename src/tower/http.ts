@@ -79,7 +79,7 @@
  *   POST /reveal {path} | /edit {path, line?}   show a path the system names in Finder, or open it in the user's editor
  *   POST /<capability>/<verb>   an extension's verb;  GET /<capability>/<read>  an extension's read (src/tower/calls.ts)
  *
- * Every command's body, up to 8 MiB, is parsed by its schema in src/shared/api.ts, or an extension's manifest, through
+ * Every command's body, up to 28 MB, is parsed by its schema in src/shared/api.ts, or an extension's manifest, through
  * the dispatch, for the caller the `tower` command's headers claim (`CALLER_HEADERS`), the user when they claim none. A
  * deprecated verb or read answers with RFC 9745's `Deprecation` header, and a `Link` to what to use instead. A failure,
  * of a command or a read, answers `{t: 'error', code, message}` with the code's status (`ERROR_STATUS`).
@@ -105,6 +105,7 @@ import { defaultRenderer, rendererFile, renderersOf } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
 import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
+import { megabytes, UPLOAD_LIMIT } from '../shared/uploads.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
 import { esc, exemptionsBy, shelfKind, shelfPage } from '../shared/cards.ts'
 import { attachShell } from '../shared/client.ts'
@@ -646,10 +647,10 @@ export const httpServer = defineResource({
     const MUX: { [R in keyof typeof TRANSPORT]: (input: RouteInput[R]) => Answer | Promise<Answer> } = { 'mux/watch': muxWatch, 'mux/unwatch': muxUnwatch }
 
     /**
-     * The largest command body read. The largest real requests are a `collection/write` of a self-contained html item
-     * and a `review/append` carrying a diff, tens of KB; this leaves room for one with its images inlined.
+     * The largest command body read: an `upload` of the largest file it takes, base64, with room to spare. The other
+     * large requests are a `collection/write` of a self-contained html item and a `review/append` carrying a diff.
      */
-    const MAX_BODY = 8 * 1024 * 1024
+    const MAX_BODY = Math.ceil((UPLOAD_LIMIT * 4) / 3) + 1_000_000
 
     /** A command's body, or `undefined` once it passes `MAX_BODY`: the rest is left unread. */
     const readBody = (req: http.IncomingMessage): Promise<string | undefined> =>
@@ -711,7 +712,7 @@ export const httpServer = defineResource({
       const text = await readBody(req)
       if (text === undefined) {
         res.setHeader('connection', 'close')
-        return fail(res, 'invalid', `The body is over ${MAX_BODY / 1024 / 1024} MiB`)
+        return fail(res, 'invalid', `The body is over ${megabytes(MAX_BODY)}`)
       }
       const body = parseJson(text)
       if (!body) return fail(res, 'invalid', 'The body is not JSON')

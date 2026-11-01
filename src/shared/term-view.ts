@@ -9,6 +9,7 @@ import type { ScreenMsg, TerminalMsg } from './shelf-page.ts'
 import { fitSize, loadTerminalFont, reportWheel, type TermFont } from './terminal.ts'
 import type { ShellStream } from './terms.ts'
 import { terminalKeymap } from './termkeys.ts'
+import { uploadRefusal } from './uploads.ts'
 
 /**
  * A terminal a viewer has open on a PTY, every renderer's: `termHandlers` its steps, `mountTermView` the xterm.js view
@@ -199,8 +200,8 @@ export type TermViewIo = {
   mode(m: TermMode): void
   end(msg: Extract<TerminalMsg | ShellStream, { t: 'x' | 'error' }>): void
   error(err: Error): void
-  /** Copies a file dropped or pasted on the terminal where the PTY's program can read it, its bytes base64, and answers its path (`upload`, the verb). */
-  upload(name: string, data: string): Promise<string>
+  /** Given, a file dropped or pasted on the terminal is copied where the PTY's program can read it, its bytes base64, and its path answered (`upload`, the verb). */
+  upload?(name: string, data: string): Promise<string>
   /** Given, the file paths written in the terminal are links too, read from `cwd()` and opened through `edit` (the verb). */
   files?: { cwd(): string; edit(path: string, line?: number): Promise<unknown> }
 }
@@ -287,24 +288,26 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
    * terminal pastes a dropped file's path: the browser hands over the bytes, not a path, so each is uploaded first.
    * Claude takes a pasted image's path as the image. A past session's terminal takes none.
    */
-  async function pasteFiles(files: File[]) {
-    if (!term || machine.state().t === 'exited') return
+  async function pasteFiles(upload: NonNullable<TermViewIo['upload']>, files: File[]) {
+    const refusal = files.map((file) => uploadRefusal(file.name, file.size)).find(Boolean)
+    if (refusal) throw new Error(refusal)
     const paths = []
-    for (const file of files) paths.push(await io.upload(file.name, await base64Of(file)))
+    for (const file of files) paths.push(await upload(file.name, await base64Of(file)))
+    if (!term || machine.state().t === 'exited') return
     term.focus()
     paths.forEach((path, i) => (i && term!.paste(' '), term!.paste(path)))
   }
   const takeFiles = (e: Event, list: FileList | undefined) => {
-    if (!list?.length || !term || machine.state().t === 'exited') return
+    if (!io.upload || !list?.length || !term || machine.state().t === 'exited') return
     e.preventDefault()
     e.stopPropagation()
-    pasteFiles([...list]).catch(io.error)
+    pasteFiles(io.upload, [...list]).catch(io.error)
   }
   /** A paste with text in it is the text's (a sheet's or a document's copy carries a picture of itself too): xterm's. */
   const onPaste = (e: ClipboardEvent) => e.clipboardData?.types.includes('text/plain') || takeFiles(e, e.clipboardData?.files)
   const onDrop = (e: DragEvent) => takeFiles(e, e.dataTransfer?.files)
   const onDragOver = (e: DragEvent) => {
-    if (!e.dataTransfer?.types.includes('Files') || !term || machine.state().t === 'exited') return
+    if (!io.upload || !e.dataTransfer?.types.includes('Files') || !term || machine.state().t === 'exited') return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
   }

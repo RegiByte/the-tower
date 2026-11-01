@@ -60,8 +60,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   ([[machines]], [[tower3d-desk]]). A web address it writes (given xterm's web-links addon) or a hyperlink a program
   marks (OSC 8) opens in a new tab, http(s) only; given `io.files`, a file path a line writes
   ([`fileMentions`](ref:hub/src/shared/term-view.ts#fileMentions)) is read from the terminal's directory and opened
-  with the `edit` verb, at its `:line`. A file dropped or pasted on it (a paste carrying plain text stays the text's)
-  is copied by the `upload` verb (API 1.137) to the user's own folder (mode 0700) in the temp folder, named by its hash, and its path pasted, as a
+  with the `edit` verb, at its `:line`. Given `io.upload`, a file dropped or pasted on it (a paste carrying plain text stays the text's), up to 20 MB
+  ([`UPLOAD_LIMIT`](ref:hub/src/shared/uploads.ts#UPLOAD_LIMIT)), is copied by the `upload` verb (API 1.137) to the user's own folder (mode 0700) in the temp folder, named by its hash, and its path pasted, as a
   native terminal pastes a dropped file's path: Claude takes a pasted image's path as the image. Its width rule is Claude Code's (`Bun.stringWidth`): given xterm's
   unicode-graphemes addon (`/addon-unicode-graphemes.js`, API 1.127), an emoji takes two cells and a grapheme cluster
   (a variation selector, a ZWJ sequence, a skin tone) is one character. Under xterm's default Unicode 6 widths most

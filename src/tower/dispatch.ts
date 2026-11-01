@@ -24,6 +24,7 @@ import { hostRequest, pressSubmit, reap, reveal, runEditor, submitText, termsReq
 import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
+import { uploadRefusal } from '../shared/uploads.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
 import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
 import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
@@ -908,7 +909,11 @@ export const dispatch = defineResource({
       reveal: ({ path: target }) => onPath(target, reveal),
       edit: ({ path: target, line }) =>
         onPath(target, (file) => (line === undefined ? inEditor('open', { path: file }) : inEditor('goto', { path: file, line: String(line) }))),
-      upload: ({ name, data }) => ({ t: 'uploaded', path: writeUpload(Buffer.from(data, 'base64'), extOf(name)) }),
+      upload: ({ name, data }) => {
+        const bytes = Buffer.from(data, 'base64')
+        const refusal = uploadRefusal(name, bytes.length)
+        return refusal ? apiError('invalid', refusal) : { t: 'uploaded', path: writeUpload(bytes, extOf(name)) }
+      },
       'shell/spawn': ({ project, cwd }) => terms({ t: 'spawn', project, cwd, ...SHELL_SIZE }),
       'shell/keys': ({ id, data }) => terms({ t: 'write', id, data }),
       'shell/resize': ({ id, cols, rows }) => terms({ t: 'resize', id, cols, rows }),
