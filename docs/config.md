@@ -78,6 +78,10 @@ read, a pin of nothing an extension that would start offers, an unpin of what th
 and a region neither the renderer nor an extension that would start declares. A region with a failing key is drawn by
 its default, and `GET /renderers` serves the same problems as `layoutProblems`.
 
+The page draws a worker's tabs (`card.panes`) in `scroll` with the tabs a pane chord opens first (Terminal, Brief,
+Changes, Reviews), where they stay put, and every other tab after them in the strip that scrolls: its `order` arranges
+each of the two apart, so a view ordered before Brief draws after Reviews.
+
 ## Projects
 
 Each project is a floor. Its sessions start in the hub; the repos are the other directories they work in.
