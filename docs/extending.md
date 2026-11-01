@@ -638,8 +638,8 @@ hint?, display?}` on lines the card's worker changed, `repo` named as its Change
 and the Changes draw it on those lines, saying its `hint` (the reviews extension marks the lines each note of the
 worker's thread is about, `n3`, "noted in n3"); `display`, a subject key a click on the mark would show, is drawn by no
 renderer yet; an action may carry `words` of its own (`{label, hint?, destructive?}`, API 1.98), over its verb's or
-command's, so one command offered on several things says which; its asks (`{key, subject, title, since, until?, sound:
-'wait' | 'offer', actions}`, `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
+command's, so one command offered on several things says which; its asks (`{key, subject, title, hint?, since, until?,
+sound: 'wait' | 'offer', actions}`, `hint` more about it in words drawn on hover (API 1.132), `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
 a shelf entry, an item or the board) in `board.asks`,
 keyed `<cap>:<key>`, which every renderer orders and rings beside the waits. A fold that throws or returns what its
 manifest doesn't declare costs its part on that subject, and its dependents' there, as a `threw` or `shape` problem;

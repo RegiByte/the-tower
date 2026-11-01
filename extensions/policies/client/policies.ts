@@ -18,6 +18,9 @@ type ValidPolicyView = Extract<PolicyView, { header: PolicyHeader }>
 /** The rule and slot words renderers import from `/policies.js`. */
 export { cronFields, cronProblem, nextSlot, ON_TIME_MS, onTimeSlot, ruleWords, slotsBetween, slotWords, zoneCity } from '../../../src/shared/slots.ts'
 
+/** A slot offered until `until`, in words said in `tz`: `today 15:00 offered, open until Fri 15:00`. */
+export const offeredWords = (slot: number, until: number, tz: string | undefined, now: number) => `${slotWords(slot, tz, now)} offered, open until ${slotWords(until, tz, now)}`
+
 export const POLICIES = 'policies'
 
 /** The policies extension's part of a floor, `floor.x.policies`: its policies and open offers, none while it is off there. */

@@ -5,7 +5,7 @@
 import type { Board, Floor } from '../../../src/bridge/board.ts'
 import { shortHash, type Offer, type PolicyReplies, type PolicyView, type ValidPolicyView } from '../policies.ts'
 import { DISMISS_OFFER_TITLE, callOf, esc } from '../../../src/shared/cards.ts'
-import { floorPolicies, heldWords, offerAskKey, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
+import { floorPolicies, heldWords, offerAskKey, offeredWords, POLICIES, slotWords, standingWords, type Problem } from './policies.ts'
 import { ICON } from '../../../src/shared/icons.ts'
 import { fileButtonsHtml } from '../../../src/shared/file-acts.ts'
 
@@ -28,8 +28,7 @@ export const policyZone = (board: Board, project: string, policy: string) => {
 
 /** A slot offered, in words: `today 15:00 offered, open until Fri 15:00`. */
 export const offerWords = (board: Board, offer: Pick<Offer, 'project' | 'policy' | 'slot' | 'until'>, now: number) => {
-  const tz = policyZone(board, offer.project, offer.policy)
-  return `${slotWords(offer.slot, tz, now)} offered, open until ${slotWords(offer.until, tz, now)}`
+  return offeredWords(offer.slot, offer.until, policyZone(board, offer.project, offer.policy), now)
 }
 
 /** Whether the policy may start on its own, and whose approval lets it. */

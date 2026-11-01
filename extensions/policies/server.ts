@@ -11,7 +11,7 @@ import { ruleWords, slotsBetween, slotWords } from '../../src/shared/slots.ts'
 import { tagOf } from '../../src/shared/tags.ts'
 import { runCheck } from './check.ts'
 import { policiesLines, runsLines } from './cli.ts'
-import { checkFound, checkKey, decide, ON_TIME_MS, onTimeSlot, standingWords, type Action } from './client/policies.ts'
+import { checkFound, checkKey, decide, offeredWords, ON_TIME_MS, onTimeSlot, standingWords, type Action } from './client/policies.ts'
 import {
   cardRun,
   currentCard,
@@ -318,10 +318,11 @@ const start: Start = (ctx) => {
             key: o.key,
             subject: `item.${POLICIES}:${floor.id}/${o.policy}`,
             title: o.title ?? o.tag,
+            hint: offeredWords(o.slot, o.until, views.find((v) => v.id === o.policy)?.header?.when.tz, now),
             since: o.since,
             until: o.until,
             sound: 'offer',
-            actions: [{ verb: o.calls.accept[0], call: o.calls.accept[1] }],
+            actions: [{ verb: o.calls.accept[0], call: o.calls.accept[1], words: { label: 'Accept', hint: 'start the run this slot offers' } }],
           }),
         )
         const slots = views.flatMap((v) => (v.header && v.header.runner === undefined ? [{ key: v.id, when: v.header.when }] : []))

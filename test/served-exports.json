@@ -1167,6 +1167,7 @@
       "heldWords",
       "nextSlot",
       "offerAskKey",
+      "offeredWords",
       "onTimeSlot",
       "policyLine",
       "ruleWords",

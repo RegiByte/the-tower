@@ -17,7 +17,6 @@ import { screen } from './screen.js'
 import { stats } from './stats.js'
 import { settingsPane } from './settings-pane.js'
 import { alerting } from './alerts.js'
-import { policyCalls } from './policy-call.js'
 import { draft } from './draft.js'
 import { archive } from './archive.js'
 import { boardKit } from './board.js'
@@ -314,7 +313,6 @@ let redrawPalette = () => {}
 const { draftIo, draftTitle, pruneDraftTitles, openDraft, spawnOn, deleteSent } = draft({ render: () => (render(), redrawPalette()), board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
 
 const { showLanding, showKeys, ask } = dialogs({ board })
-const { policyCall } = policyCalls({ floorOf, selectArriving })
 
 
 
@@ -945,12 +943,6 @@ document.addEventListener('click', async (e) => {
   }
   const dismissed = target.closest('[data-dismiss]')?.dataset.dismiss
   if (dismissed) return dismissWait(dismissed)
-  const offerDismissed = target.closest('[data-offer-dismiss]')?.dataset.offerDismiss
-  if (offerDismissed) return dismissWait(offerDismissed)
-  const policies = target.closest('[data-policies]')?.dataset.policies
-  if (policies) return openPolicies(policies)
-  const policyButton = target.closest('[data-policy-call]')
-  if (policyButton) return policyCall(policyButton, JSON.parse(/** @type {string} */ (policyButton.dataset.policyCall)))
   const worker = target.closest('[data-worker]')?.dataset.worker
   if (worker) return select(worker)
   const unshowKey = target.closest('[data-unshow]')?.dataset.unshow
