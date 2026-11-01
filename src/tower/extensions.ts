@@ -9,10 +9,11 @@
 import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type StartedSystem, type SystemConfig } from 'braided'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
-import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
+import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, withProblem, withRendererLayouts, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
 import { importFresh } from '../fresh-imports.ts'
+import { rendererRegions } from '../renderers.ts'
 import '../lent-modules.ts'
 import { runProcess } from '../run.ts'
 import { API_VERSION, apiError, COMPOSITES, type ApiError } from '../shared/api.ts'
@@ -570,7 +571,7 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
     const text = JSON.stringify(now)
     if (text === seen) return
     seen = text
-    const resolved = resolve(discover(now), now, API_VERSION)
+    const resolved = withRendererLayouts(resolve(discover(now), now, API_VERSION), rendererRegions(now))
     const accepted = resolved.order.map((id) => resolved.accepted.get(id)!)
     const next = resourcesOf(accepted, memo, restarts)
     const nextResources = { ...core, ...next.resources }

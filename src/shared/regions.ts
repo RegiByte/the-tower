@@ -97,6 +97,9 @@ export const BUDGETS = { lines: ['lines'], badges: ['badges'], actions: ['verbs'
 export const overflowOf = (region: Region & { overflows: Overflow[] }, entry: LayoutEntry | undefined): Overflow =>
   entry?.overflow && region.overflows.includes(entry.overflow) ? entry.overflow : region.overflows[0]
 
+/** The regions each renderer declares, by id: what no extension lays out. */
+export type RendererRegions = { name: string; regions: string[] }[]
+
 /** What a renderer's `renderer.json` declares: its regions, its kit, the chords it keeps for itself, its default layout. */
 export type Declared = { regions: Region[]; kit: KitMember[]; keeps: string[]; layout: Layout }
 
