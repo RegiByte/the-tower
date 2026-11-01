@@ -1,10 +1,11 @@
 import type { Board, Card } from '../bridge/board.ts'
 import { exemptionWords } from './crews.ts'
-import type { Action, Added, AddedMark, Badge, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
+import type { Action, Added, AddedLine, AddedMark, Badge, BadgeTone, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
 import { SVG_PATH, type ICON } from './icons.ts'
 import type { Tower } from './shelf-page.ts'
 import { accepted } from './media.ts'
 import { onKind, type Subject, type Text } from './subjects.ts'
+import type { LayoutEntry } from './regions.ts'
 import type { CommandKit } from './views.ts'
 
 /**
@@ -46,10 +47,73 @@ export const actionsOf = (board: Board, subject: Subject): ({ verb: string } | A
  * The badges extensions show beside `subject`: on a card, each exemption a launch contributor gave its worker, so no
  * limit is lifted unseen; then what folds add, in fold order.
  */
-export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => [
-  ...(subject.kind === 'card' ? ((subject.value as Card).exempt ?? []).map((e) => ({ label: 'exempt', tone: 'offered' as const, hint: exemptionWords(e), cap: e.by })) : []),
-  ...(board.adds[subject.key]?.badges ?? []),
-]
+export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => [...exemptionsOf(board, subject), ...(board.adds[subject.key]?.badges ?? [])]
+
+/**
+ * The id an action is pinned, hidden and seen by (decision `region-overflow`): a command's `<cap>/<command>`, a verb's
+ * own qualified name. Every action with that verb or command on a subject shares it, so they pin, hide and clear
+ * together. @since 1.138
+ */
+export const actionId = (action: Added<Action>): string => (isCommand(action) ? `${action.cap}/${action.command}` : action.verb)
+
+/** The id an extension's lines are pinned and hidden by: its capability, so they rank as one. @since 1.138 */
+export const lineId = (line: AddedLine): string => line.cap
+
+/** The badge tones from most to least severe; `broken` and `needs` are severe. @since 1.138 */
+export const SEVERITY: readonly BadgeTone[] = ['broken', 'needs', 'working', 'offered', 'ready', 'quiet']
+
+const SEVERE: readonly BadgeTone[] = ['broken', 'needs']
+
+/** A badge's tone, `quiet` when it names none. */
+const toneOf = (badge: Badge): BadgeTone => badge.tone ?? 'quiet'
+
+/** An action as a region ranks it: the action, its id and whether the layout pins it. @since 1.138 */
+export type Ranked = { action: Added<Action>; id: string; pinned: boolean }
+
+/** `items` less those `entry` hides, the pinned first in `pinned`'s order, then the rest in their own. */
+const ranked = <T>(items: T[], idOf: (item: T) => string, entry: LayoutEntry | undefined): T[] => {
+  const shown = items.filter((item) => !entry?.hidden?.includes(idOf(item)))
+  const pins = entry?.pinned ?? []
+  return [...pins.flatMap((pin) => shown.filter((item) => idOf(item) === pin)), ...shown.filter((item) => !pins.includes(idOf(item)))]
+}
+
+/**
+ * `actions` as a region draws them under its layout `entry`: less the hidden, the pinned first in `pinned`'s order,
+ * then the rest in board order. A renderer passes what it draws, after leaving out what its holder omits. @since 1.138
+ */
+export const rankedActions = (actions: Added<Action>[], entry: LayoutEntry | undefined): Ranked[] => {
+  const pins = entry?.pinned ?? []
+  return ranked(actions, actionId, entry).map((action) => ({ action, id: actionId(action), pinned: pins.includes(actionId(action)) }))
+}
+
+/** The badges folds add beside `subject`, most severe first, in board order within a tone. Exemptions are apart: `exemptionsOf`. @since 1.138 */
+export const rankedBadges = (board: Board, subject: Subject): Added<Badge>[] =>
+  (board.adds[subject.key]?.badges ?? []).toSorted((a, b) => SEVERITY.indexOf(toneOf(a)) - SEVERITY.indexOf(toneOf(b)))
+
+/** A card's exemptions as badges: drawn with its identity and never tucked, so no lifted limit goes unseen. @since 1.138 */
+export const exemptionsOf = (board: Board, subject: Subject): Added<Badge>[] =>
+  subject.kind === 'card' ? ((subject.value as Card).exempt ?? []).map((e) => ({ label: 'exempt', tone: 'offered' as const, hint: exemptionWords(e), cap: e.by })) : []
+
+/** The lines extensions add to the worker of `card` under its layout `entry`: less the hidden, pinned capabilities first, then fold order. @since 1.138 */
+export const rankedLines = (board: Board, card: string, entry: LayoutEntry | undefined): AddedLine[] => ranked(board.adds[`card:${card}`]?.lines ?? [], lineId, entry)
+
+/** Every verb and command id an extension on the board declares, whatever its state: what can be new to a viewer. @since 1.138 */
+export const offeredIds = (board: Board): string[] =>
+  board.extensions.flatMap((e) => [...e.verbs.map((v) => v.name), ...e.commands.map((c) => `${e.provides}/${c.name}`)])
+
+/** Whether `id` is new to the viewer: an extension declares it (`offered`) and `seen` doesn't hold it. It never ranks. @since 1.138 */
+export const isFresh = (offered: readonly string[], seen: readonly string[], id: string): boolean => offered.includes(id) && !seen.includes(id)
+
+/** An item of a head's fill order. @since 1.138 */
+export type HeadItem = { t: 'badge'; badge: Added<Badge> } | { t: 'action'; ranked: Ranked }
+
+/** A head's fill order: the severe badges, the pinned actions, the other badges, the other actions. @since 1.138 */
+export const headRanked = (badges: Added<Badge>[], actions: Ranked[]): HeadItem[] => {
+  const badge = (b: Added<Badge>): HeadItem => ({ t: 'badge', badge: b })
+  const action = (r: Ranked): HeadItem => ({ t: 'action', ranked: r })
+  const severe = (b: Added<Badge>) => SEVERE.includes(toneOf(b))
+  return [...badges.filter(severe).map(badge), ...actions.filter((r) => r.pinned).map(action), ...badges.filter((b) => !severe(b)).map(badge), ...actions.filter((r) => !r.pinned).map(action)]
+}
 
 /** The lines extensions add to what `tower whoami` prints for the worker of `card`. */
 export const linesOf = (board: Board, card: string): string[] => (board.adds[`card:${card}`]?.lines ?? []).map((l) => l.text)
