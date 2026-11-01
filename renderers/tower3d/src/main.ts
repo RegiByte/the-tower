@@ -1249,12 +1249,19 @@ addEventListener('focus', () => {
 addEventListener('blur', () => setTimeout(() => seeing.dispatch({ type: 'focus', focused: document.hasFocus() })))
 document.addEventListener('visibilitychange', () => seeing.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
+/**
+ * The actions seen as `read` from the store, with what this page saw (`here`) kept: the set only grows, and a read
+ * sent before this page's last write may answer without it.
+ */
+const seenSince = (read: string[] | null, here: string[] | null) => (read && here ? (sawAll(read, here) ?? read) : (read ?? here))
+
 /** Your record as `tower.store` keeps it now: another renderer of yours may have changed it. */
 function rereadViewer() {
   if (FIXTURE !== undefined) return
   rereadLayout()
-  readViewer(tower.store.get).then((viewer) => {
+  readViewer(tower.store.get).then((read) => {
     const was = s.viewer
+    const viewer = { ...read, seen: seenSince(read.seen, was.seen) }
     s.viewer = viewer
     if (viewer.seen === null && s.board) keepViewer('seen', seenOf(null, offeredIds(s.board)))
     seeing.dispatch({ type: 'stored', viewer })
