@@ -809,9 +809,9 @@ function kitRegion(el, id, subject, options) {
 
   /**
    * The `menu` form: the ranked items that fit drawn in place on one row, the rest tucked behind ⋯, a menu of them
-   * (`/menu.js`). ⋯ is drawn whenever the region holds anything to list or pin, tucked or not, so its menu's footer is
-   * always reachable and ⋯ keeps its place; its width is then taken from the room before the fill, and it shows a count
-   * only of what it hides. The row is the one the region's badges and actions share; everything on it the region didn't draw is
+   * (`/menu.js`). ⋯ is drawn whenever the region holds an action or a line to pin, tucked or not, so its menu's footer is
+   * always reachable and ⋯ keeps its place, and whenever something is tucked; its width is then taken from the room
+   * before the fill, and it shows a count only of what it hides. The row is the one the region's badges and actions share; everything on it the region didn't draw is
    * protected, and so is what it draws marked `data-keep`. The view's own controls marked `data-tuck` rank ahead of
    * every contribution, the highest rank first, so they leave last; once tucked, each is listed in the menu as a proxy
    * pressing the original. Each item's width is read while it is drawn and remembered while tucked; the region forgets
@@ -844,7 +844,7 @@ function kitRegion(el, id, subject, options) {
     let textsNow = []
     /** @type {AddedLine[]} */
     let linesLeft = []
-    /** Whether the region holds anything to list or pin: ⋯ is drawn while it does, in a place that doesn't move. */
+    /** Whether the region holds anything to pin: ⋯ is drawn while it does, in a place that doesn't move. */
     let holding = false
     const relist = () => list(tuckedNow, textsNow)
     const listed = menu(more, {
@@ -1054,7 +1054,7 @@ function kitRegion(el, id, subject, options) {
         const budget = layout()[id]?.lines ?? parts.lines.length
         const { drawn } = drawCount(parts.lines, budget, { noun: 'line', say: (l) => l.text, pinned: (l) => pins.includes(lineId(l)) })
         linesLeft = parts.lines.filter((l) => !drawn.includes(l))
-        holding = parts.lines.length > 0 || ranked.length > 0 || badges.length > 0
+        holding = parts.lines.length > 0 || ranked.length > 0
         paintParts((html, slot, name) => write(name === 'actions' ? items : slot, html), { ...parts, lines: drawn.map(lineHtml).join('') })
       },
       prepare: () => {
