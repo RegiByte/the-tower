@@ -15,10 +15,10 @@ import { doctor, verdictLines } from './doctor.ts'
 import { init } from './init.ts'
 import { update } from './update.ts'
 import { foldLog } from './checkpoints.ts'
-import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, submitText } from './machine.ts'
+import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf } from './machine.ts'
 import { runningNamed } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
-import { KILLED_BY, PROMPTED_BY, type Session } from './bridge/facts.ts'
+import { KILLED_BY, type Session } from './bridge/facts.ts'
 import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
@@ -79,7 +79,7 @@ const print = (reply: FromHost) => {
 }
 
 /** A verb asked of the tower, which builds every session's launch and holds its callsigns and conversations. */
-const towerCommand = async (verb: 'spawn' | 'resume', body: unknown): Promise<FromHost> => {
+const towerCommand = async (verb: 'spawn' | 'resume' | 'submit', body: unknown): Promise<FromHost> => {
   const tower = towerUrl(readConfig(paths.config))
   const res = await fetch(`${tower}/${verb}`, { method: 'POST', headers: { origin: tower, 'content-type': 'application/json', ...callerHeaders(process.env.TOWER_SESSION_ID) }, body: JSON.stringify(body) }).catch((err) => {
     if (err.cause?.code === 'ECONNREFUSED') throw new CliError(`The tower is not running: no tower answers at ${tower}`, 'tower up')
@@ -132,9 +132,7 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
     print(await towerCommand('resume', { id: log.header.id, conversation: conversation.id, prompt }))
   },
   submit: async ([id, ...rest]) => {
-    const by = process.env.TOWER_SESSION_ID
-    if (by) print(await request({ t: 'fact', id, fact: { hook_event_name: PROMPTED_BY, by } }))
-    print(await fromHost(submitText(paths, id, rest.join(' '))))
+    print(await towerCommand('submit', { id, text: rest.join(' '), by: process.env.TOWER_SESSION_ID }))
   },
   kill: async ([id]) => {
     const by = process.env.TOWER_SESSION_ID
