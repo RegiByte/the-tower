@@ -31,8 +31,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   copies until 2.0, the reviews extension's client holding its own (`/x/reviews/anchors.js`). The review threads' format and the Reviews panel are
   the reviews extension's client, `/x/reviews/reviews.js` and `/x/reviews/panel.js` (`/reviews.js` serves the former
   through `LEGACY` until 2.0, [[review-threads]]).
-- `brief.ts`: a worker's brief by session, the current one in full and the earlier ones folded, as a pure view
-  over the `/conversations/<id>` read, and the label of the session a showing came from ([[brief-turns]]).
+- `brief.ts`: a worker's brief by session, the current one in full and the earlier ones folded, each turn with
+  Claude's steps between its prompt and its answer, as a pure view over the `/conversations/<id>` read, and the label of the session a showing came from ([[brief-turns]]).
 - Drafts' editing moved into the bundled drafts extension's client, `/x/drafts/drafts.js`
   ([`drafts.ts`](ref:hub/extensions/drafts/client/drafts.ts), [[extensions]]); `/drafts.js` still serves it, with a
   `Deprecation` header, until 2.0 (`LEGACY`). No served module bundles it: `wireSpawn` takes its `draftsOf`, `keepUnsent` and `titleOf` as `io.drafts`, and the

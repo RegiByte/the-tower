@@ -45,7 +45,7 @@
 - [`conversationsAfter`](ref:hub/src/bridge/conversation.ts#conversationsAfter) and
   [`threads`](ref:hub/src/bridge/chains.ts#threads): each conversation with its latest prompt and answer, linked to
   the sessions it was resumed from and by ([[resume]]). [`briefOf`](ref:hub/src/bridge/turns.ts#briefOf) gathers a
-  worker's saved conversations and their last turns from the logs when a brief is asked for, never kept
+  worker's saved conversations and their last turns, each with Claude's steps, from the logs when a brief is asked for, never kept
   ([[brief-turns]]).
 - [`waitsOnSomeone`](ref:hub/src/bridge/status.ts#waitsOnSomeone): see [[waiting-on-you]].
 - [`lifeOf`](ref:hub/src/bridge/life.ts#lifeOf): a worker's lifecycle as its card spells it (live, stranded, cut off,

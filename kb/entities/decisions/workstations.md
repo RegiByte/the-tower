@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-11-01",
   "refs": [
     "hub/renderers/tower3d/src/layout.ts#AwaySlot",
     "hub/renderers/tower3d/src/layout.ts#plan",
