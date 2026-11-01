@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-01",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -30,7 +30,13 @@ collection and a shelf entry are the core's views too, the drafts editor and the
 Each project directory in the sidebar links the web page of its origin remote, read once from `GET /origins`
 ([`sidebar`](ref:hub/renderers/page/sidebar.js#sidebar)). The sidebar lists each floor's workers by crew ([[crews]]), each card with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)) and time in state, the lines extensions add to it above its
-live status line and set apart from it as a quiet note, and a worker's running subagents as
+live status line and set apart from it as a quiet note, and the badges below it. A card's row (`card.row`) draws these
+in the form the layout picks ([[region-overflow]]): by default `count`, which keeps the row to one line and one row of
+badges: the card's exemptions, then the first ranked line and the first two ranked badges (or what the layout's
+`lines` and `badges` say, less what it pins and hides), and a "+n" in plain text for the rest. The rest are listed in
+the "+n"'s tip and in the description the card's link names (`aria-describedby`), and the worker's head draws all of
+them once it is open; `wrap` draws every one, as it always did
+([`drawCount`](ref:hub/renderers/page/added.js#drawCount), shared with the item rows). A worker's running subagents are drawn as
 satellites under it ([`satellitesOf`](ref:hub/src/shared/subagents.ts#satellitesOf)). The rate limits fold into one chip
 naming the tightest limit, whose popover holds the meters and the probes ([[probes]]). A floor folds to its sign, which
 then carries its waits on you, its offers and its workers on duty lamped by their loudest attention
