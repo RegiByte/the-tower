@@ -607,13 +607,18 @@ export function regions(deps) {
       repaint(strip, tablistHtml(tabsHtml(fixed) + (rest.length ? `<span class="tab-scroll">${tabsHtml(rest)}</span>` : '')) + adds)
       const scroller = scrollerOf()
       if (!scroller) return
-      scroller.scrollLeft = scrolled.left
+      if (scroller !== scrolled.drawn) scroller.scrollLeft = scrolled.left
       if (scrolled.open !== open) bringOpen(scroller)
+      scrolled.drawn = scroller
       scrolled.open = open
       markEdges(scroller)
     }
 
-    /** Where the scroll form's scroller was left, and the tab open when it was last drawn. @type {{ left: number, open?: string }} */
+    /**
+     * Where the scroll form's scroller was left, the scroller last drawn and the tab open then. A scroller a draw left in
+     * place already sits where the viewer left it: only one a draw put in its place takes the offset back.
+     * @type {{ left: number, drawn?: HTMLElement, open?: string }}
+     */
     const scrolled = { left: 0 }
 
     const scrollerOf = () => /** @type {HTMLElement | null} */ (strip.querySelector(':scope > .tab-set > .tab-scroll'))
