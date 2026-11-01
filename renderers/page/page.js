@@ -818,13 +818,16 @@ function kitRegion(el, id, subject, options) {
       if (el.querySelector('[data-tucked][aria-busy="true"], .region-menu [aria-busy="true"]')) more.setAttribute('aria-busy', 'true')
       else more.removeAttribute('aria-busy')
     }
-    /** A control busy or done: ⋯ says so at once, and the menu lists its proxy as the original is next frame. */
+    /**
+     * A control busy or done: ⋯ says so at once, and the menu lists its proxy as the original is next frame. A control
+     * marked busy again while it already is (`/press.js` marks them anew on every redraw in the page) changes nothing.
+     */
     const busy = new MutationObserver((records) => {
-      if (records.every((r) => r.target === more)) return
+      if (records.every((r) => r.target === more || r.oldValue === /** @type {Element} */ (r.target).getAttribute('aria-busy'))) return
       showBusy()
       readNext(placed)
     })
-    busy.observe(el, { subtree: true, attributeFilter: ['aria-busy'] })
+    busy.observe(el, { subtree: true, attributeFilter: ['aria-busy'], attributeOldValue: true })
     const badgesAt = () => slots.badges ?? items
     /** The view's controls the region may tuck, the highest rank first. */
     const tuckable = () => /** @type {HTMLElement[]} */ ([...row.querySelectorAll('[data-tuck]')]).sort((a, b) => Number(b.dataset.tuck) - Number(a.dataset.tuck))
