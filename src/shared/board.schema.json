@@ -1675,6 +1675,7 @@
       "enum": [
         "drive",
         "submit",
+        "prompt",
         "resume",
         "carry-on",
         "goto",
@@ -1686,7 +1687,7 @@
         "send-home",
         "note"
       ],
-      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `note` adds a note to the review thread about its work (`NoteVerb`)."
+      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works; `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `note` adds a note to the review thread about its work (`NoteVerb`)."
     },
     "CardCalls": {
       "type": "object",
@@ -1698,6 +1699,21 @@
             {
               "type": "string",
               "const": "submit"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
+        "prompt": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "submit/at-prompt"
             },
             {
               "type": "object",
@@ -1862,6 +1878,35 @@
                 {
                   "type": "string",
                   "const": "submit"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "prompt"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "submit/at-prompt"
                 },
                 {
                   "type": "object",
@@ -5517,7 +5562,10 @@
         "worktree_failed",
         "config",
         "limited",
-        "internal"
+        "internal",
+        "not_at_prompt",
+        "composer_holds",
+        "moved"
       ]
     }
   }

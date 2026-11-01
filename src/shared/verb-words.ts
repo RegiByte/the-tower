@@ -33,6 +33,7 @@ export const verbId = <S extends Subject>(subject: S, verb: SubjectVerbs[S]) => 
 export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'card/drive': { label: 'Open terminal', hint: 'Answer in its terminal, as you would in Claude.', command: 'pane-terminal' },
   'card/submit': { label: 'Send a prompt', hint: 'Type a prompt into its composer from outside its terminal, and submit it.', api: 'submit' },
+  'card/prompt': { label: 'Send at its prompt', hint: 'Type a prompt into its composer and submit it, while it waits at its prompt with nothing typed there.', api: 'submit/at-prompt' },
   'card/resume': { label: 'Resume', hint: 'Continue its latest conversation as a new session.', api: 'resume' },
   'card/carry-on': { label: 'Carry on', hint: 'Resume it on a prompt telling it it was cut off mid-turn, so it takes the turn up again.', api: 'resume' },
   'card/goto': { label: 'Go to its resume', hint: 'Go to the worker that carries on its conversation.' },

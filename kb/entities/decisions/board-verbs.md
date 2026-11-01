@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-10-31",
+  "reviewed": "2026-11-01",
   "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/checkouts.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
 }
 ---
@@ -25,7 +25,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 `ProbeVerb`, `PolicyVerb`, `OfferVerb`); the rules that read other decisions:
 - A card ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)) is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive))
   while its PTY runs: `drive` and `kill` then. `submit` while at Claude's composer, not on a startup screen nor a
-  question ([[collections]]); `brief` once Claude saved a [[conversation]]; `carry-on` beside `resume` when the host
+  question ([[collections]]); `prompt` while it sits at its prompt with nothing in its composer ([[submit-at-prompt]]); `brief` once Claude saved a [[conversation]]; `carry-on` beside `resume` when the host
   cut it off mid-turn ([[carry-on]]); `review` while every dir of its floor is a git repo, it isn't a reviewer and its
   checkout is still there ([[reviewer]]); `reap` while it
   has [[leftover]]s; `send-home` while any of its crew runs ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions),
@@ -66,7 +66,8 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 - An offer is advice, not a permission. The server refuses only what the facts rule out: a conversation Claude
   hasn't saved, or one the session doesn't hold ([`resume`](ref:hub/src/tower/dispatch.ts#resume)); a pid that
   isn't one of the session's leftovers ([`reapProcess`](ref:hub/src/tower/dispatch.ts#reapProcess)); a lost
-  worktree. A call the board doesn't offer right now, such as resuming the conversation of a session still
+  worktree; a prompt typed where it would answer a question or a screen, or, by `submit/at-prompt`, into a composer
+  that holds text or a worker that isn't at its prompt ([[submit-at-prompt]]). A call the board doesn't offer right now, such as resuming the conversation of a session still
   running, goes through, the way it would from a terminal ([[agents-have-every-capability]]).
 
 **Alternatives considered.**

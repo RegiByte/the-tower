@@ -1363,3 +1363,26 @@ test("server: the active viewer is the one the user acted on last among those wh
   }
   await boardWhere((b) => b.viewers.active === undefined)
 })
+
+test('server: a prompt is refused where it would answer a question, and at-prompt refuses a busy worker or a composer holding text, before typing anything', async () => {
+  const log = (id: string, events: unknown[]) => {
+    const header = { id, project: 'bare', cwd: BARE, argv: ['claude'], startedAt: Date.now() - 60_000, cols: 80, rows: 24 }
+    writeFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), [header, ...events].map((line) => JSON.stringify(line)).join('\n') + '\n')
+  }
+  const started = [0.1, 'h', { hook_event_name: 'SessionStart', source: 'startup', session_id: 'c-prompt' }]
+  const sessions = { asking: '20261004-212000-a5c1', holding: '20261004-212100-b0d2', working: '20261004-212200-c3e4' }
+  log(sessions.asking, [started, [0.2, 'h', { hook_event_name: 'UserPromptSubmit', session_id: 'c-prompt', prompt: 'Write it.' }], [0.3, 'h', { hook_event_name: 'PermissionRequest' }]])
+  log(sessions.holding, [started, [0.2, 'i', 'half typed']])
+  log(sessions.working, [started, [0.2, 'h', { hook_event_name: 'UserPromptSubmit', session_id: 'c-prompt', prompt: 'Write it.' }]])
+  await boardWhere((b) => Object.values(sessions).every((id) => floorOf(b, 'bare').cards.some((c) => c.id === id)))
+  const refusal = async (verb: string, id: string) => {
+    const reply = await post(verb, { id, text: 'hello' })
+    assert.equal(reply.status, 409, reply.body)
+    return errorCode(reply)
+  }
+  assert.equal(await refusal('submit', sessions.asking), 'not_at_prompt')
+  assert.equal(await refusal('submit/at-prompt', sessions.asking), 'not_at_prompt')
+  assert.equal(await refusal('submit/at-prompt', sessions.working), 'not_at_prompt')
+  assert.equal(await refusal('submit/at-prompt', sessions.holding), 'composer_holds')
+  assert.equal(errorCode(await post('submit/at-prompt', { id: sessions.holding, text: '' })), 'invalid')
+})

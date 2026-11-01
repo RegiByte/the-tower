@@ -33,7 +33,8 @@ export type On =
 /**
  * What a step does. `spawn`: a session named `as` in the scenario's directory, answering the trust screen the
  * directory's first session raises, or held by `blocked`'s; `resume`: a session named `as` continuing the conversation of `from`, killed by
- * then; `keys`: raw input; `submit`: text typed and sent, as `POST /submit`; `write`: a file in the directory;
+ * then; `keys`: raw input; `submit`: text typed and sent, as `POST /submit`; `atPrompt`: the same as
+ * `POST /submit/at-prompt`, which must answer the error code `refused` names when it names one; `write`: a file in the directory;
  * `kill`: the session, waited on until it exits.
  */
 export type Act =
@@ -41,6 +42,7 @@ export type Act =
   | { resume: string; from: string }
   | { keys: string }
   | { submit: string }
+  | { atPrompt: string; refused?: 'not_at_prompt' | 'composer_holds' | 'moved' }
   | { write: string; text: string }
   | { kill: true }
 
@@ -150,6 +152,19 @@ export const SCENARIOS: Scenario[] = [
       { on: TURN, do: { submit: 'Reply with just the word ok.' } },
       { on: DONE },
     ],
+  }),
+  one('composer-typed', {
+    prompt: 'reply with exactly the word PONG and nothing else',
+    steps: [
+      { on: DONE, pause: 1500, do: { atPrompt: 'reply with exactly the word PING and nothing else' } },
+      { on: DONE, pause: 1500, do: { keys: 'half typed' } },
+      { pause: 1000, do: { atPrompt: 'reply with exactly the word PANG and nothing else', refused: 'composer_holds' } },
+      { pause: 1500 },
+    ],
+  }),
+  one('escaped-prompt', {
+    prompt: 'Write a 900-word story about a lighthouse keeper. Do not use any tools.',
+    steps: [{ on: { event: 'turn.start' }, pause: 150, do: { keys: ESC } }, { pause: 2000, do: { atPrompt: 'reply with exactly the word PONG', refused: 'composer_holds' } }, { pause: 1500 }],
   }),
   one('permission-answered', {
     prompt: 'Use the Write tool to create a file named hello.txt containing the single word hi. Then reply with just: done.',
