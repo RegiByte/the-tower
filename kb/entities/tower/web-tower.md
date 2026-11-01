@@ -122,7 +122,9 @@ inline size changes (a `ResizeObserver` that ignores the row's own height), when
 size changes. It never fits on the clock's tick: the pill's time has a reserved width. A region not drawn (a kept
 worker, a hidden tab) is neither measured nor fitted.
 
-⋯ ([`menu`](ref:hub/renderers/page/menu.js#menu)) is a button with `aria-haspopup="menu"`, labelled with what it hides
+⋯ ([`menu`](ref:hub/renderers/page/menu.js#menu)) is drawn whenever the head holds anything to list or pin, tucked
+or not, so its menu's footer is always reachable and it keeps its place, its width taken from the room before the fill.
+It is a button with `aria-haspopup="menu"`, labelled with what it hides
 ("More on HOLMES-42: 7 actions, 3 badges, 1 needs attention"), its count beside it, and a dot: the broken tone for a
 tucked severe badge, else the new one for a tucked new action. It is busy while something tucked, or an entry of its
 menu, is. Its popover holds a header of the tucked badges and of the text the view lets go when it is cut
