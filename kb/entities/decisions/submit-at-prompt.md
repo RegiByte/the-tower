@@ -72,8 +72,9 @@ always submitting.
 - [`submit`](ref:hub/src/tower/dispatch.ts#submit) keeps queueing while Claude works, and refuses `not_at_prompt`
   outside `AT_COMPOSER`. `tower submit` goes through the tower, so the CLI gets the same refusal.
 - [Tests](ref:hub/test/composer.test.ts) replay the fixtures, and the claude-check scenarios `composer-typed` and
-  `escaped-prompt` call the verb on each Claude release, once to submit and once to be refused (`composer-typed` also
-  sends `/cost` and `!echo hi`, refused `not_plain`).
+  `escaped-prompt` call the verb on each Claude release, once to submit and once to be refused (`not_plain` reads the text
+  alone, so no scenario watches it; the leading characters were checked by hand on Claude 2.1.316, and a release that
+  changes them is read from its changelog).
 
 **Claude's idle overlays.** Some of Claude's screens take keys while the status reads idle or failed. The session
 feedback survey ("How is Claude doing this session?", 1 Bad 2 Fine 3 Good 0 Dismiss) shares the composer: in Claude
