@@ -100,7 +100,8 @@ which sends its keys, and nothing else, to the tower framing it ([[keymap]]). So
 (`/collection/<project>/<collection>/<item>`), and [`inCollection`](ref:hub/src/tower/dispatch.ts#inCollection)
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
 showed (`/shown/<id>/<path>`) is served the same way, and only while that session's log shows it ([[agent-show]]). `/submit` types a prompt
-into a worker's composer through [`submitText`](ref:hub/src/machine.ts#submitText). A worker's `submit`, `spawn`,
+into a worker's composer through [`submitText`](ref:hub/src/machine.ts#submitText), and `/submit/at-prompt` only while
+it sits at its prompt with nothing in its composer ([[submit-at-prompt]]). A worker's `submit`, `spawn`,
 `kill` and `keys` (with `by`) are named in the target's log first ([[worker-prompts]]); a `/spawn` with `hire` is
 weighed against the floor's limits by [`hired`](ref:hub/src/tower/dispatch.ts#hired) ([[hiring-limits]]); a worker that
 asked to go home is sent home once its turn completes ([[leave]]). An `item` shelf entry's file is served from its

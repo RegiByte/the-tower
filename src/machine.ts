@@ -22,14 +22,11 @@ export const hostRequest = async (paths: SystemPaths, msg: ToHost): Promise<From
   return reply
 }
 
-/**
- * Types `text` into a session's composer and submits it, as the user would: in pastes small enough to land as typed
- * text, then Enter once the host has written the last one. Whatever the composer held stays, ahead of the text.
- */
-export const submitText = async (paths: SystemPaths, id: string, text: string): Promise<FromHost> => {
+/** Writes each chunk to a session's PTY in order, each once the host has written the one before. */
+const writeAll = async (paths: SystemPaths, id: string, chunks: string[]): Promise<FromHost> => {
   const host = await connectHost(paths.control)
   try {
-    for (const data of [...promptPastes(text), SUBMIT_KEY]) {
+    for (const data of chunks) {
       const reply = await host.request({ t: 'write', id, data })
       if (reply.t === 'error') return reply
     }
@@ -37,6 +34,18 @@ export const submitText = async (paths: SystemPaths, id: string, text: string): 
   } finally {
     host.close()
   }
+}
+
+/** Types `text` into a session's composer as the user would, in pastes small enough to land as typed text (`promptPastes`). */
+export const typeText = (paths: SystemPaths, id: string, text: string): Promise<FromHost> => writeAll(paths, id, promptPastes(text))
+
+/** Submits what the session's composer holds. */
+export const pressSubmit = (paths: SystemPaths, id: string): Promise<FromHost> => writeAll(paths, id, [SUBMIT_KEY])
+
+/** Types `text` into a session's composer and submits it. Whatever the composer held stays, ahead of the text. */
+export const submitText = async (paths: SystemPaths, id: string, text: string): Promise<FromHost> => {
+  const typed = await typeText(paths, id, text)
+  return typed.t === 'error' ? typed : pressSubmit(paths, id)
 }
 
 /** What a request to a socket nobody listens on, or whose server went away mid-request, fails with. */

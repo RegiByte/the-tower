@@ -13,7 +13,7 @@ import type { Words } from './extensions.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.133'
+export const API_VERSION = '1.134'
 
 const id = z.string().min(1)
 
@@ -166,7 +166,19 @@ export const VERBS = {
     reply: ok,
   },
   submit: {
-    input: z.object({ id, text: z.string(), by }).describe("Type a prompt into the session's composer, after whatever it holds, and submit it, as the user would."),
+    input: z
+      .object({ id, text: z.string(), by })
+      .describe(
+        "Type a prompt into the session's composer, after whatever it holds, and submit it, as the user would: queued while Claude works. Refused (`not_at_prompt`) while the worker asks the user something or waits on one of Claude's screens, where the text would answer it. @since 1.134 refused there",
+      ),
+    reply: ok,
+  },
+  'submit/at-prompt': {
+    input: z
+      .object({ id, text: z.string().min(1), by })
+      .describe(
+        "Type a prompt into the session's composer and submit it, only while the worker sits at its prompt (idle, done, failed or watching) with nothing in its composer: refused `not_at_prompt` or `composer_holds` otherwise, checked as the call arrives. If the worker moves while the text is typed (a turn starts, someone types), Enter is not pressed and it answers `moved`: the text waits unsent in the composer. @since 1.134",
+      ),
     reply: ok,
   },
   resize: { input: z.object({ id, ...size }).describe("Resize the session's PTY; whoever resizes it owns its size."), reply: ok },
@@ -480,7 +492,8 @@ export const TRANSPORT = {
  * floor's `hiring`), until something ends or the user raises them. `internal`: the tower failed where it didn't expect to (its log has
  * the stack). Renderers branch on the code; the message is for people.
  */
-export const ERROR_CODES = ['invalid', 'not_found', 'refused', 'unavailable', 'exists', 'would_lose', 'lost', 'offline', 'worktree_failed', 'config', 'limited', 'internal'] as const
+/** `not_at_prompt`, `composer_holds`, `moved`: why a prompt was not submitted (`submit/at-prompt`). @since 1.134 */
+export const ERROR_CODES = ['invalid', 'not_found', 'refused', 'unavailable', 'exists', 'would_lose', 'lost', 'offline', 'worktree_failed', 'config', 'limited', 'internal', 'not_at_prompt', 'composer_holds', 'moved'] as const
 export const ApiError = z.object({ t: z.literal('error'), code: z.enum(ERROR_CODES), message: z.string() })
 
 export type ErrorCode = (typeof ERROR_CODES)[number]
@@ -499,6 +512,9 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   config: 500,
   limited: 409,
   internal: 500,
+  not_at_prompt: 409,
+  composer_holds: 409,
+  moved: 409,
 }
 
 export const apiError = (code: ErrorCode, message: string): ApiError => ({ t: 'error', code, message })

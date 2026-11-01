@@ -4,15 +4,15 @@
   "name": "Session stuck on booting",
   "summary": "A session that stays booting is Claude on a startup screen the bridge does not recognize (an external CLAUDE.md imports prompt, new dialog copy), or a launch that never drew Claude; recognized screens (trust, login) show as blocked.",
   "in": "host",
-  "reviewed": "2026-10-30",
-  "refs": ["hub/src/bridge/status.ts#BOOTING", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/verbs.ts#AT_COMPOSER", "hub/src/cli.ts"]
+  "reviewed": "2026-11-01",
+  "refs": ["hub/src/bridge/status.ts#BOOTING", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/composer.ts#AT_COMPOSER", "hub/src/cli.ts"]
 }
 ---
 **Symptom.** A card reads `booting` and does not move on. The workspace trust dialog and Claude's first-run setup
 and sign-in screens are recognized from the session's output ([`blockedBy`](ref:hub/src/bridge/blocked.ts#blockedBy)):
 those read `blocked`, wait on you and lead the waiting list ([[attention-list]]). A card left `booting` is on a screen the table doesn't
 know. The card offers no `submit`, so drafts cannot be handed to it
-([`AT_COMPOSER`](ref:hub/src/bridge/verbs.ts#AT_COMPOSER)).
+([`AT_COMPOSER`](ref:hub/src/bridge/composer.ts#AT_COMPOSER)).
 
 **Where to look first.** The session's screen: open its terminal in a renderer, or `tower screen <id>` (rebuilt
 from the log) or `tower attach <id>` ([`cli.ts`](ref:hub/src/cli.ts)). Its log has `o` events but no `h` event.

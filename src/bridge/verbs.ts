@@ -8,19 +8,21 @@ import type { Call } from '../shared/api.ts'
 import type { AddedTidy } from '../shared/extensions.ts'
 import { CARRY_ON } from '../shared/launch.ts'
 import type { SessionRef } from './chains.ts'
+import { AT_COMPOSER } from './composer.ts'
 import type { Status } from './status.ts'
 import type { TidyPlan } from './board.ts'
 import type { FloorWorktreeRepo, WorktreeState } from './worktrees.ts'
 
 /**
- * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal; `goto` goes to the
+ * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works;
+ * `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the
  * session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home`
  * ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a
  * stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a
  * prompt telling it so; `note` adds a note to the review thread about its work
  * (`NoteVerb`).
  */
-export type CardVerb = 'drive' | 'submit' | 'resume' | 'carry-on' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home' | 'note'
+export type CardVerb = 'drive' | 'submit' | 'prompt' | 'resume' | 'carry-on' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home' | 'note'
 /**
  * `note` adds a note to a checkout's review thread, offered while its work goes on (`CheckoutState` live): a note on
  * work that landed, or whose worktree is gone, reaches nobody. The API still takes one there.
@@ -46,9 +48,6 @@ export type BranchVerb = 'recut' | 'delete'
 
 const LIVE: ReadonlySet<Status> = new Set(['booting', 'blocked', 'idle', 'working', 'needs_input', 'watching', 'done', 'failed'])
 
-/** Claude's composer has focus: not before Claude starts (on a screen that blocks it, maybe), nor on a question. */
-const AT_COMPOSER: ReadonlySet<Status> = new Set(['idle', 'working', 'watching', 'done', 'failed'])
-
 /** The session's PTY is running: its screen is live and it takes keys. */
 export const isLive = (status: Status) => LIVE.has(status)
 
@@ -59,13 +58,17 @@ export const isLive = (status: Status) => LIVE.has(status)
 const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): ConversationVerb[] =>
   resumedBy ? ['goto'] : live || !resumable ? [] : ['resume']
 
-/** `awaitsResume`: stranded, on duty until its latest conversation is resumed or it is let go. `cutOff`: stranded mid-turn. */
-const cardVerbs = (status: Status, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, awaitsResume: boolean, cutOff: boolean): CardVerb[] => {
+/**
+ * `atPrompt`: it takes a prompt now (`promptRefusal`). `awaitsResume`: stranded, on duty until its latest conversation
+ * is resumed or it is let go. `cutOff`: stranded mid-turn.
+ */
+const cardVerbs = (status: Status, atPrompt: boolean, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, awaitsResume: boolean, cutOff: boolean): CardVerb[] => {
   const live = isLive(status)
   const latest = conversations.at(-1)
   return [
     ...(live ? ['drive' as const] : []),
     ...(AT_COMPOSER.has(status) ? ['submit' as const] : []),
+    ...(atPrompt ? ['prompt' as const] : []),
     ...(latest ? conversationVerbs(live, resumable, latest.resumedBy) : []),
     ...(awaitsResume && cutOff ? ['carry-on' as const] : []),
     ...(conversations.length > 0 ? ['brief' as const] : []),
@@ -91,7 +94,7 @@ const worktreeVerbs = (state: WorktreeState, recordsDiscards: boolean): Worktree
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
 /** `note` takes the author and what the note says. */
-export type CardCalls = { submit?: Call<'submit'>; resume?: Call<'resume'>; 'carry-on'?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
+export type CardCalls = { submit?: Call<'submit'>; prompt?: Call<'submit/at-prompt'>; resume?: Call<'resume'>; 'carry-on'?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
 export type NoteCalls = { note?: Call<'review/append'> }
 export type ConversationCalls = { resume?: Call<'resume'> }
 export type ResourceCalls = { reap: Call<'reap/process'> }
@@ -156,15 +159,17 @@ export const conversationOffers = (session: string, conversation: string, live: 
 export const cardOffers = (
   id: string,
   status: Status,
+  atPrompt: boolean,
   resumable: boolean,
   conversations: { id: string; resumedBy?: SessionRef }[],
   leftovers: number,
   awaitsResume: boolean,
   cutOff: boolean,
 ): Offers<CardVerb, CardCalls> => {
-  const verbs = cardVerbs(status, resumable, conversations, leftovers, awaitsResume, cutOff)
+  const verbs = cardVerbs(status, atPrompt, resumable, conversations, leftovers, awaitsResume, cutOff)
   return actionsOf(verbs, {
     submit: (): Call<'submit'> => ['submit', { id }],
+    prompt: (): Call<'submit/at-prompt'> => ['submit/at-prompt', { id }],
     resume: (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id }],
     'carry-on': (): Call<'resume'> => ['resume', { id, conversation: conversations.at(-1)!.id, prompt: CARRY_ON }],
     reap: (): Call<'reap'> => ['reap', { id }],

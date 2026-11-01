@@ -18,6 +18,7 @@ import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLi
 import type { Peer, Resource } from './resources.ts'
 import { bucketStart, nextBucket, today, type Today } from './stats.ts'
 import { withLiveness, type Status } from './status.ts'
+import { promptRefusal } from './composer.ts'
 import { awaitsResume, lifeOf, type Attention } from './life.ts'
 import type { BlockedKind } from './blocked.ts'
 import { prunable, type Prune } from './prunable.ts'
@@ -585,7 +586,7 @@ const card = (
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
-    ...cardOffers(header.id, life.status, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
+    ...cardOffers(header.id, life.status, promptRefusal(life.status, facts.heldSince) === undefined, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
   }
 }
 
