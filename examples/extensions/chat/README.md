@@ -31,8 +31,8 @@ The tower checks again when the prompt arrives. If the worker started working or
 between, the tower refuses the prompt. The text stays in the box with the tower's reason under it, so nothing you
 typed is lost.
 
-It sends plain text only, never images or keys. It won't send text that starts with `/`, which Claude would run as
-a slash command, and it points you to the terminal for those. Tower 3D,
+It sends plain text only, never images or keys. It won't send text that starts with `/` or `!`, which Claude would
+run as a slash or shell command, and it points you to the terminal for those. Tower 3D,
 The Week and the CLI draw no box.
 
 ## Add it
