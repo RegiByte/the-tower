@@ -10,7 +10,7 @@ import type { Board, Card } from '../bridge/board.ts'
 import type { Stats, StatsQuery } from '../bridge/stats.ts'
 import type { ProbeView } from '../bridge/legacy.ts'
 import type { LandingRead } from '../bridge/worktrees.ts'
-import type { Brief } from '../bridge/turns.ts'
+import type { Brief, ToolCall } from '../bridge/turns.ts'
 import type { ReviewHistory } from './reviews-legacy.ts'
 import type { RepoChanges } from '../changes.ts'
 import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from './api.ts'
@@ -32,6 +32,10 @@ export type SchemeChoice = '' | 'light' | 'dark'
  */
 export type Reads = {
   'conversations/<id>': Brief[]
+  /** One saved conversation of the session as `conversations/<id>` lists it, with every one of its turns: those of the sessions it resumed first. @since 1.132 */
+  'conversations/<id>/<conversation>': Brief
+  /** One tool call of the session, by its `Step` id: its input as logged, the permission check it met, how it ended, how long it ran. @since 1.132 */
+  'conversations/<id>/tool/<call>': ToolCall
   /** A project's cards the board leaves out (`onBoard`), newest first: the same cards, read again when `board.archiveAt` or the floor's `archived` moves. */
   'archive/<project>': Card[]
   /** What changed in each of the session's repos, as git reads it now, `changes/<id>?scope` (`Queries['changes/<id>']`): all since the base, uncommitted, or one commit. */
@@ -207,6 +211,10 @@ export type Tower = {
   /** Why there is no live board, `code` config, internal or disconnected, until `subscribe` hands a board again. */
   onBoardError(fn: (err: Error & { code: BoardError['code'] }) => void): () => void
   conversations(session: string): Promise<Brief[]>
+  /** One of the session's saved conversations with every one of its turns. @since 1.132 */
+  conversation(session: string, conversation: string): Promise<Brief>
+  /** One tool call of the session, by its id: its input as logged, its permission check, how it ended. @since 1.132 */
+  toolCall(session: string, call: string): Promise<ToolCall>
   archive(project: string): Promise<Card[]>
   /** This page's renderer when it is served as one, at `/r/<name>/`, on its own or framed on a shelf; null for any other page. */
   renderer(): Promise<Renderer | null>

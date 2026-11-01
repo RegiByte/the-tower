@@ -12,7 +12,10 @@
  *   await tower.conversations(sessionId)            the saved conversations of every session its worker ran as up to it, its own first,
  *                                                   then each earlier session's, latest first: each with its `session` ({id, callsign,
  *                                                   startedAt}), latest prompt and answer, and `turns`, the last few (config
- *                                                   `brief.pairs`) oldest first, in full
+ *                                                   `brief.pairs`) oldest first, in full, each with Claude's `steps` on the way to its
+ *                                                   answer, and `earlier` when it holds turns before them
+ *   await tower.conversation(sessionId, id)         one of those conversations with every one of its turns
+ *   await tower.toolCall(sessionId, callId)         one tool call of a turn's steps: its input as logged, its permission check, how it ended
  *   await tower.archive(project)                    the project's cards the board leaves out, newest first: read when a past list opens,
  *                                                   and again when `board.archiveAt` or the floor's `archived` moves
  *   await tower.stats({ from, to, bucket, project })  stats over every session's log (`/stats`): every field optional,
@@ -634,6 +637,8 @@
       return () => errorWatchers.delete(fn)
     },
     conversations: (session) => api.get(`conversations/${encodeURIComponent(session)}`),
+    conversation: (session, conversation) => api.get(`conversations/${encodeURIComponent(session)}/${encodeURIComponent(conversation)}`),
+    toolCall: (session, call) => api.get(`conversations/${encodeURIComponent(session)}/tool/${encodeURIComponent(call)}`),
     archive: (project) => api.get(`archive/${encodeURIComponent(project)}`),
     renderer: async () => (served === 'r' ? (await api.get('renderers')).renderers.find((/** @type {import('../shared/model.ts').Renderer} */ r) => r.name === servedAs) ?? null : null),
     landing: (query) => api.get(`landing?${new URLSearchParams(query)}`),
