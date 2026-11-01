@@ -1,4 +1,4 @@
-import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, linesOf, DISMISS_TITLE } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, linesOf, DISMISS_TITLE, plural } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -59,7 +59,7 @@ import { actionsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { Offer } from '../../extensions/policies/policies.ts'
  * @import { BoardAsk } from '../../src/shared/extensions.ts'
  * @import { CommandKit, Placing } from '../../src/shared/views.ts'
- * @import { Layout, Region, KitMember } from '../../src/shared/regions.ts'
+ * @import { Layout, LayoutProblem, Region, KitMember } from '../../src/shared/regions.ts'
  * @import { Openable } from '../../src/shared/palette.ts'
  */
 
@@ -114,7 +114,7 @@ function render() {
   const host = lostAt() ? 'unknown' : hostState(board())
   paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   paintStrip()
-  $('notes').innerHTML = `${claudeUntestedHtml(board()) ?? ''}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`
+  $('notes').innerHTML = `${claudeUntestedHtml(board()) ?? ''}${layoutNoteHtml()}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`
   paintKeys()
   paintLimits()
   const floors = $('floors')
@@ -145,11 +145,12 @@ function tick() {
  * what the main pane shows, what the viewer is told about waits and offers (`/attend.js`, which also holds whether the
  * window has their eye and the worker the view is on, told by the `focus`, `visible` and `watch` events) and the waits
  * and offers N visited this round (`Heed` in cards.ts), and the workers it started that the board doesn't carry yet
- * (`started`), which it waits for as they arrive. The view and the rings follow one selection because every
- * handler that sets `view` does it through `viewed`, which tells attention.
- * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, view: MainView, attending: Attending, visited: ReadonlySet<string>, started: ReadonlySet<string> }} PageState
+ * (`started`), which it waits for as they arrive, and the viewer's own layout of this renderer's regions as `tower.store`
+ * keeps it (`layout`). The view and the rings follow one selection because every handler that sets `view` does it
+ * through `viewed`, which tells attention.
+ * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, layout: Layout | undefined, view: MainView, attending: Attending, visited: ReadonlySet<string>, started: ReadonlySet<string> }} PageState
  * @typedef {{ [K in keyof Viewer]: { type: 'keep', field: K, value: Viewer[K] } }[keyof Viewer]} ViewerKept
- * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
+ * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | { type: 'laid-out', layout: Layout | undefined } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
  *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'started', id: string } | { type: 'followed', location: import('../../src/shared/views.ts').Location }} PageEvent
  * @typedef {Exclude<AttendEffect, StateEffect<Attending>> | ViewerKept | StateEffect<PageState> | TimerEffect<PageEvent>
  *   | { type: 'leave', view: MainView } | { type: 'enter', view: MainView } | { type: 'hash', hash: string } | { type: 'draw' }
@@ -201,6 +202,7 @@ const pageHandlers = {
   'board-error': (s, { error, at }) => marked({ ...s, error }, error.code === 'disconnected', at),
   lost: attend,
   stored: (s, e) => attend({ ...s, viewer: { ...s.viewer, ...e.viewer } }, e),
+  'laid-out': (s, { layout }) => [into({ ...s, layout })],
   keep: (s, e) => [into({ ...s, viewer: { ...s.viewer, [e.field]: e.value } }), e],
   started: (s, { id }) => [into({ ...s, started: new Set([...s.started, id]) })],
   'next-waiting': (s) => {
@@ -225,7 +227,7 @@ const pageHandlers = {
 
 /** @type {Loop<PageState, PageEvent>} */
 const page = loop({
-  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), view: HOME, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }), visited: new Set(), started: new Set() },
+  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), layout: undefined, view: HOME, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }), visited: new Set(), started: new Set() },
   handlers: pageHandlers,
   execute: {
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
@@ -440,10 +442,33 @@ const renderers = await tower.get('renderers')
 const RENDERER = /^\/r\/([^/]+)\//.exec(location.pathname)?.[1] ?? renderers.default
 /** What this renderer declares in its `renderer.json` and the config's layout for it, as `GET /renderers` serves them. */
 const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ (renderers.renderers.find((r) => r.name === RENDERER))
+/** Where `tower.store` keeps the viewer's own layout of this renderer's regions. */
 const LAYOUT_KEY = `layout.${RENDERER}`
-/** The viewer's own layout, over the config's and the renderer's. @type {Layout | undefined} */
-let storedLayout = /** @type {Layout | undefined} */ ((await tower.store.get(LAYOUT_KEY)) ?? undefined)
-const layout = () => layoutOf(declaredLayout(board(), declared.layout ?? {}), declared.configLayout, storedLayout)
+/** What is wrong with the config's layout for this renderer, against the regions it and the extensions that would start declare. */
+const LAYOUT_PROBLEMS = declared.layoutProblems ?? []
+/** Whether `problem` is about the config's layout of region `id`: its key names one of that region's fields. @param {LayoutProblem} problem @param {string} id */
+const problemOf = (problem, id) => {
+  const at = `renderers.${RENDERER}.layout.${id}.`
+  return problem.key.startsWith(at) && !problem.key.slice(at.length).includes('.')
+}
+/** The regions whose layout in the config fails its check: each is drawn by its default, as the check says. */
+const LAYOUT_FAILED = Object.keys(declared.configLayout).filter((id) => LAYOUT_PROBLEMS.some((p) => p.level === 'fail' && problemOf(p, id)))
+/** The config's layout for this renderer, less the regions whose layout fails its check. */
+const CONFIG_LAYOUT = Object.fromEntries(Object.entries(declared.configLayout).filter(([id]) => !LAYOUT_FAILED.includes(id)))
+/**
+ * The config's layout problems for this renderer, on the board: the regions drawn by their default when any fails, else
+ * how many warnings, each problem in the tip as `tower config check` lists it.
+ */
+const layoutNoteHtml = () => {
+  if (!LAYOUT_PROBLEMS.length) return ''
+  const line = LAYOUT_FAILED.length
+    ? `${LAYOUT_FAILED.join(', ')} drawn by default: the config's layout of ${LAYOUT_FAILED.length === 1 ? 'it' : 'them'} fails its check`
+    : `the config's layout for ${RENDERER}: ${plural(LAYOUT_PROBLEMS.length, 'warning')}`
+  const tip = [...LAYOUT_PROBLEMS.map((p) => `${p.level} · ${p.key}: ${p.problem}`), 'tower config check lists the same'].join('\n')
+  return `<span class="layout-problems" tabindex="0" data-tip="${esc(tip)}">${esc(line)}</span>`
+}
+/** The layout the page draws by: the renderer's own, under the config's, under the viewer's (`layoutOf`). */
+const layout = () => layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, page.state().layout)
 const KIT = /** @type {readonly KitMember[]} */ (declared.kit ?? [])
 const MAIN = /** @type {Region} */ ((declared.regions ?? []).find((r) => r.id === 'board.main'))
 
@@ -725,10 +750,12 @@ addEventListener('focus', () => page.dispatch({ type: 'focus', focused: true }))
 addEventListener('blur', () => setTimeout(() => page.dispatch({ type: 'focus', focused: document.hasFocus() })))
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
-/** The viewer's record as `tower.store` keeps it now: another renderer of theirs may have changed it. */
+/** The viewer's record and their layout as `tower.store` keeps them now: another renderer or window of theirs may have changed them. */
 async function rereadViewer() {
   const was = viewer()
-  page.dispatch({ type: 'stored', viewer: await readViewer(tower.store.get) })
+  const [kept, laidOut] = await Promise.all([readViewer(tower.store.get), tower.store.get(LAYOUT_KEY)])
+  page.dispatch({ type: 'stored', viewer: kept })
+  page.dispatch({ type: 'laid-out', layout: /** @type {Layout | undefined} */ (laidOut ?? undefined) })
   if (viewer().statsRange !== was.statsRange) sideView.dispatch({ type: 'range', range: viewer().statsRange })
 }
 
