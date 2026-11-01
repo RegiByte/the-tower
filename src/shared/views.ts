@@ -4,7 +4,7 @@ import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
 import type { Notice } from './toasts.ts'
 import { accepted, mediaTypeOf } from './media.ts'
-import type { ExtensionLayoutEntry, KitMember, Layout, LayoutEntry, Region, Scale } from './regions.ts'
+import type { KitMember, Layout, LayoutEntry, Region, Scale } from './regions.ts'
 import { ADDRESS_TYPE, onKind, parentOf, shownSubject, subjectAt, type Subject, type Text } from './subjects.ts'
 
 export * from './fill.ts'
@@ -325,18 +325,13 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
   )
 }
 
-/** An extension's layout less the regions in `taken`: an extension lays out only its own regions, never a renderer's. */
-const ownRegions = (layout: Record<string, ExtensionLayoutEntry>, taken: readonly string[]): Layout =>
-  Object.fromEntries(Object.entries(layout).filter(([id]) => !taken.includes(id)))
-
 /**
  * The layout a renderer declares, `declared` (its `renderer.json`'s), over the defaults that started extensions give the
- * regions they declare: the bottom layer, under the renderer's own, the config's and the viewer's (`layoutOf`). An
- * extension's layout counts only for regions the renderer doesn't declare itself, `rendererRegions` (since 1.138:
- * decision `region-overflow`). @since 1.114
+ * regions they declare: the bottom layer, under the renderer's own, the config's and the viewer's (`layoutOf`). The
+ * board carries no extension's layout of a region a renderer declares (since 1.138, decision `region-overflow`). @since 1.114
  */
-export const declaredLayout = (board: Board, declared: Layout, rendererRegions: readonly string[]): Layout =>
-  layoutOf(Object.assign({}, ...board.extensions.filter((e) => e.state === 'started').map((e) => ownRegions(e.layout ?? {}, rendererRegions))), declared, undefined)
+export const declaredLayout = (board: Board, declared: Layout): Layout =>
+  layoutOf(Object.assign({}, ...board.extensions.filter((e) => e.state === 'started').map((e) => e.layout ?? {})), declared, undefined)
 
 /** Whether a view's `on` holds `subject`: its kind, `item.*` for any collection's item, `collection.<id>` for that one collection. */
 export const viewOn = (on: readonly string[], subject: Pick<Subject, 'kind' | 'value'>) =>

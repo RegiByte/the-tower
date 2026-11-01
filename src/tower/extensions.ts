@@ -571,6 +571,8 @@ export const runExtensions = async (core: TowerResources, started: TowerSystem) 
     const text = JSON.stringify(now)
     if (text === seen) return
     seen = text
+    // Renderers' regions are read when the config changes: a renderer.json rebuilt or installed since leaves the
+    // renderer-region warnings and dropped layouts as they were until the next config edit.
     const resolved = withRendererLayouts(resolve(discover(now), now, API_VERSION), rendererRegions(now))
     const accepted = resolved.order.map((id) => resolved.accepted.get(id)!)
     const next = resourcesOf(accepted, memo, restarts)
