@@ -34,7 +34,7 @@ const CSS = `:where([data-view="${ID}"]) {
 /** How near its end, in pixels, the viewer reads for a redraw to keep the brief there. */
 const AT_END = 48
 
-/** A worker has a Brief tab where it has a brief. */
+/** A running worker has a Brief tab, and so does one with conversations to read. */
 export const tab: Tab = (_board, subject) => (can(subject.value as Card, 'brief') ? {} : undefined)
 
 export const mount: Mount = (host, { tower, board: first, subject: at, kit }) => {
