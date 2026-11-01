@@ -3,9 +3,17 @@
   "version": "1.0",
   "title": "Drafts",
   "description": "Prompts kept for later: edited in a renderer, then sent to a new session or typed into a worker, and deleted.",
-  "requires": { "tower": "1.125" },
+  "requires": { "tower": "1.130" },
   "server": "server.ts",
   "client": "client",
+  "commands": {
+    "new": {
+      "module": "commands.js",
+      "export": "newDraft",
+      "on": ["floor"],
+      "words": { "label": "New draft", "hint": "a prompt kept for later", "icon": "draft" }
+    }
+  },
   "views": {
     "editor": {
       "module": "editor.js",

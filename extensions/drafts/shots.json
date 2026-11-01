@@ -18,7 +18,7 @@
         }
       ],
       "crop": [
-        ".new-draft",
+        ".sign button.added",
         "[data-view=\"drafts/tray\"] .tray-open"
       ],
       "open": "#$WORKER_1"

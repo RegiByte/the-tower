@@ -1,16 +1,16 @@
-import { badgesOf, cardSubject, linesOf, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTree, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { addedActions, badgesOf, cardSubject, linesOf, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTree, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
-import { draftsOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
-import { addsHtml, asksHtml, badgesHtml } from './added.js'
+import { actionsHtml, asksHtml, badgesHtml, heldActions, iconButtonsHtml } from './added.js'
 
 /**
  * @import { Board, Card, Floor, Unresumable } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
+ * @import { Hold } from '../../src/shared/regions.ts'
  * @import { FloorBranch, FloorWorktree } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
@@ -42,6 +42,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  *   heed: () => Heed,
  *   withKeys: (what: string, id: string) => string,
  *   opensHtml: (subject: Subject) => string,
+ *   holdsOf: (region: string) => Hold[],
  * }} SidebarDeps
  */
 
@@ -52,7 +53,7 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
  * @param {SidebarDeps} deps
  */
 export async function sidebar(deps) {
-  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml, heed, withKeys, opensHtml } = deps
+  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml, heed, withKeys, opensHtml, holdsOf } = deps
   /** The web page of each project directory's origin remote. @type {Record<string, string>} */
   let origins = {}
 
@@ -310,16 +311,19 @@ export async function sidebar(deps) {
     const open = isOpen(f)
     const n = String(all.length - i).padStart(2, '0')
     const spawn = heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''
-    const draft = draftsOf(f) ? `<button class="new-draft" data-new-draft="${f.id}" aria-label="new draft on ${esc(f.name)}" data-tip="new draft: a prompt kept for later">${ICON.draft}</button>` : ''
     return `<section class="floor${open ? '' : ' folded'}" style="${paint(f.id)}" data-hold="floor:${esc(f.id)}">
-    <div class="sign"><span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? draft : floorSummaryHtml(f)}${spawn}</div>
+    <div class="sign"><span class="fold" role="heading" aria-level="2"><button data-floor-fold="${esc(f.id)}" aria-expanded="${open}" data-tip="${esc(`${f.name}: ${open ? 'fold' : 'unfold'}`)}"><span class="num">${n}</span><span class="name">${esc(f.name)}</span>${ICON.caret}</button></span>${open ? signHtml(f) : floorSummaryHtml(f)}${spawn}</div>
     ${open ? floorBodyHtml(f, heads, floorCrews(f)) : ''}
   </section>`
   }
 
-  /** What extensions add to the floor: its badges and actions in a row. @param {Floor} f */
+  /** What extensions add to an open floor's sign: their commands, each its icon. @param {Floor} f */
+  const signHtml = (f) => iconButtonsHtml(board(), floorSubject(f), heldActions(holdsOf('floor.sign'), addedActions(board(), floorSubject(f))))
+
+  /** What extensions add to the floor: its badges and verbs in a row. @param {Floor} f */
   const floorAddsHtml = (f) => {
-    const adds = addsHtml(board(), floorSubject(f)) + opensHtml(floorSubject(f))
+    const subject = floorSubject(f)
+    const adds = badgesHtml(board(), subject) + actionsHtml(board(), subject, heldActions(holdsOf('floor.section'), addedActions(board(), subject))) + opensHtml(subject)
     return adds ? `<div class="adds">${adds}</div>` : ''
   }
 
