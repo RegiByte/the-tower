@@ -5,7 +5,7 @@ import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../extensions/reviews/client/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
-import { briefCss, expandedSaid, openFolds, saidText, sessionWhen, type BriefMarkdown } from '../../../src/shared/brief.ts'
+import { briefCss, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, withWhole, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
@@ -2045,12 +2045,16 @@ async function openBrief(id: string) {
 /** The desk's brief as last read: what it is drawn again from, and what a copy reads its text from. */
 let deskBrief: { id: string; threads: Threads } | undefined
 
+/** The tool calls read in a logbook, by key, as drawn: read once, the first time one is opened. */
+const toolsRead = new Map<string, string>()
+const toolRead = (key: string) => toolsRead.get(key)
+
 /** What the viewer opened in a drawn logbook, and how they read its words. */
-const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expandedSaid(el), markdown: s.viewer.briefMarkdown })
+const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expandedSaid(el), openTools: openTools(el), tools: toolRead, markdown: s.viewer.briefMarkdown })
 
 function drawDeskBrief(same: boolean) {
   const c = findCard(s.board!, deskBrief!.id)!
-  const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), markdown: s.viewer.briefMarkdown }
+  const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), tools: toolRead, markdown: s.viewer.briefMarkdown }
   $('desk-brief').innerHTML = logbookHtml(s.board!, c, deskBrief!.threads, look, s.replay?.id === c.id ? s.replay.session : undefined)
 }
 
@@ -2077,8 +2081,33 @@ document.addEventListener('click', (e) => {
   if (files) return (keepViewer('changesTree', files === 'shown'), renderPanel(), drawSettings())
   const said = el.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
   const threads = el.closest('#desk-brief') ? deskBrief?.threads : panelAs('logbook')?.threads
-  if (said && threads) copiedAs(saidText(threads, said)!, said.endsWith(':prompt') ? 'the prompt' : 'the answer')
+  if (said && threads) return copiedAs(saidText(threads, said)!, saidWhat(threads, said)!)
+  const earlier = el.closest<HTMLElement>('[data-brief-earlier]')?.dataset.briefEarlier
+  if (earlier) readWhole(earlier, !!el.closest('#desk-brief'))
 })
+
+/** A logbook's conversation read whole, drawn in place of its last turns where it was asked for. */
+function readWhole(key: string, atDeskBrief: boolean) {
+  const [session, conversation] = key.split(':')
+  tower.conversation(session, conversation).then((whole) => {
+    if (atDeskBrief && deskBrief) return (deskBrief = { ...deskBrief, threads: withWhole(deskBrief.threads, whole) }), drawDeskBrief(true)
+    const open = panelAs('logbook')
+    if (open?.threads) setPanel({ ...open, threads: withWhole(open.threads, whole) }), renderPanel()
+  }, (err: Error) => toast(err.message))
+}
+
+/** A logbook's tool call opened: read once and drawn in its body. */
+document.addEventListener('toggle', (e) => {
+  const details = e.target
+  if (!(details instanceof HTMLDetailsElement) || !details.dataset.tool || !details.open || toolsRead.has(details.dataset.tool)) return
+  const key = details.dataset.tool
+  const [session, call] = key.split(':')
+  tower.toolCall(session, call).then((read) => {
+    toolsRead.set(key, toolCallHtml(read))
+    for (const drawn of document.querySelectorAll<HTMLElement>('details[data-tool]'))
+      if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = toolsRead.get(key)!
+  }, (err: Error) => toast(err.message))
+}, true)
 
 function openScreen() {
   s.deskTab = 'screen'

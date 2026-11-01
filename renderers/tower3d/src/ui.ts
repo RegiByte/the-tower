@@ -433,8 +433,8 @@ export function shellHeadHtml(sh: Shell, floor: Floor | undefined, armed: boolea
     <span class="acts">${askingButton(armed, `data-act="shell-kill" data-of="${esc(sh.id)}" class="danger"`, 'Kill', 'kill this shell', killShellAsk(floor, sh))}${closeButton}</span>`
 }
 
-/** What a viewer opened in a drawn logbook (`openFolds`, `expandedSaid`) and how they read its words. */
-export type BriefLook = Pick<BriefView, 'open' | 'expanded' | 'markdown'>
+/** What a viewer opened in a drawn logbook (`openFolds`, `expandedSaid`, `openTools`), the tool calls read, and how they read its words. */
+export type BriefLook = Pick<BriefView, 'open' | 'expanded' | 'markdown' | 'openTools' | 'tools'>
 
 /** The worker's conversations by session (`lineageBriefHtml`), their markdown safe in the panel. */
 const briefHtml = (board: Board, c: Card, threads: Brief[], look: BriefLook) =>

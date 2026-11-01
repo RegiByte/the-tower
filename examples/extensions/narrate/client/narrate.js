@@ -31,7 +31,7 @@ const sectionsOf = (bus, of) => bus.under(of, 'section').sort((a, b) => a.value.
 const nameOf = (subject) => {
   const v = subject.value
   if (subject.kind === 'section') return v.heading ?? 'the opening'
-  if (subject.kind === 'said') return v.side === 'prompt' ? 'the prompt' : 'the answer'
+  if (subject.kind === 'said') return v.side === 'prompt' ? 'the prompt' : v.side === 'answer' ? 'the answer' : "Claude's words"
   if (subject.kind === 'shown') return v.target.split('/').pop()
   return v.tag ?? v.id ?? subject.key
 }
