@@ -4,7 +4,7 @@ import { offeredIn, ordered, paneShows, pickView, shownOf } from '/views.js'
 import { shownFrom } from '/brief.js'
 import { ICON } from '/icons.js'
 import { fileSpansHtml } from '/panels.js'
-import { keyedTip, paintOnce } from './kit.js'
+import { keyedTip, repaint } from './kit.js'
 import { actionsHtml, badgesHtml, heldActions, iconActionsHtml } from './added.js'
 
 /**
@@ -604,7 +604,7 @@ export function regions(deps) {
     function tabsScroll(all, adds) {
       const fixed = all.filter((t) => !t.showing && PANE_COMMANDS[t.view.id])
       const rest = all.filter((t) => !fixed.includes(t))
-      paintOnce(strip, tablistHtml(tabsHtml(fixed) + (rest.length ? `<span class="tab-scroll">${tabsHtml(rest)}</span>` : '')) + adds)
+      repaint(strip, tablistHtml(tabsHtml(fixed) + (rest.length ? `<span class="tab-scroll">${tabsHtml(rest)}</span>` : '')) + adds)
       const scroller = scrollerOf()
       if (!scroller) return
       scroller.scrollLeft = scrolled.left
