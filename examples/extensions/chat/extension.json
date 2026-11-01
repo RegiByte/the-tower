@@ -1,0 +1,18 @@
+{
+  "id": "chat",
+  "version": "1.0",
+  "title": "Chat",
+  "description": "A plain text box at the foot of a worker's Brief that sends a prompt while the worker waits at its prompt, for people who would rather not type into a terminal.",
+  "requires": { "tower": "1.135" },
+  "client": "client",
+  "views": {
+    "input": {
+      "module": "input.js",
+      "export": "mount",
+      "on": ["card"],
+      "scales": ["row"],
+      "needs": ["toast", "display"],
+      "words": { "label": "Chat", "hint": "a text box that sends a prompt to the worker while it waits at its prompt" }
+    }
+  }
+}
