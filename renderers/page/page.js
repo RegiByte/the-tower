@@ -309,7 +309,9 @@ const openShelf = (project, n) => {
   goTo({ view: SHELF_VIEW, subject: `shelf:${project}/${n}`, ...(args && { args }) })
 }
 
-const { draftIo, draftTitle, pruneDraftTitles, openDraft, spawnOn, deleteSent } = draft({ render, board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
+let redrawPalette = () => {}
+
+const { draftIo, draftTitle, pruneDraftTitles, openDraft, spawnOn, deleteSent } = draft({ render: () => (render(), redrawPalette()), board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
 
 const { showLanding, showKeys, ask } = dialogs({ board })
 const { policyCall } = policyCalls({ floorOf, selectArriving })
@@ -431,7 +433,8 @@ function learnPick(id) {
   toast(capability.text.replace(/`/g, ''), action)
 }
 
-const { openPalette, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: doPick, opens: () => opensHere() })
+const { openPalette, redraw, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: doPick, opens: () => opensHere() })
+redrawPalette = redraw
 
 /** This renderer's name, from the path it is served at: `/r/<name>/`. */
 const renderers = await tower.get('renderers')
