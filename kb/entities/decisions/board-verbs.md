@@ -25,7 +25,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 `ProbeVerb`, `PolicyVerb`, `OfferVerb`); the rules that read other decisions:
 - A card ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)) is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive))
   while its PTY runs: `drive` and `kill` then. `submit` while at Claude's composer, not on a startup screen nor a
-  question ([[collections]]); `prompt` while it sits at its prompt with nothing in its composer ([[submit-at-prompt]]); `brief` once Claude saved a [[conversation]]; `carry-on` beside `resume` when the host
+  question ([[collections]]); `prompt` while it sits at its prompt with nothing in its composer ([[submit-at-prompt]]); `brief` while it is live, empty until Claude saves a [[conversation]] (a composer in the Brief sends its first prompt), and after it ends while it has one; `carry-on` beside `resume` when the host
   cut it off mid-turn ([[carry-on]]); `review` while every dir of its floor is a git repo, it isn't a reviewer and its
   checkout is still there ([[reviewer]]); `reap` while it
   has [[leftover]]s; `send-home` while any of its crew runs ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions),

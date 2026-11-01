@@ -138,7 +138,7 @@ test('waits: a screen that blocks first, then a question, then an answer, each k
     { id: '20261003-115149-aee9', key: '20261003-115149-aee9@1791028325519', reason: 'done', since: 1791028325519 },
   ])
   const blocked = cardsOf([logs[2]], hostWith(logs[2].header.id))[0]
-  assert.deepEqual([blocked.status, blocked.blocked, blocked.attention, blocked.verbs], ['blocked', 'trust', 'needs', ['drive', 'kill', 'send-home']])
+  assert.deepEqual([blocked.status, blocked.blocked, blocked.attention, blocked.verbs], ['blocked', 'trust', 'needs', ['drive', 'brief', 'kill', 'send-home']])
 })
 
 test('attention: working at a turn, needs you on a question, ready on an answer, quiet when idle, broken once lost or failed', () => {
@@ -187,12 +187,12 @@ test('sessions that never held a conversation resume nothing', () => {
   assert.deepEqual(cards.map((c) => c.conversations), [[], []])
 })
 
-test('verbs: a live session is driven and killed, takes a prompt at its composer and at its prompt, and is briefed once Claude saved its conversation', () => {
+test('verbs: a live session is driven and killed, takes a prompt at its composer and at its prompt, and is briefed from its start', () => {
   const log = homed(fixture('interrupts'))
   const at = (t: number, live: string[]) => cardsOf([{ ...log, events: log.events.filter((e) => e[0] <= t && e[1] !== 'x') }], hostWith(...live))[0]
   const id = [log.header.id]
-  assert.deepEqual(at(5, id).verbs, ['drive', 'kill', 'send-home'])
-  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'prompt', 'kill', 'send-home'])
+  assert.deepEqual(at(5, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
+  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'prompt', 'brief', 'kill', 'send-home'])
   assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
   assert.deepEqual(at(140, id).conversations.map((c) => c.verbs), [[]])
   assert.deepEqual(at(140, []).verbs, ['resume', 'carry-on', 'brief', 'let-go'])
