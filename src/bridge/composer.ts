@@ -53,6 +53,15 @@ export const heldAfter = (heldSince: number | undefined, status: Status, streame
   }
 }
 
+/**
+ * Claude's composer leaves plain-prompt mode on a first character: `/` opens a command (a panel that takes keys, with
+ * no turn to move the status) and `!` runs the rest as a shell command. Leading whitespace does not hide either.
+ */
+const NOT_PLAIN: ReadonlySet<string> = new Set(['/', '!'])
+
+/** Whether the text opens with a character that makes Claude's composer run it as something other than a prompt. */
+export const isPlain = (text: string) => !NOT_PLAIN.has(text.trimStart().charAt(0))
+
 /** Why a worker takes no prompt now: `not_at_prompt`, its main loop is busy or held; `composer_holds`, text sits in its composer. */
 export type PromptRefusal = 'not_at_prompt' | 'composer_holds'
 

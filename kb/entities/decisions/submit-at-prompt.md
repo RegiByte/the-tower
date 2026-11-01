@@ -11,6 +11,7 @@
     "hub/src/bridge/composer.ts",
     "hub/src/bridge/composer.ts#heldAfter",
     "hub/src/bridge/composer.ts#promptRefusal",
+    "hub/src/bridge/composer.ts#isPlain",
     "hub/src/bridge/composer.ts#AT_PROMPT",
     "hub/src/bridge/composer.ts#AT_COMPOSER",
     "hub/src/bridge/facts.ts#factsAfter",
@@ -31,7 +32,7 @@
     { "to": "board-verbs", "verb": "refines", "carries": "the card verb prompt, offered while the worker takes one" },
     { "to": "log-reductions", "verb": "uses", "carries": "typed input, prompt.submit and command.run of the composer, an aborted turn.complete" },
     { "to": "worker-prompts", "verb": "uses", "carries": "a worker's prompt named in the target's log before it is typed" },
-    { "to": "renderer-api-contract", "verb": "refines", "carries": "submit/at-prompt and the codes not_at_prompt, composer_holds, moved" }
+    { "to": "renderer-api-contract", "verb": "refines", "carries": "submit/at-prompt and the codes not_plain, not_at_prompt, composer_holds, moved" }
   ]
 }
 ---
@@ -62,10 +63,17 @@ always submitting.
   nobody else typed, a worker's prompt named in the log just before it ([[worker-prompts]]), so text left unsent
   names nobody; otherwise it answers `moved` ([`movedWhileTyped`](ref:hub/src/tower/dispatch.ts#movedWhileTyped))
   and the text waits, visible, in the composer, which then reads `composer_holds`.
+- [`isPlain`](ref:hub/src/bridge/composer.ts#isPlain) is checked first, on the text alone: Claude's composer leaves
+  plain-prompt mode on a leading `/` (a command, opening a panel that takes keys while no status moves) and `!` (the
+  rest runs as a shell command, likewise unseen by the status, and the composer then reads `composer_holds`), even
+  after whitespace. The verb refuses them `not_plain`, its message naming the worker's terminal as the place to run
+  them. `#`, `@`, `?`, `&` and `\` submit as prompts: typed, `@` opens a file picker, but a paste does not (checked on
+  Claude 2.1.316).
 - [`submit`](ref:hub/src/tower/dispatch.ts#submit) keeps queueing while Claude works, and refuses `not_at_prompt`
   outside `AT_COMPOSER`. `tower submit` goes through the tower, so the CLI gets the same refusal.
 - [Tests](ref:hub/test/composer.test.ts) replay the fixtures, and the claude-check scenarios `composer-typed` and
-  `escaped-prompt` call the verb on each Claude release, once to submit and once to be refused.
+  `escaped-prompt` call the verb on each Claude release, once to submit and once to be refused (`composer-typed` also
+  sends `/cost` and `!echo hi`, refused `not_plain`).
 
 **Claude's idle overlays.** Some of Claude's screens take keys while the status reads idle or failed. The session
 feedback survey ("How is Claude doing this session?", 1 Bad 2 Fine 3 Good 0 Dismiss) shares the composer: in Claude

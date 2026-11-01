@@ -5568,7 +5568,8 @@
         "internal",
         "not_at_prompt",
         "composer_holds",
-        "moved"
+        "moved",
+        "not_plain"
       ]
     }
   }
