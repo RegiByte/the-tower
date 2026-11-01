@@ -24,7 +24,7 @@
     "hub/src/shared/spawn.ts#spawnHandlers",
     "hub/renderers/tower3d/src/main.ts#confirmed",
     "hub/renderers/tower3d/src/ui.ts#askingButton",
-    "hub/renderers/tower3d/src/ui.ts#addedKey",
+    "hub/renderers/tower3d/src/desk-verbs.ts#addedKey",
     "hub/src/shared/duty.ts#sendHomeAsk"
   ]
 }
@@ -70,7 +70,7 @@ them.
 - A framed page may not open `confirm()`, so Tower 3D's destructive buttons arm on a first press ("sure?", the
   shared ask as its tip) and run on a second soon after ([`confirmed`](ref:hub/renderers/tower3d/src/main.ts#confirmed),
   [`askingButton`](ref:hub/renderers/tower3d/src/ui.ts#askingButton)). An extension's verb is armed under the action
-  itself and its place among the card's verbs of its id ([`addedKey`](ref:hub/renderers/tower3d/src/ui.ts#addedKey)),
+  itself and its place among the card's verbs of its id ([`addedKey`](ref:hub/renderers/tower3d/src/desk-verbs.ts#addedKey)),
   so a pin or a board that reorders the desk between the presses never confirms the verb that took its place.
 
 **Alternatives considered.**
