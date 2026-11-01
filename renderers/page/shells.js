@@ -79,6 +79,7 @@ export function shells(deps) {
       mode: (mode) => showMode($('s-mode'), mode),
       end: (msg) => (msg.t === 'error' && toast(msg.message), closeShell()),
       error: (err) => toast(err.message),
+      upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
       files: { cwd: () => /** @type {string} */ (board().shells.find((sh) => sh.id === id)?.cwd), edit: (path, line) => tower.call('edit', { path, line }) },
     })
     shell = { id, view }

@@ -13,7 +13,7 @@ import type { Words } from './extensions.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.136'
+export const API_VERSION = '1.137'
 
 const id = z.string().min(1)
 
@@ -251,6 +251,17 @@ export const VERBS = {
         "Open a file or folder the system names (as `reveal` takes them) in the user's editor: the config's `editor.open`, or `editor.goto` at `line`.",
       ),
     reply: ok,
+  },
+  upload: {
+    input: z
+      .object({
+        name: z.string().describe("The file's name, as the browser had it: only its extension is kept."),
+        data: z.base64().describe("The file's bytes, base64."),
+      })
+      .describe(
+        "Copy a file the user handed a browser page (dropped or pasted) to the user's own folder in the machine's temp folder, named by its content, and answer its path: what a terminal pastes where a native one pastes a dropped file's own path. Claude takes a pasted image's path as the image. The body's 8 MiB bounds it. @since 1.137",
+      ),
+    reply: z.object({ t: z.literal('uploaded'), path: z.string().describe('Where the copy is: the same bytes always land at the same path.') }),
   },
   'shell/spawn': { input: z.object({ project: id, cwd: id }).describe("Start a login shell in one of the project's directories."), reply: spawned },
   'shell/keys': { input: z.object({ id, data: z.string() }).describe('Keys reach a shell in order, one request at a time.'), reply: ok },
