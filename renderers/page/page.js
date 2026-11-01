@@ -855,6 +855,20 @@ function kitRegion(el, id, subject, options) {
         ),
       ]
     }
+    /**
+     * The items the layout's budgets let be drawn in place, in rank order: the view's controls and the pinned actions
+     * always, then at most `badges` badges and `actions` actions; `0` leaves only the pinned (decision `region-overflow`).
+     * @param {ReturnType<typeof fillOrder>} order
+     */
+    const budgeted = (order) => {
+      const entry = layout()[id]
+      const drawn = { badge: 0, action: 0 }
+      return order.filter((i) => {
+        if (i.t === 'core' || (i.t === 'action' && i.ranked.pinned)) return true
+        const budget = i.t === 'badge' ? entry?.badges : entry?.actions
+        return budget === undefined || drawn[i.t]++ < budget
+      })
+    }
     /** The menu's entry for a tucked control of the view: pressing it presses the original. @param {HTMLElement} c @param {string} key @returns {MenuItem} */
     const proxy = (c, key) => {
       runs.set(key, () => c.click())
@@ -916,7 +930,8 @@ function kitRegion(el, id, subject, options) {
       },
       read: () => {
         const order = fillOrder()
-        for (const item of order) if (!item.el.hasAttribute('data-tucked')) widths.set(item.el, lineWidth(item.el) + gapBeside(item.el))
+        const allowed = budgeted(order)
+        for (const item of allowed) if (!item.el.hasAttribute('data-tucked')) widths.set(item.el, lineWidth(item.el) + gapBeside(item.el))
         if (!more.hidden) widths.set(more, lineWidth(more) + gapBeside(more))
         const drawn = new Set(/** @type {Element[]} */ (order.map((i) => i.el)))
         const kept = lineWidth(row, (e) => drawn.has(e) || e === more || e === pop)
@@ -924,18 +939,20 @@ function kitRegion(el, id, subject, options) {
         const texts = /** @type {HTMLElement[]} */ ([...el.querySelectorAll('[data-tuck-text]')]).filter(isCut).map((t) => (t.textContent ?? '').trim())
         stale = false
         return () => {
-          const keys = order.map((i) => i.key).join('\n')
-          if (keys !== sig) was = order.length
-          const fits = fill(order.map((i) => /** @type {number} */ (widths.get(i.el))), room, /** @type {number} */ (widths.get(more)), was, FIT_MARGIN)
+          const keys = allowed.map((i) => i.key).join('\n')
+          if (keys !== sig) was = allowed.length
+          const fits = fill(allowed.map((i) => /** @type {number} */ (widths.get(i.el))), room, /** @type {number} */ (widths.get(more)), was, FIT_MARGIN)
           was = fits
           sig = keys
+          const inPlace = new Set(allowed.slice(0, fits))
+          const tucked = order.filter((i) => !inPlace.has(i))
           const focused = document.activeElement
-          order.forEach((item, n) => item.el.toggleAttribute('data-tucked', n >= fits))
-          more.hidden = fits === order.length
+          order.forEach((item) => item.el.toggleAttribute('data-tucked', !inPlace.has(item)))
+          more.hidden = !tucked.length
           if (more.hidden) listed.close()
-          if (focused && order.slice(fits).some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
-          list(order.slice(fits), texts)
-          return order.slice(0, fits).flatMap((i) => (i.t === 'action' ? [i.el] : []))
+          if (focused && tucked.some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
+          list(tucked, texts)
+          return [...inPlace].flatMap((i) => (i.t === 'action' ? [i.el] : []))
         }
       },
       remeasure: () => ((widths = new WeakMap()), (stale = true)),
