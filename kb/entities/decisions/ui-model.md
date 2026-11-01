@@ -93,7 +93,8 @@ and a framed document's section are the same thing.
   holding views mounts them by the layout, a tabs region its tabs as (view, subject) pairs, and is handed `show` and
   `visible` ([`RegionHandle`](ref:hub/src/shared/views.ts#RegionHandle), since 1.111); one holding a view beside
   contributions (`lines.acts`) draws both, and is hidden while it holds neither
-  ([`regions`](ref:hub/renderers/page/regions.js#regions)); a region holding one view picks it again on every update,
+  ([`regions`](ref:hub/renderers/page/regions.js#regions)); a region of contributions may take `visible` too, which the
+  page reads to forget the "new" dots it kept while the view is hidden; a region holding one view picks it again on every update,
   mounting it again when the pick changes, and as a row hides while it has none to draw, where a pane says it has
   nothing. A command on a viewer subject runs on the subject its
   region was drawn on. `run('spawn', subject)`
