@@ -115,3 +115,10 @@ test('a conversation with turns before those a brief gives says so, and reads wh
   assert.deepEqual(whole.turns.map((t) => [t.session, t.answer]), [[sessions[0].header.id, 'PONG'], [sessions[1].header.id, 'pong']])
   assert.equal(wholeConversation(sessions[1], sessions, logOf, 'no-such-conversation', callsign), undefined)
 })
+
+test('a message to a subagent is its SendMessage call, not a message to a worker', () => {
+  const steps = Object.values(turnsByConversation(fixture('subagent-resume'))).flat().flatMap((t) => t.steps)
+  assert.equal(steps.some((s) => s.t === 'sent'), false)
+  const call = steps.find((s) => s.t === 'tool' && s.tool === 'SendMessage')
+  assert.deepEqual(call && call.t === 'tool' && [call.line, call.outcome], ['Ask reader to read more.txt', 'ok'])
+})

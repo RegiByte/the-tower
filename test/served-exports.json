@@ -909,7 +909,9 @@
       "sessionWhen",
       "shownFrom",
       "toolCallHtml",
+      "toolCallSettled",
       "toolKey",
+      "wholeHolds",
       "withWhole"
     ],
     "/termkeys.js": [
