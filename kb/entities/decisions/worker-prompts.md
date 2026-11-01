@@ -61,8 +61,8 @@ then.
   request with `by` is named unless the latest `tower.keys` names the same worker and is less than a minute old
   ([`inBurst`](ref:hub/src/tower/dispatch.ts#inBurst)); the tower waits for its fold of the fact before typing
   ([`keyedBy`](ref:hub/src/tower/dispatch.ts#keyedBy)), so the burst's next request reads it.
-- The `tower` CLI names its caller from `TOWER_SESSION_ID`: it passes it on `hire`, `review`, `send` and `home`, and
-  `tower submit` and `tower kill`, which speak to the host directly, append the fact themselves first. The user's
+- The `tower` CLI names its caller from `TOWER_SESSION_ID`: it passes it on `hire`, `review`, `send`, `home` and
+  `submit`, and `tower kill`, which speaks to the host directly, appends the fact itself first. The user's
   page and terminal pass none, so the user's acts stay unnamed.
 
 **Alternatives considered.**
@@ -77,5 +77,5 @@ then.
 
 **Impact.** A target's log says which worker prompted it, ended it or typed into it, within a minute's precision for
 keys: keys the user types inside a worker's burst read as that burst's. A prompt mark whose prompt never arrives
-(text typed into a dialog, not submitted) makes the user's next composer prompt the worker's: rare, since the CLI
-submits only to a worker at its composer.
+(text typed into a dialog, not submitted) makes the user's next composer prompt the worker's: rare, since `submit`
+refuses a worker asking something or held by a screen ([[submit-at-prompt]]).
