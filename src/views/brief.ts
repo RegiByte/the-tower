@@ -1,4 +1,4 @@
-import type { Card } from '../bridge/board.ts'
+import type { Board, Card } from '../bridge/board.ts'
 import type { Brief } from '../bridge/turns.ts'
 import { addedActions } from '../shared/adds.ts'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, openTools, saidOf, saidText, saidWhat, toolCallHtml, toolCallSettled, wholeHolds, withWhole, type BriefMarkdown } from '../shared/brief.ts'
@@ -6,7 +6,7 @@ import { can, conversationSubject, esc } from '../shared/cards.ts'
 import { fenceText, markdownCss, markdownHtml } from '../shared/markdown.ts'
 import { drawPanel } from '../shared/panel-kit.ts'
 import { saidSubject, type Subject } from '../shared/subjects.ts'
-import type { Mount, Tab } from '../shared/views.ts'
+import { viewsOf, type Mount, type RegionHandle, type Tab } from '../shared/views.ts'
 
 /**
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt, Claude's steps
@@ -14,29 +14,39 @@ import type { Mount, Tab } from '../shared/views.ts'
  * it works, as it calls each tool; kept at the end while the viewer reads there. A tool call opened is read once; a
  * conversation's earlier turns are read whole when asked for, and kept until its latest turn moves. Each conversation's heading holds what extensions add to it (`conversation.head`). Each prompt
  * and answer drawn is a viewer subject on the page's bus (`said`), and holds the commands offered on it beside its copy
- * (`said.acts`).
+ * (`said.acts`). Its foot, under the scroll, holds the view that writes to the worker (`card.composer`), at its natural
+ * height up to a cap, then scrolling; with no view there it takes no room.
  */
 
 const ID = 'tower/brief'
 
 const CSS = `:where([data-view="${ID}"]) {
   position: absolute; inset: 0;
-  & > .brief { position: absolute; inset: 0; overflow: auto; padding: 0 var(--sp-xl) 40px; background: var(--panel); color: var(--ink);
+  & > .brief-frame { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--panel); }
+  & .brief { flex: 1 1 0; min-height: 0; overflow: auto; padding: 0 var(--sp-xl) 40px; background: var(--panel); color: var(--ink);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }
   & .brief-view { max-width: 980px; margin: 0 auto; }
+  & .brief-foot { flex: 0 0 auto; max-height: min(40%, 320px); overflow: auto; border-top: 1px solid var(--line); padding: var(--sp-m) var(--sp-xl);
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }
+  & .brief-foot > .view-root { max-width: 980px; margin: 0 auto; }
 }`
 
 /** How near its end, in pixels, the viewer reads for a redraw to keep the brief there. */
 const AT_END = 48
+
+/** The views that could write to a worker from the Brief's foot: on a card at `row` scale, its floor not off for them. */
+const composersOf = (board: Board, c: Card) => viewsOf(board).filter((v) => v.on.includes('card') && v.scales.includes('row') && !v.off?.includes(c.project)).map((v) => v.id).join(' ')
 
 /** A worker has a Brief tab where it has a brief. */
 export const tab: Tab = (_board, subject) => (can(subject.value as Card, 'brief') ? {} : undefined)
 
 export const mount: Mount = (host, { tower, board: first, subject: at, kit }) => {
   let board = first
+  let subject = at
   let card = at.value as Card
-  host.innerHTML = `<style>${CSS}${briefCss}${markdownCss}</style><div class="brief"></div>`
+  host.innerHTML = `<style>${CSS}${briefCss}${markdownCss}</style><div class="brief-frame"><div class="brief"></div><div class="brief-foot" hidden></div></div>`
   const el = host.querySelector<HTMLElement>('.brief')!
+  const foot = host.querySelector<HTMLElement>('.brief-foot')!
   const body = el
   /** The conversations as last read, and the key of the card's state they were read at: read again when it moves. */
   let threads: Brief[] | undefined
@@ -48,6 +58,23 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
   /** Whether anything is offered on a prompt or an answer: commands on `said` are offered by kind and type alone. */
   let saidActs = false
   let seen = true
+  /** Whether the viewer reads at the end, kept as they scroll: a foot that grows keeps them there. */
+  let readsAtEnd = true
+  el.addEventListener('scroll', () => (readsAtEnd = el.scrollHeight - el.scrollTop - el.clientHeight < AT_END), { passive: true })
+  const footSize = new ResizeObserver(() => readsAtEnd && (el.scrollTop = el.scrollHeight))
+  footSize.observe(foot)
+
+  /** The view writing to the worker (`card.composer`), mounted again when the views that could be there change. */
+  let composer: RegionHandle | undefined
+  let composers = ''
+  function placeComposer() {
+    const now = composersOf(board, card)
+    if (now === composers) return composer?.update(subject)
+    composers = now
+    composer?.close()
+    foot.hidden = !now
+    composer = now ? kit.region(foot, 'card.composer', subject) : undefined
+  }
 
   const actsOn = (b: typeof board) => addedActions(b, saidSubject({ session: '', conversation: '', startedAt: 0, side: 'prompt', card: card.id, project: card.project, body: '' })).length > 0
 
@@ -156,13 +183,16 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
   const offStore = tower.store.on(() => void chooseMarkdown())
   void chooseMarkdown()
   read()
+  placeComposer()
 
   return {
     update(next, now) {
       board = next
+      subject = now
       card = now.value as Card
       if (actsOn(next) !== saidActs) draw(true)
       read()
+      placeComposer()
     },
     show(s) {
       if (s.kind === 'conversation') return true
@@ -174,9 +204,12 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     visible(on) {
       seen = on
       read()
+      composer?.visible?.(on)
     },
     close() {
       offStore()
+      footSize.disconnect()
+      composer?.close()
       regions.forEach((r) => r.close())
       for (const s of said.values()) kit.bus.clear(s.key)
     },

@@ -93,7 +93,8 @@ and a framed document's section are the same thing.
   holding views mounts them by the layout, a tabs region its tabs as (view, subject) pairs, and is handed `show` and
   `visible` ([`RegionHandle`](ref:hub/src/shared/views.ts#RegionHandle), since 1.111); one holding a view beside
   contributions (`lines.acts`) draws both, and is hidden while it holds neither
-  ([`regions`](ref:hub/renderers/page/regions.js#regions)). A command on a viewer subject runs on the subject its
+  ([`regions`](ref:hub/renderers/page/regions.js#regions)); a row holding one view hides when it has none to draw,
+  where a pane says it has nothing. A command on a viewer subject runs on the subject its
   region was drawn on. `run('spawn', subject)`
   opens the renderer's new-worker form on a floor, or on a draft, which is deleted once a worker starts on it. A command is
   lent the part with no host ([`CommandKit`](ref:hub/src/shared/views.ts#CommandKit)) through
@@ -124,7 +125,11 @@ and a framed document's section are the same thing.
   published subjects so a view drawing its subject again draws them, told through `onMark` of the key's kind; whoever puts
   one lifts it.
   The Brief publishes every prompt and answer it draws ([`saidOf`](ref:hub/src/shared/brief.ts#saidOf)) and fills
-  `said.acts` beside each copy where anything is offered on `said`. `tower/document`, and `tower/shelf` for an `md`
+  `said.acts` beside each copy where anything is offered on `said`. Under its scroll, the Brief's foot holds
+  `card.composer` (since 1.135): one view on the card at `row` scale that writes to the worker, at its natural height
+  up to the smaller of 320px and 40% of the Brief, then scrolling; no view offered there, or the layout hiding it,
+  and the foot takes no room. It is mounted again as the views that could be there change, and a foot that grows keeps
+  a reader at the end there ([`brief`](ref:hub/src/views/brief.ts), [[submit-at-prompt]]). `tower/document`, and `tower/shelf` for an `md`
   entry's file (since 1.128, its sections of the file, keyed `shelf:<project>/<n>/<file>`), draw through
   [`drawSections`](ref:hub/src/views/sections.ts#drawSections), which splits its source with
   [`sectionsOf`](ref:hub/src/shared/markdown.ts#sectionsOf) (pure, lexed once: before each heading of the shallowest
@@ -321,6 +326,7 @@ flowchart LR
   panes --> shown["a shown file: the view its type picks"]
   brief --> conv["conversation.head: badges, actions"]
   brief --> said["said.acts: commands on said"]
+  brief --> composer["card.composer: a view writing to the worker"]
   changes --> pick["lines.acts: views and commands on lines"]
   shown --> md["tower/document: a document frame"]
   md --> sec["section.acts: commands on each section, in a gutter beside the frame"]
