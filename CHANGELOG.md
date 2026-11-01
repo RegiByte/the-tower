@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.82.0
+
+A file dropped or pasted on a terminal reaches it as its path. No restart beyond the tower's own (`tower down tower`,
+then `tower up tower`), the renderer API 1.136 → 1.137 (additive, no major), no config change. Thanks to Vinicius Borges
+for the feature (#316).
+
+- **Files on a terminal** (API 1.137): drag a file from Finder or Photos onto a terminal, or paste a copied image, and
+  the session gets the file's path, as a native terminal pastes a dropped file's path. Claude shows a pasted image as
+  `[Image #1]`; a shell gets the path. Every terminal takes files: the page's sessions, its shell dock and Tower 3D. A
+  paste that carries plain text stays a text paste (#326).
+  - The new `upload` verb copies the file to the user's own folder in the machine's temp folder
+    (`$TMPDIR/tower-uploads-<uid>/`, mode 0700), named by its content, and answers the path. From another machine, the
+    file lands on the machine the sessions run on.
+  - Files up to 20 MB (`UPLOAD_LIMIT`, `src/shared/uploads.ts`); a larger one is refused with its size. The largest
+    request body the tower reads rises from 8 MiB to 28 MB to fit it.
+  - `/term-view.js`: `TermViewIo` gains an optional `upload`; a renderer that passes none takes no files.
+  - `npm run drive -- … --drop <file>` drops a real file through Chrome's input.
+
 ## v1.81.0
 
 The Brief reads whole turns and carries a chat box's place, the sidebar stops naming extensions, and a prompt typed from
