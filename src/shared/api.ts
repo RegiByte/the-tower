@@ -259,7 +259,7 @@ export const VERBS = {
         data: z.base64().describe("The file's bytes, base64."),
       })
       .describe(
-        "Copy a file the user handed a browser page (dropped or pasted) to the user's own folder in the machine's temp folder, named by its content, and answer its path: what a terminal pastes where a native one pastes a dropped file's own path. Claude takes a pasted image's path as the image. The body's 8 MiB bounds it. @since 1.137",
+        "Copy a file the user handed a browser page (dropped or pasted) to the user's own folder in the machine's temp folder, named by its content, and answer its path: what a terminal pastes where a native one pastes a dropped file's own path. Claude takes a pasted image's path as the image. Files up to 20 MB (`UPLOAD_LIMIT`). @since 1.137",
       ),
     reply: z.object({ t: z.literal('uploaded'), path: z.string().describe('Where the copy is: the same bytes always land at the same path.') }),
   },

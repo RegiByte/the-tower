@@ -63,7 +63,7 @@ The routes are the renderer API ([[renderer-api]]); the tower page (`renderers/p
 through [`/tower.js`](ref:hub/src/tower/tower.js) like any other: the board, commands (the calls of the board's `actions` where it
 offers them), reads and streams. It relays a framed shelf page's requests to the same `tower.js`.
 
-Every command goes through [`command`](ref:hub/src/tower/http.ts#command): the body, read up to 8 MiB
+Every command goes through [`command`](ref:hub/src/tower/http.ts#command): the body, read up to 28 MB
 ([`readBody`](ref:hub/src/tower/http.ts#readBody), refused past it as `invalid` with the rest left unread), is parsed by the verb's
 schema in [`api.ts`](ref:hub/src/shared/api.ts), handled by its entry in
 [`HANDLERS`](ref:hub/src/tower/dispatch.ts#HANDLERS) with the caller the request claims, and the reply checked against
