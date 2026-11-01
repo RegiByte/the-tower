@@ -5,20 +5,20 @@ import { ICON } from '/icons.js'
  * What extensions add to a subject, as the page draws it beside the core's own: badges, and actions as buttons whose
  * press the page runs through `runAdded` (`/cards.js`); and the asks, as rows beside the offers.
  * @import { Board } from '../../src/bridge/board.ts'
- * @import { Action, Added, BoardAsk } from '../../src/shared/extensions.ts'
+ * @import { Action, Added, Badge, BoardAsk } from '../../src/shared/extensions.ts'
  * @import { Glyph } from '../../src/shared/adds.ts'
  * @import { Hold } from '../../src/shared/regions.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  */
 
+/** One badge: a link when it has `href`. @param {Added<Badge>} b */
+export const badgeHtml = (b) => {
+  const attrs = `class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}`
+  return b.href ? `<a ${attrs} href="${esc(b.href)}" target="_blank" rel="noreferrer">${esc(b.label)}</a>` : `<span ${attrs}>${esc(b.label)}</span>`
+}
+
 /** A subject's badges: a link when one has `href`. @param {Board} board @param {Subject} subject */
-export const badgesHtml = (board, subject) =>
-  badgesOf(board, subject)
-    .map((b) => {
-      const attrs = `class="badge ${b.tone ?? 'quiet'}"${b.hint ? ` data-tip="${esc(b.hint)}"` : ''}`
-      return b.href ? `<a ${attrs} href="${esc(b.href)}" target="_blank" rel="noreferrer">${esc(b.label)}</a>` : `<span ${attrs}>${esc(b.label)}</span>`
-    })
-    .join('')
+export const badgesHtml = (board, subject) => badgesOf(board, subject).map(badgeHtml).join('')
 
 /** One action as a button: what its press runs is on it, with the key of the subject it runs on. @param {Board} board @param {string} key @param {Added<Action>} action */
 const actionHtml = (board, key, action) => {

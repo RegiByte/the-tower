@@ -1,4 +1,4 @@
-import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, linesOf, DISMISS_TITLE, plural } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, isFresh, offeredIds, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -24,7 +24,7 @@ import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, holdRow, pai
 import { briefCss } from '/brief.js'
 import { markdownCss } from '/markdown.js'
 import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, addedCommandOf, commandOf, frameCommandOf, isAddedId } from '/keymap.js'
-import { VIEWER_KEYS, readViewer } from '/viewer.js'
+import { VIEWER_KEYS, readViewer, sawAll, seenOf } from '/viewer.js'
 import { settingsCss } from '/settings.js'
 import { loadTerminalFont } from '/terminal.js'
 import { watchTips } from '/tips.js'
@@ -34,7 +34,7 @@ import { DRAFTS, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
-import { actionsHtml, asksHtml, badgesHtml } from './added.js'
+import { actionsHtml, asksHtml, badgeHtml } from './added.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -43,7 +43,8 @@ import { actionsHtml, asksHtml, badgesHtml } from './added.js'
  * @import { Attended, Heed, Move } from '../../src/shared/cards.ts'
  * @import { BoardError, FromPage } from '../../src/shared/shelf-page.ts'
  * @import { KeyPress } from '../../src/shared/keymap.ts'
- * @import { Action, Added } from '../../src/shared/extensions.ts'
+ * @import { Action, Added, AddedLine, Badge } from '../../src/shared/extensions.ts'
+ * @import { Ranked } from '../../src/shared/adds.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call } from '../../src/shared/api.ts'
@@ -567,6 +568,7 @@ function runAddedId(id, subject) {
   const on = (s) => (!command.on ? boardSubject(board()) : !s ? undefined : command.on.includes(s.kind) || (s.kind.startsWith('item.') && command.on.includes('item.*')) ? s : on(subjectAt(board(), parentOf(s) ?? '')))
   const target = on(subject)
   if (!target) return (toast(`${command.words.label} isn't offered on ${subject.key}`), true)
+  markSeen([id])
   void told(runCommandWith(board(), { command: name, cap }, target, commandKit))
   return true
 }
@@ -591,10 +593,70 @@ function dismissHtml(key) {
 }
 
 /**
+ * What the viewer has seen of what extensions offer: their record's `seen`, or all that is offered while nothing was
+ * ever kept there (decision `region-overflow`).
+ * @param {readonly string[]} offered
+ */
+const seenAmong = (offered) => seenOf(viewer().seen, offered)
+
+/** The actions `ids` seen by the viewer, kept when any of them was new to them. @param {string[]} ids */
+function markSeen(ids) {
+  const offered = offeredIds(board())
+  const had = seenAmong(offered)
+  const next = sawAll(had, ids.filter((id) => isFresh(offered, had, id)))
+  if (next) keepViewer('seen', next)
+}
+
+/** What a region draws among its badges and never tucks, marked so: a worker's Dismiss and its exemptions. @param {string} dismiss @param {Added<Badge>[]} exemptions */
+const keptHtml = (dismiss, exemptions) => (dismiss || exemptions.length ? `<span class="kept" data-keep>${dismiss}${exemptions.map(badgeHtml).join('')}</span>` : '')
+
+/** An extension's line on a worker. @param {AddedLine} line */
+const lineHtml = (line) => `<span class="adds-line" data-tip="${esc(line.text)}">${esc(line.text)}</span>`
+
+/** Whether `el` is drawn now: it has a box, or the nearest element holding it has, a `display: contents` slot having none of its own. @param {Element} el @returns {boolean} */
+const isDrawn = (el) => (getComputedStyle(el).display === 'contents' && el.parentElement ? isDrawn(el.parentElement) : el.getClientRects().length > 0)
+
+/**
+ * A region of contributions as each frame reads it: `inPlace`, the actions new to the viewer it draws in place now,
+ * `undefined` while it isn't drawn; `saw`, told what it drew in place and whether the window has focus, answers those
+ * the viewer saw.
+ * @typedef {{ inPlace(): string[] | undefined, saw(ids: string[] | undefined, focused: boolean): string[] }} PlacedRegion
+ */
+
+/** The regions of contributions mounted now. @type {Set<PlacedRegion>} */
+const placedRegions = new Set()
+/** The regions drawn since the last frame. @type {Set<PlacedRegion>} */
+const unread = new Set()
+let reading = 0
+
+/** Reads `region` in the next frame, with every other region drawn meanwhile. @param {PlacedRegion} region */
+const readNext = (region) => {
+  unread.add(region)
+  reading ||= requestAnimationFrame(readAll)
+}
+
+/**
+ * One frame's pass over the regions drawn since the last: every region is read, then written, so many regions cost one
+ * layout. An action new to the viewer that a region draws in place while the window has focus is seen (decision
+ * `region-overflow`).
+ */
+function readAll() {
+  reading = 0
+  const regions = [...unread]
+  unread.clear()
+  const drawn = regions.map((r) => r.inPlace())
+  const focused = document.hasFocus()
+  markSeen(regions.flatMap((r, n) => r.saw(drawn[n], focused)))
+}
+
+/**
  * One of the page's regions inside a view that holds what extensions add, on `subject`: drawn the page's way, its
  * badges, lines and actions as its holds say, each in the element marked to hold it (`data-holds="badges"`, `lines`,
- * `actions`) when `el` has one, else together in `el`; their presses run by the page's own clicks. A worker's head
- * holds the page's own Dismiss beside its badges. The commands its options `omit` (`<cap>/<name>`) are left out.
+ * `actions`) when `el` has one, else together in `el`; their presses run by the page's own clicks. Its badges come by
+ * severity and its actions and lines in the layout's order (`rankedBadges`, `rankedActions`, `rankedLines`), less the
+ * commands its options `omit` (`<cap>/<name>`). A worker's head holds the page's own Dismiss beside its badges, with
+ * its exemptions, both kept (`data-keep`). An action new to the viewer carries a dot; once it has been drawn in place in
+ * a focused window it is seen, and the region keeps its dot until its view is hidden or it closes.
  * @param {HTMLElement} el @param {string} id @param {Subject} subject @param {{ omit?: string[] }} options
  * @returns {import('../../src/shared/views.ts').RegionHandle}
  */
@@ -605,26 +667,66 @@ function kitRegion(el, id, subject, options) {
   const actions = holds.includes('verbs') || holds.includes('commands')
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
   const marked = Object.values(slots).filter((s) => s !== undefined)
+  /** The actions as the last draw ranked them, one button each in `actionsAt`. @type {Ranked[]} */
+  let ranked = []
+  /** The actions this region drew with a dot that the viewer has seen since: their dot stays until the region is hidden. @type {Set<string>} */
+  const dotted = new Set()
+  const actionsAt = slots.actions ?? el
+  /** The buttons of the ranked actions, in their order. */
+  const actionEls = () => /** @type {HTMLElement[]} */ ([...actionsAt.querySelectorAll(':scope > [data-added]')])
   /** @param {HTMLElement} at @param {Subject} s */
   const mark = (at, s) => ((at.dataset.region = id), (at.dataset.subject = s.key), regionSubjects.set(at, s))
   /** @param {Subject} s */
   const shownActions = (s) => addedActions(board(), s).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`)))
+  /** Each action's dot, on while it is new to the viewer or the region keeps it. */
+  const dot = () => {
+    const offered = offeredIds(board())
+    const had = seenAmong(offered)
+    actionEls().forEach((b, n) => {
+      const on = dotted.has(ranked[n].id) || isFresh(offered, had, ranked[n].id)
+      b.classList.toggle('fresh', on)
+      if (on) b.setAttribute('aria-description', 'new')
+      else b.removeAttribute('aria-description')
+    })
+  }
+  /** @type {PlacedRegion} */
+  const placed = {
+    inPlace: () => {
+      if (!isDrawn(el)) return undefined
+      const offered = offeredIds(board())
+      const had = seenAmong(offered)
+      return actionEls().flatMap((b, n) => (b.getClientRects().length && isFresh(offered, had, ranked[n].id) ? [ranked[n].id] : []))
+    },
+    saw: (ids, focused) => {
+      if (!ids) return (hide(), [])
+      if (!focused) return []
+      ids.forEach((i) => dotted.add(i))
+      return ids
+    },
+  }
+  const hide = () => (dotted.clear(), dot())
   const draw = (/** @type {Subject} */ s) => {
     at = s
+    const entry = layout()[id]
+    ranked = actions ? rankedActions(shownActions(s), entry) : []
     const parts = {
-      badges: holds.includes('badges') ? `${id === 'card.head' ? dismissHtml(s.key) : ''}${badgesHtml(board(), s)}` : '',
-      lines: holds.includes('lines') && s.kind === 'card' ? linesOf(board(), /** @type {Card} */ (s.value).id).map((l) => `<span class="adds-line" data-tip="${esc(l)}">${esc(l)}</span>`).join('') : '',
-      actions: actions ? actionsHtml(board(), s, shownActions(s)) : '',
+      badges: holds.includes('badges') ? `${keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s))}${rankedBadges(board(), s).map(badgeHtml).join('')}` : '',
+      lines: holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry).map(lineHtml).join('') : '',
+      actions: actionsHtml(board(), s, ranked.map((r) => r.action)),
     }
-    if (!marked.length) return (mark(el, s), paintOnce(el, `${parts.badges}${parts.actions}`))
-    for (const [name, slot] of Object.entries(slots)) if (slot) (mark(slot, s), paintOnce(slot, parts[/** @type {keyof typeof parts} */ (name)]))
+    if (!marked.length) (mark(el, s), paintOnce(el, `${parts.badges}${parts.actions}`))
+    else for (const [name, slot] of Object.entries(slots)) if (slot) (mark(slot, s), paintOnce(slot, parts[/** @type {keyof typeof parts} */ (name)]))
+    dot()
+    readNext(placed)
   }
+  placedRegions.add(placed)
   draw(subject)
   const clear = (/** @type {HTMLElement} */ at) => (at.replaceChildren(), delete at.dataset.region, delete at.dataset.subject)
   return {
     update: draw,
     options: (next) => ((omit = /** @type {{ omit?: string[] }} */ (next).omit ?? []), draw(at)),
-    close: () => (marked.length ? marked : [el]).forEach(clear),
+    visible: (on) => on || hide(),
+    close: () => (placedRegions.delete(placed), unread.delete(placed), (marked.length ? marked : [el]).forEach(clear)),
   }
 }
 
@@ -745,7 +847,7 @@ const LEAVE = {
   view: () => mainRegion.leave(),
 }
 
-addEventListener('focus', () => page.dispatch({ type: 'focus', focused: true }))
+addEventListener('focus', () => (page.dispatch({ type: 'focus', focused: true }), placedRegions.forEach(readNext)))
 // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
 addEventListener('blur', () => setTimeout(() => page.dispatch({ type: 'focus', focused: document.hasFocus() })))
 document.addEventListener('visibilitychange', () => page.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
@@ -782,6 +884,7 @@ async function runAddedAt(el, { subject: key, action }) {
   if (isCommand(action) && !subject) return toast('That is no longer on the board')
   const words = actionWords(board(), action)
   if (words.destructive && !(await ask(`${words.label}?`, words.label))) return
+  markSeen([actionId(action)])
   await told(pressing(el, () => (isCommand(action) ? runCommandWith(board(), action, /** @type {Subject} */ (subject), commandKit) : runVerb(action))))
 }
 
@@ -1172,6 +1275,7 @@ tower.subscribe(async (next) => {
   await rereadViewer()
   const first = !opened()
   page.dispatch({ type: 'board', board: next })
+  if (first && viewer().seen === null) keepViewer('seen', seenOf(null, offeredIds(board())))
   showBoardError()
   noticeShown(cards())
   freshArchives()
