@@ -4,7 +4,7 @@ import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
 import type { Notice } from './toasts.ts'
 import { accepted, mediaTypeOf } from './media.ts'
-import type { KitMember, Layout, Region, Scale } from './regions.ts'
+import type { ExtensionLayoutEntry, KitMember, Layout, LayoutEntry, Region, Scale } from './regions.ts'
 import { ADDRESS_TYPE, onKind, parentOf, shownSubject, subjectAt, type Subject, type Text } from './subjects.ts'
 
 /**
@@ -248,8 +248,6 @@ export const viewsOf = (board: Board): View[] => [
     .flatMap((e) => e.views.map((v): View => ({ ...v, cap: e.provides, ...(e.off?.length && { off: e.off }) }))),
 ]
 
-type LayoutEntry = Layout[string]
-
 /**
  * The core's retired views (`LEGACY`'s `view` entries) and the views that draw their subjects now: a layout naming one
  * names those. `tower/shown`'s showings are drawn by the views by type, so an `order` naming it leaves them to their
@@ -268,9 +266,34 @@ const unaliased = (entry: LayoutEntry): LayoutEntry => {
 }
 
 /**
+ * The pins of a region's layers, lowest first, as one list (decision `region-overflow`): each layer's pins, the
+ * highest layer's first, an id once, less every id a layer above it names in its `unpinned`.
+ */
+const pinsOf = (at: LayoutEntry[]): string[] => [
+  ...new Set(
+    at
+      .map((e, n) => (e.pinned ?? []).filter((id) => !at.slice(n + 1).some((above) => above.unpinned?.includes(id))))
+      .reverse()
+      .flat(),
+  ),
+]
+
+/** The ids a region's layers unpin that a layer below still pins, the highest layer's first: an unpin of nothing pinned is dropped. */
+const unpinsOf = (at: LayoutEntry[]): string[] => [
+  ...new Set(
+    at
+      .map((e, n) => (e.unpinned ?? []).filter((id) => at.slice(0, n).some((below) => below.pinned?.includes(id))))
+      .reverse()
+      .flat(),
+  ),
+]
+
+/**
  * The layout a renderer draws by, three layers each over the one before: its own (`renderer.json`), the config's, the
  * viewer's (`tower.store`'s `layout.<renderer>`). For each region, each field is the highest layer's that sets it,
- * every view's options apart; `hidden` is the layers' union, less each view a higher layer names in its `order`.
+ * every view's options apart; `hidden` is the layers' union, less each id a higher layer names in its `order` or its
+ * `pinned`; `pinned` is the layers' union, the highest's first, less what a higher layer names in `unpinned`; and
+ * `unpinned`, what a layer unpins that a lower one pins.
  */
 export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | undefined): Layout => {
   const layers = [declared, configured, stored ?? {}]
@@ -279,25 +302,39 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
     regions.map((id) => {
       const at = layers.map((l) => unaliased(l[id] ?? {}))
       const last = <K extends keyof LayoutEntry>(field: K) => at.findLast((e) => e[field] !== undefined)?.[field]
-      const hidden = at.flatMap((e, n) => (e.hidden ?? []).filter((v) => !at.slice(n + 1).some((above) => above.order?.includes(v))))
+      const hidden = at.flatMap((e, n) => (e.hidden ?? []).filter((v) => !at.slice(n + 1).some((above) => above.order?.includes(v) || above.pinned?.includes(v))))
+      const pinned = pinsOf(at)
+      const unpinned = unpinsOf(at)
       const options = Object.assign({}, ...at.map((e) => e.options ?? {}))
       const entry: LayoutEntry = {
         ...(last('order') && { order: last('order') }),
         ...(hidden.length && { hidden: [...new Set(hidden)] }),
         ...(last('open') && { open: last('open') }),
         ...(Object.keys(options).length && { options }),
+        ...(pinned.length && { pinned }),
+        ...(unpinned.length && { unpinned }),
+        ...(last('overflow') && { overflow: last('overflow') }),
+        ...(last('lines') !== undefined && { lines: last('lines') }),
+        ...(last('badges') !== undefined && { badges: last('badges') }),
+        ...(last('actions') !== undefined && { actions: last('actions') }),
       }
       return [id, entry]
     }),
   )
 }
 
+/** An extension's layout less the regions in `taken`: an extension lays out only its own regions, never a renderer's. */
+const ownRegions = (layout: Record<string, ExtensionLayoutEntry>, taken: readonly string[]): Layout =>
+  Object.fromEntries(Object.entries(layout).filter(([id]) => !taken.includes(id)))
+
 /**
  * The layout a renderer declares, `declared` (its `renderer.json`'s), over the defaults that started extensions give the
- * regions they declare: the bottom layer, under the renderer's own, the config's and the viewer's (`layoutOf`). @since 1.114
+ * regions they declare: the bottom layer, under the renderer's own, the config's and the viewer's (`layoutOf`). An
+ * extension's layout counts only for regions the renderer doesn't declare itself, `rendererRegions` (since 1.138:
+ * decision `region-overflow`). @since 1.114
  */
-export const declaredLayout = (board: Board, declared: Layout): Layout =>
-  layoutOf(Object.assign({}, ...board.extensions.filter((e) => e.state === 'started').map((e) => e.layout ?? {})), declared, undefined)
+export const declaredLayout = (board: Board, declared: Layout, rendererRegions: readonly string[]): Layout =>
+  layoutOf(Object.assign({}, ...board.extensions.filter((e) => e.state === 'started').map((e) => ownRegions(e.layout ?? {}, rendererRegions))), declared, undefined)
 
 /** Whether a view's `on` holds `subject`: its kind, `item.*` for any collection's item, `collection.<id>` for that one collection. */
 export const viewOn = (on: readonly string[], subject: Pick<Subject, 'kind' | 'value'>) =>
