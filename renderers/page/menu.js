@@ -15,10 +15,13 @@ import { keepingFocus } from '/panels.js'
  * ↑ ↓ Home End move among the entries, a letter goes to the next whose label starts with what was typed; Esc and Tab
  * close it, focus back on the button.
  *
- * @typedef {{ t: 'item', key: string, label: string, hint?: string, danger?: boolean, fresh?: boolean, busy?: boolean, held?: boolean }} MenuItem
+ * @typedef {{ t: 'item', key: string, label: string, hint?: string, danger?: boolean, fresh?: boolean, busy?: boolean, held?: boolean, stays?: boolean }} MenuItem
  *   `key` is unique in the page, as a control asking a thing is named by it while it is busy (`/press.js`), and stable
- *   across boards; `held`, shown but not pressable (its `hint` says why).
- * @typedef {MenuItem | { t: 'separator' } | { t: 'group', label: string, entries: MenuEntry[] }} MenuEntry
+ *   across boards; `held`, shown but not pressable (its `hint` says why); `stays`, the menu stays open once it runs (it
+ *   changes what the menu lists).
+ * @typedef {{ t: 'check', key: string, label: string, hint?: string, checked: boolean }} MenuCheck
+ *   A choice the menu stays open on, checked or not (`menuitemcheckbox`).
+ * @typedef {MenuItem | MenuCheck | { t: 'separator' } | { t: 'group', label: string, entries: MenuEntry[] }} MenuEntry
  * @typedef {{ header: string, entries: MenuEntry[] }} Listing
  *   `header`: html, plain text and badges only: it is the menu's description.
  */
@@ -32,20 +35,24 @@ const TYPED_MS = 700
 const entryHtml = (e) => {
   if (e.t === 'separator') return '<div role="separator"></div>'
   if (e.t === 'group') return `<div role="group" aria-label="${esc(e.label)}"><div class="menu-label" aria-hidden="true">${esc(e.label)}</div>${e.entries.map(entryHtml).join('')}</div>`
+  if (e.t === 'check')
+    return `<button role="menuitemcheckbox" aria-checked="${e.checked}" tabindex="-1" class="menu-item" data-key="${esc(e.key)}"${e.hint ? ` aria-description="${esc(e.hint)}"` : ''}><span class="menu-word">${esc(e.label)}</span>${e.hint ? `<small aria-hidden="true">${esc(e.hint)}</small>` : ''}</button>`
   const classes = ['menu-item', e.danger ? 'danger' : '', e.fresh ? 'fresh' : ''].filter(Boolean).join(' ')
   const description = [e.fresh ? 'new' : '', e.hint ?? ''].filter(Boolean).join('. ')
   return `<button role="menuitem" tabindex="-1" class="${classes}" data-key="${esc(e.key)}"${e.held ? ` aria-disabled="true" data-tip="${esc(e.hint ?? '')}"` : ''}${e.busy ? ' aria-busy="true"' : ''}${description ? ` aria-description="${esc(description)}"` : ''}><span class="menu-word">${esc(e.label)}</span>${e.hint ? `<small aria-hidden="true">${esc(e.hint)}</small>` : ''}</button>`
 }
 
-/** Every item of `entries`, groups opened. @param {MenuEntry[]} entries @returns {MenuItem[]} */
-const itemsOf = (entries) => entries.flatMap((e) => (e.t === 'item' ? [e] : e.t === 'group' ? itemsOf(e.entries) : []))
+/** Every item and choice of `entries`, groups opened. @param {MenuEntry[]} entries @returns {(MenuItem | MenuCheck)[]} */
+const itemsOf = (entries) => entries.flatMap((e) => (e.t === 'item' || e.t === 'check' ? [e] : e.t === 'group' ? itemsOf(e.entries) : []))
 
 /**
- * A menu `control` opens, its entries `draw` gives it, `run` called with the item picked and its element once the menu
- * has closed. Answers what the caller drives it by: `draw` again on every board, `open` whether it is open, `remove`
- * when its region goes.
+ * A menu `control` opens, its entries `draw` gives it, `run` called with the item picked and its element, once the menu
+ * has closed unless the item stays (`stays`, a choice). `opening` is called as it opens, before it is placed, so the
+ * caller can draw what it lists at that moment; `closed` once it has closed. Answers what the caller drives it by:
+ * `draw` again on every board, `open` whether it is open, `focus` an entry by its key (after an entry that stays
+ * changed what is listed), `remove` when its region goes.
  * @param {HTMLButtonElement} control
- * @param {{ run(item: MenuItem, el: HTMLElement): void }} on
+ * @param {{ run(item: MenuItem | MenuCheck, el: HTMLElement): void, opening?(): void, closed?(): void }} on
  */
 export function menu(control, on) {
   const id = `region-menu-${++menus}`
@@ -62,7 +69,7 @@ export function menu(control, on) {
   control.setAttribute('aria-controls', `${id}-list`)
   const head = /** @type {HTMLElement} */ (pop.querySelector('.menu-head'))
   const list = /** @type {HTMLElement} */ (pop.querySelector('[role="menu"]'))
-  /** The items drawn, by key. @type {Map<string, MenuItem>} */
+  /** The items drawn, by key. @type {Map<string, MenuItem | MenuCheck>} */
   let items = new Map()
   let drawn = { header: '', list: '' }
   /** Where focus goes as the menu opens: its first item or its last. @type {'first' | 'last'} */
@@ -70,7 +77,7 @@ export function menu(control, on) {
   let typed = ''
   let typedAt = 0
 
-  const buttons = () => /** @type {HTMLElement[]} */ ([...list.querySelectorAll('[role="menuitem"]')])
+  const buttons = () => /** @type {HTMLElement[]} */ ([...list.querySelectorAll('[role="menuitem"], [role="menuitemcheckbox"]')])
   const open = () => pop.matches(':popover-open')
   /** @param {number} n */
   const focusAt = (n) => {
@@ -96,7 +103,9 @@ export function menu(control, on) {
   }
 
   pop.addEventListener('beforetoggle', (e) => {
-    if (/** @type {ToggleEvent} */ (e).newState === 'open') place()
+    if (/** @type {ToggleEvent} */ (e).newState !== 'open') return
+    on.opening?.()
+    place()
   })
   pop.addEventListener('toggle', (e) => {
     const opened = /** @type {ToggleEvent} */ (e).newState === 'open'
@@ -107,6 +116,7 @@ export function menu(control, on) {
       return
     }
     if (pop.contains(document.activeElement)) control.focus({ preventScroll: true })
+    on.closed?.()
   })
 
   control.addEventListener('keydown', (e) => {
@@ -141,12 +151,12 @@ export function menu(control, on) {
   })
 
   list.addEventListener('click', (e) => {
-    const el = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest('[role="menuitem"]'))
+    const el = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest('[role="menuitem"], [role="menuitemcheckbox"]'))
     if (!el) return
     e.stopPropagation()
     const item = items.get(/** @type {string} */ (el.dataset.key))
     if (!item || el.getAttribute('aria-disabled') === 'true') return
-    closeToControl()
+    if (item.t === 'item' && !item.stays) closeToControl()
     on.run(item, el)
   })
 
@@ -165,6 +175,8 @@ export function menu(control, on) {
     },
     open,
     close,
+    /** Focus on the entry with `key`, while the menu is open. @param {string} key */
+    focus: (key) => buttons().find((b) => b.dataset.key === key)?.focus(),
     /** The menu gone with its region: closed, its popover removed, the button left as the caller made it. */
     remove: () => (close(), pop.remove()),
   }
