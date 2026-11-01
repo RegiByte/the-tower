@@ -36,7 +36,7 @@ outside the terminal is checked against the composer. No restart beyond the towe
     typed inputs to know when the composer holds text.
   - **Changed behavior:** `POST /submit` and `tower submit` now refuse `not_at_prompt` while the worker is
     `needs_input`, `blocked` or `booting`, and when its session isn't running. Text that used to be typed into a
-    question or a startup screen is refused instead; answer a dialog with `POST /keys` (`tower keys`) or in the
+    question or a startup screen is refused instead; answer a dialog with `POST /keys` or in the
     terminal. `submit` still queues while Claude works.
   - `tower submit` goes through the tower's `submit`, naming the sending worker in the target's log, instead of
     writing to the host.
@@ -69,7 +69,7 @@ outside the terminal is checked against the composer. No restart beyond the towe
 - **Leftovers from the extension READMEs** (#315): a worker's brief mentions keeping drafts only where drafts is on
   (drafts' own server adds the line), the palette draws again when a draft's title arrives while it is open, the shots
   tool takes `$VAR`s in every step, clicks the first match with a box and fixes the sandbox's callsigns, the handbook
-  gives the shape of a policy's `hire.cut`, and two kb entities are corrected.
+  gives the shape of a policy's `hire.cut`, and the kb is corrected where it disagreed with the code.
 
 ## v1.80.0
 
