@@ -34,6 +34,9 @@ app.setActivationPolicy(.accessory)
 let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: size[0], height: size[1]), styleMask: [.titled], backing: .buffered, defer: false)
 window.alphaValue = 0
 let web = WKWebView(frame: window.contentView!.bounds, configuration: WKWebViewConfiguration())
+// Nobody can see the window, and WebKit would hold the page hidden (no animation frames, `visibilityState` hidden):
+// Tower.app's page is seen, so the page here is held visible.
+web.setValue(false, forKey: "windowOcclusionDetectionEnabled")
 let delegate = Delegate()
 web.navigationDelegate = delegate
 web.uiDelegate = delegate
@@ -63,7 +66,7 @@ let keyCodes: [String: UInt16] = {
   let row = "asdfhgzxcv\u{0}bqweryt123465=97-80]ou[ip\u{0}lj'k;\\,/nm.\u{0}\u{0}`"
   var codes = [String: UInt16]()
   for (i, c) in row.enumerated() where c != "\u{0}" { codes[String(c)] = UInt16(i) }
-  return codes.merging(["enter": 36, "tab": 48, "space": 49, "backspace": 51, "escape": 53, "arrowleft": 123, "arrowright": 124, "arrowdown": 125, "arrowup": 126]) { $1 }
+  return codes.merging(["enter": 36, "tab": 48, "space": 49, "backspace": 51, "escape": 53, "arrowleft": 123, "arrowright": 124, "arrowdown": 125, "arrowup": 126, "home": 115, "end": 119]) { $1 }
 }()
 
 /** A chord as `drive` writes one: a key with any of Meta+, Ctrl+, Alt+, Shift+ before it. */
@@ -75,7 +78,7 @@ func press(_ chord: String) {
     guard let flag = names[name] else { fail("unknown modifier \(name)") }
     flags.insert(flag)
   }
-  let special: [String: String] = ["Escape": "\u{1b}", "Enter": "\r", "Tab": "\t", "Space": " ", "Backspace": "\u{7f}"]
+  let special: [String: String] = ["Escape": "\u{1b}", "Enter": "\r", "Tab": "\t", "Space": " ", "Backspace": "\u{7f}", "Home": "\u{F729}", "End": "\u{F72B}"]
   let chars = special[key] ?? key
   guard let code = keyCodes[key.lowercased()] else { fail("no key code for \(key)") }
   for type in [NSEvent.EventType.keyDown, .keyUp] {
