@@ -1,9 +1,9 @@
-import { addedActions, ago, can, commandUrl, esc, findCard, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
+import { addedActions, ago, can, commandUrl, esc, findCard, overflowOf, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
 import { mountTermView } from '/term-view.js'
 import { offeredIn, ordered, paneShows, pickView, shownOf } from '/views.js'
 import { shownFrom } from '/brief.js'
 import { ICON } from '/icons.js'
-import { fileSpansHtml, keepShownTabs } from '/panels.js'
+import { fileSpansHtml } from '/panels.js'
 import { keyedTip, paintOnce } from './kit.js'
 import { actionsHtml, badgesHtml, heldActions, iconActionsHtml } from './added.js'
 
@@ -12,7 +12,7 @@ import { actionsHtml, badgesHtml, heldActions, iconActionsHtml } from './added.j
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { Action, Added } from '../../src/shared/extensions.ts'
  * @import { Bus, Kit, CommandKit, Location, Mount, Mounted, Pane, RegionHandle, RegionOptions, TabWords, Tab, View } from '../../src/shared/views.ts'
- * @import { Layout, Region, KitMember, Scale } from '../../src/shared/regions.ts'
+ * @import { Layout, Overflow, Region, KitMember, Scale } from '../../src/shared/regions.ts'
  * @import { TermViewHandle } from '../../src/shared/term-view.ts'
  * @import { Tower, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
@@ -570,18 +570,82 @@ export function regions(deps) {
         m.panel.inert = key !== open
       }
       handOpen(all)
+      forms[formOf()](all, shownAddsHtml(all))
+    }
+
+    /** The forms the tab row is drawn in, by the overflow each draws. */
+    const forms = { scroll: tabsScroll }
+
+    /** The form the layout picks among those the region offers; a region offering none is drawn scrolling. @returns {keyof typeof forms} */
+    function formOf() {
+      if (!region.overflows) return 'scroll'
+      return /** @type {keyof typeof forms} */ (overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region), layout()[region.id]))
+    }
+
+    /** What extensions add to the open showing (`shown.head`), after the tablist. @param {TabOf[]} all */
+    function shownAddsHtml(all) {
       const showing = all.find((t) => t.key === open)?.showing
       const adds = showing ? heldHtml('shown.head', shownSubject(card, showing), actionsHtml) : ''
-      const own = all.filter((t) => !t.showing)
-      const shown = all.filter((t) => t.showing)
-      paintOnce(
-        strip,
-        `<span class="tab-set" role="tablist" aria-label="views of ${esc(card.callsign)}">${own.map((t) => tabHtml(t, t.key === open)).join('')}` +
-          (shown.length ? `<span class="shown-tabs">${shown.map((t) => tabHtml(t, t.key === open)).join('')}</span>` : '') +
-          '</span>' +
-          (adds && `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(/** @type {CardShown} */ (showing)))}">${adds}</span>`),
-      )
-      keepShownTabs(strip, card.id)
+      return adds && `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(/** @type {CardShown} */ (showing)))}">${adds}</span>`
+    }
+
+    /** The worker's tablist around `inner`, the tabs as a form lays them out. @param {string} inner */
+    const tablistHtml = (inner) => `<span class="tab-set" role="tablist" aria-label="views of ${esc(card.callsign)}">${inner}</span>`
+
+    /** @param {TabOf[]} tabs */
+    const tabsHtml = (tabs) => tabs.map((t) => tabHtml(t, t.key === open)).join('')
+
+    /**
+     * The scroll form: the tabs of the keymap's pane commands stay put, and every other tab, extension views and
+     * showings alike, scrolls sideways in a `.tab-scroll` past them, with a thin scrollbar and a fade at an edge past
+     * which more hide. The open tab is brought into view as it opens and as the row resizes.
+     * @param {TabOf[]} all @param {string} adds
+     */
+    function tabsScroll(all, adds) {
+      const fixed = all.filter((t) => !t.showing && PANE_COMMANDS[t.view.id])
+      const rest = all.filter((t) => !fixed.includes(t))
+      paintOnce(strip, tablistHtml(tabsHtml(fixed) + (rest.length ? `<span class="tab-scroll">${tabsHtml(rest)}</span>` : '')) + adds)
+      const scroller = scrollerOf()
+      if (!scroller) return
+      scroller.scrollLeft = scrolled.left
+      if (scrolled.open !== open) bringOpen(scroller)
+      scrolled.open = open
+      markEdges(scroller)
+    }
+
+    /** Where the scroll form's scroller was left, and the tab open when it was last drawn. @type {{ left: number, open?: string }} */
+    const scrolled = { left: 0 }
+
+    const scrollerOf = () => /** @type {HTMLElement | null} */ (strip.querySelector(':scope > .tab-set > .tab-scroll'))
+
+    /** The scroll padding the scroller's fades take at each edge. @param {HTMLElement} scroller */
+    const fadeOf = (scroller) => parseFloat(getComputedStyle(scroller).scrollPaddingLeft)
+
+    /** The open tab when the scroller holds it. @param {HTMLElement} scroller */
+    const openIn = (scroller) => open === undefined ? null : /** @type {HTMLElement | null} */ (scroller.querySelector(`:scope > [data-tab="${CSS.escape(open)}"]`))
+
+    /** Whether `tab` is wider than the scroller can show between its fades: shown from its start, unfaded. @param {HTMLElement} scroller @param {HTMLElement} tab */
+    const fills = (scroller, tab) => tab.offsetWidth > scroller.clientWidth - 2 * fadeOf(scroller)
+
+    /** Scrolls the open tab clear of the scroller's fades, or to its start when it fills the scroller. @param {HTMLElement} scroller */
+    function bringOpen(scroller) {
+      const tab = openIn(scroller)
+      if (!tab) return
+      const fade = fadeOf(scroller)
+      const box = scroller.getBoundingClientRect()
+      const at = tab.getBoundingClientRect()
+      if (fills(scroller, tab)) scroller.scrollLeft += at.left - box.left
+      else if (at.left < box.left + fade) scroller.scrollLeft += at.left - box.left - fade
+      else if (at.right > box.right - fade) scroller.scrollLeft += at.right - box.right + fade
+    }
+
+    /** Keeps where the scroller is, and fades each edge past which more tabs hide, but not over an open tab shown from its start that fills it. @param {HTMLElement} scroller */
+    function markEdges(scroller) {
+      scrolled.left = scroller.scrollLeft
+      const tab = openIn(scroller)
+      const whole = !!tab && fills(scroller, tab) && Math.abs(tab.getBoundingClientRect().left - scroller.getBoundingClientRect().left) < 1
+      scroller.classList.toggle('more-before', !whole && scroller.scrollLeft > 0)
+      scroller.classList.toggle('more-after', !whole && scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1)
     }
 
     /** The pane naming tab `t`: on a showing's subject, or on its own with what it shows below it. @param {TabOf} t @returns {Pane} */
@@ -645,6 +709,22 @@ export function regions(deps) {
       if (t) pick(t)
     })
 
+    strip.addEventListener('scroll', (e) => e.target === scrollerOf() && markEdges(/** @type {HTMLElement} */ (e.target)), true)
+
+    /** A mouse wheel over the scroller turns it sideways. */
+    strip.addEventListener('wheel', (e) => {
+      const scroller = scrollerOf()
+      if (!scroller?.contains(/** @type {Node} */ (e.target)) || scroller.scrollWidth <= scroller.clientWidth || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return
+      e.preventDefault()
+      scroller.scrollLeft += e.deltaY
+    }, { passive: false })
+
+    const resized = new ResizeObserver(() => {
+      const scroller = scrollerOf()
+      if (scroller) bringOpen(scroller), markEdges(scroller)
+    })
+    resized.observe(strip)
+
     panels.addEventListener('tab', () => draw())
 
     const self = { draw }
@@ -694,6 +774,7 @@ export function regions(deps) {
       },
       close() {
         tabbed.delete(self)
+        resized.disconnect()
         for (const key of [...mounted.keys()]) closeTab(key)
         for (const el of [strip, panels]) delete el.dataset.region, delete el.dataset.subject
       },

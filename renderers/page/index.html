@@ -263,6 +263,21 @@ dialog.confirm .actions { flex: none; }
 .pane-tab:has(> .icon-btn:last-child), .tab { padding-right: 0; }
 .pane-tab small { margin-left: var(--sp-xs); color: var(--faint); font-variant-numeric: tabular-nums; }
 .pane-tab small.unseen { color: var(--accent); font-weight: 700; }
+
+/* A worker's tabs in the scroll form: past the pane commands' tabs, the rest scroll under a thin scrollbar that always
+   keeps its track, so the row's height doesn't change as they start or stop overflowing, and fade at an edge past which more hide. */
+.tab-row > .tab-set > .tab-scroll { --fade: 2.5em; flex: 0 1 auto; min-width: 3em; display: flex; gap: var(--sp-s); overflow-x: scroll; overflow-y: hidden;
+  overscroll-behavior-x: contain; scroll-padding-inline: var(--fade); padding-top: 4px; scrollbar-width: auto; scrollbar-color: auto; }
+.tab-scroll > * { flex: none; max-width: 100%; }
+.tab-scroll::-webkit-scrollbar { height: 4px; }
+.tab-scroll::-webkit-scrollbar-track { background: transparent; }
+.tab-scroll::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+.tab-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+@supports not selector(::-webkit-scrollbar) { .tab-row > .tab-set > .tab-scroll { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; } }
+.tab-scroll:is(.more-before, .more-after) { mask-size: 100% calc(100% - 4px), 100% 4px; mask-position: top, bottom; mask-repeat: no-repeat; }
+.tab-scroll.more-after { mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent), linear-gradient(#000, #000); }
+.tab-scroll.more-before { mask-image: linear-gradient(to left, #000 calc(100% - var(--fade)), transparent), linear-gradient(#000, #000); }
+.tab-scroll.more-before.more-after { mask-image: linear-gradient(to right, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent), linear-gradient(#000, #000); }
 .claude-term .xterm-viewport { overflow-y: hidden !important; }
 .claude-term .xterm-scrollable-element > .scrollbar { display: none; }
 
