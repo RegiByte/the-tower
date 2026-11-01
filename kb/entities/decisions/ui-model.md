@@ -182,8 +182,9 @@ and a framed document's section are the same thing.
   through its form, [`overflowOf`](ref:hub/src/shared/regions.ts#overflowOf). A view and the region filled inside it
   share one head, so the view marks what the region's fit reads: `data-tuck="<rank>"` (a control of the view's the
   region may tuck last, its menu item calling the original's `click()`), `data-keep` (what the region draws in its
-  own slots and never tucks) and `data-tuck-text` (text the menu's header shows once tucked). Everything else in the
-  region's element that isn't a slot it filled is protected. A renderer that ignores the marks never tucks them. [`pickView`](ref:hub/src/shared/views.ts#pickView) picks the view a region
+  own slots and never tucks) and `data-tuck-text` (text the menu's header shows once tucked). The renderer marks the
+  element it fills with the form it draws (`data-overflow`), so the view can lay its parts out for a region that tucks.
+  Everything else in the region's element that isn't a slot it filled is protected. A renderer that ignores the marks never tucks them. [`pickView`](ref:hub/src/shared/views.ts#pickView) picks the view a region
   draws a subject with: the layout's order, then the view of the extension declaring the subject's collection, then
   the core view whose `accepts` fits most specifically (`text/markdown` before `text/*`), then the most specific of
   the rest, then a fallback. So a view of an extension takes a type no core view accepts by being installed, and any
