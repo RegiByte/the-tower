@@ -1,4 +1,4 @@
-import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, lineId, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -34,7 +34,7 @@ import { DRAFTS, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
 import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
-import { actionsHtml, asksHtml, badgeHtml } from './added.js'
+import { actionsHtml, asksHtml, badgeHtml, drawCount } from './added.js'
 import { menu } from './menu.js'
 import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 
@@ -693,7 +693,9 @@ const capitalized = (label) => label.replace(/^./, (l) => l.toUpperCase())
  * A form a region of contributions is drawn in (decision `region-overflow`): `actionsAt`, where its action buttons are;
  * `paint`, each hold's html in its place, written only where it changed; the frame's `prepare` and `read`, as for a
  * `PlacedRegion`, `read`'s write answering the action buttons drawn in place; `remeasure`; `close`, the form undone.
- * @typedef {{ name: Overflow, actionsAt: HTMLElement, paint(parts: { badges: string, lines: string, actions: string }): void, prepare(): void, read(): () => HTMLElement[], remeasure(): void, close(): void }} RegionForm
+ * @typedef {{ badges: string, lines: AddedLine[], actions: string }} RegionParts
+ *   What a region draws, badges and actions as html, its lines ranked for the form to place.
+ * @typedef {{ name: Overflow, actionsAt: HTMLElement, paint(parts: RegionParts): void, prepare(): void, read(): () => HTMLElement[], remeasure(): void, close(): void }} RegionForm
  */
 
 /** Writes html into elements, each only when it differs from what this writer last wrote there. */
@@ -718,8 +720,8 @@ const writer = () => {
 function kitRegion(el, id, subject, options) {
   let at = subject
   let omit = options.omit ?? []
-  const declared = () => placing().regions.find((r) => r.id === id)
-  const holds = declared()?.holds ?? []
+  const declaredRegion = () => placing().regions.find((r) => r.id === id)
+  const holds = declaredRegion()?.holds ?? []
   const actions = holds.includes('verbs') || holds.includes('commands')
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
   const marked = Object.values(slots).filter((s) => s !== undefined)
@@ -735,7 +737,7 @@ function kitRegion(el, id, subject, options) {
   const shownActions = (s) => addedActions(board(), s).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`)))
   /** The form the layout picks: the region's default when the viewer's pick is one it no longer offers, `wrap` where it offers none. @returns {Overflow} */
   const formName = () => {
-    const r = declared()
+    const r = declaredRegion()
     return r?.overflows?.length ? overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (r), layout()[id]) : 'wrap'
   }
   /** The buttons of the ranked actions, in their order. */
@@ -766,7 +768,7 @@ function kitRegion(el, id, subject, options) {
     return {
       name: 'wrap',
       actionsAt: slots.actions ?? el,
-      paint: (parts) => paintParts((html, slot) => write(slot, html), parts),
+      paint: (parts) => paintParts((html, slot) => write(slot, html), { ...parts, lines: parts.lines.map(lineHtml).join('') }),
       prepare: () => {},
       read: () => {
         const shown = actionEls().filter((b) => b.checkVisibility({ visibilityProperty: true }))
@@ -799,6 +801,8 @@ function kitRegion(el, id, subject, options) {
     host.replaceChildren(items, more)
     /** What each menu entry runs, by its key. @type {Map<string, (el: HTMLElement) => void>} */
     let runs = new Map()
+    /** The lines past the budget, which the menu's header holds. @type {AddedLine[]} */
+    let linesLeft = []
     const listed = menu(more, { run: (item, from) => runs.get(item.key)?.(from) })
     const pop = /** @type {HTMLElement} */ (more.nextElementSibling)
     const held = [slots.badges, slots.actions].filter((s) => s !== undefined)
@@ -881,8 +885,9 @@ function kitRegion(el, id, subject, options) {
       return { t: 'item', key, label: words.label, hint: words.hint, danger: words.destructive, fresh: dotOn(r, offered, had) }
     }
     /**
-     * The menu and ⋯ for what `tucked` holds: its badges and the text the view lets go (`texts`) in the header, the
-     * view's controls first under the subject's name, the dangerous after a separator, then the actions in rank order.
+     * The menu and ⋯ for what `tucked` holds: its badges, the lines past the budget and the text the view lets go
+     * (`texts`) in the header; the view's controls under the subject's name, the dangerous after a separator; then the
+     * actions in rank order.
      * @param {ReturnType<typeof fillOrder>} tucked @param {string[]} texts
      */
     const list = (tucked, texts) => {
@@ -896,24 +901,31 @@ function kitRegion(el, id, subject, options) {
       const tuckedActions = tucked.flatMap((t) => (t.t === 'action' ? [{ r: t.ranked, key: t.key }] : []))
       /** @type {MenuEntry[]} */
       const coreEntries = [...safe.map((c) => proxy(c.el, c.key)), ...(safe.length && danger.length ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...danger.map((c) => proxy(c.el, c.key))]
+      /** @type {MenuEntry[][]} */
+      const sections = [
+        core.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: subjectName(at), entries: coreEntries })] : [],
+        tuckedActions.map(({ r, key }) => actionItem(r, key, offered, had)),
+      ].filter((section) => section.length)
       listed.draw({
-        header: `${tuckedBadges.length ? `<div class="menu-badges">${tuckedBadges.map(badgeHtml).join('')}</div>` : ''}${texts.map((t) => `<p>${esc(t)}</p>`).join('')}`,
-        entries: [
-          ...(core.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: subjectName(at), entries: coreEntries })] : []),
-          ...(core.length && tuckedActions.length ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []),
-          ...tuckedActions.map(({ r, key }) => actionItem(r, key, offered, had)),
-        ],
+        header: [
+          tuckedBadges.length ? `<div class="menu-badges">${tuckedBadges.map(badgeHtml).join('')}</div>` : '',
+          ...linesLeft.map((l) => `<p class="menu-line">${esc(l.text)}</p>`),
+          ...texts.map((t) => `<p>${esc(t)}</p>`),
+        ].join(''),
+        entries: sections.flatMap((section, n) => [...(n ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...section]),
       })
+      const actionCount = core.length + tuckedActions.length
       const severe = tuckedBadges.filter(isSevere).length
       const said = [
-        core.length + tuckedActions.length ? plural(core.length + tuckedActions.length, 'action') : '',
+        actionCount ? plural(actionCount, 'action') : '',
         tuckedBadges.length ? plural(tuckedBadges.length, 'badge') : '',
+        linesLeft.length ? plural(linesLeft.length, 'line') : '',
         severe ? `${severe} ${severe === 1 ? 'needs' : 'need'} attention` : '',
       ].filter(Boolean)
       const label = `More on ${subjectName(at)}${said.length ? `: ${said.join(', ')}` : ''}`
       more.setAttribute('aria-label', label)
       more.dataset.tip = label
-      count.textContent = String(tucked.length)
+      count.textContent = String(tucked.length + linesLeft.length)
       const fresh = tuckedActions.some(({ r }) => dotOn(r, offered, had))
       if (severe || fresh) more.dataset.dot = severe ? 'severe' : 'new'
       else delete more.dataset.dot
@@ -922,7 +934,13 @@ function kitRegion(el, id, subject, options) {
     return {
       name: 'menu',
       actionsAt: items,
-      paint: (parts) => paintParts((html, slot, name) => write(name === 'actions' ? items : slot, html), parts),
+      paint: (parts) => {
+        const pins = layout()[id]?.pinned ?? []
+        const budget = layout()[id]?.lines ?? parts.lines.length
+        const { drawn } = drawCount(parts.lines, budget, { noun: 'line', say: (l) => l.text, pinned: (l) => pins.includes(lineId(l)) })
+        linesLeft = parts.lines.filter((l) => !drawn.includes(l))
+        paintParts((html, slot, name) => write(name === 'actions' ? items : slot, html), { ...parts, lines: drawn.map(lineHtml).join('') })
+      },
       prepare: () => {
         if (!stale) return
         for (const t of row.querySelectorAll('[data-tucked]')) t.removeAttribute('data-tucked')
@@ -941,14 +959,16 @@ function kitRegion(el, id, subject, options) {
         return () => {
           const keys = allowed.map((i) => i.key).join('\n')
           if (keys !== sig) was = allowed.length
-          const fits = fill(allowed.map((i) => /** @type {number} */ (widths.get(i.el))), room, /** @type {number} */ (widths.get(more)), was, FIT_MARGIN)
+          const header = linesLeft.length > 0 || texts.length > 0
+          const menuWidth = /** @type {number} */ (widths.get(more))
+          const fits = fill(allowed.map((i) => /** @type {number} */ (widths.get(i.el))), header ? room - menuWidth : room, header ? 0 : menuWidth, was, FIT_MARGIN)
           was = fits
           sig = keys
           const inPlace = new Set(allowed.slice(0, fits))
           const tucked = order.filter((i) => !inPlace.has(i))
           const focused = document.activeElement
           order.forEach((item) => item.el.toggleAttribute('data-tucked', !inPlace.has(item)))
-          more.hidden = !tucked.length
+          more.hidden = !tucked.length && !header
           if (more.hidden) listed.close()
           if (focused && tucked.some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
           list(tucked, texts)
@@ -1005,11 +1025,12 @@ function kitRegion(el, id, subject, options) {
     badges = holds.includes('badges') ? rankedBadges(board(), s) : []
     const parts = {
       badges: holds.includes('badges') ? `${keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s))}${badges.map(badgeHtml).join('')}` : '',
-      lines: holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry).map(lineHtml).join('') : '',
+      lines: holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry) : [],
       actions: actionsHtml(board(), s, ranked.map((r) => r.action)),
     }
     const name = formName()
     if (form.name !== name) (form.close(), (form = formOf(name)))
+    el.dataset.overflow = form.name
     for (const slot of marked.length ? marked : [el]) mark(slot, s)
     form.paint(parts)
     dot()
@@ -1022,7 +1043,7 @@ function kitRegion(el, id, subject, options) {
     update: draw,
     options: (next) => ((omit = /** @type {{ omit?: string[] }} */ (next).omit ?? []), draw(at)),
     visible: (on) => (on ? readNext(placed) : hide()),
-    close: () => (form.close(), placedRegions.delete(placed), unread.delete(placed), (marked.length ? marked : [el]).forEach(clear)),
+    close: () => (form.close(), placedRegions.delete(placed), unread.delete(placed), delete el.dataset.overflow, (marked.length ? marked : [el]).forEach(clear)),
   }
 }
 

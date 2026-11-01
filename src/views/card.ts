@@ -24,7 +24,9 @@ import { keyedTip, paintOnce } from './parts.ts'
  * shows its lamp and time, its words in its tip and to assistive tech. The head wraps and never clips: the actions
  * wrap first, then context and cost go under the status. The timer's width is reserved, so its tick never moves the
  * head. For a region that tucks what doesn't fit, the head marks its own controls `data-tuck` (their rank, the lowest
- * tucked first) and the text a menu shows in their place `data-tuck-text`.
+ * tucked first) and the text a menu shows in their place `data-tuck-text`. When the region says it tucks (`menu` as
+ * its `data-overflow`), at compact room the top extension line takes the place line's slot, and the place line's text
+ * is left to the region's menu.
  *
  * At cell scale the view holding the card speaks to it through its options (`CardOptions`):
  * `acts`, its own controls at the end of the head, a press dispatching a bubbling `act` event; `pick`, the callsign as
@@ -84,6 +86,7 @@ const CSS = `:where([data-view="${ID}"]) {
     & .verb .icon { width: var(--icon-m); height: var(--icon-m); }
     & .verb.danger { color: var(--broken-text); }
     & .bar-line { margin-top: var(--sp-xs); }
+    & .bar-top[data-overflow="menu"] .bar-sub:has(.adds-line) .where { display: none; }
   }
   @container card-head (width < 480px) {
     & .bar-info { flex: 1 1 0; }

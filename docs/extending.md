@@ -159,6 +159,10 @@ account:
   exemptions).
 - `data-tuck-text`: text the menu's header shows once it is tucked.
 
+The renderer marks the element it fills with the form it draws the region in, `data-overflow="menu"` and so on, so a
+view can lay out its own parts for a region that tucks: the page's worker head gives its place line's slot to the top
+extension line at compact room, its text left to the menu's header, only while its head is drawn as `menu`.
+
 Everything else in the region's element that isn't a slot it filled is protected: its width is taken from the room.
 A renderer that ignores the marks never tucks those controls, and they stay drawn. Whatever is tucked is hidden, out
 of the tab order and the accessibility tree, and is reached by keyboard through the menu; the palette lists every
