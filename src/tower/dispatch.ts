@@ -12,7 +12,7 @@ import path from 'node:path'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
-import { AT_COMPOSER, promptRefusal } from '../bridge/composer.ts'
+import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
 import type { Status } from '../bridge/status.ts'
 import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
@@ -224,6 +224,7 @@ export const dispatch = defineResource({
     const submitAtPrompt = (id: string, text: string, by: string | undefined) =>
       withSession(id, () =>
         fromWorker(by, async () => {
+          if (!isPlain(text)) return apiError('not_plain', `Claude reads a prompt starting with "${text.trimStart().charAt(0)}" as a command, not a prompt: run it in ${nameOf(id)}'s terminal`)
           const before = system.session(id)!.facts
           const refused = promptRefused(id, before)
           if (refused) return refused

@@ -42,7 +42,7 @@ export type Act =
   | { resume: string; from: string }
   | { keys: string }
   | { submit: string }
-  | { atPrompt: string; refused?: 'not_at_prompt' | 'composer_holds' | 'moved' }
+  | { atPrompt: string; refused?: 'not_at_prompt' | 'composer_holds' | 'moved' | 'not_plain' }
   | { write: string; text: string }
   | { kill: true }
 
@@ -157,6 +157,8 @@ export const SCENARIOS: Scenario[] = [
     prompt: 'reply with exactly the word PONG and nothing else',
     steps: [
       { on: DONE, pause: 1500, do: { atPrompt: 'reply with exactly the word PING and nothing else' } },
+      { pause: 500, do: { atPrompt: '/cost', refused: 'not_plain' } },
+      { pause: 500, do: { atPrompt: '!echo hi', refused: 'not_plain' } },
       { on: DONE, pause: 1500, do: { keys: 'half typed' } },
       { pause: 1000, do: { atPrompt: 'reply with exactly the word PANG and nothing else', refused: 'composer_holds' } },
       { pause: 1000, do: { keys: '\x03' } },

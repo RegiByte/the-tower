@@ -268,7 +268,8 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   works; it is refused (`not_at_prompt`) while the worker asks the user something or waits on one of Claude's
   screens, where the text would answer it. `submit/at-prompt` submits only while the worker sits at its prompt (idle,
   done, failed or watching) with nothing in its composer, which the card offers as its `prompt` verb. It refuses
-  `not_at_prompt` or `composer_holds` as the call arrives, and `moved` when the worker moved while the text was typed:
+  `not_plain` for text opening with `/` or `!` (Claude's composer runs it as a command or a shell line: the message names the
+  worker's terminal), `not_at_prompt` or `composer_holds` as the call arrives, and `moved` when the worker moved while the text was typed:
   Enter is not pressed, and the text waits in the composer. A composer for people calls this one.
 - **Which page the user is at** (API 1.129): a page names itself and its renderer on its board stream,
   `GET /board?viewer=<id>&renderer=<name>` (its own id, 8 to 64 letters, digits and dashes, new on every load), and
