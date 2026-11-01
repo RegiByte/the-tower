@@ -12,6 +12,65 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.81.0
+
+The Brief reads whole turns and carries a chat box's place, the sidebar stops naming extensions, and a prompt typed from
+outside the terminal is checked against the composer. No restart beyond the tower's own (`tower down tower`, then
+`tower up tower`), the renderer API 1.131 → 1.136 (additive, no major), no config change (the chat example is opt-in).
+**One changed behavior:** `submit` refuses more often (see its entry).
+
+- **The Brief reads whole turns** (API 1.133): a turn shows Claude's words between tool calls, one line per tool call
+  (the tool, what it did, how it ended) and the messages it sent, besides its prompt and answer (#319).
+  - A tool call opens to its input, the permission check it met and its error; five or more in a row fold to a count
+    that names how many failed, were denied or stopped. A conversation with more turns than the brief shows offers
+    "earlier turns". Tower 3D's logbook draws the same through `/brief.js`.
+  - Two reads: `GET /conversations/<id>/<conversation>` (every turn) and `GET /conversations/<id>/tool/<call>` (one
+    call's input, check, outcome and error), as `tower.conversation` and `tower.toolCall`. `Turn` gains `steps` and
+    `session`, `Brief` gains `earlier`.
+  - `said` gains side `step.<n>`, so narrate's Listen reaches Claude's words mid-turn and the messages it sent.
+  - No host or mod change: the session log already held it all.
+- **Submit at the prompt** (API 1.134): `POST /submit/at-prompt {id, text, by?}` and the card verb `prompt` type only
+  when the worker sits at its prompt with an empty composer (#321).
+  - It refuses `not_at_prompt` or `composer_holds` as the call arrives, and `moved` (409) when the status moved or
+    someone typed while it pasted; the text then waits, visible, in the composer. The fold keeps `heldSince` and counts
+    typed inputs to know when the composer holds text.
+  - **Changed behavior:** `POST /submit` and `tower submit` now refuse `not_at_prompt` while the worker is
+    `needs_input`, `blocked` or `booting`, and when its session isn't running. Text that used to be typed into a
+    question or a startup screen is refused instead; answer a dialog with `POST /keys` or in the
+    terminal. `submit` still queues while Claude works.
+  - `tower submit` goes through the tower's `submit`, naming the sending worker in the target's log, instead of
+    writing to the host.
+  - Text starting with `/` or `!` (leading whitespace ignored) runs in Claude's composer as a command, so
+    `submit/at-prompt` refuses it `not_plain` (API 1.136, #324). `submit` is unchanged.
+- **A composer outside the terminal** (API 1.135): the page's `card.composer` region sits at the foot of the Brief,
+  under its latest turn, outside the scroll (#322).
+  - The foot draws its view at its natural height up to the smaller of 320px and 40% of the Brief, then scrolls inside,
+    and keeps a reader who was at the end there. With no view, no room is left.
+  - A region holding one view picks it again on every update and hides while it has nothing to draw. Tower 3D declares
+    no `card.composer` yet.
+  - **The `chat` example extension** (#323): a chat box in the Brief for people who would rather not type into a
+    terminal. ⌘⏎ sends (Ctrl+Enter elsewhere; `keys.submit` rebinds it) and Enter is a newline. Send is enabled only
+    while the card offers `prompt`, otherwise the line under the box says why. A refusal leaves the text, the draft
+    is kept per worker across a reload, and text starting with `/` or `!` is held back with "Plain text only". Copy
+    `examples/extensions/chat` to use it; no server code, no config.
+- **A running worker always offers the Brief** (API 1.136): `brief` was offered once a conversation was saved; it is
+  now offered while the worker runs, and after it ends while it has conversations. A fresh worker's tab says "no
+  conversation yet" (#324).
+- **The sidebar stops naming extensions** (API 1.132): the page read policies, reviews and drafts by name in four
+  places; each now reads what the extension declares (#317).
+  - `Ask.hint` is more about an ask in words, drawn on hover. A policy's offer is an ask like any other: its title
+    opens the policy's document, and Accept is the ask's verb. Policies requires tower 1.132.
+  - A policy run on its worker and "reviews X" on a reviewer are badges from the policies and reviews extensions' card
+    folds.
+  - The floor's `floor.sign` region holds commands drawn as icons; drafts contributes its new-draft pencil there, and
+    `floor.section` no longer holds commands.
+  - An offer's title no longer truncates to its first letters. Accepting an offer no longer toasts or selects the new
+    worker.
+- **Leftovers from the extension READMEs** (#315): a worker's brief mentions keeping drafts only where drafts is on
+  (drafts' own server adds the line), the palette draws again when a draft's title arrives while it is open, the shots
+  tool takes `$VAR`s in every step, clicks the first match with a box and fixes the sandbox's callsigns, the handbook
+  gives the shape of a policy's `hire.cut`, and the kb is corrected where it disagreed with the code.
+
 ## v1.80.0
 
 The tower runs on Windows through WSL 2, contributed by @amandamachadodev. No restart beyond the tower's own (`tower
