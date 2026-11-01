@@ -351,9 +351,9 @@ export type TidyEntry = { key: string; label: string; hint?: string; does?: stri
 /**
  * Something asking for the user, in the attention order beside the waits. `key`: this ask alone, as `Wait.key` names a
  * wait. `subject`: the subject key it is about. `since`, `until`: epoch ms; it is gone past `until`. `sound`: it rings
- * as a wait does, or as an offer.
+ * as a wait does, or as an offer. `hint`: more about it in words, which renderers draw on hover (since 1.132).
  */
-export type Ask = { key: string; subject: string; title: string; since: number; until?: number; sound: 'wait' | 'offer'; actions: Action[] }
+export type Ask = { key: string; subject: string; title: string; hint?: string; since: number; until?: number; sound: 'wait' | 'offer'; actions: Action[] }
 
 /** A slot a fold gives its subject: `key`, which of the extension's subjects it is for, and its rule. */
 export type FoldedSlot = { key: string; when: When }

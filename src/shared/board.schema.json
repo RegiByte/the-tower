@@ -5343,6 +5343,9 @@
         "title": {
           "type": "string"
         },
+        "hint": {
+          "type": "string"
+        },
         "since": {
           "type": "number"
         },

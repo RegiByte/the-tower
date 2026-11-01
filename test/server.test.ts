@@ -531,9 +531,11 @@ test('server: policies kept before the policies extension keep their approvals, 
     ['digest.md', 'nightly.md', 'sweep.md', 'triage.md'],
     'every valid policy the tower runs has its slots fired by the core',
   )
+  const asks = board.asks.filter((a) => a.cap === 'policies')
+  assert.match(asks[0]?.hint ?? '', /^.+ offered, open until .+$/, 'the open offer says its slot and until when on hover')
   assert.deepEqual(
-    board.asks.filter((a) => a.cap === 'policies'),
-    [{ key: `policies:${triage.id}@${triage.slot}`, subject: `item.policies:lab/${triage.id}`, title: 'Triage', since: OFFERED_AT, until: triage.slot + DAY, sound: 'offer', cap: 'policies', actions: [{ verb: 'policies/run', call: accept[1], cap: 'policies' }] }],
+    asks.map(({ hint, ...a }) => a),
+    [{ key: `policies:${triage.id}@${triage.slot}`, subject: `item.policies:lab/${triage.id}`, title: 'Triage', since: OFFERED_AT, until: triage.slot + DAY, sound: 'offer', cap: 'policies', actions: [{ verb: 'policies/run', call: accept[1], words: { label: 'Accept', hint: 'start the run this slot offers' }, cap: 'policies' }] }],
     'the open offer is an ask that rings as an offer, until the next slot',
   )
   const standings = Object.fromEntries(floor.policies.map((p) => [p.id, standing(p, now)]))

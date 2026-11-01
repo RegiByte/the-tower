@@ -56,12 +56,16 @@ export const addedActionsHtml = (board, subject) => actionsHtml(board, subject, 
 /** A subject's badges, then its added actions. @param {Board} board @param {Subject} subject */
 export const addsHtml = (board, subject) => `${badgesHtml(board, subject)}${addedActionsHtml(board, subject)}`
 
-/** Asks as rows: what is asked and by whom, its actions on its subject, and ✕ to dismiss it. @param {Board} board @param {BoardAsk[]} asks @param {number} now */
+/**
+ * Asks as rows: what is asked and by whom, which opens its subject and says its hint on hover, its actions on its
+ * subject, and ✕ to dismiss it.
+ * @param {Board} board @param {BoardAsk[]} asks @param {number} now
+ */
 export const asksHtml = (board, asks, now) =>
   asks.length
     ? `<div class="offers">${asks
         .map(
-          (a) => `<div class="offer-row ask-row ${a.sound === 'wait' ? 'needs' : 'offered'}" data-hold="ask:${esc(a.key)}"><span class="what"><b>${esc(a.title)}</b> <span>${esc(a.cap)} asks · ${esc(span(now - a.since))} ago</span></span>
+          (a) => `<div class="offer-row ask-row ${a.sound === 'wait' ? 'needs' : 'offered'}" data-hold="ask:${esc(a.key)}"><button class="what" data-open-view="${esc(JSON.stringify({ subject: a.subject }))}"${a.hint ? ` data-tip="${esc(a.hint)}"` : ''}><b>${esc(a.title)}</b> <span>${esc(a.cap)} asks · ${esc(span(now - a.since))} ago</span></button>
     ${a.actions.map((action) => actionHtml(board, a.subject, action)).join('')}
     <button class="icon-btn" data-dismiss="${esc(a.key)}" aria-label="${DISMISS_ASK_TITLE}" data-tip="${DISMISS_ASK_TITLE}">${ICON.close}</button></div>`,
         )

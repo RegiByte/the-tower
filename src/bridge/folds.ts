@@ -80,6 +80,7 @@ const PartShape = z.strictObject({
           .string()
           .regex(SUBJECT_KEY, 'a subject key of the core: card:<id>, conversation:<id>, shown:<card>/<at>, floor:<project>, collection:<project>/<collection>, shelf:<project>/<n>, item.<collection>:<project>/<id> or board'),
         title: z.string().min(1),
+        hint: z.string().min(1).optional(),
         since: z.number(),
         until: z.number().optional(),
         sound: z.enum(['wait', 'offer']),
