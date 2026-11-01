@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-10-31",
+  "reviewed": "2026-11-01",
   "refs": [
     "hub/src/directory.ts#keepContent",
     "hub/src/directory.ts#keepArgs",
@@ -51,8 +51,8 @@ versions of one idea with nothing saying which was current.
   about an item is stored beside it.
 - To change a kept item, a worker edits its file in place and never keeps a second copy; it never deletes one:
   throwing an item away is the user's. The brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) and the
-  handbook say so. The brief also says to keep off-goal ideas and later prompts with `tower keep drafts` and carry on
-  ([[brief-first]]).
+  handbook say so. Where the floor has drafts, its extension adds the line that says to keep off-goal ideas and later
+  prompts with `tower keep drafts` and carry on ([[brief-first]]).
 - Every spawn and resume passes the project's collections directory as `--add-dir`
   ([`keptArgs`](ref:hub/src/shared/launch.ts#keptArgs)), so an edit there asks no permission. The directory holds no
   `.claude/`, so [[repos-file-access-only]]'s reason for `additionalDirectories` does not apply, and the flag is the

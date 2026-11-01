@@ -9,7 +9,7 @@ const SPAWN_SIZE = { cols: 120, rows: 40 }
 
 /**
  * Every session is told, in its system prompt, what every worker does on every turn: who it is, how to reach a peer,
- * showing what it made, stopping what it started, keeping ideas for later. Workers follow these recipes whether or not
+ * showing what it made, stopping what it started, editing a kept item in place. Workers follow these recipes whether or not
  * they load the tower:handbook skill, which holds the rest. `user`: the name the config gives the person running the tower, said
  * once so a worker knows them by it on review notes and when they name themselves.
  */
@@ -30,10 +30,7 @@ const towerBrief = (user: string | undefined) =>
     "- Stopping what you started: other workers' command lines carry their briefs and paths, so `pkill -f` or " +
       '`killall` with a pattern can end them. Save the PID of anything you start (`… & echo $! > server.pid`) and ' +
       'stop it with `kill <pid>`.',
-    "- Keeping for later: an idea off the current goal, or a prompt the user wants for a later session, goes in the " +
-      "floor's drafts with `tower keep drafts` (markdown on stdin, its first line a title, written to stand on its " +
-      'own). Name it to the user by the tag and title it prints, and carry on. To change a kept item, edit its file ' +
-      'in place (`tower kept` gives the path): never keep a second copy.',
+    '- Kept items: to change one, edit its file in place (`tower kept` gives the path): never keep a second copy.',
     '- Everything else is in the tower:handbook skill: review threads and notes, hiring workers and sending them ' +
       "home, crews, the floor's shelf (the pages the user means by \"shelf\"), the tower's config, worktrees and the " +
       "tower's API. Load it when the task touches any of them. Don't create or remove " +

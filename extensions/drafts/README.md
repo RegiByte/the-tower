@@ -50,7 +50,7 @@ Every worker's `tower whoami` lists the collection:
 ```
 
 A worker keeps an idea off its goal, or a prompt for later, with `tower keep drafts` (markdown on stdin, its first
-line the title). The Week draws none of it.
+line the title). Its system prompt says so only on a floor where drafts is on. The Week draws none of it.
 
 ## Add it
 
