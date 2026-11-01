@@ -41,7 +41,7 @@ export const drawCount = (items, k, what) => {
 
 /**
  * The "+n" of one or more `drawCount` results, as the region shows it: `mark` is the "+n" as plain text, not focusable and
- * hidden from assistive tech, its tip listing what was left out; `note` is the same list as hidden text with the `id`
+ * hidden from assistive tech, its tip listing what was left out; `note` is the same list as text hidden from browsing with the `id`
  * given, which the focusable thing of the row names in its `aria-describedby` (`by`). All three are empty when nothing
  * was left out.
  * @param {string} id
@@ -53,7 +53,7 @@ export const moreOf = (id, counts) => {
   const rests = counts.map((c) => c.rest).filter(Boolean)
   return {
     mark: `<span class="more" aria-hidden="true" data-tip="${esc(['also:', ...rests].join('\n'))}">+${left}</span>`,
-    note: `<span class="sr-only" id="${esc(id)}">${esc(`also: ${rests.join('; ')}`)}</span>`,
+    note: `<span hidden id="${esc(id)}">${esc(`also: ${rests.join('; ')}`)}</span>`,
     by: ` aria-describedby="${esc(id)}"`,
   }
 }
