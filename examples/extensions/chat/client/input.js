@@ -5,7 +5,7 @@ import { chordLabel, commandOf } from '/keymap.js'
  * `chat/input`: a plain text box at the foot of a worker's Brief (`card.composer`). The keymap's `submit` chord or Send
  * sends what it holds through the card's `prompt` verb (`submit/at-prompt`), offered while the worker waits at its
  * prompt with nothing typed in its terminal; Enter is a newline. The tower checks again as the text arrives: a refusal
- * leaves the text in the box and says why under it. Text starting with `/` is not sent: plain text only. Text sent
+ * leaves the text in the box and says why under it. Text starting with `/` or `!` is not sent: plain text only. Text sent
  * clears the box, and the prompt shows in the Brief from the log. What is typed is kept per worker in the view's
  * state, so a reload or another renderer finds it.
  */
@@ -41,8 +41,12 @@ const NOT_NOW = {
 /** A worker at its prompt takes none while something is typed in its terminal's composer. */
 const HOLDS = { why: 'holding text in its composer, typed in its terminal or a prompt Esc put back: submit it there, or clear it with Ctrl+C', there: true }
 
-/** Claude runs a prompt that starts with `/` as a slash command, whose menus take the keys of whatever is sent next. */
-const SLASH = 'Plain text only: run slash commands in its terminal.'
+/**
+ * Claude runs a prompt that starts with `/` as a slash command, whose menus take the keys of whatever is sent next,
+ * and one that starts with `!` as a shell command.
+ */
+const NOT_PLAIN = /^\s*[/!]/
+const SLASH = 'Plain text only: run slash and shell commands in its terminal.'
 
 const TERMINAL = '<button data-chat-terminal>Open its terminal</button>'
 
@@ -104,7 +108,7 @@ export function mount(host, { tower, board: first, subject, kit, state }) {
     const not = notNow()
     const chord = sendChord(board.keys)
     const sent = said.t === 'sent' && card.status === said.status && card.enteredAt === said.enteredAt
-    const slash = text.value.trimStart().startsWith('/')
+    const slash = NOT_PLAIN.test(text.value)
     text.placeholder = `A prompt for ${card.callsign}`
     send.disabled = sending || !!not || slash || !text.value.trim()
     hint.textContent = chord ? `${chord} sends` : ''
@@ -122,7 +126,7 @@ export function mount(host, { tower, board: first, subject, kit, state }) {
   async function submit() {
     const value = text.value
     const call = callOf(card, 'prompt')
-    if (sending || !value.trim() || value.trimStart().startsWith('/') || !call) return
+    if (sending || !value.trim() || NOT_PLAIN.test(value) || !call) return
     sending = true
     said = { t: 'none' }
     draw()
