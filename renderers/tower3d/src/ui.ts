@@ -10,8 +10,8 @@ import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel,
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import type { Action, Added } from '../../../src/shared/extensions.ts'
-import { actionWords, addedActions, exemptionsOf, rankedActions, rankedBadges, rankedLines, type LayoutEntry, type Ranked, cardSubject, conversationSubject, type Subject, isCommand, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
+import { addedKey, deskVerbs, placed } from './desk-verbs.ts'
+import { actionWords, exemptionsOf, rankedBadges, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighbours, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle, quotaOf } from '../../../extensions/quota/client/quota.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
@@ -287,23 +287,6 @@ const cardBadgesHtml = (board: Board, c: Card) => badgesHtml(board, cardSubject(
 /** The lines extensions add under a card, one under another, as its desk's layout `entry` ranks them. */
 const cardLinesHtml = (board: Board, c: Card, entry: LayoutEntry | undefined) =>
   rankedLines(board, c.id, entry).map((l) => `<span class="adds-line" data-tip="${esc(l.text)}">${esc(l.text)}</span>`).join('')
-
-/**
- * The verbs extensions offer on a card, as its desk draws them under its layout `entry`: ranked, less the hidden. A
- * client command needs a renderer that imports modules, so commands are left out.
- */
-export const deskVerbs = (board: Board, c: Card, entry: LayoutEntry | undefined): Ranked[] =>
-  rankedActions(addedActions(board, cardSubject(c)).filter((a) => !isCommand(a)), entry)
-
-/**
- * The key a destructive extension verb on a card is armed under: its card, the action itself, and its place among the
- * card's verbs of its `actionId`. A pin or a hide moves every action of an id together, so whatever reorders the desk,
- * a second press confirms only the very action the first one armed.
- */
-export const addedKey = (c: Card, action: Added<Action>, k: number) => `added ${c.id} ${k} ${JSON.stringify(action)}`
-
-/** Each ranked verb with its place among those of its `actionId`. */
-const placed = (verbs: Ranked[]) => verbs.map((r, n) => ({ ...r, k: verbs.slice(0, n).filter((o) => o.id === r.id).length }))
 
 /** The dot on an action new to the viewer. */
 const FRESH_DOT = '<span class="fresh"></span>'
