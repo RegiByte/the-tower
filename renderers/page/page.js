@@ -443,7 +443,9 @@ const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ (re
 const LAYOUT_KEY = `layout.${RENDERER}`
 /** The viewer's own layout, over the config's and the renderer's. @type {Layout | undefined} */
 let storedLayout = /** @type {Layout | undefined} */ ((await tower.store.get(LAYOUT_KEY)) ?? undefined)
-const layout = () => layoutOf(declaredLayout(board(), declared.layout ?? {}), declared.configLayout, storedLayout)
+/** The ids of the regions this renderer declares: an extension's layout counts only for the others. */
+const OWN_REGIONS = (declared.regions ?? []).map((r) => r.id)
+const layout = () => layoutOf(declaredLayout(board(), declared.layout ?? {}, OWN_REGIONS), declared.configLayout, storedLayout)
 const KIT = /** @type {readonly KitMember[]} */ (declared.kit ?? [])
 const MAIN = /** @type {Region} */ ((declared.regions ?? []).find((r) => r.id === 'board.main'))
 
