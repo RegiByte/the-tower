@@ -574,7 +574,7 @@ export function regions(deps) {
     }
 
     /** The forms the tab row is drawn in, by the overflow each draws. */
-    const forms = { scroll: tabsScroll }
+    const forms = { scroll: tabsScroll, wrap: tabsWrap }
 
     /** The form the layout picks among those the region offers; a region offering none is drawn scrolling. @returns {keyof typeof forms} */
     function formOf() {
@@ -589,8 +589,8 @@ export function regions(deps) {
       return adds && `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(/** @type {CardShown} */ (showing)))}">${adds}</span>`
     }
 
-    /** The worker's tablist around `inner`, the tabs as a form lays them out. @param {string} inner */
-    const tablistHtml = (inner) => `<span class="tab-set" role="tablist" aria-label="views of ${esc(card.callsign)}">${inner}</span>`
+    /** The worker's tablist around `inner`, the tabs as form `form` lays them out. @param {keyof typeof forms} form @param {string} inner */
+    const tablistHtml = (form, inner) => `<span class="tab-set tabs-${form}" role="tablist" aria-label="views of ${esc(card.callsign)}">${inner}</span>`
 
     /** @param {TabOf[]} tabs */
     const tabsHtml = (tabs) => tabs.map((t) => tabHtml(t, t.key === open)).join('')
@@ -604,13 +604,18 @@ export function regions(deps) {
     function tabsScroll(all, adds) {
       const fixed = all.filter((t) => !t.showing && PANE_COMMANDS[t.view.id])
       const rest = all.filter((t) => !fixed.includes(t))
-      repaint(strip, tablistHtml(`${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
+      repaint(strip, tablistHtml('scroll', `${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
       const scroller = /** @type {HTMLElement} */ (scrollerOf())
       if (scroller !== scrolled.drawn) scroller.scrollLeft = scrolled.left
       if (scrolled.open !== open) bringOpen(scroller)
       scrolled.drawn = scroller
       scrolled.open = open
       markEdges(scroller)
+    }
+
+    /** The wrap form: every tab in the layout's order, on as many rows as they take. @param {TabOf[]} all @param {string} adds */
+    function tabsWrap(all, adds) {
+      repaint(strip, tablistHtml('wrap', tabsHtml(all)) + adds)
     }
 
     /**
