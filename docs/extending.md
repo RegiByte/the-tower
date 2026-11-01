@@ -74,25 +74,95 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 
 - `regions`: each place it draws for one subject kind, named `<kind>.<place>` (`item.*` is every collection's items),
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
-  holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`. Only
-  `regions` is required. `tower extensions check` and the table under [Extensions](#extensions) are read from them.
+  holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`, and
+  the forms it draws it in when it is full, its default first (`overflows`, API 1.138: [When a region is
+  full](#when-a-region-is-full)). Only `regions` is required. `tower extensions check` and the table under
+  [Extensions](#extensions) are read from them.
 - `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `notice`, `confirm`, `href`,
   `showing`, `location`): a
   view is offered only where the kit holds every member it `needs` ([Views](#views)).
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
-- `layout`: its own default arrangement of the views in its regions, by region id: `order` (view ids first, in this
-  order; the rest after), `hidden` (not offered there), `open` (the tab a tabs region opens on) and `options` (each
-  view's own settings there). The config's `renderers.<name>.layout` lies over it, and the viewer's, kept in
-  `tower.store` under `layout.<name>`, over both: `layoutOf(declared, configured, stored)` in `/views.js` takes each
-  field from the highest layer that sets it, and `hidden` from all of them, less a view a higher layer names in its
-  `order`. `GET /renderers` serves the config's as `configLayout` (API 1.104).
+- `layout`: its own default arrangement of its regions, by region id: `order` (view ids first, in this order; the
+  rest after), `hidden` (not offered there: views, and since API 1.138 actions and an extension's lines), `open` (the
+  tab a tabs region opens on), `options` (each view's own settings there), and since API 1.138 `pinned`, `unpinned`,
+  `overflow` and the budgets `lines`, `badges` and `actions` ([When a region is full](#when-a-region-is-full)). The
+  config's `renderers.<name>.layout` lies over it, and the viewer's, kept in `tower.store` under `layout.<name>`, over
+  both: `layoutOf(declared, configured, stored)` in `/views.js` takes each field from the highest layer that sets it;
+  `hidden` from all of them, less an id a higher layer names in its `order` or `pinned`; and `pinned` from all of
+  them, the highest layer's first, less an id a higher layer names in `unpinned`. `GET /renderers` serves the
+  config's as `configLayout` (API 1.104), and what is wrong with it as `layoutProblems` (API 1.138).
 - `entry`: the page the file declares for, `index.html` unless set. Two renderers may share a root with different
   entries (Tower 3D's Lab is its `out/` with `lab.html`): only the one whose `entry` matches reads the file.
 
 A file that doesn't parse declares nothing, and the renderer serves all the same: `GET /renderers` says why as its
 `problem`, and `tower config check` warns. The tower reads `keeps` for extensions' chords; `kit` and `layout` are read
 by the renderer that hosts views, through `/views.js`.
+
+### When a region is full
+
+Extensions may add more to a region than fits it. A region draws a prefix of one ranked list in place and reaches
+the rest through its overflow form (API 1.138, decision `region-overflow`):
+
+- `menu`: what doesn't fit in the room goes behind a ⋯ control, measured.
+- `count`: a fixed number in place and "+n" for the rest, reached where the subject opens or in the palette. Offer it
+  only where the rest is reachable there.
+- `wrap`: everything, the region growing.
+- `scroll`: a strip with a visible edge that keeps the open item in view.
+
+A region lists the forms it draws in `overflows`, its default first, and the user picks one with the layout's
+`overflow`, per region: a choice applies wherever the region is drawn, grid cells included. A region with no
+`overflows` offers no choice. Declare a form only once your renderer draws it, so `tower config check` never accepts
+a form it can't draw. `overflowOf(region, entry)` in `/cards.js` answers the form a region is drawn in: the layout's
+when the region offers it, else the default.
+
+The ranking is shared code in `/cards.js`, so every renderer orders a region alike:
+
+- `actionId(action)` and `lineId(line)`: the one id space pins, hides and the viewer's seen name, a command's
+  `<cap>/<command>`, a verb's qualified name, and for lines the extension's capability.
+- `rankedActions(actions, entry)`: less the hidden, the pinned first in their order, then board order. Pass what you
+  draw, after leaving out what the holder omits: `rankedActions(omitted(addedActions(board, s), omit), entry)`.
+- `rankedBadges(board, subject)`: the folds' badges by `SEVERITY`, board order within a tone. A card's exemptions are
+  apart (`exemptionsOf`): draw them with its identity and never tuck them.
+- `rankedLines(board, card, entry)`: a card's lines, pinned capabilities first, then fold order.
+- `headRanked(badges, ranked)`: a head's fill order, the severe badges, the pinned actions, the other badges, the other
+  actions.
+
+`fill(widths, room, menu, was, margin)` in `/views.js` answers how many of the ranked items a `menu` region draws in
+place: fewer as soon as they don't fit, more only with `margin` to spare. Pass the count you drew last as `was`, and
+`widths.length` on a first fit or once the ranked ids changed. Measure each item when it is painted, fit on a change
+of the region's inline size or of what it paints, never on a clock tick.
+
+The budgets `lines`, `badges` and `actions` say how many of each a `menu` region draws at most, or a `count` region
+exactly:
+
+- pins don't count against a budget, and are drawn while there is room;
+- the region's own controls never count;
+- `0` under `menu` draws the pinned alone;
+- `count` draws min(k, n) and shows no "+0";
+- under `wrap` and `scroll` a budget is unused;
+- on a worker's head, `lines` is how many lines its row of lines shows, not part of the fill.
+
+An extension's actions are new to the viewer while an extension offers them and the viewer's `seen` doesn't hold them
+(`isFresh(offeredIds(board), seen, id)`; `seen` in `/viewer.js`). Mark them with a dot. Newness never changes the
+ranking. When nothing was ever kept, write `seenOf(null, offeredIds(board))` once, so a fresh tower shows nothing as
+new. Add to `seen` with `sawAll(seen, ids)`, which answers nothing when there is nothing to write: when the viewer runs,
+pins or hides an action, opens a menu that lists it, or sees it drawn in place in a focused window.
+
+A view and the renderer that fills a region inside it share one head. The view marks what the region's fit takes into
+account:
+
+- `data-tuck="<rank>"` with an `aria-label`: a control of the view's the region may tuck as a last resort, the lowest
+  rank first, after every contribution. Its menu item calls the original's `click()`, so the view's handler runs
+  unchanged.
+- `data-keep`: something the region draws in its own slots that it must never tuck (a heeded wait's Dismiss, a card's
+  exemptions).
+- `data-tuck-text`: text the menu's header shows once it is tucked.
+
+Everything else in the region's element that isn't a slot it filled is protected: its width is taken from the room.
+A renderer that ignores the marks never tucks those controls, and they stay drawn. Whatever is tucked is hidden, out
+of the tab order and the accessibility tree, and is reached by keyboard through the menu; the palette lists every
+action on the subject in focus, tucked or hidden.
 
 ### A new one
 
@@ -347,7 +417,7 @@ extensions' server code as `tower:<name>.js` ([Extensions](#extensions)):
 | `/tower.js` | the client: the board, every verb and read, streams, `tower.store`, the viewer's appearance (`tower.prefs`) |
 | `/design.css` | the design's tokens as custom properties (colours in both schemes, the type and spacing scales, corners), the faces, a few classes (`.needs`, `.pill`, `.eyebrow`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states |
 | `/design.js` | the design module: palettes, type, the type and spacing scales (`size`, `space`), the terminal's theme, the sky by hour, a document's stylesheet |
-| `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`) |
+| `/cards.js` | words about cards and floors, the spawn form, round-robin through waits, the ring and its sounds, why a verb can't run (`whyNot`), and a region's ranking and form (API 1.138: `actionId`, `lineId`, `rankedActions`, `rankedBadges`, `rankedLines`, `exemptionsOf`, `headRanked`, `offeredIds`, `isFresh`, `overflowOf`; [When a region is full](#when-a-region-is-full)) |
 | `/panels.js` | the Changes, Reviews, Stats and Policies panels as pure views, their stylesheet, and the data attributes you wire; a read that failed (`failedHtml`, also each view's `failed`); the Stats panel's money, hours and durations as words (`usd`, `hours`, `duration`) |
 | `/brief.js` | a worker's brief as a chat over `/conversations/<id>`: each turn's prompt, Claude's steps (its words, tool calls in a line each, messages sent) and answer; its stylesheet, what a viewer opened read back from the drawn html, copying a prompt, answer or step as written (`saidText`, `saidWhat`), a tool call opened as read (`toolCallHtml`), a conversation read whole in place (`withWhole`), and the viewer's rendered or raw choice in `tower.store` (`BRIEF_MARKDOWN_KEY`) |
 | `/x/drafts/drafts.js` | the bundled drafts extension's client: editing a floor's drafts over the generic `collection/*` verbs, the floor's drafts collection while the extension is on there (`draftsOf`), keeping a prompt the new-worker form closed on (`keepUnsent`), and putting a deleted draft back (`discard` answers what it deleted, `restore`). `/drafts.js` serves it too, deprecated, until 2.0 |
@@ -373,8 +443,8 @@ extensions' server code as `tower:<name>.js` ([Extensions](#extensions)):
 | `/loop.js` | a machine as data: `loop` runs a map of handlers, `(state, event) -> effects`, the next state among them, through your executors of the rest; `timers()` executes timer effects, each carrying the event it fires |
 | `/reads.js` | reads a viewer holds (`Held`): the last read held until the next lands, a read overtaken landing on nothing, a failure shown only while nothing is held; the steps, and `heldHandlers` and `reading` to run them on `loop`. `/panels.js` runs them for review threads (`threadWant`, `heldThread`, `readThread`) and a worker's Changes (`changesHandlers`, `readChanges`) |
 | `/term-view.js` | a terminal a viewer has open on a PTY, as a machine on `loop`: `termHandlers` its steps (opening, watching, owning, exited), and `mountTermView(host, { Terminal, FitAddon }, io)` running it in xterm.js on a `terminal/<id>`, `screen/<id>` or `shell/<id>` stream. The PTY has one size: a terminal opened while nobody else views it takes the size (a shell's always), a resize from anyone else hands it back and the view follows at a font that fits, typing takes it again, and a pane or font change fits the PTY only while this viewer holds it |
-| `/views.js` | views, the layout and navigation (API 1.104): `CORE_VIEWS` and `viewsOf(board)`, `layoutOf(declared, configured, stored)` and `declaredLayout(board, declared)` (the regions' defaults extensions give under a renderer's own, 1.114), `viewOn`, `offeredIn` and `pickView` (which view a region draws a subject with) and `coreViewOf` (the core's view for a media type, 1.109), `displayed` (where display puts a subject) and `openable` (the "Open <label>" a region offers), `hashOf`, `locationOf` and `shortHashOf` (the location grammar and the tower page's older hashes, 1.108), and the types a view is written to: `Mount`, `ViewCtx`, `Mounted`, `Kit`, `CommandKit`, `Location` |
-| `/viewer.js` | what a viewer keeps in `tower.store` that every renderer reads alike, as one record (`Viewer`): dismissals, the ring, the brief rendered or raw, the diff layout, unfolded crews and the Stats range, read whole by `readViewer(tower.store.get)`, each under its key in `VIEWER_KEYS` |
+| `/views.js` | views, the layout and navigation (API 1.104): `CORE_VIEWS` and `viewsOf(board)`, `layoutOf(declared, configured, stored)` and `declaredLayout(board, declared, rendererRegions)` (the regions' defaults extensions give under a renderer's own, 1.114, for regions the renderer doesn't declare, 1.138), `fill` (how many of a region's ranked items fit, 1.138), `viewOn`, `offeredIn` and `pickView` (which view a region draws a subject with) and `coreViewOf` (the core's view for a media type, 1.109), `displayed` (where display puts a subject) and `openable` (the "Open <label>" a region offers), `hashOf`, `locationOf` and `shortHashOf` (the location grammar and the tower page's older hashes, 1.108), and the types a view is written to: `Mount`, `ViewCtx`, `Mounted`, `Kit`, `CommandKit`, `Location` |
+| `/viewer.js` | what a viewer keeps in `tower.store` that every renderer reads alike, as one record (`Viewer`): dismissals, the ring, the brief rendered or raw, the diff layout, unfolded crews, the Stats range and the actions seen (`seen`, with `seenOf` and `sawAll`, 1.138), read whole by `readViewer(tower.store.get)`, each under its key in `VIEWER_KEYS` |
 | `/spawn.js` | the new-worker dialog as a machine on `loop`: `spawnHandlers` its steps (open, editing, starting, closed), and `wireSpawn(dialog, io)` running it in your `<dialog>` with the form of `/cards.js`, keeping a prompt it closes on as a draft (`keepUnsent`, from the drafts client your renderer passes as `io.drafts`) and handing you the worker it started |
 | `/attend.js` | what a viewer is told about the waits and offers asking for them, as a machine on `loop`: `attendHandlers` over the state `attending(eye)`, or `attendNext(state, event)` to run one event by hand. What the viewer looks at reaches it as events: the window's `focus` and `visible`, and `watch` with the worker their view is on (`watchedIn(state)` is the one they watch: the view's, while the window has their eye): what begins is said (`announce`), notified (`notify`, `unnotify` once over or dismissed) and rung (`sound`, a score of `SOUNDS` in `/cards.js`), a `remind` ring re-armed as a timer, dismissals and the ring setting kept (`keep`, a field of the viewer's record of `/viewer.js`, fed back as `stored` when read again); your executors play, notify and keep, or drop what you don't do |
 | `/media.js` | media types by file extension (API 1.131): `mediaTypeOf(path)` (what the tower serves a file as, `UNKNOWN_TYPE` for an extension it doesn't name), `MEDIA_TYPES`, and `accepted(accepts, type)` (whether a view's `accepts` takes a type, `image/*` included) |
@@ -772,11 +842,14 @@ as `<cap>/<name>`:
   which `tower config check` holds the config's layout to.
 - `regions`: those it declares inside it, each in the manifest's `regions` by id. One id has one meaning: two
   extensions declaring it with other fields are both refused. A region it declares may carry its default `layout`
-  (API 1.114): `order`, `hidden` and each view's `options`, as a renderer's layout writes them. It is the bottom
-  layer, under the renderer's own (`renderer.json`), the config's and the viewer's, each field taken from the
-  highest layer that sets it and `hidden` from all of them less a view a higher layer orders: `declaredLayout(board,
-  declared)` in `/views.js` lays the defaults of every started extension under a renderer's own, for `layoutOf`. So
-  the explorer's `file.open` draws code with its own view, and a user's config line takes it back.
+  (API 1.114): `order`, `hidden` and each view's `options`, as a renderer's layout writes them. Pins, the form and
+  budgets are the user's, and a manifest naming them is refused. It is the bottom layer, under the renderer's own
+  (`renderer.json`), the config's and the viewer's, each field taken from the highest layer that sets it and
+  `hidden` from all of them less a view a higher layer orders: `declaredLayout(board, declared, rendererRegions)` in
+  `/views.js` lays the defaults of every started extension under a renderer's own, for `layoutOf`. So the explorer's
+  `file.open` draws code with its own view, and a user's config line takes it back. An extension lays out only its own
+  regions: its layout of a region a renderer declares (`card.head`, `card.panes`) is ignored there (API 1.138), and
+  `tower extensions check` and the board warn about it.
 - `keys`: default chords that display the subject in focus with it.
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
