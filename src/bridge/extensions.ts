@@ -627,9 +627,20 @@ export const rendererLayoutProblems = (manifest: Manifest, renderers: RendererRe
       : []
   })
 
-/** `resolved` with each extension's `rendererLayoutProblems` against `renderers` added to its problems. */
+/** `manifest` with no layout of a region one of `renderers` declares: an extension lays out only its own regions. */
+const ownLayouts = (manifest: Manifest, renderers: RendererRegions): Manifest => {
+  const taken = (id: string) => renderers.some((r) => r.regions.includes(id))
+  if (!Object.keys(manifest.regions ?? {}).some(taken)) return manifest
+  return { ...manifest, regions: Object.fromEntries(Object.entries(manifest.regions!).map(([id, { layout, ...region }]) => [id, taken(id) ? region : { ...region, ...(layout && { layout }) }])) }
+}
+
+/**
+ * `resolved` as the board shows it against the regions `renderers` declare: each extension's `rendererLayoutProblems`
+ * added to its problems, and its layout of those regions dropped, so no renderer reading the board lays one out.
+ */
 export const withRendererLayouts = (resolved: Resolved, renderers: RendererRegions): Resolved => {
-  const added = <T extends { manifest?: Manifest; problems: LoadProblem[] }>(e: T): T => (e.manifest ? { ...e, problems: [...e.problems, ...rendererLayoutProblems(e.manifest, renderers)] } : e)
+  const added = <T extends { manifest?: Manifest; problems: LoadProblem[] }>(e: T): T =>
+    e.manifest ? { ...e, manifest: ownLayouts(e.manifest, renderers), problems: [...e.problems, ...rendererLayoutProblems(e.manifest, renderers)] } : e
   return {
     order: resolved.order,
     accepted: new Map([...resolved.accepted].map(([id, a]) => [id, added(a)])),

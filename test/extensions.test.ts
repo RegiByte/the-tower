@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { chainOrder, mismatchOf, registry, resolve, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
+import { chainOrder, mismatchOf, registry, resolve, withRendererLayouts, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
 import { matchRead, MAX_DEPTH, nestedIn, qualifiedOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
 import { extensionFactOf, type Session } from '../src/bridge/facts.ts'
 import { floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
@@ -343,4 +343,17 @@ test('guidance is refused with no brief to list it by, with a brief over a line 
   assert.deepEqual(r.refused.get('long')!.problems.map((p) => p.path), ['guidance.brief'])
   assert.match(r.refused.get('typo')!.problems[0].message, /^extensions\.typo\.guidance/)
   assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'guidance']])
+})
+
+test("an extension lays out only its own regions: its layout of a renderer's region is dropped, with a warning", () => {
+  const region = (layout: object) => ({ subject: 'card', holds: ['commands'], layout })
+  const found = [ext('stress', { requires: { tower: '1.114' }, regions: { 'card.head': region({ hidden: ['grid/add'] }), 'stress.own': region({ order: ['a/a'] }) } })]
+  const r = withRendererLayouts(resolve(found, config({ extensions: added(found) }), '1.138'), [{ name: 'page', regions: ['card.head'] }, { name: 'tower3d', regions: ['card.desk'] }])
+  const stress = r.accepted.get('stress')!
+  assert.equal(stress.manifest.regions!['card.head'].layout, undefined)
+  assert.deepEqual(stress.manifest.regions!['stress.own'].layout, { order: ['a/a'] }, 'its own region keeps its layout')
+  assert.deepEqual(
+    stress.problems.map((p) => [p.level, p.path, p.message]),
+    [['warn', 'regions.card.head.layout', 'stress lays out region card.head, which page declares: an extension lays out only its own regions, so this layout is ignored']],
+  )
 })

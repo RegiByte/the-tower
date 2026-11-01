@@ -173,8 +173,10 @@ and a framed document's section are the same thing.
   dropped as it is read. Under them, since 1.114, the defaults an extension gives the regions it
   declares (`regions.<id>.layout` in its manifest, `order`, `hidden` and `options` alone), laid under the renderer's own by
   [`declaredLayout`](ref:hub/src/shared/views.ts#declaredLayout): a region only its extension knows has a default
-  only that extension can give, and the user takes it back with a config line. Since 1.138 it takes the regions the
-  renderer declares and ignores an extension's layout of them: an extension lays out only its own regions.
+  only that extension can give, and the user takes it back with a config line. Since 1.138 the board carries no
+  extension's layout of a region any renderer declares, since the tower drops it as it resolves
+  ([`withRendererLayouts`](ref:hub/src/bridge/extensions.ts#withRendererLayouts)): an extension lays out only its
+  own regions, and a renderer gets the rule without passing anything.
 - *A full region* ([[region-overflow]]): a region draws a prefix of its ranked list in place and reaches the rest
   through its form, [`overflowOf`](ref:hub/src/shared/regions.ts#overflowOf). A view and the region filled inside it
   share one head, so the view marks what the region's fit reads: `data-tuck="<rank>"` (a control of the view's the

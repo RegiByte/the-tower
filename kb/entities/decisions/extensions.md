@@ -33,9 +33,10 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   are free. `views` and `regions` are read since 1.104 in the shapes [[ui-model]] gives them, one written to the reserved shapes before refused naming the new one, and `commands` take default `keys`.
   A region's `layout` gives `order`, `hidden` and `options` alone: a manifest naming the user's pins, form or budgets
   is refused, and one laying out a region a renderer declares is warned on the board and by `tower extensions check`
-  ([`rendererLayoutProblems`](ref:hub/src/bridge/extensions.ts#rendererLayoutProblems), threaded every renderer's
-  regions by [`withRendererLayouts`](ref:hub/src/bridge/extensions.ts#withRendererLayouts)): an extension lays out
-  only its own regions, so that layout is ignored ([[region-overflow]]). Verbs, commands and views share one id
+  ([`rendererLayoutProblems`](ref:hub/src/bridge/extensions.ts#rendererLayoutProblems)), and
+  [`withRendererLayouts`](ref:hub/src/bridge/extensions.ts#withRendererLayouts), given every renderer's regions as
+  the tower resolves, drops that layout from what the board shows: an extension lays out only its own regions
+  ([[region-overflow]]). The regions are read again when the config changes, not when a `renderer.json` does. Verbs, commands and views share one id
   space, since pins, hides and a viewer's seen name each by `<cap>/<name>`, so a manifest naming two alike is refused. Every key
   carries the minor it arrived in (`x-since`), so a key newer than the manifest's `requires.tower` is
   `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.

@@ -154,9 +154,8 @@ test("views: the layout takes each field from the highest layer that sets it; hi
   assert.deepEqual(layout['card.panes'], { order: ['b/b'], options: { 'b/b': { x: 1 }, 'c/c': { y: 2 } } })
   assert.deepEqual(layoutOf({ r: { hidden: ['v/v'] } }, {}, { r: { order: ['v/v'] } }).r, { order: ['v/v'] })
   const declaring = { extensions: [{ state: 'started', layout: { 'file.open': { order: ['files/code'], hidden: ['tower/text'] } } }, { state: 'failed', layout: { 'x.y': { order: ['x/x'] } } }] } as unknown as Board
-  assert.deepEqual(declaredLayout(declaring, { 'card.panes': { order: ['a/a'] } }, ['card.panes']), { 'file.open': { order: ['files/code'], hidden: ['tower/text'] }, 'card.panes': { order: ['a/a'] } }, "a started extension's region defaults lie under the renderer's own")
-  assert.deepEqual(layoutOf(declaredLayout(declaring, {}, []), { 'file.open': { order: ['tower/text'] } }, undefined)['file.open'], { order: ['tower/text'] }, 'a higher layer orders a view the default hid')
-  assert.deepEqual(declaredLayout(declaring, {}, ['file.open']), {}, "an extension's layout of a region the renderer declares is ignored")
+  assert.deepEqual(declaredLayout(declaring, { 'card.panes': { order: ['a/a'] } }), { 'file.open': { order: ['files/code'], hidden: ['tower/text'] }, 'card.panes': { order: ['a/a'] } }, "a started extension's region defaults lie under the renderer's own")
+  assert.deepEqual(layoutOf(declaredLayout(declaring, {}), { 'file.open': { order: ['tower/text'] } }, undefined)['file.open'], { order: ['tower/text'] }, 'a higher layer orders a view the default hid')
   const retired = layoutOf({}, { 'card.panes': { order: ['tower/brief', 'tower/shown'], hidden: ['tower/shown'] } }, undefined)['card.panes']
   assert.deepEqual(retired.order, ['tower/brief'], 'a retired view in an order leaves its subjects to their pick')
   assert.deepEqual(retired.hidden, VIEW_ALIASES['tower/shown'], 'a retired view hidden hides the views that draw its subjects now')
