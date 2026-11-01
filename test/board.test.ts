@@ -187,12 +187,12 @@ test('sessions that never held a conversation resume nothing', () => {
   assert.deepEqual(cards.map((c) => c.conversations), [[], []])
 })
 
-test('verbs: a live session is driven and killed, takes a prompt at its composer, and is briefed once Claude saved its conversation', () => {
+test('verbs: a live session is driven and killed, takes a prompt at its composer and at its prompt, and is briefed once Claude saved its conversation', () => {
   const log = homed(fixture('interrupts'))
   const at = (t: number, live: string[]) => cardsOf([{ ...log, events: log.events.filter((e) => e[0] <= t && e[1] !== 'x') }], hostWith(...live))[0]
   const id = [log.header.id]
   assert.deepEqual(at(5, id).verbs, ['drive', 'kill', 'send-home'])
-  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'kill', 'send-home'])
+  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'prompt', 'kill', 'send-home'])
   assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
   assert.deepEqual(at(140, id).conversations.map((c) => c.verbs), [[]])
   assert.deepEqual(at(140, []).verbs, ['resume', 'carry-on', 'brief', 'let-go'])
@@ -309,7 +309,7 @@ test('calls: each verb that is a request comes ready, a resume naming the conver
     { resume: ['resume', { id: log.header.id, conversation: latest }] },
   ])
   const live = cardsOf([{ ...log, events: log.events.filter((e) => e[1] !== 'x') }], hostWith(log.header.id))[0]
-  assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], kill: ['kill', { id: log.header.id }], 'send-home': [['kill', { id: log.header.id }]] })
+  assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], prompt: ['submit/at-prompt', { id: log.header.id }], kill: ['kill', { id: log.header.id }], 'send-home': [['kill', { id: log.header.id }]] })
   assert.deepEqual(board(viewOf(CONFIG, { host: hostWith() })).floors[0].calls, {
     spawn: ['spawn', { project: 'tower' }],
     shell: ['shell/spawn', { project: 'tower' }],

@@ -139,6 +139,14 @@ async function post<T>(verb: string, body: unknown): Promise<T> {
   return JSON.parse(text)
 }
 
+/** `POST /submit/at-prompt`, which must answer the error `refused` when one is named, else succeed. */
+async function promptAt(id: string, text: string, refused: string | undefined): Promise<void> {
+  const res = await fetch(`${TOWER}/submit/at-prompt`, { method: 'POST', headers: { origin: TOWER, 'content-type': 'application/json' }, body: JSON.stringify({ id, text }) })
+  const reply = await res.text()
+  const code = res.ok ? undefined : (JSON.parse(reply) as { code: string }).code
+  if (code !== refused) throw new Error(`POST /submit/at-prompt: ${res.status} ${reply}${refused ? `, expected ${refused}` : ''}`)
+}
+
 /**
  * A session's log as it grows, read from where the last read stopped: its events, and the statuses its facts enter,
  * each at the index of the event that moved it.
@@ -301,6 +309,7 @@ async function act(scenario: Scenario, dir: string, sessions: Map<string, Live>,
   live.cursor = live.tail.events.length
   if ('keys' in what) return post('keys', { id: live.id, data: what.keys })
   if ('submit' in what) return post('submit', { id: live.id, text: what.submit })
+  if ('atPrompt' in what) return promptAt(live.id, what.atPrompt, what.refused)
   return kill(live, result)
 }
 

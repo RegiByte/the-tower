@@ -12,13 +12,15 @@ import path from 'node:path'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
-import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Session } from '../bridge/facts.ts'
+import { AT_COMPOSER, promptRefusal } from '../bridge/composer.ts'
+import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
+import type { Status } from '../bridge/status.ts'
 import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
-import { hostRequest, reap, reveal, runEditor, submitText, termsRequest } from '../machine.ts'
+import { hostRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText } from '../machine.ts'
 import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
@@ -45,8 +47,9 @@ import {
   type Runtime,
 } from '../shared/model.ts'
 import { projectCollectionsPath } from '../shared/paths.ts'
-import { sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
+import { promptPastes, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { REVIEWS } from '../shared/reviews.ts'
+import { STATUS_NAME } from '../shared/status-words.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
@@ -173,8 +176,67 @@ export const dispatch = defineResource({
         return named.t === 'error' ? named : act()
       })
 
+    /** A worker by its callsign in what the tower says about it. */
+    const nameOf = (id: string) => everyCard(Date.now()).find((c) => c.id === id)?.callsign ?? `Session "${id}"`
+
+    /** What a worker that takes no prompt is doing, said with what to do instead. */
+    const NOT_AT_PROMPT: Record<Exclude<Status, 'idle' | 'done' | 'failed' | 'watching'>, string> = {
+      booting: 'is starting: send once it sits at its prompt',
+      blocked: "waits on one of Claude's screens: answer it in its terminal",
+      working: 'is working: it takes a prompt once its turn ends',
+      needs_input: 'asks you something: answer it in its terminal',
+      exited: "isn't running: resume it first",
+      lost: "isn't running: resume it first",
+    }
+
+    const notAtPrompt = (id: string, status: Status) => apiError('not_at_prompt', `${nameOf(id)} ${NOT_AT_PROMPT[status as keyof typeof NOT_AT_PROMPT]}`)
+
+    /** Text typed while a worker asks something or waits on a screen would answer it. */
     const submit = (id: string, text: string, by: string | undefined) =>
-      withSession(id, () => namedFirst(id, PROMPTED_BY, by, PROMPT_FROM_WORKER, () => daemon(() => submitText(paths, id, text))))
+      withSession(id, () => {
+        const { status } = system.session(id)!.facts.state
+        if (!AT_COMPOSER.has(status)) return notAtPrompt(id, status)
+        return namedFirst(id, PROMPTED_BY, by, PROMPT_FROM_WORKER, () => daemon(() => submitText(paths, id, text)))
+      })
+
+    const promptRefused = (id: string, { state, heldSince }: Facts) => {
+      const refusal = promptRefusal(state.status, heldSince)
+      if (refusal === 'not_at_prompt') return notAtPrompt(id, state.status)
+      if (refusal === 'composer_holds') return apiError('composer_holds', `${nameOf(id)}'s composer holds text, typed in its terminal or a prompt Esc put back: send or clear it there`)
+      return undefined
+    }
+
+    /** Why the worker moved while the text was typed, by what the log says now against what it said before. */
+    const movedWhileTyped = (id: string, before: Facts, after: Facts, typed: number) => {
+      const name = nameOf(id)
+      const where = 'the text waits unsent in its composer'
+      if (after.state.status !== before.state.status || after.state.since !== before.state.since)
+        return apiError('moved', `${name} went from ${STATUS_NAME[before.state.status]} to ${STATUS_NAME[after.state.status]} while the text was typed: ${where}`)
+      if (after.typed > typed) return apiError('moved', `Someone typed into ${name}'s terminal while the text was typed: ${where}`)
+      return apiError('moved', `The tower did not see the text reach ${name}'s log within ${TRACK_TIMEOUT_MS / 1000} s: ${where}`)
+    }
+
+    /**
+     * Checked as the call arrives, on the live fold, and again once the fold has read every paste back from the log:
+     * Enter is pressed only if nothing moved the worker and nobody else typed in between.
+     */
+    const submitAtPrompt = (id: string, text: string, by: string | undefined) =>
+      withSession(id, () =>
+        fromWorker(by, async () => {
+          const before = system.session(id)!.facts
+          const refused = promptRefused(id, before)
+          if (refused) return refused
+          const named = by ? (factRefused(PROMPT_FROM_WORKER) ?? (await actedBy(id, PROMPTED_BY, by))) : OK
+          if (named.t === 'error') return named
+          const typing = await daemon(() => typeText(paths, id, text))
+          if (typing.t === 'error') return typing
+          const typed = before.typed + promptPastes(text).length
+          await system.until(() => system.session(id)!.facts.typed >= typed, TRACK_TIMEOUT_MS)
+          const after = system.session(id)!.facts
+          const still = after.state.status === before.state.status && after.state.since === before.state.since && after.typed === typed
+          return still ? daemon(() => pressSubmit(paths, id)) : movedWhileTyped(id, before, after, typed)
+        }),
+      )
 
     /** Only a running session's kill is named: the host refuses the rest. */
     const kill = (id: string, by: string | undefined) =>
@@ -819,6 +881,7 @@ export const dispatch = defineResource({
       resume: ({ id, conversation, prompt }, caller) => resume(id, conversation, prompt, nestedIn(caller, 'tower/resume')),
       keys: ({ id, data, by }) => keys(id, data, by),
       submit: ({ id, text, by }) => submit(id, text, by),
+      'submit/at-prompt': ({ id, text, by }) => submitAtPrompt(id, text, by),
       resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
       kill: ({ id, by }) => kill(id, by),
       'let-go': ({ id }) => letGo(id),

@@ -124,6 +124,7 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
     hooked('apply', 'tidy.apply'),
   ]),
   submit: single('Send a prompt', 'Type a prompt into a worker and submit it.', 'named, then typed'),
+  'submit/at-prompt': single('Send at its prompt', 'Type a prompt into a worker waiting at its prompt and submit it.', 'checked, named, typed, checked again, then submitted'),
   keys: single('Type keys', "Write keys to a worker's terminal.", 'named, then written'),
   resize: single('Resize', "Resize a worker's terminal.", 'resized'),
   reap: single('Reap', 'End what a session left running.', 'reaped'),
