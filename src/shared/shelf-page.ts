@@ -32,9 +32,9 @@ export type SchemeChoice = '' | 'light' | 'dark'
  */
 export type Reads = {
   'conversations/<id>': Brief[]
-  /** One saved conversation of the session as `conversations/<id>` lists it, with every one of its turns: those of the sessions it resumed first. @since 1.132 */
+  /** One saved conversation of the session as `conversations/<id>` lists it, with every one of its turns: those of the sessions it resumed first. @since 1.133 */
   'conversations/<id>/<conversation>': Brief
-  /** One tool call of the session, by its `Step` id: its input as logged, the permission check it met, how it ended, how long it ran. @since 1.132 */
+  /** One tool call of the session, by its `Step` id: its input as logged, the permission check it met, how it ended, how long it ran. @since 1.133 */
   'conversations/<id>/tool/<call>': ToolCall
   /** A project's cards the board leaves out (`onBoard`), newest first: the same cards, read again when `board.archiveAt` or the floor's `archived` moves. */
   'archive/<project>': Card[]
@@ -211,9 +211,9 @@ export type Tower = {
   /** Why there is no live board, `code` config, internal or disconnected, until `subscribe` hands a board again. */
   onBoardError(fn: (err: Error & { code: BoardError['code'] }) => void): () => void
   conversations(session: string): Promise<Brief[]>
-  /** One of the session's saved conversations with every one of its turns. @since 1.132 */
+  /** One of the session's saved conversations with every one of its turns. @since 1.133 */
   conversation(session: string, conversation: string): Promise<Brief>
-  /** One tool call of the session, by its id: its input as logged, its permission check, how it ended. @since 1.132 */
+  /** One tool call of the session, by its id: its input as logged, its permission check, how it ended. @since 1.133 */
   toolCall(session: string, call: string): Promise<ToolCall>
   archive(project: string): Promise<Card[]>
   /** This page's renderer when it is served as one, at `/r/<name>/`, on its own or framed on a shelf; null for any other page. */

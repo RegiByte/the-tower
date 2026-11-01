@@ -271,9 +271,9 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   renderer: one page, across every machine reading the tower, for what only one should do (play a sound, speak). The
   tower holds them in memory and never logs them. `tower.js` does all of it for a page, as `tower.viewer`.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
-  `/conversations/<id>` (each turn with Claude's `steps` since 1.132), `/conversations/<id>/<conversation>` (one
+  `/conversations/<id>` (each turn with Claude's `steps` since 1.133), `/conversations/<id>/<conversation>` (one
   conversation, every turn) and `/conversations/<id>/tool/<call>` (one tool call: its input, its permission check, how
-  it ended; both 1.132), `/archive/<project>`, `/collection/<project>/<collection>/<item>`, `/reviews/<project>`
+  it ended; both 1.133), `/archive/<project>`, `/collection/<project>/<collection>/<item>`, `/reviews/<project>`
   (deprecated since 1.93: the reviews extension's `/reviews/history/<project>`),
   `/probe/<name>` (deprecated since 1.90: the quota extension's `/quota/reads` and the board's `x.quota`), `/runs/<project>`
   (deprecated since 1.91: the policies extension's `/policies/runs/<project>?policy&limit`, a policy's runs, newest
@@ -875,7 +875,7 @@ the frame lit; other views draw no marks yet.
 
 - `said`: `saidSubject` in `/cards.js`, keyed `said:<session>:<conversation>:<startedAt>:<side>`, of its
   conversation, carrying its words as `body` and the type `text/markdown`. `side` is `prompt`, `answer`, or (since
-  1.132) `step.<n>`: Claude's words between tool calls, or a message it sent, the `n`th of the turn's steps. The Brief asks the kit for `said.acts`
+  1.133) `step.<n>`: Claude's words between tool calls, or a message it sent, the `n`th of the turn's steps. The Brief asks the kit for `said.acts`
   beside each copy button, where anything is offered on `said`, and takes `show(said)`, scrolling to it.
 - `section`: `sectionSubject(of, section)` in `/cards.js`, keyed `section:<of key>#<n>`, of the showing or item the
   document is (`value.of`), carrying `heading`, its markdown as `body` and the document's type. `sectionsOf(text)` in
