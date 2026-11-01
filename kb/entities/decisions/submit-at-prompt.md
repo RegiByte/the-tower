@@ -47,19 +47,20 @@ always submitting.
 **How.**
 - The fold keeps `heldSince`, when the composer may have started holding text
   ([`heldAfter`](ref:hub/src/bridge/composer.ts#heldAfter)): typed input while the composer has focus
-  ([`AT_COMPOSER`](ref:hub/src/bridge/composer.ts#AT_COMPOSER)), but not a bare Esc or Enter; and an Esc before Claude
+  ([`AT_COMPOSER`](ref:hub/src/bridge/composer.ts#AT_COMPOSER)), but not a bare Esc, Enter or Shift+Tab; and an Esc before Claude
   streamed anything, a main-loop `turn.complete` aborted with no answer and no step or call in the turn, which puts the
   prompt back in the composer ([recorded](ref:hub/test/fixtures/escaped-prompt.jsonl)). A `prompt.submit` or
-  `command.run` from the composer, or a new conversation, empties it; a compaction keeps it. Keys answering a
+  `command.run` from the composer, Ctrl+C typed at it ([recorded](ref:hub/test/fixtures/composer-typed.jsonl)), or a
+  new conversation, empties it; a compaction keeps it. Keys answering a
   permission dialog or the trust screen are typed while the composer has no focus, and fill nothing.
 - At its prompt is [`AT_PROMPT`](ref:hub/src/bridge/composer.ts#AT_PROMPT): idle, done, failed or watching.
   [`promptRefusal`](ref:hub/src/bridge/composer.ts#promptRefusal) says `not_at_prompt` outside it, `composer_holds`
   while `heldSince` is set. The card offers `prompt` when it says neither ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)).
-- [`submitAtPrompt`](ref:hub/src/tower/dispatch.ts#submitAtPrompt) refuses on that, names a worker's prompt
-  ([[worker-prompts]]), types the pastes ([`typeText`](ref:hub/src/machine.ts#typeText)), then waits for the fold to
+- [`submitAtPrompt`](ref:hub/src/tower/dispatch.ts#submitAtPrompt) refuses on that, types the pastes ([`typeText`](ref:hub/src/machine.ts#typeText)), then waits for the fold to
   read every paste back from the log (the fold counts typed input, `typed`). Enter
   ([`pressSubmit`](ref:hub/src/machine.ts#pressSubmit)) is pressed only if the status and its `since` are unchanged and
-  nobody else typed; otherwise it answers `moved` ([`movedWhileTyped`](ref:hub/src/tower/dispatch.ts#movedWhileTyped))
+  nobody else typed, a worker's prompt named in the log just before it ([[worker-prompts]]), so text left unsent
+  names nobody; otherwise it answers `moved` ([`movedWhileTyped`](ref:hub/src/tower/dispatch.ts#movedWhileTyped))
   and the text waits, visible, in the composer, which then reads `composer_holds`.
 - [`submit`](ref:hub/src/tower/dispatch.ts#submit) keeps queueing while Claude works, and refuses `not_at_prompt`
   outside `AT_COMPOSER`. `tower submit` goes through the tower, so the CLI gets the same refusal.
@@ -85,7 +86,7 @@ screen fold (`screen.ts`, as `blocked.ts` matches startup screens) is where a `d
 - *Leave `watching` out of at its prompt*: it would block a composer for any worker running a monitor; the check
   before Enter covers a task waking it.
 
-**Impact.** A composer outside the terminal calls `submit/at-prompt` and draws the card's `prompt` verb. Any key typed
-in a worker's terminal after its answer, an arrow key included, keeps the verb off until the next prompt: the cost of
-not reading the screen. `submit` and `tower submit` refuse a worker that asks something or waits on a screen (API
-1.133).
+**Impact.** A composer outside the terminal calls `submit/at-prompt` and draws the card's `prompt` verb. Any key that
+can put text in a worker's composer after its answer, an arrow key or a Backspace included, keeps the verb off until a
+prompt is submitted there or Ctrl+C clears it: the cost of not reading the screen. `submit` and `tower submit` refuse a
+worker that asks something or waits on a screen (API 1.133).
