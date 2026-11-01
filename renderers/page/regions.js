@@ -604,9 +604,8 @@ export function regions(deps) {
     function tabsScroll(all, adds) {
       const fixed = all.filter((t) => !t.showing && PANE_COMMANDS[t.view.id])
       const rest = all.filter((t) => !fixed.includes(t))
-      repaint(strip, tablistHtml(tabsHtml(fixed) + (rest.length ? `<span class="tab-scroll">${tabsHtml(rest)}</span>` : '')) + adds)
-      const scroller = scrollerOf()
-      if (!scroller) return
+      repaint(strip, tablistHtml(`${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
+      const scroller = /** @type {HTMLElement} */ (scrollerOf())
       if (scroller !== scrolled.drawn) scroller.scrollLeft = scrolled.left
       if (scrolled.open !== open) bringOpen(scroller)
       scrolled.drawn = scroller
