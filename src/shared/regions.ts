@@ -108,18 +108,29 @@ export const CLI_REGIONS: Region[] = [{ id: 'card.whoami', subject: 'card', hold
 
 /**
  * Something that draws contributions, by name: a renderer, or the `tower` command. `regions` is absent when it declares
- * none, `why` saying why when it is known; `kit`, what it lends the views it hosts.
+ * none, `why` saying why when it is known; `kit`, what it lends the views it hosts; `layout`, its own and the config's
+ * (since 1.138), which picks each region's form and budgets.
  */
-export type Drawer = { name: string; regions?: Region[]; why?: string; kit?: readonly KitMember[] }
+export type Drawer = { name: string; regions?: Region[]; why?: string; kit?: readonly KitMember[]; layout?: Layout }
+
+/** A region's form as a layout leaves it, and the budget it gives what lands there, when it gives one. @since 1.138 */
+export type RegionForm = { overflow: Overflow; budget?: number }
 
 /**
  * One of an extension's commands or contributions and where it lands: `what` names it, `hold` is what a region must
  * hold to draw it, `on` the subject kinds it is offered on (empty for a command with none, which a palette runs), and
  * `at` each drawer's regions that draw it, `undefined` for a drawer that declares none (with its `why`), and `palette`
  * for a command with no `on` where the drawer runs commands: a renderer whose regions hold commands lists them in its
- * palette.
+ * palette. `pin`, the id the layout pins it by, when one id does; `forms`, the form of each of a drawer's regions that
+ * offers forms (since 1.138).
  */
-export type Landing = { what: string; hold: Hold; on: string[]; at: { drawer: string; regions: string[] | undefined; why?: string; palette?: true }[] }
+export type Landing = {
+  what: string
+  hold: Hold
+  on: string[]
+  pin?: string
+  at: { drawer: string; regions: string[] | undefined; why?: string; palette?: true; forms?: Record<string, RegionForm> }[]
+}
 
 /**
  * Whether a region for subjects of `region` draws one of `kind`: the same kind, `item.*` against any collection's items,
@@ -140,16 +151,34 @@ const drawsAsk = (region: Region, on: string[]) => on.includes('board') || regio
 const draws = (region: Region, hold: Hold, on: string[]) =>
   region.holds.includes(hold) && (hold === 'asks' ? drawsAsk(region, on) : on.some((kind) => forKind(region.subject, kind)))
 
-const landed = (drawers: Drawer[], what: string, hold: Hold, on: string[]): Landing => ({
+/** The budget key that counts `hold`, when one does. */
+const budgetOf = (hold: Hold) => (Object.keys(BUDGETS) as (keyof typeof BUDGETS)[]).find((key) => (BUDGETS[key] as readonly Hold[]).includes(hold))
+
+/** The form of each of `regions` that offers forms, under `layout`, and the budget it gives `hold`. */
+const formsOf = (regions: Region[], hold: Hold, layout: Layout | undefined): Record<string, RegionForm> | undefined => {
+  const offering = regions.filter((r): r is Region & { overflows: Overflow[] } => !!r.overflows?.length)
+  const key = budgetOf(hold)
+  return offering.length
+    ? Object.fromEntries(offering.map((r) => [r.id, { overflow: overflowOf(r, layout?.[r.id]), ...(key && layout?.[r.id]?.[key] !== undefined && { budget: layout[r.id]![key] }) }]))
+    : undefined
+}
+
+const landed = (drawers: Drawer[], what: string, hold: Hold, on: string[], pin?: string): Landing => ({
   what,
   hold,
   on,
-  at: drawers.map((d) => ({
-    drawer: d.name,
-    regions: d.regions?.filter((r) => draws(r, hold, on)).map((r) => r.id),
-    ...(!d.regions && d.why && { why: d.why }),
-    ...(hold === 'commands' && !on.length && d.regions?.some((r) => r.holds.includes('commands')) && { palette: true as const }),
-  })),
+  ...(pin && { pin }),
+  at: drawers.map((d) => {
+    const regions = d.regions?.filter((r) => draws(r, hold, on))
+    const forms = regions && formsOf(regions, hold, d.layout)
+    return {
+      drawer: d.name,
+      regions: regions?.map((r) => r.id),
+      ...(!d.regions && d.why && { why: d.why }),
+      ...(hold === 'commands' && !on.length && d.regions?.some((r) => r.holds.includes('commands')) && { palette: true as const }),
+      ...(forms && { forms }),
+    }
+  }),
 })
 
 /** Where a view lands: in each region holding views of a kind it is on, at a scale it draws, of a drawer lending all it needs. */
@@ -171,27 +200,48 @@ const viewLanded = (drawers: Drawer[], what: string, view: { on: string[]; scale
  * no region draws.
  */
 export const landing = (drawers: Drawer[], extension: Pick<Manifest, 'folds' | 'commands' | 'views'> & { cap: string }): Landing[] => [
-  ...Object.entries(extension.commands ?? {}).map(([name, c]) => landed(drawers, `${extension.cap}/${name}`, 'commands', c.on ?? [])),
+  ...Object.entries(extension.commands ?? {}).map(([name, c]) => landed(drawers, `${extension.cap}/${name}`, 'commands', c.on ?? [], `${extension.cap}/${name}`)),
   ...Object.entries(extension.views ?? {}).map(([name, v]) => viewLanded(drawers, `${extension.cap}/${name}`, v)),
   ...Object.entries(extension.folds ?? {}).flatMap(([kind, fold]) =>
     (fold.adds ?? []).flatMap((add): Landing[] => {
       const what = `${extension.cap} ${add}`
       if (add === 'slots') return []
       if (add === 'actions') return [landed(drawers, what, 'verbs', [kind]), ...(extension.commands ? [landed(drawers, what, 'commands', [kind])] : [])]
-      return [landed(drawers, what, add, [kind])]
+      return [landed(drawers, what, add, [kind], add === 'lines' ? extension.cap : undefined)]
     }),
   ),
 ]
 
-/** Where one landing goes, in a line: `narrate/speak on shown: page shown.head; tower3d: no region holds commands`. */
+/** How a region's form treats what lands there, in words; nothing for `wrap`, which draws it all. */
+const formWords = (l: Landing, drawer: string, region: string, form: RegionForm): string | undefined => {
+  const key = budgetOf(l.hold)
+  if (form.overflow === 'wrap') return undefined
+  if (form.overflow === 'scroll') return 'scroll'
+  if (form.overflow === 'count') return `count: ${form.budget ?? 0}`
+  if (form.budget !== undefined && key) return `menu: ${form.budget} in place; more with ${region}.${key}`
+  const pin = l.pin ? `; pin it with renderers.${drawer}.layout ${region}.pinned "${l.pin}"` : l.hold === 'verbs' ? `; pin each with renderers.${drawer}.layout ${region}.pinned` : ''
+  return `menu: in ⋯ when there's no room${pin}`
+}
+
+/** A region a landing goes to, with its form in words when it isn't `wrap`. */
+const regionWords = (l: Landing, drawer: string, region: string, forms: Record<string, RegionForm> | undefined): string => {
+  const words = forms?.[region] && formWords(l, drawer, region, forms[region])
+  return words ? `${region} (${words})` : region
+}
+
+/**
+ * Where one landing goes, in a line, with how each region's form treats it: `stress/a3 on card (commands): page
+ * card.head (menu: in ⋯ when there's no room; pin it with renderers.page.layout card.head.pinned "stress/a3");
+ * tower3d: no region holds commands`.
+ */
 export const landingLine = (l: Landing): string => {
-  const at = l.at.map(({ drawer, regions, why, palette }) =>
+  const at = l.at.map(({ drawer, regions, why, palette, forms }) =>
     regions === undefined
       ? `${drawer}: ${why ?? 'declares no regions'}`
       : palette
         ? `${drawer} its palette`
         : regions.length
-          ? `${drawer} ${regions.join(', ')}`
+          ? `${drawer} ${regions.map((r) => regionWords(l, drawer, r, forms)).join(', ')}`
           : `${drawer}: ${why ?? `no region holds ${l.hold}`}`,
   )
   return `${l.what} ${l.on.length ? `on ${l.on.join(', ')}` : 'on no subject, run from a palette'} (${l.hold}): ${at.join('; ')}`
