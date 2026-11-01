@@ -44,7 +44,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `editor` | How the tower opens things in the user's editor, three argv templates: `window` opens `{dir}` in a new window, `open` opens `{path}` (a file or folder), `goto` opens `{path}` at `{line}`. Set all three or none. | VS Code's `code` |
 | `callsigns` | The names workers are called by, the same on every floor: each an upper case letter, then upper case letters and digits, none twice. Read when a worker starts: a change names new workers only. | the tower's list |
 | `plugins` | Absolute plugin directories every session loads, each passed to Claude as `--plugin-dir`. | none |
-| `renderers` | Renderers served at `/r/<name>/`, by name: `root`, the absolute directory of its built files; `entry`, its page in it (`index.html` unless set); `settings`, its own configuration, passed through unread; `layout`, the default arrangement of the views in its regions, by region id (`order`, `hidden`, `open`, `options`), over its own `renderer.json`'s and under the viewer's, each view's `options` checked against its manifest's (see [docs/extending.md](extending.md#your-own-renderer)). A new name adds a renderer; `page`, `week` or `tower3d` overrides that built-in's fields. | the built-ins |
+| `renderers` | Renderers served at `/r/<name>/`, by name: `root`, the absolute directory of its built files; `entry`, its page in it (`index.html` unless set); `settings`, its own configuration, passed through unread; `layout`, the default arrangement of its regions, by region id (`order`, `hidden`, `open`, `options`; and for what extensions contribute, `pinned` and `unpinned` ids, an `overflow` form among the region's `overflows`, and the budgets `lines`, `badges` and `actions`), over its own `renderer.json`'s and under the viewer's, each view's `options` checked against its manifest's and the rest against the regions that read them (see [docs/extending.md](extending.md#when-a-region-is-full)). A new name adds a renderer; `page`, `week` or `tower3d` overrides that built-in's fields. | the built-ins |
 | `renderer` | The renderer `/` opens, by name. | `page` |
 | `worktrees` | How the tower cuts worktrees: see [Worktrees](#worktrees). A project's own win per key. | |
 | `hiring` | How far `tower hire` goes: see [Hiring](#hiring). A project's own win per key. | |
@@ -55,6 +55,28 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
 | `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place), and after its month closed a stream's month file (an extension's system stream, such as the quota probe's reads, or a floor's policy runs and approvals). | never |
 | `keys` | Chords that replace the keymap's defaults, by command id: see [Keys](#keys). | the defaults |
 | `extensions` | The extensions the tower runs beside the bundled ones, and the bundled ones' overrides, by id: see [Extensions](#extensions). | the bundled ones |
+
+### A renderer's layout
+
+`renderers.<name>.layout` arranges a renderer's regions, by region id. Beside `order`, `hidden`, `open` and `options`,
+a region that holds what extensions contribute takes:
+
+| Key | What |
+|---|---|
+| `pinned` | Action ids (`<cap>/<command>`, or a verb's `<cap>/<verb>`) or an extension's capability for its lines, drawn first in this order and kept in place while there is room. Pins merge over the layers: the viewer's first, then these, then the renderer's own. |
+| `unpinned` | Ids the renderer's own layout pins that this layer drops. The viewer's `unpinned`, set from the page, drops a pin made here. |
+| `overflow` | The form the region is drawn in when full, one of the forms its `renderer.json` lists in `overflows`: `menu`, `count`, `wrap` or `scroll`. |
+| `lines`, `badges`, `actions` | How many of each a `menu` region draws in place at most, or a `count` region exactly; pins and the region's own controls don't count. `0` under `menu` is pins only. |
+
+```json
+"renderers": { "page": { "layout": { "card.head": { "pinned": ["reviews/hire"], "overflow": "wrap" } } } }
+```
+
+`tower config check` fails a form a region doesn't offer, a budget for something it doesn't hold, a pin where nothing
+pins and an id both pinned and unpinned in one region; it warns about a budget a `wrap` or `scroll` region doesn't
+read, a pin of nothing an extension that would start offers, an unpin of what the renderer's own layout doesn't pin,
+and a region neither the renderer nor an extension that would start declares. A region with a failing key is drawn by
+its default, and `GET /renderers` serves the same problems as `layoutProblems`.
 
 ## Projects
 
