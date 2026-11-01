@@ -4,7 +4,6 @@ import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, 
 import type { FloorCollection, FloorItem } from '../../../src/bridge/board.ts'
 import { keptTitle } from './kept.ts'
 import { cardReviews, floorThreadsOf, keepsThreads, threadCheckout } from '../../../extensions/reviews/client/panel.ts'
-import { reviewerOf } from '../../../extensions/reviews/client/reviews.ts'
 import { failedHtml, fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
@@ -325,7 +324,7 @@ export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor 
     can(c, 'send-home') && askingButton(armed(`kill ${c.id}`), `data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(cards, c))),
     `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
-  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}${cardLinesHtml(board, c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, reviewerOf(c)))}</span>
+  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}${cardLinesHtml(board, c)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, undefined))}</span>
     <span class="stats">${stats}</span><span class="acts">${acts}</span>`
 }
 

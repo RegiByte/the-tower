@@ -172,7 +172,8 @@
       },
       "adds": [
         "actions",
-        "marks"
+        "marks",
+        "badges"
       ]
     },
     "floor": {
