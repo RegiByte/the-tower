@@ -10,6 +10,7 @@ import { SVG_PATH } from '../shared/icons.ts'
 import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { RUNTIMES } from '../shared/model.ts'
+import { USER_LAYOUT_KEYS } from '../shared/regions.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
@@ -611,6 +612,21 @@ const viewProblems = (manifest: Manifest): LoadProblem[] => [
   ),
 ]
 
+/** A key of a region's layout in a manifest that is the user's alone, at its path. */
+const USER_LAYOUT_KEY = new RegExp(`^regions\\..+\\.layout\\.(${USER_LAYOUT_KEYS.join('|')})$`)
+
+/**
+ * A name the manifest gives a verb, a command or a view alike: pins, hides and what a viewer has seen name each by
+ * `<cap>/<name>`, one id space, so the two would pin and hide as one (decision `region-overflow`).
+ */
+const idSpaceProblems = (manifest: Manifest): LoadProblem[] => {
+  const kinds = { verbs: manifest.verbs, commands: manifest.commands, views: manifest.views }
+  const named = Object.entries(kinds).flatMap(([kind, names]) => Object.keys(names ?? {}).map((name) => ({ kind, name })))
+  return [...Map.groupBy(named, (n) => n.name)]
+    .filter(([, alike]) => alike.length > 1)
+    .map(([name, alike]) => error('invalid', `${name} names a ${alike.map((n) => n.kind.slice(0, -1)).join(' and a ')}: pins and hides name each by ${capabilityOf(manifest)}/${name}, so give each its own name`, alike.map((n) => `${n.kind}.${name}`).join(', ')))
+}
+
 /**
  * What an extension tells the workers: the config's `brief` and `full` over the manifest's, its `also` added after the
  * full text as the user's. `undefined` when neither says anything; why, when the config adds to guidance with no brief to list it by.
@@ -645,7 +661,9 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
     const unknown = (i: { path: string; message: string }) =>
       i.path.startsWith('plugins.')
         ? `${i.message}: plugins are keyed by a runtime this tower knows, ${RUNTIMES.join(', ')}`
-        : `${i.message}: this tower is ${tower}. If the key is newer, raise requires.tower; otherwise it's a typo`
+        : USER_LAYOUT_KEY.test(i.path)
+          ? `${i.message}: ${USER_LAYOUT_KEYS.join(', ')} are the user's: a manifest's layout gives order, hidden and options`
+          : `${i.message}: this tower is ${tower}. If the key is newer, raise requires.tower; otherwise it's a typo`
     return { found, claims, problems: issuesOf(parsed.error.issues).map((i) => error('invalid', i.message.startsWith('unknown key') ? unknown(i) : i.message, i.path)) }
   }
   const manifest = parsed.data
@@ -667,7 +685,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
   const fields = compileFields(manifest, capabilityOf(manifest))
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...iconProblems(manifest, found.client)]
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...idSpaceProblems(manifest), ...iconProblems(manifest, found.client)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),
