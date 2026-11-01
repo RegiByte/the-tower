@@ -22,21 +22,80 @@ export const KIT_MEMBERS = ['terminal', 'region', 'run', 'display', 'go', 'bus',
 export type KitMember = (typeof KIT_MEMBERS)[number]
 
 /**
+ * How a region reaches what doesn't fit in it (decision `region-overflow`): `menu`, what doesn't fit in the room behind
+ * a menu; `count`, a fixed number in place and the rest counted, reached where the subject opens; `wrap`, everything,
+ * the region growing; `scroll`, a strip with a visible edge that keeps the open item in view. @since 1.138
+ */
+export const OVERFLOWS = ['menu', 'count', 'wrap', 'scroll'] as const
+export type Overflow = (typeof OVERFLOWS)[number]
+
+/**
  * A place a renderer draws for subjects of one kind. `id`: `<subject kind>.<place>`; `subject`: the kind, `item.*`
  * for every collection's items; `scale` and `arity` matter to one that holds views, `one` at a time or several as
  * `tabs`; `description`: where it is on screen, in words.
  */
-export type Region = { id: string; subject: string; holds: Hold[]; scale?: Scale; arity?: 'one' | 'tabs'; description?: string }
+export type Region = {
+  id: string
+  subject: string
+  holds: Hold[]
+  scale?: Scale
+  arity?: 'one' | 'tabs'
+  description?: string
+  /**
+   * The overflow forms the renderer draws this region in, its default first. Absent: it offers no choice, and a
+   * layout's `overflow`, budgets and pins for it are refused. @since 1.138
+   */
+  overflows?: Overflow[]
+}
 
 /**
- * An arrangement of the views in a renderer's regions, by region id: `order` the views first, in this order; `hidden`
- * those not offered there; `open` the tab a tabs region opens on; `options` each view's own settings there. A
- * renderer's own (its `renderer.json`), the config's and the viewer's are laid one over the other by `layoutOf`.
+ * How one region is arranged: `order` the views first, in this order; `hidden` those not offered there; `open` the tab
+ * a tabs region opens on; `options` each view's own settings there.
  */
-export type Layout = Record<
-  string,
-  { order?: string[]; hidden?: string[]; open?: { view: string; subject?: string }; options?: Record<string, Record<string, unknown>> }
->
+export type LayoutEntry = {
+  order?: string[]
+  /** What is not offered there: views, and since 1.138 actions (`actionId`) and an extension's lines (`lineId`). */
+  hidden?: string[]
+  open?: { view: string; subject?: string }
+  options?: Record<string, Record<string, unknown>>
+  /** Drawn first, in this order, and drawn while there is room whatever the budgets: actions and lines by id. @since 1.138 */
+  pinned?: string[]
+  /** The ids a lower layer pins that this layer drops: the viewer unpinning a pin the config made. @since 1.138 */
+  unpinned?: string[]
+  /** The form the region is drawn in, one of its `overflows`. @since 1.138 */
+  overflow?: Overflow
+  /**
+   * How many lines are drawn in place: at most this many under `menu`, exactly this many under `count`, pins aside.
+   * A worker's head draws its lines in a row of their own, so there `lines` is that row's, not the fill's. @since 1.138
+   */
+  lines?: number
+  /** How many badges are drawn in place, as `lines`; 0 under `menu` draws only the pinned. @since 1.138 */
+  badges?: number
+  /** How many actions are drawn in place, as `badges`. @since 1.138 */
+  actions?: number
+}
+
+/**
+ * An arrangement of a renderer's regions, by region id. A renderer's own (its `renderer.json`), the config's and the
+ * viewer's are laid one over the other by `layoutOf`.
+ */
+export type Layout = Record<string, LayoutEntry>
+
+/** What an extension's manifest lays out in the regions it declares: the user's keys (pins, form, budgets) are not among them. */
+export type ExtensionLayoutEntry = Pick<LayoutEntry, 'order' | 'hidden' | 'options'>
+
+/** The keys of a layout entry that are the user's alone: a manifest's layout never gives them. */
+export const USER_LAYOUT_KEYS = ['pinned', 'unpinned', 'overflow', 'lines', 'badges', 'actions'] as const satisfies readonly (keyof LayoutEntry)[]
+
+/** The budget keys, each counting one hold. */
+export const BUDGETS = { lines: ['lines'], badges: ['badges'], actions: ['verbs', 'commands'] } as const satisfies Record<string, readonly Hold[]>
+
+/**
+ * The form `region` is drawn in under `entry`: the layout's when the region offers it, else its default. The default
+ * stands in for a viewer's choice the renderer no longer offers; a config's that it doesn't is a problem the checks say.
+ */
+export const overflowOf = (region: Region & { overflows: Overflow[] }, entry: LayoutEntry | undefined): Overflow =>
+  entry?.overflow && region.overflows.includes(entry.overflow) ? entry.overflow : region.overflows[0]
 
 /** What a renderer's `renderer.json` declares: its regions, its kit, the chords it keeps for itself, its default layout. */
 export type Declared = { regions: Region[]; kit: KitMember[]; keeps: string[]; layout: Layout }
