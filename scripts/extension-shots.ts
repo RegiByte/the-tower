@@ -14,7 +14,8 @@
  *
  *   {
  *     "settings": { … },                         the extension's settings in the sandbox's config, $EXT expanded
- *     "workers": 1,                              sandbox workers on the `lab` floor, as $WORKER_1 … (default 1)
+ *     "workers": 1,                              sandbox workers on the `lab` floor, as $WORKER_1 … (default 1, at most 5),
+ *                                                called HOLMES-42, MARPLE-17, POIROT-08, ODIN-21, VESPER-33 in that order
  *     "seed": ["tower keep drafts < $EXT/shots/seed/notes.md"],
  *                                                shell lines run in order against the sandbox (`sandbox run`): `tower`
  *                                                acts as $WORKER_1 (TOWER_SESSION_ID), $EXT is the extension's folder,
@@ -35,8 +36,10 @@
  *
  * Steps: `{"click": css}`, `{"hover": css}` and `{"until": css}` find the first element the selector matches whose text
  * holds `text`, when given (`{"click": "button", "text": "plan.md"}`), waiting for it up to `ms` (default 30000);
- * `{"key": chord}` and `{"type": text}` as `npm run drive` takes them; `{"eval": js}`, awaited; `{"wait": ms}`. Wait for
- * what the picture needs with `until`, not with `wait`: a machine running many sessions is slow.
+ * `{"key": chord}` and `{"type": text}` as `npm run drive` takes them; `{"eval": js}`, awaited; `{"wait": ms}`. `$VARs`
+ * are expanded in every step as in `open`. A click or hover takes the first match that has a box. Wait for what the
+ * picture needs with `until`, not with `wait`: a machine running many sessions is slow. A popover or tip is drawn only
+ * once the page has placed it: a scene showing one waits for `{"until": "<its selector>[data-placed]"}` before the picture.
  *
  * Seed made-up content only: no real names, paths or numbers, since the pictures are published with the extension.
  * Pictures are taken at scale 2 (crisp on a retina display) and cropped, so they stay small.
@@ -103,10 +106,14 @@ async function enable(folder: string, settings: unknown): Promise<string> {
   return id
 }
 
+/** The callsigns of a scene's workers, in order, so a retake draws every picture showing one the same. */
+const CALLSIGNS = ['HOLMES-42', 'MARPLE-17', 'POIROT-08', 'ODIN-21', 'VESPER-33']
+
 async function spawnWorkers(n: number): Promise<string[]> {
+  if (n > CALLSIGNS.length) throw new Error(`shots.json asks for ${n} workers: CALLSIGNS in scripts/extension-shots.ts names ${CALLSIGNS.length}`)
   const ids: string[] = []
   for (let i = 0; i < n; i++) {
-    const reply = (await post('spawn', { project: 'lab', cwd: path.join(ROOT, 'lab') })) as { t: string; id?: string; message?: string }
+    const reply = (await post('spawn', { project: 'lab', cwd: path.join(ROOT, 'lab'), callsign: CALLSIGNS[i] })) as { t: string; id?: string; message?: string }
     if (reply.t !== 'spawned') throw new Error(`the sandbox refused a worker: ${reply.message}`)
     ids.push(reply.id!)
   }
@@ -126,19 +133,24 @@ async function spawnWorkers(n: number): Promise<string[]> {
 const expand = (s: string, vars: Record<string, string>) => s.replace(/\$([A-Z_][A-Z0-9_]*)/g, (m, name) => vars[name] ?? m)
 
 /** The element a step names: the first the selector matches whose text holds `text`, when given. */
-const find = (css: string, text: string | undefined) =>
-  `[...document.querySelectorAll(${JSON.stringify(css)})].find((e) => ${JSON.stringify(text ?? '')} === '' || e.textContent.includes(${JSON.stringify(text ?? '')}))`
+const matches = (css: string, text: string | undefined) =>
+  `[...document.querySelectorAll(${JSON.stringify(css)})].filter((e) => ${JSON.stringify(text ?? '')} === '' || e.textContent.includes(${JSON.stringify(text ?? '')}))`
+
+const find = (css: string, text: string | undefined) => `${matches(css, text)}[0]`
+
+/** The first match with a box: a hidden duplicate of what a step names has none and is not what it means. */
+const findShown = (css: string, text: string | undefined) => `${matches(css, text)}.find((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 })`
 
 const STEP_MS = 30000
 const named = (css: string, { text }: Target) => `${css}${text ? ` holding "${text}"` : ''}`
 
 /**
- * Moves the pointer to the middle of the element a step names, once it has settled: the same node in the same place on
+ * Moves the pointer to the middle of the element a step names that has a box, once it has settled: the same node in the same place on
  * two looks 250 ms apart, so a press doesn't land on a node the page is about to draw again.
  */
 async function centre(page: Page, css: string, target: Target) {
   const box = `(async () => {
-    const look = () => { const e = ${find(css, target.text)}; return e && [e, e.getBoundingClientRect()] }
+    const look = () => { const e = ${findShown(css, target.text)}; return e && [e, e.getBoundingClientRect()] }
     const first = look()
     if (!first) return null
     await new Promise((r) => setTimeout(r, 250))
@@ -209,7 +221,7 @@ async function take(id: string, shots: Shots, vars: Record<string, string>, asWo
     for (const scheme of scene.schemes ?? ['light', 'dark']) {
       await withPage(`${tower()}/${expand(scene.open ?? '', vars)}`, { width, height, scale: 2, scheme }, async (page) => {
         for (const step of scene.steps ?? []) {
-          await run(page, step).catch(async (err: Error) => {
+          await run(page, JSON.parse(expand(JSON.stringify(step), vars)) as Step).catch(async (err: Error) => {
             const seen = path.join(os.tmpdir(), `extension-shots-${id}-${scene.name}-${scheme}.png`)
             await page.shot(seen)
             throw new Error(`${scene.name} (${scheme}): ${err.message}. The page as it failed: ${seen}`)
