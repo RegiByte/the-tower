@@ -2,24 +2,34 @@
   "regions": [
     { "id": "board.main", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "one", "description": "the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry)" },
     { "id": "board.strip", "subject": "board", "holds": ["views"], "scale": "row", "arity": "one", "description": "a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows" },
-    { "id": "board.notes", "subject": "board", "holds": ["asks"], "description": "the notes at the top of the sidebar, for asks about no floor" },
-    { "id": "floor.sign", "subject": "floor", "holds": ["commands"], "description": "the floor's sign in the sidebar while the floor is open, and the palette: each command its icon alone, its label and hint the tip" },
-    { "id": "floor.section", "subject": "floor", "holds": ["badges", "verbs", "asks", "tidy"], "description": "the floor's section in the sidebar, its Tidy and the palette" },
+    { "id": "board.notes", "subject": "board", "holds": ["asks"], "description": "the notes at the top of the sidebar, for asks about no floor", "overflows": ["wrap"] },
+    { "id": "floor.sign", "subject": "floor", "holds": ["commands"], "description": "the floor's sign in the sidebar while the floor is open, and the palette: each command its icon alone, its label and hint the tip", "overflows": ["wrap"] },
+    { "id": "floor.section", "subject": "floor", "holds": ["badges", "verbs", "asks", "tidy"], "description": "the floor's section in the sidebar, its Tidy and the palette", "overflows": ["wrap"] },
     { "id": "floor.trays", "subject": "collection", "holds": ["views"], "scale": "row", "arity": "one", "description": "a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection" },
-    { "id": "card.row", "subject": "card", "holds": ["badges", "lines"], "description": "the worker's row in the sidebar" },
-    { "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header, and the palette" },
+    { "id": "card.row", "subject": "card", "holds": ["badges", "lines"], "description": "the worker's row in the sidebar", "overflows": ["wrap"] },
+    { "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header, and the palette", "overflows": ["wrap"] },
     { "id": "card.panes", "subject": "card", "holds": ["views"], "scale": "pane", "arity": "tabs", "description": "the worker's tabs (terminal, brief, changes, reviews, shown files)" },
-    { "id": "conversation.head", "subject": "conversation", "holds": ["badges", "verbs", "commands"], "description": "the conversation's heading in the Brief" },
-    { "id": "said.acts", "subject": "said", "holds": ["commands"], "description": "beside a prompt's or an answer's copy in the Brief" },
-    { "id": "section.acts", "subject": "section", "holds": ["commands"], "description": "in a gutter beside a markdown document, level with each of its sections" },
-    { "id": "shown.head", "subject": "shown", "holds": ["badges", "verbs"], "description": "beside the worker's tabs while the showing is open" },
-    { "id": "shown.tab", "subject": "shown", "holds": ["commands"], "description": "inside the showing's tab while it is open, beside its own icons: each command its icon alone, its label and hint the tip" },
+    { "id": "conversation.head", "subject": "conversation", "holds": ["badges", "verbs", "commands"], "description": "the conversation's heading in the Brief", "overflows": ["wrap"] },
+    { "id": "said.acts", "subject": "said", "holds": ["commands"], "description": "beside a prompt's or an answer's copy in the Brief", "overflows": ["wrap"] },
+    { "id": "section.acts", "subject": "section", "holds": ["commands"], "description": "in a gutter beside a markdown document, level with each of its sections", "overflows": ["wrap"] },
+    { "id": "shown.head", "subject": "shown", "holds": ["badges", "verbs"], "description": "beside the worker's tabs while the showing is open", "overflows": ["wrap"] },
+    { "id": "shown.tab", "subject": "shown", "holds": ["commands"], "description": "inside the showing's tab while it is open, beside its own icons: each command its icon alone, its label and hint the tip", "overflows": ["wrap"] },
     { "id": "card.composer", "subject": "card", "holds": ["views"], "scale": "row", "arity": "one", "description": "at the foot of the worker's Brief, under its latest turn: what writes to the worker" },
-    { "id": "lines.acts", "subject": "lines", "holds": ["commands", "views"], "scale": "row", "arity": "one", "description": "under lines picked in a worker's Changes: what acts on them, a review's note box among them" },
-    { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette" },
-    { "id": "item.row", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's row in the floor's trays" }
+    { "id": "lines.acts", "subject": "lines", "holds": ["commands", "views"], "scale": "row", "arity": "one", "description": "under lines picked in a worker's Changes: what acts on them, a review's note box among them", "overflows": ["wrap"] },
+    { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette", "overflows": ["wrap"] },
+    { "id": "item.row", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's row in the floor's trays", "overflows": ["wrap"] }
   ],
   "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location"],
   "keeps": [],
-  "layout": { "floor.section": { "hidden": ["policies/policies"] }, "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] } }
+  "layout": {
+    "floor.section": { "hidden": ["policies/policies"] },
+    "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] },
+    "floor.sign": { "actions": 3 },
+    "card.head": { "lines": 1 },
+    "card.row": { "lines": 1, "badges": 2 },
+    "item.row": { "badges": 1, "actions": 2 },
+    "said.acts": { "actions": 2 },
+    "section.acts": { "actions": 2 },
+    "shown.tab": { "actions": 2 }
+  }
 }
