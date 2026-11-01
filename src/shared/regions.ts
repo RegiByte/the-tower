@@ -1,4 +1,4 @@
-import type { Manifest } from './extensions.ts'
+import type { Add, Manifest } from './extensions.ts'
 
 /**
  * Where a renderer draws what extensions contribute (decision `renderers-in-config`): its regions, each named by a
@@ -196,6 +196,14 @@ const viewLanded = (drawers: Drawer[], what: string, view: { on: string[]; scale
   }),
 })
 
+type FoldDecl = NonNullable<Manifest['folds']>[string]
+
+/** What a fold contributes beside its part: what it adds with code and what it projects from its facts. @since 1.138 */
+export const foldAdds = (fold: FoldDecl | undefined): Add[] => [...new Set([...(fold?.adds ?? []), ...(Object.keys(fold?.project ?? {}) as Add[])])]
+
+/** Whether `manifest`'s fold on `kind` contributes lines, added or projected. @since 1.138 */
+export const addsLinesOn = (manifest: Pick<Manifest, 'folds'>, kind: string): boolean => foldAdds(manifest.folds?.[kind]).includes('lines')
+
 /**
  * Where each of an extension's commands, views and fold contributions lands, per drawer: a command in regions holding
  * commands on its `on`; a fold's actions in those holding verbs, and commands too when it declares any; its badges,
@@ -206,7 +214,7 @@ export const landing = (drawers: Drawer[], extension: Pick<Manifest, 'folds' | '
   ...Object.entries(extension.commands ?? {}).map(([name, c]) => landed(drawers, `${extension.cap}/${name}`, 'commands', c.on ?? [], `${extension.cap}/${name}`)),
   ...Object.entries(extension.views ?? {}).map(([name, v]) => viewLanded(drawers, `${extension.cap}/${name}`, v)),
   ...Object.entries(extension.folds ?? {}).flatMap(([kind, fold]) =>
-    (fold.adds ?? []).flatMap((add): Landing[] => {
+    foldAdds(fold).flatMap((add): Landing[] => {
       const what = `${extension.cap} ${add}`
       if (add === 'slots') return []
       if (add === 'actions') return [landed(drawers, what, 'verbs', [kind]), ...(extension.commands ? [landed(drawers, what, 'commands', [kind])] : [])]

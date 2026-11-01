@@ -6,7 +6,7 @@ import { hiddenBelow } from './shelf.ts'
 import { chordProblem } from './shared/keymap.ts'
 import { ConfigError, type Config, type Renderer, type RendererConfig } from './shared/model.ts'
 import { capabilityOf, type Manifest } from './shared/extensions.ts'
-import { BUDGETS, HOLDS, KIT_MEMBERS, OVERFLOWS, overflowOf, REGION_ID, SCALES, type Declared, type Hold, type Layout, type LayoutEntry, type LayoutProblem, type Overflow, type Region, type RendererRegions } from './shared/regions.ts'
+import { addsLinesOn, BUDGETS, HOLDS, KIT_MEMBERS, OVERFLOWS, overflowOf, REGION_ID, SCALES, type Declared, type Hold, type Layout, type LayoutEntry, type LayoutProblem, type Overflow, type Region, type RendererRegions } from './shared/regions.ts'
 
 /** The default of `renderer` in the config. */
 export const DEFAULT_RENDERER = 'page'
@@ -100,8 +100,7 @@ export const layoutReachOf = (manifests: Manifest[]): LayoutReach => ({
   regions: manifests.flatMap((m) => Object.entries(m.regions ?? {}).map(([id, { layout: _, ...region }]) => ({ id, ...region }))),
   offered: manifests.flatMap((m) => {
     const cap = capabilityOf(m)
-    const adds = m.folds?.card?.adds ?? []
-    return [...Object.keys(m.verbs ?? {}), ...Object.keys(m.commands ?? {})].map((name) => `${cap}/${name}`).concat(adds.includes('lines') ? [cap] : [])
+    return [...Object.keys(m.verbs ?? {}), ...Object.keys(m.commands ?? {})].map((name) => `${cap}/${name}`).concat(addsLinesOn(m, 'card') ? [cap] : [])
   }),
 })
 
