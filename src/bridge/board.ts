@@ -61,7 +61,7 @@ const excerpt = (text: string | undefined) => (text && text.length > EXCERPT_CHA
 /** `promptBy`: the hirer whose prompt its latest is, while that is still the prompt the worker was hired on; else the prompt is the user's. */
 export type CardConversation = Pick<Thread, 'id' | 'prompt' | 'answer' | 'resumes' | 'resumedBy'> & { promptBy?: string; startedAt: number; verbs: ConversationVerb[]; calls: ConversationCalls; actions: ConversationAction[] }
 
-/** A process a session left running: `orphan` when re-parented to launchd. */
+/** A process a session left running: `orphan` when re-parented out of the host's tree. */
 export type CardResource = { pid: number; command: string; ports: number[]; orphan: boolean; verbs: ResourceVerb[]; calls: ResourceCalls; actions: ResourceAction[] }
 
 export type CardShown = Omit<Shown, 'at'> & { at: number; session: string }

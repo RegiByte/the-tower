@@ -1202,7 +1202,7 @@
         "actions"
       ],
       "additionalProperties": false,
-      "description": "A process a session left running: `orphan` when re-parented to launchd."
+      "description": "A process a session left running: `orphan` when re-parented out of the host's tree."
     },
     "ResourceVerb": {
       "type": "string",

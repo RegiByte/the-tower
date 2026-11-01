@@ -13,8 +13,8 @@
 offers held Z ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)). Tower 3D also lists a floor's leftovers on a
 Running board by its control room and in the floor panel, each ended on its own. `tower ls` sums them per session.
 
-**Where to look first.** `tower ps`: every [[leftover]] with its session, pid, `orphan` (re-parented to
-launchd) and listening ports. The list is read from `ps` and `lsof`
+**Where to look first.** `tower ps`: every [[leftover]] with its session, pid, `orphan` (re-parented out of
+the host's process tree) and listening ports. The list is read from `ps` and `lsof`
 ([`resourcesOf`](ref:hub/src/machine.ts#resourcesOf)), and the live system refreshes it every 5 s while a renderer holds the board, so a card lags
 a little; a reap reads it afresh when no renderer does.
 
