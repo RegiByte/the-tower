@@ -623,6 +623,9 @@ function markSeen(ids) {
 /** The viewer's pin writes in flight, one after another. */
 let pinWrites = Promise.resolve()
 
+/** What the layers under the viewer's pin in region `id`: the renderer's own and the config's. @param {string} id */
+const pinsBelow = (id) => layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, undefined)[id]?.pinned ?? []
+
 /**
  * Pins `pin` (an action's or a line's id) in region `id` for the viewer, or unpins it: their layer of the layout
  * (decision `region-overflow`). A pin a layer below (the config's, the renderer's) makes leaves their `unpinned`; any
@@ -637,7 +640,7 @@ function pinIn(id, pin, on) {
   if (on) markSeen([pin])
   pinWrites = pinWrites.then(async () => {
     const stored = /** @type {Layout} */ ((await tower.store.get(LAYOUT_KEY)) ?? {})
-    const below = layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, undefined)[id]?.pinned ?? []
+    const below = pinsBelow(id)
     const { pinned: was = [], unpinned: unpinnedWas = [], ...rest } = stored[id] ?? {}
     const pinned = [...was.filter((p) => p !== pin), ...(on && !below.includes(pin) ? [pin] : [])]
     const unpinned = [...unpinnedWas.filter((p) => p !== pin && below.includes(p)), ...(!on && below.includes(pin) ? [pin] : [])]
@@ -946,8 +949,8 @@ function kitRegion(el, id, subject, options) {
       runs = new Map()
       const pins = layout()[id]?.pinned ?? []
       const theirs = page.state().layout?.[id]?.pinned ?? []
+      const below = pinsBelow(id)
       const config = CONFIG_LAYOUT[id]?.pinned ?? []
-      const own = declared.layout?.[id]?.pinned ?? []
       const lines = holds.includes('lines') && at.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (at.value).id, undefined) : []
       const drawn = new Set(ranked.map((r) => r.id))
       /** @template T @param {T[]} all @param {(item: T) => string} idOf */
@@ -957,9 +960,12 @@ function kitRegion(el, id, subject, options) {
         ...firstOfEach(shownActions(at).filter((a) => drawn.has(actionId(a))), actionId).map((a) => /** @type {[string, string]} */ ([actionId(a), actionWords(board(), a).label])),
         ...firstOfEach(lines, lineId).map((l) => /** @type {[string, string]} */ ([lineId(l), `${l.cap}: ${l.text}`])),
       ]
-      /** Who pinned `pin`, when it isn't the viewer. @param {string} pin @returns {string | undefined} */
-      const by = (pin) =>
-        theirs.includes(pin) ? undefined : config.includes(pin) ? (pins.includes(pin) ? 'pinned by your config' : 'pinned by your config, unpinned here') : own.includes(pin) ? `pinned by ${RENDERER}` : undefined
+      /** Who pinned `pin` when a layer below the viewer's did, and whether the viewer unpinned it. @param {string} pin @returns {string | undefined} */
+      const by = (pin) => {
+        if (theirs.includes(pin) || !below.includes(pin)) return undefined
+        const who = config.includes(pin) ? 'your config' : RENDERER
+        return pins.includes(pin) ? `pinned by ${who}` : `pinned by ${who}, unpinned here`
+      }
       /** @type {MenuCheck[]} */
       const checks = pinnable.map(([pin, label]) => {
         const key = `${at.key} pin:${pin}`
