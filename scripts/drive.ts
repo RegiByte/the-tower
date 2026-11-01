@@ -15,6 +15,7 @@
  *     --key <chord>   press a key on the focused element as a real keyboard would: a key name (a space for Space) with any of Meta+, Ctrl+,
  *                     Alt+, Shift+ before it (Meta+Backspace, Shift+Enter, Alt+ArrowLeft, Ctrl+c)
  *     --type <text>   type text into the focused element
+ *     --drop <file>   drag a file from outside the browser and drop it where the pointer is (after --hover), as Finder would
  *
  *   npm run drive -- 'http://127.0.0.1:4399/r/tower3d/?board=busy&seed=1' \
  *     --eval 'tower3d.ready()' --eval 'tower3d.capture()' --eval 'tower3d.step(60).counts' --shot /tmp/busy.png
@@ -30,7 +31,7 @@ import { parseArgs } from 'node:util'
 
 const CHROME = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
-const STEPS = ['eval', 'shot', 'wait', 'hover', 'wheel', 'down', 'up', 'key', 'type'] as const
+const STEPS = ['eval', 'shot', 'wait', 'hover', 'wheel', 'down', 'up', 'key', 'type', 'drop'] as const
 type Step = { kind: (typeof STEPS)[number]; value: string }
 
 function parse(argv: string[]) {
@@ -41,7 +42,7 @@ function parse(argv: string[]) {
     options: { size: { type: 'string', default: '1280x800' }, scheme: { type: 'string' }, motion: { type: 'string' }, ...Object.fromEntries(STEPS.map((s) => [s, { type: 'string', multiple: true }])) },
   })
   const url = tokens.find((t) => t.kind === 'positional')?.value
-  if (!url) throw new Error('usage: npm run drive -- <url> [--size WxH] [--scheme light|dark] [--motion reduce] [--eval js | --shot file | --wait ms | --hover css | --wheel dy | --down b | --up b | --key chord | --type text]…')
+  if (!url) throw new Error('usage: npm run drive -- <url> [--size WxH] [--scheme light|dark] [--motion reduce] [--eval js | --shot file | --wait ms | --hover css | --wheel dy | --down b | --up b | --key chord | --type text | --drop file]…')
   const steps: Step[] = tokens.flatMap((t) => (t.kind === 'option' && (STEPS as readonly string[]).includes(t.name) ? [{ kind: t.name as Step['kind'], value: t.value! }] : []))
   const [width, height] = values.size.split('x').map(Number)
   return { url, steps, width, height, scheme: values.scheme, motion: values.motion }
@@ -134,6 +135,8 @@ export type Page = {
   press(chord: string, down: boolean): Promise<void>
   key(chord: string): Promise<void>
   type(text: string): Promise<void>
+  /** A file from outside the browser dragged in and dropped at the pointer. */
+  drop(file: string): Promise<void>
   /** Every page error, unhandled rejection and console error so far, as printed. */
   errors: string[]
 }
@@ -203,6 +206,10 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
       async type(text) {
         await cdp.send('Input.insertText', { text })
       },
+      async drop(file) {
+        const data = { items: [], files: [path.resolve(file)], dragOperationsMask: 1 }
+        for (const type of ['dragEnter', 'dragOver', 'drop']) await cdp.send('Input.dispatchDragEvent', { type, ...pointer, data })
+      },
     })
     cdp.close()
     return result
@@ -224,6 +231,7 @@ async function main() {
       if (step.kind === 'down' || step.kind === 'up') await page.press(step.value, step.kind === 'down')
       if (step.kind === 'key') await page.key(step.value)
       if (step.kind === 'type') await page.type(step.value)
+      if (step.kind === 'drop') await page.drop(step.value)
       if (step.kind === 'hover') {
         const at = (await page.eval(`(() => { const r = document.querySelector(${JSON.stringify(step.value)}).getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] })()`)) as [number, number]
         await page.mouse(...at)
