@@ -1,7 +1,7 @@
 import type { Card } from '../bridge/board.ts'
 import type { Brief } from '../bridge/turns.ts'
 import { addedActions } from '../shared/adds.ts'
-import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, openTools, saidOf, saidText, saidWhat, toolCallHtml, withWhole, type BriefMarkdown } from '../shared/brief.ts'
+import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, openTools, saidOf, saidText, saidWhat, toolCallHtml, toolCallSettled, wholeHolds, withWhole, type BriefMarkdown } from '../shared/brief.ts'
 import { can, conversationSubject, esc } from '../shared/cards.ts'
 import { fenceText, markdownCss, markdownHtml } from '../shared/markdown.ts'
 import { drawPanel } from '../shared/panel-kit.ts'
@@ -12,7 +12,7 @@ import type { Mount, Tab } from '../shared/views.ts'
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt, Claude's steps
  * and its answer, the latest at the bottom, in the viewer's markdown. Read again as its conversations change and, while
  * it works, as it calls each tool; kept at the end while the viewer reads there. A tool call opened is read once; a
- * conversation's earlier turns are read whole when asked for, and kept until its turns move. Each conversation's heading holds what extensions add to it (`conversation.head`). Each prompt
+ * conversation's earlier turns are read whole when asked for, and kept until its latest turn moves. Each conversation's heading holds what extensions add to it (`conversation.head`). Each prompt
  * and answer drawn is a viewer subject on the page's bus (`said`), and holds the commands offered on it beside its copy
  * (`said.acts`).
  */
@@ -52,9 +52,9 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
   const actsOn = (b: typeof board) => addedActions(b, saidSubject({ session: '', conversation: '', startedAt: 0, side: 'prompt', card: card.id, project: card.project, body: '' })).length > 0
 
   const keyOf = (c: Card) => `${c.status} ${c.tool} ${JSON.stringify(c.conversations)} ${JSON.stringify(c.conversations.map((v) => board.adds[`conversation:${v.id}`]))}`
-  /** The tool calls read, by key, as drawn. */
+  /** The tool calls read that had ended, by key, as drawn. */
   const tools = new Map<string, string>()
-  /** The conversations read whole, by their earlier button's key: drawn in place of their last turns until the next read. */
+  /** The conversations read whole: drawn in place of their last turns until a read moves their latest turn, then let go. */
   let wholes: Brief[] = []
 
   /** Draws the brief read; `same`, a redraw of what is drawn, keeps its folds and opened answers. */
@@ -95,7 +95,12 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     const first = readAt === undefined
     readAt = key
     void tower.conversations(card.id).then(
-      (read) => readAt === key && ((threads = wholes.reduce(withWhole, read)), draw(!first)),
+      (read) => {
+        if (readAt !== key) return
+        wholes = wholes.filter((whole) => wholeHolds(read, whole))
+        threads = wholes.reduce(withWhole, read)
+        draw(!first)
+      },
       (err: Error) => kit.toast(err.message),
     )
   }
@@ -131,14 +136,15 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     }, (err: Error) => kit.toast(err.message))
   }
 
-  /** A tool call opened: read once, drawn in its body, and kept for every draw after. */
+  /** A tool call opened: read, drawn in its body, and kept for every draw after once it ended. */
   function readTool(details: HTMLDetailsElement) {
     const key = details.dataset.tool!
     if (!details.open || tools.has(key)) return
     void tower.toolCall(...(key.split(':') as [string, string])).then((call) => {
-      tools.set(key, toolCallHtml(call))
+      const html = toolCallHtml(call)
+      if (toolCallSettled(call)) tools.set(key, html)
       for (const drawn of body.querySelectorAll<HTMLElement>('details[data-tool]'))
-        if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = tools.get(key)!
+        if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = html
     }, (err: Error) => kit.toast(err.message))
   }
 

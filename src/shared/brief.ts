@@ -15,9 +15,11 @@
  *   data-copy-said="<key>"           copy that prompt's, answer's or step's text as written (`saidText`, `saidWhat`)
  *   data-brief-markdown="<choice>"   draw words rendered or raw (`BRIEF_MARKDOWNS`), the viewer's, kept under `BRIEF_MARKDOWN_KEY`
  *   data-tool="<session>:<call>" opened   read the call (`tower.toolCall`), draw it in its `[data-tool-body]`
- *                                         (`toolCallHtml`), and hand it to the next draw as `tools`
+ *                                         (`toolCallHtml`), and hand it to the next draw as `tools` once it ended
+ *                                         (`toolCallSettled`): a call drawn open fires `toggle` again as it is drawn
  *   data-brief-earlier="<session>:<conversation>"   read the conversation whole (`tower.conversation`) and draw it in place
- *                                                   of its last turns (`withWhole`)
+ *                                                   of its last turns (`withWhole`) while its latest turn
+ *                                                   holds (`wholeHolds`)
  *
  * and each fence's `data-copy-code` of `/markdown.js`.
  */
@@ -152,6 +154,20 @@ const conversationKey = (b: Brief) => `${b.session.id}:${b.id}`
 
 /** A brief with the conversation `whole` read whole in place of its last turns. @since 1.132 */
 export const withWhole = (briefs: Brief[], whole: Brief): Brief[] => briefs.map((b) => (conversationKey(b) === conversationKey(whole) ? whole : b))
+
+const turnMark = (turn: Turn | undefined) => turn && `${turn.startedAt} ${turn.answeredAt} ${turn.steps.length}`
+
+/**
+ * Whether a conversation read whole still holds what a later brief gives of it: its latest turn is the same, unmoved.
+ * One that moved is read again, or let go. @since 1.132
+ */
+export const wholeHolds = (briefs: Brief[], whole: Brief): boolean => {
+  const now = briefs.find((b) => conversationKey(b) === conversationKey(whole))
+  return now !== undefined && turnMark(now.turns.at(-1)) === turnMark(whole.turns.at(-1))
+}
+
+/** Whether a tool call read is how it ended, to keep for every draw after: one still running is read again when opened. @since 1.132 */
+export const toolCallSettled = (call: ToolCall) => call.outcome !== 'running'
 
 const OUTCOME_WORDS: Record<ToolOutcome, string> = { running: 'running', ok: '', error: 'failed', denied: 'denied', abandoned: 'stopped' }
 

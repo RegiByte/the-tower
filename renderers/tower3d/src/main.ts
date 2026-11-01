@@ -5,7 +5,7 @@ import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../extensions/reviews/client/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
-import { briefCss, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, withWhole, type BriefMarkdown } from '../../../src/shared/brief.ts'
+import { briefCss, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole, type BriefMarkdown } from '../../../src/shared/brief.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
@@ -2045,7 +2045,7 @@ async function openBrief(id: string) {
 /** The desk's brief as last read: what it is drawn again from, and what a copy reads its text from. */
 let deskBrief: { id: string; threads: Threads } | undefined
 
-/** The tool calls read in a logbook, by key, as drawn: read once, the first time one is opened. */
+/** The tool calls read in a logbook that had ended, by key, as drawn: one still running is read again when drawn open. */
 const toolsRead = new Map<string, string>()
 const toolRead = (key: string) => toolsRead.get(key)
 
@@ -2096,16 +2096,17 @@ function readWhole(key: string, atDeskBrief: boolean) {
   }, (err: Error) => toast(err.message))
 }
 
-/** A logbook's tool call opened: read once and drawn in its body. */
+/** A logbook's tool call opened: read and drawn in its body, kept once it ended. */
 document.addEventListener('toggle', (e) => {
   const details = e.target
   if (!(details instanceof HTMLDetailsElement) || !details.dataset.tool || !details.open || toolsRead.has(details.dataset.tool)) return
   const key = details.dataset.tool
   const [session, call] = key.split(':')
   tower.toolCall(session, call).then((read) => {
-    toolsRead.set(key, toolCallHtml(read))
+    const html = toolCallHtml(read)
+    if (toolCallSettled(read)) toolsRead.set(key, html)
     for (const drawn of document.querySelectorAll<HTMLElement>('details[data-tool]'))
-      if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = toolsRead.get(key)!
+      if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = html
   }, (err: Error) => toast(err.message))
 }, true)
 

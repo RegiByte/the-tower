@@ -76,6 +76,7 @@ const LINE_FIELDS: Record<string, string[]> = {
   ToolSearch: ['query'],
   WebFetch: ['url'],
   WebSearch: ['query'],
+  SendMessage: ['summary', 'to'],
 }
 
 /** What a `tool.call` carries besides the tool's input. */
@@ -109,22 +110,26 @@ const outcomeAfter = (outcome: ToolOutcome, hook: Hook): ToolOutcome => {
 
 type ToolStep = Extract<Step, { t: 'tool' }>
 
+/** What a turn's steps read of the rest of its log: the steps each `Agent` call's subagent took, and whether an address is a subagent's. */
+type Agents = { stepsOf: (call: string) => number | undefined; isAgent: (to: string) => boolean }
+
 /**
  * A turn's steps from its work: a step's words come before the calls it made, which Claude logs first since they run
- * while it streams; the turn's answer, its last words, is left out.
+ * while it streams; the turn's answer, its last words, is left out. A message to another worker is a `sent` step and
+ * its `SendMessage` call is not drawn again; one to a subagent is the call, its address no worker's.
  */
-const stepsOf = ({ work, answer }: Opened, cwd: string, agentStepsOf: (call: string) => number | undefined): Step[] => {
+const stepsOf = ({ work, answer }: Opened, cwd: string, agents: Agents): Step[] => {
   const calls = new Map<string, ToolStep>()
   const read = work.reduce<{ done: Step[]; pending: Step[] }>(({ done, pending }, [at, hook]) => {
     switch (hook.hook_event_name) {
       case 'tool.call': {
-        if (hook.tool === 'SendMessage') return { done, pending }
+        if (hook.tool === 'SendMessage' && !agents.isAgent(String(hook.to))) return { done, pending }
         const id = String(hook.tool_use_id)
         calls.set(id, { t: 'tool', at, id, tool: String(hook.tool), line: toolLine(hook, cwd), outcome: 'running' })
         return { done, pending: [...pending, calls.get(id)!] }
       }
       case 'session.send':
-        return { done, pending: [...pending, { t: 'sent', at, to: { callsign: String(hook.to) }, text: String(hook.text) }] }
+        return agents.isAgent(String(hook.to)) ? { done, pending } : { done, pending: [...pending, { t: 'sent', at, to: { callsign: String(hook.to) }, text: String(hook.text) }] }
       case 'turn.step': {
         const text = (hook.result as { answer?: string } | undefined)?.answer
         return { done: [...done, ...(text ? [{ t: 'text' as const, at, text }] : []), ...pending], pending: [] }
@@ -145,7 +150,7 @@ const stepsOf = ({ work, answer }: Opened, cwd: string, agentStepsOf: (call: str
   const said = answer !== undefined && last?.t === 'text' && last.text === answer ? steps.slice(0, -1) : steps
   return said.map((s) => {
     if (s.t !== 'tool') return s
-    const agentSteps = agentStepsOf(s.id)
+    const agentSteps = agents.stepsOf(s.id)
     return { ...calls.get(s.id)!, ...(agentSteps !== undefined && { agentSteps }) }
   })
 }
@@ -178,12 +183,16 @@ export const turnsByConversation = ({ header, events }: SessionLog): Record<stri
     }
     return WORK.has(data.hook_event_name) && ofMainLoop(data) ? withLatest(tally, (turn) => ({ ...turn, work: [...turn.work, [at, data]] })) : tally
   }, { byConversation: {}, spawned: new Map(), agentSteps: new Map() })
-  const agentStepsOf = (call: string) => {
-    const agent = tally.spawned.get(call)
-    return agent === undefined ? undefined : (tally.agentSteps.get(agent) ?? 0)
+  const spawnedAgents = new Set(tally.spawned.values())
+  const agents: Agents = {
+    stepsOf: (call) => {
+      const agent = tally.spawned.get(call)
+      return agent === undefined ? undefined : (tally.agentSteps.get(agent) ?? 0)
+    },
+    isAgent: (to) => spawnedAgents.has(to),
   }
   return Object.fromEntries(Object.entries(tally.byConversation).map(([id, turns]) =>
-    [id, turns.map(({ work: _, ...turn }, i) => ({ ...turn, steps: stepsOf(turns[i], header.cwd, agentStepsOf) }))]))
+    [id, turns.map(({ work: _, ...turn }, i) => ({ ...turn, steps: stepsOf(turns[i], header.cwd, agents) }))]))
 }
 
 /** One tool call as its session logged it: its input, the permission check it met, how it ended, and how long it ran. @since 1.132 */
