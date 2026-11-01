@@ -136,6 +136,7 @@ const start: Start = (ctx) => {
         return {
           x,
           actions: unreviewable(card, floor, of) ? [] : [{ verb: `${CAP}/hire`, call: { project: card.project, of: card.callsign } }],
+          ...(of && { badges: [{ label: `reviews ${of}`, tone: 'quiet', hint: `reviews the work of ${of}, on its review thread` }] }),
           ...(file && { marks: threadMarks(file.thread) }),
         }
       },

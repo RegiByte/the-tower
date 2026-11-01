@@ -55,7 +55,7 @@ const reviewsFolder = (logs: SessionLog[]): Folder => ({
   requires: [],
   wants: [],
   off: [],
-  specs: new Map([['card', { x: z.unknown(), adds: ['actions'] }]]),
+  specs: new Map([['card', { x: z.unknown(), adds: ['actions', 'badges'] }]]),
   folds: { card: (startReviews({} as StartCtx) as Started).folds!.card },
   commands: [],
   verbs: new Map([['reviews', new Set(['hire', 'append'])]]),

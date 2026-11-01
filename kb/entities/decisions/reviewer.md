@@ -100,10 +100,10 @@ and how its findings reach the author.
 - *The pair is logged.* The reviewer's `of` fact (`tower.x.reviews.of`), read while its crew edge is reviews' (a fork
   carries the fact and no edge), is the card's `x.reviews.of` ([`ofCard`](ref:hub/extensions/reviews/server.ts#ofCard),
   read by [`reviewerOf`](ref:hub/extensions/reviews/client/reviews.ts#reviewerOf), the reviews client's), copied back to `card.reviews` until 2.0; the
-  crew edge gives `card.crew` and `card.reportsTo`, and the fork's git record gives `card.worktree.from`. Both
-  renderers draw [`pairLineOf`](ref:hub/src/shared/worker-details.ts#pairLineOf) ("reviews MARCO-87"), given
-  the callsign `reviewerOf` reads, beside the branch,
-  Tower 3D on the desk's name tag. The words `tower whoami` and the card say include "exempt from hiring limits by
+  crew edge gives `card.crew` and `card.reportsTo`, and the fork's git record gives `card.worktree.from`. The card
+  fold adds the badge "reviews MARCO-87", which the tower page and Tower 3D's desk panel draw among the card's badges; Tower 3D draws
+  [`pairLineOf`](ref:hub/src/shared/worker-details.ts#pairLineOf) ("reviews MARCO-87"), given the callsign
+  `reviewerOf` reads, on the desk's name tag, as `tower agent` does in its line. The words `tower whoami` and the card say include "exempt from hiring limits by
   reviews".
 - *Reviewers of before 1.95.* Every reviewer spawned before the facts existed is known only by its first prompt. A
   session that logged neither `tower.exempt` nor `tower.reports-to`, whose launch prompt
