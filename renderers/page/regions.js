@@ -312,36 +312,56 @@ export function regions(deps) {
   }
 
   /**
-   * A region holding one view on its subject, the one the layout picks among those it offers. A row with none to draw
-   * is hidden, as a row beside contributions is: a pane with none says so.
+   * A region holding one view on its subject, the one the layout picks among those it offers, picked again on every
+   * update and mounted again when the pick changes. A row with none to draw is hidden, as a row beside contributions
+   * is: a pane with none says so.
    * @param {HTMLElement} host @param {Region} region @param {Subject} subject @param {Record<string, Record<string, unknown>>} options
    * @returns {RegionHandle}
    */
   function one(host, region, subject, options) {
     host.dataset.region = region.id
-    host.dataset.subject = subject.key
-    const offered = offeredIn(views(), region, layout(), deps.kit, subject)
-    const view = pickView(board(), offered, layout()[region.id]?.order, subject)
-    const el = document.createElement('div')
-    el.className = 'view-root'
-    host.replaceChildren(el)
-    if (!view?.module && region.scale === 'row') {
-      host.hidden = true
-      return { update: () => {}, close: () => (host.replaceChildren(), (host.hidden = false), delete host.dataset.region, delete host.dataset.subject) }
+    let at = subject
+    let asked = options
+    let seen = true
+    /** The view mounted, by id, and its host; `undefined` while none is. @type {{ id: string | undefined, hosted: Hosted | undefined }} */
+    let held = { id: undefined, hosted: undefined }
+    /** @param {Record<string, Record<string, unknown>>} next @param {string} id */
+    const optionsOf = (next, id) => ({ ...layout()[region.id]?.options?.[id], ...next[id] })
+    const pick = () => pickView(board(), offeredIn(views(), region, layout(), deps.kit, at), layout()[region.id]?.order, at)
+
+    function mount() {
+      const view = pick()
+      held.hosted?.close()
+      const el = document.createElement('div')
+      el.className = 'view-root'
+      host.replaceChildren(el)
+      host.hidden = !view?.module && region.scale === 'row'
+      if (!view?.module) {
+        if (!host.hidden) failed(el, region.id, `nothing here draws ${at.key}`)
+        held = { id: view?.id, hosted: undefined }
+        return
+      }
+      const hosted = mountView(view, el, at, region.scale, optionsOf(asked, view.id), undefined, () => {})
+      if (!seen) hosted.visible(false)
+      held = { id: view.id, hosted }
     }
-    if (!view?.module) {
-      failed(el, region.id, `nothing here draws ${subject.key}`)
-      return { update: () => {}, close: () => host.replaceChildren() }
-    }
-    /** @param {Record<string, Record<string, unknown>>} asked */
-    const optionsOf = (asked) => ({ ...layout()[region.id]?.options?.[view.id], ...asked[view.id] })
-    const hosted = mountView(view, el, subject, region.scale, optionsOf(options), undefined, () => {})
+
+    host.dataset.subject = at.key
+    mount()
     return {
-      update: (at) => ((host.dataset.subject = at.key), hosted.update(at)),
-      options: (next) => hosted.options(optionsOf(/** @type {Record<string, Record<string, unknown>>} */ (next))),
-      show: (s) => hosted.show(s),
-      visible: (on) => hosted.visible(on),
-      close: () => (hosted.close(), host.replaceChildren(), delete host.dataset.region, delete host.dataset.subject),
+      update: (next) => {
+        at = next
+        host.dataset.subject = next.key
+        if (pick()?.id !== held.id) mount()
+        else held.hosted?.update(next)
+      },
+      options: (next) => {
+        asked = /** @type {Record<string, Record<string, unknown>>} */ (next)
+        if (held.id) held.hosted?.options(optionsOf(asked, held.id))
+      },
+      show: (s) => held.hosted?.show(s) ?? false,
+      visible: (on) => ((seen = on), held.hosted?.visible(on)),
+      close: () => (held.hosted?.close(), host.replaceChildren(), (host.hidden = false), delete host.dataset.region, delete host.dataset.subject),
     }
   }
 

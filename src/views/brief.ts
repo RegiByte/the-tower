@@ -1,4 +1,4 @@
-import type { Board, Card } from '../bridge/board.ts'
+import type { Card } from '../bridge/board.ts'
 import type { Brief } from '../bridge/turns.ts'
 import { addedActions } from '../shared/adds.ts'
 import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, openTools, saidOf, saidText, saidWhat, toolCallHtml, toolCallSettled, wholeHolds, withWhole, type BriefMarkdown } from '../shared/brief.ts'
@@ -6,7 +6,7 @@ import { can, conversationSubject, esc } from '../shared/cards.ts'
 import { fenceText, markdownCss, markdownHtml } from '../shared/markdown.ts'
 import { drawPanel } from '../shared/panel-kit.ts'
 import { saidSubject, type Subject } from '../shared/subjects.ts'
-import { viewsOf, type Mount, type RegionHandle, type Tab } from '../shared/views.ts'
+import type { Mount, Tab } from '../shared/views.ts'
 
 /**
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt, Claude's steps
@@ -33,9 +33,6 @@ const CSS = `:where([data-view="${ID}"]) {
 
 /** How near its end, in pixels, the viewer reads for a redraw to keep the brief there. */
 const AT_END = 48
-
-/** The views that could write to a worker from the Brief's foot: on a card at `row` scale, its floor not off for them. */
-const composersOf = (board: Board, c: Card) => viewsOf(board).filter((v) => v.on.includes('card') && v.scales.includes('row') && !v.off?.includes(c.project)).map((v) => v.id).join(' ')
 
 /** A worker has a Brief tab where it has a brief. */
 export const tab: Tab = (_board, subject) => (can(subject.value as Card, 'brief') ? {} : undefined)
@@ -64,17 +61,8 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
   const footSize = new ResizeObserver(() => readsAtEnd && (el.scrollTop = el.scrollHeight))
   footSize.observe(foot)
 
-  /** The view writing to the worker (`card.composer`), mounted again when the views that could be there change. */
-  let composer: RegionHandle | undefined
-  let composers = ''
-  function placeComposer() {
-    const now = composersOf(board, card)
-    if (now === composers) return composer?.update(subject)
-    composers = now
-    composer?.close()
-    foot.hidden = !now
-    composer = now ? kit.region(foot, 'card.composer', subject) : undefined
-  }
+  /** The view writing to the worker (`card.composer`): the region picks it, and hides the foot while it has none. */
+  const composer = kit.region(foot, 'card.composer', subject)
 
   const actsOn = (b: typeof board) => addedActions(b, saidSubject({ session: '', conversation: '', startedAt: 0, side: 'prompt', card: card.id, project: card.project, body: '' })).length > 0
 
@@ -183,7 +171,6 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
   const offStore = tower.store.on(() => void chooseMarkdown())
   void chooseMarkdown()
   read()
-  placeComposer()
 
   return {
     update(next, now) {
@@ -192,7 +179,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
       card = now.value as Card
       if (actsOn(next) !== saidActs) draw(true)
       read()
-      placeComposer()
+      composer.update(subject)
     },
     show(s) {
       if (s.kind === 'conversation') return true
@@ -204,12 +191,12 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     visible(on) {
       seen = on
       read()
-      composer?.visible?.(on)
+      composer.visible?.(on)
     },
     close() {
       offStore()
       footSize.disconnect()
-      composer?.close()
+      composer.close()
       regions.forEach((r) => r.close())
       for (const s of said.values()) kit.bus.clear(s.key)
     },
