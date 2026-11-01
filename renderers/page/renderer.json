@@ -7,7 +7,7 @@
     { "id": "floor.section", "subject": "floor", "holds": ["badges", "verbs", "asks", "tidy"], "description": "the floor's section in the sidebar, its Tidy and the palette", "overflows": ["wrap"] },
     { "id": "floor.trays", "subject": "collection", "holds": ["views"], "scale": "row", "arity": "one", "description": "a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection" },
     { "id": "card.row", "subject": "card", "holds": ["badges", "lines"], "description": "the worker's row in the sidebar", "overflows": ["count", "wrap"] },
-    { "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header, and the palette", "overflows": ["wrap"] },
+    { "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header, and the palette", "overflows": ["menu", "wrap"] },
     { "id": "card.panes", "subject": "card", "holds": ["views"], "scale": "pane", "arity": "tabs", "description": "the worker's tabs (terminal, brief, changes, reviews, shown files)", "overflows": ["scroll"] },
     { "id": "conversation.head", "subject": "conversation", "holds": ["badges", "verbs", "commands"], "description": "the conversation's heading in the Brief", "overflows": ["wrap"] },
     { "id": "said.acts", "subject": "said", "holds": ["commands"], "description": "beside a prompt's or an answer's copy in the Brief", "overflows": ["wrap"] },

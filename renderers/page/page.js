@@ -1,4 +1,4 @@
-import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, isFresh, offeredIds, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -8,7 +8,7 @@ import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
-import { busOf, declaredLayout, displayed, layoutOf, openable, viewOn, viewsOf } from '/views.js'
+import { busOf, declaredLayout, displayed, fill, layoutOf, openable, viewOn, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
 import { shells } from './shells.js'
@@ -35,6 +35,8 @@ import { verbLabel } from '/verb-words.js'
 import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
 import { actionsHtml, asksHtml, badgeHtml } from './added.js'
+import { menu } from './menu.js'
+import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 
 /**
  * @import { SideView } from './stats.js'
@@ -44,7 +46,8 @@ import { actionsHtml, asksHtml, badgeHtml } from './added.js'
  * @import { BoardError, FromPage } from '../../src/shared/shelf-page.ts'
  * @import { KeyPress } from '../../src/shared/keymap.ts'
  * @import { Action, Added, AddedLine, Badge } from '../../src/shared/extensions.ts'
- * @import { Ranked } from '../../src/shared/adds.ts'
+ * @import { HeadItem, Ranked } from '../../src/shared/adds.ts'
+ * @import { MenuEntry, MenuItem } from './menu.js'
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call } from '../../src/shared/api.ts'
@@ -60,7 +63,7 @@ import { actionsHtml, asksHtml, badgeHtml } from './added.js'
  * @import { Offer } from '../../extensions/policies/policies.ts'
  * @import { BoardAsk } from '../../src/shared/extensions.ts'
  * @import { CommandKit, Placing } from '../../src/shared/views.ts'
- * @import { Layout, LayoutProblem, Region, KitMember } from '../../src/shared/regions.ts'
+ * @import { Layout, LayoutProblem, Overflow, Region, KitMember } from '../../src/shared/regions.ts'
  * @import { Openable } from '../../src/shared/palette.ts'
  */
 
@@ -627,10 +630,10 @@ const lineHtml = (line) => `<span class="adds-line" data-tip="${esc(line.text)}"
 const isDrawn = (el) => (getComputedStyle(el).display === 'contents' && el.parentElement ? isDrawn(el.parentElement) : el.checkVisibility({ visibilityProperty: true }))
 
 /**
- * A region of contributions as each frame reads it: `inPlace`, the actions new to the viewer it draws in place now,
- * `undefined` while it isn't drawn; `saw`, told what it drew in place and whether the window has focus, answers those
- * the viewer saw.
- * @typedef {{ inPlace(): string[] | undefined, saw(ids: string[] | undefined, focused: boolean): string[] }} PlacedRegion
+ * A region of contributions as each frame reads it: `prepare` writes what must be drawn before it is measured, `read`
+ * reads it and answers the write that follows, which answers the actions new to the viewer it drew in place while the
+ * window has focus; `remeasure` forgets what it measured, its room or the type having changed, and reads it next frame.
+ * @typedef {{ prepare(): void, read(): (focused: boolean) => string[], remeasure(): void }} PlacedRegion
  */
 
 /** The regions of contributions mounted now. @type {Set<PlacedRegion>} */
@@ -646,17 +649,58 @@ const readNext = (region) => {
 }
 
 /**
- * One frame's pass over the regions drawn since the last: every region is read, then written, so many regions cost one
- * layout. An action new to the viewer that a region draws in place while the window has focus is seen (decision
- * `region-overflow`).
+ * One frame's pass over the regions drawn since the last: every region prepared, then read, then written, so many
+ * regions cost two layouts at most. An action new to the viewer that a region draws in place while the window has focus
+ * is seen (decision `region-overflow`).
  */
 function readAll() {
   reading = 0
   const regions = [...unread]
   unread.clear()
-  const drawn = regions.map((r) => r.inPlace())
+  regions.forEach((r) => r.prepare())
+  const writes = regions.map((r) => r.read())
   const focused = document.hasFocus()
-  markSeen(regions.flatMap((r, n) => r.saw(drawn[n], focused)))
+  markSeen(writes.flatMap((write) => write(focused)))
+}
+
+/** The inline size each measured row was last seen at, so its own height changing as it tucks is no reason to fit again. @type {WeakMap<Element, number>} */
+const widthSeen = new WeakMap()
+/** The region each measured row is the row of. @type {WeakMap<Element, PlacedRegion>} */
+const rowOf = new WeakMap()
+/** A region measured by its row's width fits again in the next frame once that width changes: the room it has did. */
+const resized = new ResizeObserver((entries) => {
+  for (const { target, contentBoxSize } of entries) {
+    const width = contentBoxSize[0].inlineSize
+    if (widthSeen.get(target) === width) continue
+    widthSeen.set(target, width)
+    rowOf.get(target)?.remeasure()
+  }
+})
+
+/** The px a region must have to spare before it draws one more item in place, so a region at its edge doesn't flicker. */
+const FIT_MARGIN = 24
+
+/** A subject by the name the page shows it by: a worker's callsign. @param {Subject} s */
+const subjectName = (s) => (s.kind === 'card' ? /** @type {Card} */ (s.value).callsign : s.key)
+
+/** Whether a badge is one that asks for attention. @param {Added<Badge>} b */
+const isSevere = (b) => b.tone === 'broken' || b.tone === 'needs'
+
+/** `label` with its first letter up, as a menu lists it. @param {string} label */
+const capitalized = (label) => label.replace(/^./, (l) => l.toUpperCase())
+
+/**
+ * A form a region of contributions is drawn in (decision `region-overflow`): `actionsAt`, where its action buttons are;
+ * `paint`, each hold's html in its place, written only where it changed; the frame's `prepare` and `read`, as for a
+ * `PlacedRegion`, `read`'s write answering the action buttons drawn in place; `remeasure`; `close`, the form undone.
+ * @typedef {{ name: Overflow, actionsAt: HTMLElement, paint(parts: { badges: string, lines: string, actions: string }): void, prepare(): void, read(): () => HTMLElement[], remeasure(): void, close(): void }} RegionForm
+ */
+
+/** Writes html into elements, each only when it differs from what this writer last wrote there. */
+const writer = () => {
+  /** @type {Map<Element, string>} */
+  const wrote = new Map()
+  return (/** @type {Element} */ to, /** @type {string} */ html) => wrote.get(to) !== html && (wrote.set(to, html), (to.innerHTML = html), true)
 }
 
 /**
@@ -666,66 +710,286 @@ function readAll() {
  * severity and its actions and lines in the layout's order (`rankedBadges`, `rankedActions`, `rankedLines`), less the
  * commands its options `omit` (`<cap>/<name>`). A worker's head holds the page's own Dismiss beside its badges, with
  * its exemptions, both kept (`data-keep`). An action new to the viewer carries a dot; once it has been drawn in place in
- * a focused window it is seen, and the region keeps its dot until its view is hidden or it closes.
+ * a focused window it is seen, and the region keeps its dot until its view is hidden or it closes. It is drawn in the
+ * form its layout picks among those the region offers: `wrap` (`drawWrap`), else `menu` (`drawMenu`).
  * @param {HTMLElement} el @param {string} id @param {Subject} subject @param {{ omit?: string[] }} options
  * @returns {import('../../src/shared/views.ts').RegionHandle}
  */
 function kitRegion(el, id, subject, options) {
   let at = subject
   let omit = options.omit ?? []
-  const holds = placing().regions.find((r) => r.id === id)?.holds ?? []
+  const declared = () => placing().regions.find((r) => r.id === id)
+  const holds = declared()?.holds ?? []
   const actions = holds.includes('verbs') || holds.includes('commands')
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
   const marked = Object.values(slots).filter((s) => s !== undefined)
-  /** The actions as the last draw ranked them, one button each in `actionsAt`. @type {Ranked[]} */
+  /** The actions as the last draw ranked them, one button each in the form's `actionsAt`. @type {Ranked[]} */
   let ranked = []
+  /** The badges as the last draw ranked them. @type {Added<Badge>[]} */
+  let badges = []
   /** The actions this region drew with a dot that the viewer has seen since: their dot stays until the region is hidden. @type {Set<string>} */
   const dotted = new Set()
-  const actionsAt = slots.actions ?? el
-  /** The buttons of the ranked actions, in their order. */
-  const actionEls = () => /** @type {HTMLElement[]} */ ([...actionsAt.querySelectorAll(':scope > [data-added]')])
   /** @param {HTMLElement} at @param {Subject} s */
   const mark = (at, s) => ((at.dataset.region = id), (at.dataset.subject = s.key), regionSubjects.set(at, s))
   /** @param {Subject} s */
   const shownActions = (s) => addedActions(board(), s).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`)))
+  /** The form the layout picks: the region's default when the viewer's pick is one it no longer offers, `wrap` where it offers none. @returns {Overflow} */
+  const formName = () => {
+    const r = declared()
+    return r?.overflows?.length ? overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (r), layout()[id]) : 'wrap'
+  }
+  /** The buttons of the ranked actions, in their order. */
+  const actionEls = () => /** @type {HTMLElement[]} */ ([...form.actionsAt.querySelectorAll(':scope > [data-added]')])
+  /** Whether the action ranked `r` carries the dot. @param {Ranked} r @param {readonly string[]} offered @param {readonly string[]} had */
+  const dotOn = (r, offered, had) => dotted.has(r.id) || isFresh(offered, had, r.id)
   /** Each action's dot, on while it is new to the viewer or the region keeps it. */
   const dot = () => {
     const offered = offeredIds(board())
     const had = seenAmong(offered)
     actionEls().forEach((b, n) => {
-      const on = dotted.has(ranked[n].id) || isFresh(offered, had, ranked[n].id)
+      const on = dotOn(ranked[n], offered, had)
       b.classList.toggle('fresh', on)
       if (on) b.setAttribute('aria-description', 'new')
       else b.removeAttribute('aria-description')
     })
   }
-  /** @type {PlacedRegion} */
-  const placed = {
-    inPlace: () => {
-      if (!isDrawn(el)) return undefined
+  const hide = () => (dotted.clear(), dot())
+  /** Each hold's html written in its place: `into` names the element a slot's html goes in. @param {(html: string, slot: HTMLElement, name: string) => void} into @param {{ badges: string, lines: string, actions: string }} parts */
+  const paintParts = (into, parts) => {
+    if (!marked.length) return into(`${parts.badges}${parts.actions}`, el, 'actions')
+    for (const [name, slot] of Object.entries(slots)) if (slot) into(parts[/** @type {keyof typeof parts} */ (name)], slot, name)
+  }
+
+  /** The `wrap` form: every item drawn in place, the region growing as they wrap. @returns {RegionForm} */
+  function drawWrap() {
+    const write = writer()
+    return {
+      name: 'wrap',
+      actionsAt: slots.actions ?? el,
+      paint: (parts) => paintParts((html, slot) => write(slot, html), parts),
+      prepare: () => {},
+      read: () => {
+        const shown = actionEls().filter((b) => b.checkVisibility({ visibilityProperty: true }))
+        return () => shown
+      },
+      remeasure: () => {},
+      close: () => {},
+    }
+  }
+
+  /**
+   * The `menu` form: the ranked items that fit drawn in place on one row, the rest tucked behind ⋯, a menu of them
+   * (`/menu.js`). The row is the one the region's badges and actions share; everything on it the region didn't draw is
+   * protected, and so is what it draws marked `data-keep`. The view's own controls marked `data-tuck` rank ahead of
+   * every contribution, the highest rank first, so they leave last; once tucked, each is listed in the menu as a proxy
+   * pressing the original. Each item's width is read while it is drawn and remembered while tucked; the region forgets
+   * them all when its room or the type changes, draws everything once more and measures it again.
+   * @returns {RegionForm}
+   */
+  function drawMenu() {
+    const write = writer()
+    const host = slots.actions ?? el
+    const items = document.createElement('span')
+    items.className = 'region-items'
+    const more = document.createElement('button')
+    more.className = 'region-more'
+    more.hidden = true
+    host.replaceChildren(items, more)
+    /** What each menu entry runs, by its key. @type {Map<string, (el: HTMLElement) => void>} */
+    let runs = new Map()
+    const listed = menu(more, { run: (item, from) => runs.get(item.key)?.(from) })
+    const pop = /** @type {HTMLElement} */ (more.nextElementSibling)
+    const held = [slots.badges, slots.actions].filter((s) => s !== undefined)
+    /** The row the region's items share: the nearest element holding both its badges and its actions, else the region. */
+    let row = /** @type {HTMLElement} */ (held[0]?.parentElement ?? el)
+    while (row !== el && !held.every((s) => row.contains(s))) row = /** @type {HTMLElement} */ (row.parentElement)
+    /** Each item's width on the row, its gap beside it included, read while it was drawn. @type {WeakMap<Element, number>} */
+    let widths = new WeakMap()
+    let stale = true
+    /** How many items the last fit drew in place, and of which list. */
+    let was = 0
+    let sig = ''
+    rowOf.set(row, placed)
+    resized.observe(row)
+    /** ⋯ is busy while something tucked, or an entry of its menu, is. */
+    const showBusy = () => {
+      if (el.querySelector('[data-tucked][aria-busy="true"], .region-menu [aria-busy="true"]')) more.setAttribute('aria-busy', 'true')
+      else more.removeAttribute('aria-busy')
+    }
+    /** A control busy or done: ⋯ says so at once, and the menu lists its proxy as the original is next frame. */
+    const busy = new MutationObserver((records) => {
+      if (records.every((r) => r.target === more)) return
+      showBusy()
+      readNext(placed)
+    })
+    busy.observe(el, { subtree: true, attributeFilter: ['aria-busy'] })
+    const badgesAt = () => slots.badges ?? items
+    /** The view's controls the region may tuck, the highest rank first. */
+    const tuckable = () => /** @type {HTMLElement[]} */ ([...row.querySelectorAll('[data-tuck]')]).sort((a, b) => Number(b.dataset.tuck) - Number(a.dataset.tuck))
+    /**
+     * What the region fills the row with, in rank order: the view's tuckable controls, then the badges and actions in
+     * the head's order (`headRanked`), each with its element and the key the menu lists it by.
+     * @returns {({ el: HTMLElement, key: string } & ({ t: 'core' } | HeadItem))[]}
+     */
+    const fillOrder = () => {
+      const actionButtons = actionEls()
+      const badgeEls = /** @type {HTMLElement[]} */ ([...badgesAt().children].filter((c) => !c.matches('[data-keep], [data-added]')))
+      const seen = new Map()
+      /** @param {Ranked} r */
+      const keyOf = (r) => {
+        const n = seen.get(r.id) ?? 0
+        seen.set(r.id, n + 1)
+        return `${at.key} ${r.id}#${n}`
+      }
+      return [
+        ...tuckable().map((c) => ({ t: /** @type {const} */ ('core'), el: c, key: `${at.key} tuck:${c.dataset.tuck}` })),
+        ...headRanked(badges, ranked).map((item) =>
+          item.t === 'badge'
+            ? { ...item, el: badgeEls[badges.indexOf(item.badge)], key: `${at.key} badge:${badges.indexOf(item.badge)}` }
+            : { ...item, el: actionButtons[ranked.indexOf(item.ranked)], key: keyOf(item.ranked) },
+        ),
+      ]
+    }
+    /** The menu's entry for a tucked control of the view: pressing it presses the original. @param {HTMLElement} c @param {string} key @returns {MenuItem} */
+    const proxy = (c, key) => {
+      runs.set(key, () => c.click())
+      return { t: 'item', key, label: capitalized(c.getAttribute('aria-label') ?? c.textContent ?? ''), hint: c.dataset.tip, danger: c.classList.contains('danger'), held: c.getAttribute('aria-disabled') === 'true', busy: c.getAttribute('aria-busy') === 'true' }
+    }
+    /** The menu's entry for a tucked action, run as its button runs it. @param {Ranked} r @param {string} key @param {readonly string[]} offered @param {readonly string[]} had @returns {MenuItem} */
+    const actionItem = (r, key, offered, had) => {
+      const words = actionWords(board(), r.action)
+      runs.set(key, (from) => void runAddedAt(from, { subject: at.key, action: r.action }))
+      return { t: 'item', key, label: words.label, hint: words.hint, danger: words.destructive, fresh: dotOn(r, offered, had) }
+    }
+    /**
+     * The menu and ⋯ for what `tucked` holds: its badges and the text the view lets go (`texts`) in the header, the
+     * view's controls first under the subject's name, the dangerous after a separator, then the actions in rank order.
+     * @param {ReturnType<typeof fillOrder>} tucked @param {string[]} texts
+     */
+    const list = (tucked, texts) => {
+      runs = new Map()
       const offered = offeredIds(board())
       const had = seenAmong(offered)
-      return actionEls().flatMap((b, n) => (b.checkVisibility({ visibilityProperty: true }) && isFresh(offered, had, ranked[n].id) ? [ranked[n].id] : []))
-    },
-    saw: (ids, focused) => {
-      if (!ids) return (hide(), [])
-      if (!focused) return []
-      ids.forEach((i) => dotted.add(i))
-      return ids
-    },
+      const core = tucked.flatMap((t) => (t.t === 'core' ? [t] : [])).sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+      const safe = core.filter((c) => !c.el.classList.contains('danger'))
+      const danger = core.filter((c) => c.el.classList.contains('danger'))
+      const tuckedBadges = tucked.flatMap((t) => (t.t === 'badge' ? [t.badge] : []))
+      const tuckedActions = tucked.flatMap((t) => (t.t === 'action' ? [{ r: t.ranked, key: t.key }] : []))
+      /** @type {MenuEntry[]} */
+      const coreEntries = [...safe.map((c) => proxy(c.el, c.key)), ...(safe.length && danger.length ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...danger.map((c) => proxy(c.el, c.key))]
+      listed.draw({
+        header: `${tuckedBadges.length ? `<div class="menu-badges">${tuckedBadges.map(badgeHtml).join('')}</div>` : ''}${texts.map((t) => `<p>${esc(t)}</p>`).join('')}`,
+        entries: [
+          ...(core.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: subjectName(at), entries: coreEntries })] : []),
+          ...(core.length && tuckedActions.length ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []),
+          ...tuckedActions.map(({ r, key }) => actionItem(r, key, offered, had)),
+        ],
+      })
+      const severe = tuckedBadges.filter(isSevere).length
+      const said = [
+        core.length + tuckedActions.length ? plural(core.length + tuckedActions.length, 'action') : '',
+        tuckedBadges.length ? plural(tuckedBadges.length, 'badge') : '',
+        severe ? `${severe} ${severe === 1 ? 'needs' : 'need'} attention` : '',
+      ].filter(Boolean)
+      const label = `More on ${subjectName(at)}${said.length ? `: ${said.join(', ')}` : ''}`
+      more.setAttribute('aria-label', label)
+      more.dataset.tip = label
+      write(more, `<span aria-hidden="true">⋯</span><span class="n" aria-hidden="true">${tucked.length}</span>`)
+      const fresh = tuckedActions.some(({ r }) => dotOn(r, offered, had))
+      if (severe || fresh) more.dataset.dot = severe ? 'severe' : 'new'
+      else delete more.dataset.dot
+      showBusy()
+    }
+    return {
+      name: 'menu',
+      actionsAt: items,
+      paint: (parts) => paintParts((html, slot, name) => write(name === 'actions' ? items : slot, html), parts),
+      prepare: () => {
+        if (!stale) return
+        for (const t of row.querySelectorAll('[data-tucked]')) t.removeAttribute('data-tucked')
+        more.hidden = false
+      },
+      read: () => {
+        const order = fillOrder()
+        for (const item of order) if (!item.el.hasAttribute('data-tucked')) widths.set(item.el, lineWidth(item.el) + gapBeside(item.el))
+        if (!more.hidden) widths.set(more, lineWidth(more) + gapBeside(more))
+        const drawn = new Set(/** @type {Element[]} */ (order.map((i) => i.el)))
+        const kept = lineWidth(row, (e) => drawn.has(e) || e === more || e === pop)
+        const room = roomOf(row) - kept - 1
+        const texts = /** @type {HTMLElement[]} */ ([...el.querySelectorAll('[data-tuck-text]')]).filter(isCut).map((t) => (t.textContent ?? '').trim())
+        stale = false
+        return () => {
+          const keys = order.map((i) => i.key).join('\n')
+          if (keys !== sig) was = order.length
+          const count = fill(order.map((i) => /** @type {number} */ (widths.get(i.el))), room, /** @type {number} */ (widths.get(more)), was, FIT_MARGIN)
+          was = count
+          sig = keys
+          const focused = document.activeElement
+          order.forEach((item, n) => item.el.toggleAttribute('data-tucked', n >= count))
+          more.hidden = count === order.length
+          if (more.hidden) listed.close()
+          if (focused && order.slice(count).some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
+          list(order.slice(count), texts)
+          return order.slice(0, count).flatMap((i) => (i.t === 'action' ? [i.el] : []))
+        }
+      },
+      remeasure: () => ((widths = new WeakMap()), (stale = true)),
+      close: () => {
+        listed.remove()
+        resized.unobserve(row)
+        rowOf.delete(row)
+        widthSeen.delete(row)
+        busy.disconnect()
+        for (const t of row.querySelectorAll('[data-tucked]')) t.removeAttribute('data-tucked')
+        host.replaceChildren()
+      },
+    }
   }
-  const hide = () => (dotted.clear(), dot())
+
+  /** @type {PlacedRegion} */
+  const placed = {
+    prepare: () => form.prepare(),
+    read: () => {
+      if (!isDrawn(el)) return () => (hide(), [])
+      const placing = form.read()
+      return (focused) => {
+        const shown = placing()
+        if (!focused) return []
+        const offered = offeredIds(board())
+        const had = seenAmong(offered)
+        const buttons = actionEls()
+        const seen = shown.flatMap((b) => {
+          const r = ranked[buttons.indexOf(b)]
+          return r && isFresh(offered, had, r.id) ? [r.id] : []
+        })
+        seen.forEach((i) => dotted.add(i))
+        return seen
+      }
+    },
+    remeasure: () => (form.remeasure(), readNext(placed)),
+  }
+  const FORMS = /** @type {Partial<Record<Overflow, () => RegionForm>>} */ ({ wrap: drawWrap, menu: drawMenu })
+  /** @param {Overflow} name */
+  const formOf = (name) => {
+    const make = FORMS[name]
+    if (!make) throw new Error(`the page draws ${id} as wrap or menu, not ${name}: its renderer.json offers a form the page doesn't draw`)
+    return make()
+  }
+  let form = formOf(formName())
   const draw = (/** @type {Subject} */ s) => {
     at = s
     const entry = layout()[id]
     ranked = actions ? rankedActions(shownActions(s), entry) : []
+    badges = holds.includes('badges') ? rankedBadges(board(), s) : []
     const parts = {
-      badges: holds.includes('badges') ? `${keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s))}${rankedBadges(board(), s).map(badgeHtml).join('')}` : '',
+      badges: holds.includes('badges') ? `${keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s))}${badges.map(badgeHtml).join('')}` : '',
       lines: holds.includes('lines') && s.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (s.value).id, entry).map(lineHtml).join('') : '',
       actions: actionsHtml(board(), s, ranked.map((r) => r.action)),
     }
-    if (!marked.length) (mark(el, s), paintOnce(el, `${parts.badges}${parts.actions}`))
-    else for (const [name, slot] of Object.entries(slots)) if (slot) (mark(slot, s), paintOnce(slot, parts[/** @type {keyof typeof parts} */ (name)]))
+    const name = formName()
+    if (form.name !== name) (form.close(), (form = formOf(name)))
+    for (const slot of marked.length ? marked : [el]) mark(slot, s)
+    form.paint(parts)
     dot()
     readNext(placed)
   }
@@ -736,7 +1000,7 @@ function kitRegion(el, id, subject, options) {
     update: draw,
     options: (next) => ((omit = /** @type {{ omit?: string[] }} */ (next).omit ?? []), draw(at)),
     visible: (on) => (on ? readNext(placed) : hide()),
-    close: () => (placedRegions.delete(placed), unread.delete(placed), (marked.length ? marked : [el]).forEach(clear)),
+    close: () => (form.close(), placedRegions.delete(placed), unread.delete(placed), (marked.length ? marked : [el]).forEach(clear)),
   }
 }
 
@@ -1132,7 +1396,8 @@ function applyScheme() {
 }
 
 tower.onScheme(applyScheme)
-tower.prefs.on(() => (applyTermFont(), render(), drawSettings()))
+tower.prefs.on(() => (applyTermFont(), placedRegions.forEach((r) => r.remeasure()), render(), drawSettings()))
+document.fonts.addEventListener('loadingdone', () => placedRegions.forEach((r) => r.remeasure()))
 // A view or a framed page set a key the viewer's record keeps, such as a dismissal.
 tower.store.on(() => void rereadViewer().then(render))
 
