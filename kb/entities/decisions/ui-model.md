@@ -166,11 +166,11 @@ and a framed document's section are the same thing.
   its own with `tower x`.
 - *The layout* ([`layoutOf`](ref:hub/src/shared/views.ts#layoutOf)): three layers, the renderer's own, the config's
   `renderers.<r>.layout` and the viewer's in `tower.store`, each field from the highest that sets it, `hidden` the
-  union less what a higher layer orders or pins. Since 1.138 an entry ([`LayoutEntry`](ref:hub/src/shared/regions.ts#LayoutEntry))
+  union less what a higher layer orders, or pins where that pin stands in the merge. Since 1.138 an entry ([`LayoutEntry`](ref:hub/src/shared/regions.ts#LayoutEntry))
   also takes the user's `pinned` and `unpinned` ids, an `overflow` form and the `lines`, `badges` and `actions`
   budgets for what extensions contribute ([[region-overflow]]): `pinned` is the layers' union, the viewer's first,
-  less what a higher layer unpins, and `unpinned` keeps only what a lower layer still pins, so a stale one is
-  dropped as it is read. Under them, since 1.114, the defaults an extension gives the regions it
+  less what a higher layer unpins, and `unpinned` keeps only what a lower layer still pins and no higher one pins
+  again, so a stale one is dropped as it is read. Under them, since 1.114, the defaults an extension gives the regions it
   declares (`regions.<id>.layout` in its manifest, `order`, `hidden` and `options` alone), laid under the renderer's own by
   [`declaredLayout`](ref:hub/src/shared/views.ts#declaredLayout): a region only its extension knows has a default
   only that extension can give, and the user takes it back with a config line. Since 1.138 the board carries no
