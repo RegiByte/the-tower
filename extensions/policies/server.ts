@@ -6,7 +6,7 @@
  */
 import type { Board, Card, Floor } from '../../src/bridge/board.ts'
 import { apiError, isApiError, type ApiError, type Replies, type RouteInput } from '../../src/shared/api.ts'
-import type { Ask, CallCtx, Part, Reduce, Slot, Start, StreamFact } from '../../src/shared/extensions.ts'
+import type { Ask, Badge, CallCtx, Part, Reduce, Slot, Start, StreamFact } from '../../src/shared/extensions.ts'
 import { ruleWords, slotsBetween, slotWords } from '../../src/shared/slots.ts'
 import { tagOf } from '../../src/shared/tags.ts'
 import { runCheck } from './check.ts'
@@ -80,6 +80,13 @@ const runLines = (run: CardRun, tz: string | undefined, now: number): string[] =
     ...(found ? [`Its check found: ${found}`] : []),
   ]
 }
+
+/** A run's badge on its worker's card: which run of which policy, and what started it on hover. */
+const runBadge = (run: CardRun, tz: string | undefined, now: number): Badge => ({
+  label: `run ${run.n} · ${run.title ?? run.tag}`,
+  tone: 'quiet',
+  hint: `run ${run.n} of the policy ${run.title ?? run.tag} (${run.tag}): ${run.start === 'hand' ? 'started by hand' : `${run.slot === null ? 'no' : slotWords(run.slot, tz, now)} slot, ${run.start === 'auto' ? 'started on its own' : 'its offer accepted'}`}`,
+})
 
 /** Why a policy can't take a fact for `slot`: it isn't valid, another runner acts on it, or `slot` is none of its slots up to now. */
 const slotRefusal = (policy: string, parsed: Parsed, slot: number | undefined): ApiError | undefined => {
@@ -308,7 +315,8 @@ const start: Start = (ctx) => {
         const run = cardRun(card.lineage[0].id, files, factsOf(own.streams as OwnStreams))
         if (!run) return {}
         const file = files.find((f) => f.id === run.policy)
-        return { x: { run }, lines: runLines(run, file?.parsed.ok ? file.parsed.header.when.tz : undefined, now) }
+        const tz = file?.parsed.ok ? file.parsed.header.when.tz : undefined
+        return { x: { run }, lines: runLines(run, tz, now), badges: [runBadge(run, tz, now)] }
       },
       floor: (floor: Floor, { now, board, callsignOf, own }): Part => {
         const views = policyViews(floor.id, filesOf(own.collections[POLICIES] ?? []), factsOf(own.streams as OwnStreams), floor.cards, callsignOf, board.hostUp, now)
