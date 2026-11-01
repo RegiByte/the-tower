@@ -64,6 +64,8 @@ export function mount(host, { tower, board: first, subject, kit, state }) {
   let said = { t: 'none' }
   let sending = false
   let keepTimer
+  /** The line under the box as last drawn: drawn again only when it changes, so its link survives a click. */
+  let drawn = ''
 
   host.innerHTML = `<style>${STYLE}</style><div class="chat">
     <textarea data-chat-text rows="2"></textarea>
@@ -86,6 +88,15 @@ export function mount(host, { tower, board: first, subject, kit, state }) {
     text.style.height = `${text.scrollHeight + text.offsetHeight - text.clientHeight}px`
   }
 
+  /** The box fitted again when its width changes, since its text wraps anew. */
+  let width = 0
+  const widthWatch = new ResizeObserver(([entry]) => {
+    if (entry.contentRect.width === width) return
+    width = entry.contentRect.width
+    fit()
+  })
+  widthWatch.observe(text)
+
   /** Why the worker takes no prompt now, or undefined while its card offers `prompt`. */
   const notNow = () => (callOf(card, 'prompt') ? undefined : (NOT_NOW[card.status] ?? HOLDS))
 
@@ -98,13 +109,14 @@ export function mount(host, { tower, board: first, subject, kit, state }) {
     send.disabled = sending || !!not || slash || !text.value.trim()
     hint.textContent = chord ? `${chord} sends` : ''
     say.className = `say${said.t === 'refused' ? ' refused' : ''}`
-    say.innerHTML =
+    const html =
       said.t === 'refused' ? `${esc(said.message)}${TERMINAL}`
       : slash ? `${SLASH}${TERMINAL}`
       : sending ? 'sending…'
       : sent ? 'sent'
       : not ? `${esc(card.callsign)} is ${esc(not.why)}.${not.there ? TERMINAL : ''}`
       : ''
+    if (html !== drawn) say.innerHTML = drawn = html
   }
 
   async function submit() {
@@ -158,6 +170,7 @@ export function mount(host, { tower, board: first, subject, kit, state }) {
       draw()
     },
     close() {
+      widthWatch.disconnect()
       if (keepTimer === undefined) return
       clearTimeout(keepTimer)
       state.set(draftKey(), text.value || null)

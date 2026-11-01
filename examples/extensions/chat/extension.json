@@ -11,7 +11,7 @@
       "export": "mount",
       "on": ["card"],
       "scales": ["row"],
-      "needs": ["toast", "display"],
+      "needs": ["display"],
       "words": { "label": "Chat", "hint": "a text box that sends a prompt to the worker while it waits at its prompt" }
     }
   }
