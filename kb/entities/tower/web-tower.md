@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-01",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -89,8 +89,8 @@ own width, a container query on the head, so a grid cell and a narrow window loo
 Resume, Let go and Send home draw as icon buttons ([`ICON`](ref:hub/src/shared/icons.ts#ICON)) with their names as
 `aria-label` and tip, Send home in the danger tone, and the context as its number alone; regular to 1100px and wide
 above, words beside the icons and the meter drawn. Below 480px the pill shows its lamp and time, its words kept for
-assistive tech and in its tip. The head wraps and never clips: the actions wrap first, then context and cost go under
-the status. The pill's time has a reserved width, so its tick never moves the head. In a grid cell the head ends Send
+assistive tech and in its tip. The head never clips: what its region doesn't tuck behind ⋯ (below) wraps, the actions
+first, then context and cost go under the status. The pill's time has a reserved width, so its tick never moves the head. In a grid cell the head ends Send
 home │ Open ✕, its verbs, then the grid's acts in the order they are read by keyboard. The head marks its own controls
 `data-tuck` with a rank (details, Let go, Resume, Send home) and its place line `data-tuck-text`, for a region that
 tucks what doesn't fit.
@@ -108,6 +108,28 @@ so the viewer sees the dot once. The page reads its own layout (`layout.page` in
 its `renderer.json`'s) again on every board and every store event, so a choice another window makes isn't lost. A
 region whose layout in the config fails its check (`layoutProblems` on `GET /renderers`) is drawn by its default, and
 the sidebar's notes say so, each problem in the tip.
+
+A region is drawn in the form its layout picks among those it offers: `wrap` draws everything, and a worker's head
+offers `menu` first. Under `menu` the region draws on one row the prefix of its ranked items that fits and tucks the
+rest behind ⋯ (`data-tucked`, drawn `display: none`). Its fill order is the head's own controls marked `data-tuck`,
+highest rank first so they leave last, then `headRanked`'s badges and actions. The fit reads every region drawn in one
+frame, untucking them all first when they must be measured afresh, then reading them, then writing. It measures each
+item while it is drawn and remembers its width while tucked ([`lineWidth`](ref:hub/renderers/page/fit.js#lineWidth)).
+Everything else on the row is protected, and `fill` decides with hysteresis. It forgets its widths when the row's
+inline size changes (a `ResizeObserver` that ignores the row's own height), when fonts load and when the viewer's text
+size changes. It never fits on the clock's tick: the pill's time has a reserved width. A region not drawn (a kept
+worker, a hidden tab) is neither measured nor fitted.
+
+⋯ ([`menu`](ref:hub/renderers/page/menu.js#menu)) is a button with `aria-haspopup="menu"`, labelled with what it hides
+("More on HOLMES-42: 7 actions, 3 badges, 1 needs attention"), its count beside it, and a dot: the broken tone for a
+tucked severe badge, else the new one for a tucked new action. It is busy while something tucked, or an entry of its
+menu, is. Its popover holds a header of the tucked badges and of the text the view lets go when it is cut
+(`data-tuck-text`), the menu's description, then a `role="menu"`: the view's tucked controls under the subject's name,
+the dangerous after a separator, each a proxy that presses the original (Send home asks first, Details opens its
+popover), then the tucked actions in rank order, run as their buttons run. The popover sits in the region's slot, so a
+pick finds the subject the region was drawn on. ↑ ↓ Home End move, a letter jumps by label, Esc and Tab close it with
+focus back on ⋯, and a board drawn while it is open keeps focus on the same entry by its key. ⋯ sits between the
+contributions and the head's own verbs, so a cell still ends Send home │ Open ✕.
 
 The page is the tower's accessible renderer: Tower 3D's pointer-lock walk can't be. Every worker is a link to
 `#<id>`, opened at load and on `hashchange`, the selected one `aria-current`. The pane tabs are an ARIA tablist, the
