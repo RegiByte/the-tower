@@ -116,7 +116,8 @@ rest behind ⋯ (`data-tucked`, drawn `display: none`). Its fill order is the he
 highest rank first so they leave last, then `headRanked`'s badges and actions. The fit reads every region drawn in one
 frame, untucking them all first when they must be measured afresh, then reading them, then writing. It measures each
 item while it is drawn and remembers its width while tucked ([`lineWidth`](ref:hub/renderers/page/fit.js#lineWidth)).
-Everything else on the row is protected, and `fill` decides with hysteresis. It forgets its widths when the row's
+Everything else on the row is protected, and `fill` decides with hysteresis. The layout's `badges` and `actions`
+budgets cap how many of each are drawn in place, the pinned actions and the view's controls aside. It forgets its widths when the row's
 inline size changes (a `ResizeObserver` that ignores the row's own height), when fonts load and when the viewer's text
 size changes. It never fits on the clock's tick: the pill's time has a reserved width. A region not drawn (a kept
 worker, a hidden tab) is neither measured nor fitted.
