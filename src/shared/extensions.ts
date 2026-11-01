@@ -12,7 +12,7 @@ import { cronProblem, isZone, periodProblem, type When } from './slots.ts'
 import { RUNTIMES, type Runtime } from './model.ts'
 import { FACT_KINDS } from './rate-limits.ts'
 import { chordProblem } from './keymap.ts'
-import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Layout, type Region } from './regions.ts'
+import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type ExtensionLayoutEntry, type Region } from './regions.ts'
 import { ICON, SVG_PATH } from './icons.ts'
 
 export type { StreamFact }
@@ -259,7 +259,7 @@ export type ExtensionView = {
   /** The regions its views declare inside them. @since 1.104 */
   regions: Region[]
   /** The default layout of the regions it declares, by region id, when it gives one. @since 1.114 */
-  layout?: Layout
+  layout?: Record<string, ExtensionLayoutEntry>
   /** What it adds to the spawn form, when it adds anything. @since 1.87 */
   spawn?: { fields: SpawnFieldView[] }
   /** What it tells the workers, the config's over its manifest's, when either says anything. @since 1.129 */
