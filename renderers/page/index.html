@@ -256,6 +256,29 @@ dialog.confirm .actions { flex: none; }
 .region-keep { display: contents; }
 [data-region] .added.fresh { position: relative; }
 [data-region] .added.fresh::after { content: ''; position: absolute; top: -3px; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--panel); }
+[data-tucked] { display: none !important; }
+.region-items { display: contents; }
+.region-more { display: inline-flex; align-items: center; gap: var(--sp-xs); }
+.region-more[hidden] { display: none; }
+.region-more .n { color: var(--muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.region-more[data-dot]::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.region-more[data-dot="severe"]::before { background: var(--broken); }
+.region-menu { margin: 0; inset: auto; position: fixed; min-width: 15rem; max-width: min(26rem, calc(100vw - 16px)); overflow: auto; padding: 0 0 var(--sp-xs);
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); font-size: var(--fs-s); }
+.region-menu .menu-head { display: flex; flex-direction: column; gap: var(--sp-xs); padding: var(--sp-s) var(--sp-m); border-bottom: 1px solid var(--line); color: var(--muted); }
+.region-menu .menu-head:empty { display: none; }
+.region-menu .menu-head p { margin: 0; overflow-wrap: anywhere; }
+.region-menu .menu-badges { display: flex; flex-wrap: wrap; gap: var(--sp-xs); }
+.region-menu [role="menu"] { display: flex; flex-direction: column; padding-top: var(--sp-xs); }
+.region-menu .menu-label { padding: var(--sp-xs) var(--sp-m) var(--sp-2xs); color: var(--faint); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.region-menu [role="separator"] { margin: var(--sp-xs) 0; border-top: 1px solid var(--line); }
+.region-menu .menu-item { display: flex; align-items: baseline; gap: var(--sp-l); width: 100%; min-height: 0; padding: var(--sp-xs) var(--sp-m); border: 0; border-radius: 0; background: none;
+  color: var(--ink); font-size: var(--fs-s); font-weight: 400; text-align: left; }
+.region-menu .menu-item:is(:hover, :focus-visible) { background: var(--panel-2); outline-offset: -2px; }
+.region-menu .menu-item small { margin-left: auto; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: var(--fs-xs); }
+.region-menu .menu-item.danger { color: var(--broken-text); }
+.region-menu .menu-item[aria-disabled="true"] { color: var(--faint); cursor: default; }
+.region-menu .menu-item.fresh .menu-word::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: var(--sp-xs); border-radius: 50%; background: var(--accent); vertical-align: middle; }
 
 .pane-tab { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); color: var(--muted); background: none; }
 .pane-tab .icon-btn, .tab .icon-btn { margin-block: -1px; }
