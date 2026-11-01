@@ -20,8 +20,8 @@ import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
-import { hostRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText } from '../machine.ts'
-import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
+import { hostRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
+import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
@@ -681,6 +681,12 @@ export const dispatch = defineResource({
       }
     }
 
+    /** A file name's extension, lower case, when it is one an item could carry: none otherwise. */
+    const extOf = (name: string): string => {
+      const ext = path.extname(name).slice(1).toLowerCase()
+      return ITEM_EXT.test(ext) ? ext : ''
+    }
+
     /** A project's main checkout or one of its worktrees. */
     async function openDir(dir: string): Promise<Answer> {
       const projects = Object.values(readConfig().projects)
@@ -902,6 +908,7 @@ export const dispatch = defineResource({
       reveal: ({ path: target }) => onPath(target, reveal),
       edit: ({ path: target, line }) =>
         onPath(target, (file) => (line === undefined ? inEditor('open', { path: file }) : inEditor('goto', { path: file, line: String(line) }))),
+      upload: ({ name, data }) => ({ t: 'uploaded', path: writeUpload(Buffer.from(data, 'base64'), extOf(name)) }),
       'shell/spawn': ({ project, cwd }) => terms({ t: 'spawn', project, cwd, ...SHELL_SIZE }),
       'shell/keys': ({ id, data }) => terms({ t: 'write', id, data }),
       'shell/resize': ({ id, cols, rows }) => terms({ t: 'resize', id, cols, rows }),

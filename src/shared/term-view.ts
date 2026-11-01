@@ -199,6 +199,8 @@ export type TermViewIo = {
   mode(m: TermMode): void
   end(msg: Extract<TerminalMsg | ShellStream, { t: 'x' | 'error' }>): void
   error(err: Error): void
+  /** Copies a file dropped or pasted on the terminal where the PTY's program can read it, its bytes base64, and answers its path (`upload`, the verb). */
+  upload(name: string, data: string): Promise<string>
   /** Given, the file paths written in the terminal are links too, read from `cwd()` and opened through `edit` (the verb). */
   files?: { cwd(): string; edit(path: string, line?: number): Promise<unknown> }
 }
@@ -212,6 +214,15 @@ export type TermViewHandle = {
   rescheme(): void
   close(): void
 }
+
+/** A file's bytes, base64. */
+const base64Of = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).slice((reader.result as string).indexOf(',') + 1))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
 
 /** Opens a view of a PTY's stream in `host`, which it fits and watches for resizes, until `close`. */
 export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): TermViewHandle {
@@ -271,6 +282,35 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
     }
     io.end(msg)
   })
+  /**
+   * Files dropped or pasted on the terminal reach its PTY as their paths, pasted, a space between, as a native
+   * terminal pastes a dropped file's path: the browser hands over the bytes, not a path, so each is uploaded first.
+   * Claude takes a pasted image's path as the image. A past session's terminal takes none.
+   */
+  async function pasteFiles(files: File[]) {
+    if (!term || machine.state().t === 'exited') return
+    const paths = []
+    for (const file of files) paths.push(await io.upload(file.name, await base64Of(file)))
+    term.focus()
+    paths.forEach((path, i) => (i && term!.paste(' '), term!.paste(path)))
+  }
+  const takeFiles = (e: Event, list: FileList | undefined) => {
+    if (!list?.length || !term || machine.state().t === 'exited') return
+    e.preventDefault()
+    e.stopPropagation()
+    pasteFiles([...list]).catch(io.error)
+  }
+  /** A paste with text in it is the text's (a sheet's or a document's copy carries a picture of itself too): xterm's. */
+  const onPaste = (e: ClipboardEvent) => e.clipboardData?.types.includes('text/plain') || takeFiles(e, e.clipboardData?.files)
+  const onDrop = (e: DragEvent) => takeFiles(e, e.dataTransfer?.files)
+  const onDragOver = (e: DragEvent) => {
+    if (!e.dataTransfer?.types.includes('Files') || !term || machine.state().t === 'exited') return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+  host.addEventListener('paste', onPaste, { capture: true })
+  host.addEventListener('drop', onDrop)
+  host.addEventListener('dragover', onDragOver)
   const observer = new ResizeObserver(() => machine.dispatch({ type: 'pane' }))
   observer.observe(host)
   return {
@@ -287,6 +327,9 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
     close: () => {
       stop()
       observer.disconnect()
+      host.removeEventListener('paste', onPaste, { capture: true })
+      host.removeEventListener('drop', onDrop)
+      host.removeEventListener('dragover', onDragOver)
       timing['timer/cancel']({ type: 'timer/cancel', id: 'pane' }, machine.dispatch)
       term?.dispose()
       term = undefined
