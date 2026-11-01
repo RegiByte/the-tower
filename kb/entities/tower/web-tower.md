@@ -52,7 +52,11 @@ one, then is deleted. A floor that keeps policies has a
 tray that opens the policies extension's panel at `#policies/<floor>` ([[policies]]); its open offers, drawn as the
 floor's other asks are, sit above its workers and N goes to them after the waits ([[attention-list]]); a worker a run
 started says so in its badges, the policies extension's ([[policies]]). The shell dock starts a shell in any directory of a floor. Under the worker bar sits
-one tab row: the shared panels, then the worker's showings ([[agent-show]]).
+one tab row: the shared panels, then the worker's showings ([[agent-show]]), in the form the layout picks among
+`card.panes`' `overflows` ([[region-overflow]]). In `scroll`, its default and so far its only form
+([`tabsScroll`](ref:hub/renderers/page/regions.js#tabsScroll)), the tabs a pane chord opens stay put and every other
+tab, extension views and showings alike, scrolls past them under a thin scrollbar, faded at an edge past which more
+hide, the open tab brought clear of the fades as it opens and as the row resizes.
 
 Frames that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are sandboxed at
 an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may also read the
