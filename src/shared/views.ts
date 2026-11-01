@@ -7,6 +7,8 @@ import { accepted, mediaTypeOf } from './media.ts'
 import type { ExtensionLayoutEntry, KitMember, Layout, LayoutEntry, Region, Scale } from './regions.ts'
 import { ADDRESS_TYPE, onKind, parentOf, shownSubject, subjectAt, type Subject, type Text } from './subjects.ts'
 
+export * from './fill.ts'
+
 /**
  * Views (decision `ui-model`): modules that draw one subject into an element a region gives them, the core's and
  * extensions' alike, picked by the layout and reached through locations and display. Pure: every renderer that hosts
