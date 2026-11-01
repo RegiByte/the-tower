@@ -1,22 +1,23 @@
-import { addedActions, badgesOf, cardSubject, linesOf, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTree, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { addedActions, badgesOf, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTree, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
 import { verbLabel } from '/verb-words.js'
-import { actionsHtml, asksHtml, badgesHtml, heldActions, iconButtonsHtml } from './added.js'
+import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, heldActions, iconButtonsHtml, moreOf } from './added.js'
 
 /**
  * @import { Board, Card, Floor, Unresumable } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
- * @import { Hold } from '../../src/shared/regions.ts'
+ * @import { Hold, LayoutEntry, Overflow, Region } from '../../src/shared/regions.ts'
  * @import { FloorBranch, FloorWorktree } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
+ * @import { Added, Badge } from '../../src/shared/extensions.ts'
  */
 
 /** @typedef {{ hires: (c: Card) => Card[], fold: ReturnType<typeof crewFoldsOf>, hiresEverywhere: (c: Card) => Card[], everyone: Card[] }} Crews A floor's crews, indexed once. */
@@ -43,6 +44,7 @@ import { actionsHtml, asksHtml, badgesHtml, heldActions, iconButtonsHtml } from 
  *   withKeys: (what: string, id: string) => string,
  *   opensHtml: (subject: Subject) => string,
  *   holdsOf: (region: string) => Hold[],
+ *   regionLayout: (region: string) => { region: Region | undefined, entry: LayoutEntry | undefined },
  * }} SidebarDeps
  */
 
@@ -53,7 +55,7 @@ import { actionsHtml, asksHtml, badgesHtml, heldActions, iconButtonsHtml } from 
  * @param {SidebarDeps} deps
  */
 export async function sidebar(deps) {
-  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml, heed, withKeys, opensHtml, holdsOf } = deps
+  const { render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml, heed, withKeys, opensHtml, holdsOf, regionLayout } = deps
   /** The web page of each project directory's origin remote. @type {Record<string, string>} */
   let origins = {}
 
@@ -68,16 +70,63 @@ export async function sidebar(deps) {
     render()
   }
 
+  /** @param {string} text */
+  const lineHtml = (text) => `<div class="adds-line" data-tip="${esc(text)}">${esc(text)}</div>`
+
+  /** A badge in words, for the list of those a row leaves out. @param {Added<Badge>} b */
+  const badgeWords = (b) => (b.hint ? `${b.label} (${b.hint})` : b.label)
+
+  /**
+   * What a worker's row draws of the lines and badges extensions add, in the `wrap` form: all of them, the lines less
+   * those the layout hides. `by` and `note` are empty: nothing is left out.
+   * @param {Card} c @param {LayoutEntry | undefined} entry
+   */
+  const rowWrapped = (c, entry) => ({
+    lines: rankedLines(board(), c.id, entry).map((l) => lineHtml(l.text)).join(''),
+    badges: badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : '',
+    by: '',
+    note: '',
+  })
+
+  /**
+   * The same in the `count` form: the card's exemptions, then the first of its ranked lines and badges the budgets allow
+   * and the lines the layout pins, and a "+n" for the rest. The rest are in the "+n"'s tip and in the description the
+   * row's link names (`note`, `by`); the worker's head lists all of them once it is opened.
+   * @param {Card} c @param {LayoutEntry | undefined} entry
+   */
+  const rowCounted = (c, entry) => {
+    const { lines: nLines, badges: nBadges } = /** @type {{ lines: number, badges: number }} */ (entry)
+    const subject = cardSubject(c)
+    const lines = drawCount(rankedLines(board(), c.id, entry), nLines, { noun: 'line', say: (l) => l.text, pinned: (l) => !!entry?.pinned?.includes(lineId(l)) })
+    const badges = drawCount(rankedBadges(board(), subject), nBadges, { noun: 'badge', say: badgeWords, pinned: () => false })
+    const more = moreOf(`more-${c.id}`, [lines, badges])
+    const drawn = [...exemptionsOf(board(), subject), ...badges.drawn]
+    return {
+      lines: lines.drawn.map((l) => lineHtml(l.text)).join(''),
+      badges: drawn.length || more.mark ? `<div class="badges counted">${drawn.map(badgeHtml).join('')}${more.mark}</div>` : '',
+      by: more.by,
+      note: more.note,
+    }
+  }
+
+  /** A worker's row's lines and badges, in the form `card.row` is drawn in. @param {Card} c */
+  const rowAdds = (c) => {
+    const { region, entry } = regionLayout('card.row')
+    return overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region), entry) === 'count' ? rowCounted(c, entry) : rowWrapped(c, entry)
+  }
+
   /** @param {Card} c @param {Card} [over] */
   const sessionHtml = (c, over) => {
+    const adds = rowAdds(c)
     return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
-    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
+    <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}${adds.by}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLineOf(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c, undefined)].filter(Boolean).join(' · ')))}</div>` : ''}
-    ${linesOf(board(), c.id).map((l) => `<div class="adds-line" data-tip="${esc(l)}">${esc(l)}</div>`).join('')}
+    ${adds.lines}
     <div class="line">${lineOf(c)}</div>
-    ${badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : ''}
+    ${adds.badges}
     ${satellitesHtml(c)}
     ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
+    ${adds.note}
   </div>`
   }
 

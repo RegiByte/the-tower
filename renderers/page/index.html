@@ -130,6 +130,9 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess .adds-line { margin-top: var(--sp-xs); padding: var(--sp-2xs) var(--sp-s); border-left: 2px solid var(--deco); border-radius: var(--radius-s); background: color-mix(in oklab, var(--ink) 6%, var(--panel));
   color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
 .sess .adds-line + .adds-line { margin-top: var(--sp-2xs); }
+.sess .badges.counted { flex-wrap: nowrap; align-items: center; }
+.sess .badges.counted .badge { flex: 0 1 auto; min-width: 0; }
+.sess .more { flex: none; color: var(--muted); font-size: var(--fs-xs); font-weight: 700; font-variant-numeric: tabular-nums; cursor: default; }
 .sess .line { margin-top: var(--sp-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-s); }
 .tool { color: var(--ink); } .tool b { font-weight: 700; }
 .subs { display: grid; gap: var(--sp-2xs); margin-top: var(--sp-xs); }
