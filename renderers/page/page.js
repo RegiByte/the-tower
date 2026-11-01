@@ -801,9 +801,33 @@ function kitRegion(el, id, subject, options) {
     host.replaceChildren(items, more)
     /** What each menu entry runs, by its key. @type {Map<string, (el: HTMLElement) => void>} */
     let runs = new Map()
-    /** The lines past the budget, which the menu's header holds. @type {AddedLine[]} */
+    /** The tucked actions new to the viewer as the menu opened, by key: listed first, under New, while it stays open. @type {string[]} */
+    let captured = []
+    /** The last fit's fill order and what it tucked, the text it found cut, and the lines past the budget. */
+    /** @type {ReturnType<typeof fillOrder>} */
+    let orderNow = []
+    /** @type {ReturnType<typeof fillOrder>} */
+    let tuckedNow = []
+    /** @type {string[]} */
+    let textsNow = []
+    /** @type {AddedLine[]} */
     let linesLeft = []
-    const listed = menu(more, { run: (item, from) => runs.get(item.key)?.(from) })
+    const relist = () => list(tuckedNow, textsNow)
+    const listed = menu(more, {
+      run: (item, from) => runs.get(item.key)?.(from),
+      opening: () => {
+        const offered = offeredIds(board())
+        const had = seenAmong(offered)
+        const fresh = tuckedNow.flatMap((i) => (i.t === 'action' && isFresh(offered, had, i.ranked.id) ? [i] : []))
+        captured = fresh.map((i) => i.key)
+        markSeen(fresh.flatMap((i) => (i.t === 'action' ? [i.ranked.id] : [])))
+        relist()
+      },
+      closed: () => {
+        captured = []
+        relist()
+      },
+    })
     const pop = /** @type {HTMLElement} */ (more.nextElementSibling)
     const held = [slots.badges, slots.actions].filter((s) => s !== undefined)
     /** The row the region's items share: the nearest element holding both its badges and its actions, else the region. */
@@ -886,8 +910,8 @@ function kitRegion(el, id, subject, options) {
     }
     /**
      * The menu and ⋯ for what `tucked` holds: its badges, the lines past the budget and the text the view lets go
-     * (`texts`) in the header; the view's controls under the subject's name, the dangerous after a separator; then the
-     * actions in rank order.
+     * (`texts`) in the header; the actions new as it opened first, under New, this once; the view's controls under the
+     * subject's name, the dangerous after a separator; the other actions in rank order.
      * @param {ReturnType<typeof fillOrder>} tucked @param {string[]} texts
      */
     const list = (tucked, texts) => {
@@ -898,23 +922,26 @@ function kitRegion(el, id, subject, options) {
       const safe = core.filter((c) => !c.el.classList.contains('danger'))
       const danger = core.filter((c) => c.el.classList.contains('danger'))
       const tuckedBadges = tucked.flatMap((t) => (t.t === 'badge' ? [t.badge] : []))
-      const tuckedActions = tucked.flatMap((t) => (t.t === 'action' ? [{ r: t.ranked, key: t.key }] : []))
+      const news = captured.flatMap((key) => orderNow.flatMap((i) => (i.key === key && i.t === 'action' ? [{ r: i.ranked, key }] : [])))
+      const tuckedActions = tucked.flatMap((t) => (t.t === 'action' && !captured.includes(t.key) ? [{ r: t.ranked, key: t.key }] : []))
       /** @type {MenuEntry[]} */
       const coreEntries = [...safe.map((c) => proxy(c.el, c.key)), ...(safe.length && danger.length ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...danger.map((c) => proxy(c.el, c.key))]
       /** @type {MenuEntry[][]} */
       const sections = [
+        news.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: 'New', entries: news.map(({ r, key }) => ({ ...actionItem(r, key, offered, had), fresh: true })) })] : [],
         core.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: subjectName(at), entries: coreEntries })] : [],
         tuckedActions.map(({ r, key }) => actionItem(r, key, offered, had)),
       ].filter((section) => section.length)
       listed.draw({
         header: [
+          news.length ? '<p class="menu-once">New actions are listed here this once.</p>' : '',
           tuckedBadges.length ? `<div class="menu-badges">${tuckedBadges.map(badgeHtml).join('')}</div>` : '',
           ...linesLeft.map((l) => `<p class="menu-line">${esc(l.text)}</p>`),
           ...texts.map((t) => `<p>${esc(t)}</p>`),
         ].join(''),
         entries: sections.flatMap((section, n) => [...(n ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...section]),
       })
-      const actionCount = core.length + tuckedActions.length
+      const actionCount = core.length + news.length + tuckedActions.length
       const severe = tuckedBadges.filter(isSevere).length
       const said = [
         actionCount ? plural(actionCount, 'action') : '',
@@ -971,6 +998,9 @@ function kitRegion(el, id, subject, options) {
           more.hidden = !tucked.length && !header
           if (more.hidden) listed.close()
           if (focused && tucked.some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
+          orderNow = order
+          tuckedNow = tucked
+          textsNow = texts
           list(tucked, texts)
           return [...inPlace].flatMap((i) => (i.t === 'action' ? [i.el] : []))
         }
