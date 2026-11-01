@@ -29,7 +29,10 @@ same palette, and only the drawing is a renderer's.
   grouped by where each opens ([[ui-model]]))
   and **learn** (capabilities that name no command; one entry for the patterns users are discovering).
   Each entry's `does` is a tagged message the renderer runs; an extension's is `added`, its subject's key and the
-  action, which a renderer that can't import modules leaves out when it is a command.
+  action, which a renderer that can't import modules leaves out when it is a command. The palette reads no layout,
+  so it lists what a region hides or tucks too: it is the complete path to an extension's actions on the subjects it
+  lists, which lets a full region tuck them ([[region-overflow]]). A showing's, a said's and a section's actions are
+  not among its subjects yet, so those regions don't offer `count`.
 - No arguments, no forms: an entry runs something ready or opens the UI that exists for it (the new-worker form, a
   draft, a confirm). A pick goes through the same handler as its button or key, so destructive verbs ask through the
   same confirm and the palette can't drift from the buttons. A verb a keymap command does runs as that command and
