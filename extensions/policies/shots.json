@@ -13,7 +13,7 @@
     },
     {
       "name": "floor", "open": "#$WORKER_1", "size": "1180x720",
-      "steps": [{ "until": ".offers .offer-row" }, { "until": ".sess .run" }, { "until": ".tray", "text": "policies" }],
+      "steps": [{ "until": ".offers .offer-row" }, { "until": ".sess .badge", "text": "run 1" }, { "until": ".tray", "text": "policies" }],
       "crop": "section.floor"
     }
   ],

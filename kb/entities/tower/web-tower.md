@@ -43,9 +43,9 @@ pane read as its type. Drafts are the drafts extension's over the `drafts` colle
 view in the main pane that saves as you type, built on `/x/drafts/drafts.js` as Tower 3D's is ([[corkboard]]); a draft
 starts a worker through the page's new-worker dialog (the keymap's `spawn` on the draft) or is submitted to a running
 one, then is deleted. A floor that keeps policies has a
-tray that opens the policies extension's panel at `#policies/<floor>` ([[policies]]); its open offers sit above its
-workers and N goes to them after the waits ([[attention-list]]); a worker a run started says so under its callsign,
-from the policies extension's `card.x.policies.run` ([[policies]]). The shell dock starts a shell in any directory of a floor. Under the worker bar sits
+tray that opens the policies extension's panel at `#policies/<floor>` ([[policies]]); its open offers, drawn as the
+floor's other asks are, sit above its workers and N goes to them after the waits ([[attention-list]]); a worker a run
+started says so in its badges, the policies extension's ([[policies]]). The shell dock starts a shell in any directory of a floor. Under the worker bar sits
 one tab row: the shared panels, then the worker's showings ([[agent-show]]).
 
 Frames that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are sandboxed at

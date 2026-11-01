@@ -2,8 +2,6 @@ import { badgesOf, cardSubject, linesOf, floorSubject, heededAsks, projectOfKey,
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { reviewerOf } from '/x/reviews/reviews.js'
-import { policyZone } from '/x/policies/panel.js'
-import { runOf, slotWords } from '/x/policies/policies.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
@@ -14,7 +12,6 @@ import { addsHtml, asksHtml, badgesHtml } from './added.js'
 /**
  * @import { Board, Card, Floor, Unresumable } from '../../src/bridge/board.ts'
  * @import { Attention } from '../../src/bridge/life.ts'
- * @import { CardRun } from '../../extensions/policies/policies.ts'
  * @import { FloorBranch, FloorWorktree } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
@@ -76,7 +73,6 @@ export async function sidebar(deps) {
     return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLineOf(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c, reviewerOf(c))].filter(Boolean).join(' · ')))}</div>` : ''}
-    ${runHtml(c)}
     ${linesOf(board(), c.id).map((l) => `<div class="adds-line" data-tip="${esc(l)}">${esc(l)}</div>`).join('')}
     <div class="line">${lineOf(c)}</div>
     ${badgesOf(board(), cardSubject(c)).length ? `<div class="badges">${badgesHtml(board(), cardSubject(c))}</div>` : ''}
@@ -84,15 +80,6 @@ export async function sidebar(deps) {
     ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
   </div>`
   }
-
-  /** The run of a policy a worker is, with what started it on hover. @param {Card} c */
-  const runHtml = (c) => {
-    const run = runOf(c)
-    return run ? `<div class="run" data-tip="${esc(runTitle(c.project, run))}">run ${run.n} · ${esc(run.title ?? run.tag)}</div>` : ''
-  }
-
-  /** What started a policy's run, on hover: a run not started by hand has a slot. @param {string} project @param {CardRun} run */
-  const runTitle = (project, run) => `run ${run.n} of the policy ${run.title ?? run.tag} (${run.tag}): ${run.start === 'hand' ? 'started by hand' : `${slotWords(run.slot, policyZone(board(), project, run.policy), pageNow())} slot, ${run.start === 'auto' ? 'started on its own' : 'its offer accepted'}`}`
 
   /**
    * The worker's subagents running now, a fork marked as its twin, and those that just ended fading out: the fade is an

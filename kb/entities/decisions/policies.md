@@ -94,10 +94,12 @@ user may replace it by providing `policies`.
   approval, `invalid` for one approved once, `held` for the latest pass's slot while it is open and a run still runs;
   shown, never rung), with `run` and `approve` as its `actions`, calling `policies/*`; `floor.x.policies.offers`
   ([`offersOf`](ref:hub/extensions/policies/policies.ts#offersOf)), each also an ask (`sound: 'offer'`, `until` the next
-  slot, about the policy's item) in `board.asks`, the attention order's only offers
+  slot, about the policy's item, its hint the slot offered and until when, its action Accept) in `board.asks`, the
+  attention order's only offers
   ([`attentionOrder`](ref:hub/src/shared/waits.ts#attentionOrder)); a slot per policy the tower runs, in
   `board.adds`. The card fold: `card.x.policies.run` ([`cardRun`](ref:hub/extensions/policies/policies.ts#cardRun)), the
-  run fact naming the first session of a worker's lineage, and the lines `tower whoami` prints. Reads:
+  run fact naming the first session of a worker's lineage, the lines `tower whoami` prints, and a badge saying which
+  run of which policy it is. Reads:
   `policies/runs/<project>?policy&limit` ([`runsRead`](ref:hub/extensions/policies/policies.ts#runsRead)), a policy's
   runs, each worker as it is now, the archive included; `policies/said/<project>`, what `tower policies` and
   `tower runs` print, in the extension's words ([`policiesLines`](ref:hub/extensions/policies/cli.ts#policiesLines)),
