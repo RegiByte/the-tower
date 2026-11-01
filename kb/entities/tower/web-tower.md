@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-01",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -89,6 +89,20 @@ the status. The pill's time has a reserved width, so its tick never moves the he
 home │ Open ✕, its verbs, then the grid's acts in the order they are read by keyboard. The head marks its own controls
 `data-tuck` with a rank (details, Let go, Resume, Send home) and its place line `data-tuck-text`, for a region that
 tucks what doesn't fit.
+
+What extensions add to a region the page fills ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), a worker's
+head among them, comes in the ranked order every renderer shares ([[region-overflow]]): badges by severity, a worker's
+exemptions and a heeded wait's Dismiss first and marked `data-keep`, actions and lines in the layout's order, its pins
+first, less what it hides and what the holding view omits. An action new to the viewer, one an extension offers that
+their `seen` in `tower.store` doesn't hold, carries a dot. The first board of a viewer who never kept one seeds `seen`
+with everything offered, so a fresh tower shows nothing as new. An action is seen once the viewer runs it from its
+button, the palette or a chord, or once it is drawn in place in a focused window
+([`markSeen`](ref:hub/renderers/page/page.js#markSeen)): every region drawn is read once a frame, and every region
+mounted on the window's focus. A region keeps the dot of what it saw in place until its view is hidden or it closes,
+so the viewer sees the dot once. The page reads its own layout (`layout.page` in `tower.store`, over the config's and
+its `renderer.json`'s) again on every board and every store event, so a choice another window makes isn't lost. A
+region whose layout in the config fails its check (`layoutProblems` on `GET /renderers`) is drawn by its default, and
+the sidebar's notes say so, each problem in the tip.
 
 The page is the tower's accessible renderer: Tower 3D's pointer-lock walk can't be. Every worker is a link to
 `#<id>`, opened at load and on `hashchange`, the selected one `aria-current`. The pane tabs are an ARIA tablist, the
