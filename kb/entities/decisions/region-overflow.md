@@ -86,8 +86,8 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   ahead of all of them, so they leave last. An extension's lines rank and pin together by its capability; without a
   pin they come in the order extensions resolve (bundled first, then by id), so at a narrow head a policy run's line
   can outrank a worker's own tab line. That is chosen, not accidental: a default pin would have the core name an
-  extension. The fill, how many of
-  the ranked widths fit in the room with hysteresis so a region doesn't flicker, is pure and shared too.
+  extension. The fill, how many of the ranked widths fit in the room with hysteresis so a region doesn't flicker, is
+  pure and shared too.
 - *No extension priority.* A manifest declares no priority, budget or pin. An extension's layout is the bottom
   layer, and it lays out only the regions it declares itself: a renderer's region (`card.head`, `card.panes`) takes
   nothing from it, and both checks warn when a manifest tries. Before this, a manifest could declare a renderer's
