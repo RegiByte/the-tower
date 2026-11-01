@@ -258,7 +258,8 @@ and a framed document's section are the same thing.
   location, its cells and head toggle kept in its state, each cell (since 1.112) its own region `card.cell`, which
   holds `tower/card` at cell scale with the `head` option the toggle sets. A view is told the `scale` of the region it
   is mounted in; `tower/card` draws no close at `cell`, where leaving for the skyline would take the grid away. At
-  `cell` its head is compact (since 1.113), one row of lamp, callsign and tabs when hidden, and the view holding it
+  `cell` its head is one row of lamp, callsign and tabs when hidden (since 1.113); how dense it is follows its own
+  width, not its scale ([[web-tower]]); and the view holding it
   speaks to it through its options ([`CardOptions`](ref:hub/src/views/card.ts#CardOptions)): `acts`, the host's own
   controls at the end of the head (the grid's Open and take it out), `pick`, the callsign as a menu of other workers
   (the grid's swap), and `omit`, commands its head leaves out (the grid's own Add to grid), which a contributions

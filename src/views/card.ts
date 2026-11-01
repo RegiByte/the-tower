@@ -1,6 +1,6 @@
 import type { Board, Card, CardResource, Floor } from '../bridge/board.ts'
 import {
-  BLOCKED_TEXT, HOST_MEANS, LET_GO_MEANS, callOf, can, claudeFlagHtml, detailsOf, esc, gistLine, lampOf, letGoAsk, letGoneLine, modelName, noLongerOffered, offeredCall, reapAsk, resumesRow,
+  BLOCKED_TEXT, LET_GO_MEANS, callOf, can, claudeFlagHtml, detailsOf, esc, gistLine, lampOf, letGoAsk, letGoneLine, modelName, noLongerOffered, offeredCall, reapAsk, resumesRow,
   sendHomeAsk, sentHome, statusName, statusTitle, when, whereLineOf, whyNot, type DaemonVerb,
 } from '../shared/cards.ts'
 import { ICON, withIcons } from '../shared/icons.ts'
@@ -17,7 +17,16 @@ import { keyedTip, paintOnce } from './parts.ts'
  * with the views on the card and one per thing it showed. A worker that waits on you says so between them. The
  * `head` option, false, draws its tabs alone; at cell scale, inside another view, its head has no close.
  *
- * At cell scale the head is compact, and the view holding the card speaks to it through its options (`CardOptions`):
+ * The head's main line holds what identifies the worker (callsign, status and how long it has held it, context and
+ * cost), then what extensions add, then its own verbs; under it, a line of where it works and the extensions' lines.
+ * How dense it is follows the head's own width, its room, the same in a pane and in a cell: compact below 760px, where
+ * the verbs draw as icons and the context as its number alone, regular to 1100px, wide above. Below 480px the status
+ * shows its lamp and time, its words in its tip and to assistive tech. The head wraps and never clips: the actions
+ * wrap first, then context and cost go under the status. The timer's width is reserved, so its tick never moves the
+ * head. For a region that tucks what doesn't fit, the head marks its own controls `data-tuck` (their rank, the lowest
+ * tucked first) and the text a menu shows in their place `data-tuck-text`.
+ *
+ * At cell scale the view holding the card speaks to it through its options (`CardOptions`):
  * `acts`, its own controls at the end of the head, a press dispatching a bubbling `act` event; `pick`, the callsign as
  * a menu of other workers, a choice dispatching a bubbling `pick` event; and `omit`, the commands its head leaves out.
  * With no head, the cell's one row holds the lamp, the callsign, the tabs and the acts.
@@ -36,26 +45,51 @@ const ID = 'tower/card'
 
 const CSS = `:where([data-view="${ID}"]) {
   gap: var(--sp-m);
-  & .bar { flex: none; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
-  & .bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); }
+  & .bar { flex: none; container: card-head / inline-size; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  & .bar-top { display: flex; flex-direction: column; gap: var(--sp-xs); min-width: 0; }
   & .bar-top[hidden] { display: none; }
   & .part, & :is([data-holds="badges"], [data-holds="lines"], [data-holds="actions"]) { display: contents; }
-  & .bar-info { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-l); min-width: 0; flex: 1 1 20rem; white-space: nowrap; color: var(--muted); font-size: var(--fs-s); }
+  & .bar-main { display: flex; flex-wrap: wrap; align-items: first baseline; gap: var(--sp-s) var(--sp-l); }
+  & .bar-info { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-l); flex: 0 1 auto; white-space: nowrap; color: var(--muted); font-size: var(--fs-s); }
+  & .bar-info :is(.who, .lead) { display: inline-flex; align-items: center; gap: inherit; }
+  & .bar-info .who { flex: 0 1 auto; flex-wrap: wrap; }
+  & .bar-info .lead { flex: none; }
   & .bar-info .call { flex: none; font: 800 var(--fs-2xl)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
   & .bar-info .pill { flex: none; font-variant-numeric: tabular-nums; }
-  & .bar-info .where { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  & .bar-info .adds-line { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
-  & .bar-info .stats { flex: none; margin-left: auto; display: flex; align-items: center; gap: var(--sp-l); }
+  & .pill [data-since] { display: inline-block; min-width: 7ch; font-variant-numeric: tabular-nums; }
+  & .bar-info .stats { flex: none; display: flex; align-items: center; gap: var(--sp-l); }
   & .bar-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
   & .bar-info .meter { width: 56px; --fill: var(--working); }
   & .bar-info .ports { color: var(--ink); cursor: pointer; font-family: var(--mono); font-size: var(--fs-xs); padding: 1px var(--sp-s); border: 0; border-radius: var(--radius); background: var(--panel-2); }
   & .bar-info .ports.orphan { color: var(--on-broken); background: var(--broken); }
   & .bar-info .dismiss { flex: none; min-height: 0; padding: 1px var(--sp-s); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
-  & .bar-actions { flex: none; display: flex; gap: var(--sp-s); margin-left: auto; }
+  & .bar-actions { flex: 0 1 auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--sp-s); margin-left: auto; }
   & .bar-actions .icon-btn { aspect-ratio: 1; }
+  & .verb { display: inline-flex; align-items: center; gap: var(--sp-xs); }
+  & .bar-sub { display: flex; align-items: center; gap: var(--sp-l); min-width: 0; white-space: nowrap; color: var(--muted); font-size: var(--fs-s); }
+  & .bar-sub .where { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; }
+  & .bar-sub .adds-line { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
   & .bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
-  & .bar-top[hidden] + .bar-line { margin-top: 0; }
+  & .bar-top[hidden] ~ .bar-line { margin-top: 0; }
   & .bar-line .shown-adds { display: flex; align-items: center; gap: var(--sp-s); }
+  @container card-head (width < 760px) {
+    & .bar-main, & .bar-info { gap: var(--sp-xs) var(--sp-m); }
+    & .bar-info .call { font-size: var(--fs-l); }
+    & .bar-info .meter { display: none; }
+    & .bar-actions { gap: var(--sp-2xs); }
+    & :is(.bar-actions, .acts) button { min-height: 0; padding: 3px var(--sp-s); font-size: var(--fs-s); }
+    & .bar-actions .verb { display: inline-grid; place-items: center; min-width: var(--control); min-height: var(--control); padding: 0; }
+    & .verb .word { display: none; }
+    & .verb .icon { width: var(--icon-m); height: var(--icon-m); }
+    & .verb.danger { color: var(--broken-text); }
+    & .bar-line { margin-top: var(--sp-xs); }
+  }
+  @container card-head (width < 480px) {
+    & .bar-info { flex: 1 1 0; }
+    & .bar-actions { flex: 1000 1 0; max-width: max-content; }
+    & .pill .status-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    & .pill { gap: var(--sp-xs); padding-inline: var(--sp-s); }
+  }
   & .bar-details, & .bar-left { margin: 0; inset: 100px 20px auto auto; width: min(620px, 90vw); max-height: 70vh; overflow: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); background: var(--panel); color: var(--ink);
     border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); scrollbar-gutter: stable; }
   & .bar-details h3, & .bar-left h3 { margin: 0 0 var(--sp-l); font: 800 var(--fs-l)/1 var(--display); letter-spacing: .04em; }
@@ -77,17 +111,14 @@ const CSS = `:where([data-view="${ID}"]) {
   & .ask button { margin-left: auto; flex: none; }
   & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--enamel); border-radius: var(--radius); }
   &.cell { gap: 0; }
-  &.cell .bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m);
+  &.cell .bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; column-gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m);
     border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; }
-  &.cell .bar-top { grid-column: 1 / 3; flex-wrap: nowrap; gap: var(--sp-m); min-width: 0; }
-  &.cell .bar-info { flex: 1 1 0; flex-wrap: nowrap; overflow: hidden; gap: var(--sp-m); }
-  &.cell .bar-info .call { font-size: var(--fs-l); }
-  &.cell .bar-actions { align-items: center; gap: var(--sp-2xs); }
-  &.cell :is(.bar-actions, .acts) button { min-height: 0; padding: 3px var(--sp-s); font-size: var(--fs-s); }
-  &.cell .bar-line { grid-column: 1 / -1; margin-top: var(--sp-xs); }
+  &.cell .bar-top { grid-column: 1 / 3; }
+  &.cell .bar-line { grid-column: 1 / -1; }
   &.cell .acts { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: var(--sp-2xs); padding-left: var(--sp-s); border-left: 1px solid var(--line); }
   &.cell .acts:empty { display: none; }
   &.cell .mini { display: none; }
+  &.cell.bare .bar { align-items: center; }
   &.cell.bare .mini { display: flex; align-items: center; gap: var(--sp-xs); grid-column: 1; grid-row: 1; font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
   &.cell.bare .bar-line { grid-column: 2; grid-row: 1; margin: 0; min-width: 0; overflow: hidden; }
   &.cell .pick { min-height: 0; padding: 0 2px; background: none; border: 0; color: var(--muted); }
@@ -124,9 +155,11 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   const cell = scale === 'cell'
   const pop = `card-${++mounts}`
   host.innerHTML = `<style>${CSS}</style><div class="bar">
-    ${cell ? '<span class="mini"></span>' : ''}<div class="bar-top"${head ? '' : ' hidden'}><div class="bar-info"><span class="part lead"></span><span data-holds="badges"></span><span class="part where-part"></span><span data-holds="lines"></span><span class="part stats-part"></span></div>
-      <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions"></span><span class="part own"></span></div></div>
-    <div class="tab-row bar-line" data-holds="tabs"></div>${cell ? '<span class="acts"></span>' : ''}</div>
+    ${cell ? '<span class="mini"></span>' : ''}<div class="bar-top"${head ? '' : ' hidden'}>
+      <div class="bar-main"><div class="bar-info"><span class="who"><span class="part lead"></span><span class="part stats-part"></span></span><span data-holds="badges"></span></div>
+        <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions"></span><span class="part own"></span></div></div>
+      <div class="bar-sub"><span class="part where-part"></span><span data-holds="lines"></span></div></div>${cell ? '<span class="acts"></span>' : ''}
+    <div class="tab-row bar-line" data-holds="tabs"></div></div>
   <div class="bar-details" id="${pop}-details" popover></div><div class="bar-left" id="${pop}-left" popover></div>${cell ? `<div class="bar-pick" id="${pop}-pick" popover></div>` : ''}
   <div class="ask"></div>
   <div class="screen" data-holds="views"></div>`
@@ -156,11 +189,17 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
 
   /** Why a daemon verb can't run now: a daemon it needs is down. */
   const heldWhy = (verb: DaemonVerb) => whyNot(board, verb)
-  const heldHtml = (verb: DaemonVerb, label: string, inner: string, cls = '') =>
-    `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(heldWhy(verb) ?? HOST_MEANS.unknown)}">${inner}</button>`
 
-  const letGoHtml = (c: Card, label: string) =>
-    !can(c, 'let-go') ? '' : heldWhy('let-go') ? heldHtml('let-go', label, label) : `<button data-let-go data-tip="${esc(`let ${c.callsign} go: ${LET_GO_MEANS}`)}">${label}</button>`
+  /**
+   * A core verb, its icon beside its word, the icon alone at compact room. `tuck` is its rank among the head's own
+   * controls a region may tuck when even icons don't fit, the lowest first. Held, while a daemon it needs is down, it
+   * says why in place of `tip`.
+   */
+  const verbHtml = (v: { verb: 'resume' | 'let-go' | 'send-home'; mark: string; icon: string; tip: string; tuck: number; tone: string }) => {
+    const label = verbLabel('card', v.verb)
+    const held = v.verb === 'send-home' ? undefined : heldWhy(v.verb)
+    return `<button class="verb ${v.tone}${held ? ' held' : ''}" ${held ? 'aria-disabled="true"' : v.mark} aria-label="${esc(label)}" data-tip="${esc(held ?? v.tip)}" data-tuck="${v.tuck}">${v.icon}<span class="word">${label}</span></button>`
+  }
 
   const sendHomeTitle = (c: Card) => {
     const sent = sentHome(cards(), c)
@@ -218,9 +257,9 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     paintOnce(
       $('.lead'),
       `<span class="call" role="heading" aria-level="2">${c.callsign}</span>${cell ? pickHtml() : ''}
-    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}"${c.stuck || c.broken ? ` data-tip="${esc(statusTitle(c))}"` : ''}><span class="lamp"></span>${statusName(c)} ·<span translate="no" data-since="${c.enteredAt}"></span></span>`,
+    <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}"><span class="lamp"></span><span class="status-word">${statusName(c)} ·</span><span translate="no" data-since="${c.enteredAt}"></span></span>`,
     )
-    paintOnce($('.where-part'), `<span class="where" data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, reviewerOf(c))))}</span>`)
+    paintOnce($('.where-part'), `<span class="where" data-tuck-text data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, reviewerOf(c))))}</span>`)
     paintOnce(
       $('.stats-part'),
       `<span class="stats">
@@ -230,12 +269,12 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="${pop}-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`,
     )
-    paintOnce($('.details-part'), `<button class="icon-btn" popovertarget="${pop}-details" aria-label="details" data-tip="everything else about ${c.callsign}">${ICON.info}</button>`)
+    paintOnce($('.details-part'), `<button class="icon-btn" popovertarget="${pop}-details" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`)
     paintOnce(
       $('.own'),
-      `${!can(c, 'resume') ? '' : heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume'), `${ICON.resume} ${verbLabel('card', 'resume')}`, 'primary') : `<button class="primary" data-resume>${ICON.resume} ${verbLabel('card', 'resume')}</button>`}
-    ${letGoHtml(c, verbLabel('card', 'let-go'))}
-    ${can(c, 'send-home') ? `<button class="danger" data-send-home data-tip="${esc(sendHomeTitle(c))}">${verbLabel('card', 'send-home')}</button>` : ''}
+      `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: `resume ${c.callsign}: its latest conversation goes on as a new session`, tuck: 3, tone: 'primary' }) : ''}
+    ${can(c, 'let-go') ? verbHtml({ verb: 'let-go', mark: 'data-let-go', icon: ICON.letGo, tip: `let ${c.callsign} go: ${LET_GO_MEANS}`, tuck: 2, tone: '' }) : ''}
+    ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: 'data-send-home', icon: ICON.sendHome, tip: sendHomeTitle(c), tuck: 4, tone: 'danger' }) : ''}
     ${scale !== 'cell' ? `<button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,
     )
     paintOnce(details, detailsHtml(c))

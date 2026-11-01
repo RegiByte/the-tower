@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-01",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -70,6 +70,19 @@ regions, keymap runner, display, toasts and confirm), updated on each board and 
 the last four workers left, kept drawn and hidden; a worker's tabs are a tabs region it fills the same way ([[ui-model]]); [`display`](ref:hub/renderers/page/page.js#display)
 places a subject through `/views.js` onto a view or one of the page's routes, a floor's section and the palette offer
 "Open <label>" for the views offered there, and extensions' chords run on the subject in focus.
+
+A worker's head ([`tower/card`](ref:hub/src/views/card.ts#mount)) never crops what identifies the worker. Its main
+line holds the callsign, the status pill with its time in state, then context and cost, then what extensions add, then
+the worker's own verbs; a line under it holds where it works and the extensions' lines. Its density follows the head's
+own width, a container query on the head, so a grid cell and a narrow window look alike: compact below 760px, where
+Resume, Let go and Send home draw as icon buttons ([`ICON`](ref:hub/src/shared/icons.ts#ICON)) with their names as
+`aria-label` and tip, Send home in the danger tone, and the context as its number alone; regular to 1100px and wide
+above, words beside the icons and the meter drawn. Below 480px the pill shows its lamp and time, its words kept for
+assistive tech and in its tip. The head wraps and never clips: the actions wrap first, then context and cost go under
+the status. The pill's time has a reserved width, so its tick never moves the head. In a grid cell the head ends Send
+home │ Open ✕, its verbs, then the grid's acts in the order they are read by keyboard. The head marks its own controls
+`data-tuck` with a rank (details, Let go, Resume, Send home) and its place line `data-tuck-text`, for a region that
+tucks what doesn't fit.
 
 The page is the tower's accessible renderer: Tower 3D's pointer-lock walk can't be. Every worker is a link to
 `#<id>`, opened at load and on `hashchange`, the selected one `aria-current`. The pane tabs are an ARIA tablist, the
