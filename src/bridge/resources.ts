@@ -23,7 +23,7 @@ const matches = (text: string, line: RegExp): RegExpExecArray[] =>
   })
 
 /**
- * `commands` is `ps -A -ww -o pid=,ppid=,command=`; `environments` is `ps -A -ww -E -o pid=,command=`, whose
+ * `commands` is `ps -A -ww -o pid=,ppid=,command=`; `environments` is `ps -A -ww -E -o pid=,command=` (`e` for `-E` under WSL), whose
  * command runs into the environment with nothing to tell them apart, so it is read only for the session marker.
  */
 export const parseProcesses = (commands: string, environments: string): Process[] => {

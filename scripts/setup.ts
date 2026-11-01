@@ -16,6 +16,7 @@ import { parseArgs } from 'node:util'
 import { readiness, verdictLines } from '../src/doctor.ts'
 import { init } from '../src/init.ts'
 import { bringAllUp, daemons } from '../src/machine.ts'
+import { platform } from '../src/platform.ts'
 import { towerPort, towerUrl } from '../src/shared/model.ts'
 import { configPath, systemPaths } from '../src/shared/paths.ts'
 import { readConfig } from '../src/system.ts'
@@ -62,4 +63,4 @@ The tower is up at ${url}${values['no-open'] ? '' : ', opening in your browser'}
 Next:
 ${next.map(([what, why]) => `  ${what.padEnd(width)}${why}`).join('\n')}`)
 
-if (!values['no-open']) execFileSync('open', [url])
+if (!values['no-open']) await platform().openUrl(url)

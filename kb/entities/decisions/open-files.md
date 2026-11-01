@@ -11,7 +11,7 @@
     "hub/src/shared/api.ts#VERBS",
     "hub/src/tower/dispatch.ts#onPath",
     "hub/src/tower/dispatch.ts#unnamed",
-    "hub/src/machine.ts#revealInFinder",
+    "hub/src/machine.ts#reveal",
     "hub/src/machine.ts#runEditor",
     "hub/src/shared/model.ts#editorArgv",
     "hub/src/tower/dispatch.ts#inEditor",
@@ -40,7 +40,7 @@ for the user.
 
 **How.**
 - *Two verbs* in [`VERBS`](ref:hub/src/shared/api.ts#VERBS): `reveal {path}` shows the path selected in a Finder
-  window (`open -R`); `edit {path, line?}` opens it in the user's editor. With VS Code's `code`, or Cursor, which shares its
+  window (`open -R`), or Windows' Explorer under WSL ([[platforms]]); `edit {path, line?}` opens it in the user's editor. With VS Code's `code`, or Cursor, which shares its
   flags, the editor picks the window: a file opens in the window whose folder holds it, else the last active one; a
   folder in the window that has it open, else a new one. `open {dir}` keeps its new window.
 - *The editor is data.* The config's `editor` holds an argv per thing the tower does: `window` (`{dir}`), `open`

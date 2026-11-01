@@ -12,7 +12,7 @@ something that runs every night. Instead of a stack of terminal tabs you have a 
 **floor**; each session on it is a **worker** with a **callsign** (`HOLMES-42`) it keeps for good, across
 resumes. You see at a glance who is working, who is done and who is waiting on you, and you go to them in order.
 
-Local only: no accounts, no external services. macOS.
+Local only: no accounts, no external services. macOS, or Windows through WSL 2.
 
 ## What you can do
 
@@ -161,11 +161,11 @@ key.
 
 Requirements:
 
-- macOS
+- macOS, or Linux under WSL 2 on Windows (keep the checkout in the Linux filesystem, `~/…`, not under `/mnt/c`)
 - Node 24 or later
 - Claude Code 2.1.292 or later, signed in (tested up to 2.1.312; `tower doctor` and the board say when yours is
   outside that range)
-- `git` and `curl` (Xcode's command line tools)
+- `git` 2.38 or later, `curl` and `lsof` (Xcode's command line tools on a Mac; `apt` under WSL)
 - Optional: VS Code's `code` on the PATH, or another editor set in the config, to open projects and files from the
   tower
 

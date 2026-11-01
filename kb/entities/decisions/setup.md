@@ -7,14 +7,14 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-10-31",
-  "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/cli.ts", "hub/package.json", "hub/README.md", "hub/docs/config.md"]
+  "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/cli.ts", "hub/package.json", "hub/README.md", "hub/docs/config.md"]
 }
 ---
 **Problem.** A tower that starts only after writing `config.json` by hand and running each process in a terminal of
 its own, and that says nothing of what a machine lacks until something fails deep inside a session, is closed to
 anyone but its author.
 
-**Why.** The tower is shared with people who have Claude Code on a Mac and nothing else of ours. A clone and one
+**Why.** The tower is shared with people who have Claude Code on a Mac or in WSL 2 and nothing else of ours. A clone and one
 command should reach a running tower with a worker to spawn.
 
 **How.**
@@ -29,7 +29,7 @@ command should reach a running tower with a worker to spawn.
   ([`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange)) or one it cannot place, not signed in, a daemon not
   running yet, the quota probe failing or overdue as the running tower reports it ([[probes]]), an extension not
   started or a problem of one, each with its fix, its warnings only under `--all` ([[extensions]])) or `fail` (it can't
-  run: not macOS, Node below 24, no `claude` or `curl`, `git` missing or older than 2.38 (the landing check runs
+  run: not macOS or WSL 2 ([[platforms]]), Node below 24, no `claude`, `curl` or `lsof`, `git` missing or older than 2.38 (the landing check runs
   `merge-tree --write-tree`), a Claude older than tested, a system root that isn't writable, a config that doesn't read
   or that `tower config check` fails ([[tower-cli]]), a daemon's place held by something else or its pid running
   without answering ([[bring-up]])), each `warn` and `fail` with one fix. Any `fail` exits 1. Sign-in is `claude auth

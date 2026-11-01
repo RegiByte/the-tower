@@ -16,7 +16,8 @@ whether or not Claude wrote its transcript. The session may also reach the paren
 - The transcript: every classic hook carries `transcript_path`
   ([`ClaudeHookInput`](ref:hub/src/shared/model.ts#ClaudeHookInput)); read it from the session's `SessionStart` `h`
   event and check the file exists after a prompt (Claude creates it with the first message).
-- The environment of the session's Claude, the host's direct child: `ps -E -ww -o command= -p <pid>`. Look for
+- The environment of the session's Claude, the host's direct child: `ps -E -ww -o command= -p <pid>`
+  (`ps e` under WSL, [[platforms]]). Look for
   `CLAUDECODE`, `CLAUDE_PID`, `CLAUDE_CODE_SESSION*`, `CLAUDE_CODE_CHILD*`, `CLAUDE_CODE_MESSAGING*`.
 
 **Likely causes.**
