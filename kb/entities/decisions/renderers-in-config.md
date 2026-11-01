@@ -55,7 +55,7 @@ update of the core never touches it.
   the renderer's kit lends what it needs.
 - *Overflow forms* (since 1.138, [[region-overflow]]). A region lists in `overflows` the forms the renderer draws it in
   when full, its default first; the page declares `wrap` where it draws it and its layout defaults for the budgets
-  later forms read. [`layoutProblems`](ref:hub/src/renderers.ts#layoutProblems) checks the config's layout for a
+  later forms read, and Tower 3D `wrap` on its three regions, which it draws by its own layout ([[tower3d-desk]]). [`layoutProblems`](ref:hub/src/renderers.ts#layoutProblems) checks the config's layout for a
   renderer against its regions and those of the extensions that would start: a form not offered, a budget for what a
   region doesn't hold or doesn't read, a pin where nothing pins or of nothing offered, an unpin of nothing pinned
   below, a region nobody declares. `GET /renderers` serves it per renderer as `layoutProblems`
