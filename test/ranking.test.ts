@@ -62,11 +62,14 @@ test('layout: pins are a union, the viewer first, then the config, then the rend
   const stale = layoutOf({}, { 'card.head': { pinned: ['c/one'] } }, { 'card.head': { unpinned: ['gone/x'] } })['card.head']
   assert.deepEqual(stale, { pinned: ['c/one'] }, 'an unpin of what no lower layer pins is dropped when read')
   assert.deepEqual(layoutOf({}, { r: { pinned: ['a/a'], unpinned: ['a/a'] } }, undefined).r.pinned, ['a/a'], "a layer's unpinned drops only a lower layer's pin")
+  assert.deepEqual(layoutOf({ r: { pinned: ['a/a'] } }, { r: { unpinned: ['a/a'] } }, { r: { pinned: ['a/a'] } }).r, { pinned: ['a/a'] }, 'an unpin a higher layer pins again is dropped')
 })
 
 test('layout: hidden is the union, less what a higher layer orders or pins; form and budgets come from the highest layer', () => {
   const merged = layoutOf({ r: { hidden: ['a/a', 'b/b'], overflow: 'wrap', lines: 1 } }, { r: { hidden: ['c/c'], badges: 2 } }, { r: { pinned: ['a/a'], overflow: 'menu', lines: 0 } }).r
   assert.deepEqual(merged.hidden, ['b/b', 'c/c'], 'pinning in the viewer un-hides what a lower layer hid')
+  const unpinnedPin = layoutOf({ r: { hidden: ['x/x'] } }, { r: { pinned: ['x/x'] } }, { r: { unpinned: ['x/x'] } }).r
+  assert.deepEqual(unpinnedPin, { hidden: ['x/x'], unpinned: ['x/x'] }, 'a pin unpinned above un-hides nothing')
   assert.equal(merged.overflow, 'menu')
   assert.equal(merged.lines, 0, 'a budget of 0 is set, not absent')
   assert.equal(merged.badges, 2)

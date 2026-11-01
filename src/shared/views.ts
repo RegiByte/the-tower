@@ -280,11 +280,16 @@ const pinsOf = (at: LayoutEntry[]): string[] => [
   ),
 ]
 
-/** The ids a region's layers unpin that a layer below still pins, the highest layer's first: an unpin of nothing pinned is dropped. */
+/**
+ * The ids a region's layers unpin that a layer below still pins and no layer above pins again, the highest layer's
+ * first: an unpin of nothing pinned, or of what is pinned anew above it, is dropped.
+ */
 const unpinsOf = (at: LayoutEntry[]): string[] => [
   ...new Set(
     at
-      .map((e, n) => (e.unpinned ?? []).filter((id) => at.slice(0, n).some((below) => below.pinned?.includes(id))))
+      .map((e, n) =>
+        (e.unpinned ?? []).filter((id) => at.slice(0, n).some((below) => below.pinned?.includes(id)) && !at.slice(n + 1).some((above) => above.pinned?.includes(id))),
+      )
       .reverse()
       .flat(),
   ),
@@ -293,8 +298,8 @@ const unpinsOf = (at: LayoutEntry[]): string[] => [
 /**
  * The layout a renderer draws by, three layers each over the one before: its own (`renderer.json`), the config's, the
  * viewer's (`tower.store`'s `layout.<renderer>`). For each region, each field is the highest layer's that sets it,
- * every view's options apart; `hidden` is the layers' union, less each id a higher layer names in its `order` or its
- * `pinned`; `pinned` is the layers' union, the highest's first, less what a higher layer names in `unpinned`; and
+ * every view's options apart; `hidden` is the layers' union, less each id a higher layer names in its `order` or pins
+ * where that pin stands in the merge; `pinned` is the layers' union, the highest's first, less what a higher layer names in `unpinned`; and
  * `unpinned`, what a layer unpins that a lower one pins.
  */
 export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | undefined): Layout => {
@@ -304,8 +309,8 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
     regions.map((id) => {
       const at = layers.map((l) => unaliased(l[id] ?? {}))
       const last = <K extends keyof LayoutEntry>(field: K) => at.findLast((e) => e[field] !== undefined)?.[field]
-      const hidden = at.flatMap((e, n) => (e.hidden ?? []).filter((v) => !at.slice(n + 1).some((above) => above.order?.includes(v) || above.pinned?.includes(v))))
       const pinned = pinsOf(at)
+      const hidden = at.flatMap((e, n) => (e.hidden ?? []).filter((v) => !at.slice(n + 1).some((above) => above.order?.includes(v) || (above.pinned?.includes(v) && pinned.includes(v)))))
       const unpinned = unpinsOf(at)
       const options = Object.assign({}, ...at.map((e) => e.options ?? {}))
       const entry: LayoutEntry = {
