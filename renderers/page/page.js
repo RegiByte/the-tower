@@ -794,6 +794,8 @@ function kitRegion(el, id, subject, options) {
     const more = document.createElement('button')
     more.className = 'region-more'
     more.hidden = true
+    more.innerHTML = '<span aria-hidden="true">⋯</span><span class="n" aria-hidden="true"></span>'
+    const count = /** @type {HTMLElement} */ (more.querySelector('.n'))
     host.replaceChildren(items, more)
     /** What each menu entry runs, by its key. @type {Map<string, (el: HTMLElement) => void>} */
     let runs = new Map()
@@ -894,7 +896,7 @@ function kitRegion(el, id, subject, options) {
       const label = `More on ${subjectName(at)}${said.length ? `: ${said.join(', ')}` : ''}`
       more.setAttribute('aria-label', label)
       more.dataset.tip = label
-      write(more, `<span aria-hidden="true">⋯</span><span class="n" aria-hidden="true">${tucked.length}</span>`)
+      count.textContent = String(tucked.length)
       const fresh = tuckedActions.some(({ r }) => dotOn(r, offered, had))
       if (severe || fresh) more.dataset.dot = severe ? 'severe' : 'new'
       else delete more.dataset.dot
@@ -921,16 +923,16 @@ function kitRegion(el, id, subject, options) {
         return () => {
           const keys = order.map((i) => i.key).join('\n')
           if (keys !== sig) was = order.length
-          const count = fill(order.map((i) => /** @type {number} */ (widths.get(i.el))), room, /** @type {number} */ (widths.get(more)), was, FIT_MARGIN)
-          was = count
+          const fits = fill(order.map((i) => /** @type {number} */ (widths.get(i.el))), room, /** @type {number} */ (widths.get(more)), was, FIT_MARGIN)
+          was = fits
           sig = keys
           const focused = document.activeElement
-          order.forEach((item, n) => item.el.toggleAttribute('data-tucked', n >= count))
-          more.hidden = count === order.length
+          order.forEach((item, n) => item.el.toggleAttribute('data-tucked', n >= fits))
+          more.hidden = fits === order.length
           if (more.hidden) listed.close()
-          if (focused && order.slice(count).some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
-          list(order.slice(count), texts)
-          return order.slice(0, count).flatMap((i) => (i.t === 'action' ? [i.el] : []))
+          if (focused && order.slice(fits).some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
+          list(order.slice(fits), texts)
+          return order.slice(0, fits).flatMap((i) => (i.t === 'action' ? [i.el] : []))
         }
       },
       remeasure: () => ((widths = new WeakMap()), (stale = true)),

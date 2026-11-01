@@ -260,8 +260,9 @@ dialog.confirm .actions { flex: none; }
 .region-items { display: contents; }
 .region-more { display: inline-flex; align-items: center; gap: var(--sp-xs); }
 .region-more[hidden] { display: none; }
-.region-more .n { color: var(--muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
-.region-more[data-dot]::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.region-more .n { min-width: 2ch; color: var(--muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.region-more::before { content: ''; width: 7px; height: 7px; border-radius: 50%; }
+.region-more[data-dot]::before { background: var(--accent); }
 .region-more[data-dot="severe"]::before { background: var(--broken); }
 .region-menu { margin: 0; inset: auto; position: fixed; min-width: 15rem; max-width: min(26rem, calc(100vw - 16px)); overflow: auto; padding: 0 0 var(--sp-xs);
   background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); font-size: var(--fs-s); }
