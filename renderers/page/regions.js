@@ -312,7 +312,8 @@ export function regions(deps) {
   }
 
   /**
-   * A region holding one view on its subject, the one the layout picks among those it offers.
+   * A region holding one view on its subject, the one the layout picks among those it offers. A row with none to draw
+   * is hidden, as a row beside contributions is: a pane with none says so.
    * @param {HTMLElement} host @param {Region} region @param {Subject} subject @param {Record<string, Record<string, unknown>>} options
    * @returns {RegionHandle}
    */
@@ -324,6 +325,10 @@ export function regions(deps) {
     const el = document.createElement('div')
     el.className = 'view-root'
     host.replaceChildren(el)
+    if (!view?.module && region.scale === 'row') {
+      host.hidden = true
+      return { update: () => {}, close: () => (host.replaceChildren(), (host.hidden = false), delete host.dataset.region, delete host.dataset.subject) }
+    }
     if (!view?.module) {
       failed(el, region.id, `nothing here draws ${subject.key}`)
       return { update: () => {}, close: () => host.replaceChildren() }
