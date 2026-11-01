@@ -41,7 +41,7 @@ export const CLI_VERBS = {
     usage: 'resume <id> [--carry-on]',
     help: "start a session that continues <id>'s conversation, print its id; through the tower's resume queue. --carry-on tells Claude it was cut off mid-turn by the host and to carry on (a card's `carry-on`)",
   },
-  submit: { of: 'user', usage: 'submit <id> <text...>', help: "type a prompt and submit it; a worker's prompt (TOWER_SESSION_ID) is named in its log first" },
+  submit: { of: 'user', usage: 'submit <id> <text...>', help: "type a prompt and submit it, through the tower; refused while it asks you something or waits on a screen. A worker's prompt (TOWER_SESSION_ID) is named in its log first" },
   kill: { of: 'user', usage: 'kill <id|CALLSIGN>', help: "end a session, by its id or its worker's callsign; a worker's kill (TOWER_SESSION_ID) is named in its log first" },
   live: { of: 'user', usage: 'live', help: 'ids of running sessions' },
   ls: { of: 'user', usage: 'ls', help: 'every session, with project, status and what it left running' },
