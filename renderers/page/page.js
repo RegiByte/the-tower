@@ -1065,7 +1065,7 @@ function kitRegion(el, id, subject, options) {
       read: () => {
         const order = fillOrder()
         const allowed = budgeted(order)
-        for (const item of allowed) if (!item.el.hasAttribute('data-tucked')) widths.set(item.el, lineWidth(item.el) + gapBeside(item.el))
+        for (const item of order) if (!item.el.hasAttribute('data-tucked')) widths.set(item.el, lineWidth(item.el) + gapBeside(item.el))
         if (!more.hidden) widths.set(more, lineWidth(more) + gapBeside(more))
         const drawn = new Set(/** @type {Element[]} */ (order.map((i) => i.el)))
         const kept = lineWidth(row, (e) => drawn.has(e) || e === more || e === pop)
