@@ -1,0 +1,79 @@
+{
+  "workers": 2,
+  "seed": [
+    "sleep 1; curl -sS --unix-socket \"$TOWER_SANDBOX/hooks.sock\" -H 'content-type: application/json' -d '{\"hook_event_name\":\"Stop\",\"background_tasks\":[],\"session_crons\":[]}' \"http://host/hooks/$WORKER_1\" >/dev/null"
+  ],
+  "scenes": [
+    {
+      "name": "brief",
+      "open": "#$WORKER_1",
+      "size": "1180x620",
+      "steps": [
+        {
+          "click": ".pane-tab",
+          "text": "Brief"
+        },
+        {
+          "until": "[data-chat-text]"
+        },
+        {
+          "click": "[data-chat-text]"
+        },
+        {
+          "type": "Add a line about the new export to the README."
+        },
+        {
+          "until": "[data-chat-send]:not(:disabled)"
+        }
+      ],
+      "crop": "[data-view=\"tower/brief\"]",
+      "pad": 0
+    },
+    {
+      "name": "working",
+      "open": "#$WORKER_2",
+      "size": "1180x620",
+      "steps": [
+        {
+          "click": ".pane-tab",
+          "text": "Brief"
+        },
+        {
+          "until": "[data-view=\"chat/input\"] .say",
+          "text": "working on it"
+        }
+      ],
+      "crop": ".brief-foot",
+      "pad": 0
+    },
+    {
+      "name": "holds",
+      "open": "#$WORKER_1",
+      "size": "1180x620",
+      "steps": [
+        {
+          "click": ".pane-tab",
+          "text": "Brief"
+        },
+        {
+          "until": "[data-chat-text]"
+        },
+        {
+          "click": "[data-chat-text]"
+        },
+        {
+          "type": "And the changelog too."
+        },
+        {
+          "eval": "fetch('/keys', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: '$WORKER_1', data: 'half a thought' }) })"
+        },
+        {
+          "until": "[data-view=\"chat/input\"] .say",
+          "text": "holding text"
+        }
+      ],
+      "crop": ".brief-foot",
+      "pad": 0
+    }
+  ]
+}

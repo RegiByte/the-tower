@@ -867,7 +867,8 @@ kit for `card.composer`, a region holding one view on the card at `row` scale: w
 Brief, then scrolls inside; with none offered, or the layout hiding it (`layout["card.composer"].hidden`), the Brief
 keeps no room for it. Whether the worker takes a prompt is the card's `prompt` verb (`callOf(card, 'prompt')`), and
 the call is `submit/at-prompt`, which says why it refused ([The API](#the-api)). A draft kept across reloads goes in
-`tower.store`, by card. Tower 3D draws no `card.composer`.
+`tower.store`, by card. Tower 3D draws no `card.composer`. [`examples/extensions/chat`](../examples/extensions/chat/) is one to copy: a
+text box that sends with the keymap's `submit` chord and says each refusal's message under it, keeping the text.
 
 **The bus** (API 1.118). What a view draws that the board never carries, and that a user can still point at, is a
 viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines
