@@ -57,8 +57,8 @@ one tab row: the shared panels, then the worker's showings ([[agent-show]]), in 
 ([`tabsScroll`](ref:hub/renderers/page/regions.js#tabsScroll)), the tabs a pane chord opens stay put and every other
 tab, extension views and showings alike, scrolls past them under a thin scrollbar, faded at an edge past which more
 hide, the open tab brought clear of the fades as it opens and as the row resizes; the layout's `order` arranges the
-two apart. In `wrap` ([`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap)), every tab is drawn in the layout's
-order, on as many rows as they take.
+two apart. In `wrap` ([`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap)), every tab is drawn, the views in
+the layout's order and the showings after them, on as many rows as they take.
 
 Frames that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are sandboxed at
 an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may also read the
