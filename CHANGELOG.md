@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.80.0
+
+The tower runs on Windows through WSL 2, contributed by @amandamachadodev. No restart beyond the tower's own (`tower
+down tower`, then `tower up tower`), the renderer API unchanged, no config change.
+
+- **WSL 2** (#313): the tower runs on Linux under WSL 2 as on macOS. What differs is one record per platform
+  (`src/platform.ts`, decision `platforms`): procps's `ps e` for BSD's `ps -E`, the doctor's install fixes, and
+  `explorer.exe` (with the path through `wslpath -w`) for opening the browser and revealing a file. Native Linux is
+  not claimed yet: `tower doctor` fails it.
+  - A leftover is `orphan` when its parent is outside the host's process tree, whatever adopted it (launchd, WSL's
+    init relay, a subreaper). On macOS this marks the same processes as before.
+  - `tower doctor` names the platform and checks `lsof`.
+  - Under WSL, keep the checkout in the Linux filesystem (`~/…`), not under `/mnt/c`.
+- **Extension READMEs** (#312): the README standard requires only an extension's title line and what it adds, and
+  allows an example run in place; the bundled READMEs say only what is true and recommended for each.
+
 ## v1.79.0
 
 Narrate reads a whole document and says workers' memos aloud, extensions guide the workers that use them, commands draw
