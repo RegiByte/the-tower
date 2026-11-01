@@ -4485,7 +4485,10 @@
           "description": "The regions its views declare inside them."
         },
         "layout": {
-          "$ref": "#/definitions/Layout",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ExtensionLayoutEntry"
+          },
           "description": "The default layout of the regions it declares, by region id, when it gives one."
         },
         "spawn": {
@@ -4993,6 +4996,13 @@
         },
         "description": {
           "type": "string"
+        },
+        "overflows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Overflow"
+          },
+          "description": "The overflow forms the renderer draws this region in, its default first. Absent: it offers no choice, and a layout's `overflow`, budgets and pins for it are refused."
         }
       },
       "required": [
@@ -5025,49 +5035,41 @@
         "pane"
       ]
     },
-    "Layout": {
+    "Overflow": {
+      "type": "string",
+      "enum": [
+        "menu",
+        "count",
+        "wrap",
+        "scroll"
+      ]
+    },
+    "ExtensionLayoutEntry": {
       "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "order": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "hidden": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "open": {
-            "type": "object",
-            "properties": {
-              "view": {
-                "type": "string"
-              },
-              "subject": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "view"
-            ],
-            "additionalProperties": false
-          },
-          "options": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object",
-              "additionalProperties": {}
-            }
+      "properties": {
+        "order": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
-        "additionalProperties": false
+        "hidden": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What is not offered there: views, and since 1.138 actions (`actionId`) and an extension's lines (`lineId`)."
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
       },
-      "description": "An arrangement of the views in a renderer's regions, by region id: `order` the views first, in this order; `hidden` those not offered there; `open` the tab a tabs region opens on; `options` each view's own settings there. A renderer's own (its `renderer.json`), the config's and the viewer's are laid one over the other by `layoutOf`."
+      "additionalProperties": false,
+      "description": "What an extension's manifest lays out in the regions it declares: the user's keys (pins, form, budgets) are not among them."
     },
     "SpawnFieldView": {
       "type": "object",
