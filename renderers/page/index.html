@@ -247,7 +247,8 @@ dialog.confirm .actions { flex: none; }
 .confirm-body:empty { display: none; }
 
 .main { position: relative; display: flex; flex-direction: column; gap: var(--sp-m); min-width: 0; min-height: 0; padding: var(--sp-xl) var(--sp-xl) 0; }
-.untested { color: var(--muted); font-size: var(--fs-s); text-decoration: underline dotted; cursor: help; white-space: nowrap; }
+.untested, .layout-problems { color: var(--muted); font-size: var(--fs-s); text-decoration: underline dotted; cursor: help; white-space: nowrap; }
+.side-notes .layout-problems { display: block; white-space: normal; }
 .pane-tab { min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-s); color: var(--muted); background: none; }
 .pane-tab .icon-btn, .tab .icon-btn { margin-block: -1px; }
 .pane-tab .icon-btn .icon, .tab .icon-btn .icon { width: var(--icon-s); height: var(--icon-s); }
