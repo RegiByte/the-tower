@@ -129,5 +129,8 @@ export async function palette(deps) {
     $('patterns').scrollTop = 0
   }
 
-  return { openPalette, showPatterns }
+  /** Draws the entries again while the palette is open, as a draft's title arrives. */
+  const redraw = () => dialog.open && draw()
+
+  return { openPalette, redraw, showPatterns }
 }
