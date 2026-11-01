@@ -48,7 +48,9 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   `logbook` slot stands it ([[desk-dressing]]). Its act opens the desk panel's Logbook tab where you stand.
 - **The Logbook tab** is the desk panel's brief tab (the tower page keeps "Brief"): a chip per session of the lineage,
   oldest first, the running one live, over the lineage brief ([`logbookHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookHtml)),
-  which reads as the tower page's does ([[brief-turns]]). A resume given no prompt of its own shows the same last
+  which reads as the tower page's does ([[brief-turns]]): each turn's steps, a tool call opened read once and kept
+  for the next draw ([`readWhole`](ref:hub/renderers/tower3d/src/main.ts#readWhole) for a conversation's earlier
+  turns). A resume given no prompt of its own shows the same last
   screen as the session it resumed (Claude reprints the conversation), so its chip says "resumed, no new turns"
   ([`sessionsHtml`](ref:hub/renderers/tower3d/src/ui.ts#sessionsHtml), from the shared `resumedIdle`).
 - **Replay** ([`replay`](ref:hub/renderers/tower3d/src/main.ts#replay)): a past session's chip puts that session's

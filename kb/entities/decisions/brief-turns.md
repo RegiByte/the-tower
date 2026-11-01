@@ -1,15 +1,27 @@
 ---
 {
   "type": "decision",
-  "name": "The brief: a worker's last turns across its lineage, read from the logs when asked, drawn as a chat",
-  "summary": "A worker's brief lists the saved conversations of every session it ran as, each with its session and its last brief.pairs turns (a user prompt or another worker's message, with Claude's latest answer to it and when each was given); they are derived from the session logs when /conversations/<id> is read, never kept in facts or on the board. One shared view draws it inline in every renderer as a chat in time order: the earlier sessions folded at the top, prompts and answers as bubbles, long ones folded, markdown rendered or raw by the viewer's choice.",
+  "name": "The brief: a worker's last turns across its lineage, each with Claude's steps, read from the logs when asked, drawn as a chat",
+  "summary": "A worker's brief lists the saved conversations of every session it ran as, each with its session and its last brief.pairs turns (a user prompt or another worker's message, what Claude did on the way: its words between tool calls, each tool call in one line, the messages it sent, and its latest answer, with when each was given); they are derived from the session logs when /conversations/<id> is read, never kept in facts or on the board, and a conversation reads whole, or one tool call in full, on demand. One shared view draws it inline in every renderer as a chat in time order: the earlier sessions folded at the top, prompts and answers as bubbles, steps between them, long ones folded, markdown rendered or raw by the viewer's choice.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-11-01",
   "refs": [
     "hub/src/bridge/turns.ts#turnsByConversation",
-    "hub/src/bridge/turns.ts#lastTurns",
+    "hub/src/bridge/turns.ts#turnsOf",
+    "hub/src/bridge/turns.ts#stepsOf",
+    "hub/src/bridge/turns.ts#Step",
+    "hub/src/bridge/turns.ts#toolLine",
+    "hub/src/bridge/turns.ts#toolCallOf",
+    "hub/src/bridge/turns.ts#wholeConversation",
+    "hub/src/bridge/messages.ts#deliveries",
+    "hub/src/shared/brief.ts#toolCallHtml",
+    "hub/src/shared/brief.ts#openTools",
+    "hub/src/shared/brief.ts#withWhole",
+    "hub/src/shared/brief.ts#saidWhat",
+    "hub/src/tower/http.ts#conversation",
+    "hub/src/tower/http.ts#toolCall",
     "hub/src/bridge/turns.ts#briefOf",
     "hub/src/bridge/turns.ts#Turn",
     "hub/src/bridge/turns.ts#BriefSession",
@@ -43,7 +55,7 @@
     "hub/test/turns.test.ts"
   ],
   "links": [
-    { "to": "tower-server", "verb": "reads", "carries": "the session logs of a worker's lineage and each conversation's resume chain, on each GET /conversations/<id>" },
+    { "to": "tower-server", "verb": "reads", "carries": "the session logs of a worker's lineage and each conversation's resume chain, on each GET /conversations/<id>, a conversation whole on GET /conversations/<id>/<conversation>, and one call on GET /conversations/<id>/tool/<call>" },
     { "to": "system-root", "verb": "reads", "carries": "config.json's brief.pairs, project over top level over 2" },
     { "to": "markdown-safe", "verb": "uses", "carries": "markdownHtml as said, inline; markdownCss" },
     { "to": "shared-panels", "verb": "extends", "carries": "review note bodies as markdown" },
@@ -64,11 +76,25 @@ renderer can draw the brief alike, inline.
 **Decision.**
 - *Turns, from the logs.* `GET /conversations/<id>` ([`conversations`](ref:hub/src/tower/http.ts#conversations))
   serves each conversation with its last `brief.pairs` turns ([`briefConfig`](ref:hub/src/shared/model.ts#briefConfig)),
-  oldest first. A turn ([`Turn`](ref:hub/src/bridge/turns.ts#Turn)) is a user prompt or a message another worker sent,
-  with Claude's latest main-loop answer before the next prompt; a turn with no answer is still being worked on.
-  [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation) reads them from the log, and
-  [`lastTurns`](ref:hub/src/bridge/turns.ts#lastTurns) continues a resumed conversation into its source session's log
-  only while the count falls short.
+  oldest first, and `earlier` when it holds turns before them. A turn ([`Turn`](ref:hub/src/bridge/turns.ts#Turn)) is a
+  user prompt or a message another worker sent, with Claude's latest main-loop answer before the next prompt; a turn
+  with no answer is still being worked on. [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation)
+  reads them from the log, and [`turnsOf`](ref:hub/src/bridge/turns.ts#turnsOf) continues a resumed conversation into
+  its source session's log only while the count falls short.
+  [`wholeConversation`](ref:hub/src/bridge/turns.ts#wholeConversation) gives every turn of one conversation, at
+  `GET /conversations/<id>/<conversation>` ([`conversation`](ref:hub/src/tower/http.ts#conversation)).
+- *Steps, since 1.132.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between
+  its prompt and its answer, read from the log by [`stepsOf`](ref:hub/src/bridge/turns.ts#stepsOf): its words between
+  tool calls (`turn.step`'s `answer`), each main-loop tool call in one line
+  ([`toolLine`](ref:hub/src/bridge/turns.ts#toolLine): its telling field, a path relative to the session's folder)
+  with how it ended (`tower.tool.result`, `tower.tool.abandoned`) and how long it ran (`PostToolUse`), and each message
+  it sent another worker (`session.send`, its recipient named through
+  [`deliveries`](ref:hub/src/bridge/messages.ts#deliveries); its `SendMessage` call is not drawn again). A step's calls
+  are logged before its words, since they run while Claude streams: the fold puts the words first. The answer is not a
+  step. A subagent's events stay out, its steps counted on the `Agent` call that started it (`agent.spawn`). A call
+  reads in full on demand at `GET /conversations/<id>/tool/<call>` ([`toolCallOf`](ref:hub/src/bridge/turns.ts#toolCallOf),
+  [`toolCall`](ref:hub/src/tower/http.ts#toolCall)): its input as logged, its permission check, how it ended, its
+  error. The tool's output is not in the log (the host leaves it out), so it is not served.
 - *Workers' messages are turns.* A prompt of peer origin whose text is a delivery from another Claude session
   ([`delivered`](ref:hub/src/bridge/messages.ts#delivered)) opens a turn carrying `from`
   ([`PeerFrom`](ref:hub/src/bridge/turns.ts#PeerFrom)): the sender's callsign, and its session when
@@ -86,11 +112,18 @@ renderer can draw the brief alike, inline.
   [`briefHtml`](ref:hub/src/shared/brief.ts#briefHtml) draws it in time order as a chat: earlier sessions folded at the
   top, then the session read for. A resume never given a prompt says so
   ([`resumedIdle`](ref:hub/src/shared/brief.ts#resumedIdle)). The user's prompts, workers' messages and Claude's
-  answers are bubbles of their own kind; a hired worker's launch prompt is headed by its hirer. Each bubble copies
-  its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText)),
+  answers are bubbles of their own kind; a hired worker's launch prompt is headed by its hirer. A turn's steps sit
+  between its prompt and its answer: Claude's words as quiet text, a message it sent as a bubble to its recipient, a
+  tool call as a `<details>` line that, opened, the renderer reads once and draws with
+  [`toolCallHtml`](ref:hub/src/shared/brief.ts#toolCallHtml); a run of five or more calls folds to its count, naming
+  those that failed, were denied or stopped. "earlier turns" on a conversation reads it whole, drawn in place
+  ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)). Each bubble copies
+  its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText),
+  [`saidWhat`](ref:hub/src/shared/brief.ts#saidWhat) naming it),
   never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds.
   A renderer passes `adds` to draw what extensions contribute to a conversation (its badges, its actions) on that
-  conversation's heading, and `acts` (since 1.118) what is offered on a prompt or answer (`said`, [[ui-model]]) beside
+  conversation's heading, and `acts` (since 1.118) what is offered on a prompt, an answer, or Claude's words or message
+  on the way (`said`, side `step.<n>` since 1.132, [[ui-model]]) beside
   its copy, each by the key [`saidOf`](ref:hub/src/shared/brief.ts#saidOf) gives it: the view is pure and draws
   nothing when they are not given.
 - *Rendered or raw* is a viewer's choice in `tower.store`
@@ -105,8 +138,9 @@ renderer can draw the brief alike, inline.
   [Logbook](ref:hub/renderers/tower3d/src/ui.ts#logbookHtml) ([[logbook]]), and `tower agent` prints the current
   session's conversations in full ([`threadLines`](ref:hub/src/directory.ts#threadLines)) and one line per earlier
   session. A redraw keeps what the viewer opened, read back from what it drew
-  ([`openFolds`](ref:hub/src/shared/brief.ts#openFolds), [`expandedSaid`](ref:hub/src/shared/brief.ts#expandedSaid)),
-  kept no longer than the open brief.
+  ([`openFolds`](ref:hub/src/shared/brief.ts#openFolds), [`expandedSaid`](ref:hub/src/shared/brief.ts#expandedSaid),
+  [`openTools`](ref:hub/src/shared/brief.ts#openTools)), kept no longer than the open brief. The page's Brief reads
+  again as the worker calls each tool (`card.tool` moves), so steps arrive while it works.
 
 **Alternatives considered.**
 - *Fold every turn into `Conversation`.* Full prompt text of every turn of every session would sit in memory and in
@@ -117,6 +151,10 @@ renderer can draw the brief alike, inline.
 - *Keep the brief in a frame and wire copy and folds from the parent.* Needs `allow-same-origin`, and every control
   is wired twice. The guarantee rests on `markdownHtml` and its test.
 - *The text to copy in a data attribute.* Every prompt and answer twice in the html; the renderer holds the reply.
+- *Steps on the board, or every call's input in the brief.* A call's input runs to a hundred KB (a `Write`'s content);
+  a line each is small, the input is read when opened.
+- *A tool's output, from Claude's transcript.* Couples the tower to Claude's private file format; the input and how it
+  ended say what a call did, and nobody asked for more.
 
 **Consequences.** Opening a brief reads one log per session in the worker's lineage and in each conversation's chain,
 as `/screen` does. `prompt` and `answer` stay the latest of the whole conversation, which the board and cards use. A
