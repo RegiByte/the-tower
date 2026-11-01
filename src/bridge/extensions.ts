@@ -240,6 +240,8 @@ const underDeclared = (raw: unknown, required: string): LoadProblem[] =>
 const CORE_READS: string[] = Object.keys({
   board: true,
   'conversations/<id>': true,
+  'conversations/<id>/<conversation>': true,
+  'conversations/<id>/tool/<call>': true,
   'archive/<project>': true,
   'changes/<id>': true,
   'reviews/<project>': true,

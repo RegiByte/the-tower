@@ -25,6 +25,8 @@
  *   GET  /origins       the web page of each project directory's origin remote, by directory
  *   GET  /patterns      what users found doing with the tower, from the checkout's docs/patterns/*.md (src/shared/capabilities.ts)
  *   GET  /conversations/<id>  the saved conversations of every session its worker ran as up to it, its own first, each with its session, latest prompt and answer and last `brief.pairs` turns in full, read from the logs
+ *   GET  /conversations/<id>/<conversation>  one of the session's saved conversations with every one of its turns
+ *   GET  /conversations/<id>/tool/<call>  one tool call of the session: its input as logged, its permission check, how it ended
  *   GET  /archive/<project>  the project's cards the board leaves out, newest first (src/bridge/board.ts `onBoard`)
  *   GET  /reviews/<project>  the reviews extension's reviews/history/<project>, through LEGACY until 2.0
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
@@ -90,7 +92,7 @@ import { z } from 'zod'
 import { LEGACY_READS, legacyNamed } from '../bridge/legacy.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import { withLiveness } from '../bridge/status.ts'
-import { briefOf } from '../bridge/turns.ts'
+import { briefOf, toolCallOf, wholeConversation } from '../bridge/turns.ts'
 import { isLive } from '../bridge/verbs.ts'
 import { changesIn } from '../changes.ts'
 import { itemPath } from '../collections.ts'
@@ -245,14 +247,33 @@ export const httpServer = defineResource({
       res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archivedCards(project, now)))
     }
 
+    /** Each session's log as read for one request, read once. */
+    const logsRead = () => {
+      const logs = new Map<string, SessionLog>()
+      return (sessionId: string) => logs.get(sessionId) ?? logs.set(sessionId, readLog(logFileOf(paths, sessionId), everyEvent).log).get(sessionId)!
+    }
+
     function conversations(res: http.ServerResponse, id: string) {
       const session = system.session(id)
       if (!session) return fail(res, 'not_found', `No session "${id}"`)
       const config = readConfig()
       const { pairs } = briefConfig(config, session.header.project)
-      const logs = new Map<string, SessionLog>()
-      const logOf = (sessionId: string) => logs.get(sessionId) ?? logs.set(sessionId, readLog(logFileOf(paths, sessionId), everyEvent).log).get(sessionId)!
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(briefOf(session, system.sessions(), logOf, pairs, callsignsOf(config))))
+      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(briefOf(session, system.sessions(), logsRead(), pairs, callsignsOf(config))))
+    }
+
+    function conversation(res: http.ServerResponse, id: string, conversationId: string) {
+      const session = system.session(id)
+      if (!session) return fail(res, 'not_found', `No session "${id}"`)
+      const whole = wholeConversation(session, system.sessions(), logsRead(), conversationId, callsignsOf(readConfig()))
+      if (!whole) return fail(res, 'not_found', `Session "${id}" saved no conversation "${conversationId}"`)
+      json(res, whole satisfies Reads['conversations/<id>/<conversation>'])
+    }
+
+    function toolCall(res: http.ServerResponse, id: string, call: string) {
+      if (!system.session(id)) return fail(res, 'not_found', `No session "${id}"`)
+      const read = toolCallOf(logsRead()(id), call)
+      if (!read) return fail(res, 'not_found', `Session "${id}" logged no tool call "${call}"`)
+      json(res, read satisfies Reads['conversations/<id>/tool/<call>'])
     }
 
     async function changes(res: http.ServerResponse, id: string, { scope }: z.output<(typeof QUERIES)['changes/<id>']>) {
@@ -803,6 +824,8 @@ export const httpServer = defineResource({
       apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
       apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
       apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
+      apiRead('conversations/<id>/<conversation>', { path: /^\/conversations\/(?<id>[\w-]+)\/(?<conversation>[\w-]+)$/, serve: ({ res, params }) => conversation(res, params.id!, params.conversation!) }),
+      apiRead('conversations/<id>/tool/<call>', { path: /^\/conversations\/(?<id>[\w-]+)\/tool\/(?<call>[\w-]+)$/, serve: ({ res, params }) => toolCall(res, params.id!, params.call!) }),
       apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ req, res, params }) => legacyRead(req, res, 'reviews/<project>', params, {}) }),
       apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, serve: ({ res, params, query }) => changes(res, params.id!, query) }),
       plain('stream', { path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
