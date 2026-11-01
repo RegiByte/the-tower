@@ -195,9 +195,10 @@ and a framed document's section are the same thing.
   [`policies/tray`](ref:hub/extensions/policies/client/tray.ts#mount)), picked by the owner rule above with no layout
   line, each marking what the main pane has open through `kit.location`. A tray's unfolded part is an element of class
   `tray-open`, which the row's flex layout places under every tray; whether a tray is unfolded is the view's state.
-  The trays name no extension in the page; its sidebar still does elsewhere: the offers rows and their Accept, a
-  worker's policy run line, a worker's reviewer on its row and the sign's new-draft button, each a region's work
-  still to come.
+  The trays name no extension in the page, nor does the rest of the sidebar but the quota probe's line under the
+  limits: a floor's offers are its asks, a policy run and a reviewer say so in their cards' badges, and the sign's
+  new-draft pencil is the drafts extension's command in the page's `floor.sign` region, which draws commands as their
+  icons.
 - *Locations* ([`hashOf`](ref:hub/src/shared/views.ts#hashOf), [`locationOf`](ref:hub/src/shared/views.ts#locationOf)):
   `{ view, subject?, pane?, args? }` in the URL as
   `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>[/<shows>[/<arg>…]]]]`, each key and arg one encoded segment,
@@ -297,7 +298,8 @@ flowchart LR
   board --> main["board.main: one view, pane scale"]
   board --> dock["board.dock: shells"]
   side --> strip["board.strip: one view of the board, row"]
-  side --> fsec["floor.section: badges, actions, asks, tidy"]
+  side --> sign["floor.sign: commands, as icons"]
+  side --> fsec["floor.section: badges, verbs, asks, tidy"]
   fsec --> row["card.row: badges, lines"]
   fsec --> trays["floor.trays: views of collection, row"]
   main --> card["tower/card on card"]

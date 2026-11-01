@@ -70,8 +70,9 @@ Nothing. A `drafts` entry under the config's `collections` renames it:
 
 Drafts writes no facts. Its server is one launch contributor: the line in a worker's system prompt on
 `tower keep drafts`, added on floors where drafts is on. Each draft is one markdown file, `collections/<project>/drafts/<id>.md`,
-and who kept it is the core's `tower.keep` fact. It declares the collection and two views, `editor` (the main pane)
-and `tray` (the sidebar row); `client/drafts.ts`, served as `/x/drafts/drafts.js`, is the autosave and conflict
+and who kept it is the core's `tower.keep` fact. It declares the collection, two views, `editor` (the main pane)
+and `tray` (the sidebar row), and a command on every floor, `new` (`client/commands.ts`), which opens a new draft in
+the editor and the tower page draws as the pencil on the floor's sign (its `floor.sign` region); `client/drafts.ts`, served as `/x/drafts/drafts.js`, is the autosave and conflict
 handling over the core's collection verbs, which the tower page imports and Tower 3D bundles.
 
 ## Pictures

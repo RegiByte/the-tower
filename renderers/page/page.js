@@ -357,7 +357,7 @@ function noticeShown(all) {
   shownPrimed = true
 }
 
-const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml: (f) => trayRowsHtml(f), heed, withKeys, opensHtml: (subject) => opensHtml(subject) })
+const { toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml: (f) => trayRowsHtml(f), heed, withKeys, opensHtml: (subject) => opensHtml(subject), holdsOf: (region) => placing().regions.find((r) => r.id === region)?.holds ?? [] })
 
 
 /** A floor in the sidebar: shown, unfolded and scrolled to, its name focused. @param {string} project */
@@ -876,8 +876,6 @@ document.addEventListener('click', async (e) => {
   if (target.closest('a[href]') || inView(target)) return
   const spawn = target.closest('[data-spawn]')
   if (spawn) return openSpawn(/** @type {string} */ (spawn.dataset.spawn))
-  const newDraft = target.closest('[data-new-draft]')
-  if (newDraft) return openDraft(/** @type {string} */ (newDraft.dataset.newDraft))
   const copy = target.closest('[data-copy]')?.dataset.copy
   if (copy) return copyText(copy, copy)
   const markdown = /** @type {BriefMarkdown | undefined} */ (target.closest('[data-brief-markdown]')?.dataset.briefMarkdown)

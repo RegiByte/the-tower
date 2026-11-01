@@ -35,6 +35,17 @@ export const heldActions = (holds, actions) => actions.filter((a) => holds.inclu
 /** A glyph as the page draws it: a core icon inline, an extension's SVG as a mask in the ink around it. @param {Glyph} glyph */
 const glyphHtml = (glyph) => (glyph.t === 'core' ? ICON[glyph.name] : `<span class="icon glyph" style="--glyph: url(&quot;${esc(glyph.href)}&quot;)"></span>`)
 
+/** An action drawn as its glyph alone: its attributes, its label as the tip with its hint, and what it shows. @param {Board} board @param {Subject} subject @param {Added<Action>} a */
+const iconOf = (board, subject, a) => {
+  const words = actionWords(board, a)
+  const glyph = glyphOf(board, a)
+  return {
+    words,
+    attrs: `class="icon-btn added${words.destructive ? ' danger' : ''}" data-added="${esc(JSON.stringify({ subject: subject.key, action: a }))}" data-tip="${esc(words.hint ? `${words.label} · ${words.hint}` : words.label)}"`,
+    face: glyph ? glyphHtml(glyph) : `<small>${esc(words.label)}</small>`,
+  }
+}
+
 /**
  * Actions inside a control that is itself pressed (a tab): each its glyph alone, its label when it names none, its
  * words the tip; hidden from assistive tech as the control's own icons are, the palette running each by keyboard.
@@ -43,10 +54,17 @@ const glyphHtml = (glyph) => (glyph.t === 'core' ? ICON[glyph.name] : `<span cla
 export const iconActionsHtml = (board, subject, actions) =>
   actions
     .map((a) => {
-      const words = actionWords(board, a)
-      const glyph = glyphOf(board, a)
-      const tip = words.hint ? `${words.label} · ${words.hint}` : words.label
-      return `<span class="icon-btn added${words.destructive ? ' danger' : ''}" data-added="${esc(JSON.stringify({ subject: subject.key, action: a }))}" aria-hidden="true" data-tip="${esc(tip)}">${glyph ? glyphHtml(glyph) : `<small>${esc(words.label)}</small>`}</span>`
+      const { attrs, face } = iconOf(board, subject, a)
+      return `<span ${attrs} aria-hidden="true">${face}</span>`
+    })
+    .join('')
+
+/** Actions as buttons showing their glyph alone, their label when they name none, labelled by it for assistive tech. @param {Board} board @param {Subject} subject @param {Added<Action>[]} actions */
+export const iconButtonsHtml = (board, subject, actions) =>
+  actions
+    .map((a) => {
+      const { words, attrs, face } = iconOf(board, subject, a)
+      return `<button ${attrs} aria-label="${esc(words.label)}">${face}</button>`
     })
     .join('')
 
