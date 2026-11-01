@@ -67,7 +67,8 @@ const CSS = `:where([data-view="${ID}"]) {
   & .bar-actions .icon-btn { aspect-ratio: 1; }
   & .verb { display: inline-flex; align-items: center; gap: var(--sp-xs); }
   & .bar-sub { display: flex; align-items: center; gap: var(--sp-l); min-width: 0; white-space: nowrap; color: var(--muted); font-size: var(--fs-s); }
-  & .bar-sub .where { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; }
+  & .bar-sub .where { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  & .bar-sub:has(.adds-line) .where { flex: none; max-width: 50%; }
   & .bar-sub .adds-line { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
   & .bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
   & .bar-top[hidden] ~ .bar-line { margin-top: 0; }
@@ -158,14 +159,19 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     ${cell ? '<span class="mini"></span>' : ''}<div class="bar-top"${head ? '' : ' hidden'}>
       <div class="bar-main"><div class="bar-info"><span class="who"><span class="part lead"></span><span class="part stats-part"></span></span><span data-holds="badges"></span></div>
         <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions"></span><span class="part own"></span></div></div>
-      <div class="bar-sub"><span class="part where-part"></span><span data-holds="lines"></span></div></div>${cell ? '<span class="acts"></span>' : ''}
-    <div class="tab-row bar-line" data-holds="tabs"></div></div>
+      <div class="bar-sub"><span class="part where-part"></span><span data-holds="lines"></span></div></div>
+    <div class="tab-row bar-line" data-holds="tabs"></div>${cell ? '<span class="acts"></span>' : ''}</div>
   <div class="bar-details" id="${pop}-details" popover></div><div class="bar-left" id="${pop}-left" popover></div>${cell ? `<div class="bar-pick" id="${pop}-pick" popover></div>` : ''}
   <div class="ask"></div>
   <div class="screen" data-holds="views"></div>`
   host.classList.toggle('cell', cell)
   const $ = <E extends HTMLElement = HTMLElement>(selector: string) => host.querySelector<E>(selector)!
   const top = $('.bar-top')
+  /**
+   * The acts of the view holding a cell come where they are read: after the head's verbs while the head shows, after
+   * the tabs on the one row of a cell with no head.
+   */
+  const placeActs = () => cell && (head ? top : $('.bar-line')).after($('.acts'))
   const details = $('.bar-details')
   const left = $('.bar-left')
   /** What the head leaves out: nothing at pane scale. */
@@ -350,6 +356,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     head = opts.head !== false
     top.hidden = !head
     host.classList.toggle('bare', cell && !head)
+    placeActs()
     if (!head) (headRegion?.close(), (headRegion = undefined))
     else if (!headRegion) headRegion = kit.region(top, 'card.head', at, omitted())
     else if (JSON.stringify(omitted()) !== omitWas) headRegion.options?.(omitted())
@@ -357,6 +364,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   }
 
   host.classList.toggle('bare', cell && !head)
+  placeActs()
   draw()
 
   return {
