@@ -47,7 +47,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { KeyPress } from '../../src/shared/keymap.ts'
  * @import { Action, Added, AddedLine, Badge } from '../../src/shared/extensions.ts'
  * @import { HeadItem, Ranked } from '../../src/shared/adds.ts'
- * @import { MenuEntry, MenuItem } from './menu.js'
+ * @import { MenuCheck, MenuEntry, MenuItem } from './menu.js'
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { BriefMarkdown } from '../../src/shared/brief.ts'
  * @import { Call } from '../../src/shared/api.ts'
@@ -620,6 +620,31 @@ function markSeen(ids) {
   })
 }
 
+/** The viewer's pin writes in flight, one after another. */
+let pinWrites = Promise.resolve()
+
+/**
+ * Pins `pin` (an action's or a line's id) in region `id` for the viewer, or unpins it: their layer of the layout
+ * (decision `region-overflow`). A pin a layer below (the config's, the renderer's) makes leaves their `unpinned`; any
+ * other goes after their pins. An unpin leaves their `pinned`, and goes into their `unpinned` while a layer below pins
+ * it. Their layout is
+ * read from `tower.store` just before it is written and only that region's entry changes, so a choice another window
+ * of theirs made for another region stays; an unpin no layer below pins any more is dropped as the entry is written.
+ * Pinning an action is seeing it.
+ * @param {string} id @param {string} pin @param {boolean} on
+ */
+function pinIn(id, pin, on) {
+  if (on) markSeen([pin])
+  pinWrites = pinWrites.then(async () => {
+    const stored = /** @type {Layout} */ ((await tower.store.get(LAYOUT_KEY)) ?? {})
+    const below = layoutOf(declaredLayout(board(), declared.layout ?? {}), CONFIG_LAYOUT, undefined)[id]?.pinned ?? []
+    const { pinned: was = [], unpinned: unpinnedWas = [], ...rest } = stored[id] ?? {}
+    const pinned = [...was.filter((p) => p !== pin), ...(on && !below.includes(pin) ? [pin] : [])]
+    const unpinned = [...unpinnedWas.filter((p) => p !== pin && below.includes(p)), ...(!on && below.includes(pin) ? [pin] : [])]
+    tower.store.set(LAYOUT_KEY, { ...stored, [id]: { ...rest, ...(pinned.length && { pinned }), ...(unpinned.length && { unpinned }) } })
+  })
+}
+
 /** What a region draws among its badges and never tucks, marked so: a worker's Dismiss and its exemptions. @param {string} dismiss @param {Added<Badge>[]} exemptions */
 const keptHtml = (dismiss, exemptions) => (dismiss || exemptions.length ? `<span class="region-keep" data-keep>${dismiss}${exemptions.map(badgeHtml).join('')}</span>` : '')
 
@@ -801,6 +826,8 @@ function kitRegion(el, id, subject, options) {
     host.replaceChildren(items, more)
     /** What each menu entry runs, by its key. @type {Map<string, (el: HTMLElement) => void>} */
     let runs = new Map()
+    /** Whether the menu lists what can be pinned, checked where pinned, in place of what is tucked. */
+    let pinning = false
     /** The tucked actions new to the viewer as the menu opened, by key: listed first, under New, while it stays open. @type {string[]} */
     let captured = []
     /** The last fit's fill order and what it tucked, the text it found cut, and the lines past the budget. */
@@ -824,6 +851,7 @@ function kitRegion(el, id, subject, options) {
         relist()
       },
       closed: () => {
+        pinning = false
         captured = []
         relist()
       },
@@ -908,13 +936,57 @@ function kitRegion(el, id, subject, options) {
       runs.set(key, (from) => void runAddedAt(from, { subject: at.key, action: r.action }))
       return { t: 'item', key, label: words.label, hint: words.hint, danger: words.destructive, fresh: dotOn(r, offered, had) }
     }
+    /** What the menu lists: what can be pinned while the viewer pins, else what `tucked` holds. @param {ReturnType<typeof fillOrder>} tucked @param {string[]} texts */
+    const list = (tucked, texts) => (pinning ? listPins() : listTucked(tucked, texts))
+    /**
+     * What can be pinned in the region, each checked where the layout pins it and saying who pinned it when it isn't
+     * the viewer: every action drawn, one per id, then each extension's lines, one per capability.
+     */
+    const listPins = () => {
+      runs = new Map()
+      const pins = layout()[id]?.pinned ?? []
+      const theirs = page.state().layout?.[id]?.pinned ?? []
+      const config = CONFIG_LAYOUT[id]?.pinned ?? []
+      const own = declared.layout?.[id]?.pinned ?? []
+      const lines = holds.includes('lines') && at.kind === 'card' ? rankedLines(board(), /** @type {Card} */ (at.value).id, undefined) : []
+      const drawn = new Set(ranked.map((r) => r.id))
+      /** @template T @param {T[]} all @param {(item: T) => string} idOf */
+      const firstOfEach = (all, idOf) => all.filter((item, n) => all.findIndex((other) => idOf(other) === idOf(item)) === n)
+      /** @type {[string, string][]} */
+      const pinnable = [
+        ...firstOfEach(shownActions(at).filter((a) => drawn.has(actionId(a))), actionId).map((a) => /** @type {[string, string]} */ ([actionId(a), actionWords(board(), a).label])),
+        ...firstOfEach(lines, lineId).map((l) => /** @type {[string, string]} */ ([lineId(l), `${l.cap}: ${l.text}`])),
+      ]
+      /** Who pinned `pin`, when it isn't the viewer. @param {string} pin @returns {string | undefined} */
+      const by = (pin) =>
+        theirs.includes(pin) ? undefined : config.includes(pin) ? (pins.includes(pin) ? 'pinned by your config' : 'pinned by your config, unpinned here') : own.includes(pin) ? `pinned by ${RENDERER}` : undefined
+      /** @type {MenuCheck[]} */
+      const checks = pinnable.map(([pin, label]) => {
+        const key = `${at.key} pin:${pin}`
+        const checked = pins.includes(pin)
+        runs.set(key, () => pinIn(id, pin, !checked))
+        return { t: 'check', key, label, hint: by(pin), checked }
+      })
+      const done = `${at.key} pinned`
+      runs.set(done, () => {
+        pinning = false
+        relist()
+        listed.focus(listedFirst())
+      })
+      listed.draw({
+        header: '<p>Pinned actions and lines are drawn first, while there is room.</p>',
+        entries: [{ t: 'group', label: 'Pin to the head', entries: checks }, { t: 'separator' }, { t: 'item', key: done, label: 'Done', stays: true }],
+      })
+    }
+    /** The key of the menu's first entry as it is listed now. */
+    const listedFirst = () => /** @type {HTMLElement | null} */ (pop.querySelector('[role^="menuitem"]'))?.dataset.key ?? ''
     /**
      * The menu and ⋯ for what `tucked` holds: its badges, the lines past the budget and the text the view lets go
      * (`texts`) in the header; the actions new as it opened first, under New, this once; the view's controls under the
-     * subject's name, the dangerous after a separator; the other actions in rank order.
+     * subject's name, the dangerous after a separator; the other actions in rank order; then "Pin to the head…".
      * @param {ReturnType<typeof fillOrder>} tucked @param {string[]} texts
      */
-    const list = (tucked, texts) => {
+    const listTucked = (tucked, texts) => {
       runs = new Map()
       const offered = offeredIds(board())
       const had = seenAmong(offered)
@@ -932,6 +1004,12 @@ function kitRegion(el, id, subject, options) {
         core.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: subjectName(at), entries: coreEntries })] : [],
         tuckedActions.map(({ r, key }) => actionItem(r, key, offered, had)),
       ].filter((section) => section.length)
+      const pin = `${at.key} pin`
+      runs.set(pin, () => {
+        pinning = true
+        relist()
+        listed.focus(listedFirst())
+      })
       listed.draw({
         header: [
           news.length ? '<p class="menu-once">New actions are listed here this once.</p>' : '',
@@ -939,7 +1017,7 @@ function kitRegion(el, id, subject, options) {
           ...linesLeft.map((l) => `<p class="menu-line">${esc(l.text)}</p>`),
           ...texts.map((t) => `<p>${esc(t)}</p>`),
         ].join(''),
-        entries: sections.flatMap((section, n) => [...(n ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...section]),
+        entries: [...sections.flatMap((section, n) => [...(n ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...section]), { t: 'separator' }, { t: 'item', key: pin, label: 'Pin to the head…', stays: true }],
       })
       const actionCount = core.length + news.length + tuckedActions.length
       const severe = tuckedBadges.filter(isSevere).length
