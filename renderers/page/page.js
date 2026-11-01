@@ -809,7 +809,9 @@ function kitRegion(el, id, subject, options) {
 
   /**
    * The `menu` form: the ranked items that fit drawn in place on one row, the rest tucked behind ⋯, a menu of them
-   * (`/menu.js`). The row is the one the region's badges and actions share; everything on it the region didn't draw is
+   * (`/menu.js`). ⋯ is drawn whenever the region holds anything to list or pin, tucked or not, so its menu's footer is
+   * always reachable and ⋯ keeps its place; its width is then taken from the room before the fill, and it shows a count
+   * only of what it hides. The row is the one the region's badges and actions share; everything on it the region didn't draw is
    * protected, and so is what it draws marked `data-keep`. The view's own controls marked `data-tuck` rank ahead of
    * every contribution, the highest rank first, so they leave last; once tucked, each is listed in the menu as a proxy
    * pressing the original. Each item's width is read while it is drawn and remembered while tucked; the region forgets
@@ -842,6 +844,8 @@ function kitRegion(el, id, subject, options) {
     let textsNow = []
     /** @type {AddedLine[]} */
     let linesLeft = []
+    /** Whether the region holds anything to list or pin: ⋯ is drawn while it does, in a place that doesn't move. */
+    let holding = false
     const relist = () => list(tuckedNow, textsNow)
     const listed = menu(more, {
       run: (item, from) => runs.get(item.key)?.(from),
@@ -1023,7 +1027,7 @@ function kitRegion(el, id, subject, options) {
           ...linesLeft.map((l) => `<p class="menu-line">${esc(l.text)}</p>`),
           ...texts.map((t) => `<p>${esc(t)}</p>`),
         ].join(''),
-        entries: [...sections.flatMap((section, n) => [...(n ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...section]), { t: 'separator' }, { t: 'item', key: pin, label: 'Pin to the head…', stays: true }],
+        entries: [...sections.flatMap((section, n) => [...(n ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), ...section]), ...(sections.length ? [/** @type {MenuEntry} */ ({ t: 'separator' })] : []), { t: 'item', key: pin, label: 'Pin to the head…', stays: true }],
       })
       const actionCount = core.length + news.length + tuckedActions.length
       const severe = tuckedBadges.filter(isSevere).length
@@ -1036,7 +1040,7 @@ function kitRegion(el, id, subject, options) {
       const label = `More on ${subjectName(at)}${said.length ? `: ${said.join(', ')}` : ''}`
       more.setAttribute('aria-label', label)
       more.dataset.tip = label
-      count.textContent = String(tucked.length + linesLeft.length)
+      count.textContent = tucked.length + linesLeft.length ? String(tucked.length + linesLeft.length) : ''
       const fresh = tuckedActions.some(({ r }) => dotOn(r, offered, had))
       if (severe || fresh) more.dataset.dot = severe ? 'severe' : 'new'
       else delete more.dataset.dot
@@ -1050,6 +1054,7 @@ function kitRegion(el, id, subject, options) {
         const budget = layout()[id]?.lines ?? parts.lines.length
         const { drawn } = drawCount(parts.lines, budget, { noun: 'line', say: (l) => l.text, pinned: (l) => pins.includes(lineId(l)) })
         linesLeft = parts.lines.filter((l) => !drawn.includes(l))
+        holding = parts.lines.length > 0 || ranked.length > 0 || badges.length > 0
         paintParts((html, slot, name) => write(name === 'actions' ? items : slot, html), { ...parts, lines: drawn.map(lineHtml).join('') })
       },
       prepare: () => {
@@ -1070,16 +1075,16 @@ function kitRegion(el, id, subject, options) {
         return () => {
           const keys = allowed.map((i) => i.key).join('\n')
           if (keys !== sig) was = allowed.length
-          const header = linesLeft.length > 0 || texts.length > 0
+          const always = holding || texts.length > 0
           const menuWidth = /** @type {number} */ (widths.get(more))
-          const fits = fill(allowed.map((i) => /** @type {number} */ (widths.get(i.el))), header ? room - menuWidth : room, header ? 0 : menuWidth, was, FIT_MARGIN)
+          const fits = fill(allowed.map((i) => /** @type {number} */ (widths.get(i.el))), always ? room - menuWidth : room, always ? 0 : menuWidth, was, FIT_MARGIN)
           was = fits
           sig = keys
           const inPlace = new Set(allowed.slice(0, fits))
           const tucked = order.filter((i) => !inPlace.has(i))
           const focused = document.activeElement
           order.forEach((item) => item.el.toggleAttribute('data-tucked', !inPlace.has(item)))
-          more.hidden = !tucked.length && !header
+          more.hidden = !tucked.length && !always
           if (more.hidden) listed.close()
           if (focused && tucked.some((i) => i.el.contains(focused))) more.focus({ preventScroll: true })
           orderNow = order
