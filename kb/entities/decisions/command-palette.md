@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-21",
   "reviewed": "2026-11-01",
-  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/test/palette.test.ts"]
+  "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
 }
 ---
 **Problem.** The tower's capabilities were reachable only by the mouse, by chords nobody had learned yet, or by tips
@@ -61,7 +61,10 @@ same palette, and only the drawing is a renderer's.
   facet in `VERBS` ([[board-verbs]]); the page's buttons read the same table.
 - The tower page ([`palette`](ref:hub/renderers/page/palette.js#palette)) draws it as a `<dialog>`, opens it on the
   keymap command `palette` (⌘K, rebound by the config's `keys`, [[keymap]]), dispatches picks through
-  [`doPick`](ref:hub/renderers/page/page.js#doPick) and keeps recent picks in `tower.store` as view state.
+  [`doPick`](ref:hub/renderers/page/page.js#doPick) and keeps recent picks in `tower.store` as view state. A pick of
+  an extension's action runs it through the handler its button runs
+  ([`runAddedAt`](ref:hub/renderers/page/page.js#runAddedAt)), which marks it seen for the viewer
+  ([[region-overflow]]): the renderer's handler does it, never the shared palette code.
 
 **Alternatives considered.**
 - Patterns as entries: stories don't fit a one-line list, and they turn the palette into reading matter.
