@@ -86,6 +86,12 @@ export function keepingFocus(el: HTMLElement, write: () => void) {
 const shownStrips = new WeakMap<HTMLElement, { of: string; left: number; on?: string }>()
 
 /**
+ * How each `.shown-tabs` strip marks its edges as of its row's latest draw. A draw that changed nothing keeps the same
+ * strip, so its scroll and wheel listeners are added once, the first time, and read the marking from here.
+ */
+const marks = new WeakMap<HTMLElement, () => void>()
+
+/**
  * Keeps a `.tab-row`'s `.shown-tabs` where the viewer left it through a redraw, scrolls a showing newly selected into
  * view, marks the edges past which more showings hide (`more-before`, `more-after`) and turns a mouse wheel over it
  * sideways. A selected showing as wide as the strip fills it unfaded, its controls in full. Call it after each draw of the row, with the id of the worker it is drawn for: another starts at its first.
@@ -113,8 +119,11 @@ export function keepShownTabs(row: HTMLElement, of: string) {
     strip.classList.toggle('more-before', faded && strip.scrollLeft > 0)
     strip.classList.toggle('more-after', faded && strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1)
   }
+  const listening = marks.has(strip)
+  marks.set(strip, mark)
   mark()
-  strip.addEventListener('scroll', mark)
+  if (listening) return
+  strip.addEventListener('scroll', () => marks.get(strip)!())
   strip.addEventListener('wheel', (e) => {
     if (strip.scrollWidth <= strip.clientWidth || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return
     e.preventDefault()
