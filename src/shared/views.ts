@@ -188,7 +188,8 @@ export type RegionOptions = Record<string, Record<string, unknown>> | { omit: st
  * A region a view asked the kit for: `update` with its subject as it stands; one holding views is handed `show`, a
  * subject below its own, true when a view in it took it (a tabs region opens that view's tab), `visible`, whether
  * the view holding it is seen, which it passes to the views it shows (@since 1.111), and `options`, the options it
- * was asked with as they stand now (@since 1.113).
+ * was asked with as they stand now (@since 1.113). A region of contributions may take `visible` too: a renderer that
+ * marks what is new there forgets what it marked while the view is hidden.
  */
 export type RegionHandle = { update(subject: Subject): void; show?(subject: Subject): boolean; visible?(on: boolean): void; options?(options: RegionOptions): void; close(): void }
 

@@ -378,7 +378,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       panes.update(now)
     },
     show: (s) => panes.show?.(s) ?? false,
-    visible: (on) => panes.visible?.(on),
+    visible: (on) => (panes.visible?.(on), headRegion?.visible?.(on)),
     close() {
       headRegion?.close()
       panes.close()
