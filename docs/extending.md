@@ -264,6 +264,12 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 - **Verbs**: `POST /<verb>` with a JSON body: `spawn`, `resume`, `submit`, `keys`, `kill`, `collection/create`,
   `tidy` and the rest, and the extensions' verbs by their names (`reviews/append`). Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
   the tower answers 403, its guard against other web pages.
+- **Prompts** (API 1.134): `submit` types after whatever the worker's composer holds and is queued while Claude
+  works; it is refused (`not_at_prompt`) while the worker asks the user something or waits on one of Claude's
+  screens, where the text would answer it. `submit/at-prompt` submits only while the worker sits at its prompt (idle,
+  done, failed or watching) with nothing in its composer, which the card offers as its `prompt` verb. It refuses
+  `not_at_prompt` or `composer_holds` as the call arrives, and `moved` when the worker moved while the text was typed:
+  Enter is not pressed, and the text waits in the composer. A composer for people calls this one.
 - **Which page the user is at** (API 1.129): a page names itself and its renderer on its board stream,
   `GET /board?viewer=<id>&renderer=<name>` (its own id, 8 to 64 letters, digits and dashes, new on every load), and
   calls `POST /viewer/active {viewer}` when it gains focus and as the user acts. The board's `viewers.active` is the
@@ -286,7 +292,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 - **Streams**: a session's screen, an interactive terminal, a shell (`screen/<id>`, `terminal/<id>`, `shell/<id>`),
   multiplexed on one connection, `GET /mux`.
 - **Errors** are data: `{t: 'error', code, message}`. Branch on `code` (`invalid`, `not_found`, `refused`,
-  `unavailable`…), never on `message`.
+  `unavailable`, `not_at_prompt`…), never on `message`.
 
 `GET /schema` serves every verb's input and reply, and the error, as JSON Schema, and every GET route as a read
 (`reads`, keyed by name: its `path` with named params like `/screen/{id}`, its `kind`, `json`, `stream`, `page` or

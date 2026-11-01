@@ -1,5 +1,6 @@
 import type { LogEvent, SessionHeader } from '../shared/model.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
+import { heldAfter } from './composer.ts'
 import { isTyped } from './input.ts'
 import { delivered } from './messages.ts'
 import { BOOTING, nextState, type SessionState, type Status } from './status.ts'
@@ -81,6 +82,10 @@ export type Facts = {
   hired: string[]
   /** When someone last typed into the session. */
   typedAt?: number
+  /** How many times someone typed into the session. */
+  typed: number
+  /** When Claude's composer may have started holding text, until a prompt submitted from it empties it (`heldAfter`). */
+  heldSince?: number
   /** When Claude last raised a hook or a mod event, its subagents' included. */
   heardAt?: number
   hostStopped?: boolean
@@ -164,7 +169,7 @@ export type FoldEvent = LogEvent | Unreadable
 export type Session = { header: SessionHeader; facts: Facts }
 
 export const initialFacts = (header: SessionHeader): Facts => ({
-  state: BOOTING, cols: header.cols, rows: header.rows, turns: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
+  state: BOOTING, cols: header.cols, rows: header.rows, turns: 0, typed: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
   spend: [], tokens: [], turnSpans: [], waits: [], prompts: [], asks: [], failures: [], subagentRuns: [], limitReadings: {},
   pages: [], sent: [], received: [], extensionFacts: [], exempt: [],
 })
@@ -405,6 +410,10 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
   }
 }
 
+/** The main loop's current turn has called a tool or stepped: an Esc now leaves its prompt out of the composer. */
+const streamed = (startedAt: number, { tool, steppedAt, turnStartedAt }: Facts) =>
+  tool !== undefined || (steppedAt !== undefined && turnStartedAt !== undefined && steppedAt >= startedAt + turnStartedAt * 1000)
+
 /**
  * Output draws the screen, and changes no fact but a blocking screen's state: otherwise the same facts come back, so a
  * caller can tell nothing changed.
@@ -418,8 +427,9 @@ const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
     ...facts,
     state: nextState(facts.state, event),
     conversations: conversationsAfter(facts.conversations, event),
+    heldSince: heldAfter(facts.heldSince, facts.state.status, streamed(startedAt, facts), event),
   }
-  if (event[1] === 'i') return isTyped(event[2]) ? { ...next, typedAt: event[0] } : next
+  if (event[1] === 'i') return isTyped(event[2]) ? { ...next, typedAt: event[0], typed: facts.typed + 1 } : next
   if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitCode: event[2].exitCode, signal: event[2].signal, exitedFrom: facts.state.status }
   if (event[1] === 'r') {
     const [cols, rows] = event[2].split('x').map(Number)

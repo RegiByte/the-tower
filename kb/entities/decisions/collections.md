@@ -61,7 +61,8 @@ primitives every renderer can reach.
   `collection/delete`, `collection/restore` (an undo of a delete, claimed as a create claims a name, so it never
   overwrites, [[press-feedback]]), and `submit`.
 - `submit` is a card verb ([[board-verbs]]) on a worker at its composer (idle, working, watching, done or failed): a
-  booting worker may be on a startup dialog, and one needing input on a question, so keys there would answer them.
+  booting worker may be on a startup dialog, and one needing input on a question, so keys there would answer them,
+  and the tower refuses it there too ([[submit-at-prompt]]).
   [`submitText`](ref:hub/src/machine.ts#submitText) types the text as the user would, over one host connection:
   bracketed pastes small enough to land as typed text ([`promptPastes`](ref:hub/src/shared/protocol.ts#promptPastes),
   whose comment says why), then Enter as its own write once the host has written the last paste.
@@ -103,5 +104,5 @@ primitives every renderer can reach.
   names an item ([[shelf-items]]).
 
 **Impact.** The collections are the third kind of stored state ([[logs-are-facts]]). Board floors carry
-`collections`, cards may offer `submit`, and `tower submit` submits through the same `submitText`. The tower page's
+`collections`, cards may offer `submit`, and `tower submit` submits through the tower's same `submit`. The tower page's
 drafts and Tower 3D's corkboard ([[corkboard]]) are each a renderer's own feature over one shared editor.
