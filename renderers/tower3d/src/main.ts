@@ -14,7 +14,10 @@ import { ICON } from '../../../src/shared/icons.ts'
 import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall, type DiffLayout, type StatsRange } from '../../../src/shared/panels.ts'
 import { cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, noteCallOf, resolveAction, reviewsHtml, threadCheckout, threadViewOf, type ThreadPlace, type ThreadView } from '../../../extensions/reviews/client/panel.ts'
 import type { NoteCall } from '../../../extensions/reviews/threads.ts'
-import { VIEWER_KEYS, readViewer, type Viewer } from '../../../src/shared/viewer.ts'
+import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer } from '../../../src/shared/viewer.ts'
+import { actionId, isFresh as isNewAction, offeredIds } from '../../../src/shared/adds.ts'
+import { declaredLayout, layoutOf } from '../../../src/shared/views.ts'
+import type { Layout } from '../../../src/shared/regions.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
@@ -53,7 +56,7 @@ import { closeTerm, mountTerm } from './term.ts'
 import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
-import { addedKey, activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { addedKey, deskVerbs, activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, keymapSheetHtml, type Keys } from '../../../src/shared/keymap.ts'
 import { MOVE_KEYS, move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
@@ -446,7 +449,8 @@ function renderPanel() {
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
     if (!c) return unfocus()
-    $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), isArmed, held, tower.framed)
+    $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskEntry(board), isArmed, dottedNow(board), held, tower.framed)
+    sawDesk(board, c)
     $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh))
     keepShownTabs($('desk-tabs').parentElement!, c.id)
     if (s.deskTab === 'reviews') drawThread($('desk-reviews'), cardThread(c))
@@ -646,6 +650,7 @@ function openShellPick(first: string) {
 
 /** Back to walking: the terminal closes and the camera returns to your eyes. */
 function unfocus() {
+  s.dotted.clear()
   closeTerm($('desk-screen'))
   show('desk', false)
   show('desk-brief', false)
@@ -887,6 +892,7 @@ function focusDesk(id: string) {
   closeDoc()
   closeDraftPanel()
   setPanel({ kind: 'desk', id })
+  s.dotted.clear()
   s.deskTab = 'screen'
   dropPick()
   s.view = 'focus'
@@ -1233,7 +1239,12 @@ const seeing = loop({
     keep: ({ field, value }) => keepViewer(field, value),
   },
 })
-addEventListener('focus', () => seeing.dispatch({ type: 'focus', focused: true }))
+addEventListener('focus', () => {
+  seeing.dispatch({ type: 'focus', focused: true })
+  const desk = panelAs('desk')
+  const c = desk && s.board && findCard(s.board, desk.id)
+  if (c) sawDesk(s.board!, c)
+})
 // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
 addEventListener('blur', () => setTimeout(() => seeing.dispatch({ type: 'focus', focused: document.hasFocus() })))
 document.addEventListener('visibilitychange', () => seeing.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
@@ -1241,9 +1252,11 @@ document.addEventListener('visibilitychange', () => seeing.dispatch({ type: 'vis
 /** Your record as `tower.store` keeps it now: another renderer of yours may have changed it. */
 function rereadViewer() {
   if (FIXTURE !== undefined) return
+  rereadLayout()
   readViewer(tower.store.get).then((viewer) => {
     const was = s.viewer
     s.viewer = viewer
+    if (viewer.seen === null && s.board) keepViewer('seen', seenOf(null, offeredIds(s.board)))
     seeing.dispatch({ type: 'stored', viewer })
     if (viewer.statsRange !== was.statsRange) rangeStats()
     if (viewer.briefMarkdown !== was.briefMarkdown) redrawDeskBrief()
@@ -1254,6 +1267,57 @@ function rereadViewer() {
 function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
   s.viewer = { ...s.viewer, [field]: value }
   if (FIXTURE === undefined) tower.store.set(VIEWER_KEYS[field], value)
+}
+
+/** Your own layout of this renderer, as every renderer keeps the viewer's: `layout.<renderer>` in `tower.store`. */
+const layoutKey = (name: string) => `layout.${name}`
+
+/** Your layout as `tower.store` keeps it now, the desk drawn again when it changed. */
+function rereadLayout() {
+  const name = s.declared?.name
+  if (!name) return
+  tower.store.get(layoutKey(name)).then((kept) => {
+    const stored = (kept ?? undefined) as Layout | undefined
+    if (JSON.stringify(stored) === JSON.stringify(s.storedLayout)) return
+    s.storedLayout = stored
+    renderPanel()
+  })
+}
+
+/**
+ * The layout Tower 3D draws by (decision `region-overflow`): its `renderer.json`'s over what started extensions give
+ * their own regions, then the config's, then yours.
+ */
+const layoutNow = (board: Board) => layoutOf(declaredLayout(board, s.declared?.layout ?? {}), s.declared?.configLayout ?? {}, s.storedLayout)
+const deskEntry = (board: Board) => layoutNow(board)['card.desk']
+
+/** The actions you have seen, by `actionId`, across every renderer of yours. */
+const seenNow = (board: Board) => seenOf(s.viewer.seen, offeredIds(board))
+
+/** Whether the open desk draws an action's "new" dot: while it is new to you, and until the panel closes once it drew it so. */
+const dottedNow = (board: Board) => {
+  const offered = offeredIds(board)
+  const seen = seenNow(board)
+  return (id: string) => s.dotted.has(id) || isNewAction(offered, seen, id)
+}
+
+/** `ids` seen by you, kept for every renderer of yours when that adds any. */
+function sawActions(board: Board, ids: string[]) {
+  const seen = sawAll(seenNow(board), ids)
+  if (seen) keepViewer('seen', seen)
+}
+
+/**
+ * The verbs new to you that worker `c`'s desk draws count as seen once drawn in a focused window; the desk keeps their
+ * dots until its panel closes, so you see them. Run at every paint of the desk and when the window gains focus.
+ */
+function sawDesk(board: Board, c: Card) {
+  if (!document.hasFocus()) return
+  const offered = offeredIds(board)
+  const seen = seenNow(board)
+  const fresh = deskVerbs(board, c, deskEntry(board)).map((r) => r.id).filter((id) => isNewAction(offered, seen, id))
+  for (const id of fresh) s.dotted.add(id)
+  sawActions(board, fresh)
 }
 
 function dismissWait(key: string) {
@@ -2531,6 +2595,7 @@ $('desk-head').addEventListener('click', (e) => {
   if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, () => tried(() => tower.run(offeredCall(c, 'reap', c.callsign))))
   if (what === 'added') {
     const { k, action } = JSON.parse(button!.dataset.added!) as { k: number; action: VerbAction & { cap: string } }
+    sawActions(board, [actionId(action)])
     if (actionWords(board, action).destructive && !confirmed(addedKey(c, action, k))) return
     return pressing(button!, () => tried(() => runVerb(action)))
   }
@@ -2916,6 +2981,7 @@ $('draft-note').addEventListener('click', (e) => {
 
 idle(tower.framed)
 Promise.all([loadModels(), tower.recall(), loadFaces(), loadKit(), tower.renderer()]).then(([m, kept, , kit, renderer]) => {
+  s.declared = renderer ?? undefined
   checkWardrobe(m.catalogue)
   s.models = m
   s.chairKit = chairKit(m.desk.getObjectByName('chair')!)

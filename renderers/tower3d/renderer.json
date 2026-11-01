@@ -1,8 +1,8 @@
 {
   "regions": [
-    { "id": "card.desk", "subject": "card", "holds": ["badges", "lines", "verbs"], "description": "the worker's panel at its desk" },
-    { "id": "floor.console", "subject": "floor", "holds": ["tidy"], "description": "the floor's Tidy" },
-    { "id": "conversation.head", "subject": "conversation", "holds": ["badges"], "description": "the conversation's heading in the logbook" }
+    { "id": "card.desk", "subject": "card", "holds": ["badges", "lines", "verbs"], "overflows": ["wrap"], "description": "the worker's panel at its desk" },
+    { "id": "floor.console", "subject": "floor", "holds": ["tidy"], "overflows": ["wrap"], "description": "the floor's Tidy" },
+    { "id": "conversation.head", "subject": "conversation", "holds": ["badges"], "overflows": ["wrap"], "description": "the conversation's heading in the logbook" }
   ],
   "kit": [],
   "keeps": [

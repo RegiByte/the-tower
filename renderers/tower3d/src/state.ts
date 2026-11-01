@@ -3,6 +3,8 @@ import type { ChairKit, Chairs } from './chairs.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
 import type { Board, Card, ShelfSelf, Stats, tower } from './api.ts'
+import type { Layout } from '../../../src/shared/regions.ts'
+import type { Renderer } from '../../../src/shared/model.ts'
 import type { Note } from './cork.ts'
 import type { ArcadeSign, Cabinet } from './arcade.ts'
 import type { Desk, Station } from './desk.ts'
@@ -124,8 +126,12 @@ export type State = {
   catNames: CatNames
   /** The waits visited by N this round (`Heed`); what you dismissed and how waits ring are the attention machine's (`/attend.js`). */
   visited: ReadonlySet<string>
-  /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range. */
+  /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range, the actions seen. */
   viewer: Viewer
+  /** Tower 3D as `GET /renderers` served it at start: what its `renderer.json` lays out and the config's layout for it. */
+  declared: Renderer | undefined
+  /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
+  storedLayout: Layout | undefined
   /** The lighting setting as last chosen, kept in `tower.store` under `LIGHTING_KEY`: the page draws `LIT`, what it started with. */
   lighting: boolean
   /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
@@ -153,6 +159,8 @@ export type State = {
   /** Every showing you have opened, by `shownKey`, kept with your spot; and every one on the last board, to spot new ones. */
   seenShown: Set<string>
   lastShown: Set<string>
+  /** The actions the open desk drew with a "new" dot: drawn so until its panel closes, though seen once drawn. */
+  dotted: Set<string>
   /** The draft taken off a corkboard, and the one open in the editor (extensions/drafts/client/drafts.ts). */
   carrying: Held | undefined
   /** A beer from the roof's bar in your right hand. */
@@ -232,9 +240,9 @@ export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
-  visited: new Set(), viewer: VIEWER_DEFAULT, lighting: LIT, waitedAt: 0, lastStatus: new Map(),
+  visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: LIT, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
-  doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(),
+  doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(), folds: new Set(), treeFolds: new Set(), pick: undefined, picking: false, pickText: '', pickFresh: false, jump: undefined,
   aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, armed: undefined, down: undefined,
   doorMode: false, doorHeld: false, still: false,
