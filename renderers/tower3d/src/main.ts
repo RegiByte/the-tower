@@ -2530,8 +2530,8 @@ $('desk-head').addEventListener('click', (e) => {
   if (what === 'let-go') return confirmed(`let-go ${c.id}`) && pressing(button!, () => letWorkerGo(c))
   if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, () => tried(() => tower.run(offeredCall(c, 'reap', c.callsign))))
   if (what === 'added') {
-    const { n, action } = JSON.parse(button!.dataset.added!) as { n: number; action: VerbAction & { cap: string } }
-    if (actionWords(board, action).destructive && !confirmed(addedKey(c, n))) return
+    const { k, action } = JSON.parse(button!.dataset.added!) as { k: number; action: VerbAction & { cap: string } }
+    if (actionWords(board, action).destructive && !confirmed(addedKey(c, action, k))) return
     return pressing(button!, () => tried(() => runVerb(action)))
   }
 })
