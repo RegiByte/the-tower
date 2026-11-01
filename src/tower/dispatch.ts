@@ -18,7 +18,7 @@ import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
-import { hostRequest, reap, revealInFinder, runEditor, submitText, termsRequest } from '../machine.ts'
+import { hostRequest, reap, reveal, runEditor, submitText, termsRequest } from '../machine.ts'
 import { apiError, isApiError, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
@@ -832,7 +832,7 @@ export const dispatch = defineResource({
       reap: ({ id }) => reapSession(id),
       'reap/process': ({ id, pid }) => reapProcess(id, pid),
       open: ({ dir }) => openDir(dir),
-      reveal: ({ path: target }) => onPath(target, revealInFinder),
+      reveal: ({ path: target }) => onPath(target, reveal),
       edit: ({ path: target, line }) =>
         onPath(target, (file) => (line === undefined ? inEditor('open', { path: file }) : inEditor('goto', { path: file, line: String(line) }))),
       'shell/spawn': ({ project, cwd }) => terms({ t: 'spawn', project, cwd, ...SHELL_SIZE }),

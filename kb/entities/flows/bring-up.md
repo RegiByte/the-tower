@@ -38,7 +38,7 @@ sequenceDiagram
 - Each daemon names where it serves and who holds it ([`daemons`](ref:hub/src/machine.ts#daemons)). A socket lives
   in the system root, so it is held by this system's daemon when it answers. The tower's port (the config's `port`,
   [`towerPort`](ref:hub/src/shared/model.ts#towerPort), [[port-in-config]]) is held by this system's tower when the
-  process listening on it runs the tower's server with this system's config in its environment (`ps -E`); anything
+  process listening on it runs the tower's server with this system's config in its environment (`ps -E`, `ps e` under WSL); anything
   else there is something else, and [`bringAllUp`](ref:hub/src/machine.ts#bringAllUp) refuses before starting
   anything. It also refuses a daemon whose place is free while its pid file names this system's daemon still running
   ([`startedPid`](ref:hub/src/machine.ts#startedPid)): a tower started before the config's port changed, which

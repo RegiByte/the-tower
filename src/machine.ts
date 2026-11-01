@@ -9,6 +9,7 @@ import { run as runGit } from './git.ts'
 import { parseListening, parseProcesses, peers, resources, type ClaudeRegistration, type Peer, type Process, type Resource } from './bridge/resources.ts'
 import { connectHost, connectTerms } from './shared/client.ts'
 import { withoutParentSession } from './shared/env.ts'
+import { platform } from './platform.ts'
 import type { SystemPaths } from './shared/paths.ts'
 import { answers } from './shared/socket.ts'
 import { promptPastes, SUBMIT_KEY, type FromHost, type HostLive, type ToHost } from './shared/protocol.ts'
@@ -98,7 +99,7 @@ const HOST_SCRIPT = path.join(import.meta.dirname, 'host', 'main.ts')
 export type ProcessScan = { procs: Process[]; hosts: Set<number> }
 
 export const scanProcesses = async (): Promise<ProcessScan> => {
-  const procs = parseProcesses(...(await Promise.all([run('ps', ['-A', '-ww', '-o', 'pid=,ppid=,command=']), run('ps', ['-A', '-ww', '-E', '-o', 'pid=,command='])])))
+  const procs = parseProcesses(...(await Promise.all([run('ps', ['-A', '-ww', '-o', 'pid=,ppid=,command=']), run('ps', ['-A', '-ww', platform().psEnvironment, '-o', 'pid=,command='])])))
   return { procs, hosts: new Set(procs.filter((proc) => proc.command.endsWith(HOST_SCRIPT)).map((proc) => proc.pid)) }
 }
 
@@ -168,10 +169,8 @@ export const originUrl = async (dir: string): Promise<string | undefined> => {
   return webUrl(r.stdout.trim())
 }
 
-/** Shows `target` selected in a Finder window. */
-export const revealInFinder = async (target: string): Promise<void> => {
-  await promisify(execFile)('open', ['-R', target])
-}
+/** Shows `target` selected in the desktop's file manager: Finder, or Windows' Explorer under WSL. */
+export const reveal = (target: string): Promise<void> => platform().reveal(target)
 
 /** Runs one of the user's editor commands, an argv, to its end. */
 export const runEditor = async ([command, ...args]: string[]): Promise<void> => {
@@ -211,7 +210,7 @@ const listenerOn = async (port: number): Promise<number | undefined> => {
  * entries, spaces in paths included.
  */
 const servesConfig = async (pid: number, config: string): Promise<boolean> => {
-  const env = `${await run('ps', ['-E', '-ww', '-o', 'command=', '-p', String(pid)])} `.replace(/\n/g, ' ')
+  const env = `${await run('ps', [platform().psEnvironment, '-ww', '-o', 'command=', '-p', String(pid)])} `.replace(/\n/g, ' ')
   if (env.includes(' TOWER_CONFIG=')) return env.includes(` TOWER_CONFIG=${config} `)
   const home = path.dirname(path.dirname(config))
   return config === path.join(home, '.tower', 'config.json') && env.includes(` HOME=${home} `)

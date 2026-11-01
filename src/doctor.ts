@@ -21,6 +21,7 @@ import { ConfigError, editorArgv, towerPort, type Config } from './shared/model.
 import type { SystemPaths } from './shared/paths.ts'
 import type { Reads } from './shared/shelf-page.ts'
 import { readConfig } from './system.ts'
+import { detected } from './platform.ts'
 
 export type Verdict = { level: 'ok' | 'warn' | 'fail'; what: string; fix?: string }
 
@@ -44,10 +45,15 @@ const ran = async (file: string, args: string[]): Promise<Ran | undefined> => {
   }
 }
 
-const macos = (): Verdict =>
-  process.platform === 'darwin'
-    ? { level: 'ok', what: 'macOS' }
-    : { level: 'fail', what: `${process.platform}: the tower runs on macOS only`, fix: 'run it on a Mac (it reads ps -E, lsof and launchd re-parenting)' }
+/** On a platform the tower doesn't run on, the platform's own check fails first and names the fix that matters. */
+const installs = (tool: string): string => detected()?.installs(tool) ?? `install ${tool}`
+
+const supported = (): Verdict => {
+  const here = detected()
+  return here
+    ? { level: 'ok', what: here.name }
+    : { level: 'fail', what: `${process.platform}: the tower runs on macOS and WSL 2 only`, fix: 'run it on a Mac or in WSL 2 (decision platforms)' }
+}
 
 const node = (): Verdict =>
   Number(process.versions.node.split('.')[0]) >= NODE_MAJOR
@@ -61,13 +67,13 @@ const onPath = async (command: string, args: string[], fix: string): Promise<Ver
 
 const gitVersion = async (): Promise<Verdict> => {
   const run = await ran('git', ['--version'])
-  if (!run) return { level: 'fail', what: 'git is not on the PATH', fix: 'xcode-select --install' }
+  if (!run) return { level: 'fail', what: 'git is not on the PATH', fix: installs('git') }
   const what = run.stdout.trim()
   const [major, minor] = (/(\d+)\.(\d+)/.exec(what) ?? []).slice(1).map(Number)
   const [wantMajor, wantMinor] = GIT_MINIMUM
   return major > wantMajor || (major === wantMajor && minor >= wantMinor)
     ? { level: 'ok', what }
-    : { level: 'fail', what: `${what}, older than ${GIT_MINIMUM.join('.')}`, fix: 'brew install git, or update the Command Line Tools: xcode-select --install' }
+    : { level: 'fail', what: `${what}, older than ${GIT_MINIMUM.join('.')}`, fix: detected()?.newerGit ?? 'install a newer git' }
 }
 
 const claudeVersion = async (): Promise<Verdict> => {
@@ -224,12 +230,13 @@ const readable = (paths: SystemPaths): Config | Error => {
 export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
   const config = readable(paths)
   return [
-    macos(),
+    supported(),
     node(),
     await claudeVersion(),
     await claudeSignedIn(),
     await gitVersion(),
-    await onPath('curl', ['--version'], 'xcode-select --install'),
+    await onPath('curl', ['--version'], installs('curl')),
+    await onPath('lsof', ['-h'], installs('lsof')),
     writable(paths),
     configValid(paths, config),
     await editor(config),
