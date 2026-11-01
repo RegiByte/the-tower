@@ -5,9 +5,10 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { contractOf, goneFrom, parseContract, readOne, replacementProblem, type LoadProblem } from './bridge/extensions.ts'
+import { contractOf, goneFrom, parseContract, readOne, rendererLayoutProblems, replacementProblem, type LoadProblem } from './bridge/extensions.ts'
 import { CliError } from './cli-error.ts'
 import { BUNDLED_DIR, CONTRACT_FILE, foundIn, MANIFEST_FILE } from './extensions.ts'
+import { rendererRegions } from './renderers.ts'
 import { runProcess } from './run.ts'
 import { API_VERSION } from './shared/api.ts'
 import { BUNDLED, capabilityOf, Manifest, meets, type ExtensionView } from './shared/extensions.ts'
@@ -58,7 +59,7 @@ const startProblems = async (dir: string, settings: unknown): Promise<LoadProble
 
 /**
  * Every problem the tower would find in the folder: its manifest and settings (the config's, when it names the
- * extension), its contract and, replacing a bundled capability, the bundled one's; against the running tower's
+ * extension), a layout of a region a renderer declares, its contract and, replacing a bundled capability, the bundled one's; against the running tower's
  * registry when `views` are given; then its start. A manifest that doesn't load isn't started; one that does is answered with them.
  */
 export const checkFolder = async (dir: string, config: Config, views: ExtensionView[] | undefined): Promise<{ id: string; problems: LoadProblem[]; manifest?: Manifest }> => {
@@ -70,7 +71,7 @@ export const checkFolder = async (dir: string, config: Config, views: ExtensionV
   if (!read.manifest || read.problems.some((p) => p.level === 'error')) return { id, problems: read.problems }
   const cap = capabilityOf(read.manifest)
   const replaced = (BUNDLED as readonly string[]).includes(cap) ? replacementProblem(read.manifest, found, foundIn(cap, true, path.join(BUNDLED_DIR, cap))) : undefined
-  const problems = [...read.problems, ...(replaced ? [replaced] : []), ...(views ? runningProblems(read.manifest, id, views) : [])]
+  const problems = [...read.problems, ...rendererLayoutProblems(read.manifest, rendererRegions(config)), ...(replaced ? [replaced] : []), ...(views ? runningProblems(read.manifest, id, views) : [])]
   return { id, problems: [...problems, ...(await startProblems(dir, read.settings))], manifest: read.manifest }
 }
 

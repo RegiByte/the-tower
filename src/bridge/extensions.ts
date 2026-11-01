@@ -10,7 +10,7 @@ import { SVG_PATH } from '../shared/icons.ts'
 import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { RUNTIMES } from '../shared/model.ts'
-import { USER_LAYOUT_KEYS } from '../shared/regions.ts'
+import { USER_LAYOUT_KEYS, type RendererRegions } from '../shared/regions.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
@@ -614,6 +614,28 @@ const viewProblems = (manifest: Manifest): LoadProblem[] => [
 
 /** A key of a region's layout in a manifest that is the user's alone, at its path. */
 const USER_LAYOUT_KEY = new RegExp(`^regions\\..+\\.layout\\.(${USER_LAYOUT_KEYS.join('|')})$`)
+
+/**
+ * Each region a manifest lays out that a renderer declares itself: an extension lays out only its own regions, so
+ * that layout is ignored (decision `region-overflow`). A warning, not a refusal: its views and region still work.
+ */
+export const rendererLayoutProblems = (manifest: Manifest, renderers: RendererRegions): LoadProblem[] =>
+  Object.entries(manifest.regions ?? {}).flatMap(([id, region]) => {
+    const declaring = renderers.filter((r) => r.regions.includes(id)).map((r) => r.name)
+    return region.layout && declaring.length
+      ? [warn('invalid', `${manifest.id} lays out region ${id}, which ${declaring.join(' and ')} ${declaring.length > 1 ? 'declare' : 'declares'}: an extension lays out only its own regions, so this layout is ignored`, `regions.${id}.layout`)]
+      : []
+  })
+
+/** `resolved` with each extension's `rendererLayoutProblems` against `renderers` added to its problems. */
+export const withRendererLayouts = (resolved: Resolved, renderers: RendererRegions): Resolved => {
+  const added = <T extends { manifest?: Manifest; problems: LoadProblem[] }>(e: T): T => (e.manifest ? { ...e, problems: [...e.problems, ...rendererLayoutProblems(e.manifest, renderers)] } : e)
+  return {
+    order: resolved.order,
+    accepted: new Map([...resolved.accepted].map(([id, a]) => [id, added(a)])),
+    refused: new Map([...resolved.refused].map(([id, r]) => [id, added(r)])),
+  }
+}
 
 /**
  * A name the manifest gives a verb, a command or a view alike: pins, hides and what a viewer has seen name each by

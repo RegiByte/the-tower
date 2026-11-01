@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { hiddenBelow } from './shelf.ts'
 import { chordProblem } from './shared/keymap.ts'
 import { ConfigError, type Config, type Renderer, type RendererConfig } from './shared/model.ts'
-import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Declared, type Layout, type Region } from './shared/regions.ts'
+import { HOLDS, KIT_MEMBERS, REGION_ID, SCALES, type Declared, type Layout, type Region, type RendererRegions } from './shared/regions.ts'
 
 /** The default of `renderer` in the config. */
 export const DEFAULT_RENDERER = 'page'
@@ -22,19 +22,32 @@ const BUILT_INS: Record<string, RendererConfig> = {
 /** A name that is one path segment of `/r/<name>/`. */
 export const RENDERER_NAME = /^[\w-]+$/
 
-/** Every renderer: the built-ins in their order, then the config's own. A config renderer with no root to serve is a config error. */
-export const renderersOf = (config: Config): Renderer[] => {
+/** Each renderer's name and its config, the built-in's fields under the config's: the built-ins in their order, then the config's own. */
+const configsOf = (config: Config): [string, RendererConfig][] => {
   const declared = config.renderers ?? {}
-  const names = [...new Set([...Object.keys(BUILT_INS), ...Object.keys(declared)])]
-  return names.map((name) => {
+  return [...new Set([...Object.keys(BUILT_INS), ...Object.keys(declared)])].map((name) => [name, { ...BUILT_INS[name], ...declared[name] }])
+}
+
+/**
+ * The regions each renderer declares in its `renderer.json`: what no extension lays out, the config's renderers
+ * included. Read apart from `renderersOf`, so a config's bad layout doesn't hide them; a renderer given no root declares none.
+ */
+export const rendererRegions = (config: Config): RendererRegions =>
+  configsOf(config).map(([name, { root, entry = 'index.html' }]) => {
+    const declared = root ? declaredAt(root, entry) : undefined
+    return { name, regions: declared && 'regions' in declared ? declared.regions.map((r) => r.id) : [] }
+  })
+
+/** Every renderer: the built-ins in their order, then the config's own. A config renderer with no root to serve is a config error. */
+export const renderersOf = (config: Config): Renderer[] =>
+  configsOf(config).map(([name, renderer]) => {
     if (!RENDERER_NAME.test(name)) throw new ConfigError(`renderers."${name}" in the config: a renderer's name is letters, digits, "_" and "-"`)
-    const { root, entry = 'index.html', settings = {}, layout = {} } = { ...BUILT_INS[name], ...declared[name] }
+    const { root, entry = 'index.html', settings = {}, layout = {} } = renderer
     if (!root) throw new ConfigError(`renderers.${name} in the config has no "root": the directory its built files are in`)
     const configLayout = LayoutSchema.safeParse(layout)
     if (!configLayout.success) throw new ConfigError(`renderers.${name}.layout in the config: ${layoutIssues(configLayout.error)}`)
     return { name, root, entry, available: existsSync(path.join(root, entry)), settings, configLayout: configLayout.data, ...declaredAt(root, entry) }
   })
-}
 
 /** The file a renderer declares its regions in, at its root. */
 export const DECLARED_FILE = 'renderer.json'
