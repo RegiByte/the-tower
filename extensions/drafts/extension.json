@@ -4,6 +4,7 @@
   "title": "Drafts",
   "description": "Prompts kept for later: edited in a renderer, then sent to a new session or typed into a worker, and deleted.",
   "requires": { "tower": "1.125" },
+  "server": "server.ts",
   "client": "client",
   "views": {
     "editor": {
@@ -29,5 +30,6 @@
       "label": "Drafts",
       "description": "Prompts kept for later: each starts a new session or is typed into a worker, then is deleted."
     }
-  }
+  },
+  "spawn": { "launch": true }
 }

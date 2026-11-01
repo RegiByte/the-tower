@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The system prompt carries the everyday recipes; the tower:handbook skill is the handbook",
-  "summary": "The tower brief every worker gets in its system prompt says what it does on every turn, most important first: tower whoami, reaching a peer by its message-as name, tower show for every file or page made for the user, kept where it lasts, stopping what it started by PID, tower keep drafts. The tower:handbook skill holds the rest: reviews, hiring, crews, kept items, the shelf and the config, worktrees and the API.",
+  "summary": "The tower brief every worker gets in its system prompt says what it does on every turn, most important first: tower whoami, reaching a peer by its message-as name, tower show for every file or page made for the user, kept where it lasts, stopping what it started by PID, editing a kept item in place. The tower:handbook skill holds the rest: reviews, hiring, crews, kept items, the shelf and the config, worktrees and the API.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-10-31",
-  "refs": ["hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md"]
+  "reviewed": "2026-11-01",
+  "refs": ["hub/src/shared/launch.ts#towerBrief", "hub/extensions/drafts/server.ts", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
 **Problem.** A worker learns the tower from two texts: the tower brief in its system prompt, sent on every turn,
@@ -21,8 +21,9 @@ keep its ideas and reach a peer correctly.
   callsign and naming commits and paths; every file or page made for the user gets `tower show` (a path named in
   an answer is not shown), kept where it lasts rather than in a temporary folder unless it is throwaway, and shown
   again after a change; what it starts it stops by PID, since `pkill -f` or `killall` with a pattern matches other
-  workers, whose command lines carry their briefs and paths; off-goal ideas and later prompts go to
-  `tower keep drafts`, edited in place afterwards. A last line names
+  workers, whose command lines carry their briefs and paths; a kept item is changed by editing its file in place.
+  Where the floor has drafts, the drafts extension's launch contributor adds the line that sends off-goal ideas and
+  later prompts to `tower keep drafts`. A last line names
   what the skill holds and keeps the worktree rule.
 - The skill (`SKILL.md`) is the handbook: the CLI in full, reaching out step by step, reviews, hiring and crews,
   showing and keeping in detail, policies, the floor's shelf and the config, worktree rules, the API. It doesn't
