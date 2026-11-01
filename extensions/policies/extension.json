@@ -744,5 +744,9 @@
         }
       }
     }
+  },
+  "guidance": {
+    "brief": "Standing work the tower starts on a schedule: write one with `tower keep policies`, see where each stands with `tower policies`.",
+    "full": "A policy is standing work the floor keeps in its `policies` collection: one markdown file, a `# Title`, a fenced json header (when it fires, whether each slot is offered to the user or started on its own, how many runs may run at once, where its worker starts), then the prose that is the worker's whole prompt.\n\nWrite one with `tower keep policies` (markdown on stdin) and edit it in place; an edit to the words of an auto policy needs the user's approval again, and approving is the user's, so read it with `tower read <tag>` and don't approve unless asked. `tower policies` says each policy's rule in words, its approval, its live runs and where it stands now; `tower policies run <tag>` starts it now or takes its open offer.\n\nWhen you are a run, `tower whoami` says which policy and slot you are, and `tower runs` lists what earlier runs did and left: read it before you start, and end with what the next run needs to know. The handbook's Policies section has the header's keys."
   }
 }

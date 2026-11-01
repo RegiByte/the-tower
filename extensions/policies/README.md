@@ -45,6 +45,7 @@ takes its open offer, and `tower runs [<tag>]` lists a policy's latest runs.
 
 ### The workers
 
+Every worker's `tower whoami` lists policies among the extensions it can use, and `tower x policies` prints how to write one.
 A worker started for a policy reads in `tower whoami` which run of which policy it is, and `tower runs` for what
 earlier runs left. Tower 3D and The Week draw none of it.
 
