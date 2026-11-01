@@ -11,15 +11,22 @@ const refusalAt = (log: SessionLog, t: number) => {
   return promptRefusal(state.status, heldSince) ?? 'at_prompt'
 }
 
-test('text typed into the composer after an answer holds it until a prompt empties it', () => {
+test('text typed into the composer after an answer holds it until a prompt or Ctrl+C empties it', () => {
   const log = fixture('composer-typed')
   assert.equal(refusalAt(log, 0.3), 'not_at_prompt', 'starting')
-  assert.equal(refusalAt(log, 0.41), 'at_prompt', 'Claude started')
+  assert.equal(refusalAt(log, 0.42), 'at_prompt', 'Claude started')
   assert.equal(refusalAt(log, 1), 'not_at_prompt', 'working')
   assert.equal(refusalAt(log, 3), 'at_prompt', 'done, nothing typed since')
-  assert.equal(refusalAt(log, 4.36), 'composer_holds', 'submit/at-prompt typed PING and pressed Enter: not yet submitted')
-  assert.equal(refusalAt(log, 7), 'at_prompt', 'PING answered')
+  assert.equal(refusalAt(log, 3.75), 'composer_holds', 'submit/at-prompt typed PING and pressed Enter: not yet submitted')
+  assert.equal(refusalAt(log, 6), 'at_prompt', 'PING answered')
   assert.equal(refusalAt(log, 8), 'composer_holds', '"half typed" sits in the composer')
+  assert.equal(refusalAt(log, 9.5), 'at_prompt', 'Ctrl+C cleared it')
+})
+
+test('Shift+Tab at the prompt cycles the permission mode and fills nothing', () => {
+  const log = fixture('composer-typed')
+  const shifted = { ...log, events: [...log.events.filter((e) => e[0] <= 3), [3.1, 'i', '\x1b[Z'] as (typeof log.events)[number]] }
+  assert.equal(refusalAt(shifted, 3.2), 'at_prompt')
 })
 
 test('an Esc before Claude streams puts the prompt back in the composer', () => {

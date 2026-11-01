@@ -202,7 +202,7 @@ export const dispatch = defineResource({
     const promptRefused = (id: string, { state, heldSince }: Facts) => {
       const refusal = promptRefusal(state.status, heldSince)
       if (refusal === 'not_at_prompt') return notAtPrompt(id, state.status)
-      if (refusal === 'composer_holds') return apiError('composer_holds', `${nameOf(id)}'s composer holds text, typed in its terminal or a prompt Esc put back: send or clear it there`)
+      if (refusal === 'composer_holds') return apiError('composer_holds', `${nameOf(id)}'s composer holds text, typed in its terminal or a prompt Esc put back: submit it there, or clear it with Ctrl+C`)
       return undefined
     }
 
@@ -218,7 +218,8 @@ export const dispatch = defineResource({
 
     /**
      * Checked as the call arrives, on the live fold, and again once the fold has read every paste back from the log:
-     * Enter is pressed only if nothing moved the worker and nobody else typed in between.
+     * Enter is pressed only if nothing moved the worker and nobody else typed in between. A worker's prompt is named
+     * just before Enter, so text left unsent names nobody.
      */
     const submitAtPrompt = (id: string, text: string, by: string | undefined) =>
       withSession(id, () =>
@@ -226,15 +227,17 @@ export const dispatch = defineResource({
           const before = system.session(id)!.facts
           const refused = promptRefused(id, before)
           if (refused) return refused
-          const named = by ? (factRefused(PROMPT_FROM_WORKER) ?? (await actedBy(id, PROMPTED_BY, by))) : OK
-          if (named.t === 'error') return named
+          const unnamed = by ? factRefused(PROMPT_FROM_WORKER) : undefined
+          if (unnamed) return unnamed
           const typing = await daemon(() => typeText(paths, id, text))
           if (typing.t === 'error') return typing
           const typed = before.typed + promptPastes(text).length
           await system.until(() => system.session(id)!.facts.typed >= typed, TRACK_TIMEOUT_MS)
           const after = system.session(id)!.facts
           const still = after.state.status === before.state.status && after.state.since === before.state.since && after.typed === typed
-          return still ? daemon(() => pressSubmit(paths, id)) : movedWhileTyped(id, before, after, typed)
+          if (!still) return movedWhileTyped(id, before, after, typed)
+          const named = by ? await actedBy(id, PROMPTED_BY, by) : OK
+          return named.t === 'error' ? named : daemon(() => pressSubmit(paths, id))
         }),
       )
 

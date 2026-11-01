@@ -159,7 +159,9 @@ export const SCENARIOS: Scenario[] = [
       { on: DONE, pause: 1500, do: { atPrompt: 'reply with exactly the word PING and nothing else' } },
       { on: DONE, pause: 1500, do: { keys: 'half typed' } },
       { pause: 1000, do: { atPrompt: 'reply with exactly the word PANG and nothing else', refused: 'composer_holds' } },
-      { pause: 1500 },
+      { pause: 1000, do: { keys: '\x03' } },
+      { pause: 1000, do: { atPrompt: 'reply with exactly the word PANG and nothing else' } },
+      { on: DONE, pause: 1500 },
     ],
   }),
   one('escaped-prompt', {

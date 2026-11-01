@@ -17,18 +17,27 @@ export const AT_PROMPT: ReadonlySet<Status> = new Set(['idle', 'watching', 'done
 
 const ESC = '\x1b'
 const ENTER = '\r'
+const SHIFT_TAB = '\x1b[Z'
+const CTRL_C = '\x03'
 
-/** Esc interrupts a turn or closes what is open, and a bare Enter submits what the composer holds: neither leaves text in it. */
-const fillsComposer = (input: string) => isTyped(input) && input !== ESC && input !== ENTER
+/**
+ * Esc interrupts a turn or closes what is open, a bare Enter submits what the composer holds, and Shift+Tab cycles the
+ * permission mode: none leaves text in it.
+ */
+const fillsComposer = (input: string) => isTyped(input) && input !== ESC && input !== ENTER && input !== SHIFT_TAB
 
 /**
  * When the composer may have started holding text, until something empties it: typed input while it has focus, or an
  * Esc before Claude streamed anything, which puts the turn's prompt back in it. A prompt or command submitted from the
- * composer empties it, as does a new conversation; a compaction keeps what it held. `status` is the session's before
+ * composer empties it, as do Ctrl+C typed at it and a new conversation; a compaction keeps what it held. `status` is the session's before
  * the event; `streamed`, whether the main loop's current turn has stepped or called a tool.
  */
 export const heldAfter = (heldSince: number | undefined, status: Status, streamed: boolean, event: LogEvent): number | undefined => {
-  if (event[1] === 'i') return heldSince ?? (AT_COMPOSER.has(status) && fillsComposer(event[2]) ? event[0] : undefined)
+  if (event[1] === 'i') {
+    if (!AT_COMPOSER.has(status)) return heldSince
+    if (event[2] === CTRL_C) return undefined
+    return heldSince ?? (fillsComposer(event[2]) ? event[0] : undefined)
+  }
   if (event[1] !== 'h' || event[2].agentId !== undefined) return heldSince
   const hook = event[2]
   switch (hook.hook_event_name) {
