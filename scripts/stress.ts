@@ -52,11 +52,12 @@ const count = (name: string, v: string | undefined) => {
 
 /**
  * Adds the extension in `folder` to the sandbox's config and waits for the tower to start it. One the config already
- * names is restarted instead, since the tower reads a folder's code again only then.
+ * names at the same folder is restarted instead, since the tower reads a folder's code again only then; one named at
+ * another folder gets the new path, which the tower starts it from.
  */
 async function enable(id: string, folder: string) {
   const config = JSON.parse(readFileSync(CONFIG, 'utf8'))
-  if (config.extensions?.[id]) await fetch(`${URL}/extension/restart`, { method: 'POST', headers: { origin: URL!, 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
+  if (config.extensions?.[id]?.path === folder) await fetch(`${URL}/extension/restart`, { method: 'POST', headers: { origin: URL!, 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
   else {
     config.extensions = { ...config.extensions, [id]: { path: folder } }
     writeFileSync(CONFIG, JSON.stringify(config, null, 2))
@@ -98,8 +99,8 @@ async function labWorkers(): Promise<string[]> {
 }
 
 const GRID = 'floor%3Alab'
-const WAIT_FOUR = "(async()=>{for(let i=0;i<100&&document.querySelectorAll('.grid-cell .bar-info .call').length<4;i++)await new Promise(r=>setTimeout(r,100));return document.querySelectorAll('.grid-cell').length})()"
-const TAKE_TWO_OUT = "(async()=>{for(let k=0;k<2;k++){document.querySelector('.grid-cell:last-child [aria-label=\"Take it out of the grid\"]').click();await new Promise(r=>setTimeout(r,400))}return document.querySelectorAll('.grid-cell').length})()"
+const WAIT_FOUR = "(async()=>{for(let i=0;i<100&&document.querySelectorAll('.grid-cell .bar-info .call').length<4;i++)await new Promise(r=>setTimeout(r,100));const n=document.querySelectorAll('.grid-cell').length;if(n<4)throw new Error('the grid drew '+n+' of 4 cells');return n})()"
+const TAKE_TWO_OUT = "(async()=>{for(let k=0;k<2;k++){document.querySelector('.grid-cell:last-child [aria-label=\"Take it out of the grid\"]').click();await new Promise(r=>setTimeout(r,400))}const n=document.querySelectorAll('.grid-cell').length;if(n!==2)throw new Error('the grid has '+n+' cells after taking two out');return n})()"
 
 const scenes: Scene[] = [
   { name: 'full', open: '#$WORKER_1', size: '1440x900', steps: [{ wait: 2500 }] },
