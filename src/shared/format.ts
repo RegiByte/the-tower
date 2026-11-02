@@ -23,11 +23,13 @@ export const modelName = (m?: string) => m?.replace(/^claude-([a-z]+)-(\d+)-(\d+
 export const base = (p: string) => p.split('/').filter(Boolean).pop() ?? p
 export const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
+/** A time gone by: `42s`, `4m 05s`, `3h 07m`, `2d`. The second unit is padded, so a ticking count keeps its width. */
 export const ago = (ms: number) => {
   const s = Math.max(0, Math.floor(ms / 1000))
+  const two = (n: number) => String(n).padStart(2, '0')
   if (s < 60) return `${s}s`
-  if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`
-  if (s < 86400) return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`
+  if (s < 3600) return `${Math.floor(s / 60)}m ${two(s % 60)}s`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ${two(Math.floor((s % 3600) / 60))}m`
   return `${Math.floor(s / 86400)}d`
 }
 
