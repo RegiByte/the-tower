@@ -293,18 +293,30 @@ dialog.confirm .actions { flex: none; }
 .pane-tab small { margin-left: var(--sp-xs); color: var(--faint); font-variant-numeric: tabular-nums; }
 .pane-tab small.unseen { color: var(--accent); font-weight: 700; }
 
-/* A worker's tabs in the scroll form: past the pane commands' tabs, the rest scroll under a thin scrollbar that always
-   keeps its track, so the row is as tall whether or not they overflow, or there are any, and fade at an edge past which more hide. */
-.tab-row > .tab-set > .tab-scroll { --fade: 2.5em; flex: 0 1 auto; min-width: 3em; display: flex; gap: var(--sp-s); overflow-x: scroll; overflow-y: hidden;
-  overscroll-behavior-x: contain; scroll-padding-inline: var(--fade); padding-top: 4px; min-height: calc(var(--control) + 8px); scrollbar-width: auto; scrollbar-color: auto; }
+/* A worker's tabs in the scroll form: past the pane commands' tabs, the rest scroll above a thin scrollbar that always
+   keeps its track, so the row is as tall whether or not they overflow, or there are any; its thumb shows while the
+   pointer is over them, and they fade at an edge past which more hide. The tabs keep a focus ring's room on each side,
+   the track below it. A head lends the room below its tab line (`--tabs-room`) to that ring and track; what it doesn't
+   lend is matched above the tabs, so they stay level with the pane commands' tabs. */
+.tab-row > .tab-set > .tab-scroll { --fade: 2.5em; --ring: 3px; --bar: 3px; --lent: min(calc(var(--ring) + var(--bar)), var(--tabs-room, 0px));
+  flex: 0 1 auto; min-width: 3em; display: flex; gap: var(--sp-s); overflow-x: scroll; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding-inline: var(--fade);
+  padding-block: calc(2 * var(--ring) + var(--bar) - var(--lent)) var(--ring); margin-block: calc(-1 * var(--ring)) calc(-1 * var(--lent));
+  min-height: calc(var(--control) + 3 * var(--ring) + 2 * var(--bar) - var(--lent)); scrollbar-width: auto; scrollbar-color: auto; }
 .tab-scroll > * { flex: none; max-width: 100%; }
 .tab-row > .tab-set > .tab-scroll:empty { min-width: 0; }
-.tab-scroll::-webkit-scrollbar { height: 4px; }
+.tab-scroll::-webkit-scrollbar { height: var(--bar); }
 .tab-scroll::-webkit-scrollbar-track { background: transparent; }
-.tab-scroll::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
-.tab-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-@supports not selector(::-webkit-scrollbar) { .tab-row > .tab-set > .tab-scroll { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; } }
-.tab-scroll:is(.more-before, .more-after) { mask-size: 100% calc(100% - 4px), 100% 4px; mask-position: top, bottom; mask-repeat: no-repeat; }
+/* The thumb paints the scroller's color, which only its tabs' own colors hide: WebKit repaints a scrollbar when that
+   color changes, not when the thumb's own style does. */
+.tab-row > .tab-set > .tab-scroll { color: transparent; }
+.tab-row > .tab-set > .tab-scroll:is(:hover, :focus-within) { color: var(--line-strong); }
+.tab-scroll::-webkit-scrollbar-thumb { background: none; border-radius: 2px; box-shadow: inset 0 0 0 var(--bar); }
+.tab-scroll::-webkit-scrollbar-thumb:hover { color: var(--muted); }
+@supports not selector(::-webkit-scrollbar) {
+  .tab-row > .tab-set > .tab-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  .tab-row > .tab-set > .tab-scroll:is(:hover, :focus-within) { scrollbar-color: var(--line-strong) transparent; }
+}
+.tab-scroll:is(.more-before, .more-after) { mask-size: 100% calc(100% - var(--bar)), 100% var(--bar); mask-position: top, bottom; mask-repeat: no-repeat; }
 .tab-scroll.more-after { mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent), linear-gradient(#000, #000); }
 .tab-scroll.more-before { mask-image: linear-gradient(to left, #000 calc(100% - var(--fade)), transparent), linear-gradient(#000, #000); }
 .tab-scroll.more-before.more-after { mask-image: linear-gradient(to right, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent), linear-gradient(#000, #000); }
