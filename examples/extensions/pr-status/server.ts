@@ -57,12 +57,26 @@ const periodMs = (every: string): number => {
 /** How long a branch with no open pull request waits between asks, by how many answers in a row were the same: the last for every one after. */
 const BACKOFF = [5 * 60_000, 15 * 60_000, 30 * 60_000]
 
+/** How long an open pull request whose checks still run waits between asks: the tick's period, so a result shows within it. */
+const RUNNING_CHECKS_MS = 30_000
+
 /**
- * How long a branch waits after an ask: `every` while its pull request is open, else `BACKOFF` by its streak of answers
- * unchanged. A failed ask goes by the pull request seen before it, so a blip on an open one is asked again at `every`.
+ * How long a branch waits after an ask: `RUNNING_CHECKS_MS` while its pull request is open and its checks run, `every`
+ * while it is open, else `BACKOFF` by its streak of answers unchanged. A failed ask goes by the pull request seen
+ * before it, so a blip on an open one is asked again as soon as before.
  */
 const waitOf = (every: number, pr: Pr | null | undefined, unchanged: number): number =>
-  pr?.state === 'OPEN' ? every : Math.max(every, BACKOFF[Math.min(unchanged, BACKOFF.length - 1)])
+  pr?.state !== 'OPEN'
+    ? Math.max(every, BACKOFF[Math.min(unchanged, BACKOFF.length - 1)])
+    : pr.checks === 'PENDING' || pr.checks === 'EXPECTED'
+      ? Math.min(every, RUNNING_CHECKS_MS)
+      : every
+
+/**
+ * How early a tick takes a branch for due. Ticks come every 30 seconds and a branch falls due a wait after its last
+ * ask ended, a moment past the tick that will find it: without this, every wait would run a tick longer.
+ */
+const DUE_SLACK_MS = 5_000
 
 const GH_TIMEOUT_MS = 30_000
 const GIT_TIMEOUT_MS = 10_000
@@ -437,7 +451,7 @@ const start: Start = (ctx) => {
           const now = Date.now()
           const branches = onBoard()
           forgetGone(branches)
-          const dueNow = branches.filter((b) => (due.get(keyOf(b.dir, b.branch))?.at ?? 0) <= now)
+          const dueNow = branches.filter((b) => (due.get(keyOf(b.dir, b.branch))?.at ?? 0) <= now + DUE_SLACK_MS)
           if (dueNow.length) await askAbout(dueNow)
         } finally {
           ticking = false

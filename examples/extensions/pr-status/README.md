@@ -83,8 +83,9 @@ of one does.
 trigger compares two boards and calls `pr-status/ask` once with the branches of the workers in a worktree whose card
 went from `working` to a turn's end (`done`, `watching`, `idle`, `failed`, or `exited` and `lost` for a worker gone
 mid-turn; a permission prompt mid-turn is not one). Besides that, its `tick` every 30 seconds asks about the branches
-that are due. A branch with an open pull request is due every `every`; one with none, or with one merged or closed,
-waits 5, then 15, then 30 minutes while GitHub keeps saying the same, and back to the start when it changes. Most branches have no pull request most of the time, and a
+that are due, or due within the next few seconds. A branch with an open pull request is due every `every`, and every
+30 seconds while its checks still run, so a result shows within half a minute; one with none, or with one merged or
+closed, waits 5, then 15, then 30 minutes while GitHub keeps saying the same, and back to the start when it changes. Most branches have no pull request most of the time, and a
 new one shows at the turn's end anyway. When each branch is due is kept in memory, and forgotten for a branch that
 leaves the board, so a restart asks about every branch once. One round runs at a time, and a halt (a restart, a
 config change) stops one before it records what a killed `gh` said.
