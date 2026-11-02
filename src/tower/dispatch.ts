@@ -14,7 +14,7 @@ import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import type { Occupant } from '../bridge/worktrees.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
 import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
-import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
+import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, RENAMED, type Facts, type Session } from '../bridge/facts.ts'
 import type { Status } from '../bridge/status.ts'
 import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
@@ -241,6 +241,35 @@ export const dispatch = defineResource({
           if (!still) return movedWhileTyped(id, before, after, typed)
           const named = by ? await actedBy(id, PROMPTED_BY, by) : OK
           return named.t === 'error' ? named : daemon(() => pressSubmit(paths, id))
+        }),
+      )
+
+    /**
+     * A worker on duty whose card offers `rename` takes a callsign no other worker on duty holds (`callsignRefused`): the
+     * fact names it first, then a running worker's Claude is renamed through its composer (`/rename`, run at once even
+     * mid-turn), so its peer name follows. Refused before anything is logged where typing would answer a question or join
+     * text the composer holds.
+     */
+    const rename = (id: string, typed: string, by: string | undefined) =>
+      withSession(id, () =>
+        fromWorker(by, async () => {
+          const card = cardsNow().find((c) => c.id === id)
+          if (!card || !can(card, 'rename')) return apiError('refused', `${nameOf(id)} is not on duty at its composer: rename a worker on duty, running at its composer or stopped and waiting to be resumed`)
+          const config = readConfig()
+          const onDuty = cardsNow().flatMap((c) => (c.onDuty ? [c.id] : []))
+          const live = system.live()?.ids ?? new Set<string>()
+          const held = heldCallsigns(system.sessions(), new Set([...onDuty, ...live].filter((s) => s !== id)), callsignsOf(config))
+          const refused = callsignRefused(typed, held)
+          if (refused) return apiError('refused', refused)
+          const callsign = typedCallsign(typed, id)
+          if (callsign === card.callsign) return OK
+          const running = live.has(id)
+          const { state, heldSince } = system.session(id)!.facts
+          if (running && !AT_COMPOSER.has(state.status)) return notAtPrompt(id, state.status)
+          if (running && heldSince !== undefined) return apiError('composer_holds', `${card.callsign}'s composer holds text, typed in its terminal or a prompt Esc put back: submit it there, or clear it with Ctrl+C, then rename it`)
+          const named = factRefused('rename a worker') ?? (await host({ t: 'fact', id, fact: { hook_event_name: RENAMED, callsign, ...(by && { by }) } }))
+          if (named.t === 'error' || !running) return named
+          return daemon(() => submitText(paths, id, `/rename ${callsign}`))
         }),
       )
 
@@ -921,6 +950,7 @@ export const dispatch = defineResource({
       resize: ({ id, cols, rows }) => withSession(id, () => host({ t: 'resize', id, cols, rows })),
       kill: ({ id, by }) => kill(id, by),
       'let-go': ({ id }) => letGo(id),
+      rename: ({ id, callsign, by }) => rename(id, callsign, by),
       'viewer/active': ({ viewer }) => viewerActive(viewer),
       fact: logFact,
       'probe/run': legacy('probe/run'),

@@ -43,6 +43,7 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'card/reap': { label: 'End all', hint: 'End every process it left running.', destructive: true, api: 'reap' },
   'card/kill': { label: 'Kill', hint: 'End its session; its conversation can be resumed.', destructive: true, api: 'kill' },
   'card/let-go': { label: 'Let go', hint: 'Take it off duty without resuming it; its conversation stays in the archive.', destructive: true, api: 'let-go' },
+  'card/rename': { label: 'Rename', hint: 'Give it a new callsign: its card, its peers and its resumes call it by it.', api: 'rename' },
   'card/send-home': { label: 'Send home', hint: 'End it and every worker under it that runs; each can be resumed.', destructive: true, api: 'kill' },
   'card/note': { label: 'Note', hint: 'Add a note to the review thread about its work.', api: 'review/append', command: 'pane-reviews' },
   'floor/spawn': { label: 'New worker', hint: 'Start a worker on this floor, from the new-worker form.', api: 'spawn' },

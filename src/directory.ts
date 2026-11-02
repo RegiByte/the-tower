@@ -28,6 +28,7 @@ import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 // `reviewerOf` and `threadCheckoutOf` are the core's deprecated copies of the reviews client's: the CLI says them until extensions say their own CLI words.
 import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { callsignsOf, checkoutDirs, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
+import { typedCallsign } from './shared/callsign.ts'
 import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
@@ -933,6 +934,16 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a stranded worker (stopped, killed or lost), on duty until it is resumed, is let go`)
     await command(...call)
     console.log(`Let ${card.callsign} go: it is off duty, and its conversation can still be resumed from the floor's archive.`)
+  },
+  rename: async ([callsign, typed]) => {
+    if (!callsign || !typed) throw new CliError(usageLine('rename'))
+    const card = await cardNamed(await readBoard(), callsign)
+    const call = callOf(card, 'rename')
+    if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a worker on duty, running at its composer or waiting to be resumed, is renamed`)
+    await command(call[0], { ...call[1], callsign: typed, by: me })
+    const renamed = typedCallsign(typed, card.id)
+    const peers = card.live ? `other sessions message it as "${renamed}"` : `its Claude runs as ${renamed} once it is resumed`
+    console.log(`Renamed ${card.callsign} to ${renamed}: ${peers}. Its worktree and branch keep their names.`)
   },
   send: async ([callsign]) => {
     if (!callsign) throw new CliError(usageLine('send'))

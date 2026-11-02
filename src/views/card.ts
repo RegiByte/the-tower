@@ -3,6 +3,7 @@ import {
   BLOCKED_TEXT, LET_GO_MEANS, callOf, can, detailsOf, esc, gistLine, lampOf, letGoAsk, letGoneLine, modelName, noLongerOffered, offeredCall, reapAsk, resumesRow,
   sendHomeAsk, sentHome, statusName, statusTitle, when, whereLineOf, whyNot, type DaemonVerb,
 } from '../shared/cards.ts'
+import { callsignRefused, typedCallsign } from '../shared/callsign.ts'
 import { ICON, withIcons } from '../shared/icons.ts'
 import { pressing } from '../shared/press.ts'
 import type { Subject } from '../shared/subjects.ts'
@@ -57,6 +58,17 @@ const CSS = `:where([data-view="${ID}"]) {
   & .bar-info .who { flex: 0 1 auto; flex-wrap: wrap; }
   & .bar-info .lead { flex: none; }
   & .bar-info .call { flex: none; font: 800 var(--fs-2xl)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
+  & .naming { position: relative; display: inline-flex; flex: none; }
+  & .call .rename { all: unset; cursor: text; border-radius: var(--radius-s); text-decoration: underline dotted transparent; text-underline-offset: .18em; }
+  & .call .rename:hover { text-decoration-color: var(--faint); }
+  & .call .rename:focus-visible { outline: 2px solid var(--pe); outline-offset: 2px; }
+  & .call .rename-field { box-sizing: content-box; min-width: 4ch; margin: -2px -4px; padding: 1px 3px; font: inherit; letter-spacing: inherit; text-transform: uppercase; color: inherit;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-s); outline: none; }
+  & .call .rename-field:focus-visible { border-color: var(--pe); }
+  & .call .rename-field[aria-invalid="true"] { border-color: var(--broken); }
+  & .naming .rename-why { position: absolute; top: calc(100% + 6px); left: 0; z-index: 3; width: max-content; max-width: min(28rem, 70vw); padding: var(--sp-xs) var(--sp-m);
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop); color: var(--muted); font: 400 var(--fs-s)/1.35 var(--body, inherit); letter-spacing: normal; white-space: normal; }
+  & .naming .rename-why.bad { color: var(--broken-text); }
   & .bar-info .pill { flex: none; font-variant-numeric: tabular-nums; }
   & .bar-info .stats { flex: none; display: flex; align-items: center; gap: var(--sp-l); }
   & .bar-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -159,7 +171,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   const pop = `card-${++mounts}`
   host.innerHTML = `<style>${CSS}</style><div class="bar">
     ${cell ? '<span class="mini"></span>' : ''}<div class="bar-top"${head ? '' : ' hidden'}>
-      <div class="bar-main"><div class="bar-info"><span class="who"><span class="part lead"></span><span class="part stats-part"></span></span><span data-holds="badges"></span></div>
+      <div class="bar-main"><div class="bar-info"><span class="who"><span class="lead"><span class="naming"></span><span class="part lead-rest"></span></span><span class="part stats-part"></span></span><span data-holds="badges"></span></div>
         <div class="bar-actions"><span class="part details-part"></span><span data-holds="actions"></span><span class="part own"></span></div></div>
       <div class="bar-sub"><span class="part where-part"></span><span data-holds="lines"></span></div></div>
     <div class="tab-row bar-line" data-holds="tabs"></div>${cell ? '<span class="acts"></span>' : ''}</div>
@@ -176,6 +188,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   const placeActs = () => cell && (head ? top : $('.bar-line')).after($('.acts'))
   const details = $('.bar-details')
   const left = $('.bar-left')
+  const naming = $('.naming')
   /** What the head leaves out: nothing at pane scale. */
   const omitted = () => ({ omit: cell ? (opts.omit ?? []) : [] })
   let headRegion = head ? kit.region(top, 'card.head', subject, omitted()) : undefined
@@ -266,9 +279,10 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     const orphan = c.resources.some((r) => r.orphan)
     const ctx = c.context
     if (cell) drawCell(c)
+    if (!editing) paintOnce(naming, `<span class="call" role="heading" aria-level="2">${can(c, 'rename') ? `<button class="rename" data-rename="${c.id}" data-tip="rename ${c.callsign}">${c.callsign}</button>` : c.callsign}</span>`)
     paintOnce(
-      $('.lead'),
-      `<span class="call" role="heading" aria-level="2">${c.callsign}</span>${cell ? pickHtml() : ''}
+      $('.lead-rest'),
+      `${cell ? pickHtml() : ''}
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}"><span class="lamp"></span><span class="status-word">${statusName(c)} ·</span><span translate="no" data-since="${c.enteredAt}"></span></span>`,
     )
     paintOnce($('.where-part'), `<span class="where" data-tuck-text data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, reviewerOf(c))))}</span>`)
@@ -297,6 +311,88 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     ${can(c, 'drive') ? `<button class="primary" data-drive ${keyedTip(board.keys, 'answer in its terminal', 'pane-terminal')}>${verbLabel('card', 'drive')}</button>` : ''}`,
     )
   }
+
+  /** The callsigns of the other workers on duty, which a new one must be free of (`callsignRefused`). */
+  const othersOnDuty = (c: Card) => cards().flatMap((d) => (d.onDuty && d.id !== c.id ? [d.callsign] : []))
+
+  /** Why the typed callsign can't be the worker's: empty when it can. */
+  const renameWhy = (c: Card, typed: string) => (typed.trim() ? (callsignRefused(typed, othersOnDuty(c)) ?? '') : 'type a callsign')
+
+  /**
+   * The callsign edited in place: a click on it (or the page's own `[data-rename]` click) turns it into a field, Enter
+   * saves, Esc or leaving it unchanged puts the callsign back. While it is open the board's draws leave it alone, so
+   * what is typed survives them; the new name is checked as it is typed, the tower again on the save.
+   */
+  let editing = false
+
+  function startEditing() {
+    const c = card
+    if (editing || !can(c, 'rename')) return
+    editing = true
+    naming.innerHTML = `<span class="call" role="heading" aria-level="2"><input class="rename-field" data-rename-field="${c.id}" value="${esc(c.callsign)}" size="${c.callsign.length}" autocomplete="off" spellcheck="false"
+      aria-label="new callsign for ${c.callsign}" aria-describedby="${pop}-rename-why"></span><small class="rename-why" id="${pop}-rename-why" aria-live="polite">Enter renames · Esc cancels · its worktree and branch keep their names</small>`
+    const input = naming.querySelector<HTMLInputElement>('input')!
+    input.focus()
+    input.select()
+  }
+
+  function stopEditing() {
+    if (!editing) return
+    const refocus = naming.contains(document.activeElement)
+    editing = false
+    paintOnce(naming, '')
+    draw()
+    if (refocus) naming.querySelector<HTMLElement>('[data-rename]')?.focus()
+  }
+
+  /** What the field says under it: why the name can't be had, or how to finish. */
+  const sayWhy = (why: string) => {
+    const out = naming.querySelector('.rename-why')!
+    out.textContent = why || 'Enter renames · Esc cancels · its worktree and branch keep their names'
+    out.classList.toggle('bad', why !== '')
+    naming.querySelector('input')!.setAttribute('aria-invalid', String(why !== ''))
+  }
+
+  const unchanged = (c: Card, typed: string) => !typed.trim() || typedCallsign(typed, c.id) === c.callsign
+
+  async function save(input: HTMLInputElement) {
+    const c = card
+    const typed = input.value.trim()
+    if (unchanged(c, typed)) return stopEditing()
+    const why = renameWhy(c, typed)
+    if (why) return sayWhy(why)
+    const call = callOf(c, 'rename')
+    if (!call) return sayWhy(noLongerOffered(c.callsign, 'rename'))
+    input.readOnly = true
+    try {
+      if ((await pressing(input, () => tower.run(['rename', { ...call[1], callsign: typed }]))) === undefined) return
+      stopEditing()
+      kit.toast(`Renamed ${c.callsign} to ${typedCallsign(typed, c.id)}`)
+    } catch (err) {
+      input.readOnly = false
+      input.focus()
+      sayWhy((err as Error).message)
+    }
+  }
+
+  naming.addEventListener('click', (e) => (e.target as Element).closest('[data-rename]') && startEditing())
+  naming.addEventListener('input', (e) => {
+    const input = e.target as HTMLInputElement
+    input.size = Math.max(input.value.length, 4)
+    sayWhy(unchanged(card, input.value) ? '' : renameWhy(card, input.value))
+  })
+  naming.addEventListener('keydown', (e) => {
+    const input = (e.target as Element).closest<HTMLInputElement>('.rename-field')
+    if (!input) return
+    e.stopPropagation()
+    if (e.key === 'Enter') return (e.preventDefault(), void save(input))
+    if (e.key === 'Escape') return (e.preventDefault(), stopEditing())
+  })
+  /** Leaving the field keeps the edit only when it was saved: anything else puts the callsign back. */
+  naming.addEventListener('focusout', (e) => {
+    const input = e.target as HTMLInputElement
+    if (input.matches('.rename-field') && !input.readOnly) stopEditing()
+  })
 
   const told = <T,>(request: Promise<T>) => request.catch((err: Error) => void kit.toast(err.message))
 

@@ -106,6 +106,10 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   'viewer/active': single('Viewer active', 'Say the user acted on this page: only the tower holds it, in memory.', 'noted'),
   kill: flow('End a worker', 'Kill its PTY: it can be resumed.', [sealed('named, then killed', 'the log says who ended it')]),
   'let-go': flow('Let go', 'Take a worker stranded by the host off duty, still resumable.', [sealed('only a stranded card', "the board's rule")]),
+  rename: flow('Rename', 'Give a worker on duty a new callsign: its card, its peers and its resumes call it by it.', [
+    sealed('free of the workers on duty', 'two workers on duty never share a callsign'),
+    sealed('named, then typed', 'the log names the worker first; a running Claude is renamed through its composer'),
+  ]),
   fact: flow('Log a fact', "A fact about the caller's own session: show, keep or leave.", [
     sealed('a running worker, about itself', 'a worker names only its own session'),
     sealed("the fact's schema", 'the board reads it'),

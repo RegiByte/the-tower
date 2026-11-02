@@ -128,6 +128,8 @@ export type Facts = {
   keyedBy?: [at: number, by: string]
   /** The worker that killed the session (`tower.kill`): a kill no worker named is the user's. */
   killedBy?: string
+  /** The callsign its worker was renamed to last in this session (`tower.rename`): it names the worker from then on. */
+  renamed?: string
   /**
    * When the worker asked to go home (`tower.leave`), in seconds since the session's start: the tower sends it home once
    * its main loop's turn completes. A prompt after it keeps the worker on duty.
@@ -214,6 +216,9 @@ export const KEYED_BY = 'tower.keys'
 
 /** The fact the tower appends before a worker's kill reaches a session (`kill` with `by`). */
 export const KILLED_BY = 'tower.kill'
+
+/** The fact the tower appends when the user or a worker renames a worker (`rename`): `{callsign}`, its new one. */
+export const RENAMED = 'tower.rename'
 
 /** The signal the host ends a session with, node-pty's default for a kill. */
 const SIGHUP = 1
@@ -399,6 +404,8 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, killedBy: String(hook.by) }
     case LEAVE:
       return { ...facts, leaveAt: t }
+    case RENAMED:
+      return { ...facts, renamed: String(hook.callsign) }
     case EXEMPT:
       return { ...facts, exempt: [...facts.exempt, { from: hook.from as Exemption['from'], by: String(hook.by) }] }
     case REPORTS_TO:

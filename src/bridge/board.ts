@@ -590,7 +590,7 @@ const card = (
     sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
-    ...cardOffers(header.id, life.status, promptRefusal(life.status, facts.heldSince) === undefined, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
+    ...cardOffers(header.id, life.status, promptRefusal(life.status, facts.heldSince) === undefined, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff, facts.broken !== undefined),
   }
 }
 

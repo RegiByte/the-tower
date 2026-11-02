@@ -127,6 +127,11 @@ export const CLI_VERBS = {
     usage: 'let-go <CALLSIGN>',
     help: "take a stranded worker (stopped, killed or lost) off duty, still resumable (its card's `let-go`)",
   },
+  rename: {
+    of: 'worker',
+    usage: 'rename <CALLSIGN> <NEW>',
+    help: "give a worker on duty a new callsign, NAME-NN or a bare NAME (its card's `rename`): its card, its peer name and its resumes take it; its worktree and branch keep theirs",
+  },
   api: { of: 'worker', usage: 'api [name]', help: "the API's verbs and reads, one line each, or one in full as JSON Schema" },
   flows: {
     of: 'worker',

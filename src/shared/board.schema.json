@@ -1684,10 +1684,11 @@
         "reap",
         "kill",
         "let-go",
+        "rename",
         "send-home",
         "note"
       ],
-      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works; `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `note` adds a note to the review thread about its work (`NoteVerb`)."
+      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works; `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `rename` gives a worker on duty a new callsign, while it runs at its composer or waits to be resumed; `note` adds a note to the review thread about its work (`NoteVerb`)."
     },
     "CardCalls": {
       "type": "object",
@@ -1812,6 +1813,21 @@
           ],
           "maxItems": 2
         },
+        "rename": {
+          "type": "array",
+          "minItems": 2,
+          "items": [
+            {
+              "type": "string",
+              "const": "rename"
+            },
+            {
+              "type": "object",
+              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+            }
+          ],
+          "maxItems": 2
+        },
         "send-home": {
           "type": "array",
           "items": {
@@ -1847,7 +1863,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "`note` takes the author and what the note says."
+      "description": "`note` takes the author and what the note says; `rename`, the new callsign."
     },
     "CardAction": {
       "anyOf": [
@@ -2107,6 +2123,35 @@
                 {
                   "type": "string",
                   "const": "let-go"
+                },
+                {
+                  "type": "object",
+                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
+                }
+              ],
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "verb",
+            "call"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "verb": {
+              "type": "string",
+              "const": "rename"
+            },
+            "call": {
+              "type": "array",
+              "minItems": 2,
+              "items": [
+                {
+                  "type": "string",
+                  "const": "rename"
                 },
                 {
                   "type": "object",

@@ -19,10 +19,10 @@ import type { FloorWorktreeRepo, WorktreeState } from './worktrees.ts'
  * session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home`
  * ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a
  * stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a
- * prompt telling it so; `note` adds a note to the review thread about its work
- * (`NoteVerb`).
+ * prompt telling it so; `rename` gives a worker on duty a new callsign, while it runs at its composer or waits to be
+ * resumed; `note` adds a note to the review thread about its work (`NoteVerb`).
  */
-export type CardVerb = 'drive' | 'submit' | 'prompt' | 'resume' | 'carry-on' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home' | 'note'
+export type CardVerb = 'drive' | 'submit' | 'prompt' | 'resume' | 'carry-on' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'rename' | 'send-home' | 'note'
 /**
  * `note` adds a note to a checkout's review thread, offered while its work goes on (`CheckoutState` live): a note on
  * work that landed, or whose worktree is gone, reaches nobody. The API still takes one there.
@@ -60,10 +60,11 @@ const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: Session
 
 /**
  * `atPrompt`: it takes a prompt now (`promptRefusal`). `awaitsResume`: stranded, on duty until its latest conversation
- * is resumed or it is let go. `cutOff`: stranded mid-turn. A running worker offers its `brief` before its first turn, so
+ * is resumed or it is let go. `cutOff`: stranded mid-turn. `broken`: its fold stopped at a line it couldn't follow, so
+ * a rename logged after it would never be read. A running worker offers its `brief` before its first turn, so
  * a composer there can send the first prompt; a session that ended offers it while it has conversations to read.
  */
-const cardVerbs = (status: Status, atPrompt: boolean, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, awaitsResume: boolean, cutOff: boolean): CardVerb[] => {
+const cardVerbs = (status: Status, atPrompt: boolean, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, awaitsResume: boolean, cutOff: boolean, broken: boolean): CardVerb[] => {
   const live = isLive(status)
   const latest = conversations.at(-1)
   return [
@@ -76,6 +77,7 @@ const cardVerbs = (status: Status, atPrompt: boolean, resumable: boolean, conver
     ...(leftovers > 0 ? ['reap' as const] : []),
     ...(live ? ['kill' as const] : []),
     ...(awaitsResume ? ['let-go' as const] : []),
+    ...((AT_COMPOSER.has(status) || awaitsResume) && !broken ? ['rename' as const] : []),
   ]
 }
 
@@ -95,8 +97,8 @@ const worktreeVerbs = (state: WorktreeState, occupied: boolean, recordsDiscards:
 
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
-/** `note` takes the author and what the note says. */
-export type CardCalls = { submit?: Call<'submit'>; prompt?: Call<'submit/at-prompt'>; resume?: Call<'resume'>; 'carry-on'?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
+/** `note` takes the author and what the note says; `rename`, the new callsign. */
+export type CardCalls = { submit?: Call<'submit'>; prompt?: Call<'submit/at-prompt'>; resume?: Call<'resume'>; 'carry-on'?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; rename?: Call<'rename'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
 export type NoteCalls = { note?: Call<'review/append'> }
 export type ConversationCalls = { resume?: Call<'resume'> }
 export type ResourceCalls = { reap: Call<'reap/process'> }
@@ -167,8 +169,9 @@ export const cardOffers = (
   leftovers: number,
   awaitsResume: boolean,
   cutOff: boolean,
+  broken: boolean,
 ): Offers<CardVerb, CardCalls> => {
-  const verbs = cardVerbs(status, atPrompt, resumable, conversations, leftovers, awaitsResume, cutOff)
+  const verbs = cardVerbs(status, atPrompt, resumable, conversations, leftovers, awaitsResume, cutOff, broken)
   return actionsOf(verbs, {
     submit: (): Call<'submit'> => ['submit', { id }],
     prompt: (): Call<'submit/at-prompt'> => ['submit/at-prompt', { id }],
@@ -177,6 +180,7 @@ export const cardOffers = (
     reap: (): Call<'reap'> => ['reap', { id }],
     kill: (): Call<'kill'> => ['kill', { id }],
     'let-go': (): Call<'let-go'> => ['let-go', { id }],
+    rename: (): Call<'rename'> => ['rename', { id }],
   })
 }
 

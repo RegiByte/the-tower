@@ -1,4 +1,4 @@
-import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, lineId, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, lineId, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines, statusName } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -1435,6 +1435,89 @@ document.addEventListener(
   },
   true,
 )
+
+/**
+ * A worker's menu, a right click (or the context-menu key) on its row: what can be done to it in place. Rename opens
+ * the worker and turns the callsign in its card's head into a field, the card's own `[data-rename]`. It is a manual
+ * popover that closes itself (a press outside it, Esc, the window losing focus): an automatic one takes the release of
+ * the right button that opened it for a click outside, and closes at once.
+ */
+const workerMenu = Object.assign(document.createElement('div'), { className: 'region-menu worker-menu', popover: 'manual' })
+document.body.append(workerMenu)
+
+/** The row the menu was opened on, focus going back to it when Esc closes the menu. @type {HTMLElement | undefined} */
+let menuRow
+
+const menuOpen = () => workerMenu.matches(':popover-open')
+
+/** @param {{ refocus: boolean }} how */
+const closeWorkerMenu = ({ refocus }) => {
+  if (!menuOpen()) return
+  workerMenu.hidePopover()
+  if (refocus) menuRow?.querySelector('a')?.focus({ preventScroll: true })
+}
+
+document.addEventListener('pointerdown', (e) => menuOpen() && !workerMenu.contains(/** @type {Node} */ (e.target)) && closeWorkerMenu({ refocus: false }), true)
+document.addEventListener('keydown', (e) => {
+  if (!menuOpen() || e.key !== 'Escape') return
+  e.preventDefault()
+  e.stopPropagation()
+  closeWorkerMenu({ refocus: true })
+}, true)
+addEventListener('blur', () => closeWorkerMenu({ refocus: false }))
+addEventListener('resize', () => closeWorkerMenu({ refocus: false }))
+
+/** How long the card a menu entry opened may take to draw its head and terminal. */
+const CARD_DRAWN_MS = 3000
+
+/**
+ * Opens worker `id`'s card and presses its callsign once the card has settled: its head drawn, and its terminal open,
+ * since a terminal focuses itself as its screen arrives and would close a field opened before it. A card that opened
+ * on another tab, or whose terminal never comes, is pressed at the deadline. The field is the card's own.
+ * @param {string} id
+ */
+function renameIn(id) {
+  const opened = selected() !== id
+  select(id)
+  const until = performance.now() + CARD_DRAWN_MS
+  const press = () => {
+    const button = /** @type {HTMLElement | undefined} */ ([...document.querySelectorAll(`[data-rename="${CSS.escape(id)}"]`)].find((b) => /** @type {HTMLElement} */ (b).offsetParent))
+    const late = performance.now() >= until
+    if (button && (!opened || late || button.closest('[data-view="tower/card"]')?.querySelector('.xterm'))) return void requestAnimationFrame(() => button.click())
+    if (!late) requestAnimationFrame(press)
+    else toast(noLongerOffered(/** @type {Card} */ (findCard(id))?.callsign ?? 'The worker', 'rename'))
+  }
+  requestAnimationFrame(press)
+}
+
+/** @param {Card} c @param {number} x @param {number} y */
+function openWorkerMenu(c, x, y) {
+  const renamable = can(c, 'rename')
+  const hint = renamable ? 'a new callsign, typed in its card' : `${c.callsign} is ${statusName(c)}: only a worker on duty at its composer, or waiting to be resumed, is renamed`
+  workerMenu.innerHTML = `<div class="menu-head"><p>${esc(c.callsign)}</p></div><div role="menu" aria-label="${esc(c.callsign)}">
+    <button role="menuitem" class="menu-item" data-worker-rename="${esc(c.id)}"${renamable ? '' : ` aria-disabled="true" data-tip="${esc(hint)}"`}><span class="menu-word">${verbLabel('card', 'rename')}…</span><small aria-hidden="true">${esc(hint)}</small></button></div>`
+  if (!menuOpen()) workerMenu.showPopover()
+  const r = workerMenu.getBoundingClientRect()
+  Object.assign(workerMenu.style, { left: `${Math.max(8, Math.min(x, innerWidth - r.width - 8))}px`, top: `${Math.max(8, Math.min(y, innerHeight - r.height - 8))}px` })
+  workerMenu.querySelector('button')?.focus()
+}
+
+document.addEventListener('contextmenu', (e) => {
+  const row = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest('.sess[data-id]'))
+  const c = row && findCard(/** @type {string} */ (row.dataset.id))
+  if (!row || !c) return
+  e.preventDefault()
+  menuRow = row
+  const at = e.clientX || e.clientY ? { x: e.clientX, y: e.clientY } : (({ left, bottom }) => ({ x: left, y: bottom }))(row.getBoundingClientRect())
+  openWorkerMenu(c, at.x, at.y)
+})
+
+workerMenu.addEventListener('click', (e) => {
+  const item = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest('[data-worker-rename]'))
+  if (!item || item.getAttribute('aria-disabled') === 'true') return
+  closeWorkerMenu({ refocus: false })
+  renameIn(/** @type {string} */ (item.dataset.workerRename))
+})
 
 /**
  * A link goes where its href says: a worker's `#<id>` reaches `route` as the hash changes. A view wires its own

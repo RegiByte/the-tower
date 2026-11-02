@@ -54,7 +54,8 @@ deriving it again from a list that can change can say it wrongly.
   typed, the tower again at the spawn.
 - *Read from the log.* [`workerName`](ref:hub/src/bridge/chains.ts#workerName) takes the first session of the worker's
   lineage and reads its `--name` ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)); a log without one (written before
-  sessions were named) falls back to the id's callsign over the current list. [`namer`](ref:hub/src/bridge/chains.ts#namer)
+  sessions were named) falls back to the id's callsign over the current list. A later rename, a `tower.rename` in the
+  chain's logs, comes before both ([[rename]]), checked by the same `callsignRefused`. [`namer`](ref:hub/src/bridge/chains.ts#namer)
   (the board, kept items, hires, briefs) and [`resumeName`](ref:hub/src/bridge/chains.ts#resumeName) (the name a
   carry-on resume runs under) both go through it.
 
@@ -64,7 +65,8 @@ deriving it again from a list that can change can say it wrongly.
   depend on every earlier session, so a deleted log could rename later ones. Choosing the id keeps the name a function
   of the id alone.
 - *Only adding names to the list*: fewer repeats, never none.
-- *A `tower.name` fact in the log*: `--name` in the header argv already records it from the first moment.
+- *A `tower.name` fact for the first name*: `--name` in the header argv already records it from the first moment;
+  only a later rename is a fact of its own ([[rename]]).
 - *Names lists versioned by the start time in the id*: a dated generation concept in the config and code for what the
   log already holds.
 

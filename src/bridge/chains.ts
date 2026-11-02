@@ -61,18 +61,24 @@ export const lineage = (session: Session, before: (s: Session) => Session | unde
 }
 
 /**
- * A worker keeps the callsign of its first session: the name that session's Claude ran under, read from its log, so a
- * change to the names callsigns are drawn from renames no one. A log from before sessions were named takes its id's
- * callsign. `before`: the session a session continues. `callsign`: a session id's (`callsignsOf`).
+ * A worker is called, in every session it ran as, by the callsign it was last renamed to (`tower.rename`) in the latest
+ * of them that renamed it, else by the callsign of its first session: the name that session's Claude ran under, read
+ * from its log, so a change to the names callsigns are drawn from renames no one. A log from before sessions were named
+ * takes its id's callsign. `before`: the session a session continues; `after`, the one that continues it. `callsign`: a
+ * session id's (`callsignsOf`).
  */
-const workerName = (session: Session, before: (s: Session) => Session | undefined, callsign: (id: string) => string) => {
-  const [first] = lineage(session, before)
-  return runsAs(first) ?? callsign(first.header.id)
+const workerName = (session: Session, before: (s: Session) => Session | undefined, after: (s: Session) => Session | undefined, callsign: (id: string) => string) => {
+  let last = session
+  for (let next = after(last); next; next = after(last)) last = next
+  const worker = lineage(last, before)
+  return worker.findLast((s) => s.facts.renamed !== undefined)?.facts.renamed ?? runsAs(worker[0]) ?? callsign(worker[0].header.id)
 }
 
 /** The running session of the worker called `name` (a callsign, any case). */
-export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, name: string, callsign: (id: string) => string): Session | undefined =>
-  sessions.find((s) => running.has(s.header.id) && workerName(s, (x) => continues(x, sessions), callsign).toUpperCase() === name.toUpperCase())
+export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, name: string, callsign: (id: string) => string): Session | undefined => {
+  const nameOf = namer(continuations(sessions), callsign)
+  return sessions.find((s) => running.has(s.header.id) && nameOf(s).toUpperCase() === name.toUpperCase())
+}
 
 /**
  * The callsigns of the workers of sessions `ids`: a new worker's name is kept apart from theirs (`freshId`,
@@ -80,15 +86,16 @@ export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, 
  */
 export const heldCallsigns = (sessions: Session[], ids: ReadonlySet<string>, callsign: (id: string) => string): string[] => {
   const byId = new Map(sessions.map((s) => [s.header.id, s]))
+  const nameOf = namer(continuations(sessions), callsign)
   return [...ids].map((id) => {
     const session = byId.get(id)
-    return session ? workerName(session, (s) => continues(s, sessions), callsign) : callsign(id)
+    return session ? nameOf(session) : callsign(id)
   })
 }
 
 /** The name a resume of `conversation` runs under as session `id`: its worker's, or its own on a fork. */
 export const resumeName = (source: Session, conversation: string, id: string, sessions: Session[], callsign: (id: string) => string) =>
-  carriesOn(source, conversation) ? workerName(source, (s) => continues(s, sessions), callsign) : callsign(id)
+  carriesOn(source, conversation) ? namer(continuations(sessions), callsign)(source) : callsign(id)
 
 /** The conversation's latest prompt and answer: what a resumed session hasn't had yet comes from the session it resumed. */
 const latest = (session: Session, conversation: Conversation, sessions: Session[]): Pick<Conversation, 'prompt' | 'answer'> => {
@@ -104,8 +111,10 @@ export type SessionRef = { id: string; callsign: string }
 export type SessionLink = SessionRef & { startedAt: number }
 
 /** The callsign of the worker each session ran as, over the sessions' `continuations`. */
-export const namer = (continued: Map<Session, Session>, callsign: (id: string) => string) => (session: Session) =>
-  workerName(session, (s) => continued.get(s), callsign)
+export const namer = (continued: Map<Session, Session>, callsign: (id: string) => string) => {
+  const heirs = new Map([...continued].map(([heir, before]) => [before, heir]))
+  return (session: Session) => workerName(session, (s) => continued.get(s), (s) => heirs.get(s), callsign)
+}
 
 /** A saved conversation as a session holds it, linked to the sessions it came from and went on to. */
 export type Thread = Conversation & { resumes?: SessionLink; resumedBy?: SessionLink }

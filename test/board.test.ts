@@ -192,10 +192,10 @@ test('verbs: a live session is driven and killed, takes a prompt at its composer
   const at = (t: number, live: string[]) => cardsOf([{ ...log, events: log.events.filter((e) => e[0] <= t && e[1] !== 'x') }], hostWith(...live))[0]
   const id = [log.header.id]
   assert.deepEqual(at(5, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
-  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'prompt', 'brief', 'kill', 'send-home'])
+  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'prompt', 'brief', 'kill', 'rename', 'send-home'])
   assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
   assert.deepEqual(at(140, id).conversations.map((c) => c.verbs), [[]])
-  assert.deepEqual(at(140, []).verbs, ['resume', 'carry-on', 'brief', 'let-go'])
+  assert.deepEqual(at(140, []).verbs, ['resume', 'carry-on', 'brief', 'let-go', 'rename'])
 })
 
 test('let go: a stranded worker leaves duty for the archive on the tower.letGo the host appends, its conversation still resumable', () => {
@@ -215,10 +215,10 @@ test('carry on: a worker the host stopped mid-turn is cut off, and offers a resu
   const midTurn = homed(fixture('host-stopped-mid-turn'))
   const [cut, done] = cardsOf([midTurn, homed(fixture('host-stopped-done'))])
   assert.deepEqual([cut.status, cut.stranded, cut.cutOff, statusName(cut)], ['exited', true, true, 'stopped mid-turn, resumable'])
-  assert.deepEqual(cut.verbs, ['resume', 'carry-on', 'brief', 'let-go'])
+  assert.deepEqual(cut.verbs, ['resume', 'carry-on', 'brief', 'let-go', 'rename'])
   assert.deepEqual(cut.calls['carry-on'], ['resume', { id: midTurn.header.id, conversation: 'dd49802c-3de0-416f-ac89-3711b7f03bb4', prompt: CARRY_ON }])
   assert.deepEqual([done.status, done.stranded, done.cutOff, statusName(done)], ['exited', true, false, 'stopped, resumable'])
-  assert.deepEqual(done.verbs, ['resume', 'brief', 'let-go'])
+  assert.deepEqual(done.verbs, ['resume', 'brief', 'let-go', 'rename'])
   const [letGo] = cardsOf([{ ...midTurn, events: [...midTurn.events, [20, 'h', { hook_event_name: 'tower.letGo' }]] }])
   assert.deepEqual([letGo.cutOff, letGo.verbs], [true, ['resume', 'brief']])
 })
@@ -229,7 +229,7 @@ test('a worker killed by a signal from outside the tower, caught or not, is stra
   const [killed, killedHard, sentHome, sentHomeHard] = cardsOf([exitingWith({ exitCode: 143 }), exitingWith({ exitCode: 0, signal: 9 }), exitingWith({ exitCode: 129 }), exitingWith({ exitCode: 0, signal: 1 })])
   for (const card of [killed, killedHard]) {
     assert.deepEqual([card.stranded, card.cutOff, card.onDuty, statusName(card)], [true, true, true, 'stopped mid-turn, resumable'])
-    assert.deepEqual(card.verbs, ['resume', 'carry-on', 'brief', 'let-go'])
+    assert.deepEqual(card.verbs, ['resume', 'carry-on', 'brief', 'let-go', 'rename'])
   }
   for (const card of [sentHome, sentHomeHard]) assert.deepEqual([card.stranded, card.onDuty], [false, false])
 })
@@ -319,7 +319,7 @@ test('calls: each verb that is a request comes ready, a resume naming the conver
     { resume: ['resume', { id: log.header.id, conversation: latest }] },
   ])
   const live = cardsOf([{ ...log, events: log.events.filter((e) => e[1] !== 'x') }], hostWith(log.header.id))[0]
-  assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], prompt: ['submit/at-prompt', { id: log.header.id }], kill: ['kill', { id: log.header.id }], 'send-home': [['kill', { id: log.header.id }]] })
+  assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], prompt: ['submit/at-prompt', { id: log.header.id }], kill: ['kill', { id: log.header.id }], rename: ['rename', { id: log.header.id }], 'send-home': [['kill', { id: log.header.id }]] })
   assert.deepEqual(board(viewOf(CONFIG, { host: hostWith() })).floors[0].calls, {
     spawn: ['spawn', { project: 'tower' }],
     shell: ['shell/spawn', { project: 'tower' }],
@@ -415,6 +415,18 @@ test('a resume runs under its worker’s callsign when it carries the worker on,
   assert.equal(resumeName(heir, latest, '20261005-120000-0000', sessions, callsign), rootName)
   assert.equal(resumeName(root, first, '20261005-120000-0000', sessions, callsign), callsign('20261005-120000-0000'))
   assert.notEqual(callsign('20261005-120000-0000'), rootName)
+})
+
+test('a rename names the worker by the tower.rename the host appends, in every session it ran as and in the resume carrying it on, the latest winning; a fork keeps its own', () => {
+  const logs = ['lineage-root', 'lineage-heir', 'lineage-fork'].map(fixture)
+  const [root, heir, fork] = logs
+  const renamed = (log: SessionLog, at: number, to: string): SessionLog => ({ ...log, events: [...log.events, [at, 'h', { hook_event_name: 'tower.rename', callsign: to }]] })
+  const named = (logs: SessionLog[]) => logs.map((log) => cardsOf(logs).find((c) => c.id === log.header.id)!.callsign)
+  const forkName = named(logs)[2]
+  assert.deepEqual(named([renamed(root, 1, 'ADA-01'), heir, fork]), ['ADA-01', 'ADA-01', forkName])
+  assert.deepEqual(named([renamed(root, 1, 'ADA-01'), renamed(heir, 5, 'GRACE-07'), fork]), ['GRACE-07', 'GRACE-07', forkName])
+  const sessions = [renamed(root, 1, 'ADA-01'), heir].map((log) => ({ header: log.header, facts: factsOf(log) }))
+  assert.equal(resumeName(sessions[1], sessions[1].facts.conversations.at(-1)!.id, '20261005-120000-0000', sessions, callsign), 'ADA-01')
 })
 
 test('the config’s callsigns name every worker; a list that can’t name them is a config error', () => {

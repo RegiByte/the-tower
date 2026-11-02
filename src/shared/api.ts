@@ -14,7 +14,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.140'
+export const API_VERSION = '1.141'
 
 const id = z.string().min(1)
 
@@ -203,6 +203,18 @@ export const VERBS = {
   },
   'let-go': {
     input: z.object({ id }).describe("Take a stranded worker (stopped, killed or lost, waiting to be resumed) off duty: a fact in its log, appended by the host. Its conversation stays resumable from the floor's archive."),
+    reply: ok,
+  },
+  rename: {
+    input: z
+      .object({
+        id,
+        callsign: z.string().min(1).describe("The worker's new callsign: `NAME-NN`, or a bare `NAME` given the number its session id hashes to. Refused while a worker on duty holds it, as a typed callsign is at a spawn."),
+        by: actor('named in the session\'s log with the new callsign.'),
+      })
+      .describe(
+        "Rename a worker on duty: the board, its peers and everything after call it by the new callsign, as the fact `tower.rename` in its log, appended by the host. A running worker's Claude is renamed too (`/rename`, typed into its composer), so other sessions message it by the new name; refused (`not_at_prompt`, `composer_holds`) while that would answer a question or join text in its composer. A stopped worker takes the name when it is resumed. Its worktree and branch keep their names. @since 1.141",
+      ),
     reply: ok,
   },
   fact: {

@@ -9,7 +9,7 @@
 }
 ---
 `docs/usage.md` names the workers' `tower` verbs ([`CLI_VERBS`](ref:hub/src/cli-verbs.ts#CLI_VERBS), [[tower-cli]]):
-`show`, `hire`, `agents`, `agent`, `home`, `let-go`, `review`, `note`, `thread`, `send`, `keep`, `kept`, `read`,
+`show`, `hire`, `agents`, `agent`, `home`, `let-go`, `rename`, `review`, `note`, `thread`, `send`, `keep`, `kept`, `read`,
 `policies`, `runs`, `probes`, and the renderers that ship.
 A verb added, renamed or dropped re-checks it.
 

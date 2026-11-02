@@ -29,7 +29,8 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
   cut it off mid-turn ([[carry-on]]); `review` while every dir of its floor is a git repo, it isn't a reviewer and its
   checkout is still there ([[reviewer]]); `reap` while it
   has [[leftover]]s; `send-home` while any of its crew runs ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions),
-  [[crews]]); `let-go` while stranded on duty ([[let-go]]); `note` while its floor keeps review threads and its
+  [[crews]]); `let-go` while stranded on duty ([[let-go]]); `rename` while at Claude's composer or stranded on duty,
+  its log not broken ([[rename]]); `note` while its floor keeps review threads and its
   checkout's work goes on ([`noteActions`](ref:hub/src/bridge/verbs.ts#noteActions),
   [`checkoutState`](ref:hub/src/bridge/checkouts.ts#checkoutState), [[review-threads]]). A floor's `threads` offer
   `note` the same way.

@@ -131,7 +131,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     ...life, hiredBy, enteredAt, startedAt, cols: 120, rows: 40,
     context: f.context, costUsd: f.costUsd, tool: f.tool, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
     resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), pages: [], sent: [], conversations,
-    ...cardOffers(id, life.status, promptRefusal(life.status, undefined) === undefined, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
+    ...cardOffers(id, life.status, promptRefusal(life.status, undefined) === undefined, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff, false),
   }
 }
 

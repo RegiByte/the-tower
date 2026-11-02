@@ -58,7 +58,13 @@ on that floor with `tower hire … floor <id>`: the hire works there and still r
 A worker's callsign is drawn at random unless you type one as it starts: the New worker dialog's Callsign,
 `tower hire … callsign ZECA` or `tower spawn <project> --callsign ZECA`. A name typed without a number gets one
 (`ZECA-63`) and is refused while a worker on duty has that name; a name typed with its number is refused only when
-that exact callsign is on duty. The callsign is kept for good, across resumes.
+that exact callsign is on duty. The callsign is kept across resumes.
+
+To rename a worker on duty, click its callsign at the top of its card and type the new one in place (Enter
+renames, Esc cancels), right-click the worker in the sidebar and pick **Rename…**, or run
+`tower rename <CALLSIGN> <NEW>`; the same rules apply. Its card, the name other sessions message it by and its
+resumes take the new callsign; its worktree and branch keep their names. A worker asking you something, or with text
+in its composer, is renamed once that is answered or cleared.
 
 ## Checking on a worker
 
