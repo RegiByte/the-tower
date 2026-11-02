@@ -58,7 +58,6 @@ const CSS = `:where([data-view="${ID}"]) {
   & .bar-info .lead { flex: none; }
   & .bar-info .call { flex: none; font: 800 var(--fs-2xl)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
   & .bar-info .pill { flex: none; font-variant-numeric: tabular-nums; }
-  & .pill [data-since] { display: inline-block; min-width: 7ch; font-variant-numeric: tabular-nums; }
   & .bar-info .stats { flex: none; display: flex; align-items: center; gap: var(--sp-l); }
   & .bar-info b { color: var(--ink); font-variant-numeric: tabular-nums; }
   & .bar-info .meter { width: 56px; --fill: var(--working); }
