@@ -440,7 +440,7 @@ export const dispatch = defineResource({
         const { branchPrefix, links } = worktreesConfig(config, projectId)
         resumingIn = { id: heir, cwd }
         try {
-          const restoring = gone ? await worktreeVerb(async () => ({ t: 'restored', restored: await restoreWorktree(project, projectId, links, name!, `${branchPrefix}${name}`) })) : undefined
+          const restoring = gone ? await worktreeVerb(async () => ({ t: 'restored', restored: await restoreWorktree(project, projectId, links, name!, `${branchPrefix}${name}`, occupants()) })) : undefined
           if (restoring && 'code' in restoring) return restoring
           const restored = restoring?.restored
           const answer = await host(

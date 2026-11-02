@@ -28,8 +28,8 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   ([`readRepos`](ref:hub/src/system.ts#readRepos)), the board's as its git changes, asking git again only for the parts a
   change touched ([[live-system]]), every verb's afresh after a fetch; the pure fold
   ([`floorWorktrees`](ref:hub/src/bridge/worktrees.ts#floorWorktrees)) makes one entry per name across repos with a
-  state: `live` (a worker on duty in it, running or stranded until resumed or let go, or a shell; [[tidy]]), `lost`
-  (a folder gone), `at-risk` (uncommitted files, or commits on no remote that aren't **absorbed** or [[carried]]),
+  state: `lost` (a folder gone, whoever is in it), then `live` (a worker on duty in it, running or stranded until
+  resumed or let go, a resume in flight, or a shell; [[tidy]]), `at-risk` (uncommitted files, or commits on no remote that aren't **absorbed** or [[carried]]),
   `carried` (clean, its work landed only as copies, some edited: removed by its own `remove`), else `removable`. Every
   git call runs with the user's config that would change a read set back to git's default
   ([`PINNED`](ref:hub/src/git.ts#PINNED)): under `status.showUntrackedFiles=no` a worktree holding only new files
@@ -70,6 +70,9 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
 - **No global prune.** The cut never runs `git worktree prune`: it would clear every lost worktree's ghost entry, the
   only evidence of `lost`. A ghost at the name's path answers `exists`; `worktree/recut` and `worktree/prune` clear
   only that name's ghost with `git worktree remove --force <path>` (the folder is gone, so `--force` loses nothing).
+- **Lost is a fact of the folders, occupancy of the workers.** A lost worktree offers `recut` always and `prune` only
+  while nobody is in it, and `worktree/prune` refuses one someone is in, so a stranded worker or a resume in flight
+  never has its worktree forgotten under it.
 - **Lost refuses work.** A spawn is refused with `lost` when any of the session's dirs is gone, not only its `cwd`;
   recut restores the folders from the branch. A resume restores a gone worktree under its name first (recut, its kept
   branch, or a fresh cut once nothing of it is left), and is refused with `lost` only where none applies ([[resume]]).
