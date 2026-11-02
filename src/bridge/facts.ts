@@ -1,3 +1,4 @@
+import { CALLSIGN } from '../shared/callsign.ts'
 import type { LogEvent, SessionHeader } from '../shared/model.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
 import { heldAfter } from './composer.ts'
@@ -404,8 +405,11 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, killedBy: String(hook.by) }
     case LEAVE:
       return { ...facts, leaveAt: t }
-    case RENAMED:
-      return { ...facts, renamed: String(hook.callsign) }
+    case RENAMED: {
+      const callsign = String(hook.callsign)
+      if (!CALLSIGN.test(callsign)) throw new Error(`tower.rename names "${callsign}", not a callsign (NAME-NN): only the tower's rename verb logs one`)
+      return { ...facts, renamed: callsign }
+    }
     case EXEMPT:
       return { ...facts, exempt: [...facts.exempt, { from: hook.from as Exemption['from'], by: String(hook.by) }] }
     case REPORTS_TO:

@@ -45,6 +45,9 @@ export const freshId = (draw: () => string, callsign: (id: string) => string, he
 /** A name a callsign can start with: it is matched in upper case, and lowercased it names a worktree. */
 export const CALLSIGN_NAME = /^[A-Z][A-Z0-9]*$/
 
+/** A whole callsign, as the board names a worker: a name and its number (`typedCallsign`, `callsigns`). */
+export const CALLSIGN = /^[A-Z][A-Z0-9]*-[0-9]+$/
+
 /** A callsign typed for a new worker, upper-cased: a name, and a number if given. */
 const TYPED = /^[A-Z][A-Z0-9]*(-[0-9]+)?$/
 

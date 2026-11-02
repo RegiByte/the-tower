@@ -279,7 +279,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     const orphan = c.resources.some((r) => r.orphan)
     const ctx = c.context
     if (cell) drawCell(c)
-    if (!editing) paintOnce(naming, `<span class="call" role="heading" aria-level="2">${can(c, 'rename') ? `<button class="rename" data-rename="${c.id}" data-tip="rename ${c.callsign}">${c.callsign}</button>` : c.callsign}</span>`)
+    if (!editing) paintOnce(naming, `<span class="call" role="heading" aria-level="2">${can(c, 'rename') ? `<button class="rename" data-rename="${esc(c.id)}" data-tip="rename ${esc(c.callsign)}">${esc(c.callsign)}</button>` : esc(c.callsign)}</span>`)
     paintOnce(
       $('.lead-rest'),
       `${cell ? pickHtml() : ''}
@@ -329,8 +329,8 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     const c = card
     if (editing || !can(c, 'rename')) return
     editing = true
-    naming.innerHTML = `<span class="call" role="heading" aria-level="2"><input class="rename-field" data-rename-field="${c.id}" value="${esc(c.callsign)}" size="${c.callsign.length}" autocomplete="off" spellcheck="false"
-      aria-label="new callsign for ${c.callsign}" aria-describedby="${pop}-rename-why"></span><small class="rename-why" id="${pop}-rename-why" aria-live="polite">Enter renames · Esc cancels · its worktree and branch keep their names</small>`
+    naming.innerHTML = `<span class="call" role="heading" aria-level="2"><input class="rename-field" data-rename-field="${esc(c.id)}" value="${esc(c.callsign)}" size="${c.callsign.length}" autocomplete="off" spellcheck="false"
+      aria-label="new callsign for ${esc(c.callsign)}" aria-describedby="${pop}-rename-why"></span><small class="rename-why" id="${pop}-rename-why" aria-live="polite">Enter renames · Esc cancels · its worktree and branch keep their names</small>`
     const input = naming.querySelector<HTMLInputElement>('input')!
     input.focus()
     input.select()

@@ -9,6 +9,7 @@
   "reviewed": "2026-11-02",
   "refs": [
     "hub/src/bridge/facts.ts#RENAMED",
+    "hub/src/shared/callsign.ts#CALLSIGN",
     "hub/src/bridge/chains.ts#workerName",
     "hub/src/bridge/chains.ts#namer",
     "hub/src/bridge/verbs.ts#cardVerbs",
@@ -41,7 +42,9 @@ from: typing it is how the user would rename it, and needs no change to the host
   refused (`not_at_prompt`, `composer_holds`) before anything is logged where typing would answer a question or
   join text the composer holds.
 - *Logged, then typed.* The host appends `tower.rename {callsign}` (with `by` when a worker asks) to the session's
-  log ([`RENAMED`](ref:hub/src/bridge/facts.ts#RENAMED)), then the tower types `/rename <callsign>` and Enter into a
+  log ([`RENAMED`](ref:hub/src/bridge/facts.ts#RENAMED)); the fold takes only a whole callsign
+  ([`CALLSIGN`](ref:hub/src/shared/callsign.ts#CALLSIGN)) and breaks the session on anything else, as any fact of a
+  shape it doesn't expect ([[broken-logs]]), since renderers draw the name as html. Then the tower types `/rename <callsign>` and Enter into a
   running worker's composer: an immediate command, run even mid-turn. A stopped worker's resume runs under the new
   name as its `--name`.
 - *Read.* [`workerName`](ref:hub/src/bridge/chains.ts#workerName) walks the worker's whole chain, the sessions it

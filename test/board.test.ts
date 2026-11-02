@@ -427,6 +427,9 @@ test('a rename names the worker by the tower.rename the host appends, in every s
   assert.deepEqual(named([renamed(root, 1, 'ADA-01'), renamed(heir, 5, 'GRACE-07'), fork]), ['GRACE-07', 'GRACE-07', forkName])
   const sessions = [renamed(root, 1, 'ADA-01'), heir].map((log) => ({ header: log.header, facts: factsOf(log) }))
   assert.equal(resumeName(sessions[1], sessions[1].facts.conversations.at(-1)!.id, '20261005-120000-0000', sessions, callsign), 'ADA-01')
+  const [bad] = cardsOf([renamed(root, 1, '<img src=x onerror=alert(1)>')])
+  assert.equal(bad.callsign, named([root])[0])
+  assert.match(bad.broken!.message, /not a callsign/)
 })
 
 test('the config’s callsigns name every worker; a list that can’t name them is a config error', () => {
