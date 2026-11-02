@@ -80,8 +80,9 @@ its default, and `GET /renderers` serves the same problems as `layoutProblems`.
 
 The page draws a worker's tabs (`card.panes`) in `scroll` with the tabs a pane chord opens first (Terminal, Brief,
 Changes, Reviews), where they stay put, and every other tab after them in the strip that scrolls: its `order` arranges
-each of the two apart, so a view ordered before Brief draws after Reviews. In `wrap` the views follow `order`, unsplit.
-In either form the worker's showings come after its views, in the order they were shown.
+each of the two apart, so a view ordered before Brief draws after Reviews. In `wrap` and `menu` the views follow `order`,
+unsplit; `menu` draws those that fit and lists the rest behind "+n ▾", never the pane chords' tabs or the open one.
+In every form the worker's showings come after its views, in the order they were shown.
 
 ## Projects
 
