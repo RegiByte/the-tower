@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.83.1
+
+Two fixes to a worker's head. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config
+change, no API change (1.138).
+
+- **Scrolling tabs keep their scrollbar clear of them.** In the scroll form, the tabs keep a focus ring's room on
+  each side, with the track below it, and the thumb shows only while the pointer is over them or one holds focus.
+  A full head lends its bottom padding to the ring and track, so it is no taller than without them. A grid cell
+  lends none, so there the room is matched above the tabs, which stay level with the pane commands' tabs (#347).
+- **The status pill is as wide as its time.** It no longer reserves room for "59m 59s" after a short time such as
+  "2d". A time gone by pads its second unit (`4m 05s`, `3h 07m`), so a ticking count changes width only when it moves
+  to a new unit or gains a digit; the CLI, the brief and Tower 3D write it the same way (#347).
+
 ## v1.83.0
 
 What the tower does when extension contributions outgrow their space. No restart beyond the tower's own (`tower down
