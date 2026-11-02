@@ -737,8 +737,9 @@ export function regions(deps) {
           repaint(list, drawn.map((t) => (tight ? namedTabHtml : tabHtml)(t, t.key === open)).join(''))
           more.hidden = !tucked.length
           more.textContent = `+${tucked.length} ▾`
-          more.setAttribute('aria-label', `${tucked.length} more ${tucked.length === 1 ? 'tab' : 'tabs'}`)
-          more.dataset.tip = tucked.map((t) => (t.showing ? shownTitle(t.showing) : t.view.words.label)).join(', ')
+          const said = `More tabs of ${card.callsign}: ${tucked.length}`
+          more.setAttribute('aria-label', said)
+          more.dataset.tip = said
           listed.draw({ header: '', entries: tucked.map(itemOf) })
           if (!tucked.length) listed.close()
         },
