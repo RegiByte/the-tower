@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.84.0
+
+A worker whose worktree is gone resumes. No restart beyond the tower's own (`tower down tower`, then `tower up tower`),
+no config change, API 1.140 (additions only).
+
+- **Resume restores a gone worktree first.** A worker whose worktree was removed, by Tidy, autotidy or by hand,
+  resumes again: the resume recuts the worktree under its old name from what git still holds (its lost folders, its
+  kept branch, or, once its work landed and its branch was deleted, a fresh cut from origin's default branch). Only a
+  checkout that can't come back, such as a lost one on a detached HEAD, stays unresumable, with the fix named. While
+  the resume runs, it holds the worktree, so Tidy can't remove it again before the worker is on duty (#349).
+- **The worker is told in a first message.** A resume that restored a worktree says so in its prompt: which restore
+  ran, from where and at what commit. Without a prompt of yours, the worker answers briefly and waits for you; with
+  one, the note comes first in the same message. `--resume` keeps a conversation's first system prompt, so the note
+  can't travel there. The Resume buttons say so before you press them (#351).
+- **A worktree with a folder missing reads lost, whoever is in it.** It offers Recut, and Prune only while nobody
+  is in it; the API refuses a prune under a worker. It is no longer offered as a worktree to join (#349).
+
 ## v1.83.1
 
 Two fixes to a worker's head. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config
