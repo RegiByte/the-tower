@@ -312,6 +312,8 @@ dialog.confirm .actions { flex: none; }
 /* A worker's tabs in the menu form: those that fit on one row, the rest behind "+n ▾" after the tablist. */
 .tab-row > .tab-set.tabs-menu { flex: 0 1 auto; min-width: 0; display: flex; gap: var(--sp-s); overflow: hidden; padding-block: 2px; margin-block: -2px; }
 .tabs-menu > * { flex: none; max-width: 100%; }
+.tab-row > .tab-set.tabs-menu.tight > :not(.shown-tab) { flex: 0 1 auto; min-width: 3em; display: inline-flex; align-items: center; overflow: hidden; }
+.tabs-menu.tight .tab-word { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tab-row > .tabs-more { color: var(--ink); }
 .tabs-adds { display: contents; }
 .tabs-adds > * { flex: none; }

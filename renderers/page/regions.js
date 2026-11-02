@@ -475,16 +475,25 @@ export function regions(deps) {
     /** The terminal while the worker drives (or has no brief), else its brief. @param {TabOf[]} all */
     const byDefault = (all) => all.find((t) => t.view.id === (can(card, 'drive') || !can(card, 'brief') ? 'tower/terminal' : 'tower/brief')) ?? all[0]
 
+    /** A tab's words: the view's own `tab` export's while mounted, else what it gave when listed. @param {TabOf} t @returns {TabWords} */
+    const wordsOf = (t) => mounted.get(t.key)?.hosted.tab() ?? t.words ?? {}
+
+    /** What a view's tab says it opens. @param {TabOf} t */
+    const hintOf = (t) => wordsOf(t).hint ?? t.view.words.hint ?? t.view.words.label
+
     /** @param {TabOf} t @param {boolean} on */
-    function tabHtml(t, on) {
+    const tabHtml = (t, on) => (t.showing ? shownTabHtml(t.showing, on, t.key, `panel-${esc(t.key)}`) : viewTabHtml(t, on, hintOf(t)))
+
+    /** A tab whose label may be cut short: its tip says its name first. @param {TabOf} t @param {boolean} on */
+    const namedTabHtml = (t, on) => (t.showing ? tabHtml(t, on) : viewTabHtml(t, on, `${t.view.words.label} · ${hintOf(t)}`))
+
+    /** A view's tab, `hint` its tip. @param {TabOf} t @param {boolean} on @param {string} hint */
+    function viewTabHtml(t, on, hint) {
       const command = PANE_COMMANDS[t.view.id]
-      const panel = `panel-${esc(t.key)}`
-      const words = mounted.get(t.key)?.hosted.tab() ?? t.words ?? {}
-      if (t.showing) return shownTabHtml(t.showing, on, t.key, panel)
-      const hint = words.hint ?? t.view.words.hint ?? t.view.words.label
+      const words = wordsOf(t)
       const tip = command ? keyedTip(board().keys, hint, command) : `data-tip="${esc(hint)}"`
       const tally = words.text ? `<small${words.tone ? ` class="${words.tone}"` : ''}${words.tip ? ` data-tip="${esc(words.tip)}"` : ''}>${esc(words.text)}</small>` : ''
-      return `<button class="pane-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" ${tip} data-tab="${esc(t.key)}">${esc(t.view.words.label)}${tally}</button>`
+      return `<button class="pane-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="panel-${esc(t.key)}" ${tip} data-tab="${esc(t.key)}"><span class="tab-word">${esc(t.view.words.label)}</span>${tally}</button>`
     }
 
     /** What a worker showed, as a tab: a link opens in a browser tab, anything else also opens out of the tower. @param {CardShown} s @param {boolean} on @param {string} key @param {string} panel */
@@ -637,9 +646,10 @@ export function regions(deps) {
 
     /**
      * The menu form: the tabs that fit on one row, the rest behind "+n ▾" after the tablist, a menu of them
-     * (`/menu.js`). The tabs a pane chord opens and the open tab are always drawn; a tab picked from the menu is drawn
-     * last among the drawn until another is picked, the others filling what room is left in the layout's order. Each
-     * tab's width is read while every tab is drawn, and remembered by what it draws until the row's width changes.
+     * (`/menu.js`). The tabs a pane chord opens and the open tab are always drawn, their labels cut short when even they
+     * don't fit; the tab last picked from the menu is drawn next while it fits, then the others fill what room is left
+     * in the layout's order, each drawn where that order puts it. Each tab's width is read while every tab is drawn,
+     * and remembered by what it draws until the row's width changes.
      * The tablist, "+n ▾" and the showing's adds are the row's own while it is in this form: drawn into, never replaced.
      * @returns {TabsForm}
      */
@@ -677,6 +687,7 @@ export function regions(deps) {
 
       /** Draws every tab and "+n ▾" at its widest, and keeps their widths. @param {TabOf[]} all */
       function measure(all) {
+        list.classList.remove('tight')
         repaint(list, tabsHtml(all))
         more.hidden = false
         more.textContent = `+${all.length} ▾`
@@ -685,27 +696,33 @@ export function regions(deps) {
         moreWidth = more.getBoundingClientRect().width + gapOf(strip)
       }
 
-      /** The tabs drawn in place, in the layout's order, and those tucked behind "+n ▾". @param {TabOf[]} all */
+      /**
+       * The tabs drawn in place, in the layout's order, those tucked behind "+n ▾", and whether the drawn are tight: the
+       * tabs a pane chord opens and the open tab, which are never tucked, wider than the room, so their labels shrink.
+       * @param {TabOf[]} all
+       */
       function fit(all) {
         const widthOf = (/** @type {TabOf[]} */ ts) => ts.reduce((n, t) => n + /** @type {number} */ (widths.get(drawsOf(t))), 0) - (ts.length ? gapOf(list) : 0)
         const added = addsAt.firstElementChild ? addsAt.firstElementChild.getBoundingClientRect().width + gapOf(strip) : 0
         const free = strip.clientWidth - added
-        if (widthOf(all) <= free) return { drawn: all, tucked: [] }
-        const kept = all.filter((t) => (!t.showing && PANE_COMMANDS[t.view.id]) || t.key === open || t.key === swapped)
+        if (widthOf(all) <= free) return { drawn: all, tucked: [], tight: false }
+        const kept = all.filter((t) => (!t.showing && PANE_COMMANDS[t.view.id]) || t.key === open)
         let left = free - moreWidth - widthOf(kept)
         const filled = new Set(kept)
-        for (const t of all) {
+        const picked = all.find((t) => t.key === swapped && !filled.has(t))
+        for (const t of picked ? [picked, ...all] : all) {
           if (filled.has(t)) continue
-          left -= /** @type {number} */ (widths.get(drawsOf(t)))
-          if (left < 0) break
+          const width = /** @type {number} */ (widths.get(drawsOf(t)))
+          if (left - width < 0) break
+          left -= width
           filled.add(t)
         }
-        return { drawn: all.filter((t) => filled.has(t)), tucked: all.filter((t) => !filled.has(t)) }
+        return { drawn: all.filter((t) => filled.has(t)), tucked: all.filter((t) => !filled.has(t)), tight: left < 0 }
       }
 
       /** @param {TabOf} t @returns {MenuItem} */
       const itemOf = (t) => {
-        const words = mounted.get(t.key)?.hosted.tab() ?? t.words ?? {}
+        const words = wordsOf(t)
         return { t: 'item', key: itemKey(t), label: t.showing ? shownTitle(t.showing) : t.view.words.label, ...(words.text && { hint: words.text }) }
       }
 
@@ -715,8 +732,9 @@ export function regions(deps) {
           list.setAttribute('aria-label', `views of ${card.callsign}`)
           if (strip.clientWidth !== room) widths.clear(), (room = strip.clientWidth)
           if (all.some((t) => !widths.has(drawsOf(t)))) measure(all)
-          const { drawn, tucked } = fit(all)
-          repaint(list, tabsHtml(drawn))
+          const { drawn, tucked, tight } = fit(all)
+          list.classList.toggle('tight', tight)
+          repaint(list, drawn.map((t) => (tight ? namedTabHtml : tabHtml)(t, t.key === open)).join(''))
           more.hidden = !tucked.length
           more.textContent = `+${tucked.length} ▾`
           more.setAttribute('aria-label', `${tucked.length} more ${tucked.length === 1 ? 'tab' : 'tabs'}`)
