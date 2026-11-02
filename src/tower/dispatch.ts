@@ -31,6 +31,7 @@ import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
 import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
   callsignsOf,
+  commandNames,
   ConfigError,
   configuredUser,
   editorArgv,
@@ -84,6 +85,13 @@ export const launchWithDefaults = (config: Config, projectId: string, launch: La
   command: launch.command ?? projectPreferredCommand(config, projectId),
 })
 
+/** Why `name` can't be the command a launch names: `argv`'s names, when it has more than one, else that none can be given. */
+const commandRefused = (config: Config, name: string | undefined): ApiError | undefined => {
+  if (name === undefined) return undefined
+  const names = commandNames(config)
+  if (names === undefined) return apiError('invalid', `command: argv names only one command, so none can be given`)
+  return names.includes(name) ? undefined : apiError('invalid', `command: names no command of argv: they are ${names.join(', ')}`)
+}
 
 type Deps = {
   'core:config': ConfigResource
@@ -120,10 +128,15 @@ export const dispatch = defineResource({
 
     /**
      * A host older than `SPAWN_FACTS_PROTOCOL` reads past a spawn's `facts`: the session would start without them. A
-     * spawn answers once the system tracks its session, so whoever it answers reads the session by its id.
+     * host older than `COMMAND_PROTOCOL` spreads `argv` as its old array shape and fails on the object one a `command`
+     * implies. A spawn answers once the system tracks its session, so whoever it answers reads the session by its id.
      */
     async function host(msg: ToHost): Promise<Answer> {
-      const refused = msg.t === 'spawn' && msg.facts?.length ? olderHost(SPAWN_FACTS_PROTOCOL, 'start a worker with its facts') : undefined
+      const refused =
+        msg.t === 'spawn'
+          ? (msg.facts?.length ? olderHost(SPAWN_FACTS_PROTOCOL, 'start a worker with its facts') : undefined) ??
+            (msg.command !== undefined ? olderHost(COMMAND_PROTOCOL, 'start a worker under a named command') : undefined)
+          : undefined
       if (refused) return refused
       const answer = await daemon(() => hostRequest(paths, msg))
       void system.refreshLive()
@@ -145,6 +158,9 @@ export const dispatch = defineResource({
 
     /** The host protocol that first logs a spawn's `facts`. */
     const SPAWN_FACTS_PROTOCOL = 3
+
+    /** The host protocol that first takes a named `command`. */
+    const COMMAND_PROTOCOL = 4
 
     /** Why the running host, older than protocol `needs`, can't do something, so a verb that needs it refuses before it does anything. */
     const olderHost = (needs: number, doing: string): ApiError | undefined => {
@@ -439,6 +455,8 @@ export const dispatch = defineResource({
         const config = readConfig()
         const project = config.projects[source.header.project]
         if (!project) return apiError('not_found', `No project "${source.header.project}" in the config`)
+        const badCommand = commandRefused(config, source.header.command)
+        if (badCommand) return apiError('config', `${source.header.id} ran under command "${source.header.command}": ${badCommand.message}, change config.json's argv to bring it back`)
         const { project: projectId, cwd } = source.header
         const name = worktreeName(project, cwd)
         const gone = name !== undefined && sessionDirs(project, cwd).some((dir) => !existsSync(dir))
@@ -574,6 +592,8 @@ export const dispatch = defineResource({
      * refuses it, or when its crew edge names no worker; its facts are its fields' and the core's.
      */
     const newLaunch = async (config: Config, projectId: string, at: Pick<SpawnLaunch, 'id' | 'name' | 'cwd' | 'dirs' | 'worktree'>, launch: Launch, spawn: Spawn): Promise<SpawnLaunch | ApiError> => {
+      const badCommand = commandRefused(config, launch.command)
+      if (badCommand) return badCommand
       const runtime = 'claude'
       const now = Date.now()
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))

@@ -77,11 +77,15 @@ test('configProblems: the legacy array argv is still accepted; the object shape 
   assert.equal(configProblems(config({ argv: 'claude' as unknown as string[] })).some((p) => p.key === 'argv'), true)
 })
 
-test("configProblems: a project's command must be a string when given, and is never an unknown key", () => {
-  const withCommand = config({ projects: { p: { name: 'p', hub: '/', repos: [], command: 'mom' } } })
-  assert.deepEqual(configProblems(withCommand).filter((p) => p.key.startsWith('projects.p')), [])
+test("configProblems: a project's command must be a string naming one of argv's, and is never an unknown key", () => {
+  const valid = config({ argv: { claude: ['claude'], mom: ['claude-mom'] }, projects: { p: { name: 'p', hub: '/', repos: [], command: 'mom' } } })
+  assert.deepEqual(configProblems(valid).filter((p) => p.key.startsWith('projects.p')), [])
+  const unknown = config({ argv: { claude: ['claude'], mom: ['claude-mom'] }, projects: { p: { name: 'p', hub: '/', repos: [], command: 'nope' } } })
+  assert.deepEqual(configProblems(unknown).filter((p) => p.key === 'projects.p.command'), [{ level: 'fail', key: 'projects.p.command', problem: 'names no command of argv: they are claude, mom' }])
+  const ignored = config({ projects: { p: { name: 'p', hub: '/', repos: [], command: 'mom' } } })
+  assert.deepEqual(configProblems(ignored).filter((p) => p.key === 'projects.p.command'), [{ level: 'warn', key: 'projects.p.command', problem: 'argv names only one command: this is ignored' }])
   const badCommand = config({ projects: { p: { name: 'p', hub: '/', repos: [], command: 3 as unknown as string } } })
-  assert.equal(configProblems(badCommand).some((p) => p.key === 'projects.p.command'), true)
+  assert.equal(configProblems(badCommand).some((p) => p.level === 'fail' && p.key === 'projects.p.command'), true)
 })
 
 test('LEGACY names what each applier reads, and every verb, read and board field has its code', () => {

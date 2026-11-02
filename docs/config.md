@@ -43,6 +43,14 @@ A project can prefer a named command when `argv` names more than one:
 }
 ```
 
+A spawn or resume naming a command `argv` doesn't have fails, listing the names it does; this is also what a running
+session sees if its command is later dropped from `argv` and it is resumed. Each command must be its own executable on
+PATH, never a shell alias: see `argv`'s own doc comment in `src/shared/model.ts` for the wrapper-bin pattern a second
+account typically uses. Naming a command in a spawn needs the host at protocol 4 or later (`tower doctor`), since an
+older host spreads `argv` as its single array and fails on the named shape; a session already running under an older
+host resumes under `argv`'s first until the host restarts. A session resumed from before `command` existed on its
+header also resumes under `argv`'s first, not its floor's preferred one.
+
 ## Top level
 
 | Key | Takes | Unset |
@@ -111,7 +119,7 @@ Each project is a floor. Its sessions start in the hub; the repos are the other 
 | `worktrees`, `hiring`, `brief` | As at the top level, for this floor. | the top level's |
 | `extensions` | Each extension's `settings` on this floor, by id, shallow-merged over the system's and parsed by its manifest's settings schema. Settings for an id that provides nothing running here are a warning. | none |
 | `capabilities` | Capabilities turned off on this floor, by name: `{ "github": { "off": true } }`. Whichever extension provides one, it is off here, and so is every extension that requires it. `tower`, the core, is never off. | all on |
-| `command` | The `argv` command this floor's workers start with unless told otherwise, by name. Falls back to `argv`'s first when it names none of them, or when `argv` names only one (or is the legacy array). | `argv`'s first |
+| `command` | The `argv` command this floor's workers start with unless told otherwise, by name: a fail if `argv` names more than one and none of them is this, a warning (ignored) if `argv` names only one (or is the legacy array). | `argv`'s first |
 
 ## Extensions
 
@@ -148,9 +156,10 @@ read it only when it reads it again: the brief at its next `whoami`, the full te
 ### The quota probe
 
 The bundled extension `quota` reads the account's rate limits from Claude (`/usage`'s data, the `get_usage` control
-request to the `argv` sessions start with: no prompt, $0) while no session's turn has reported them within `every`, so
-the board's limits and the weekly budget stay current while nobody works. Each read is appended to its stream,
-`streams/system/probe.quota/YYYY-MM.jsonl` beside the config, the folder it kept from before it was an extension.
+request to `argv`'s first command when it names more than one: no prompt, $0) while no session's turn has reported
+them within `every`, so the board's limits and the weekly budget stay current while nobody works. Each read is
+appended to its stream, `streams/system/probe.quota/YYYY-MM.jsonl` beside the config, the folder it kept from before
+it was an extension.
 
 | Setting | Takes | Unset |
 |---|---|---|
