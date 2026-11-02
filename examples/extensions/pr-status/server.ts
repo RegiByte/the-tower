@@ -7,7 +7,7 @@
  * When: at the end of a worker's turn (its board trigger), for that worker's branch; and at its `tick`, for every
  * branch that is due. An open pull request is due every `every`; a branch with none, or with one merged or closed,
  * backs off while GitHub keeps saying the same (`BACKOFF`), since a new one most often shows at a turn's end. Each
- * round is one GraphQL query per GitHub host, every branch an alias in it.
+ * round is one GraphQL query per GitHub host and `CHUNK` branches, every branch an alias in it.
  */
 import type { Board, Card } from '../../../src/bridge/board.ts'
 import type { FoldCtx, Start, StreamFact, TriggerCall } from '../../../src/shared/extensions.ts'
@@ -15,28 +15,22 @@ import type { FoldCtx, Start, StreamFact, TriggerCall } from '../../../src/share
 type Settings = { every: string; gh: string[] }
 type Review = 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED'
 type Checks = 'SUCCESS' | 'FAILURE' | 'ERROR' | 'PENDING' | 'EXPECTED'
-/** A pull request as GitHub said it: `review` and `checks` as its GraphQL names them, absent from facts before they were asked. */
+/** A pull request as GitHub said it: `review` and `checks` as its GraphQL names them. */
 type Pr = {
   number: number
   state: 'OPEN' | 'MERGED' | 'CLOSED'
   draft: boolean
   url: string
   title: string
-  review?: Review | null
-  checks?: Checks | null
-  headOid?: string
-  createdAt?: string
+  review: Review | null
+  checks: Checks | null
+  headOid: string
+  createdAt: string
 }
-/**
- * What an ask found: the newest pull request GitHub has from a head of the branch's name, and whether git took it for
- * this branch's (`mine`), or why it couldn't be asked.
- */
-type Answer = { pr: Pr | null; mine?: boolean } | { error: string }
-/**
- * What was last seen of a branch: its newest pull request and `mine` as last asked, and `error` while its latest ask
- * failed, which keeps the pull request seen before it.
- */
-type Seen = { dir: string; branch: string; at: number; pr?: Pr | null; mine?: boolean; error?: string }
+/** What an ask found: the branch's pull request (the newest GitHub lists by its name that `mineOf` takes for its), or none, or why it couldn't be asked. */
+type Answer = { pr: Pr | null } | { error: string }
+/** What was last seen of a branch: its pull request as last asked, and `error` while its latest ask failed, which keeps the pull request seen before it. */
+type Seen = { dir: string; branch: string; at: number; pr?: Pr | null; error?: string }
 /** The stream's state: what was last seen of each checkout's branch, by `keyOf`. */
 type State = Record<string, Seen>
 type Branch = { dir: string; branch: string }
@@ -48,11 +42,10 @@ const step = (state: State, [at, code, fact]: StreamFact): State => {
   const { dir, branch } = fact as Branch
   const key = keyOf(dir, branch)
   if (code === 'f') {
-    const { pr, mine } = state[key] ?? {}
-    return { ...state, [key]: { dir, branch, at, ...(pr !== undefined && { pr }), ...(mine !== undefined && { mine }), error: (fact as { error: string }).error } }
+    const { pr } = state[key] ?? {}
+    return { ...state, [key]: { dir, branch, at, ...(pr !== undefined && { pr }), error: (fact as { error: string }).error } }
   }
-  const { pr, mine } = fact as { pr: Pr | null; mine?: boolean }
-  return { ...state, [key]: { dir, branch, at, pr, ...(mine !== undefined && { mine }) } }
+  return { ...state, [key]: { dir, branch, at, pr: (fact as { pr: Pr | null }).pr } }
 }
 
 const UNIT_MS: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000 }
@@ -73,6 +66,13 @@ const waitOf = (every: number, pr: Pr | null | undefined, unchanged: number): nu
 
 const GH_TIMEOUT_MS = 30_000
 const GIT_TIMEOUT_MS = 10_000
+/**
+ * How many branches one query asks about. `ctx.run` keeps 64 KB of a command's stdout, and each branch's answer is up
+ * to `CANDIDATES` pull requests of under 1 KB each: 20 keep a query's answer well inside it.
+ */
+const CHUNK = 20
+/** How many pull requests GitHub lists per branch name, newest first: a fork's of the same name may be newer than the branch's own. */
+const CANDIDATES = 3
 
 /** The branches the board's workers are on, once each: a worktree's, whose folder is there. The main checkout has none. */
 const branchesOf = (cards: Card[]): Branch[] => {
@@ -88,26 +88,41 @@ const branchesOf = (cards: Card[]): Branch[] => {
 const cardsOf = (board: Board): Card[] => board.floors.flatMap((floor) => floor.cards)
 
 /**
- * The board trigger: an ask for the branch of each worker in a worktree whose turn ended between two boards, its card
- * working on the first and not on the second, which is when a worker has just pushed or opened a pull request.
+ * The statuses a turn ends in: done, done with something still running, interrupted, failed, or the worker gone
+ * (sent home or its process ended) mid-turn. `blocked` and `needs_input` come mid-turn.
+ */
+const TURN_ENDS: ReadonlySet<Card['status']> = new Set(['done', 'watching', 'idle', 'failed', 'exited', 'lost'])
+
+/**
+ * The board trigger: one ask for the branches of the workers in a worktree whose turn ended between two boards, each
+ * card working on the first and in a turn's end on the second, which is when a worker has just pushed or opened a
+ * pull request.
  */
 const turnsEnded = (prev: Board, next: Board): TriggerCall[] => {
   const was = new Map(cardsOf(prev).map((card) => [card.id, card.status]))
-  const ended = cardsOf(next).filter((card) => was.get(card.id) === 'working' && card.status !== 'working')
-  return branchesOf(ended).map((input) => ({ verb: 'pr-status/ask', input }))
+  const branches = branchesOf(cardsOf(next).filter((card) => was.get(card.id) === 'working' && TURN_ENDS.has(card.status)))
+  return branches.length ? [{ verb: 'pr-status/ask', input: { branches } }] : []
 }
 
-/** A checkout's GitHub repo: its host, owner and name, as `gh repo view` reads its remote. */
-type Repo = { host: string; owner: string; name: string }
+/**
+ * A checkout's GitHub repo: its host, owner and name, as `gh repo view` reads it; `remotes`, each remote's `owner/name`
+ * by the remote's name, lowercased; and `heads`, every `owner/name` a pull request of its branches may come from: that
+ * repo and each remote's.
+ */
+type Repo = { host: string; owner: string; name: string; remotes: Map<string, string>; heads: Set<string> }
 
-const PR_FIELDS = 'number state isDraft url title reviewDecision headRefOid createdAt commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }'
+/** The `owner/name` a remote's url names, `git@github.com:o/r.git` or `https://github.com/o/r`, lowercased: as written, before `currentName`. */
+const remoteRepoOf = (url: string): string | undefined => /[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(url)?.slice(1, 3).join('/').toLowerCase()
 
-/** One query asking for the newest pull request of each of `n` branches, `b<i>` its alias, its repo and branch passed as variables. */
+const PR_FIELDS =
+  'number state isDraft url title reviewDecision headRefOid createdAt headRepository { nameWithOwner } commits(last: 1) { nodes { commit { statusCheckRollup { state } } } }'
+
+/** One query asking for the newest pull requests of each of `n` branches, `b<i>` its alias, its repo and branch passed as variables. */
 const queryOf = (n: number): string => {
   const vars = Array.from({ length: n }, (_, i) => `$o${i}: String!, $r${i}: String!, $b${i}: String!`).join(', ')
   const aliases = Array.from(
     { length: n },
-    (_, i) => `b${i}: repository(owner: $o${i}, name: $r${i}) { pullRequests(headRefName: $b${i}, first: 1, orderBy: { field: CREATED_AT, direction: DESC }) { nodes { ${PR_FIELDS} } } }`,
+    (_, i) => `b${i}: repository(owner: $o${i}, name: $r${i}) { pullRequests(headRefName: $b${i}, first: ${CANDIDATES}, orderBy: { field: CREATED_AT, direction: DESC }) { nodes { ${PR_FIELDS} } } }`,
   )
   return `query(${vars}) {\n${aliases.join('\n')}\n}`
 }
@@ -121,6 +136,7 @@ type Node = {
   reviewDecision: Review | null
   headRefOid: string
   createdAt: string
+  headRepository: { nameWithOwner: string } | null
   commits: { nodes: { commit: { statusCheckRollup: { state: Checks } | null } }[] }
 }
 
@@ -149,10 +165,7 @@ const graphqlOf = (stdout: string): Graphql | undefined => {
 }
 
 const sameAnswer = (seen: Seen | undefined, answer: Answer): boolean =>
-  seen !== undefined &&
-  ('error' in answer
-    ? seen.error === answer.error
-    : seen.error === undefined && seen.mine === answer.mine && JSON.stringify(seen.pr) === JSON.stringify(answer.pr))
+  seen !== undefined && ('error' in answer ? seen.error === answer.error : seen.error === undefined && JSON.stringify(seen.pr) === JSON.stringify(answer.pr))
 
 /** A pull request's state in words: a draft is open, said as a draft. */
 const stateOf = (pr: Pr): 'open' | 'draft' | 'merged' | 'closed' => (pr.state === 'OPEN' ? (pr.draft ? 'draft' : 'open') : pr.state === 'MERGED' ? 'merged' : 'closed')
@@ -203,7 +216,7 @@ const foldCard = (card: Card, { own }: FoldCtx) => {
   if (branch === undefined) return {}
   const seen = (own.streams.seen as State)[keyOf(card.cwd, branch)]
   const pr = seen?.pr
-  if (!pr || seen.mine === false) return {}
+  if (!pr) return {}
   const state = stateOf(pr)
   const open = pr.state === 'OPEN'
   const review = open && pr.review ? REVIEW_WORDS[pr.review] : undefined
@@ -227,24 +240,52 @@ const start: Start = (ctx) => {
   const state = () => ctx.own.streams('seen') as State
   /** Every round waits for the one before it, so two never append for the same branch at once. */
   let queue: Promise<unknown> = Promise.resolve()
-  /** Kept in memory, so a restart asks about every branch once: each checkout's repo, and per branch when it is due next and how many answers in a row were the same. */
+  /**
+   * Kept in memory, so a restart asks about every branch once, and dropped for what leaves the board: each checkout's
+   * repo, and per branch when it is due next, how many answers in a row were the same, and when it was made.
+   */
   const repos = new Map<string, Repo>()
   const due = new Map<string, { at: number; unchanged: number }>()
+  const made = new Map<string, number | undefined>()
+  /** At halt `ctx.run` kills what it runs: what a killed `gh` or `git` said is no answer, so a round stops recording at once. */
+  const halted = () => ctx.signal.aborted
 
   const gh = (args: string[], cwd: string) => ctx.run([...settings().gh, ...args], { cwd, timeoutMs: GH_TIMEOUT_MS })
   const failed = (ran: Awaited<ReturnType<typeof gh>>): string | undefined =>
     ran.timedOut ? `gh gave no answer within ${GH_TIMEOUT_MS / 1000}s` : ran.exit !== 0 ? (ran.stderr.trim() || `gh exited ${ran.exit ?? ran.signal}`).slice(-500) : undefined
+  const git = (args: string[], cwd: string) => ctx.run(['git', ...args], { cwd, timeoutMs: GIT_TIMEOUT_MS })
+
+  /**
+   * A remote's repo by its name on GitHub now, `owner/name` lowercased: a remote's url keeps a repo's name from before a
+   * rename or a transfer, which GitHub redirects and pull requests no longer carry. As written when GitHub can't say.
+   */
+  const currentName = async (host: string, written: string, dir: string): Promise<string> => {
+    const ran = await gh(['repo', 'view', `${host}/${written}`, '--json', 'nameWithOwner'], dir)
+    return failed(ran) ? written : (JSON.parse(ran.stdout) as { nameWithOwner: string }).nameWithOwner.toLowerCase()
+  }
 
   const repoOf = async (dir: string): Promise<Repo | { error: string }> => {
     const known = repos.get(dir)
     if (known) return known
+    if (halted()) return { error: 'halted' }
     try {
       const ran = await gh(['repo', 'view', '--json', 'nameWithOwner,url'], dir)
       const error = failed(ran)
       if (error) return { error }
       const { nameWithOwner, url } = JSON.parse(ran.stdout) as { nameWithOwner: string; url: string }
       const [owner, name] = nameWithOwner.split('/')
-      const repo = { host: new URL(url).host, owner, name }
+      const host = new URL(url).host
+      const named = new Map(
+        (await git(['remote', '-v'], dir)).stdout.split('\n').flatMap((line): [string, string][] => {
+          const [remote, at] = line.split(/\s+/)
+          const repo = at === undefined ? undefined : remoteRepoOf(at)
+          return repo ? [[remote, repo]] : []
+        }),
+      )
+      const remotes = new Map<string, string>()
+      for (const [remote, written] of named) remotes.set(remote, await currentName(host, written, dir))
+      if (halted()) return { error: 'halted' }
+      const repo = { host, owner, name, remotes, heads: new Set([nameWithOwner.toLowerCase(), ...remotes.values()]) }
       repos.set(dir, repo)
       return repo
     } catch (err) {
@@ -252,85 +293,135 @@ const start: Start = (ctx) => {
     }
   }
 
-  const git = (args: string[], cwd: string) => ctx.run(['git', ...args], { cwd, timeoutMs: GIT_TIMEOUT_MS })
+  /** When the branch was made, epoch ms: its reflog's first entry, or undefined without one. It doesn't change, so it is read once. */
+  const madeAt = async ({ dir, branch }: Branch): Promise<number | undefined> => {
+    const key = keyOf(dir, branch)
+    if (made.has(key)) return made.get(key)
+    const first = /@\{(\d+)\}$/.exec((await git(['reflog', 'show', '--date=unix', '--format=%gd', branch], dir)).stdout.trim().split('\n').at(-1) ?? '')
+    const at = first ? Number(first[1]) * 1000 : undefined
+    made.set(key, at)
+    return at
+  }
 
-  /**
-   * Whether a pull request GitHub found by the branch's name is this branch's, as git reads the checkout: its head
-   * commit in the branch's history, and, merged or closed, opened after the branch was made (its reflog's first entry).
-   * A name a later worker reuses (`tower/<callsign>`) starts from the default branch: a merged pull request's head may be
-   * in that history, but it was opened before. A head commit git doesn't have was pushed from elsewhere: then the
-   * pull request is taken for the branch's while open, and by when it was opened once not.
-   */
-  const mineOf = async ({ dir, branch }: Branch, pr: Pr): Promise<boolean> => {
-    const ancestor = (await git(['merge-base', '--is-ancestor', pr.headOid!, branch], dir)).exit
-    if (ancestor === 1) return false
-    if (pr.state === 'OPEN') return true
-    const made = /@\{(\d+)\}$/.exec((await git(['reflog', 'show', '--date=unix', '--format=%gd', branch], dir)).stdout.trim().split('\n').at(-1) ?? '')
-    return !made || Date.parse(pr.createdAt!) >= Number(made[1]) * 1000
+  /** The repo the branch pushes to, `owner/name` lowercased: its push remote's (`git push -u` sets it), or undefined before it was pushed. */
+  const pushedTo = async (b: Branch & Repo): Promise<string | undefined> => {
+    const remote = (await git(['for-each-ref', '--format=%(push:remotename)', `refs/heads/${b.branch}`], b.dir)).stdout.trim()
+    return remote ? b.remotes.get(remote) : undefined
   }
 
   /**
-   * One query for every branch on one host: each its answer. GitHub answers what it can and lists an error per alias it
-   * couldn't (a repo gone or out of reach), and `gh` then exits 1 with that answer on stdout: each alias takes its own
-   * data or its own error, so one repo out of reach fails only its branches. With no answer at all, every branch takes
-   * `gh`'s error.
+   * Whether a pull request GitHub lists by the branch's name is this branch's.
+   *
+   * A pushed branch's pull requests come from the repo it pushes to (`push`): others of the same name (a stranger's
+   * fork, or the upstream repo where others push branches named like yours) are not its. Of those, one opened after
+   * the branch was made is its, which holds through a rebase or an amend not yet pushed, while a name a later worker
+   * reuses (`tower/<callsign>`) shows none of the pull requests opened before. One opened before is its only while
+   * open with its head commit in the branch's history: a branch checked out from a pull request's.
+   *
+   * A branch not yet pushed has opened no pull request of its own: one counts only from a repo the checkout knows
+   * (`Repo.heads`) with its head commit in the branch's history, a branch checked out from it with no push remote yet.
+   * Without a reflog, its head commit in the branch's history, or one git doesn't have, decides.
    */
-  const askHost = async (host: string, asks: (Branch & Repo)[]): Promise<Answer[]> => {
+  const mineOf = async (b: Branch & Repo, push: string | undefined, pr: Pr, head: string | undefined): Promise<boolean> => {
+    const from = head?.toLowerCase()
+    if (from === undefined || (push === undefined ? !b.heads.has(from) : from !== push)) return false
+    const ancestor = async () => (await git(['merge-base', '--is-ancestor', pr.headOid, b.branch], b.dir)).exit
+    if (push === undefined) return (await ancestor()) === 0
+    const since = await madeAt(b)
+    if (since !== undefined && Date.parse(pr.createdAt) >= since) return true
+    const exit = await ancestor()
+    return since === undefined ? exit !== 1 : pr.state === 'OPEN' && exit === 0
+  }
+
+  /**
+   * One query for up to `CHUNK` branches on one host: each its answer. GitHub answers what it can and lists an error
+   * per alias it couldn't (a repo gone or out of reach), and `gh` then exits 1 with that answer on stdout: each alias
+   * takes its own data or its own error, so one repo out of reach fails only its branches. With no answer at all, every
+   * branch takes `gh`'s error. Each branch's answer is the newest of its candidates that `mineOf` takes for its; undefined once halted.
+   */
+  const askHost = async (host: string, asks: (Branch & Repo)[]): Promise<Answer[] | undefined> => {
     const vars = asks.flatMap((a, i) => ['-f', `o${i}=${a.owner}`, '-f', `r${i}=${a.name}`, '-f', `b${i}=${a.branch}`])
     try {
       const ran = await gh(['api', 'graphql', '--hostname', host, '-f', `query=${queryOf(asks.length)}`, ...vars], asks[0].dir)
+      if (halted()) return undefined
       const answered = graphqlOf(ran.stdout)
       const error = failed(ran)
       if (!answered) return asks.map(() => ({ error: error ?? `gh answered no GraphQL data: ${ran.stdout.slice(0, 200)}` }))
-      return asks.map((a, i): Answer => {
+      const answers: Answer[] = []
+      for (const [i, a] of asks.entries()) {
         const repo = answered.data[`b${i}`]
-        if (repo) {
-          const [node] = repo.pullRequests.nodes
-          return { pr: node ? prOf(node) : null }
+        if (!repo) {
+          const said = answered.errors?.find((e) => e.path?.[0] === `b${i}`)?.message
+          answers.push({ error: (said ?? error ?? `GitHub on ${host} answered nothing for ${a.owner}/${a.name}`).slice(0, 500) })
+          continue
         }
-        const said = answered.errors?.find((e) => e.path?.[0] === `b${i}`)?.message
-        return { error: said ?? error ?? `GitHub on ${host} answered nothing for ${a.owner}/${a.name}` }
-      })
+        let mine: Pr | null = null
+        const push = repo.pullRequests.nodes.length ? await pushedTo(a) : undefined
+        for (const node of repo.pullRequests.nodes) {
+          const pr = prOf(node)
+          if (await mineOf(a, push, pr, node.headRepository?.nameWithOwner)) {
+            mine = pr
+            break
+          }
+          if (halted()) return undefined
+        }
+        if (halted()) return undefined
+        answers.push({ pr: mine })
+      }
+      return answers
     } catch (err) {
+      if (halted()) return undefined
       const error = (err as Error).message.slice(-500)
       return asks.map(() => ({ error }))
     }
   }
 
-  /** Records an answer when it changed, and when the branch is due next: whether it changed. */
+  /** Records an answer when it changed, and when the branch is due next: whether it changed. A first answer since the start starts the streak. */
   const record = async ({ dir, branch }: Branch, answer: Answer): Promise<boolean> => {
     const key = keyOf(dir, branch)
     const before = state()[key]
     const changed = !sameAnswer(before, answer)
     if (changed && 'error' in answer) await ctx.streams.append('seen', {}, 'f', { dir, branch, error: answer.error })
-    else if (changed) await ctx.streams.append('seen', {}, 'p', { dir, branch, ...answer })
-    const unchanged = changed ? 0 : (due.get(key)?.unchanged ?? 0) + 1
+    if (changed && 'pr' in answer) await ctx.streams.append('seen', {}, 'p', { dir, branch, pr: answer.pr })
+    const last = due.get(key)
+    const unchanged = changed || !last ? 0 : last.unchanged + 1
     due.set(key, { at: Date.now() + waitOf(periodMs(settings().every), 'error' in answer ? before?.pr : answer.pr, unchanged), unchanged })
     return changed
   }
 
-  /** Asks about the branches, one query per GitHub host, once any round in flight is done: how many changed. */
+  /** Asks about the branches, `CHUNK` per query and host, once any round in flight is done: how many changed. A halt stops it before it records anything more. */
   const askAbout = (branches: Branch[]): Promise<number> => {
     const asked = queue.then(async () => {
       let changed = 0
       const byHost = new Map<string, (Branch & Repo)[]>()
       for (const b of branches) {
         const repo = await repoOf(b.dir)
+        if (halted()) return changed
         if ('error' in repo) changed += Number(await record(b, repo))
         else byHost.set(repo.host, [...(byHost.get(repo.host) ?? []), { ...b, ...repo }])
       }
-      for (const [host, asks] of byHost) {
-        if (ctx.signal.aborted) break
-        const answers = await askHost(host, asks)
-        for (const [i, a] of asks.entries()) {
-          const answer = answers[i]
-          changed += Number(await record(a, 'pr' in answer && answer.pr ? { ...answer, mine: await mineOf(a, answer.pr) } : answer))
+      for (const [host, all] of byHost) {
+        for (let from = 0; from < all.length; from += CHUNK) {
+          if (halted()) return changed
+          const asks = all.slice(from, from + CHUNK)
+          const answers = await askHost(host, asks)
+          if (!answers) return changed
+          for (const [i, a] of asks.entries()) changed += Number(await record(a, answers[i]))
         }
       }
       return changed
     })
     queue = asked.catch(() => undefined)
     return asked
+  }
+
+  /** Forgets what memory holds of the branches and checkouts no longer on the board. */
+  const forgetGone = (branches: Branch[]) => {
+    const keys = new Set(branches.map((b) => keyOf(b.dir, b.branch)))
+    const dirs = new Set(branches.map((b) => b.dir))
+    for (const key of [...due.keys()]) if (!keys.has(key)) due.delete(key)
+    for (const key of [...made.keys()]) if (!keys.has(key)) made.delete(key)
+    for (const dir of [...repos.keys()]) if (!dirs.has(dir)) repos.delete(dir)
   }
 
   const onBoard = () => branchesOf(cardsOf(ctx.board()))
@@ -344,7 +435,9 @@ const start: Start = (ctx) => {
         ticking = true
         try {
           const now = Date.now()
-          const dueNow = onBoard().filter((b) => (due.get(keyOf(b.dir, b.branch))?.at ?? 0) <= now)
+          const branches = onBoard()
+          forgetGone(branches)
+          const dueNow = branches.filter((b) => (due.get(keyOf(b.dir, b.branch))?.at ?? 0) <= now)
           if (dueNow.length) await askAbout(dueNow)
         } finally {
           ticking = false
@@ -354,11 +447,11 @@ const start: Start = (ctx) => {
     folds: { card: foldCard },
     board: turnsEnded,
     verbs: {
-      ask: async (b: Branch) => ({ changed: (await askAbout([b])) > 0 }),
+      ask: async ({ branches }: { branches: Branch[] }) => ({ changed: await askAbout(branches) }),
       'ask-now': async () => {
         const branches = onBoard()
         await askAbout(branches)
-        return { asked: branches.length }
+        return halted() ? { t: 'error', code: 'unavailable', message: 'pr-status stopped while it asked: ask again once it runs' } : { asked: branches.length }
       },
     },
     reads: {

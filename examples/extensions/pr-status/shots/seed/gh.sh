@@ -1,10 +1,14 @@
 #!/bin/sh
-# A stand-in for `gh` in the sandbox, which has no GitHub. `gh repo view` names a made-up repo; `gh api graphql`
-# answers each branch alias (`-f b<i>=<branch>`) with one made-up pull request, as GitHub shapes it, by the branch's
+# A stand-in for `gh` in the sandbox, which has no GitHub. `gh repo view` names a made-up repo, or a repo it is given by
+# that name, as GitHub does for one never renamed; `gh api graphql` answers each branch alias (`-f b<i>=<branch>`) with one made-up pull request, as GitHub shapes it, by the branch's
 # name: none (no pull request), merged, closed, draft, failing (open, its checks failing, a review required), else open
-# and approved. Its head commit is one no checkout has and it was opened just now, so git takes it for the branch's.
+# and approved. Its head is the branch's tip in the repo `repo view` names, so it is taken for the branch's, pushed or not.
 if [ "$1" = repo ]; then
-  printf '{"nameWithOwner":"example/lab","url":"https://github.com/example/lab"}\n'
+  case $3 in
+    */*/*) repo=${3#*/} ;;
+    *) repo=example/lab ;;
+  esac
+  printf '{"nameWithOwner":"%s","url":"https://github.com/%s"}\n' "$repo" "$repo"
   exit 0
 fi
 out='{"data":{'
@@ -25,7 +29,7 @@ for arg in "$@"; do
     *failing*) state=OPEN review='"REVIEW_REQUIRED"' checks='"FAILURE"' ;;
     *) state=OPEN ;;
   esac
-  node='{"number":42,"state":"'$state'","isDraft":'$draft',"url":"https://github.com/example/lab/pull/42","title":"Faster search over the archive","reviewDecision":'$review',"headRefOid":"0000000000000000000000000000000000000042","createdAt":"'$(date -u +%FT%TZ)'","commits":{"nodes":[{"commit":{"statusCheckRollup":{"state":'$checks'}}}]}}'
+  node='{"number":42,"state":"'$state'","isDraft":'$draft',"url":"https://github.com/example/lab/pull/42","title":"Faster search over the archive","reviewDecision":'$review',"headRefOid":"'$(git rev-parse "$branch")'","createdAt":"'$(date -u +%FT%TZ)'","headRepository":{"nameWithOwner":"example/lab"},"commits":{"nodes":[{"commit":{"statusCheckRollup":{"state":'$checks'}}}]}}'
   out="$out$sep\"$alias\":{\"pullRequests\":{\"nodes\":[$node]}}"
   sep=','
 done

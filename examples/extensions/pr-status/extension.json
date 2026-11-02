@@ -36,7 +36,7 @@
       "description": "What GitHub said of a checkout's branch, appended only when it changed: its newest pull request, none, or why it couldn't be asked.",
       "facts": {
         "p": {
-          "description": "What GitHub said of the branch: its newest pull request from a head of the branch's name, or null for none, and whether git took it for this branch's.",
+          "description": "What GitHub said of the branch: its pull request, the newest GitHub lists by the branch's name that git takes for the branch's (its head a repo the checkout pushes to, and opened after the branch was made), or null for none.",
           "schema": {
             "type": "object",
             "required": [
@@ -64,7 +64,11 @@
                       "state",
                       "draft",
                       "url",
-                      "title"
+                      "title",
+                      "review",
+                      "checks",
+                      "headOid",
+                      "createdAt"
                     ],
                     "properties": {
                       "number": {
@@ -94,7 +98,7 @@
                           "REVIEW_REQUIRED",
                           null
                         ],
-                        "description": "Its review decision as GitHub names it; null when none is required. Absent from facts written before it was asked."
+                        "description": "Its review decision as GitHub names it; null when none is required."
                       },
                       "checks": {
                         "enum": [
@@ -105,23 +109,19 @@
                           "EXPECTED",
                           null
                         ],
-                        "description": "The state of the checks on its newest commit as GitHub rolls them up; null with none. Absent from facts written before it was asked."
+                        "description": "The state of the checks on its newest commit as GitHub rolls them up; null with none."
                       },
                       "headOid": {
                         "type": "string",
-                        "description": "Its head commit. Absent from facts written before it was asked."
+                        "description": "Its head commit."
                       },
                       "createdAt": {
                         "type": "string",
-                        "description": "When it was opened, ISO 8601. Absent from facts written before it was asked."
+                        "description": "When it was opened, ISO 8601."
                       }
                     }
                   }
                 ]
-              },
-              "mine": {
-                "type": "boolean",
-                "description": "Whether the pull request is this branch's, as git read the checkout: its head commit in the branch's history and, merged or closed, opened after the branch was made. A false one is a branch name reused, and shows no badge. Absent from facts written before it was asked."
               }
             }
           }
@@ -216,21 +216,34 @@
   "verbs": {
     "ask": {
       "scope": "system",
-      "description": "Ask GitHub about one checkout branch now, as a round asks about each. Its board trigger calls it as a worker in a worktree ends a turn.",
+      "description": "Ask GitHub about these checkouts' branches now, as a round asks about each. Its board trigger calls it with the branches of the workers whose turn just ended.",
       "input": {
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "dir",
-          "branch"
+          "branches"
         ],
         "properties": {
-          "dir": {
-            "type": "string",
-            "description": "The checkout folder to run gh in."
-          },
-          "branch": {
-            "type": "string"
+          "branches": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "dir",
+                "branch"
+              ],
+              "properties": {
+                "dir": {
+                  "type": "string",
+                  "description": "The checkout folder to run gh and git in."
+                },
+                "branch": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       },
@@ -241,8 +254,8 @@
         ],
         "properties": {
           "changed": {
-            "type": "boolean",
-            "description": "Whether what GitHub said differed from what was last seen, and was appended."
+            "type": "integer",
+            "description": "How many branches' answers differed from what was last seen, and were appended."
           }
         }
       }
