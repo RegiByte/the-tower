@@ -14,7 +14,8 @@ and [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest): the Claude fl
 the session id is minted here ([`newSessionId`](ref:hub/src/shared/launch.ts#newSessionId)). The launch's model and
 effort come last, after the config's `argv`, so [`launchFlags`](ref:hub/src/shared/launch.ts#launchFlags) reads back
 from a header's argv what the launch asked for, never what the config passes every session
-([[host-owns-ptys]]). New sessions spawn at 120×40; the first viewer resizes them.
+([[host-owns-ptys]]). The config's `argv` is one command, or several by name (`commandNames`, `resolveCommand`): a
+project's `command` picks its floor's default, and a launch's `command` one for that session. New sessions spawn at 120×40; the first viewer resizes them.
 
 [`promptPastes`](ref:hub/src/shared/protocol.ts#promptPastes) cuts a prompt into bracketed pastes small enough
 for Claude to take as typed text (at most 400 characters and two newlines each; past 800 characters or 3 lines it

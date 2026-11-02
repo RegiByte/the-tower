@@ -39,6 +39,10 @@ sequenceDiagram
   resumes one at a time ([`resume`](ref:hub/src/tower/dispatch.ts#resume)), each until the system holds the session it
   started, so two requests at once start one session. `tower resume` asks the same queue through `POST /resume` ([`towerCommand`](ref:hub/src/cli.ts#towerCommand)), and fails with the fix `tower up` when no tower runs. Resuming a conversation
   a running session has left (by `/clear`) still forks.
+- **Same command.** A resume or fork starts under the `argv` command its source's header names, since each command
+  may run Claude under its own account and config dir, where its conversations live. One whose command the config no
+  longer names is refused (`config`), saying to bring it back; a header with none, from before named commands or a
+  single-command `argv`, resumes under `argv`'s first.
 - **Same directory.** Claude files conversations by directory, so the resume runs in the source's `cwd`
   under the same project ([`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest)). In a [[worktree]] the
   directories follow from `cwd` and the worktree line of the system prompt is composed again, with the branch read

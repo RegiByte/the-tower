@@ -28,7 +28,9 @@ writes the system's other logs, `streams/`). Clients talk to it over `control.so
 `hooks.sock` ([[host-daemon]]). A `spawn` carries the session's `id` and `args`: clients build them with
 [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest) and [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest),
 and the host appends them after the config's `argv` and the mod's `--plugin-dir`
-([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)). The host's own wiring is only the mod's path and the env
+([`sessionArgv`](ref:hub/src/host/session.ts#sessionArgv)). When the config's `argv` names several commands, a
+`spawn` may name one by its `command`: a key of the config the host reads, not a Claude flag, so the host still
+knows none. The host's own wiring is only the mod's path and the env
 that addresses its sockets; it checks the `cwd` and refuses an id it already knows.
 
 **Alternatives considered.**

@@ -20,7 +20,8 @@
   [`sessionId`](ref:hub/src/shared/launch.ts#sessionId), sortable by start time); the host refuses an id it runs or
   holds a plain log for, and a `cwd` that `sessionDirs` rejects: one of the project's dirs or a worktree of one
   ([[tower-cuts-worktrees]]). The header names the session's `runtime`, `claude`: the host starts the config's `argv`
-  with the Claude mod, and a log without it, from an older host, is Claude's. A spawn's `facts`, `tower.*` events only
+  with the Claude mod (when `argv` names several commands, the one the spawn's `command` names, or its first, the
+  name stamped on the header as `command`), and a log without it, from an older host, is Claude's. A spawn's `facts`, `tower.*` events only
   ([`checkFact`](ref:hub/src/host/main.ts#checkFact)), are logged as `h` events right after the header, in the same
   tick, so they come before the session's first output or hook whoever asked for the spawn, and whatever happens to
   it afterwards. `fact` appends a `tower.*` event as an `h` event at the host's time: a running
@@ -29,7 +30,8 @@
   [`HOST_PROTOCOL`](ref:hub/src/shared/protocol.ts#HOST_PROTOCOL), bumped by any change to a host message: the board
   says `hostOutdated` while the running host speaks another or none. A host reads past a field it doesn't know, so a
   client checks the protocol before asking for what an older host would drop: the tower refuses a `spawn` with
-  `facts` while the host speaks below 3, and a `fact` below 2.
+  `facts` while the host speaks below 3, a `spawn` naming a `command` below 4 (an older host spreads `argv` as an
+  array), and a `fact` below 2.
 - `hooks.sock`: HTTP. `POST /hooks/<session id>` appends the body as an `h` event, a `PostToolUse` without its
   `tool_response` ([`hookFact`](ref:hub/src/host/session.ts#hookFact), [[logs-are-facts]]); an unknown or exited
   session gets 404, a body that isn't a JSON object 400 with the reason.
