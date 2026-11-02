@@ -58,7 +58,10 @@ one tab row: the shared panels, then the worker's showings ([[agent-show]]), in 
 tab, extension views and showings alike, scrolls past them under a thin scrollbar, faded at an edge past which more
 hide, the open tab brought clear of the fades as it opens and as the row resizes; the layout's `order` arranges the
 two apart. In `wrap` ([`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap)), every tab is drawn, the views in
-the layout's order and the showings after them, on as many rows as they take.
+the layout's order and the showings after them, on as many rows as they take. In `menu`
+([`tabsMenu`](ref:hub/renderers/page/regions.js#tabsMenu)), the tabs that fit are drawn on one row in that order and
+the rest are listed behind "+n ▾" after the tablist, the page's menu ([[region-overflow]]): the tabs a pane chord opens
+and the open tab are always drawn, and a tab picked from the menu is drawn last among the drawn until another is.
 
 Frames that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are sandboxed at
 an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may also read the
