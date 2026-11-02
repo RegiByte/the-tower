@@ -14,7 +14,9 @@
  *         full     the first worker's page, 1440x900
  *         narrow   the same at 1000x760
  *         grid4    the lab floor's grid of four workers, 1440x900
- *         grid2    the same with two cells taken out
+ *         grid3    the same with one cell taken out: two over one, the last cell the grid's full width
+ *         grid3narrow  the grid of three at 1000x760
+ *         grid2    the grid of four with two cells taken out
  *         gridnarrow  the grid of four at 1000x760
  *       It enables the grid example extension in the sandbox when its config has none, and needs four workers on the sandbox's `lab` floor (see below) and looks at no others.
  *
@@ -100,13 +102,17 @@ async function labWorkers(): Promise<string[]> {
 
 const GRID = 'floor%3Alab'
 const WAIT_FOUR = "(async()=>{for(let i=0;i<100&&document.querySelectorAll('.grid-cell .bar-info .call').length<4;i++)await new Promise(r=>setTimeout(r,100));const n=document.querySelectorAll('.grid-cell').length;if(n<4)throw new Error('the grid drew '+n+' of 4 cells');return n})()"
-const TAKE_TWO_OUT = "(async()=>{for(let k=0;k<2;k++){document.querySelector('.grid-cell:last-child [aria-label=\"Take it out of the grid\"]').click();await new Promise(r=>setTimeout(r,400))}const n=document.querySelectorAll('.grid-cell').length;if(n!==2)throw new Error('the grid has '+n+' cells after taking two out');return n})()"
+/** Takes the last `k` cells out of the grid of four, one at a time. */
+const takeOut = (k: number) =>
+  `(async()=>{for(let k=0;k<${k};k++){document.querySelector('.grid-cell:last-child [aria-label="Take it out of the grid"]').click();await new Promise(r=>setTimeout(r,400))}const n=document.querySelectorAll('.grid-cell').length;if(n!==${4 - k})throw new Error('the grid has '+n+' cells after taking ${k} out');return n})()`
 
 const scenes: Scene[] = [
   { name: 'full', open: '#$WORKER_1', size: '1440x900', steps: [{ wait: 2500 }] },
   { name: 'narrow', open: '#$WORKER_1', size: '1000x760', steps: [{ wait: 2500 }] },
   { name: 'grid4', open: `#v/grid/grid/${GRID}`, size: '1440x900', steps: [{ wait: 1500 }, { eval: WAIT_FOUR }, { wait: 800 }] },
-  { name: 'grid2', open: `#v/grid/grid/${GRID}`, size: '1440x900', steps: [{ wait: 1500 }, { eval: WAIT_FOUR }, { eval: TAKE_TWO_OUT }, { wait: 800 }] },
+  { name: 'grid3', open: `#v/grid/grid/${GRID}`, size: '1440x900', steps: [{ wait: 1500 }, { eval: WAIT_FOUR }, { eval: takeOut(1) }, { wait: 800 }] },
+  { name: 'grid3narrow', open: `#v/grid/grid/${GRID}`, size: '1000x760', steps: [{ wait: 1500 }, { eval: WAIT_FOUR }, { eval: takeOut(1) }, { wait: 800 }] },
+  { name: 'grid2', open: `#v/grid/grid/${GRID}`, size: '1440x900', steps: [{ wait: 1500 }, { eval: WAIT_FOUR }, { eval: takeOut(2) }, { wait: 800 }] },
   { name: 'gridnarrow', open: `#v/grid/grid/${GRID}`, size: '1000x760', steps: [{ wait: 1500 }, { eval: WAIT_FOUR }, { wait: 800 }] },
 ].map((s) => ({ ...s, scale: 1 }))
 
