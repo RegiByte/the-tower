@@ -54,8 +54,9 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `term-view.ts`: a terminal a viewer has open on a PTY, as a machine on `loop`
   ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers): opening, watching, owning, exited): the PTY has
   one size and whoever types holds it (a focus report, xterm's as its window gains or loses focus, is sent without
-  taking it), a resize from anyone else hands it back, and a pane or font change fits the
-  PTY only while this viewer holds it. [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) runs it in
+  taking it), a resize from anyone else hands it back, a pane or font change fits the
+  PTY only while this viewer holds it, and a PTY that exits while viewed (its stream's `x`) leaves the view
+  read-only, as a past session opens: a view still mounted on it, a kept worker or a grid cell, sizes nothing. [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) runs it in
   xterm.js, whose constructors the renderer passes in; every terminal of the tower page and Tower 3D is one
   ([[machines]], [[tower3d-desk]]). A web address it writes (given xterm's web-links addon) or a hyperlink a program
   marks (OSC 8) opens in a new tab, http(s) only; given `io.files`, a file path a line writes
