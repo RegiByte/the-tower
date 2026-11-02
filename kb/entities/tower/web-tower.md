@@ -61,7 +61,7 @@ two apart. In `wrap` ([`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap)),
 the layout's order and the showings after them, on as many rows as they take. In `menu`
 ([`tabsMenu`](ref:hub/renderers/page/regions.js#tabsMenu)), the tabs that fit are drawn on one row in that order and
 the rest are listed behind "+n ▾" after the tablist, the page's menu ([[region-overflow]]): the tabs a pane chord opens
-and the open tab are always drawn, and a tab picked from the menu is drawn last among the drawn until another is.
+and the open tab are always drawn, their labels cut short when even they don't fit, and a tab picked from the menu is drawn last among the drawn until another is.
 
 Frames that run a floor's own page (a shelf `html` or `renderer` entry, an `html` item, a shown file) are sandboxed at
 an opaque origin and granted `clipboard-write`, so a copy button inside works framed; a `url` frame may also read the
