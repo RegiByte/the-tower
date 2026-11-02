@@ -12,6 +12,96 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.83.0
+
+What the tower does when extension contributions outgrow their space. No restart beyond the tower's own (`tower down
+tower`, then `tower up tower`), the renderer API 1.137 → 1.138 (additive, no major), no config change (the new `layout`
+keys are optional). **One removal under a minor:** an extension can no longer lay out a renderer's region (first entry).
+
+- **Regions choose how they overflow** (API 1.138): a region declares the forms it can be drawn in, and the user picks
+  one per region through `renderers.<name>.layout` (#330).
+  - Four forms: `menu` (what doesn't fit goes behind a button), `count` (a fixed number drawn, "+n" for the rest),
+    `wrap` (everything, onto more rows) and `scroll` (a sideways strip). A region's `renderer.json` lists the ones it
+    offers (`Region.overflows`), the first the default. A layout entry takes `overflow`, `pinned`, `unpinned` and the
+    budgets `lines`, `badges` and `actions`. A region that declares no `overflows` offers no choice.
+  - Pins are a union across layers: the viewer's, then the config's, then the renderer's, less what a higher layer
+    unpins. A stale `unpinned`, one nothing below pins any more, is dropped as it is read. A pin un-hides only where it
+    stands.
+  - **An extension lays out only its own regions.** Its layout of a region a renderer declares is warned on the board
+    and by `tower extensions check`, and dropped: a manifest that hid a tab of `card.panes` stops doing so (no bundled
+    or example manifest did). A manifest that names a verb, a command or a view alike is refused (one id space), and
+    its layout takes no user keys.
+  - `tower config check` and `GET /renderers` (`layoutProblems`, per renderer) say what a layout asks that a region
+    can't do: a form it doesn't offer, a budget it doesn't use, a pin it doesn't hold, a region nobody declares.
+    `tower extensions check` says which form each region draws an extension's contributions in, and how to keep one
+    in place.
+- **Ranking is shared code** (API 1.138): `/cards.js` serves `actionId`, `lineId`, `rankedActions`, `rankedBadges`,
+  `rankedLines`, `exemptionsOf`, `offeredIds`, `isFresh` and `headRanked`; `/views.js` serves `fill`; `/viewer.js`
+  gains `Viewer.seen`, `seenOf` and `sawAll`. A renderer that draws extension contributions should import these rather
+  than order them by hand.
+  - Badges rank by severity, actions and lines by pins first, then board order. A worker's exemptions and a heeded
+    wait's Dismiss are never ranked away.
+  - `fill(widths, room, menu, was, margin)` says how many ranked items fit in place, with hysteresis so a width that
+    jitters doesn't flip an item in and out.
+  - **The new dot:** an action an extension offers and the viewer hasn't seen carries a dot, until it is run, pinned,
+    listed in the menu, or drawn in place in a focused window. What the viewer has seen is kept in `tower.store`
+    (`actions.seen`), shared by the page and Tower 3D. A dot never reorders anything.
+  - A projected line (tabline's) counts as a line, so it lands and a pin of it is offered.
+- **A worker's head tucks what doesn't fit behind ⋯** (#331, #337, #341, #343): the page's `card.head` offers `menu`
+  first, then `wrap`.
+  - The head keeps its callsign, status with its time, context and cost at every width, and takes its density from its
+    own width, not its scale: a grid cell and a narrow window look alike. The place line and the extensions' lines
+    sit on a row of their own, and the timer reserves its width so the 1 s tick never moves the head.
+  - It draws what fits one row, in rank order, and the rest goes behind ⋯, which keeps room for its count and its dot
+    (a severe tucked badge, else a new tucked action). The core verbs tuck last. The `badges` and `actions` budgets
+    cap what is drawn in place; `0` leaves only the pinned.
+  - The menu lists the tucked verbs, the dangerous ones after a separator (Send home still asks first), then the
+    tucked actions in rank order. It is a new `/menu.js` any region can reuse: choices, items that keep it open, and
+    hooks on opening and closing.
+  - **A one-time New section:** the first time ⋯ opens after actions were tucked that the viewer hasn't seen, they are
+    listed first under "New" and marked seen. From then on the menu is in rank order.
+  - **Pin to the head:** ⋯'s footer turns the list into checkboxes, actions and lines apart, a line named by its text.
+    A pin the config makes says so; unchecking it writes the viewer's `unpinned`, and checking it again only drops
+    that. Pinning is seeing.
+  - Under `menu`, the lines show their `lines` budget (default 1), and at compact the top-ranked line takes the place
+    line's slot; the rest go to the menu's header. A region marks what it fills `data-overflow="<form>"`
+    (`docs/extending.md`).
+  - At compact, Resume, Let go and Send home are icon buttons. They have glyphs of their own, `ICON.letGo` (an unlink)
+    and `ICON.sendHome` (a robot under a roof), in `/icons.js`.
+  - The page says a layout's problems in the sidebar and draws the affected region by its default.
+- **A worker's tabs: scroll, menu or wrap** (#333, #336, #338, #344): `card.panes` offers `scroll` (the default),
+  `menu` and `wrap`.
+  - `scroll`: the tabs a pane chord opens (Terminal, Brief, Changes, Reviews) stay put, and every other tab, extension
+    views included, scrolls with the showings behind a visible edge. `order` applies within those two groups. The row
+    is as tall whether or not anything scrolls.
+  - `menu`: the tabs that fit are drawn and the rest are listed behind "+n ▾", which says how many. The pane tabs and
+    the open tab are always drawn, and a tab picked from the menu is drawn last. In a tight row the open showing
+    shrinks and a label keeps a letter.
+  - `wrap`: every tab in `order`, onto as many rows as it takes.
+  - In every form the showings come after the views, and a tab row keeps focus through a redraw. A tab strip no
+    longer adds its scroll and wheel listeners on every board (one wheel tick scrolled a strip once per board).
+- **The sidebar's rows draw by count** (#332): a worker's row (`card.row`) draws one line and one row of badges
+  however many extensions add, with a "+n" whose tip lists what was left out. The `lines` and `badges` budgets (1 and 2
+  by default) and pins apply, and a pinned line is drawn whatever the budget. `wrap` stays an option.
+  `drawCount` and `moreOf` (`renderers/page/added.js`) draw any region's ranked items in this form.
+- **Tower 3D honours the layout** (#335, #339): its desk (`card.desk`) and the logbook's conversation head declare
+  `wrap` and read their own layers (its `renderer.json`, the config, the viewer's `layout.tower3d`). Badges, lines and
+  verbs come ranked, with pins, hides and the new dot. A config change reaches it on a reload, the viewer's on the
+  next board; pins made on the page do not reach it.
+  - **Fix:** a destructive extension verb arms on a first press and runs on a second. The arm was keyed by the verb's
+    place on the desk, so a changed board (and now a pin or a hide) could put another destructive verb there, drawn
+    armed, and the second press ran it. The key is now the action itself: a press confirms only what was armed. A unit
+    test holds it.
+- **`tool:stress`** (#329): stages a crowd of extension contributions on a sandbox and takes the same scenes of the
+  page (full, narrow, grids of 2, 3 and 4, in light and dark), so work on a region that fills up has a fixed "before".
+  `npm run tool:stress -- gen …` writes the crowd and `shots` takes the scenes; it refuses unless pointed at a sandbox.
+  The scene runner it shares with `tool:extension-shots` is now `scripts/scenes.ts`.
+- **`tool:webkit` holds its page visible**: its window was never on screen, so WebKit held the page hidden and no
+  animation frame ran. It is visible as Tower.app's is, and presses Home and End.
+- **Polish** (#345): a worker's head no longer says `claude <version> untested` (the sidebar's status line and the
+  details still do, and so does Tower 3D's desk); a grid cell's worded act is a plain button with its padding, not an
+  icon button; the pin list groups actions and lines apart.
+
 ## v1.82.0
 
 A file dropped or pasted on a terminal reaches it as its path. No restart beyond the tower's own (`tower down tower`,
