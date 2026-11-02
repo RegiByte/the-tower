@@ -26,7 +26,7 @@ import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Repl
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { uploadRefusal } from '../shared/uploads.ts'
-import { newSessionId, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
+import { newSessionId, restoredPrompt, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
 import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
 import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
@@ -411,7 +411,7 @@ export const dispatch = defineResource({
 
     /**
      * A resume whose worktree is gone restores it first, under its old name (`restoreWorktree`), once the launch is weighed,
-     * so a refused resume restores nothing; the session is told how (`Restored`), and so is the caller. A session that
+     * so a refused resume restores nothing; the session is told how in its prompt (`restoredPrompt`), and so is the caller. A session that
      * then fails to start leaves the worktree restored, for the next resume.
      */
     const resumeOnce = (id: string, conversation: string, prompt: string | undefined, within: Caller) =>
@@ -459,8 +459,7 @@ export const dispatch = defineResource({
               contributed: merged.contributed,
               facts: kind === 'fork' ? forkFacts(worker) : [],
               conversation,
-              prompt,
-              restored,
+              prompt: restored ? restoredPrompt(restored, prompt) : prompt,
             }),
           )
           if (answer.t !== 'spawned' || !restored) return answer

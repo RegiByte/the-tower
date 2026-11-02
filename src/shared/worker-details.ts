@@ -3,6 +3,7 @@ import { base, commandName, modelName, tokenCount } from './format.ts'
 import { current, UNRESUMABLE_TITLE } from './status-words.ts'
 import { subagentEnd, subagentTokens } from './subagents.ts'
 import { reviewerOf } from './checkouts.ts'
+import { RECUT_ON_RESUME } from './verb-words.ts'
 
 /**
  * A worker's particulars: where it works, how it stands to others, what it showed, and the details its header keeps
@@ -65,7 +66,7 @@ export const detailsOf = (c: Card): [string, string][] =>
     ['cost', c.costUsd != null ? `$${c.costUsd.toFixed(2)}` : ''],
     ['subagents', c.subagents ? [String(c.subagents), ...c.subagentRuns.map(subagentRow)].join('\n') : ''],
     ['folder', c.cwd],
-    ['resume', c.unresumable ? UNRESUMABLE_TITLE[c.unresumable] : ''],
+    ['resume', c.unresumable ? UNRESUMABLE_TITLE[c.unresumable] : c.worktree?.gone && c.verbs.includes('resume') ? RECUT_ON_RESUME : ''],
     ['worktree', c.worktree ? `${c.worktree.name} ${branchLine(c)}` : ''],
     ['conversations', c.conversations.length > 1 ? String(c.conversations.length) : ''],
     ['left running', c.resources.map((r) => `${r.pid}${r.ports.map((p) => ` :${p}`).join('')}${r.orphan ? ' orphan' : ''} · ${commandName(r.command)}`).join('\n')],

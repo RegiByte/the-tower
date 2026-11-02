@@ -22,7 +22,9 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   `open` accept exactly those. A resume reuses `cwd`, so nothing new is stored and the log header and host protocol
   are unchanged ([[repos-file-access-only]]). A worktree session's system prompt also gets one line naming its
   worktree, branch and directories ([`worktreeBrief`](ref:hub/src/shared/launch.ts#worktreeBrief)), on spawn and
-  resume, because auto modes skip the permission guard and CLAUDE.md names the main checkouts' paths.
+  resume, because auto modes skip the permission guard and CLAUDE.md names the main checkouts' paths. Claude reads it
+  only when the conversation starts (`--resume` ignores a new one), so a resume restoring the worktree says so in its
+  prompt ([[resume]]).
 - **Read, never stored.** [`readRepo`](ref:hub/src/worktrees.ts#readRepo) reads each project dir's git (worktree
   list, status, unpushed commits, files changed since the base, `branch.<br>.towerBase`, origin's branches) without fetching, on a thread of its own
   ([`readRepos`](ref:hub/src/system.ts#readRepos)), the board's as its git changes, asking git again only for the parts a

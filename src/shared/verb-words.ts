@@ -6,6 +6,7 @@
  * `VERBS` (`/schema`, `tower api`) are its agent facet; moves within a renderer have none. `command` is the keymap
  * command (`/keymap.js`) that does the same for the selected worker. The tower serves this module as `/verb-words.js`.
  */
+import type { Card } from '../bridge/board.ts'
 import type { BranchVerb, CardVerb, ConversationVerb, FloorVerb, NoteVerb, ResourceVerb, WorktreeVerb } from '../bridge/verbs.ts'
 import type { Verb } from './api.ts'
 import type { CommandId } from './keymap.ts'
@@ -34,7 +35,7 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'card/drive': { label: 'Open terminal', hint: 'Answer in its terminal, as you would in Claude.', command: 'pane-terminal' },
   'card/submit': { label: 'Send a prompt', hint: 'Type a prompt into its composer from outside its terminal, and submit it.', api: 'submit' },
   'card/prompt': { label: 'Send at its prompt', hint: 'Type a prompt into its composer and submit it, while it waits at its prompt with nothing typed there.', api: 'submit/at-prompt' },
-  'card/resume': { label: 'Resume', hint: 'Continue its latest conversation as a new session, its worktree recut first if it is gone.', api: 'resume' },
+  'card/resume': { label: 'Resume', hint: 'Continue its latest conversation as a new session.', api: 'resume' },
   'card/carry-on': { label: 'Carry on', hint: 'Resume it on a prompt telling it it was cut off mid-turn, so it takes the turn up again.', api: 'resume' },
   'card/goto': { label: 'Go to its resume', hint: 'Go to the worker that carries on its conversation.' },
   'card/brief': { label: 'Brief', hint: 'Its last prompts and answers, read as a chat.', command: 'pane-brief' },
@@ -49,7 +50,7 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'floor/shell': { label: 'New shell', hint: "A login shell in the floor's hub; it keeps running after the page closes.", api: 'shell/spawn' },
   'floor/editor': { label: 'Open in editor', hint: "The floor's hub in a new window of your editor.", api: 'open' },
   'floor/tidy': { label: 'Tidy all', hint: 'Do everything the floor’s Tidy lists: landed worktrees, idle hires, old logs.', destructive: true, api: 'tidy' },
-  'conversation/resume': { label: 'Resume', hint: 'Continue this conversation as a new session, its worktree recut first if it is gone.', api: 'resume' },
+  'conversation/resume': { label: 'Resume', hint: 'Continue this conversation as a new session.', api: 'resume' },
   'conversation/goto': { label: 'Go to its resume', hint: 'Go to the worker that carries this conversation on.' },
   'resource/reap': { label: 'End', hint: 'End this process.', api: 'reap/process' },
   'worktree/recut': { label: 'Recut', hint: 'Restore its lost folders from its branch, then resume its workers.', api: 'worktree/recut' },
@@ -59,6 +60,17 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'branch/recut': { label: 'Recut', hint: 'A worktree again on the kept branch.', api: 'branch/recut' },
   'branch/delete': { label: 'Delete', hint: 'Delete the kept branch where it is absorbed into its base.', destructive: true, api: 'branch/delete' },
   'note/note': { label: 'Note', hint: "Add a note to the checkout's review thread.", api: 'review/append' },
+}
+
+/** What a resume of a worker whose worktree is gone does first, and the turn it spends saying so. @since 1.140 */
+export const RECUT_ON_RESUME = "Its worktree is gone: the resume recuts it first (from its branch, or from origin's default once its work landed) and tells it so in a first message."
+
+const RESUMES: ReadonlySet<VerbId> = new Set(['card/resume', 'card/carry-on', 'conversation/resume'])
+
+/** A verb's hint for the worker whose card offers it: a resume of one whose worktree is gone says it recuts it. @since 1.140 */
+export const verbHint = <S extends 'card' | 'conversation'>(subject: S, verb: SubjectVerbs[S], card: Pick<Card, 'worktree'>): string => {
+  const id = verbId(subject, verb)
+  return RESUMES.has(id) && card.worktree?.gone ? `${VERB_WORDS[id].hint} ${RECUT_ON_RESUME}` : VERB_WORDS[id].hint
 }
 
 /** A verb's label, as a button says it. */
