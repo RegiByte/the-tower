@@ -588,19 +588,19 @@ export function regions(deps) {
 
     /**
      * A form the tab row is drawn in: made as the row takes it, then drawn on every draw, told when the row resizes and
-     * closed as the row leaves it.
-     * @typedef {{ draw: (all: TabOf[], adds: string) => void, resized: () => void, close: () => void }} TabsForm
+     * when the type changes (the viewer's scale or face, a web font loaded), and closed as the row leaves it.
+     * @typedef {{ draw: (all: TabOf[], adds: string) => void, resized: () => void, remeasure: () => void, close: () => void }} TabsForm
      */
 
     /** The forms the tab row is drawn in, by the overflow each draws. @type {Record<'scroll' | 'menu' | 'wrap', () => TabsForm>} */
     const forms = {
-      scroll: () => ({ draw: tabsScroll, resized: () => (bringOpen(/** @type {HTMLElement} */ (scrollerOf())), markEdges(/** @type {HTMLElement} */ (scrollerOf()))), close: () => {} }),
+      scroll: () => ({ draw: tabsScroll, resized: () => (bringOpen(/** @type {HTMLElement} */ (scrollerOf())), markEdges(/** @type {HTMLElement} */ (scrollerOf()))), remeasure: () => {}, close: () => {} }),
       menu: tabsMenu,
-      wrap: () => ({ draw: tabsWrap, resized: () => {}, close: () => {} }),
+      wrap: () => ({ draw: tabsWrap, resized: () => {}, remeasure: () => {}, close: () => {} }),
     }
 
     /** The form the row is drawn in now: none before the first draw. @type {TabsForm & { name?: keyof typeof forms }} */
-    let formNow = { draw: () => {}, resized: () => {}, close: () => {} }
+    let formNow = { draw: () => {}, resized: () => {}, remeasure: () => {}, close: () => {} }
 
     /** The form the layout picks among those the region offers; a region offering none is drawn scrolling. @returns {keyof typeof forms} */
     function formOf() {
@@ -649,7 +649,7 @@ export function regions(deps) {
      * (`/menu.js`). The tabs a pane chord opens and the open tab are always drawn, their labels cut short when even they
      * don't fit; the tab last picked from the menu is drawn next while it fits, then the others fill what room is left
      * in the layout's order, each drawn where that order puts it. Each tab's width is read while every tab is drawn,
-     * and remembered by what it draws until the row's width changes.
+     * and remembered by what it draws until the row's width or the type changes.
      * The tablist, "+n ▾" and the showing's adds are the row's own while it is in this form: drawn into, never replaced.
      * @returns {TabsForm}
      */
@@ -743,6 +743,7 @@ export function regions(deps) {
           if (!tucked.length) listed.close()
         },
         resized: () => strip.clientWidth !== room && draw(),
+        remeasure: () => ((room = -1), draw()),
         close: () => (listed.remove(), strip.replaceChildren()),
       }
     }
@@ -859,6 +860,9 @@ export function regions(deps) {
 
     const resized = new ResizeObserver(() => formNow.resized())
     resized.observe(strip)
+    const remeasure = () => formNow.remeasure()
+    const offPrefs = tower.prefs.on(remeasure)
+    document.fonts.addEventListener('loadingdone', remeasure)
 
     panels.addEventListener('tab', () => draw())
 
@@ -910,6 +914,8 @@ export function regions(deps) {
       close() {
         tabbed.delete(self)
         resized.disconnect()
+        offPrefs()
+        document.fonts.removeEventListener('loadingdone', remeasure)
         formNow.close()
         for (const key of [...mounted.keys()]) closeTab(key)
         for (const el of [strip, panels]) delete el.dataset.region, delete el.dataset.subject
