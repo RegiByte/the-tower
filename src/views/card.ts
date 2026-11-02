@@ -251,7 +251,11 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     paintOnce(
       $('.acts'),
       (opts.acts ?? [])
-        .map((a) => `<button class="icon-btn" data-act="${esc(a.id)}"${a.icon ? ` aria-label="${esc(a.label)}"` : ''} data-tip="${esc(a.tip ?? a.label)}">${a.icon ? ICON[a.icon] : esc(a.label)}</button>`)
+        .map((a) =>
+          a.icon
+            ? `<button class="icon-btn" data-act="${esc(a.id)}" aria-label="${esc(a.label)}" data-tip="${esc(a.tip ?? a.label)}">${ICON[a.icon]}</button>`
+            : `<button data-act="${esc(a.id)}" data-tip="${esc(a.tip ?? a.label)}">${esc(a.label)}</button>`,
+        )
         .join(''),
     )
     if (opts.pick) paintOnce($('.bar-pick'), pickMenuHtml(opts.pick))
