@@ -5,13 +5,15 @@ import type { ModEvent } from './model.ts'
  * The host protocol's version, sent in every `live` reply. A change to a message to or from the host bumps it, so a
  * client that outlived a host restart's code change can say the running host is older than itself.
  */
-export const HOST_PROTOCOL = 3
+export const HOST_PROTOCOL = 4
 
 /** Control messages to the host. Every request gets exactly one reply, in order. */
 export type ToHost =
   /**
    * `cwd` is the project's hub or one of its repos; `args` follow the host's own Claude arguments. `facts`: `tower.*`
-   * facts logged right after the header, before any of the session's own events (protocol 3).
+   * facts logged right after the header, before any of the session's own events (protocol 3). `command`: the name of
+   * one of `argv`'s commands, when it names more than one (protocol 4); an older host spreads `argv` as an array and
+   * fails on the object shape, so a client sends `command` only once it knows the host is new enough.
    */
   | { t: 'spawn'; id: string; project: string; cwd: string; args: string[]; command?: string; facts?: ModEvent[]; cols: number; rows: number }
   | { t: 'write'; id: string; data: string }

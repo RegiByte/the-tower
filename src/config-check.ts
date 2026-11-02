@@ -19,6 +19,7 @@ import {
   CAPABILITY_KEYS,
   callsignsOf,
   COLLECTION_KEYS,
+  commandNames,
   CONFIG_KEYS,
   ConfigError,
   configuredUser,
@@ -60,6 +61,7 @@ const validArgv = (value: unknown): boolean => isCommand(value) || (isObject(val
 const isDirectory = (dir: string): boolean => existsSync(dir) && statSync(dir).isDirectory()
 
 const fail = (key: string, problem: string): ConfigProblem => ({ level: 'fail', key, problem })
+const warn = (key: string, problem: string): ConfigProblem => ({ level: 'warn', key, problem })
 
 /** A validator of the tower's own, run as the tower runs it: the config error it throws is the problem. */
 const checked = (key: string, check: () => unknown): ConfigProblem[] => {
@@ -263,7 +265,17 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
     ...(typeof project.name === 'string' && project.name ? [] : [fail(`${at}.name`, 'takes the name the floor is shown by')]),
     ...(typeof project.hub === 'string' && path.isAbsolute(project.hub) && isDirectory(project.hub) ? [] : [fail(`${at}.hub`, `${JSON.stringify(project.hub)} is no absolute path of a directory: sessions start in the hub`)]),
     ...(project.repos === undefined ? [fail(`${at}.repos`, 'takes a list of absolute directories, [] for none')] : directories(`${at}.repos`, project.repos, 'absolute directories')),
-    ...(project.command === undefined || typeof project.command === 'string' ? [] : [fail(`${at}.command`, "takes the name of one of argv's commands")]),
+    ...(project.command === undefined
+      ? []
+      : typeof project.command !== 'string'
+        ? [fail(`${at}.command`, "takes the name of one of argv's commands")]
+        : !validArgv(config.argv)
+          ? []
+          : (() => {
+              const names = commandNames(config)
+              if (names === undefined) return [warn(`${at}.command`, "argv names only one command: this is ignored")]
+              return names.includes(project.command) ? [] : [fail(`${at}.command`, `names no command of argv: they are ${names.join(', ')}`)]
+            })()),
   ]
   if (shape.some((p) => p.key === `${at}.hub`)) return [...unknownKeys(`${at}.`, project, PROJECT_KEYS), ...shape]
   const collectionIds = [config.collections, project.collections].flatMap((c) => (isObject(c) ? Object.keys(c) : []))
