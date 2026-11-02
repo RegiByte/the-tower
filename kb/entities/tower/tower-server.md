@@ -28,7 +28,8 @@ derived by [`board`](ref:hub/src/bridge/board.ts#board), with the running extens
 ([`boardOf`](ref:hub/src/tower/publisher.ts#boardOf): a fold that calls `ctx.board()` throws, since it holds the board), and pushed over SSE, debounced: it carries the present, and
 every other card is read at [`/archive/<project>`](ref:hub/src/tower/http.ts#archive) ([[board-archive]]). A session screen is
 a stream ([`screenStream`](ref:hub/src/tower/http.ts#screenStream)): a snapshot, marked `exited` (read-only) unless
-the host still runs the session, then the log's output as it is appended. A running session's screen is one
+the host still runs the session and its log holds no exit yet (the host's live set is polled, so it can still list a
+session that just exited), then the log's output as it is appended. A running session's screen is one
 [mirror](ref:hub/src/tower/screens.ts#screenMirrors) shared by all its viewers: the first builds it, replaying the
 log once ([`mirrorOf`](ref:hub/src/bridge/screen.ts#mirrorOf)), it follows the log with one tail, and every later
 viewer is sent its snapshot, so a floor of monitors opening at once costs one replay per session, not one per

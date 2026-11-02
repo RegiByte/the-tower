@@ -389,7 +389,7 @@ export const httpServer = defineResource({
         })
         if (stop) return stop
       }
-      sendSnapshot(await lastFrameOf.frame(id), !running)
+      sendSnapshot(await lastFrameOf.frame(id), true)
       return () => {}
     }
 
