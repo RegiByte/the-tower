@@ -1388,3 +1388,55 @@ test('server: a prompt is refused where it would answer a question, and at-promp
   assert.equal(await refusal('submit/at-prompt', sessions.holding), 'composer_holds')
   assert.equal(errorCode(await post('submit/at-prompt', { id: sessions.holding, text: '' })), 'invalid')
 })
+
+test("server: resume recuts a worktree that was removed with its landed branch from origin's default, under its name, and tells the resumed session in its instructions; one on a detached HEAD whose folder is gone is unresumable and refused", async () => {
+  const origin = path.join(ROOT, 'bare-origin.git')
+  execFileSync('git', ['clone', '-q', '--bare', BARE, origin])
+  gitIn(BARE, 'remote', 'add', 'origin', origin)
+  gitIn(BARE, 'fetch', '-q', 'origin')
+  gitIn(BARE, 'remote', 'set-head', 'origin', '--auto')
+  const tree = (name: string) => path.join(BARE, '.worktrees', name)
+  gitIn(BARE, 'worktree', 'add', '-q', '-b', 'tower/kite-9', tree('kite-9'), 'origin/main')
+  gitIn(BARE, 'config', 'branch.tower/kite-9.towerBase', 'origin/main')
+  gitIn(BARE, 'config', 'branch.tower/kite-9.towerName', 'kite-9')
+  gitIn(BARE, 'worktree', 'add', '-q', '--detach', tree('wren-4'), 'main')
+  const sessions = { tidied: '20261004-213000-d1e2', detached: '20261004-213100-e3f4' }
+  const ended = (id: string, cwd: string, conversation: string) => {
+    const header = { id, project: 'bare', cwd, argv: ['bash'], startedAt: Date.now() - 60_000, cols: 80, rows: 24 }
+    const events = [
+      [0.1, 'h', { hook_event_name: 'SessionStart', source: 'startup', session_id: conversation }],
+      [0.2, 'h', { hook_event_name: 'UserPromptSubmit', session_id: conversation, prompt: 'Build it.' }],
+      [0.3, 'x', { exitCode: 0 }],
+    ]
+    writeFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), [header, ...events].map((line) => JSON.stringify(line)).join('\n') + '\n')
+  }
+  ended(sessions.tidied, tree('kite-9'), 'c-tidied')
+  ended(sessions.detached, tree('wren-4'), 'c-detached')
+  gitIn(BARE, 'worktree', 'remove', tree('kite-9'))
+  gitIn(BARE, 'branch', '-D', 'tower/kite-9')
+  rmSync(tree('wren-4'), { recursive: true, force: true })
+
+  const cardOf = (b: Board, id: string) => floorOf(b, 'bare').cards.find((c) => c.id === id)
+  const gone = await boardWhere((b) => [sessions.tidied, sessions.detached].every((id) => cardOf(b, id)?.worktree?.gone))
+  assert.deepEqual(
+    [cardOf(gone, sessions.tidied)!.unresumable, cardOf(gone, sessions.detached)!.unresumable],
+    [undefined, 'gone'],
+  )
+
+  const refused = await post('resume', { id: sessions.detached, conversation: 'c-detached' })
+  assert.equal(errorCode(refused), 'lost')
+  assert.match(JSON.parse(refused.body).message, /was on a detached HEAD, with no branch to recut it from: forget "wren-4" from its floor, then try again$/)
+
+  const main = gitIn(BARE, 'rev-parse', 'origin/main').trim()
+  const resumed = await command('resume', { id: sessions.tidied, conversation: 'c-tidied' })
+  assert.deepEqual(resumed.restored, { name: 'kite-9', how: 'fresh', repos: [{ dir: BARE, from: 'origin/main', commit: main }] })
+  assert.equal(gitIn(tree('kite-9'), 'branch', '--show-current').trim(), 'tower/kite-9')
+  assert.equal(gitIn(BARE, 'config', 'branch.tower/kite-9.towerName').trim(), 'kite-9')
+  const [header] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${resumed.id}.jsonl`), 'utf8'), (log) => log.length > 0)).trim().split('\n').map((line) => JSON.parse(line))
+  const brief = header.argv[header.argv.indexOf('--append-system-prompt') + 1] as string
+  assert.ok(
+    brief.includes(`Your worktree \`kite-9\` was removed after you went home, with its branch, which the tower deletes only once its work has landed. It was recut on a new branch from \`origin/main\` at \`${main.slice(0, 7)}\``),
+    brief,
+  )
+  assert.deepEqual(header.argv.slice(-2), ['--resume', 'c-tidied'], 'no prompt is added')
+})

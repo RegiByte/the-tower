@@ -234,21 +234,23 @@ test('a worker killed by a signal from outside the tower, caught or not, is stra
   for (const card of [sentHome, sentHomeHard]) assert.deepEqual([card.stranded, card.onDuty], [false, false])
 })
 
-test("a stranded worker holds its worktree until it is resumed or let go: Tidy never offers the folder its resume needs", () => {
+test("a stranded worker holds its worktree until it is resumed or let go: Tidy never offers the folder its resume needs, nor prunes a lost one its resume recuts", () => {
   const tree = { name: 'odin-42', path: '/lab/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
-  const repos = (present: boolean) => new Map<string, RepoRead>([['/lab', { dir: '/lab', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present }], kept: [] }]])
+  const repos = (present: boolean, detached: boolean) =>
+    new Map<string, RepoRead>([['/lab', { dir: '/lab', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, ...(detached && { branch: undefined }), present }], kept: [] }]])
   const log = homed(fixture('interrupts'), tree.path)
   const lost = { ...log, events: log.events.filter((e) => e[0] <= 140 && e[1] !== 'x') }
   const letGo = { ...lost, events: [...lost.events, [150, 'h', { hook_event_name: 'tower.letGo' }] as SessionLog['events'][number]] }
-  const floorOf = (session: SessionLog, present = true, host = hostWith()) =>
-    board(viewOf(CONFIG, { sessions: [{ header: session.header, facts: factsOf(session) }], host, repos: repos(present) })).floors.find((f) => f.id === 'lab')!
+  const floorOf = (session: SessionLog, present = true, host = hostWith(), detached = false) =>
+    board(viewOf(CONFIG, { sessions: [{ header: session.header, facts: factsOf(session) }], host, repos: repos(present, detached) })).floors.find((f) => f.id === 'lab')!
   const said = (f: ReturnType<typeof floorOf>) => [f.worktrees[0].state, f.worktrees[0].sessions, f.tidy.worktrees]
   const id = log.header.id
   assert.deepEqual(said(floorOf(lost, true, hostWith(id))), ['live', [id], []])
   assert.deepEqual(said(floorOf(lost)), ['live', [id], []])
   assert.deepEqual(said(floorOf(letGo)), ['removable', [], ['odin-42']])
   assert.deepEqual(said(floorOf(log)), ['removable', [], ['odin-42']])
-  assert.deepEqual(said(floorOf(lost, false)), ['lost', [], []])
+  assert.deepEqual(said(floorOf(lost, false)), ['live', [id], []])
+  assert.deepEqual(said(floorOf(lost, false, hostWith(), true)), ['lost', [], []])
 })
 
 test('verbs: a stopped session resumes its conversation; once resumed, it leads to whoever resumed it', () => {
@@ -267,10 +269,12 @@ test('verbs: what a session left running makes it reapable', () => {
   assert.deepEqual(card.verbs, ['resume', 'brief', 'reap'])
 })
 
-test('a past worker can be resumed only where its floor still has its folder: else it says why, offers no resume and is off duty', () => {
+test('a past worker can be resumed only where its floor still has its folder, or its resume can restore it: else it says why, offers no resume and is off duty', () => {
   const log = homed(fixture('tool-turn'))
-  const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', dirty: 0, unpushed: 0, absorbed: true, risk: [] }
-  const reads = (trees: (typeof tree & { present: boolean })[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+  const tree = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42' as string | undefined, dirty: 0, unpushed: 0, absorbed: true, risk: [] }
+  const kept = { branch: 'tower/odin-42', head: 'c0ffee', base: 'origin/main', tree: 'odin-42', unpushed: 0, absorbed: true, risk: [] }
+  const reads = (trees: (typeof tree & { present: boolean })[], more: { originHead?: string; kept?: (typeof kept)[] } = {}) =>
+    new Map<string, RepoRead>([['/hub', { dir: '/hub', git: true, bases: more.originHead ? [more.originHead] : [], originHead: more.originHead, main: { dirty: 0, ahead: 0 }, trees, kept: more.kept ?? [] }]])
   const cardAt = (session: SessionLog, repos: Map<string, RepoRead>) =>
     board(viewOf(CONFIG, { sessions: [{ header: session.header, facts: factsOf(session) }], host: hostWith(), repos })).floors[0].cards[0]
   const inTree = homed(log, tree.path)
@@ -279,8 +283,12 @@ test('a past worker can be resumed only where its floor still has its folder: el
   assert.deepEqual(said(cardAt(homed(log, '/moved/hub'), new Map())), ['outside', false, [[]]])
   assert.deepEqual(said(cardAt(inTree, new Map())), [undefined, true, [['resume']]])
   assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: true }]))), [undefined, true, [['resume']]])
-  assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: false }]))), ['gone', false, [[]]])
-  assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]])
+  assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, present: false }]))), [undefined, true, [['resume']]], 'lost, recut from its branch')
+  assert.deepEqual(said(cardAt(inTree, reads([{ ...tree, branch: undefined, present: false }]))), ['gone', false, [[]]], 'lost on a detached HEAD')
+  assert.deepEqual(said(cardAt(inTree, reads([], { kept: [kept] }))), [undefined, true, [['resume']]], 'its kept branch checked out again')
+  assert.deepEqual(said(cardAt(inTree, reads([], { kept: [kept, { ...kept, branch: 'tower/odin-42-b' }] }))), ['gone', false, [[]]], 'two kept branches cut under its name')
+  assert.deepEqual(said(cardAt(inTree, reads([], { originHead: 'origin/main' }))), [undefined, true, [['resume']]], "cut afresh from origin's default")
+  assert.deepEqual(said(cardAt(inTree, reads([]))), ['gone', false, [[]]], 'no default on origin')
   const running = { ...inTree, events: inTree.events.filter((e) => e[1] !== 'x') }
   const liveGone = board(viewOf(CONFIG, { sessions: [{ header: running.header, facts: factsOf(running) }], host: hostWith(running.header.id), repos: reads([]) })).floors[0].cards[0]
   assert.deepEqual([liveGone.live, liveGone.unresumable, liveGone.worktree?.gone], [true, undefined, true])
@@ -290,7 +298,7 @@ test('a past worker can be resumed only where its floor still has its folder: el
   const both = (libPresent: boolean) =>
     new Map<string, RepoRead>([
       ['/hub', { dir: '/hub', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, present: true }], kept: [] }],
-      ['/lib', { dir: '/lib', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, path: '/lib/.worktrees/odin-42', present: libPresent }], kept: [] }],
+      ['/lib', { dir: '/lib', git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ ...tree, path: '/lib/.worktrees/odin-42', branch: undefined, present: libPresent }], kept: [] }],
     ])
   const readsOf = (repos: Map<string, RepoRead>) => [...repos.values()]
   assert.deepEqual([unresumableAt(spanning, tree.path, readsOf(both(true))), unresumableAt(spanning, tree.path, readsOf(both(false)))], [undefined, 'gone'])

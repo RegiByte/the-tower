@@ -11,6 +11,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { archiveLog, archiveStream } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
+import type { Occupant } from '../bridge/worktrees.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
 import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
@@ -52,7 +53,7 @@ import { promptPastes, sessionKeys, type FromHost, type ToHost } from '../shared
 import { REVIEWS } from '../shared/reviews.ts'
 import { STATUS_NAME } from '../shared/status-words.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
-import { briefFor, cut, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
+import { briefFor, cut, restoreWorktree, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { extensionCalls } from './calls.ts'
 import { chainCalls, hookDeadline } from './chains.ts'
@@ -265,7 +266,6 @@ export const dispatch = defineResource({
         departing.add(c.id)
         const calls = callOf(c, 'send-home')
         if (!calls) {
-          console.error(`${c.callsign} asked to go home, and its card offers no send-home`)
           continue
         }
         void (async () => {
@@ -344,7 +344,7 @@ export const dispatch = defineResource({
             const refused = factRefused(HIRE_FACT)
             if (refused) return refused
             const answer = await spawning()
-            if (answer.t !== 'spawned') return answer
+          if (answer.t !== 'spawned') return answer
             const { id } = answer as Replies['spawn']
             const logged = await host({ t: 'fact', id: by, fact: { hook_event_name: HIRED, id } })
             if (logged.t === 'error') {
@@ -400,6 +400,18 @@ export const dispatch = defineResource({
       return run
     }
 
+    /**
+     * The resume running now holds the directory it resumes in from before its worktree is restored until its session is
+     * on duty, as an occupant (`occupants`): Tidy, which skips an occupied worktree, never removes one a resume just
+     * restored before the resumed worker shows on the board.
+     */
+    let resumingIn: Occupant | undefined
+
+    /**
+     * A resume whose worktree is gone restores it first, under its old name (`restoreWorktree`), once the launch is weighed,
+     * so a refused resume restores nothing; the session is told how (`Restored`), and so is the caller. A session that
+     * then fails to start leaves the worktree restored, for the next resume.
+     */
     const resumeOnce = (id: string, conversation: string, prompt: string | undefined, within: Caller) =>
       withSession(id, async () => {
         const source = system.session(id)!
@@ -412,38 +424,50 @@ export const dispatch = defineResource({
         const config = readConfig()
         const project = config.projects[source.header.project]
         if (!project) return apiError('not_found', `No project "${source.header.project}" in the config`)
-        const lost = lostWorktree(project, source.header.cwd)
-        if (lost) return lost
+        const { project: projectId, cwd } = source.header
+        const name = worktreeName(project, cwd)
+        const gone = name !== undefined && sessionDirs(project, cwd).some((dir) => !existsSync(dir))
         const kind = carriesOn(source, conversation) ? 'resume' : 'fork'
         const heir = kind === 'resume' ? newSessionId() : (await workerIds(config))()
-        const brief = await briefFor(project, worktreesConfig(config, source.header.project).links, source.header.cwd)
-        const { project: projectId, cwd } = source.header
         const runtime = source.header.runtime ?? 'claude'
         const worker = lineage(source, (s) => continues(s, system.sessions()))
         const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker))
         if (merged.t === 'error') return merged
         const gated = await gate({ project: projectId, kind, runtime, hire: false, exempt: merged.exempt, fields: {} }, within)
         if (gated) return gated
-        const answer = await host(
-          resumeRequest({
-            kind,
-            runtime,
-            id: heir,
-            name: resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)),
-            project: projectId,
-            cwd,
-            dirs: sessionDirs(project, cwd),
-            user: configuredUser(config),
-            worktree: brief,
-            kept: projectCollectionsPath(paths, projectId),
-            plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
-            contributed: merged.contributed,
-            facts: kind === 'fork' ? forkFacts(worker) : [],
-            conversation,
-            prompt,
-          }),
-        )
-        return answer
+        const { branchPrefix, links } = worktreesConfig(config, projectId)
+        resumingIn = { id: heir, cwd }
+        try {
+          const restoring = gone ? await worktreeVerb(async () => ({ t: 'restored', restored: await restoreWorktree(project, projectId, links, name!, `${branchPrefix}${name}`) })) : undefined
+          if (restoring && 'code' in restoring) return restoring
+          const restored = restoring?.restored
+          const answer = await host(
+            resumeRequest({
+              kind,
+              runtime,
+              id: heir,
+              name: resumeName(source, conversation, heir, system.sessions(), callsignsOf(config)),
+              project: projectId,
+              cwd,
+              dirs: sessionDirs(project, cwd),
+              user: configuredUser(config),
+              worktree: await briefFor(project, links, cwd),
+              kept: projectCollectionsPath(paths, projectId),
+              plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
+              contributed: merged.contributed,
+              facts: kind === 'fork' ? forkFacts(worker) : [],
+              conversation,
+              prompt,
+              restored,
+            }),
+          )
+          if (answer.t !== 'spawned') return answer
+          await system.refreshLive()
+          await system.until(() => cardsNow().some((c) => c.id === heir && (c.onDuty || !system.live()?.ids.has(heir))), TRACK_TIMEOUT_MS)
+          return restored ? { ...answer, restored } : answer
+        } finally {
+          resumingIn = undefined
+        }
       })
 
     const withProject = (projectId: string, act: (project: Project, config: Config) => Answer | Promise<Answer>) => {
@@ -453,7 +477,7 @@ export const dispatch = defineResource({
     }
 
     /** A git refusal answers as its API error; the board reads git again after anything that may have changed it. */
-    async function worktreeVerb(act: () => Promise<Answer>): Promise<Answer> {
+    async function worktreeVerb<A extends Answer>(act: () => Promise<A>): Promise<A | ApiError> {
       try {
         return await act()
       } catch (err) {
@@ -464,8 +488,8 @@ export const dispatch = defineResource({
       }
     }
 
-    /** Who is in a worktree right now: a running session or shell keeps it from removal. */
-    const occupants = () => occupantsOf(cardsNow(), system.shells())
+    /** Who is in a worktree right now: a running session or shell, or the resume running now, keeps it from removal. */
+    const occupants = () => [...occupantsOf(cardsNow(), system.shells()), ...(resumingIn ? [resumingIn] : [])]
     const cardsNow = () => boardOf().floors.flatMap((f) => f.cards)
 
     /** The callsigns of the workers on duty, or just spawned and not on the board yet. */
@@ -984,7 +1008,6 @@ export const dispatch = defineResource({
       try {
         return await wrapped(name, q, input, caller)
       } catch (err) {
-        console.error(`${name}:`, err)
         return errorOf(err)
       }
     }

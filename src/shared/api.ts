@@ -7,13 +7,14 @@ import { z } from 'zod'
 import { AUTHOR, RUNTIMES, WORKTREE_NAME } from './model.ts'
 import type { CheckResult, Outcome, RunStart } from './policies-legacy.ts'
 import type { Words } from './extensions.ts'
+import type { Restored } from './launch.ts'
 
 /**
  * `<major>.<minor>`. The minor moves when the API adds something an older renderer reads past: a board field, a verb,
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.138'
+export const API_VERSION = '1.139'
 
 const id = z.string().min(1)
 
@@ -81,6 +82,13 @@ const cut = z
   .describe('A new worktree in every directory of the project, under one name and on one new branch; the session starts in the hub\'s.')
 /** What a cut made, and from what: each repo's base, and why it is that one. */
 const cutReply = z.object({ name: z.string(), branch: z.string(), bases: z.array(z.object({ dir: z.string(), base: z.string(), why: z.string() })) })
+
+/** A gone worktree a resume restored: how, and each repo's as it came back, from its branch or, cut afresh, its base. @since 1.139 */
+const restoredReply = z.object({
+  name: z.string(),
+  how: z.enum(['lost', 'kept', 'fresh']),
+  repos: z.array(z.object({ dir: z.string(), from: z.string(), commit: z.string() })),
+}) satisfies z.ZodType<Restored>
 
 /** A spawn's fields, before the rules between them: a policy's `hire` picks from them. */
 export const SPAWN_FIELDS = z.strictObject({
@@ -156,8 +164,10 @@ export const VERBS = {
   resume: {
     input: z
       .object({ id, conversation: id, prompt: z.string().optional().describe("Claude's first prompt in the new session, as it starts: a card's `carry-on` passes one.") })
-      .describe('Continue a conversation Claude saved in the session, as a new session.'),
-    reply: spawned,
+      .describe(
+        "Continue a conversation Claude saved in the session, as a new session. A worktree of it that is gone is restored first, under its name: its lost folders recut from their branch, its kept branch checked out again, or with nothing of it left (its work landed) cut afresh from origin's default; the new session is told which in its instructions. Refused (`lost`), naming the fix, when none applies: the card's `unresumable` is `gone`. @since 1.139 restores",
+      ),
+    reply: spawned.extend({ restored: restoredReply.optional() }),
   },
   keys: {
     input: z

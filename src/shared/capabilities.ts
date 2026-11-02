@@ -33,7 +33,7 @@ export const CAPABILITIES: Capability[] = [
   { id: 'stats', text: 'Stats reads spend, waits and the week’s budget; The Week reads it as a yearbook.' },
   { id: 'tidy', text: 'A floor’s Tidy lists what can go, landed worktrees to old logs; nothing goes unasked.', verb: 'tidy' },
   { id: 'policies', text: 'A policy is standing work: “every weekday at 9, check the dependency updates”.' },
-  { id: 'resume', text: 'A worker that ended resumes from its floor’s archive, its conversation carried on.' },
+  { id: 'resume', text: 'A worker that ended resumes from its floor’s archive, its conversation carried on, its worktree recut under its name if it was removed.' },
   { id: 'keys', text: 'Every key and what each status means are on one sheet; the config rebinds any key.', command: 'help' },
 ]
 

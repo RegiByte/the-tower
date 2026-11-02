@@ -1345,7 +1345,7 @@
         "outside",
         "gone"
       ],
-      "description": "Why a past worker can't be resumed where it ran: its cwd is no longer one of its floor's folders (`outside`: the floor's dirs moved, or it left the config), or it is a worktree whose folder is gone (`gone`: removed, or deleted)."
+      "description": "Why a past worker can't be resumed where it ran: its cwd is no longer one of its floor's folders (`outside`: the floor's dirs moved, or it left the config), or it is a worktree whose folder is gone and that a resume can't restore (`gone`: `restoreOf` says why)."
     },
     "CardConversation": {
       "type": "object",

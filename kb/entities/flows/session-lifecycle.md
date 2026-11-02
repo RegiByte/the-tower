@@ -4,7 +4,7 @@
   "name": "Session lifecycle",
   "summary": "One Claude session end to end: a renderer asks for it, the host runs it in a PTY and logs everything, and every renderer derives what to show from that log.",
   "in": "tower",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "involves": ["operator", "web-tower", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
   "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/http.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/tower/dispatch.ts#newLaunch", "hub/src/tower/dispatch.ts#contribute"]
 }
@@ -64,7 +64,8 @@ sequenceDiagram
   the floor already has, or in a new one: `spawn {cut}`, never with a `cwd`, composes the launch at the hub's worktree path, then cuts the same name in every repo, then starts the worker in the hub's worktree, and rolls the cut
   back if the spawn fails ([`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)). The host accepts a `cwd` only through
   [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs), which also gives the other directories the session may
-  read; a worktree whose folder is gone in any repo is refused as `lost` ([[tower-cuts-worktrees]]).
+  read; a spawn in a worktree whose folder is gone in any repo is refused as `lost` ([[tower-cuts-worktrees]]), and a
+  resume restores it first ([[resume]]).
 - **The log is written before anything else sees it.** Input and resizes are appended before they
   reach the PTY. A renderer never talks to Claude; it reads the log and asks the host.
 - **The screen is replayed, not stored.** Opening a session rebuilds its screen from the `o` and `r`

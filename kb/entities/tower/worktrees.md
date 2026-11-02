@@ -4,8 +4,8 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "tower-core",
-  "reviewed": "2026-10-30",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges", "hub/src/changed-files.ts#changedSince"]
+  "reviewed": "2026-11-02",
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#restoreWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges", "hub/src/changed-files.ts#changedSince"]
 }
 ---
 `src/worktrees.ts` is the only code that changes the tower's worktrees and branches. The tower server calls it; what
@@ -33,7 +33,9 @@ as old as the last fetch.
   read again or where it left its base moved.
   [`landingOf`](ref:hub/src/worktrees.ts#landingOf) reads what landing changed on a carried branch.
 - **One worktree or branch.** The `/worktree/*` and `/branch/*` verbs: recut a lost worktree or a [[kept-branch]],
-  prune a lost one, remove one that is removable or carried, delete a kept branch once absorbed or carried.
+  prune a lost one, remove one that is removable or carried, delete a kept branch once absorbed or carried. A resume
+  brings a gone worktree back under its name through [`restoreWorktree`](ref:hub/src/worktrees.ts#restoreWorktree),
+  which picks one of those recuts or a fresh [`cut`](ref:hub/src/worktrees.ts#cut) by what git reads ([[resume]]).
 - **Tidy and discard.** [`tidyable`](ref:hub/src/worktrees.ts#tidyable) refuses a Tidy whose worktrees or branches
   no longer qualify after a fetch; Tidy then applies its list through the verbs above ([[tidy]]). Work that
   never landed goes only through [`discardable`](ref:hub/src/worktrees.ts#discardable), then

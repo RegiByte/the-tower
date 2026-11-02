@@ -56,7 +56,7 @@ export const UNRESUMABLE_NAME: Record<Unresumable, string> = { outside: 'outside
 /** The same, on hover. */
 export const UNRESUMABLE_TITLE: Record<Unresumable, string> = {
   outside: "can't be resumed: its folder is no longer one of its floor's directories",
-  gone: "can't be resumed: its worktree's folder is gone",
+  gone: "can't be resumed: its worktree's folder is gone, and can't be recut by itself",
 }
 
 /**

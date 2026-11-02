@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-29",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "refs": [
     "hub/extensions/autotidy/extension.json",
     "hub/extensions/autotidy/server.ts",
@@ -73,7 +73,8 @@ theirs; the core reads nothing in it.
   flight is not asked for again as its own removals change the board. A worktree the last board did not list is never
   asked for ([`listedBefore`](ref:hub/extensions/autotidy/plan.ts#listedBefore)): the going worker's own was listed
   while it worked there, so one that comes onto the board within the two minutes was just made, a recut of the one
-  autotidy removed, by a user about to resume its worker. Each kind is its own call,
+  autotidy removed. A resume that recuts it holds it as an occupant until the resumed worker is on duty, so the core's
+  Tidy refuses it meanwhile whoever asks ([[resume]]). Each kind is its own call,
   each extension's entries a kind and each worker's reaps a kind ([`byKind`](ref:hub/extensions/autotidy/plan.ts#byKind)):
   Tidy refuses a whole call when any of it no longer qualifies, so a process exiting on its own between the board and
   the call takes down that worker's reaps, not another's, nor the worktree and the thread beside them, and a crew going
