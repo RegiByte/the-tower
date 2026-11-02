@@ -4,7 +4,7 @@
   "name": "Tower page",
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "refs": ["hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/src/shared/icons.ts#ICON", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf"]
 }
 ---
@@ -55,7 +55,7 @@ started says so in its badges, the policies extension's ([[policies]]). The shel
 one tab row: the shared panels, then the worker's showings ([[agent-show]]), in the form the layout picks among
 `card.panes`' `overflows` ([[region-overflow]]). In `scroll`, its default
 ([`tabsScroll`](ref:hub/renderers/page/regions.js#tabsScroll)), the tabs a pane chord opens stay put and every other
-tab, extension views and showings alike, scrolls past them under a thin scrollbar, faded at an edge past which more
+tab, extension views and showings alike, scrolls past them a gap above a thin scrollbar that keeps its room and shows its thumb under the pointer, faded at an edge past which more
 hide, the open tab brought clear of the fades as it opens and as the row resizes; the layout's `order` arranges the
 two apart. In `wrap` ([`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap)), every tab is drawn, the views in
 the layout's order and the showings after them, on as many rows as they take. In `menu`

@@ -47,7 +47,7 @@ const ID = 'tower/card'
 
 const CSS = `:where([data-view="${ID}"]) {
   gap: var(--sp-m);
-  & .bar { flex: none; container: card-head / inline-size; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  & .bar { --tabs-room: var(--sp-m); flex: none; container: card-head / inline-size; padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
   & .bar-top { display: flex; flex-direction: column; gap: var(--sp-xs); min-width: 0; }
   & .bar-top[hidden] { display: none; }
   & .part, & :is([data-holds="badges"], [data-holds="lines"], [data-holds="actions"]) { display: contents; }
@@ -114,7 +114,7 @@ const CSS = `:where([data-view="${ID}"]) {
   & .ask button { margin-left: auto; flex: none; }
   & .screen { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--enamel); border-radius: var(--radius); }
   &.cell { gap: 0; }
-  &.cell .bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; column-gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m);
+  &.cell .bar { --tabs-room: 0px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; column-gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m);
     border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; }
   &.cell .bar-top { grid-column: 1 / 3; }
   &.cell .bar-line { grid-column: 1 / -1; }
