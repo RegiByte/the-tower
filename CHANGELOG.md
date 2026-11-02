@@ -12,6 +12,31 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.85.0
+
+Sessions under several Claude commands, such as a work and a personal account, and a new example extension, pr-status.
+**host restart** (protocol 4), **config** (`argv` may name several commands, a project's `command`), API 1.141
+(additions only).
+
+- **Named Claude commands.** `argv` in `config.json` can name several commands by key
+  (`{"claude": ["claude"], "work": ["claude-work"]}`). Each is an executable on PATH, typically a small wrapper that
+  sets a Claude config of its own (another account, say) and execs `claude`. A project's `command` picks its floor's
+  default, the New Worker form offers a picker when there is more than one, and the spawn API takes `command`. A
+  session's header names its command, and a resume or fork starts under it, so a conversation stays in the account
+  that holds it. A plain array `argv` works as before. An unknown command fails clearly: `tower config check` fails
+  a project naming one, the spawn API refuses it, and a resume whose command left the config refuses and says what
+  to restore. By @raphalupi (#354).
+- **Restart the host before naming commands.** A named command needs host protocol 4: until the host restarts, the
+  board marks it outdated and a spawn that names a command is refused, saying so. With a plain array `argv`, nothing
+  changes until you restart.
+- **pr-status, an example extension.** A badge on each worker in a worktree names its branch's pull request and where
+  it stands (open, draft, merged, closed), with its review, and a second badge while its checks fail or still run.
+  It asks GitHub through `gh`, one GraphQL query per host for every due branch, as a worker ends a turn and on a
+  backoff otherwise, and shows a pull request only when it is the branch's own. Off until the config names it:
+  `"extensions": { "pr-status": { "path": "<tower>/examples/extensions/pr-status" } }`. By @CarlosBonetti (#353).
+- **An offered badge draws its label in its own tone,** not the card's around it (orange inside a working card)
+  (#353).
+
 ## v1.84.1
 
 Terminals take dead keys in Firefox. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no
