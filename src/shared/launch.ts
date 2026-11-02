@@ -89,7 +89,7 @@ const RESTORED_WAIT = "Make no changes now: answer briefly that you've read this
  * same message (a user's, a hirer's, or `CARRY_ON`), or, with none, the note alone, asking the worker to wait. A resume
  * keeps the system prompt its conversation started with, so the note can only reach Claude as a prompt.
  */
-export const restoredPrompt = (r: Restored, prompt: string | undefined): string => `${restoredNote(r)}\n\n${prompt ?? RESTORED_WAIT}`
+export const restoredPrompt = (r: Restored, prompt: string | undefined): string => `${restoredNote(r)}\n\n${prompt || RESTORED_WAIT}`
 
 /**
  * The tower's brief, its worktree line, then what launch contributors add to the session's instructions. Claude reads
