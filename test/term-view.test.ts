@@ -73,3 +73,14 @@ test('term view: the echo of its own earlier resize, arriving after a later fit,
   assert.deepEqual(run(late, { type: 'resized', cols: 90, rows: 25 })[0], { ...late, asked: [] })
   assert.equal(run({ ...late, asked: [] }, { type: 'resized', cols: 100, rows: 30 })[0].t, 'watching')
 })
+
+test('term view: a PTY that exits while viewed leaves the view read-only, so a later pane change or key sizes nothing', () => {
+  const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
+  for (const view of [owning, watching]) {
+    const [ended, effects] = run(view, { type: 'ended' })
+    assert.deepEqual([ended, effects], [{ t: 'exited', pty: view.pty }, [{ type: 'mode', mode: { t: 'exited' } }]])
+    assert.deepEqual(run(ended, { type: 'settled' })[1], [{ type: 'follow', ...view.pty }])
+    assert.deepEqual(run(ended, { type: 'typed', data: 'a' })[1], [])
+    assert.deepEqual(run(ended, { type: 'fitted', cols: 100, rows: 30, then: '' })[1], [])
+  }
+})

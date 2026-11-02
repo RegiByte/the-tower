@@ -37,12 +37,13 @@ export type TermMode = { t: 'owning'; cols: number; rows: number } | { t: 'watch
 
 /**
  * `snapshot`: the stream's, each time it connects, opening a fresh terminal (`others`: another terminal views the PTY); `resized`: the PTY's
- * size, set by anyone; `pane`: the view's box changed, `settled` once it has stopped; `font`: the viewer's face or size
+ * size, set by anyone; `ended`: the PTY exited while viewed; `pane`: the view's box changed, `settled` once it has stopped; `font`: the viewer's face or size
  * changed and has loaded; `fitted`: the size the pane fits at the viewer's size, with the keys typed while taking it.
  */
 export type TermEvent =
   | { type: 'snapshot'; data: string; cols: number; rows: number; exited: boolean; others: boolean }
   | { type: 'resized'; cols: number; rows: number }
+  | { type: 'ended' }
   | { type: 'typed'; data: string }
   | { type: 'pane' }
   | { type: 'settled' }
@@ -105,6 +106,8 @@ export const termHandlers = (): Handlers<TermView, TermEvent, TermEffect> => ({
     const next: TermView = s.t === 'exited' ? { t: 'exited', pty: { cols, rows } } : { t: 'watching', pty: { cols, rows } }
     return [state(next), { type: 'follow', cols, rows }, { type: 'mode', mode: modeOf(next) }]
   },
+  /** A PTY that exited takes no more sizes or keys: a view still mounted on it, unseen or not, stays read-only. */
+  ended: (s) => (s.t === 'opening' || s.t === 'exited' ? [] : [state({ t: 'exited', pty: s.pty }), { type: 'mode', mode: { t: 'exited' } }]),
   typed: (s, { data }) => {
     if (s.t === 'owning' || (s.t === 'watching' && FOCUS_REPORTS.has(data))) return [{ type: 'send', data }]
     return s.t === 'watching' ? [{ type: 'fit', then: data }] : []
@@ -281,6 +284,7 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       const [cols, rows] = 'size' in msg ? msg.size.split('x').map(Number) : [msg.cols, msg.rows]
       return machine.dispatch({ type: 'resized', cols, rows })
     }
+    if (msg.t === 'x') machine.dispatch({ type: 'ended' })
     io.end(msg)
   })
   /**
