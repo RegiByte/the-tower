@@ -44,5 +44,6 @@ keep its ideas and reach a peer correctly.
 - *The whole skill in the system prompt.* It is sent on every turn of every session, and most turns need none of
   reviews, hiring or the API.
 
-**Impact.** The brief is a little longer, and sent on every turn. A session gets the brief it was started or
-resumed with.
+**Impact.** The brief is a little longer, and sent on every turn. A session gets the brief its conversation started
+with: `--resume` ignores a new `--append-system-prompt`, so a changed brief reaches a resumed worker only in a new
+conversation.

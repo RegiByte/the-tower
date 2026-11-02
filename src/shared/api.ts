@@ -14,7 +14,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.139'
+export const API_VERSION = '1.140'
 
 const id = z.string().min(1)
 
@@ -165,7 +165,7 @@ export const VERBS = {
     input: z
       .object({ id, conversation: id, prompt: z.string().optional().describe("Claude's first prompt in the new session, as it starts: a card's `carry-on` passes one.") })
       .describe(
-        "Continue a conversation Claude saved in the session, as a new session. A worktree of it that is gone is restored first, under its name: its lost folders recut from their branch, its kept branch checked out again, or with nothing of it left (its work landed) cut afresh from origin's default; the new session is told which in its instructions. Refused (`lost`), naming the fix, when none applies: the card's `unresumable` is `gone`. @since 1.139 restores",
+        "Continue a conversation Claude saved in the session, as a new session. A worktree of it that is gone is restored first, under its name: its lost folders recut from their branch, its kept branch checked out again, or with nothing of it left (its work landed) cut afresh from origin's default; the new session is told which in its first prompt, before any `prompt` given, in one message (@since 1.140; its instructions before). Refused (`lost`), naming the fix, when none applies: the card's `unresumable` is `gone`. @since 1.139 restores",
       ),
     reply: spawned.extend({ restored: restoredReply.optional() }),
   },

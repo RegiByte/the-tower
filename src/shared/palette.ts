@@ -11,7 +11,7 @@ import { actionWords, addedActions, boardSubject, cardSubject, commandName, floo
 import type { Action, Added, Words } from './extensions.ts'
 import type { Subject } from './subjects.ts'
 import { COMMANDS, type CommandId } from './keymap.ts'
-import { VERB_WORDS, verbId, type VerbId } from './verb-words.ts'
+import { VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
 export type GoTarget =
   | { t: 'worker'; id: string }
@@ -132,7 +132,7 @@ const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card)
       id: verbId('card', a.verb),
       group: c.callsign,
       label: words.label,
-      hint: words.command ? commandHint(capabilities, words.command, words.hint) : words.hint,
+      hint: words.command ? commandHint(capabilities, words.command, words.hint) : verbHint('card', a.verb, c),
       keywords: [c.callsign, a.verb],
       chords: words.command && board.keys[words.command],
       destructive: words.destructive,
@@ -146,7 +146,7 @@ const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card)
     id: `${verbId('conversation', a.verb)}@${v.id}`,
     group: c.callsign,
     label: `${VERB_WORDS[verbId('conversation', a.verb)].label}: an earlier conversation`,
-    hint: v.prompt ?? VERB_WORDS[verbId('conversation', a.verb)].hint,
+    hint: v.prompt ?? verbHint('conversation', a.verb, c),
     keywords: [c.callsign, a.verb, v.prompt ?? ''],
     card: c.id,
     project: c.project,

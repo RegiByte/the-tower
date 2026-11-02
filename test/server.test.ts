@@ -1389,7 +1389,7 @@ test('server: a prompt is refused where it would answer a question, and at-promp
   assert.equal(errorCode(await post('submit/at-prompt', { id: sessions.holding, text: '' })), 'invalid')
 })
 
-test("server: resume recuts a worktree that was removed with its landed branch from origin's default, under its name, and tells the resumed session in its instructions; one on a detached HEAD whose folder is gone is unresumable and refused", async () => {
+test("server: resume recuts a worktree that was removed with its landed branch from origin's default, under its name, and tells the resumed session in its first prompt, before the prompt given; one on a detached HEAD whose folder is gone is unresumable and refused", async () => {
   const origin = path.join(ROOT, 'bare-origin.git')
   execFileSync('git', ['clone', '-q', '--bare', BARE, origin])
   gitIn(BARE, 'remote', 'add', 'origin', origin)
@@ -1399,8 +1399,11 @@ test("server: resume recuts a worktree that was removed with its landed branch f
   gitIn(BARE, 'worktree', 'add', '-q', '-b', 'tower/kite-9', tree('kite-9'), 'origin/main')
   gitIn(BARE, 'config', 'branch.tower/kite-9.towerBase', 'origin/main')
   gitIn(BARE, 'config', 'branch.tower/kite-9.towerName', 'kite-9')
+  gitIn(BARE, 'worktree', 'add', '-q', '-b', 'tower/moth-5', tree('moth-5'), 'origin/main')
+  gitIn(BARE, 'config', 'branch.tower/moth-5.towerBase', 'origin/main')
+  gitIn(BARE, 'config', 'branch.tower/moth-5.towerName', 'moth-5')
   gitIn(BARE, 'worktree', 'add', '-q', '--detach', tree('wren-4'), 'main')
-  const sessions = { tidied: '20261004-213000-d1e2', detached: '20261004-213100-e3f4' }
+  const sessions = { tidied: '20261004-213000-d1e2', detached: '20261004-213100-e3f4', quiet: '20261004-213200-f5a6' }
   const ended = (id: string, cwd: string, conversation: string) => {
     const header = { id, project: 'bare', cwd, argv: ['bash'], startedAt: Date.now() - 60_000, cols: 80, rows: 24 }
     const events = [
@@ -1412,8 +1415,11 @@ test("server: resume recuts a worktree that was removed with its landed branch f
   }
   ended(sessions.tidied, tree('kite-9'), 'c-tidied')
   ended(sessions.detached, tree('wren-4'), 'c-detached')
-  gitIn(BARE, 'worktree', 'remove', tree('kite-9'))
-  gitIn(BARE, 'branch', '-D', 'tower/kite-9')
+  ended(sessions.quiet, tree('moth-5'), 'c-quiet')
+  for (const name of ['kite-9', 'moth-5']) {
+    gitIn(BARE, 'worktree', 'remove', tree(name))
+    gitIn(BARE, 'branch', '-D', `tower/${name}`)
+  }
   rmSync(tree('wren-4'), { recursive: true, force: true })
 
   const cardOf = (b: Board, id: string) => floorOf(b, 'bare').cards.find((c) => c.id === id)
@@ -1428,15 +1434,19 @@ test("server: resume recuts a worktree that was removed with its landed branch f
   assert.match(JSON.parse(refused.body).message, /was on a detached HEAD, with no branch to recut it from: forget "wren-4" from its floor, then try again$/)
 
   const main = gitIn(BARE, 'rev-parse', 'origin/main').trim()
-  const resumed = await command('resume', { id: sessions.tidied, conversation: 'c-tidied' })
+  const note = (name: string) =>
+    `Your worktree \`${name}\` was removed after you went home, with its branch, which the tower deletes only once its work has landed. ` +
+    `It was recut on a new branch from \`origin/main\` at \`${main.slice(0, 7)}\`: your earlier work is there, not on your old branch or at its commits.`
+  const argvOf = async (id: string): Promise<string[]> =>
+    JSON.parse((await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8'), (log) => log.length > 0)).split('\n')[0]).argv
+
+  const resumed = await command('resume', { id: sessions.tidied, conversation: 'c-tidied', prompt: 'Carry on.' })
   assert.deepEqual(resumed.restored, { name: 'kite-9', how: 'fresh', repos: [{ dir: BARE, from: 'origin/main', commit: main }] })
   assert.equal(gitIn(tree('kite-9'), 'branch', '--show-current').trim(), 'tower/kite-9')
   assert.equal(gitIn(BARE, 'config', 'branch.tower/kite-9.towerName').trim(), 'kite-9')
-  const [header] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${resumed.id}.jsonl`), 'utf8'), (log) => log.length > 0)).trim().split('\n').map((line) => JSON.parse(line))
-  const brief = header.argv[header.argv.indexOf('--append-system-prompt') + 1] as string
-  assert.ok(
-    brief.includes(`Your worktree \`kite-9\` was removed after you went home, with its branch, which the tower deletes only once its work has landed. It was recut on a new branch from \`origin/main\` at \`${main.slice(0, 7)}\``),
-    brief,
-  )
-  assert.deepEqual(header.argv.slice(-2), ['--resume', 'c-tidied'], 'no prompt is added')
+  const argv = await argvOf(resumed.id)
+  assert.deepEqual(argv.slice(-4), ['--resume', 'c-tidied', '--', `${note('kite-9')}\n\nCarry on.`], 'the note, then the prompt given, as one message')
+
+  const quiet = await command('resume', { id: sessions.quiet, conversation: 'c-quiet' })
+  assert.deepEqual((await argvOf(quiet.id)).slice(-4), ['--resume', 'c-quiet', '--', `${note('moth-5')}\n\nMake no changes now: answer briefly that you've read this, then wait for the next message.`])
 })

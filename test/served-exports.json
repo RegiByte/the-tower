@@ -1010,7 +1010,9 @@
       "tipsOf"
     ],
     "/verb-words.js": [
+      "RECUT_ON_RESUME",
       "VERB_WORDS",
+      "verbHint",
       "verbId",
       "verbLabel"
     ],

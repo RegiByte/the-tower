@@ -40,7 +40,7 @@ name belongs to which callsign, floor or task.
 - Its skill (`skills/handbook`) teaches the tower, the command, and how to reach out, and pre-approves `Bash(tower *)`.
   Every spawn and resume also appends a short tower brief to Claude's system prompt (`--append-system-prompt`): the
   session is a tower worker, a callsign is not a `SendMessage` name, and the recipe to reach one ([[brief-first]],
-  [[the-user]]).
+  [[the-user]]). A resume's is ignored: `--resume` keeps the brief its conversation started with.
 - A peer message is Claude Code's, visible in both sessions. Workers hold every verb of the renderer API
   ([[agents-have-every-capability]]).
 
