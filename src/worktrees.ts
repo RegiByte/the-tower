@@ -817,8 +817,11 @@ const removeTree = async (tree: FloorWorktree) => {
 export const removeWorktree = async (project: Project, projectId: string, name: string, occupants: Occupant[]) =>
   removeTree(worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['removable', 'carried']))
 
+/** A lost worktree forgotten, with its absorbed branches: never one someone is in, whose resume recuts it. */
 export const pruneWorktree = async (project: Project, projectId: string, name: string, occupants: Occupant[]) => {
-  const lost = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['lost']).repos.filter((r) => !r.present)
+  const tree = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['lost'])
+  if (tree.sessions.length) throw new WorktreeError('refused', `"${name}" is in use by ${tree.sessions.join(', ')}, whose resume recuts it: let them go first`)
+  const lost = tree.repos.filter((r) => !r.present)
   for (const r of lost) await forgetLost(r.dir, r.path)
   return deleteAbsorbed(lost)
 }
@@ -923,17 +926,16 @@ export const recutBranch = async (project: Project, projectId: string, links: Re
 /**
  * The gone worktree `name` brought back under its name, as `restoreOf` reads the project's git after a fetch: its lost
  * folders recut (`recutWorktree`), its kept branch checked out again (`recutBranch`), or, with nothing of it left, cut
- * afresh on `branch` from origin's default (`cut`). Refused, naming the fix, when none applies. Whoever is on duty in a
- * lost worktree works in no folder of it, so its folders are recut whoever is.
+ * afresh on `branch` from origin's default (`cut`). Refused, naming the fix, when none applies.
  */
-export const restoreWorktree = async (project: Project, projectId: string, links: Record<string, string>, name: string, branch: string): Promise<Restored> => {
+export const restoreWorktree = async (project: Project, projectId: string, links: Record<string, string>, name: string, branch: string, occupants: Occupant[]): Promise<Restored> => {
   const restore = restoreOf(await fetchedReads(project, false), name)
   if (restore.t === 'none') throw new WorktreeError('lost', `The worktree "${name}" is gone and can't be recut by itself: ${restore.why}`)
   if (restore.t === 'fresh') {
     const made = await cut(project, links, { name, branch, base: undefined })
     return { name, how: 'fresh', repos: made.made.map((m) => ({ dir: m.dir, from: made.bases.find((b) => b.dir === m.dir)!.base, commit: m.baseCommit! })) }
   }
-  if (restore.t === 'lost') await recutWorktree(project, projectId, links, name, [])
+  if (restore.t === 'lost') await recutWorktree(project, projectId, links, name, occupants)
   else await recutBranch(project, projectId, links, restore.branch)
   const repos = await Promise.all(
     projectDirs(project).map(async (dir) => {

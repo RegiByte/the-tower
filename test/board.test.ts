@@ -249,8 +249,10 @@ test("a stranded worker holds its worktree until it is resumed or let go: Tidy n
   assert.deepEqual(said(floorOf(lost)), ['live', [id], []])
   assert.deepEqual(said(floorOf(letGo)), ['removable', [], ['odin-42']])
   assert.deepEqual(said(floorOf(log)), ['removable', [], ['odin-42']])
-  assert.deepEqual(said(floorOf(lost, false)), ['live', [id], []])
-  assert.deepEqual(said(floorOf(lost, false, hostWith(), true)), ['lost', [], []])
+  const lostHeld = floorOf(lost, false)
+  assert.deepEqual([...said(lostHeld), lostHeld.worktrees[0].verbs], ['lost', [id], [], ['recut']], 'held for its resume: recut, never pruned')
+  const lostLetGo = floorOf(lost, false, hostWith(), true)
+  assert.deepEqual([...said(lostLetGo), lostLetGo.worktrees[0].verbs], ['lost', [], [], ['recut', 'prune']], 'a stranded worker on a detached HEAD is unresumable, off duty')
 })
 
 test('verbs: a stopped session resumes its conversation; once resumed, it leads to whoever resumed it', () => {

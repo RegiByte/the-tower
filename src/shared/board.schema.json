@@ -2481,7 +2481,7 @@
         "remove",
         "discard"
       ],
-      "description": "`recut` restores a lost worktree's folders from its branch, `prune` forgets them; `remove` is offered only when nothing would be lost, or its work landed as copies (`carried`); `discard` throws away work that never landed, its tips named on the checkout's review thread first."
+      "description": "`recut` restores a lost worktree's folders from its branch, `prune` forgets them while nobody is in it; `remove` is offered only when nothing would be lost, or its work landed as copies (`carried`); `discard` throws away work that never landed, its tips named on the checkout's review thread first."
     },
     "WorktreeCalls": {
       "type": "object",

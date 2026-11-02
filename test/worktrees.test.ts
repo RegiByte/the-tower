@@ -56,10 +56,11 @@ test('a squash-merged branch looks unpushed but is absorbed: removable, not at r
   assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { dirty: 1, absorbed: true })])]), [['a', 'at-risk', ['discard']]])
 })
 
-test('state in priority order: live, then lost, then at risk, then removable', () => {
+test('state in priority order: lost, then live, then at risk, then removable; a lost one someone is in is recut, never pruned', () => {
   const lostAndRisky = [repo(HUB, [tree(HUB, 'a', { present: false })]), repo(API, [tree(API, 'a', { dirty: 3 })])]
   assert.deepEqual(states(lostAndRisky), [['a', 'lost', ['recut', 'prune']]])
-  assert.deepEqual(states(lostAndRisky, [{ id: 's1', cwd: `${API}/.worktrees/a` }]), [['a', 'live', []]])
+  assert.deepEqual(states(lostAndRisky, [{ id: 's1', cwd: `${API}/.worktrees/a` }]), [['a', 'lost', ['recut']]])
+  assert.deepEqual(states([repo(API, [tree(API, 'a', { dirty: 3 })])], [{ id: 's1', cwd: `${API}/.worktrees/a` }]), [['a', 'live', []]])
 })
 
 test('one repo at risk puts the whole name at risk', () => {

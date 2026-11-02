@@ -38,7 +38,7 @@ export type ResourceVerb = 'reap'
  */
 export type FloorVerb = 'spawn' | 'cut' | 'shell' | 'editor' | 'tidy'
 /**
- * `recut` restores a lost worktree's folders from its branch, `prune` forgets them; `remove` is offered only when nothing
+ * `recut` restores a lost worktree's folders from its branch, `prune` forgets them while nobody is in it; `remove` is offered only when nothing
  * would be lost, or its work landed as copies (`carried`); `discard` throws away work that never landed, its tips named
  * on the checkout's review thread first.
  */
@@ -89,8 +89,9 @@ const floorVerbs = (hostUp: boolean, termsUp: boolean, canCut: boolean, tidyable
 ]
 
 /** A worktree in use offers nothing. Work at risk is discarded only on a floor keeping review threads, where its tips are noted. */
-const worktreeVerbs = (state: WorktreeState, recordsDiscards: boolean): WorktreeVerb[] =>
-  state === 'lost' ? ['recut', 'prune'] : state === 'removable' || state === 'carried' ? ['remove'] : state === 'at-risk' && recordsDiscards ? ['discard'] : []
+/** `occupied`: someone is in it (`FloorWorktree.sessions`), so a lost one is recut for them, never pruned under them. */
+const worktreeVerbs = (state: WorktreeState, occupied: boolean, recordsDiscards: boolean): WorktreeVerb[] =>
+  state === 'lost' ? (occupied ? ['recut'] : ['recut', 'prune']) : state === 'removable' || state === 'carried' ? ['remove'] : state === 'at-risk' && recordsDiscards ? ['discard'] : []
 
 /** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
@@ -222,8 +223,8 @@ export const withAddedTidy = <F extends { id: string; tidy: TidyPlan } & Offers<
   return { ...f, ...offered(actions) }
 }
 
-export const worktreeOffers = (project: string, name: string, state: WorktreeState, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], recordsDiscards: boolean): Offers<WorktreeVerb, WorktreeCalls> => {
-  const verbs = worktreeVerbs(state, recordsDiscards)
+export const worktreeOffers = (project: string, name: string, state: WorktreeState, occupied: boolean, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], recordsDiscards: boolean): Offers<WorktreeVerb, WorktreeCalls> => {
+  const verbs = worktreeVerbs(state, occupied, recordsDiscards)
   return actionsOf(verbs, {
     recut: (): Call<'worktree/recut'> => ['worktree/recut', { project, name }],
     prune: (): Call<'worktree/prune'> => ['worktree/prune', { project, name }],

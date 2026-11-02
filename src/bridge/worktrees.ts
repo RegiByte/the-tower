@@ -197,10 +197,14 @@ export type Occupant = { id: string; cwd: string }
 
 const inside = (cwd: string, path: string) => cwd === path || cwd.startsWith(`${path}/`)
 
-/** Live first: a worktree in use is never offered for removal, whatever else is true of it. */
+/**
+ * Lost first: a worktree with a folder missing is `lost` whoever is in it, a stranded worker or a resume about to
+ * recut it (`sessions`), which only keeps it from being pruned. Then live: a worktree in use is never offered for
+ * removal, whatever else is true of it.
+ */
 const stateOf = (repos: FloorWorktreeRepo[], sessions: string[]): WorktreeState => {
-  if (sessions.length) return 'live'
   if (repos.some((r) => !r.present)) return 'lost'
+  if (sessions.length) return 'live'
   if (repos.some((r) => r.atRisk)) return 'at-risk'
   if (repos.some(isCarried)) return 'carried'
   return 'removable'
@@ -216,7 +220,7 @@ export const floorWorktrees = (project: string, reads: RepoRead[], occupants: Oc
     const own = repos.filter((r) => r.name === name).map((r) => r.repo)
     const sessions = occupants.filter((o) => own.some((r) => inside(o.cwd, r.path))).map((o) => o.id)
     const state = stateOf(own, sessions)
-    return { name, repos: own, sessions, state, ...worktreeOffers(project, name, state, own, recordsDiscards) }
+    return { name, repos: own, sessions, state, ...worktreeOffers(project, name, state, sessions.length > 0, own, recordsDiscards) }
   })
 }
 
