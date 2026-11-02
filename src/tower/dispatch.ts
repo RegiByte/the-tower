@@ -266,6 +266,7 @@ export const dispatch = defineResource({
         departing.add(c.id)
         const calls = callOf(c, 'send-home')
         if (!calls) {
+          console.error(`${c.callsign} asked to go home, and its card offers no send-home`)
           continue
         }
         void (async () => {
@@ -344,7 +345,7 @@ export const dispatch = defineResource({
             const refused = factRefused(HIRE_FACT)
             if (refused) return refused
             const answer = await spawning()
-          if (answer.t !== 'spawned') return answer
+            if (answer.t !== 'spawned') return answer
             const { id } = answer as Replies['spawn']
             const logged = await host({ t: 'fact', id: by, fact: { hook_event_name: HIRED, id } })
             if (logged.t === 'error') {
@@ -403,7 +404,8 @@ export const dispatch = defineResource({
     /**
      * The resume running now holds the directory it resumes in from before its worktree is restored until its session is
      * on duty, as an occupant (`occupants`): Tidy, which skips an occupied worktree, never removes one a resume just
-     * restored before the resumed worker shows on the board.
+     * restored before the resumed worker shows on the board. The host's answer already waited for the system to hold the
+     * session, so the card is there at once; the hold ends after `TRACK_TIMEOUT_MS` only when the system never held it.
      */
     let resumingIn: Occupant | undefined
 
@@ -461,10 +463,10 @@ export const dispatch = defineResource({
               restored,
             }),
           )
-          if (answer.t !== 'spawned') return answer
+          if (answer.t !== 'spawned' || !restored) return answer
           await system.refreshLive()
           await system.until(() => cardsNow().some((c) => c.id === heir && (c.onDuty || !system.live()?.ids.has(heir))), TRACK_TIMEOUT_MS)
-          return restored ? { ...answer, restored } : answer
+          return { ...answer, restored }
         } finally {
           resumingIn = undefined
         }
@@ -1008,6 +1010,7 @@ export const dispatch = defineResource({
       try {
         return await wrapped(name, q, input, caller)
       } catch (err) {
+        console.error(`${name}:`, err)
         return errorOf(err)
       }
     }
