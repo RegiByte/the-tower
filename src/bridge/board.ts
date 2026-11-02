@@ -291,7 +291,7 @@ export type FloorCollection = {
  */
 export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities' | 'command'> & {
   id: string
-  /** The floor's resolved preferred `argv` command, by name; absent in single-command mode (`projectPreferredCommand`). */
+  /** The floor's resolved preferred `argv` command, by name; absent in single-command mode (`projectPreferredCommand`). @since 1.141 */
   command?: string
   /** The cards of its present (`onBoard`); the rest are its archive, read at `GET /archive/<project>`. */
   cards: Card[]
@@ -436,7 +436,7 @@ export type Board = {
   hostOutdated: boolean
   /** The model and effort Claude starts a new worker on when asked for neither, as the sessions showed them. */
   claudeDefaults: ClaudeDefaults
-  /** Every `argv` command name, in write order; absent in single-command mode (`commandNames`). */
+  /** Every `argv` command name, in write order; absent in single-command mode (`commandNames`). @since 1.141 */
   commands?: string[]
   /** The releases outside the tested range that live workers run, each once. */
   claudeUntested: string[]
