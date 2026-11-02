@@ -6,7 +6,7 @@ import {
 import { ICON, withIcons } from '../shared/icons.ts'
 import { pressing } from '../shared/press.ts'
 import type { Subject } from '../shared/subjects.ts'
-import { verbLabel } from '../shared/verb-words.ts'
+import { verbHint, verbLabel } from '../shared/verb-words.ts'
 import type { Mount } from '../shared/views.ts'
 import { reviewerOf } from '../shared/checkouts.ts'
 import { keyedTip, paintOnce } from './parts.ts'
@@ -283,7 +283,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
     paintOnce($('.details-part'), `<button class="icon-btn" popovertarget="${pop}-details" aria-label="details" data-tip="everything else about ${c.callsign}" data-tuck="1">${ICON.info}</button>`)
     paintOnce(
       $('.own'),
-      `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: `resume ${c.callsign}: its latest conversation goes on as a new session`, tuck: 3, tone: 'primary' }) : ''}
+      `${can(c, 'resume') ? verbHtml({ verb: 'resume', mark: 'data-resume', icon: ICON.resume, tip: verbHint('card', 'resume', c), tuck: 3, tone: 'primary' }) : ''}
     ${can(c, 'let-go') ? verbHtml({ verb: 'let-go', mark: 'data-let-go', icon: ICON.letGo, tip: `let ${c.callsign} go: ${LET_GO_MEANS}`, tuck: 2, tone: '' }) : ''}
     ${can(c, 'send-home') ? verbHtml({ verb: 'send-home', mark: 'data-send-home', icon: ICON.sendHome, tip: sendHomeTitle(c), tuck: 4, tone: 'danger' }) : ''}
     ${scale !== 'cell' ? `<button class="icon-btn" data-home aria-label="back to the skyline" ${keyedTip(board.keys, 'back to the skyline', 'home')}>${ICON.close}</button>` : ''}`,

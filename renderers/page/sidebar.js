@@ -4,7 +4,7 @@ import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
 import { placeOnOpen } from '/tips.js'
-import { verbLabel } from '/verb-words.js'
+import { verbHint, verbLabel } from '/verb-words.js'
 import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, heldActions, iconButtonsHtml, moreOf } from './added.js'
 
 /**
@@ -125,7 +125,7 @@ export async function sidebar(deps) {
     <div class="line">${lineOf(c)}</div>
     ${adds.badges}
     ${satellitesHtml(c)}
-    ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
+    ${can(c, 'resume') ? `<div class="act resumes">${heldWhy('resume') ? heldHtml('resume', verbLabel('card', 'resume').toLowerCase(), `${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}`) : `<button data-resume="${esc(JSON.stringify(callOf(c, 'resume')))}" data-tip="${esc(verbHint('card', 'resume', c))}">${ICON.resume} ${verbLabel('card', 'resume').toLowerCase()}</button>`}${letGoHtml(c, verbLabel('card', 'let-go').toLowerCase())}</div>` : c.unresumable ? `<div class="act">${unresumableHtml(c.unresumable)}</div>` : ''}
     ${adds.note}
   </div>`
   }

@@ -1447,6 +1447,6 @@ test("server: resume recuts a worktree that was removed with its landed branch f
   const argv = await argvOf(resumed.id)
   assert.deepEqual(argv.slice(-4), ['--resume', 'c-tidied', '--', `${note('kite-9')}\n\nCarry on.`], 'the note, then the prompt given, as one message')
 
-  const quiet = await command('resume', { id: sessions.quiet, conversation: 'c-quiet' })
+  const quiet = await command('resume', { id: sessions.quiet, conversation: 'c-quiet', prompt: '' })
   assert.deepEqual((await argvOf(quiet.id)).slice(-4), ['--resume', 'c-quiet', '--', `${note('moth-5')}\n\nMake no changes now: answer briefly that you've read this, then wait for the next message.`])
 })
