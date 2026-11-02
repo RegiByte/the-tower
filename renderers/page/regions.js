@@ -6,6 +6,7 @@ import { ICON } from '/icons.js'
 import { fileSpansHtml } from '/panels.js'
 import { keyedTip, repaint } from './kit.js'
 import { actionsHtml, badgesHtml, heldActions, iconActionsHtml } from './added.js'
+import { menu } from './menu.js'
 
 /**
  * @import { Board, Card, CardShown } from '../../src/bridge/board.ts'
@@ -17,6 +18,7 @@ import { actionsHtml, badgesHtml, heldActions, iconActionsHtml } from './added.j
  * @import { Tower, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
  * @import { Scheme } from '../../src/shared/design.ts'
+ * @import { MenuItem } from './menu.js'
  * @import { TermFont } from '../../src/shared/terminal.ts'
  */
 
@@ -570,11 +572,26 @@ export function regions(deps) {
         m.panel.inert = key !== open
       }
       handOpen(all)
-      forms[formOf()](all, shownAddsHtml(all))
+      const name = formOf()
+      if (name !== formNow.name) formNow.close(), (formNow = { name, ...forms[name]() })
+      formNow.draw(all, shownAddsHtml(all))
     }
 
-    /** The forms the tab row is drawn in, by the overflow each draws. */
-    const forms = { scroll: tabsScroll, wrap: tabsWrap }
+    /**
+     * A form the tab row is drawn in: made as the row takes it, then drawn on every draw, told when the row resizes and
+     * closed as the row leaves it.
+     * @typedef {{ draw: (all: TabOf[], adds: string) => void, resized: () => void, close: () => void }} TabsForm
+     */
+
+    /** The forms the tab row is drawn in, by the overflow each draws. @type {Record<'scroll' | 'menu' | 'wrap', () => TabsForm>} */
+    const forms = {
+      scroll: () => ({ draw: tabsScroll, resized: () => (bringOpen(/** @type {HTMLElement} */ (scrollerOf())), markEdges(/** @type {HTMLElement} */ (scrollerOf()))), close: () => {} }),
+      menu: tabsMenu,
+      wrap: () => ({ draw: tabsWrap, resized: () => {}, close: () => {} }),
+    }
+
+    /** The form the row is drawn in now: none before the first draw. @type {TabsForm & { name?: keyof typeof forms }} */
+    let formNow = { draw: () => {}, resized: () => {}, close: () => {} }
 
     /** The form the layout picks among those the region offers; a region offering none is drawn scrolling. @returns {keyof typeof forms} */
     function formOf() {
@@ -616,6 +633,100 @@ export function regions(deps) {
     /** The wrap form: every tab in the layout's order, on as many rows as they take. @param {TabOf[]} all @param {string} adds */
     function tabsWrap(all, adds) {
       repaint(strip, tablistHtml('wrap', tabsHtml(all)) + adds)
+    }
+
+    /**
+     * The menu form: the tabs that fit on one row, the rest behind "+n ▾" after the tablist, a menu of them
+     * (`/menu.js`). The tabs a pane chord opens and the open tab are always drawn; a tab picked from the menu is drawn
+     * last among the drawn until another is picked, the others filling what room is left in the layout's order. Each
+     * tab's width is read while every tab is drawn, and remembered by what it draws until the row's width changes.
+     * The tablist, "+n ▾" and the showing's adds are the row's own while it is in this form: drawn into, never replaced.
+     * @returns {TabsForm}
+     */
+    function tabsMenu() {
+      repaint(strip, '')
+      const list = document.createElement('span')
+      list.className = 'tab-set tabs-menu'
+      list.role = 'tablist'
+      const more = document.createElement('button')
+      more.className = 'pane-tab tabs-more'
+      more.hidden = true
+      const addsAt = document.createElement('span')
+      addsAt.className = 'tabs-adds'
+      strip.append(list, more, addsAt)
+      const listed = menu(more, {
+        run: (item) => {
+          const t = tabsOf().find((t) => itemKey(t) === item.key)
+          if (t) (swapped = t.key), pick(t)
+        },
+      })
+      /** The tab last picked from the menu. @type {string | undefined} */
+      let swapped
+      /** Each tab's width on the row, its gap included, by what it draws. @type {Map<string, number>} */
+      const widths = new Map()
+      /** "+n ▾"'s width, its gap included, as wide as it ever reads. */
+      let moreWidth = 0
+      /** The row's width when the widths were read. */
+      let room = -1
+
+      /** @param {TabOf} t */
+      const itemKey = (t) => `${card.id} tab ${t.key}`
+      /** What a tab draws, but its tip, which tells the time: it names the tab's width. @param {TabOf} t */
+      const drawsOf = (t) => tabHtml(t, t.key === open).replace(/ data-tip="[^"]*"/g, '')
+      const gapOf = (/** @type {HTMLElement} */ el) => parseFloat(getComputedStyle(el).columnGap) || 0
+
+      /** Draws every tab and "+n ▾" at its widest, and keeps their widths. @param {TabOf[]} all */
+      function measure(all) {
+        repaint(list, tabsHtml(all))
+        more.hidden = false
+        more.textContent = `+${all.length} ▾`
+        const gap = gapOf(list)
+        ;[...list.children].forEach((el, n) => widths.set(drawsOf(all[n]), el.getBoundingClientRect().width + gap))
+        moreWidth = more.getBoundingClientRect().width + gapOf(strip)
+      }
+
+      /** The tabs drawn in place, in the layout's order, and those tucked behind "+n ▾". @param {TabOf[]} all */
+      function fit(all) {
+        const widthOf = (/** @type {TabOf[]} */ ts) => ts.reduce((n, t) => n + /** @type {number} */ (widths.get(drawsOf(t))), 0) - (ts.length ? gapOf(list) : 0)
+        const added = addsAt.firstElementChild ? addsAt.firstElementChild.getBoundingClientRect().width + gapOf(strip) : 0
+        const free = strip.clientWidth - added
+        if (widthOf(all) <= free) return { drawn: all, tucked: [] }
+        const kept = all.filter((t) => (!t.showing && PANE_COMMANDS[t.view.id]) || t.key === open || t.key === swapped)
+        let left = free - moreWidth - widthOf(kept)
+        const filled = new Set(kept)
+        for (const t of all) {
+          if (filled.has(t)) continue
+          left -= /** @type {number} */ (widths.get(drawsOf(t)))
+          if (left < 0) break
+          filled.add(t)
+        }
+        return { drawn: all.filter((t) => filled.has(t)), tucked: all.filter((t) => !filled.has(t)) }
+      }
+
+      /** @param {TabOf} t @returns {MenuItem} */
+      const itemOf = (t) => {
+        const words = mounted.get(t.key)?.hosted.tab() ?? t.words ?? {}
+        return { t: 'item', key: itemKey(t), label: t.showing ? shownTitle(t.showing) : t.view.words.label, ...(words.text && { hint: words.text }) }
+      }
+
+      return {
+        draw(all, adds) {
+          repaint(addsAt, adds)
+          list.setAttribute('aria-label', `views of ${card.callsign}`)
+          if (strip.clientWidth !== room) widths.clear(), (room = strip.clientWidth)
+          if (all.some((t) => !widths.has(drawsOf(t)))) measure(all)
+          const { drawn, tucked } = fit(all)
+          repaint(list, tabsHtml(drawn))
+          more.hidden = !tucked.length
+          more.textContent = `+${tucked.length} ▾`
+          more.setAttribute('aria-label', `${tucked.length} more ${tucked.length === 1 ? 'tab' : 'tabs'}`)
+          more.dataset.tip = tucked.map((t) => (t.showing ? shownTitle(t.showing) : t.view.words.label)).join(', ')
+          listed.draw({ header: '', entries: tucked.map(itemOf) })
+          if (!tucked.length) listed.close()
+        },
+        resized: () => strip.clientWidth !== room && draw(),
+        close: () => (listed.remove(), strip.replaceChildren()),
+      }
     }
 
     /**
@@ -728,10 +839,7 @@ export function regions(deps) {
       scroller.scrollLeft += e.deltaY
     }, { passive: false })
 
-    const resized = new ResizeObserver(() => {
-      const scroller = scrollerOf()
-      if (scroller) bringOpen(scroller), markEdges(scroller)
-    })
+    const resized = new ResizeObserver(() => formNow.resized())
     resized.observe(strip)
 
     panels.addEventListener('tab', () => draw())
@@ -784,6 +892,7 @@ export function regions(deps) {
       close() {
         tabbed.delete(self)
         resized.disconnect()
+        formNow.close()
         for (const key of [...mounted.keys()]) closeTab(key)
         for (const el of [strip, panels]) delete el.dataset.region, delete el.dataset.subject
       },
