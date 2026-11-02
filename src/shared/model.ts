@@ -285,7 +285,11 @@ export type Config = {
   /**
    * Command every session starts with, before the arguments the host adds. A plain array names one unnamed
    * command. An object names several by key, in write order; a project's `command` picks among them
-   * (`projectPreferredCommand`), and the New Worker form offers a picker when there is more than one.
+   * (`projectPreferredCommand`), and the New Worker form offers a picker when there is more than one. Each
+   * command must be its own executable on PATH (e.g. `{"claude": ["claude"], "claude-mom": ["claude-mom"]}`),
+   * not a shell alias or function: the host spawns it directly, with no shell to expand one. A variant that
+   * should run Claude under different settings is typically a small wrapper bin that sets an env var (an
+   * alternate `ANTHROPIC_*` config, say) and then execs the real `claude`.
    */
   argv: string[] | Record<string, string[]>
   /** Added to every session's environment after the parent-session scrub. */
