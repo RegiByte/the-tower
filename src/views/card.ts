@@ -1,6 +1,6 @@
 import type { Board, Card, CardResource, Floor } from '../bridge/board.ts'
 import {
-  BLOCKED_TEXT, LET_GO_MEANS, callOf, can, claudeFlagHtml, detailsOf, esc, gistLine, lampOf, letGoAsk, letGoneLine, modelName, noLongerOffered, offeredCall, reapAsk, resumesRow,
+  BLOCKED_TEXT, LET_GO_MEANS, callOf, can, detailsOf, esc, gistLine, lampOf, letGoAsk, letGoneLine, modelName, noLongerOffered, offeredCall, reapAsk, resumesRow,
   sendHomeAsk, sentHome, statusName, statusTitle, when, whereLineOf, whyNot, type DaemonVerb,
 } from '../shared/cards.ts'
 import { ICON, withIcons } from '../shared/icons.ts'
@@ -274,7 +274,6 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       `<span class="stats">
       ${ctx === undefined ? '' : `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i><span class="sr-only">context window, ${esc(modelName(c.model))}:</span></span><b>${ctx}%</b>`}
       ${c.costUsd != null ? `<b>$${c.costUsd.toFixed(2)}</b>` : ''}
-      ${claudeFlagHtml(c) ?? ''}
       ${can(c, 'reap') ? `<button class="ports ${orphan ? 'orphan' : ''}" popovertarget="${pop}-left" data-tip="processes left running: click to see them and end them">${c.resources.length}▪ ${ports}</button>` : ''}
     </span>`,
     )
