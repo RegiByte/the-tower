@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "refs": [
     "hub/src/bridge/prunable.ts#prunable",
     "hub/src/bridge/prunable.ts#isStuck",
@@ -70,7 +70,8 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
   the row says "answer unread" and the hire goes.
 - A worktree is offered only while nobody is in it: no worker on duty (a stranded one holds its folder until it is
   resumed or let go) and no shell ([`occupantsOf`](ref:hub/src/bridge/board.ts#occupantsOf), [[tower-cuts-worktrees]]); Tidy, a row's call and
-  `worktree/remove` fold the same occupants.
+  `worktree/remove` fold the same occupants, and with them the resume in flight, from before it restores a gone
+  worktree until its worker is on duty ([[resume]]).
 - *Stuck*: [`isStuck`](ref:hub/src/bridge/prunable.ts#isStuck), `working` with no hook or mod event for
   [`STUCK_MS`](ref:hub/src/bridge/prunable.ts#STUCK_MS), read from the fact `heardAt`
   ([`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter)): `Card.stuck`, and the status word reads "stuck". Output

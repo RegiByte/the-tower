@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "refs": [
     "hub/src/bridge/retention.ts#oldLogs",
     "hub/src/bridge/retention.ts#LogFile",

@@ -4,9 +4,9 @@
   "name": "Resume",
   "summary": "A new session continues one of the conversations an earlier session saved; which session resumes which is derived from Claude's session_id, never stored.",
   "in": "tower",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#resumeOnce", "hub/src/tower/dispatch.ts#gate", "hub/src/cli.ts#towerCommand", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/status-words.ts#UNRESUMABLE_NAME"]
+  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#resumeOnce", "hub/src/tower/dispatch.ts#gate", "hub/src/cli.ts#towerCommand", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/status-words.ts#UNRESUMABLE_NAME", "hub/src/bridge/worktrees.ts#restoreOf", "hub/src/worktrees.ts#restoreWorktree", "hub/src/shared/launch.ts#Restored"]
 }
 ---
 ```mermaid
@@ -20,8 +20,9 @@ sequenceDiagram
   O->>T: GET /conversations/<id>
   T->>F: briefOf(session): every saved conversation of its worker's sessions, latest prompt and answer, last turns
   O->>T: resume {id, conversation, prompt?}
-  T->>T: refuse unless the session saved that conversation and no running session is in it, and as lost if its worktree is gone
-  T->>H: spawn {new id, same project, same cwd, args: --name <worker's callsign> --resume <conversation> [-- <prompt>]}
+  T->>T: refuse unless the session saved that conversation and no running session is in it
+  T->>T: a gone worktree restored under its name (recut, kept branch, or cut afresh), else refused as lost
+  T->>H: spawn {new id, same project, same cwd, args: --name <worker's callsign> [--append-system-prompt …how it was restored] --resume <conversation> [-- <prompt>]}
   H->>C: new PTY
   H->>R: new sessions/<id>.jsonl
   C->>H: SessionStart {source: resume, session_id: <conversation>}
@@ -41,13 +42,28 @@ sequenceDiagram
 - **Same directory.** Claude files conversations by directory, so the resume runs in the source's `cwd`
   under the same project ([`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest)). In a [[worktree]] the
   directories follow from `cwd` and the worktree line of the system prompt is composed again, with the branch read
-  from git then ([`briefFor`](ref:hub/src/worktrees.ts#briefFor)). If any of its folders is gone, the resume is
-  refused as `lost` until the worktree is recut. A fork resumes in the same `cwd`, so it shares its parent's worktree.
+  from git then ([`briefFor`](ref:hub/src/worktrees.ts#briefFor)). A fork resumes in the same `cwd`, so it shares
+  its parent's worktree.
+- **A gone worktree comes back under its name.** If any of its folders is gone, the resume restores it first, once the
+  launch is weighed, by what git reads after a fetch ([`restoreOf`](ref:hub/src/bridge/worktrees.ts#restoreOf),
+  [`restoreWorktree`](ref:hub/src/worktrees.ts#restoreWorktree)): git still lists it (`lost`), its folders recut from
+  their branches; its [[kept-branch]] outlived it (`kept`), checked out again; nothing of it is left (`fresh`, the
+  common case once [[autotidy]] removed it with its landed branch), cut again on the branch a cut would name, from
+  origin's default, which loses nothing because only landed work goes with its branch. Where none applies (a lost
+  tree on a detached HEAD, several kept branches cut under the name, no default on origin) it is refused as `lost`,
+  naming the fix. The resumed session is told, in its instructions beside its worktree line and only on that resume,
+  which restore ran, from what and at which commit ([`Restored`](ref:hub/src/shared/launch.ts#Restored)), so it
+  doesn't look for a branch or commits that are gone; nothing is prompted, so it sits idle until someone prompts it.
+  The reply carries `restored` too. A session that then fails to start leaves the worktree restored for the next try.
+- **A restore is never tidied away.** From before its restore until its session is on duty (or already ended), the
+  resume in flight holds its directory as an occupant of the worktree, as a worker on duty does, so Tidy, which never
+  removes an occupied worktree, can't remove one a resume just recut before the resumed worker shows on the board.
 - **Whether it can be resumed is on the board, before the click.** A worker not running whose `cwd` is no longer in
-  its floor is `unresumable: 'outside'`, one whose worktree is gone `'gone'`
+  its floor is `unresumable: 'outside'`, one whose worktree is gone and can't be restored `'gone'`
   ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt), [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone));
   it offers no `resume`, a stranded one is not on duty, and every renderer and `tower agent` say why
-  ([`UNRESUMABLE_NAME`](ref:hub/src/shared/status-words.ts#UNRESUMABLE_NAME)). A recut worktree makes it resumable again.
+  ([`UNRESUMABLE_NAME`](ref:hub/src/shared/status-words.ts#UNRESUMABLE_NAME)). A worktree the resume can restore
+  leaves it resumable, the card's `worktree.gone` saying its folder is gone meanwhile.
 - **The chain is derived.** [`resumes`](ref:hub/src/bridge/chains.ts#resumes) links a resumed conversation
   to the nearest earlier session that saved it; [`resumedBy`](ref:hub/src/bridge/chains.ts#resumedBy) to the
   nearest later one that resumed it. A conversation resumed twice from one session forks; each link is to the

@@ -63,10 +63,31 @@ const worktreeLine = ({ name, branch, dirs, mains }: WorktreeBrief): string =>
   `They are your copies of ${list(mains)}. Paths that point to those main checkouts mean your copies: edit only yours, ` +
   'because the main checkouts belong to the user and other workers.'
 
-/** The tower's brief, its worktree line, then what launch contributors add to the session's instructions. */
-const briefArgs = (user: string | undefined, worktree: WorktreeBrief | undefined, added: string[]) => [
+/**
+ * A gone worktree a resume brought back before it started, under its old name (`restoreOf`): how, and each repo's
+ * worktree as it came back, checked out from `from` (its branch, or for `fresh` the base it was cut from) at `commit`.
+ */
+export type Restored = { name: string; how: 'lost' | 'kept' | 'fresh'; repos: { dir: string; from: string; commit: string }[] }
+
+const placesOf = ({ repos }: Restored) =>
+  repos.map(({ dir, from, commit }) => `\`${from}\` at \`${commit.slice(0, 7)}\`${repos.length > 1 ? ` in \`${dir}\`` : ''}`).join(', ')
+
+/**
+ * What a resumed worker is told of its worktree's restore, beside its worktree line, so it doesn't look for a branch or
+ * commits that are gone. Told once, on the resume that restored it.
+ */
+const restoredLine = (r: Restored): string =>
+  r.how === 'fresh'
+    ? `Your worktree \`${r.name}\` was removed after you went home, with its branch, which the tower deletes only once its work has landed. ` +
+      `It was recut on a new branch from ${placesOf(r)}: your earlier work is there, not on your old branch or at its commits.`
+    : r.how === 'kept'
+      ? `Your worktree \`${r.name}\` was removed after you went home, its branch kept: it was checked out again from ${placesOf(r)}.`
+      : `Your worktree \`${r.name}\`'s folders were deleted: they were checked out again from ${placesOf(r)}, without whatever was uncommitted in them.`
+
+/** The tower's brief, its worktree line and what was said of the worktree, then what launch contributors add to the session's instructions. */
+const briefArgs = (user: string | undefined, worktree: WorktreeBrief | undefined, told: string[], added: string[]) => [
   '--append-system-prompt',
-  [towerBrief(user), ...(worktree ? [worktreeLine(worktree)] : []), ...added].join('\n\n'),
+  [towerBrief(user), ...(worktree ? [worktreeLine(worktree)] : []), ...told, ...added].join('\n\n'),
 ]
 
 /** A prompt and what contributors add after it, as one: none when both are empty. */
@@ -165,18 +186,20 @@ export type SpawnLaunch = Start & { kind: 'spawn'; launch: Launch }
 
 /**
  * A resume continues a session's conversation in the directory it ran in, under the same project: as the same worker,
- * or a new one on a fork (`resumeName`). `prompt`: Claude's first prompt in it, as a spawn's.
+ * or a new one on a fork (`resumeName`). `prompt`: Claude's first prompt in it, as a spawn's. `restored`: its worktree,
+ * when this resume brought it back.
  */
-export type ResumeLaunch = Start & { kind: 'resume' | 'fork'; conversation: string; prompt: string | undefined }
+export type ResumeLaunch = Start & { kind: 'resume' | 'fork'; conversation: string; prompt: string | undefined; restored: Restored | undefined }
 
-const startArgs = (s: Start): string[] => [
+/** `told`: what the session is told of its worktree beside its worktree line. */
+const startArgs = (s: Start, told: string[]): string[] => [
   ...s.contributed.args,
   ...nameArgs(s.name),
   ...settingsArgs(s.dirs, s.contributed.env),
   ...keptArgs(s.kept),
   ...linkArgs(s.worktree),
   ...pluginArgs(s.plugins),
-  ...briefArgs(s.user, s.worktree, s.contributed.systemPrompt),
+  ...briefArgs(s.user, s.worktree, told, s.contributed.systemPrompt),
 ]
 
 type HostSpawn = Extract<ToHost, { t: 'spawn' }>
@@ -192,9 +215,9 @@ const hostSpawn = (s: Start, args: string[]): HostSpawn => ({
 })
 
 export const spawnRequest = (s: SpawnLaunch): HostSpawn =>
-  hostSpawn(s, [...startArgs(s), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })])
+  hostSpawn(s, [...startArgs(s, []), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })])
 
-export const resumeRequest = (s: ResumeLaunch): HostSpawn => hostSpawn(s, [...startArgs(s), ...resumeArgs(s.conversation, s.prompt)])
+export const resumeRequest = (s: ResumeLaunch): HostSpawn => hostSpawn(s, [...startArgs(s, s.restored ? [restoredLine(s.restored)] : []), ...resumeArgs(s.conversation, s.prompt)])
 
 /** A flag's name: `--model` of `--model` and of `--model=opus`. */
 export const flagName = (arg: string): string => arg.split('=')[0]
@@ -214,7 +237,7 @@ export const CORE_FLAGS: Record<Runtime, string[]> = {
     ...new Set(
       [
         ...spawnRequest({ ...EVERY_PART, kind: 'spawn', launch: { model: 'model', effort: 'effort', prompt: 'prompt' } }).args,
-        ...resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'conversation', prompt: 'prompt' }).args,
+        ...resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'conversation', prompt: 'prompt', restored: undefined }).args,
       ].flatMap((arg) => (arg.startsWith('-') ? [flagName(arg)] : [])),
     ),
   ],

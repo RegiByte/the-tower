@@ -4,7 +4,7 @@
   "name": "Data model",
   "summary": "The shared types and pure builders: projects and config, the session header and log events, the host and terms protocols, and spawn/resume requests.",
   "in": "bridge",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "refs": ["hub/src/shared/launch.ts#launchFlags", "hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#inProject", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#projectPlugins", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
 }
 ---
@@ -36,4 +36,6 @@ can't name workers; [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) nam
 `spawnRequest` takes the name it gives ([[callsign]]). [`worktreeBrief`](ref:hub/src/shared/launch.ts#worktreeBrief) is what a worker in a
 worktree is told in its system prompt (its name, branch, directories, the main checkouts they copy, and the sources of
 its links); spawn and resume requests take it, `undefined` in a main checkout, and pass each link's source as
-`--add-dir`, so a write through a link stays inside the session's directories ([[tower-cuts-worktrees]]).
+`--add-dir`, so a write through a link stays inside the session's directories ([[tower-cuts-worktrees]]). A resume
+request also takes [`Restored`](ref:hub/src/shared/launch.ts#Restored), how the resume brought its gone worktree back,
+said beside the worktree line on that resume only ([[resume]]).

@@ -256,6 +256,33 @@ export const projectReads = (dirs: string[], repos: Map<string, RepoRead>): Repo
   return reads.every((r) => r !== undefined) ? (reads as RepoRead[]) : undefined
 }
 
+/**
+ * How a worktree `name` whose folders are gone comes back, by what git reads of every dir of its project (`reads`):
+ * `lost`, git still lists it, its folders checked out again from their branches; `kept`, its branch outlived it,
+ * checked out again; `fresh`, nothing of it is left, so it is cut again from origin's default, which loses nothing
+ * because only landed work is removed with its branch; `none`, why it can't come back by itself.
+ */
+export type Restore = { t: 'lost' } | { t: 'kept'; branch: string } | { t: 'fresh' } | { t: 'none'; why: string }
+
+export const restoreOf = (reads: RepoRead[], name: string): Restore => {
+  const repos = gitReads(reads)
+  const bare = reads.find((r) => !r.git)
+  if (bare) return { t: 'none', why: `${bare.dir} is not a git repository, so "${name}" can't be recut there` }
+  const trees = repos.flatMap((r) => r.trees.filter((t) => t.name === name))
+  if (trees.length) {
+    if (trees.length < repos.length) return { t: 'none', why: `"${name}" is gone from some repos of its floor and lost in others: forget it from its floor, then try again` }
+    const detached = trees.find((t) => !t.present && !t.branch)
+    if (detached) return { t: 'none', why: `${detached.path} was on a detached HEAD, with no branch to recut it from: forget "${name}" from its floor, then try again` }
+    return { t: 'lost' }
+  }
+  const kept = [...new Set(repos.flatMap((r) => r.kept.filter((k) => k.tree === name).map((k) => k.branch)))]
+  if (kept.length > 1) return { t: 'none', why: `Several kept branches were cut as "${name}" (${kept.join(', ')}): recut one from its floor, then try again` }
+  if (kept.length === 1) return { t: 'kept', branch: kept[0] }
+  const headless = repos.find((r) => !r.originHead)
+  if (headless) return { t: 'none', why: `${headless.dir} has no default branch of origin to recut "${name}" from: run \`git remote set-head origin --auto\` there, then try again` }
+  return { t: 'fresh' }
+}
+
 /** The worktree a session in `cwd` works in, and the branch its repo has checked out there. */
 export const treeAt = (reads: RepoRead[], cwd: string): TreeRead | undefined =>
   gitReads(reads)

@@ -52,7 +52,7 @@ import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.
 import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
 import { deliveries, type Delivery } from './messages.ts'
-import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReads, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
+import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReads, restoreOf, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
 
 /** Excerpts: the board goes to every viewer on every change; the full text is asked for per session. */
 const EXCERPT_CHARS = 280
@@ -78,7 +78,8 @@ export type CardSent = Delivery & { callsign?: string }
 
 /**
  * Why a past worker can't be resumed where it ran: its cwd is no longer one of its floor's folders (`outside`: the
- * floor's dirs moved, or it left the config), or it is a worktree whose folder is gone (`gone`: removed, or deleted).
+ * floor's dirs moved, or it left the config), or it is a worktree whose folder is gone and that a resume can't restore
+ * (`gone`: `restoreOf` says why). @since 1.139 a gone worktree a resume restores is not `gone`.
  */
 export type Unresumable = 'outside' | 'gone'
 
@@ -471,10 +472,13 @@ const shownBy = (worker: Session[]): CardShown[] =>
 export const checkoutGone = (project: Project, cwd: string, reads: RepoRead[] | undefined): boolean =>
   worktreeName(project, cwd) !== undefined && reads !== undefined && !sessionDirs(project, cwd).every((dir) => treeAt(reads, dir)?.present)
 
-/** Why a session in `cwd` can't be resumed there, by the config and what git reads of the floor's worktrees. */
+/**
+ * Why a session in `cwd` can't be resumed there, by the config and what git reads of the floor's worktrees: a gone
+ * worktree is resumed once it is restored (`restoreOf`), so only one that can't be is `gone`.
+ */
 export const unresumableAt = (project: Project | undefined, cwd: string, reads: RepoRead[] | undefined): Unresumable | undefined => {
   if (project === undefined || !inProject(project, cwd)) return 'outside'
-  return checkoutGone(project, cwd, reads) ? 'gone' : undefined
+  return checkoutGone(project, cwd, reads) && restoreOf(reads!, worktreeName(project, cwd)!).t === 'none' ? 'gone' : undefined
 }
 
 /** `projectRead`: the reads of the project's dirs, `undefined` until each was read once. */

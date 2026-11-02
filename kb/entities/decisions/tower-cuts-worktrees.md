@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-02",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
 }
 ---
@@ -70,8 +70,9 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
 - **No global prune.** The cut never runs `git worktree prune`: it would clear every lost worktree's ghost entry, the
   only evidence of `lost`. A ghost at the name's path answers `exists`; `worktree/recut` and `worktree/prune` clear
   only that name's ghost with `git worktree remove --force <path>` (the folder is gone, so `--force` loses nothing).
-- **Lost refuses work.** Spawn and resume are refused with `lost` when any of the session's dirs is gone, not only
-  its `cwd`; recut restores the folders from the branch.
+- **Lost refuses work.** A spawn is refused with `lost` when any of the session's dirs is gone, not only its `cwd`;
+  recut restores the folders from the branch. A resume restores a gone worktree under its name first (recut, its kept
+  branch, or a fresh cut once nothing of it is left), and is refused with `lost` only where none applies ([[resume]]).
 - **Where a worker starts.** Its own worktree, unless told otherwise: `worktrees.cutByDefault` (on by default) is the
   board's `floor.cutByDefault`, and [`defaultWhere`](ref:hub/src/shared/spawn-form.ts#defaultWhere) turns it into a new
   worktree when the floor can cut, else the hub. Every start goes through one form,

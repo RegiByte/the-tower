@@ -1,6 +1,6 @@
 /**
  * The tower's worktrees, through git: reading them, cutting a name's worktree in every repo of a project, restoring a
- * lost one, removing what would lose nothing or landed edited, and discarding what never landed. Git is the only store; what its output means is decided in
+ * lost one or a gone one under its old name, removing what would lose nothing or landed edited, and discarding what never landed. Git is the only store; what its output means is decided in
  * `src/bridge/worktrees.ts`.
  *
  * Every verb fetches first and re-checks what it was offered on: the board shows a change a second or so after it
@@ -21,6 +21,7 @@ import {
   floorWorktrees,
   parseTowerRecords,
   parseWorktreeList,
+  restoreOf,
   towerTreeName,
   type BranchRead,
   type Exposure,
@@ -40,7 +41,7 @@ import { changedSince, sinceOf } from './changed-files.ts'
 import { git, gitWith, GitTimeout, run, wholeTree } from './git.ts'
 import type { RepoLayout, Stale } from './bridge/repo-changes.ts'
 import type { ErrorCode } from './shared/api.ts'
-import { worktreeBrief, type WorktreeBrief } from './shared/launch.ts'
+import { worktreeBrief, type Restored, type WorktreeBrief } from './shared/launch.ts'
 import { checkoutDirs, MAIN_CHECKOUT, projectDirs, worktreeName, worktreePath, WORKTREES_DIR, type Project } from './shared/model.ts'
 
 /** A fetch longer than this counts as offline: a base must be fresh. */
@@ -917,6 +918,30 @@ export const recutBranch = async (project: Project, projectId: string, links: Re
       throw new WorktreeError('worktree_failed', `Recutting "${branch}" as "${name}" failed in ${at}, and was rolled back: ${(err as Error).message}`)
     }
   })
+}
+
+/**
+ * The gone worktree `name` brought back under its name, as `restoreOf` reads the project's git after a fetch: its lost
+ * folders recut (`recutWorktree`), its kept branch checked out again (`recutBranch`), or, with nothing of it left, cut
+ * afresh on `branch` from origin's default (`cut`). Refused, naming the fix, when none applies. Whoever is on duty in a
+ * lost worktree works in no folder of it, so its folders are recut whoever is.
+ */
+export const restoreWorktree = async (project: Project, projectId: string, links: Record<string, string>, name: string, branch: string): Promise<Restored> => {
+  const restore = restoreOf(await fetchedReads(project, false), name)
+  if (restore.t === 'none') throw new WorktreeError('lost', `The worktree "${name}" is gone and can't be recut by itself: ${restore.why}`)
+  if (restore.t === 'fresh') {
+    const made = await cut(project, links, { name, branch, base: undefined })
+    return { name, how: 'fresh', repos: made.made.map((m) => ({ dir: m.dir, from: made.bases.find((b) => b.dir === m.dir)!.base, commit: m.baseCommit! })) }
+  }
+  if (restore.t === 'lost') await recutWorktree(project, projectId, links, name, [])
+  else await recutBranch(project, projectId, links, restore.branch)
+  const repos = await Promise.all(
+    projectDirs(project).map(async (dir) => {
+      const tree = worktreePath(dir, name)
+      return { dir, from: (await git(tree, ['branch', '--show-current'])).trim(), commit: (await git(tree, ['rev-parse', 'HEAD'])).trim() }
+    }),
+  )
+  return { name, how: restore.t, repos }
 }
 
 export const deleteBranch = async (project: Project, projectId: string, name: string) => {
