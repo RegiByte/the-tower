@@ -322,7 +322,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
 
 /**
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
- * `quiet`, `broken`, and `offered`, a policy's slot waiting to be started, which has no text tone) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
+ * `quiet`, `broken`, and `offered`, a policy's slot waiting to be started, its text tone its own colour) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
  * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
  * Only `needs` fills or washes in red: a count of waits (`.chip.waits`) is ringed in ink, its lamp in the loudest wait's
  * attention; something new is drawn in `--accent`, a problem that waits on no one in `--broken-text`.
@@ -345,7 +345,7 @@ const COMPONENTS = `
 .eyebrow { font: 800 var(--fs-xs)/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .needs { --c: var(--needs); --on: var(--on-needs); --c-text: var(--needs-text); } .ready { --c: var(--ready); --on: var(--on-ready); --c-text: var(--ready-text); }
 .working { --c: var(--working); --on: var(--on-working); --c-text: var(--working-text); }
-.quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .offered { --c: var(--offered); --on: var(--on-offered); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
+.quiet { --c: var(--quiet); --on: var(--on-quiet); --c-text: var(--muted); } .offered { --c: var(--offered); --on: var(--on-offered); --c-text: var(--offered); } .broken { --c: var(--broken); --on: var(--on-broken); --c-text: var(--broken-text); }
 .lamp { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c); }
 .needs .lamp, .lamp.needs { animation: blink 1.1s steps(2, jump-none) infinite; }
 @keyframes blink { 50% { opacity: .25; } }
