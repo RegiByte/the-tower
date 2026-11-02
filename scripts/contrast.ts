@@ -38,6 +38,7 @@ const PAIRS: Pair[] = [
   ...on(['muted'], ['addedGutter', 'removedGutter', mix('accent', 10, 'panel')], 'text', 'diff line numbers, hunk headers'),
   ...on(['accent'], ['panel', 'panel2'], 'text', 'links, a note’s re'),
   ...ATTENTION.flatMap((a) => on([`${a}Text`], ['panel', 'panel2'], 'text', `${a} as text: a status`)),
+  ...on(['offered'], ['panel', 'panel2'], 'text', 'offered as text: a badge'),
   ...on(['needsText'], [mix('needs', 8, 'panel')], 'text', 'a card that needs you'),
   ...on(['needsText'], [mix('needs', 11, 'panel')], 'text', 'the ask bar'),
   ...on(['ink'], [mix('broken', 11, 'panel')], 'text', "a draft's conflict note"),
