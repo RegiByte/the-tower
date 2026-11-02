@@ -147,7 +147,7 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefault
   const claude = [
     v.model || observed("Claude's model", modelName(defaults.model)),
     v.effort ? `${v.effort} effort` : observed("Claude's effort", defaults.effort),
-    ...(v.command ? [`with ${v.command}`] : []),
+    ...(v.command ? [`with command "${v.command}"`] : []),
     v.prompt.trim() ? 'starts on the prompt' : 'starts idle',
   ]
   const added = fields.flatMap((field) => {
@@ -168,8 +168,9 @@ const choiceHtml = (where: Where, title: string, what: string, { checked = false
   `<label class="choice"><input type="radio" name="where" value="${where}"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}>
     <b>${title}</b>${aside && `<span class="aside eyebrow">${aside}</span>`}<small>${what}</small></label>`
 
-/** A field's label: its name, and when the tower or Claude fills it in if left empty, says so. */
-const labelHtml = (name: string, optional = false) => `<span class="lbl eyebrow">${name}${optional ? '<i>optional</i>' : ''}</span>`
+/** A field's label: its name, and when the tower or Claude fills it in if left empty, says so. `hint`: a tip on an info mark beside it. */
+const labelHtml = (name: string, optional = false, hint?: string) =>
+  `<span class="lbl eyebrow">${name}${optional ? '<i>optional</i>' : ''}${hint ? `<span class="hint" tabindex="0" data-tip="${esc(hint)}">ⓘ</span>` : ''}</span>`
 
 const optionsHtml = (values: string[], none: string) => [`<option value="">${esc(none)}</option>`, ...values.map((v) => `<option>${esc(v)}</option>`)].join('')
 
@@ -219,9 +220,13 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
         <b>${esc(base(dir))}</b><span>${i ? "its own CLAUDE.md, not the hub's" : 'the hub: its CLAUDE.md and skills'}</span></label>`).join('')}</fieldset>
       <div class="fields">
         <label class="wide">${labelHtml('Callsign', true)}<input name="callsign" autocomplete="off" spellcheck="false" placeholder="drawn at random"><small class="why" data-callsign-why></small></label>
+        ${
+          commands && commands.length > 1
+            ? `<label class="wide">${labelHtml('Claude', true, 'The command run in the terminal to start Claude. Named commands are configured in config.json.')}<select name="command">${commands.map((c) => `<option value="${esc(c)}"${c === v.command ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>`
+            : ''
+        }
         <label>${labelHtml('Model', true)}<select name="model">${optionsHtml(MODELS, defaultOption(modelName(defaults.model)))}</select></label>
         <label>${labelHtml('Effort', true)}<select name="effort">${optionsHtml(EFFORTS, defaultOption(defaults.effort))}</select></label>
-        ${commands && commands.length > 1 ? `<label>${labelHtml('Claude', true)}<select name="command">${commands.map((c) => `<option value="${esc(c)}"${c === v.command ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>` : ''}
         ${fields.map(formFieldHtml).join('')}
       </div>
     </div>

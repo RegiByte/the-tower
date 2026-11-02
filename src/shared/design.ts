@@ -381,7 +381,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .sign .name { font: 800 var(--fs-l)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 .spawn-form { --pp: var(--p, var(--accent)); --pe: color-mix(in oklab, var(--pp) var(--p-edge-mix), var(--ink)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; width: min(1000px, calc(100vw - 32px));
-  height: min(680px, calc(100vh - 48px)); color: var(--ink); font: var(--fs-l)/1.45 var(--ui); }
+  min-height: min(680px, calc(100vh - 48px)); height: auto; max-height: calc(100vh - 48px); overflow: hidden; color: var(--ink); font: var(--fs-l)/1.45 var(--ui); }
 .spawn-form header { display: flex; align-items: center; gap: var(--sp-xl); padding: var(--sp-xl) var(--sp-2xl); border-bottom: 1px solid var(--line); }
 .spawn-form header .sign { flex: none; }
 .spawn-form h2 { margin: 0; font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; }
@@ -394,6 +394,8 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .spawn-form legend { padding: 0; margin-bottom: var(--sp-m); }
 .spawn-form .lbl { display: flex; align-items: baseline; gap: var(--sp-m); }
 .spawn-form .lbl i { font: italic 400 var(--fs-xs)/1 var(--ui); letter-spacing: 0; text-transform: none; color: var(--faint); }
+.spawn-form .lbl .hint { font: 400 var(--fs-s)/1 var(--ui); color: var(--faint); cursor: help; }
+.spawn-form .lbl .hint:hover, .spawn-form .lbl .hint:focus-visible { color: var(--muted); }
 .spawn-form input:not([type=radio]), .spawn-form select, .spawn-form textarea { width: 100%; font: inherit; color: var(--ink); background: var(--panel-2);
   border: 1px solid var(--line-strong); border-radius: var(--radius); padding: var(--sp-m); min-width: 0; }
 .spawn-form :is(input:not([type=radio]), select, textarea):focus-visible { outline: 2px solid var(--pe); outline-offset: -1px; }
