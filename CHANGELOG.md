@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.85.1
+
+A terminal whose worker ends while it is open goes read-only. No restart beyond the tower's own (`tower down tower`,
+then `tower up tower`), no config change, no API change.
+
+- **No more `No live session` toasts after a worker ends.** A terminal open on a worker that ends (sent home, or
+  stopped some other way) turns read-only, as a past session's terminal opens. Before, it stayed writable, and one
+  still mounted out of sight (a worker the page keeps drawn after you leave it, a grid cell) tried to resize the
+  ended session on every window resize or return to the tab, toasting `No live session "<id>"` until a reload (#359).
+- **A session that has just exited opens read-only.** A terminal opened in the second after its session exited could
+  open as live and take its size, raising the same toast (#359).
+
 ## v1.85.0
 
 Sessions under several Claude commands, such as a work and a personal account, and a new example extension, pr-status.
