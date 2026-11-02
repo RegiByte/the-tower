@@ -141,8 +141,10 @@ contributions and the head's own verbs, so a cell still ends Send home │ Open 
 
 The first opening of the menu after new actions were tucked lists them first, under New, with a line in the header
 saying they are listed there this once; opening marks them seen for the viewer, and the section stays as captured while
-the menu is open. The menu's footer, "Pin to the head…", turns its list into checkboxes, one for each action drawn (one
-per id) and each extension's lines (one per capability), in board order so nothing moves as it is checked. A check pins
+the menu is open. The menu's footer, "Pin to the head…", turns its list into checkboxes in two labelled groups: Actions, one
+for each action drawn (one per id), and Lines, each extension's lines (one per capability), a line named by its text
+with its extension beside it, quieter, so it never reads as that extension's action; in board order so nothing moves
+as it is checked. A check pins
 for the viewer ([`pinIn`](ref:hub/renderers/page/page.js#pinIn)): a read-modify-write of that region's entry in
 `layout.page`, so a choice another window made for another region stays. A pin the config makes is listed checked,
 "pinned by your config"; unchecking it writes the viewer's `unpinned` and leaves it listed, "pinned by your config,

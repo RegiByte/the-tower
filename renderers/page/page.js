@@ -947,7 +947,8 @@ function kitRegion(el, id, subject, options) {
     const list = (tucked, texts) => (pinning ? listPins() : listTucked(tucked, texts))
     /**
      * What can be pinned in the region, each checked where the layout pins it and saying who pinned it when it isn't
-     * the viewer: every action drawn, one per id, then each extension's lines, one per capability.
+     * the viewer: under Actions every action drawn, one per id; under Lines each extension's lines, one per capability,
+     * named by the line's text with its extension beside it, so a line never reads as that extension's action.
      */
     const listPins = () => {
       runs = new Map()
@@ -959,24 +960,26 @@ function kitRegion(el, id, subject, options) {
       const drawn = new Set(ranked.map((r) => r.id))
       /** @template T @param {T[]} all @param {(item: T) => string} idOf */
       const firstOfEach = (all, idOf) => all.filter((item, n) => all.findIndex((other) => idOf(other) === idOf(item)) === n)
-      /** @type {[string, string][]} */
-      const pinnable = [
-        ...firstOfEach(shownActions(at).filter((a) => drawn.has(actionId(a))), actionId).map((a) => /** @type {[string, string]} */ ([actionId(a), actionWords(board(), a).label])),
-        ...firstOfEach(lines, lineId).map((l) => /** @type {[string, string]} */ ([lineId(l), `${l.cap}: ${l.text}`])),
-      ]
+      const actionPins = firstOfEach(shownActions(at).filter((a) => drawn.has(actionId(a))), actionId).map((a) => ({ pin: actionId(a), label: actionWords(board(), a).label, from: undefined }))
+      const linePins = firstOfEach(lines, lineId).map((l) => ({ pin: lineId(l), label: l.text, from: l.cap }))
       /** Who pinned `pin` when a layer below the viewer's did, and whether the viewer unpinned it. @param {string} pin @returns {string | undefined} */
       const by = (pin) => {
         if (theirs.includes(pin) || !below.includes(pin)) return undefined
         const who = config.includes(pin) ? 'your config' : RENDERER
         return pins.includes(pin) ? `pinned by ${who}` : `pinned by ${who}, unpinned here`
       }
-      /** @type {MenuCheck[]} */
-      const checks = pinnable.map(([pin, label]) => {
+      /** @param {{ pin: string, label: string, from: string | undefined }} p @returns {MenuCheck} */
+      const check = ({ pin, label, from }) => {
         const key = `${at.key} pin:${pin}`
         const checked = pins.includes(pin)
         runs.set(key, () => pinIn(id, pin, !checked))
-        return { t: 'check', key, label, hint: by(pin), checked }
-      })
+        return { t: 'check', key, label, hint: [from, by(pin)].filter(Boolean).join(' · ') || undefined, checked }
+      }
+      /** @type {MenuEntry[]} */
+      const groups = [
+        ...(actionPins.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: 'Actions', entries: actionPins.map(check) })] : []),
+        ...(linePins.length ? [/** @type {MenuEntry} */ ({ t: 'group', label: 'Lines', entries: linePins.map(check) })] : []),
+      ]
       const done = `${at.key} pinned`
       runs.set(done, () => {
         pinning = false
@@ -984,8 +987,8 @@ function kitRegion(el, id, subject, options) {
         listed.focus(listedFirst())
       })
       listed.draw({
-        header: '<p>Pinned actions and lines are drawn first, while there is room.</p>',
-        entries: [{ t: 'group', label: 'Pin to the head', entries: checks }, { t: 'separator' }, { t: 'item', key: done, label: 'Done', stays: true }],
+        header: '<p>Pin to the head: pinned actions and lines are drawn first, while there is room.</p>',
+        entries: [...groups, { t: 'separator' }, { t: 'item', key: done, label: 'Done', stays: true }],
       })
     }
     /** The key of the menu's first entry as it is listed now. */
