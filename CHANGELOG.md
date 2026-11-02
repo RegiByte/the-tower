@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.84.1
+
+Terminals take dead keys in Firefox. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no
+config change, no API change.
+
+- **A dead key types once in Firefox and Zen.** On a layout with dead keys (Brazilian, US International), an accent no
+  longer arrives twice in a terminal (`macarrão` was `macarr˜ão`, `I'm` was `I'm'`), and a lone `'` or `~` erases
+  with one Backspace. Chrome and Safari type as before. By @viniciusborges23 (#350, #355).
+
 ## v1.84.0
 
 A worker whose worktree is gone resumes. No restart beyond the tower's own (`tower down tower`, then `tower up tower`),

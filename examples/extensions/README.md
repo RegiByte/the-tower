@@ -13,6 +13,9 @@ each one as `tower extensions check` does, so every example here works with the 
   prompt, the view to copy for `card.composer`: no server code, a refusal said under the box with the text kept.
 - [`files`](files/): a Files tab on every worker, its checkout as a tree with git's marks, a file opened beside it by
   the view its type picks, code highlighted as VS Code draws it. A copy runs `npm install` for Shiki.
+- [`pr-status`](pr-status/): badges on a worker's card naming its branch's pull request, where it stands and its review
+  and checks, asked of GitHub in one batched `gh` query as a turn ends and on a backed-off clock, kept in a stream only
+  when it changes.
 
 How extensions work: [docs/extending.md](../../docs/extending.md#extensions). What an extension's README holds, and how
 its pictures are taken: [An extension's README](../../docs/extending.md#an-extensions-readme).

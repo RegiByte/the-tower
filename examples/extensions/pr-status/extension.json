@@ -1,0 +1,362 @@
+{
+  "id": "pr-status",
+  "version": "1.0",
+  "title": "PR status",
+  "description": "A badge on a worker's card naming the pull request of its branch and where it stands: open, draft, merged or closed.",
+  "requires": {
+    "tower": "1.129"
+  },
+  "server": "server.ts",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "every": {
+        "type": "string",
+        "pattern": "^([1-9]\\d*(m|h)|([3-9]\\d|[1-9]\\d{2,})s)$",
+        "default": "2m",
+        "description": "How often it asks about a branch whose pull request is open, such as \"2m\" (\"s\", \"m\" or \"h\"): 30 seconds at least. A branch with none, or with one merged or closed, backs off to 5, 15 then 30 minutes while nothing changes, and every branch is asked about as its worker ends a turn."
+      },
+      "gh": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "default": [
+          "gh"
+        ],
+        "description": "The GitHub CLI as the tower runs it: its argv before the subcommand (`repo view`, `api graphql`)."
+      }
+    }
+  },
+  "streams": {
+    "seen": {
+      "scope": "system",
+      "description": "What GitHub said of a checkout's branch, appended only when it changed: its newest pull request, none, or why it couldn't be asked.",
+      "facts": {
+        "p": {
+          "description": "What GitHub said of the branch: its pull request, the newest GitHub lists by the branch's name that git takes for the branch's (its head a repo the checkout pushes to, and opened after the branch was made), or null for none.",
+          "schema": {
+            "type": "object",
+            "required": [
+              "dir",
+              "branch",
+              "pr"
+            ],
+            "properties": {
+              "dir": {
+                "type": "string",
+                "description": "The checkout's folder `gh` was run in."
+              },
+              "branch": {
+                "type": "string"
+              },
+              "pr": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "number",
+                      "state",
+                      "draft",
+                      "url",
+                      "title",
+                      "review",
+                      "checks",
+                      "headOid",
+                      "createdAt"
+                    ],
+                    "properties": {
+                      "number": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "state": {
+                        "enum": [
+                          "OPEN",
+                          "MERGED",
+                          "CLOSED"
+                        ]
+                      },
+                      "draft": {
+                        "type": "boolean"
+                      },
+                      "url": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "review": {
+                        "enum": [
+                          "APPROVED",
+                          "CHANGES_REQUESTED",
+                          "REVIEW_REQUIRED",
+                          null
+                        ],
+                        "description": "Its review decision as GitHub names it; null when none is required."
+                      },
+                      "checks": {
+                        "enum": [
+                          "SUCCESS",
+                          "FAILURE",
+                          "ERROR",
+                          "PENDING",
+                          "EXPECTED",
+                          null
+                        ],
+                        "description": "The state of the checks on its newest commit as GitHub rolls them up; null with none."
+                      },
+                      "headOid": {
+                        "type": "string",
+                        "description": "Its head commit."
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "description": "When it was opened, ISO 8601."
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "f": {
+          "description": "`gh` gave no answer for the branch, and why: the end of its stderr. The pull request seen before it is kept.",
+          "schema": {
+            "type": "object",
+            "required": [
+              "dir",
+              "branch",
+              "error"
+            ],
+            "properties": {
+              "dir": {
+                "type": "string"
+              },
+              "branch": {
+                "type": "string"
+              },
+              "error": {
+                "type": "string",
+                "maxLength": 500
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "slots": {
+    "tick": {
+      "when": {
+        "every": "30s"
+      }
+    }
+  },
+  "folds": {
+    "card": {
+      "x": {
+        "type": "object",
+        "required": [
+          "number",
+          "state",
+          "url",
+          "title"
+        ],
+        "description": "The pull request of the card's branch, when it has one.",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "open",
+              "draft",
+              "merged",
+              "closed"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "review": {
+            "enum": [
+              "approved",
+              "changes requested",
+              "review required"
+            ],
+            "description": "An open pull request's review decision."
+          },
+          "checks": {
+            "enum": [
+              "success",
+              "failure",
+              "error",
+              "pending",
+              "expected"
+            ],
+            "description": "The checks on its newest commit, rolled up."
+          }
+        }
+      },
+      "adds": [
+        "badges"
+      ]
+    }
+  },
+  "verbs": {
+    "ask": {
+      "scope": "system",
+      "description": "Ask GitHub about these checkouts' branches now, as a round asks about each. Its board trigger calls it with the branches of the workers whose turn just ended.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "branches"
+        ],
+        "properties": {
+          "branches": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "dir",
+                "branch"
+              ],
+              "properties": {
+                "dir": {
+                  "type": "string",
+                  "description": "The checkout folder to run gh and git in."
+                },
+                "branch": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "changed"
+        ],
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "description": "How many branches' answers differed from what was last seen, and were appended."
+          }
+        }
+      }
+    },
+    "ask-now": {
+      "scope": "system",
+      "description": "Ask GitHub about every worker's branch now, whatever their backoff says, after any round in flight.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "asked"
+        ],
+        "properties": {
+          "asked": {
+            "type": "integer",
+            "description": "How many branches it asked about."
+          }
+        }
+      },
+      "words": {
+        "label": "Ask GitHub now",
+        "hint": "Read every worker's pull request now"
+      }
+    }
+  },
+  "reads": {
+    "prs": {
+      "scope": "system",
+      "description": "Every branch it has asked about, newest answer first: its pull request, none, or why GitHub couldn't be asked, and when it asks next.",
+      "reply": {
+        "type": "object",
+        "required": [
+          "branches"
+        ],
+        "properties": {
+          "branches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "dir",
+                "branch",
+                "at"
+              ],
+              "properties": {
+                "dir": {
+                  "type": "string"
+                },
+                "branch": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "number"
+                },
+                "pr": {},
+                "error": {
+                  "type": "string"
+                },
+                "dueAt": {
+                  "type": "number",
+                  "description": "When it asks about the branch next, epoch ms; absent until it has asked since it started."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "status": {
+      "scope": "system",
+      "description": "Whether it can ask GitHub about the branches it asked about since it started: its line when it can; refused, naming why and what to do, while any branch's latest ask failed for a reason other than its checkout not being on GitHub.",
+      "reply": {
+        "type": "object",
+        "required": [
+          "ok",
+          "message"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "triggers": {
+    "board": {}
+  },
+  "checks": {
+    "asking": {
+      "words": {
+        "label": "PR status can ask GitHub about the workers' branches"
+      },
+      "read": "status"
+    }
+  }
+}

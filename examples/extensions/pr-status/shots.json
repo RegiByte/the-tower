@@ -1,0 +1,57 @@
+{
+  "settings": {
+    "gh": [
+      "$EXT/shots/seed/gh.sh"
+    ]
+  },
+  "seed": [
+    "for name in search-draft fix-merged tidy-up old-closed ci-failing; do curl -s -XPOST $TOWER_URL/spawn -H \"origin: $TOWER_URL\" -H 'content-type: application/json' -d '{\"project\":\"lab\",\"cut\":{\"name\":\"'$name'\"}}' >/dev/null; done",
+    "sleep 3 && tower x pr-status ask-now '{}' >/dev/null"
+  ],
+  "scenes": [
+    {
+      "name": "rows",
+      "open": "#$WORKER_1",
+      "size": "1180x1300",
+      "steps": [
+        {
+          "until": ".sess .badge",
+          "text": "#42 draft"
+        },
+        {
+          "until": ".sess .badge",
+          "text": "#42 merged"
+        },
+        {
+          "until": ".sess .badge",
+          "text": "#42 open · approved"
+        },
+        {
+          "until": ".sess .badge",
+          "text": "#42 closed"
+        },
+        {
+          "until": ".sess .badge",
+          "text": "checks failing"
+        }
+      ],
+      "crop": ".floor[data-hold=\"floor:lab\"]"
+    },
+    {
+      "name": "head",
+      "open": "#$WORKER_1",
+      "size": "1180x1300",
+      "steps": [
+        {
+          "click": ".sess",
+          "text": "tower/ci-failing"
+        },
+        {
+          "until": ".bar-top .badge",
+          "text": "checks failing"
+        }
+      ],
+      "crop": ".bar-top"
+    }
+  ]
+}
