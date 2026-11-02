@@ -72,26 +72,40 @@ its own branches.
 ## How it works
 
 **What it asks.** For the workers on the board in a worktree with a branch (the main checkout has none), its server
-reads each checkout's GitHub repo once with `gh repo view`, then asks for the newest pull request of every branch in
-one GraphQL query per GitHub host, `gh api graphql`, each branch an alias in it: its number, state, draft, title, review
-decision and the rolled-up state of the checks on its newest commit. A round of ten branches costs one point of
-GitHub's rate limit, as a round of one does.
+reads each checkout's GitHub repo once with `gh repo view`, and its remotes with `git remote -v`. It then asks for the
+three newest pull requests of every branch's name in one GraphQL query per GitHub host, `gh api graphql`, each branch
+an alias in it, 20 branches a query at most (a round's answer stays well inside the 64 KB `ctx.run` keeps): each pull
+request's number, state, draft, title, review decision, head commit and repo, when it was opened, and the rolled-up
+state of the checks on its newest commit. A query of ten branches costs one point of GitHub's rate limit, as a query
+of one does.
 
-**When.** As soon as a worker ends a turn, which is when it has just pushed or opened a pull request: its board
-trigger compares two boards and calls `pr-status/ask` for the branch of each worker in a worktree whose card was `working` and
-no longer is. Besides that, its `tick` every 30 seconds asks about the branches that are due. A branch with an open pull
-request is due every `every`; one with none, or with one merged or closed, waits 5, then 15, then 30 minutes while
-GitHub keeps saying the same, and back to the start when it changes. Most branches have no pull request most of the
-time, and a new one shows at the turn's end anyway. When each branch is due is kept in memory, so a restart asks
-about every branch once. One round runs at a time.
+**When.** As soon as workers end a turn, which is when one has just pushed or opened a pull request: its board
+trigger compares two boards and calls `pr-status/ask` once with the branches of the workers in a worktree whose card
+went from `working` to a turn's end (`done`, `watching`, `idle`, `failed`, or `exited` and `lost` for a worker gone
+mid-turn; a permission prompt mid-turn is not one). Besides that, its `tick` every 30 seconds asks about the branches
+that are due. A branch with an open pull request is due every `every`; one with none, or with one merged or closed,
+waits 5, then 15, then 30 minutes while GitHub keeps saying the same, and back to the start when it changes. Most branches have no pull request most of the time, and a
+new one shows at the turn's end anyway. When each branch is due is kept in memory, and forgotten for a branch that
+leaves the board, so a restart asks about every branch once. One round runs at a time, and a halt (a restart, a
+config change) stops one before it records what a killed `gh` said.
 
-**Whose it is.** GitHub finds a pull request by its head branch's name, and names come back: a later worker gets
-`tower/<callsign>` again. So the server asks git whether the pull request is this branch's: its head commit is in the
-branch's history (`git merge-base --is-ancestor`) and, merged or closed, it was opened after the branch was made (the
-branch's reflog). One that isn't shows no badge. A head commit git doesn't have was pushed from elsewhere: an open pull
-request is then taken for the branch's.
+**Whose it is.** GitHub finds a pull request by its head branch's name, and names repeat: a stranger's fork can have a
+branch of the same name, others may push branches named like yours to the upstream repo, and a later worker gets
+`tower/<callsign>` again. Of the three, the badge shows the newest that is this branch's:
 
-**What it keeps.** What GitHub said of a branch, its newest pull request or none, or why it couldn't be asked, is
+- **A pushed branch** (one with a push remote, as `git push -u` sets): its pull request comes from the repo it pushes
+  to, such as your fork. One opened after the branch was made (the branch's reflog) is its, which holds through a
+  rebase not yet pushed. One opened before is its only while open with its head commit in the branch's history (`git
+  merge-base --is-ancestor`): a branch checked out from a pull request's. So a reused name shows none of the pull
+  requests opened before it.
+- **A branch not yet pushed** has opened none of its own: a pull request counts only from a repo the checkout knows
+  (`gh repo view`'s or a GitHub remote's) with its head commit in the branch's history.
+
+Each errs toward no badge: a branch checked out from an older pull request loses it once rebased locally until the
+push, and once that pull request is merged or closed; a worktree older than git's reflog expiry (90 days by default)
+loses its merged one.
+
+**What it keeps.** What GitHub said of a branch, its pull request or none, or why it couldn't be asked, is
 appended to its system stream `seen` only when it changed, so the stream is a short history of each branch's pull
 request. The card's fold reads the stream's state by the card's folder and branch, and puts the pull request on the
 card as `x['pr-status']` (number, state, url, title, review, checks) and as its badges. A branch that couldn't be asked shows no
