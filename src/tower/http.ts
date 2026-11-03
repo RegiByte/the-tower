@@ -187,10 +187,13 @@ export const httpServer = defineResource({
     /** The design and the renderers reach framed pages too, at an opaque origin: fonts and modules load only with CORS. */
     const ANY_ORIGIN = { 'access-control-allow-origin': '*' }
 
+    /** Every unhashed response is read afresh: with no validators a browser may keep it for the life of its process. */
+    const FRESH = { 'cache-control': 'no-store' }
+
     function design(res: http.ServerResponse, url: string) {
-      if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css', ...ANY_ORIGIN }).end(designCss())
+      if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css', ...FRESH, ...ANY_ORIGIN }).end(designCss())
       if (MODULES[url]) {
-        return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(servedModule(url))
+        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(servedModule(url))
       }
       const font = fonts.find((f) => url === `/fonts/${f.file}`)
       if (!font) return fail(res, 'not_found', `No face at "${url}"`)
@@ -223,11 +226,11 @@ export const httpServer = defineResource({
       if (!now) {
         const plain = sourceText(url)
         if (!plain) return fail(res, 'not_found', `The tower serves no module at "${url}"`)
-        return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(await plain)
+        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(await plain)
       }
       const text = await now
       const kept = hashedUrl(base!, text) === url ? text : named.get(url)
-      if (kept === undefined) return res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN }).end(text)
+      if (kept === undefined) return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(text)
       res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'max-age=31536000, immutable', ...ANY_ORIGIN }).end(kept)
     }
 
@@ -544,7 +547,7 @@ export const httpServer = defineResource({
       return existsSync(found) ? { file: found } : { message: `The shelf entry names "${entry.item}", and ${projectId}/${collection} holds no item "${id}"` }
     }
 
-    const htmlPage = (res: http.ServerResponse, status: number, page: string) => res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }).end(page)
+    const htmlPage = (res: http.ServerResponse, status: number, page: string) => res.writeHead(status, { 'content-type': 'text/html; charset=utf-8', ...FRESH }).end(page)
 
     /** A page opened in a browser tab, read with the config: a config it can't read shows as a page saying so. */
     function withConfig<T>(res: http.ServerResponse, serve: (config: Config) => T): T | undefined {
@@ -558,7 +561,7 @@ export const httpServer = defineResource({
 
     /** `/`: the configured renderer, at its own URL, so its files resolve below its root. */
     const home = (res: http.ServerResponse, query: string) =>
-      withConfig(res, (config) => res.writeHead(302, { location: `/r/${defaultRenderer(config, renderersOf(config)).name}/${query}` }).end())
+      withConfig(res, (config) => res.writeHead(302, { location: `/r/${defaultRenderer(config, renderersOf(config)).name}/${query}`, ...FRESH }).end())
 
     /** A declared renderer: trusted like the tower page, at the tower's origin, so `/tower.js` calls the routes directly. */
     const rendered = (res: http.ServerResponse, name: string, file: string | undefined, query: string) =>
@@ -567,7 +570,7 @@ export const httpServer = defineResource({
         const renderer = renderers.find((r) => r.name === name)
         const built = renderers.filter((r) => r.available).map((r) => `<a href="/r/${esc(r.name)}/">${esc(r.name)}</a>`).join(', ')
         if (!renderer) return htmlPage(res, ERROR_STATUS.not_found, problemPage(`No renderer "${name}"`, `The renderers are ${renderers.map((r) => r.name).join(', ')}`, `Declare it in <code>renderers</code> in <code>${esc(paths.config)}</code>, or open one that is built: ${built}.`))
-        if (file === undefined) return res.writeHead(302, { location: `/r/${name}/${query}` }).end()
+        if (file === undefined) return res.writeHead(302, { location: `/r/${name}/${query}`, ...FRESH }).end()
         if (!renderer.available) {
           const entry = path.join(renderer.root, renderer.entry)
           return htmlPage(res, ERROR_STATUS.unavailable, problemPage(`${name} isn't built`, `${entry} doesn't exist`, `Build the renderer into its root and reload this page, or open one that is built: ${built}.`))
@@ -596,7 +599,7 @@ export const httpServer = defineResource({
       const imports = mapped ? {} : importMap(modules)
       for (const [plain, hashed] of Object.entries(imports)) if (!MODULES[plain]) named.set(hashed, modules.get(plain)!)
       const preloads = withPreloads(html, [...new Set([...modules.keys()].map((m) => imports[m] ?? m))])
-      res.writeHead(200, { 'content-type': FILE_TYPES['.html'], 'cache-control': 'no-store', ...ANY_ORIGIN }).end(mapped ? preloads : withImportMap(preloads, imports))
+      res.writeHead(200, { 'content-type': FILE_TYPES['.html'], ...FRESH, ...ANY_ORIGIN }).end(mapped ? preloads : withImportMap(preloads, imports))
     }
 
     /** A module's text as the tower serves it at `url`, if it serves one there: what a page's imports reach. */
@@ -629,7 +632,7 @@ export const httpServer = defineResource({
       if (!source) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
       if (path.extname(source) === '.ts') {
         const text = await clientModule(source)
-        return res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN, ...headers }).end(text)
+        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN, ...headers }).end(text)
       }
       serveFile(res, source, { ...ANY_ORIGIN, ...headers })
     }
@@ -639,7 +642,7 @@ export const httpServer = defineResource({
       const source = clientSource(CORE_VIEWS_DIR, file)
       if (!source) return fail(res, 'not_found', `The core serves no view module "${file}"`)
       const text = await clientModule(source)
-      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN }).end(text)
+      res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(text)
     }
 
     /** A served module from before it moved into its bundled extension: what it is now, said deprecated (RFC 9745), with a `Link` to it. */
@@ -662,7 +665,7 @@ export const httpServer = defineResource({
         const project = config.projects[projectId]
         const entry = project?.shelf?.[n]
         if (!entry || shelfKind(entry) !== 'html') return fail(res, 'not_found', `"${projectId}" has no html or item shelf entry ${n}`)
-        if (file === undefined) return res.writeHead(302, { location: `/run/${projectId}/${n}/${shelfPage(entry)}${query}` }).end()
+        if (file === undefined) return res.writeHead(302, { location: `/run/${projectId}/${n}/${shelfPage(entry)}${query}`, ...FRESH }).end()
         if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)
         const found = shelfFile(projectId, project, entry, file)
         if ('message' in found) return fail(res, 'not_found', found.message)
@@ -706,7 +709,7 @@ export const httpServer = defineResource({
     const serveBytes = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders, read: (file: string) => Buffer | string) => {
       if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)
       res
-        .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? UNKNOWN_TYPE, 'cache-control': 'no-store', ...headers })
+        .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? UNKNOWN_TYPE, ...FRESH, ...headers })
         .end(read(file))
     }
 
@@ -1103,10 +1106,10 @@ export const httpServer = defineResource({
       }
       const asset = STATIC[url]
       if (req.method === 'GET' && asset) {
-        res.writeHead(200, { 'content-type': asset[1] }).end(readFileSync(asset[0]))
+        res.writeHead(200, { 'content-type': asset[1], ...FRESH }).end(readFileSync(asset[0]))
         return
       }
-      if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return res.writeHead(200, { 'content-type': 'text/javascript' }).end(towerClient())
+      if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH }).end(towerClient())
       if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(res, url)
       if (req.method === 'GET' && /^\/(shared|src|vendor)\//.test(url)) return served(res, url.split('?')[0])
       const legacy = legacyOf('module').find((e) => e.old === url)
