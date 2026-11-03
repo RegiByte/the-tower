@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-01",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-03",
   "refs": [
     "hub/src/shared/regions.ts#Region",
     "hub/src/shared/regions.ts#Layout",
@@ -33,10 +33,10 @@
   ]
 }
 ---
-**Problem.** Every region that holds extensions' contributions draws all of them, in fold order, however many there
-are. With a handful of extensions a worker's head in a grid cell clips its own callsign, status and cost; the tab
-strip scrolls with no visible edge, so a tab past it is unfindable; the sidebar's rows grow a line per contribution.
-Nothing says what is kept in place when there is no room, who decides, or how the user reaches the rest.
+**Problem.** A region that holds extensions' contributions can be handed more than it has room for: a worker's head
+in a grid cell would clip its own callsign, status and cost, a tab strip would scroll past tabs with no visible
+edge, the sidebar's rows would grow a line per contribution. Something has to say what is kept in place when there
+is no room, who decides, and how the user reaches the rest.
 
 **Why.** The tower is open to extensions it has never seen ([[extensions]]), so a region can't be sized for the
 contributions it knows. The user decides how dense their surface is, and an agent can set it for them through the
@@ -76,8 +76,7 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   - `count` draws min(k, n) and shows no "+0";
   - under `wrap` and `scroll` a budget is unused, and the check warns;
   - on a worker's head, `lines` is read by the head's row of lines (how many lines it shows), not by the fill.
-  Forms are per region, not per scale: a choice for `card.head` applies in grid cells too, and a holding view may
-  later pass its own as an option. A form a region doesn't offer, a budget for something it doesn't hold and a pin
+  Forms are per region, not per scale: a choice for `card.head` applies in grid cells too. A form a region doesn't offer, a budget for something it doesn't hold and a pin
   where nothing pins are said by `tower config check` and on the board, and the region is drawn in its default.
   Each form is its own drawing function, not one function with a mode.
 - *Ranking in shared code.* Actions: the pinned first in their order, then the rest in board order, less what is
@@ -90,10 +89,9 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   pure and shared too.
 - *No extension priority.* A manifest declares no priority, budget or pin. An extension's layout is the bottom
   layer, and it lays out only the regions it declares itself: a renderer's region (`card.head`, `card.panes`) takes
-  nothing from it, and both checks warn when a manifest tries. Before this, a manifest could declare a renderer's
-  region and hide another extension's tab there. Removing that is a deliberate change under a minor: the manifest is
-  not the renderer API, no bundled or example manifest did it, and the behaviour was the priority field by the back
-  door.
+  nothing from it, and both checks warn when a manifest tries
+  ([`rendererLayoutProblems`](ref:hub/src/bridge/extensions.ts#rendererLayoutProblems)), since that would be a
+  priority field by the back door.
 - *Pins are a union.* `pinned` merges over the renderer's, the config's and the viewer's layers: the viewer's pins
   first, then the config's, then the renderer's, each id once, less every id a higher layer lists in `unpinned`. So
   an agent can pin for the user through the config and see it take effect, and the user can drop that pin from the
@@ -124,10 +122,8 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
 - *Viewer pins replace the config's, with a Reset.* An agent's pin in the config would be silently overridden by any
   pin made on the page.
 - *Refusing an extension that lays out a renderer's region.* It would lose the extension's views and verbs over one
-  layout key that the rule already makes inert; a warning says it. Allowing it is the back door above.
+  layout key that the rule already makes inert; a warning says it.
 
-**Impact.** Every region gets a defined behaviour when full, the same in every renderer, chosen by the user. The
-layout gains `pinned`, `unpinned`, `overflow` and budgets, a region gains `overflows`, and the shared modules gain
-the ranking, the fill and the viewer's seen set: additions under a minor of the API. Renderers draw the forms region
-by region, each adding the form to its `renderer.json` as it is built, so the checks never accept a form that isn't
+**Impact.** Every region has a defined behaviour when full, the same in every renderer, chosen by the user. A
+renderer lists a form in its `renderer.json` only once it draws it, so the checks never accept a form that isn't
 drawn.

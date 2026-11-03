@@ -6,13 +6,12 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-03",
   "refs": ["hub/src/update.ts#update", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#hostSources", "hub/src/cli.ts", "hub/CHANGELOG.md#L3-L13", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO"]
 }
 ---
-**Problem.** The only way to a newer tower was `git pull`, and nothing said whether the pull changed the host, whose
-restart ends every session. A renderer kept outside the repo had no stable version to follow
-([[renderer-api-contract]]).
+**Problem.** A `git pull` says nothing about whether it changed the host, whose restart ends every session, and gives
+a renderer kept outside the repo no stable version to follow ([[renderer-api-contract]]).
 
 **Why.** The tower is shared publicly. Its users run a checkout, not a package, and decide themselves when to stop
 their sessions; an update has to tell them what it asks of them, and never end their work on its own.
