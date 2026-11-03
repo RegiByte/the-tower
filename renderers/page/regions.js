@@ -1,11 +1,11 @@
-import { addedActions, ago, can, commandUrl, esc, findCard, overflowOf, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
+import { addedActions, ago, heldActions, can, commandUrl, esc, findCard, overflowOf, parentOf, shownHref, shownKey, shownSubject, shownTitle } from '/cards.js'
 import { mountTermView } from '/term-view.js'
 import { offeredIn, ordered, paneShows, pickView, shownOf } from '/views.js'
 import { shownFrom } from '/brief.js'
 import { ICON } from '/icons.js'
 import { fileSpansHtml } from '/panels.js'
 import { keyedTip, repaint } from './kit.js'
-import { actionsHtml, badgesHtml, heldActions, iconActionsHtml } from './added.js'
+import { actionsHtml, badgesHtml, iconActionsHtml } from './added.js'
 import { menu } from './menu.js'
 
 /**

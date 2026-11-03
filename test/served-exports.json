@@ -671,6 +671,7 @@
       "heededAsks",
       "heededOffers",
       "heededWaits",
+      "heldActions",
       "hireDepth",
       "hireRefusal",
       "hirerName",

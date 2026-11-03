@@ -14,6 +14,8 @@
     "hub/src/shared/views.ts#declaredLayout",
     "hub/src/shared/views.ts#usableConfigLayout",
     "hub/src/shared/views.ts#layoutKey",
+    "hub/src/shared/adds.ts#heldActions",
+    "hub/src/shared/adds.ts#badgesOf",
     "hub/src/shared/adds.ts#addedActions",
     "hub/src/shared/viewer.ts",
     "hub/renderers/page/renderer.json",
@@ -85,7 +87,10 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   fails, and keeps the viewer's at [`layoutKey`](ref:hub/src/shared/views.ts#layoutKey).
   Each form is its own drawing function, not one function with a mode.
 - *Ranking in shared code.* Actions: the pinned first in their order, then the rest in board order, less what is
-  hidden. Badges rank by severity, board order within a tone. A head interleaves them: the severe badges (broken,
+  hidden; a region takes only the actions its holds name, commands or verbs, as `landing` places them
+  ([`heldActions`](ref:hub/src/shared/adds.ts#heldActions)). Badges rank by severity, board order within a tone,
+  a card's exemptions ahead of them, wherever a subject's badges are drawn
+  ([`badgesOf`](ref:hub/src/shared/adds.ts#badgesOf)). A head interleaves them: the severe badges (broken,
   needs), then the pinned actions, then the other badges, then the other actions, with the `data-tuck` controls
   ahead of all of them, so they leave last. An extension's lines rank and pin together by its capability; without a
   pin they come in the order extensions resolve (bundled first, then by id), so at a narrow head a policy run's line

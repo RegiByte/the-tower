@@ -1,4 +1,4 @@
-import { DISMISS_ASK_TITLE, actionWords, badgesOf, esc, glyphOf, isCommand, plural, span } from '/cards.js'
+import { DISMISS_ASK_TITLE, actionWords, badgesOf, esc, glyphOf, plural, span } from '/cards.js'
 import { ICON } from '/icons.js'
 
 /**
@@ -7,7 +7,6 @@ import { ICON } from '/icons.js'
  * @import { Board } from '../../src/bridge/board.ts'
  * @import { Action, Added, Badge, BoardAsk } from '../../src/shared/extensions.ts'
  * @import { Glyph } from '../../src/shared/adds.ts'
- * @import { Hold } from '../../src/shared/regions.ts'
  * @import { Subject } from '../../src/shared/subjects.ts'
  */
 
@@ -66,9 +65,6 @@ const actionHtml = (board, key, action) => {
 
 /** Actions on a subject as buttons. @param {Board} board @param {Subject} subject @param {Added<Action>[]} actions */
 export const actionsHtml = (board, subject, actions) => actions.map((a) => actionHtml(board, subject.key, a)).join('')
-
-/** The actions a region holding `holds` draws: a command where it holds commands, a verb where it holds verbs. @param {Hold[]} holds @param {Added<Action>[]} actions */
-export const heldActions = (holds, actions) => actions.filter((a) => holds.includes(isCommand(a) ? 'commands' : 'verbs'))
 
 /** A glyph as the page draws it: a core icon inline, an extension's SVG as a mask in the ink around it. @param {Glyph} glyph */
 const glyphHtml = (glyph) => (glyph.t === 'core' ? ICON[glyph.name] : `<span class="icon glyph" style="--glyph: url(&quot;${esc(glyph.href)}&quot;)"></span>`)

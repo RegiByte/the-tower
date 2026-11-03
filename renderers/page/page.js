@@ -1,4 +1,4 @@
-import { actionWords, addedActions, boardSubject, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, lineId, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
+import { actionWords, addedActions, boardSubject, heldActions, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighbours, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, lineId, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
 import { probedLine } from '/x/quota/quota.js'
 import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
@@ -745,7 +745,6 @@ function kitRegion(el, id, subject, options) {
   let omit = options.omit ?? []
   const declaredRegion = () => placing().regions.find((r) => r.id === id)
   const holds = declaredRegion()?.holds ?? []
-  const actions = holds.includes('verbs') || holds.includes('commands')
   const slots = { badges: slotIn(el, 'badges'), lines: slotIn(el, 'lines'), actions: slotIn(el, 'actions') }
   const marked = Object.values(slots).filter((s) => s !== undefined)
   /** The actions as the last draw ranked them, one button each in the form's `actionsAt`. @type {Ranked[]} */
@@ -756,8 +755,8 @@ function kitRegion(el, id, subject, options) {
   const dotted = new Set()
   /** @param {HTMLElement} at @param {Subject} s */
   const mark = (at, s) => ((at.dataset.region = id), (at.dataset.subject = s.key), regionSubjects.set(at, s))
-  /** @param {Subject} s */
-  const shownActions = (s) => addedActions(board(), s).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`)))
+  /** The actions the region draws on `s`: those its holds take, as `landing` places them, less what its options omit. @param {Subject} s */
+  const shownActions = (s) => heldActions(holds, addedActions(board(), s)).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`)))
   /** The form the layout picks: the region's default when the viewer's pick is one it no longer offers, `wrap` where it offers none. @returns {Overflow} */
   const formName = () => {
     const r = declaredRegion()
@@ -1138,7 +1137,7 @@ function kitRegion(el, id, subject, options) {
   const draw = (/** @type {Subject} */ s) => {
     at = s
     const entry = layout()[id]
-    ranked = actions ? rankedActions(shownActions(s), entry) : []
+    ranked = rankedActions(shownActions(s), entry)
     badges = holds.includes('badges') ? rankedBadges(board(), s) : []
     const parts = {
       badges: holds.includes('badges') ? `${keptHtml(id === 'card.head' ? dismissHtml(s.key) : '', exemptionsOf(board(), s))}${badges.map(badgeHtml).join('')}` : '',
