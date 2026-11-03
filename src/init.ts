@@ -4,8 +4,6 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import type { Config } from './shared/model.ts'
-import { POLICIES } from './shared/policies-legacy.ts'
-import { REVIEWS } from './shared/reviews.ts'
 import { CliError } from './cli-error.ts'
 
 /** A project id is one path segment of the tower's routes. */
@@ -17,10 +15,6 @@ export const initialConfig = (hub: string, repos: string[], user: string | undef
   env: {},
   port: 4317,
   projects: { [projectId(hub)]: { name: path.basename(hub), hub, repos } },
-  collections: {
-    [REVIEWS]: { label: 'Reviews', description: 'One review thread per checkout, written only with `tower note`: not a place for write-ups.' },
-    [POLICIES]: { label: 'Policies', description: 'Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a ```json header, then the prompt. `tower policies` lists them.' },
-  },
   ...(user ? { user: { name: user } } : {}),
 })
 

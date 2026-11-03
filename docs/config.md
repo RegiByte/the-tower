@@ -231,11 +231,11 @@ by id with a `label` (the name it is shown by) and an optional `description` (wh
 shown to the user and the workers wherever it is listed). Workers add items with `tower keep <collection>` and see their counts and latest items with `tower kept`, and every item of one with `tower kept <collection>`. The bundled
 extensions declare three. `reviews`, one review thread per checkout, written only through `tower note`, is
 declared by the bundled reviews extension, owned, on every floor where its capability is on: a `reviews` entry here
-overrides its `label` and `description`, and stays a plain collection on a floor with `capabilities.reviews.off`.
+overrides its `label` and `description`, and a floor with `capabilities.reviews.off` keeps the collection only where a config entry declares it, as a plain one. `tower init` writes no entry, so a first config has the collection only where the capability is on.
 `policies`, standing work started at its slots (`tower policies` lists them, the handbook's "Policies and runs" says
 what a policy holds), is declared by the bundled policies extension, on every floor where its capability is on: a
-`policies` entry here overrides its `label` and `description`, and stays a plain collection on a floor with
-`capabilities.policies.off`, where nothing runs on a schedule. `drafts`, prompts
+`policies` entry here overrides its `label` and `description`, and a floor with `capabilities.policies.off`, where nothing
+runs on a schedule, keeps the collection only where a config entry declares it, as a plain one. `drafts`, prompts
 waiting to start a worker or be sent to one, is declared by the bundled drafts extension, on every floor where its
 capability is on: a `drafts` entry here overrides its `label` and `description`, and stays a plain collection on a
 floor with `capabilities.drafts.off`. A floor keeping `games` shows each item as an arcade cabinet in
