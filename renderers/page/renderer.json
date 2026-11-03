@@ -16,8 +16,7 @@
     { "id": "shown.tab", "subject": "shown", "holds": ["commands"], "description": "inside the showing's tab while it is open, beside its own icons: each command its icon alone, its label and hint the tip", "overflows": ["wrap"] },
     { "id": "card.composer", "subject": "card", "holds": ["views"], "scale": "row", "arity": "one", "description": "at the foot of the worker's Brief, under its latest turn: what writes to the worker" },
     { "id": "lines.acts", "subject": "lines", "holds": ["commands", "views"], "scale": "row", "arity": "one", "description": "under lines picked in a worker's Changes: what acts on them, a review's note box among them", "overflows": ["wrap"] },
-    { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette", "overflows": ["wrap"] },
-    { "id": "item.row", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's row in the floor's trays", "overflows": ["wrap"] }
+    { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette", "overflows": ["wrap"] }
   ],
   "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location"],
   "keeps": [],
@@ -25,7 +24,6 @@
     "floor.section": { "hidden": ["policies/policies"] },
     "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] },
     "card.head": { "lines": 1 },
-    "card.row": { "lines": 1, "badges": 2 },
-    "item.row": { "badges": 1, "actions": 2 }
+    "card.row": { "lines": 1, "badges": 2 }
   }
 }

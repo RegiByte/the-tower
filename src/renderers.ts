@@ -54,7 +54,7 @@ export const renderersOf = (config: Config): Renderer[] =>
 export const DECLARED_FILE = 'renderer.json'
 
 const RegionSchema: z.ZodType<Region> = z.strictObject({
-  id: z.string().regex(REGION_ID, 'a subject kind and a place: card.head, item.row, reviews.thread.head'),
+  id: z.string().regex(REGION_ID, 'a subject kind and a place: card.head, item.head, reviews.thread.head'),
   subject: z.string().min(1),
   holds: z.array(z.enum(HOLDS)).min(1),
   scale: z.enum(SCALES).optional(),
