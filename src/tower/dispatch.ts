@@ -72,12 +72,15 @@ export type Verb = Exclude<Route, 'mux/watch' | 'mux/unwatch'>
 /** The `Launch` a spawn verb's input carries into `newLaunch`: every launch field the API lets a spawn set. */
 export const spawnLaunchOf = ({ model, effort, prompt, command }: { model?: string; effort?: string; prompt?: string; command?: string }): Launch => ({ model, effort, prompt, command })
 
+/** The `argv` command a spawn runs under: the one it names, else the project's preferred one. */
+const spawnCommand = (config: Config, projectId: string, launch: Launch): string | undefined => launch.command ?? projectPreferredCommand(config, projectId)
+
 /** A spawn's launch, Claude's defaults filled in for what it left blank, and the project's preferred command when it named none. */
 export const launchWithDefaults = (config: Config, projectId: string, launch: Launch, defaults: { model?: string; effort?: string }): Launch => ({
   ...launch,
   model: launch.model ?? defaults.model,
   effort: launch.effort ?? defaults.effort,
-  command: launch.command ?? projectPreferredCommand(config, projectId),
+  command: spawnCommand(config, projectId, launch),
 })
 
 /** Why `name` can't be the command a launch names: `argv`'s names, when it has more than one, else that none can be given. */
@@ -459,7 +462,7 @@ export const dispatch = defineResource({
         const heir = kind === 'resume' ? newSessionId() : (await workerIds(config))()
         const runtime = source.header.runtime ?? 'claude'
         const worker = lineage(source, (s) => continues(s, system.sessions()))
-        const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker))
+        const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker), resolveCommand(config, source.header.command))
         if (merged.t === 'error') return merged
         const gated = await gate({ project: projectId, kind, runtime, hire: false, exempt: merged.exempt, fields: {} }, within)
         if (gated) return gated
@@ -550,6 +553,7 @@ export const dispatch = defineResource({
      * throws or returns what the runtime can't place refuses the launch when `fields` holds its capability's (the user
      * asked for what failed); otherwise its parts are dropped and it gets a `launch` problem. A conflict refuses the
      * launch, and is a problem of every extension it names. `factsOf`: a capability's facts over the worker's lineage.
+     * `command`: the config's `argv` the session runs, whose flags no contributor may pass.
      */
     const contribute = async (
       kind: LaunchRequest['kind'],
@@ -557,6 +561,7 @@ export const dispatch = defineResource({
       at: Pick<LaunchRequest, 'project' | 'cwd' | 'model' | 'effort'>,
       fields: Map<string, Record<string, unknown>>,
       factsOf: (cap: string) => SessionFact[],
+      command: string[],
     ): Promise<Merged | ApiError> => {
       const launchers = holder.launchers(at.project)
       const contributions: Contribution[] = []
@@ -575,7 +580,7 @@ export const dispatch = defineResource({
         if (fields.has(cap)) return apiError('internal', `${cap}'s launch contributor ${failed.message}`)
         holder.problem(id, { lane: 'launch', level: 'error', ...failed, message: `on a ${kind} on ${at.project}, ${failed.message}: its parts were dropped`, at: Date.now() })
       }
-      const merged = mergeParts(kind, runtime, contributions, { flags: takenFlags(runtime, resolveCommand(readConfig(), undefined)), env: takenEnv(readConfig().env) })
+      const merged = mergeParts(kind, runtime, contributions, { flags: takenFlags(runtime, command), env: takenEnv(readConfig().env) })
       if (merged.t === 'merged') return merged
       for (const cap of merged.caps) holder.problem(launchers.find((l) => l.cap === cap)!.id, { lane: 'launch', level: 'error', code: 'conflict', message: merged.message, at: Date.now() })
       return apiError('refused', merged.message)
@@ -592,7 +597,7 @@ export const dispatch = defineResource({
       const runtime = 'claude'
       const now = Date.now()
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
-      const merged = await contribute('spawn', runtime, { project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf)
+      const merged = await contribute('spawn', runtime, { project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, spawnCommand(config, projectId, launch)))
       if (merged.t === 'error') return merged
       const exempt = legacyReviewer(merged, spawn.prompt)?.exempt ?? merged.exempt
       const gated = await gate({ project: projectId, kind: 'spawn', runtime, ...(spawn.by && { by: spawn.by }), hire: spawn.hire, exempt, fields: Object.fromEntries(spawn.fields) }, spawn.within)
