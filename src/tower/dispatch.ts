@@ -36,7 +36,6 @@ import {
   configuredUser,
   editorArgv,
   outsideProject,
-  projectCollections,
   projectDirs,
   projectPlugins,
   projectPreferredCommand,
@@ -69,10 +68,6 @@ const TRACK_TIMEOUT_MS = 5000
 
 /** The verbs a dispatch handles: all but the mux's, which hold HTTP connections. */
 export type Verb = Exclude<Route, 'mux/watch' | 'mux/unwatch'>
-
-/** Whether the config declares the collection for the project. */
-export const isDeclaredIn = (config: Config, project: string, collection: string): boolean =>
-  Object.hasOwn(config.projects, project) && Object.hasOwn(projectCollections(config, project), collection)
 
 /** The `Launch` a spawn verb's input carries into `newLaunch`: every launch field the API lets a spawn set. */
 export const spawnLaunchOf = ({ model, effort, prompt, command }: { model?: string; effort?: string; prompt?: string; command?: string }): Launch => ({ model, effort, prompt, command })

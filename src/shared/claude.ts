@@ -17,7 +17,7 @@ export const CLAUDE_SURFACES: { surface: string; read: string }[] = [
   { surface: 'the mods API: $.env, $.http.fetch over a unix socket, $.session.version', read: 'src/mod/hooks/register.js' },
   { surface: 'classic hook events and their payload fields (session_id, source, trigger, notification_type, background_tasks, session_crons)', read: 'src/mod/hooks/hooks.json, src/bridge/conversation.ts, src/bridge/status.ts' },
   { surface: "the trust and sign-in screens' text", read: 'src/bridge/blocked.ts' },
-  { surface: 'bracketed pastes kept short enough to stay out of the pasted-content wrapping', read: 'src/machine.ts' },
+  { surface: 'bracketed pastes kept short enough to stay out of the pasted-content wrapping', read: 'src/shared/protocol.ts' },
   { surface: 'the peer registry ~/.claude/sessions/<pid>.json', read: 'src/machine.ts, src/bridge/resources.ts' },
   { surface: 'a transcript saved with the first prompt, so a conversation can be resumed', read: 'src/bridge/conversation.ts' },
   { surface: "print mode's get_usage control request and its answer (rate_limits.five_hour and seven_day: utilization, resets_at; rate_limits_available), recorded in test/fixtures/probe-usage.out", read: 'extensions/quota/server.ts, src/shared/rate-limits.ts, src/bridge/legacy.ts' },

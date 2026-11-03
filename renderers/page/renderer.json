@@ -24,12 +24,8 @@
   "layout": {
     "floor.section": { "hidden": ["policies/policies"] },
     "floor.trays": { "order": ["drafts/tray", "reviews/tray", "policies/tray"] },
-    "floor.sign": { "actions": 3 },
     "card.head": { "lines": 1 },
     "card.row": { "lines": 1, "badges": 2 },
-    "item.row": { "badges": 1, "actions": 2 },
-    "said.acts": { "actions": 2 },
-    "section.acts": { "actions": 2 },
-    "shown.tab": { "actions": 2 }
+    "item.row": { "badges": 1, "actions": 2 }
   }
 }
