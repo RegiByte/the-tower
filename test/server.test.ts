@@ -18,10 +18,11 @@ import boardSchema from '../src/shared/board.schema.json' with { type: 'json' }
 import { fonts } from '../src/shared/design.ts'
 import { parseThread, unseenBy } from '../extensions/reviews/client/reviews.ts'
 import type { FloorPart } from '../extensions/reviews/threads.ts'
-import type { Adds } from '../src/shared/extensions.ts'
+import { BUNDLED, type Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import type { Card } from '../src/bridge/board.ts'
-import { MODULES } from '../src/tower/served.ts'
+import { CORE_VIEWS_DIR, MODULES, sourceUrl } from '../src/tower/served.ts'
+import { bundledClient } from '../src/extensions.ts'
 import { decide, standing } from '../extensions/policies/client/policies.ts'
 import { slotWords } from '../src/shared/slots.ts'
 import { callsignsOf } from '../src/shared/model.ts'
@@ -428,6 +429,62 @@ test('server: every read answers', async () => {
   assert.ok(await firstEvent(`/screen/${SESSION}`))
   assert.equal(((await firstEvent('/shell/none')) as { t: string }).t, 'error')
   assert.deepEqual(Object.keys((await firstEvent('/mux')) as object), ['t', 'id'])
+})
+
+/**
+ * Each `src/shared` file holding state at its top level, with what declares it as the tower serves it: a `let`, or a
+ * `new Map`, `Set`, `WeakMap` or `WeakSet` assigned. A bundle may suffix the name to keep it apart (`inFlight2`).
+ */
+const STATEFUL = readdirSync(path.join(REPO, 'src', 'shared'))
+  .filter((name) => name.endsWith('.ts'))
+  .map((name) => path.join(REPO, 'src', 'shared', name))
+  .flatMap((file) =>
+    [...readFileSync(file, 'utf8').matchAll(/^(?:export )?(?:let (\w+)|const (\w+)(?::[^=]+)? = new (?:Map|Set|WeakMap|WeakSet)\b)/gm)].map(([line, mutable, held]) => ({
+      file,
+      line,
+      declared: mutable
+        ? new RegExp(`\\b(?:var|let) ${mutable}\\d*\\s*[;=,]`)
+        : new RegExp(`\\b(?:var|let|const) ${held}\\d* = (?:/\\* @__PURE__ \\*/ )?new (?:Map|Set|WeakMap|WeakSet)\\b`),
+    })),
+  )
+
+/**
+ * A served text by the source file each part was built from, as esbuild marks it (`// src/shared/press.ts`), `''`
+ * before the first mark: another file's part holds that file's own state, though it may share a name.
+ */
+const sectionsOf = (text: string): [at: string, body: string][] =>
+  text.split(/^(?=\/\/ \S+\.[jt]s$)/m).map((part) => [/^\/\/ (\S+\.[jt]s)$/m.exec(part.split('\n')[0]!)?.[1] ?? '', part])
+
+/** Every URL a served module's text imports, statically or by a literal `import()`. */
+const importedUrls = (text: string) => [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)"(\/[^"]+)"/g)].map(([, url]) => url!)
+
+test("server: a page gets one copy of each module: no served module, core view or bundled client holds another file's state, each served once at its own URL", async () => {
+  const clients = BUNDLED.flatMap((cap) => {
+    const dir = bundledClient(cap)
+    return dir ? readdirSync(dir, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.ts')).map((f) => `/x/${cap}/${f.replace(/\.ts$/, '.js')}`) : []
+  })
+  const views = readdirSync(CORE_VIEWS_DIR).filter((f) => f.endsWith('.ts')).map((f) => `/x/tower/${f.replace(/\.ts$/, '.js')}`)
+  const texts = new Map<string, string>()
+  for (let queue = [...Object.keys(MODULES), ...views, ...clients]; queue.length; ) {
+    const url = queue.shift()!
+    if (texts.has(url)) continue
+    const reply = await get(url)
+    assert.equal(reply.status, 200, `${url}: ${reply.body.slice(0, 300)}`)
+    assert.equal(reply.headers['access-control-allow-origin'], '*', url)
+    texts.set(url, reply.body)
+    queue.push(...importedUrls(reply.body).filter((imported) => /^\/(shared|src|vendor|x)\//.test(imported)))
+  }
+  assert.ok(STATEFUL.some((s) => s.line.includes('inFlight')), "press.ts's in-flight set is among the stateful files")
+  for (const { file, line, declared } of STATEFUL) {
+    const own = sourceUrl(file)
+    const holders = [...texts].filter(([, text]) => sectionsOf(text).some(([at, body]) => (at === '' || path.join(REPO, at) === file) && declared.test(body))).map(([url]) => url)
+    assert.deepEqual(holders, texts.has(own) ? [own] : [], `${path.relative(REPO, file)}'s \`${line}\` is served by ${holders.join(', ') || 'nothing'}, not by ${own} alone`)
+  }
+  for (const [url, text] of texts) {
+    if (url.startsWith('/vendor/')) continue
+    const copied = [...text.matchAll(/^\/\/ (src\/\S+\.ts)$/gm)].map(([, at]) => at).filter((at) => sourceUrl(path.join(REPO, at!)) !== url)
+    assert.deepEqual(copied, [], `${url} inlines files the tower serves at their own URLs`)
+  }
 })
 
 test('server: a sandboxed html file read by a script is the file as written; loaded any other way, its frame keys follow it', async () => {

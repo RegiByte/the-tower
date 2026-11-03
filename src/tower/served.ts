@@ -4,9 +4,9 @@
  * exports are listed in test/served-exports.json, which test/served.test.ts holds them to.
  *
  * Every source file under `src/` that a page reaches is served once, at a URL of its own, so a module has one
- * instance on a page however many modules import it: a shared module is a re-export of its file's URL. Those URLs
- * (`/shared/…`, `/src/…`, and each npm package at `/vendor/…`) are internal, not contract: renderers import the
- * shared modules' names.
+ * instance on a page however many modules import it: a shared module is a re-export of its file's URL, and a core
+ * view or a bundled client imports what it reaches under `src/` by URL. Those URLs (`/shared/…`, `/src/…`, and each npm
+ * package at `/vendor/…`) are internal, not contract: renderers import the shared modules' names.
  */
 import { build, buildSync, type BuildOptions, type Metafile, type Plugin } from 'esbuild'
 import { readFileSync, statSync } from 'node:fs'
@@ -108,6 +108,9 @@ const servedImports = (name: string, served: (file: string) => { path: string; e
 /** Every import of a file transpiled alone stays an import: of a file below `src/` at its URL, of a package at its `/vendor/` URL. */
 const sourceImports = servedImports('source-imports', (file) => ({ path: sourceUrl(file), external: true }), (specifier) => ({ path: vendorUrl(specifier), external: true }))
 
+/** A client imports what it reaches below `src/` by URL, and bundles its own modules and packages. */
+const clientImports = servedImports('client-imports', (file) => (file.startsWith(SRC + path.sep) ? { path: sourceUrl(file), external: true } : { path: file }), () => undefined)
+
 /** A served module's text, and the files it was built from: valid while none of them changed. */
 type Built = { text: string; inputs: { file: string; mtimeMs: number }[] }
 const builtCache = new Map<string, Built>()
@@ -133,6 +136,9 @@ export const sourceModule = (file: string) => cached(`source:${file}`, () => esm
 
 /** An npm package's module bundled as one ES module. */
 export const vendorModule = (specifier: string) => cached(`vendor:${specifier}`, () => esm({ entryPoints: [specifier], platform: 'browser' }))
+
+/** A core view or a client's `.ts` module bundled with its own modules and packages, what it reaches below `src/` imported by URL. */
+export const clientModule = (file: string) => cached(`client:${file}`, () => esm({ entryPoints: [file], plugins: [clientImports] }))
 
 /** `/frame-keys.js`: a framed page's keys sent to the tower framing it, run by every sandboxed html page and by `/tower.js`. */
 export const FRAME_KEYS = path.join(import.meta.dirname, 'frame-keys.js')
