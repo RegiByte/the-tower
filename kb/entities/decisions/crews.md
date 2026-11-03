@@ -67,9 +67,10 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   it now (`workerNamed` on the floor, the one on duty first: [`legacyCrew`](ref:hub/src/bridge/legacy.ts#legacyCrew)),
   as it always read. A worker whose crew edge names a worker seated when it comes sits beside it
   ([`seats`](ref:hub/src/bridge/seats.ts#seats)), a reviewer beside its author. A fork is a new worker with neither, so it heads its own crew.
-- *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by start), `crewOf`
-  (everyone under it, each before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads
-  a crew, everyone under it follows at its depth, on duty or not). `dutyOrder`, the order the move keys step through,
+- *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by first start: the
+  first session of its lineage, so a resumed worker keeps its place among its peers), `crewOf` (everyone under it, each
+  before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads a crew, by first start,
+  everyone under it follows at its depth, on duty or not). `dutyOrder`, the order the move keys step through,
   walks the same tree. `goneHome` (off duty, nobody on duty under it) and `crewFold` (a worker's hires split into those
   drawn and those gone home, with how many the fold holds) say what a renderer may fold. A renderer or the bridge walking a whole floor's crews indexes the cards once, `hiresBy`,
   `crewsOf` and `crewFoldsOf` returning the lookup each of those makes per worker, linear in the cards where a `crewOf` per
