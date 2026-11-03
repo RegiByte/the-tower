@@ -76,8 +76,10 @@ holds no such shell), one that doesn't answer `unavailable`. A spawn, a resume o
 after `TRACK_TIMEOUT_MS` without it, answering `spawned` all the same ([`host`](ref:hub/src/tower/dispatch.ts#host)). Every GET but the served files (`/tower.js`, the
 design, the modules, the vendored scripts) is an entry of [`READS`](ref:hub/src/tower/http.ts#READS): a pattern
 matched against the pathname, whose named groups are its params, and what serves it. An entry is either an API read
-that names itself (`apiRead`: a key of `Reads` or `QUERIES`, its query's schema taken from `QUERIES[name]`) or says its
-`kind`, a `page` (`/`, `/r/…`, `/run/…`), a `stream` (`/board`, `/mux`, `/screen`, `/shell`) or the `schema`. The typecheck
+that names itself (`apiRead`: a key of `Reads` or `QUERIES`, its query's schema taken from `QUERIES[name]`), which
+answers its params, query and caller with a reply as data, a body sent as JSON or a file served sandboxed, so an
+extension's `ctx.read` takes the same reply ([[extensions]]); or says its `kind`, a `page` (`/`, `/r/…`, `/run/…`), a
+`stream` (`/board`, `/mux`, `/screen`, `/shell`) or the `schema`, served on the response itself. The typecheck
 refuses an entry naming a read the API doesn't declare and a declared read with no entry. [`route`](ref:hub/src/tower/http.ts#route) takes the first entry that matches, decodes its
 params and parses the query string by its schema, refusing it as `invalid` before the entry serves; a route with no
 schema ignores the query. Reads answer their failures as the same `{t: 'error', code, message}` ([[renderer-api-contract]]).
