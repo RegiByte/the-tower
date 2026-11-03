@@ -18,7 +18,7 @@
     { "id": "lines.acts", "subject": "lines", "holds": ["commands", "views"], "scale": "row", "arity": "one", "description": "under lines picked in a worker's Changes: what acts on them, a review's note box among them", "overflows": ["wrap"] },
     { "id": "item.head", "subject": "item.*", "holds": ["badges", "verbs", "commands"], "description": "the item's view, the drafts editor for a draft, and the palette", "overflows": ["wrap"] }
   ],
-  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location"],
+  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location", "spawn"],
   "keeps": [],
   "layout": {
     "floor.section": { "hidden": ["policies/policies"] },
