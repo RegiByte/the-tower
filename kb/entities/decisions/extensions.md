@@ -420,7 +420,7 @@ contributions (1.84), then middleware and hooks (1.85), then triggers, checks an
 - *Answers that see each other's*: an answerer that needs to see or change the others' wraps the hook with `around`;
   answers stay independent, so one failing costs only itself.
 - *Contributed flags placed after the core's*: the core reads the model, effort and prompt back from argv's end
-  (`launchFlags`, `launchPrompt`); placed first, and each a single `--flag` or `--flag=value`, none can be read as one.
+  (`launchOf`); placed first, and each a single `--flag` or `--flag=value`, none can be read as one.
 - *The last contributor's flag winning*: no order of contributors would silently decide what Claude sees.
 - *Contributed env through the host's spawn*: kept out of the log, but a host change, which stops every running
   worker; through `--settings` it is logged with the argv, which the docs say plainly.

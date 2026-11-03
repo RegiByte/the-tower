@@ -1,6 +1,6 @@
 import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
 import { MAIN_CHECKOUT, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
-import { launchPrompt } from '../shared/launch.ts'
+import { launchOf } from '../shared/launch.ts'
 import type { FloorThread } from '../shared/reviews-legacy.ts'
 import { tagOf } from '../shared/tags.ts'
 import { current, workerNamed } from '../shared/cards.ts'
@@ -510,7 +510,7 @@ const card = (
   const { header, facts } = session
   const worker = lineage(session, (s) => continued.get(s))
   const callsign = nameOf(session)
-  const launch = launchPrompt(worker[0].header.argv)
+  const launch = launchOf(worker[0].header.argv).prompt
   const legacy = legacyReviewer(worker[0].facts, launch)
   const reviews = legacy?.reviews
   const exempt = legacy?.exempt ?? worker[0].facts.exempt
