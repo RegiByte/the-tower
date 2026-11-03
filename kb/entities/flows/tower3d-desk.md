@@ -73,7 +73,8 @@ sequenceDiagram
 - **Keys in order.** [`keySender`](ref:hub/src/tower/tower.js#keySender) sends one `keys` request at a time, the next
   only after the last answered; the keys typed meanwhile go as [`keyWrites`](ref:hub/src/tower/tower.js#keyWrites) of
   them, a terminal's keys in a row joined into one write, so a page slow to hear answers types in fewer writes, not
-  later. A key holding Enter or an escape is a write of its own: Claude reads text and Enter in one write as a paste. The Mac
+  later. A key holding Enter, an escape or Ctrl+C is a write of its own: Claude reads text and Enter in one write as a paste,
+  and the composer's fold reads Ctrl+C as emptying it only as a write by itself ([[submit-at-prompt]]). The Mac
   editing keys are sent as readline keys by [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap)
   ([[renderer-shared-modules]]) at the chords `board.keys` binds ([[keymap]]). The host logs `i` before writing to
   the PTY ([`handle`](ref:hub/src/host/main.ts#handle)).

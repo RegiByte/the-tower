@@ -41,11 +41,11 @@ function heldPage() {
   return { tower, writes, answer, inFlight: () => answers.length, settled }
 }
 
-test('the keys typed while a write is answered go as one write per terminal, Enter and escapes each their own', async () => {
+test('the keys typed while a write is answered go as one write per terminal, Enter, escapes and Ctrl+C each their own', async () => {
   const { tower, writes, answer, inFlight, settled } = heldPage()
   tower.keys('s1', 'a')
   await settled()
-  for (const data of ['b', 'c', '\r', 'd', '\x1b[A', 'e', 'f']) tower.keys('s1', data)
+  for (const data of ['b', 'c', '\r', 'd', '\x1b[A', 'e', 'f', '\x03']) tower.keys('s1', data)
   tower.keys('s2', 'x')
   tower.keys('s1', 'g')
   const sent: Write[][] = [writes.slice()]
@@ -64,6 +64,7 @@ test('the keys typed while a write is answered go as one write per terminal, Ent
       { id: 's1', data: 'd' },
       { id: 's1', data: '\x1b[A' },
       { id: 's1', data: 'ef' },
+      { id: 's1', data: '\x03' },
       { id: 's2', data: 'x' },
       { id: 's1', data: 'g' },
     ],
