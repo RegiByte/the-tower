@@ -33,7 +33,8 @@ export type SpawnEvent<D> =
 /**
  * `show` draws the form on `project` with `text` as its prompt (`on`: the draft it was opened on, titled on the form) and
  * opens it; `draw` redraws Start's busy and the error line from the state; `run` starts a worker on `form`; `keep`
- * keeps `text` as a draft (`keepUnsent`); `started` hands the new worker to the renderer.
+ * keeps `text` as a draft (`keepUnsent`); `started` hands the new worker to the renderer; `dismissed`, the dialog closed
+ * without starting one (after `keep`), never while Start waits, whose worker may still come.
  */
 export type SpawnEffect<D> =
   | StateEffect<Spawning<D>>
@@ -45,6 +46,7 @@ export type SpawnEffect<D> =
   | { type: 'keep'; project: string; on: D | undefined; text: string }
   | { type: 'toast'; text: string }
   | { type: 'started'; id: string; on: D | undefined }
+  | { type: 'dismissed' }
 
 export const spawnClosed = <D>(): Spawning<D> => ({ t: 'closed' })
 
@@ -58,7 +60,7 @@ export const spawnHandlers = <D>(): Handlers<Spawning<D>, SpawnEvent<D>, SpawnEf
     s.t === 'editing' ? [{ type: 'state', state: { t: 'starting', project: s.project, on: s.on, shown: true } }, { type: 'draw' }, { type: 'run', project: s.project, form }] : [],
   cancel: (s) => (s.t === 'editing' ? [{ type: 'close' }] : []),
   closed: (s, { text }) => {
-    if (s.t === 'editing') return [{ type: 'state', state: { t: 'closed' } }, { type: 'keep', project: s.project, on: s.on, text }]
+    if (s.t === 'editing') return [{ type: 'state', state: { t: 'closed' } }, { type: 'keep', project: s.project, on: s.on, text }, { type: 'dismissed' }]
     return s.t === 'starting' && s.shown ? [{ type: 'state', state: { ...s, shown: false } }] : []
   },
   started: (s, { reply }) => {
@@ -90,7 +92,8 @@ export type SpawnDrafts<I, K extends KeptDraft> = {
  * What the dialog needs of its renderer. `sign`: the floor's sign as the renderer draws it; `drafts` and `draftIo`: the
  * drafts client and its collection calls, a page without `drafts` keeping no drafts, as a floor with drafts off (@since 1.89); `held`: the draft the form was opened on as the renderer holds it now, for
  * keeping a prompt in it; `kept`: a draft a prompt was kept in; `shown`: the dialog has just opened, before its prompt
- * takes focus; `started`: a worker started from the form, on the draft it was opened on, which the renderer deletes.
+ * takes focus; `started`: a worker started from the form, on the draft it was opened on, which the renderer deletes;
+ * `dismissed`: the dialog closed without starting one (@since 1.146).
  */
 export type SpawnIo<D, I, K extends KeptDraft> = {
   board(): Board
@@ -102,6 +105,7 @@ export type SpawnIo<D, I, K extends KeptDraft> = {
   kept(d: K): void
   shown(): void
   started(id: string, on: D | undefined): void
+  dismissed?(): void
   toast(text: string): void
 }
 
@@ -170,6 +174,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
       keep: (effect) => void keep(effect),
       toast: ({ text }) => io.toast(text),
       started: ({ id, on }) => io.started(id, on),
+      dismissed: () => io.dismissed?.(),
     },
   })
   dialog.addEventListener('input', sync)
