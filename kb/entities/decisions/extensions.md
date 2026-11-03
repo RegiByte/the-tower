@@ -88,8 +88,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   this way loads what lies beside it by relative URL. `/schema` lists such a read with `kind: "file"`. Without this,
   an extension could answer JSON alone, and no view by type could draw a file it found.
 - **ctx calls what it declares.** `ctx.call` and `ctx.read` take qualified names and reach the core, the extension
-  itself, and the capabilities it requires or wants (`refused`, "declare requires.X", otherwise); a core read is served
-  as over HTTP and taken back as its JSON ([`read`](ref:hub/src/tower/http.ts#read)). `ctx.deps.<cap>` holds one
+  itself, and the capabilities it requires or wants (`refused`, "declare requires.X", otherwise); a core read answers
+  through the same code as over HTTP, for the extension's caller, its reply a copy of its body, or a file's text as
+  written, never framed ([`read`](ref:hub/src/tower/http.ts#read)). `ctx.deps.<cap>` holds one
   function per verb and per read of each declared provider's manifest, `undefined` while a wanted one is missing, which
   `GET /extensions` notes on the extension (an `info` problem, `unmet` at `wants.<cap>`).
 - **A caller on every call.** [`Caller`](ref:hub/src/shared/extensions.ts#Caller) is `{t, id?, via, within}`. Over
@@ -410,8 +411,9 @@ contributions (1.84), then middleware and hooks (1.85), then triggers, checks an
   `skipped` closure.
 - *A caller that becomes the extension inside its handler*: a worker could launder a call past a guard through any
   extension verb; the caller stays whoever started the chain.
-- *Core reads rewritten to return values for `ctx.read`*: every read would change for one caller; serving one into a
-  response that collects its body reuses them as they are.
+- *A core read for `ctx.read` served into a response that collects its body*: it reuses the reads as they are, but
+  has no request, so every read that looks at one (the caller of a legacy read, how a file is loaded) throws, and the
+  caller's `within` is lost on the way to the extension a legacy read reaches.
 - *Fold problems kept as call problems*: each build would re-find them and change the board, which builds again.
 - *Commands written per subject in `board.adds`*: every item of a kind would carry the same entry; the helpers derive
   them from `ExtensionView.commands`.

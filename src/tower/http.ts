@@ -244,10 +244,9 @@ export const httpServer = defineResource({
       res.once('drain', () => unstall(res))
     }
 
-    function archive(res: http.ServerResponse, project: string) {
-      if (!Object.hasOwn(readConfig().projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-      const now = Date.now()
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(archivedCards(project, now)))
+    function archive(project: string): ReadReply {
+      if (!Object.hasOwn(readConfig().projects, project)) return failed('not_found', `No project "${project}" in the config`)
+      return json(archivedCards(project, Date.now()))
     }
 
     /** Each session's log as read for one request, read once. */
@@ -256,38 +255,36 @@ export const httpServer = defineResource({
       return (sessionId: string) => logs.get(sessionId) ?? logs.set(sessionId, readLog(logFileOf(paths, sessionId), everyEvent).log).get(sessionId)!
     }
 
-    function conversations(res: http.ServerResponse, id: string) {
+    function conversations(id: string): ReadReply {
       const session = system.session(id)
-      if (!session) return fail(res, 'not_found', `No session "${id}"`)
+      if (!session) return failed('not_found', `No session "${id}"`)
       const config = readConfig()
       const { pairs } = briefConfig(config, session.header.project)
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(briefOf(session, system.sessions(), logsRead(), pairs, callsignsOf(config))))
+      return json(briefOf(session, system.sessions(), logsRead(), pairs, callsignsOf(config)))
     }
 
-    function conversation(res: http.ServerResponse, id: string, conversationId: string) {
+    function conversation(id: string, conversationId: string): ReadReply {
       const session = system.session(id)
-      if (!session) return fail(res, 'not_found', `No session "${id}"`)
+      if (!session) return failed('not_found', `No session "${id}"`)
       const whole = wholeConversation(session, system.sessions(), logsRead(), conversationId, callsignsOf(readConfig()))
-      if (!whole) return fail(res, 'not_found', `Session "${id}" saved no conversation "${conversationId}"`)
-      json(res, whole satisfies Reads['conversations/<id>/<conversation>'])
+      if (!whole) return failed('not_found', `Session "${id}" saved no conversation "${conversationId}"`)
+      return json(whole satisfies Reads['conversations/<id>/<conversation>'])
     }
 
-    function toolCall(res: http.ServerResponse, id: string, call: string) {
-      if (!system.session(id)) return fail(res, 'not_found', `No session "${id}"`)
+    function toolCall(id: string, call: string): ReadReply {
+      if (!system.session(id)) return failed('not_found', `No session "${id}"`)
       const read = toolCallOf(logsRead()(id), call)
-      if (!read) return fail(res, 'not_found', `Session "${id}" logged no tool call "${call}"`)
-      json(res, read satisfies Reads['conversations/<id>/tool/<call>'])
+      if (!read) return failed('not_found', `Session "${id}" logged no tool call "${call}"`)
+      return json(read satisfies Reads['conversations/<id>/tool/<call>'])
     }
 
-    async function changes(res: http.ServerResponse, id: string, { scope }: z.output<(typeof QUERIES)['changes/<id>']>) {
+    async function changes(id: string, { scope }: z.output<(typeof QUERIES)['changes/<id>']>): Promise<ReadReply> {
       const session = system.session(id)
-      if (!session) return fail(res, 'not_found', `No session "${id}"`)
+      if (!session) return failed('not_found', `No session "${id}"`)
       const { project, cwd } = session.header
       const config = readConfig()
-      if (!Object.hasOwn(config.projects, project)) return fail(res, 'not_found', `No project "${project}" in the config`)
-      // Read before the status is written: a git failure then answers as an error the panel draws, not an empty 200.
-      const repos = await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope })
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(repos))
+      if (!Object.hasOwn(config.projects, project)) return failed('not_found', `No project "${project}" in the config`)
+      return json(await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope }))
     }
 
     const DAY_MS = 86_400_000
@@ -297,15 +294,14 @@ export const httpServer = defineResource({
 
     /** By default, the day `to` falls in and the six whole local days before it. */
     /** What landing changed on a branch of a project, read from git now. */
-    async function landingRead(res: http.ServerResponse, query: z.output<typeof QUERIES.landing>) {
+    async function landingRead(query: z.output<typeof QUERIES.landing>): Promise<ReadReply> {
       const project = readConfig().projects[query.project]
-      if (!project) return fail(res, 'not_found', `No project "${query.project}"`)
+      if (!project) return failed('not_found', `No project "${query.project}"`)
       try {
-        const landing = await landingOf(project, query.branch)
-        res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(landing))
+        return json(await landingOf(project, query.branch))
       } catch (err) {
         if (!(err instanceof WorktreeError)) throw err
-        fail(res, err.code, err.message)
+        return failed(err.code, err.message)
       }
     }
 
@@ -313,23 +309,22 @@ export const httpServer = defineResource({
      * A core read that moved into an extension (`LEGACY`): its params and query as the new read takes them, read through
      * the dispatch, and the reply as the old one answered, deprecated.
      */
-    async function legacyRead(req: http.IncomingMessage, res: http.ServerResponse, old: string, params: Record<string, string | undefined>, query: Record<string, unknown>) {
+    async function legacyRead(old: string, { params, query, caller }: Asked<Record<string, unknown>>): Promise<ReadReply> {
       const { request, reply } = LEGACY_READS[old]
       const { now, since } = legacyNamed('read', old)!
       const mapped = request(params, query)
-      if (isApiError(mapped)) return send(res, mapped)
-      deprecate(res, { since, use: now })
+      if (isApiError(mapped)) return json(mapped)
       const { cap, name } = qualifiedOf(now)!
-      const answer = await dispatch.read(cap, name, mapped.params, mapped.query, callerOf(req))
-      send(res, isApiError(answer) ? answer : reply(answer, boardOf()))
+      const answer = await dispatch.read(cap, name, mapped.params, mapped.query, caller)
+      return { t: 'json', body: isApiError(answer) ? answer : reply(answer, boardOf()), headers: deprecation({ since, use: now }) }
     }
 
-    async function statsRead(res: http.ServerResponse, query: z.output<typeof QUERIES.stats>) {
+    async function statsRead(query: z.output<typeof QUERIES.stats>): Promise<ReadReply> {
       const now = Date.now()
       const { to = now, bucket, project } = query
       const from = query.from ?? bucketStart(bucketStart(to, 'day') - 6 * DAY_MS + DAY_MS / 2, 'day')
-      if (from >= to) return fail(res, 'invalid', '`from` must come before `to`')
-      if ((to - from) / BUCKET_MS[bucket] > MAX_BUCKETS) return fail(res, 'invalid', `At most ${MAX_BUCKETS} ${bucket}s: narrow the window or take days`)
+      if (from >= to) return failed('invalid', '`from` must come before `to`')
+      if ((to - from) / BUCKET_MS[bucket] > MAX_BUCKETS) return failed('invalid', `At most ${MAX_BUCKETS} ${bucket}s: narrow the window or take days`)
       const sessions = system.sessions()
       const scoped = sessions.filter((s) => project === undefined || s.header.project === project)
       const projects = Object.entries(readConfig().projects).filter(([id]) => project === undefined || id === project)
@@ -338,10 +333,10 @@ export const httpServer = defineResource({
       const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
       const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
       const readings = extensions.readings()
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, readings, now), weekly: weeklyRead(sessions, readings, { from, to }), outside: outsideIn(sessions, readings, { from, to }) } satisfies Stats))
+      return json({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, readings, now), weekly: weeklyRead(sessions, readings, { from, to }), outside: outsideIn(sessions, readings, { from, to }) } satisfies Stats)
     }
 
-    async function origins(res: http.ServerResponse) {
+    async function origins(): Promise<ReadReply> {
       const dirs = Object.values(readConfig().projects).flatMap(projectDirs)
       const urls = await Promise.all(
         dirs.map(async (dir) => {
@@ -353,7 +348,7 @@ export const httpServer = defineResource({
           }
         }),
       )
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(Object.fromEntries(urls.filter(([, url]) => url))))
+      return json(Object.fromEntries(urls.filter(([, url]) => url)))
     }
 
     type Stop = () => void
@@ -493,18 +488,15 @@ export const httpServer = defineResource({
       return OK
     }
 
-    function shelf(req: http.IncomingMessage, res: http.ServerResponse, projectId: string, n: number, file: string | undefined) {
+    function shelf(projectId: string, n: number, file: string | undefined): ReadReply {
       const project = readConfig().projects[projectId]
       const entry = project?.shelf?.[n]
-      if (!entry) return fail(res, 'not_found', `"${projectId}" has no shelf entry ${n}`)
-      if (file === undefined) {
-        const files = shelfFiles(project, entry).filter((f) => !('message' in shelfFile(projectId, project, entry, f)))
-        return res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(files))
-      }
-      if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)
+      if (!entry) return failed('not_found', `"${projectId}" has no shelf entry ${n}`)
+      if (file === undefined) return json(shelfFiles(project, entry).filter((f) => !('message' in shelfFile(projectId, project, entry, f))))
+      if (!shelfServes(project, entry, file)) return failed('not_found', `The shelf entry serves no "${file}"`)
       const found = shelfFile(projectId, project, entry, file)
-      if ('message' in found) return fail(res, 'not_found', found.message)
-      serveSandboxed(req, res, found.file)
+      if ('message' in found) return failed('not_found', found.message)
+      return { t: 'file', file: found.file }
     }
 
     /** A file an entry serves, on disk: under the hub, or an `item` entry's in its collection, which must hold it. */
@@ -583,12 +575,11 @@ export const httpServer = defineResource({
     }
 
     /** Every renderer, and the one `/` opens. */
-    function renderersRead(res: http.ServerResponse) {
+    function renderersRead(): ReadReply {
       const config = readConfig()
       const renderers = renderersOf(config)
       const reach = layoutReachOf(extensions.accepted().map((a) => a.manifest))
-      const read: Reads['renderers'] = { default: defaultRenderer(config, renderers).name, renderers: withLayoutProblems(renderers, reach) }
-      res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(read))
+      return json({ default: defaultRenderer(config, renderers).name, renderers: withLayoutProblems(renderers, reach) } satisfies Reads['renderers'])
     }
 
     /** An `html` or `item` entry's page run as a renderer of its own: at the tower's origin, so `/tower.js` calls the routes directly. */
@@ -605,21 +596,21 @@ export const httpServer = defineResource({
       })
 
     /** A collection's file, sandboxed like a shelf's: an html item opened by its URL runs at an origin of its own. */
-    function collectionItem(req: http.IncomingMessage, res: http.ServerResponse, project: string, collection: string, id: string) {
-      if (!isDeclared(project, collection)) return fail(res, 'not_found', `"${project}" has no collection "${collection}"`)
-      if (!ITEM_ID.test(id)) return fail(res, 'invalid', `"${id}" is not an item id`)
+    function collectionItem(project: string, collection: string, id: string): ReadReply {
+      if (!isDeclared(project, collection)) return failed('not_found', `"${project}" has no collection "${collection}"`)
+      if (!ITEM_ID.test(id)) return failed('invalid', `"${id}" is not an item id`)
       const file = itemPath(paths, project, collection, id)
-      if (!existsSync(file)) return fail(res, 'not_found', `${project}/${collection} holds no item "${id}"`)
-      serveSandboxed(req, res, file)
+      if (!existsSync(file)) return failed('not_found', `${project}/${collection} holds no item "${id}"`)
+      return { t: 'file', file }
     }
 
     /** A file a worker showed, sandboxed like a shelf's. */
-    function shownFile(req: http.IncomingMessage, res: http.ServerResponse, id: string, file: string) {
+    function shownFile(id: string, file: string): ReadReply {
       const session = system.session(id)
-      if (!session) return fail(res, 'not_found', `No session "${id}"`)
-      if (!shownServes(session.facts.shown, file)) return fail(res, 'not_found', `${id} showed no "${file}"`)
-      if (!existsSync(file)) return fail(res, 'not_found', `"${file}" is gone`)
-      serveSandboxed(req, res, file)
+      if (!session) return failed('not_found', `No session "${id}"`)
+      if (!shownServes(session.facts.shown, file)) return failed('not_found', `${id} showed no "${file}"`)
+      if (!existsSync(file)) return failed('not_found', `"${file}" is gone`)
+      return { t: 'file', file }
     }
 
     const isDeclared = (project: string, collection: string) => collectionOn(readConfig(), project, collection, extensions.registry().stores) !== undefined
@@ -675,6 +666,30 @@ export const httpServer = defineResource({
 
     const fail = (res: http.ServerResponse, code: ErrorCode, message: string) => send(res, apiError(code, message))
 
+    /** What a read is asked: its path's named groups, decoded (an optional group that didn't match is `undefined`), its query parsed, and who reads. */
+    type Asked<Q> = { params: Record<string, string | undefined>; query: Q; caller: Caller }
+
+    /** What a read answers: a body sent as JSON, its status an error's when it is one; or a file, served sandboxed. */
+    type ReadReply = { t: 'json'; body: unknown; headers?: http.OutgoingHttpHeaders } | { t: 'file'; file: string }
+
+    const json = (body: unknown): ReadReply => ({ t: 'json', body })
+
+    const failed = (code: ErrorCode, message: string): ReadReply => json(apiError(code, message))
+
+    /** A read's reply over HTTP: a file sandboxed as the request loads it, a page or a script's read. */
+    const write = (req: http.IncomingMessage, res: http.ServerResponse, reply: ReadReply) => {
+      if (reply.t === 'file') return serveSandboxed(req, res, reply.file)
+      if (reply.headers) setHeaders(res, reply.headers)
+      send(res, reply.body)
+    }
+
+    /** A read's reply as an extension takes it: a copy of the body, or a file's text as written. */
+    const taken = (reply: ReadReply): unknown => {
+      if (reply.t === 'json') return JSON.parse(JSON.stringify(reply.body))
+      if (!statSync(reply.file, { throwIfNoEntry: false })?.isFile()) return apiError('not_found', `"${reply.file}" is not a file`)
+      return readFileSync(reply.file, 'utf8')
+    }
+
     const isMux = (name: string): name is keyof typeof TRANSPORT => Object.hasOwn(TRANSPORT, name)
 
     /** The caller a request claims: a worker by the `tower` command's session header, else the user. */
@@ -688,11 +703,17 @@ export const httpServer = defineResource({
      * A deprecated verb's or read's answer says so (RFC 9745): `Deprecation` dated `@0`, since a manifest names the version
      * it was deprecated in and no date, and a `Link` to what to use instead.
      */
-    const deprecate = (res: http.ServerResponse, deprecated: Deprecated | undefined) => {
-      if (!deprecated) return
-      res.setHeader('deprecation', '@0')
+    const deprecation = (deprecated: Deprecated): http.OutgoingHttpHeaders => {
       const use = deprecated.use && qualifiedOf(deprecated.use)
-      if (use) res.setHeader('link', `</${use.cap === 'tower' ? use.name : deprecated.use}>; rel="successor-version"`)
+      return { deprecation: '@0', ...(use && { link: `</${use.cap === 'tower' ? use.name : deprecated.use}>; rel="successor-version"` }) }
+    }
+
+    const deprecate = (res: http.ServerResponse, deprecated: Deprecated | undefined) => {
+      if (deprecated) setHeaders(res, deprecation(deprecated))
+    }
+
+    const setHeaders = (res: http.ServerResponse, headers: http.OutgoingHttpHeaders) => {
+      for (const [name, value] of Object.entries(headers)) res.setHeader(name, value!)
     }
 
     const parseJson = (text: string): { json: unknown } | undefined => {
@@ -749,12 +770,11 @@ export const httpServer = defineResource({
       return origins.length > 0 && (req.method !== 'POST' || origins.includes(req.headers.origin ?? ''))
     }
 
-    type Served<Q extends z.ZodType> = {
+    type Served = {
       req: http.IncomingMessage
       res: http.ServerResponse
       /** The path's named groups, decoded; an optional group that didn't match is `undefined`. */
       params: Record<string, string | undefined>
-      query: z.output<Q>
       /** The url's query string with its `?`, or `''`: what a redirect carries on. */
       search: string
     }
@@ -775,28 +795,23 @@ export const httpServer = defineResource({
      */
     type StreamDoc = { description: string; read?: string; message?: object }
 
-    type ReadRoute = {
-      path: RegExp
-      query?: z.ZodType
-      stream?: StreamDoc
-      serve(served: Served<z.ZodType>): unknown
-    }
+    /** A route the tower serves on the response itself: a page, a stream or the schema. */
+    type PlainRoute = { path: RegExp; kind: Kind; stream?: StreamDoc; serve(served: Served): unknown }
 
-    type Read = ReadRoute & ({ read: ReadName } | { kind: Kind })
+    /** An API read: its answer as a value, written over HTTP by `route` and taken by `read` for an extension's `ctx.read`. */
+    type ApiRoute<N extends ReadName = ReadName> = { path: RegExp; read: N; query?: z.ZodType; answer(asked: Asked<z.output<QueryOf<N>>>): ReadReply | Promise<ReadReply> }
 
-    type ReadEntry<Q extends z.ZodType> = { path: RegExp; serve(served: Served<Q>): unknown }
+    type Read = PlainRoute | ApiRoute
 
-    const apiRead = <N extends ReadName>(name: N, entry: ReadEntry<QueryOf<N>>): ReadRoute & { read: N } => ({
+    const apiRead = <N extends ReadName>(name: N, entry: Pick<ApiRoute<N>, 'path' | 'answer'>): ApiRoute<N> => ({
       ...entry,
       read: name,
       query: name in QUERIES ? QUERIES[name as Query] : undefined,
     })
 
-    const plain = (kind: Kind, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: Kind } => ({ ...entry, kind })
+    const plain = (kind: Kind, entry: Pick<PlainRoute, 'path' | 'serve'>): PlainRoute => ({ ...entry, kind })
 
-    const streamRead = (stream: StreamDoc, entry: ReadEntry<z.ZodUnknown>): ReadRoute & { kind: 'stream' } => ({ ...plain('stream', entry), kind: 'stream', stream })
-
-    const json = (res: http.ServerResponse, body: unknown) => res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body))
+    const streamRead = (stream: StreamDoc, entry: Pick<PlainRoute, 'path' | 'serve'>): PlainRoute => ({ ...plain('stream', entry), stream })
 
     /** Every GET route but the served files: reads, the streams, the renderers and the floors' pages. */
     const READS = [
@@ -815,36 +830,36 @@ export const httpServer = defineResource({
       } }),
       streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
       plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema()) }),
-      apiRead('origins', { path: /^\/origins$/, serve: ({ res }) => origins(res) }),
+      apiRead('origins', { path: /^\/origins$/, answer: () => origins() }),
       apiRead('extensions', {
         path: /^\/extensions$/,
-        serve: ({ res }) => {
+        answer: () => {
           const read = extensions.read()
           const cards = boardOf().floors.flatMap((f) => f.cards)
-          json(res, { ...read, extensions: read.extensions.map((e) => ({ ...e, exempted: exemptionsBy(cards, e.provides) })) } satisfies Reads['extensions'])
+          return json({ ...read, extensions: read.extensions.map((e) => ({ ...e, exempted: exemptionsBy(cards, e.provides) })) } satisfies Reads['extensions'])
         },
       }),
-      apiRead('patterns', { path: /^\/patterns$/, serve: ({ res }) => json(res, readPatterns() satisfies Reads['patterns']) }),
-      apiRead('renderers', { path: /^\/renderers$/, serve: ({ res }) => renderersRead(res) }),
-      apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, serve: ({ res, params }) => archive(res, params.project!) }),
-      apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, serve: ({ res, params }) => conversations(res, params.id!) }),
-      apiRead('conversations/<id>/<conversation>', { path: /^\/conversations\/(?<id>[\w-]+)\/(?<conversation>[\w-]+)$/, serve: ({ res, params }) => conversation(res, params.id!, params.conversation!) }),
-      apiRead('conversations/<id>/tool/<call>', { path: /^\/conversations\/(?<id>[\w-]+)\/tool\/(?<call>[\w-]+)$/, serve: ({ res, params }) => toolCall(res, params.id!, params.call!) }),
-      apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, serve: ({ req, res, params }) => legacyRead(req, res, 'reviews/<project>', params, {}) }),
-      apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, serve: ({ res, params, query }) => changes(res, params.id!, query) }),
+      apiRead('patterns', { path: /^\/patterns$/, answer: () => json(readPatterns() satisfies Reads['patterns']) }),
+      apiRead('renderers', { path: /^\/renderers$/, answer: () => renderersRead() }),
+      apiRead('archive/<project>', { path: /^\/archive\/(?<project>[\w-]+)$/, answer: ({ params }) => archive(params.project!) }),
+      apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, answer: ({ params }) => conversations(params.id!) }),
+      apiRead('conversations/<id>/<conversation>', { path: /^\/conversations\/(?<id>[\w-]+)\/(?<conversation>[\w-]+)$/, answer: ({ params }) => conversation(params.id!, params.conversation!) }),
+      apiRead('conversations/<id>/tool/<call>', { path: /^\/conversations\/(?<id>[\w-]+)\/tool\/(?<call>[\w-]+)$/, answer: ({ params }) => toolCall(params.id!, params.call!) }),
+      apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, answer: (asked) => legacyRead('reviews/<project>', { ...asked, query: {} }) }),
+      apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, answer: ({ params, query }) => changes(params.id!, query) }),
       plain('stream', { path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
       plain('stream', { path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamShell(params.id!, req, res) }),
-      apiRead('stats', { path: /^\/stats$/, serve: ({ res, query }) => statsRead(res, query) }),
-      apiRead('landing', { path: /^\/landing$/, serve: ({ res, query }) => landingRead(res, query) }),
-      apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, serve: ({ req, res, params, query }) => legacyRead(req, res, 'runs/<project>', params, query) }),
-      apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, serve: ({ req, res, params, query }) => legacyRead(req, res, 'probe/<name>', params, query) }),
-      apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, serve: ({ req, res, params }) => collectionItem(req, res, params.project!, params.collection!, params.item!) }),
-      apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, serve: ({ req, res, params }) => shelf(req, res, params.project!, Number(params.n), undefined) }),
-      apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, serve: ({ req, res, params }) => shelf(req, res, params.project!, Number(params.n), params.file) }),
+      apiRead('stats', { path: /^\/stats$/, answer: ({ query }) => statsRead(query) }),
+      apiRead('landing', { path: /^\/landing$/, answer: ({ query }) => landingRead(query) }),
+      apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, answer: (asked) => legacyRead('runs/<project>', asked) }),
+      apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, answer: (asked) => legacyRead('probe/<name>', asked) }),
+      apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w-]+)\/(?<item>[^/]+)$/, answer: ({ params }) => collectionItem(params.project!, params.collection!, params.item!) }),
+      apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), undefined) }),
+      apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), params.file) }),
       plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
       plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
       plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ res, params }) => clientFile(res, params.cap!, params.file!, {}) }),
-      apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, serve: ({ req, res, params }) => shownFile(req, res, params.id!, params.path!) }),
+      apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, answer: ({ params }) => shownFile(params.id!, params.path!) }),
     ] as const satisfies readonly Read[]
 
     /** A route's pattern as a client reads it: its named groups as `{name}`, an optional tail in brackets. */
@@ -859,7 +874,7 @@ export const httpServer = defineResource({
 
     /** The streams: each declared on its `READS` entry, and the one only `/mux` reaches. */
     const describeStreams = (reads: readonly Read[]): Record<string, StreamDoc> => ({
-      ...Object.fromEntries(reads.flatMap((entry) => (entry.stream ? [[keyOf(entry), entry.stream]] : []))),
+      ...Object.fromEntries(reads.flatMap((entry) => ('stream' in entry && entry.stream ? [[keyOf(entry), entry.stream]] : []))),
       'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
     })
 
@@ -869,7 +884,7 @@ export const httpServer = defineResource({
         reads.map((entry) => {
           const path = pathOf(entry.path)
           const kind = 'read' in entry ? 'json' : entry.kind
-          return [keyOf(entry), { path, kind, ...(entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
+          return [keyOf(entry), { path, kind, ...('read' in entry && entry.query && { query: z.toJSONSchema(entry.query, { io: 'input' }) }) }]
         }),
       )
 
@@ -942,24 +957,31 @@ export const httpServer = defineResource({
       })
     }
 
-    type ServedReads = Extract<(typeof READS)[number], { read: ReadName }>['read']
+    type ServedReads = Extract<(typeof READS)[number], ApiRoute>['read']
 
     /** Types only when every read the API declares has an entry in `READS`; otherwise the missing reads are the type. */
     const everyReadServed: Exclude<ReadName, ServedReads> extends never ? true : Exclude<ReadName, ServedReads> = true
     void everyReadServed
 
+    /** A core read's reply to `params` and `query`, the query parsed by the read's schema first, refused as `invalid` when it doesn't parse. */
+    const answered = (entry: ApiRoute, params: Asked<unknown>['params'], query: unknown, caller: Caller): ReadReply | Promise<ReadReply> => {
+      const parsed = (entry.query ?? z.unknown()).safeParse(query)
+      if (!parsed.success) return failed('invalid', z.prettifyError(parsed.error))
+      return (entry.answer as (asked: Asked<unknown>) => ReadReply | Promise<ReadReply>)({ params, query: parsed.data, caller })
+    }
+
     /**
-     * The first of `READS` whose path matches the pathname, its params decoded and its query parsed; else the read of the
-     * extension whose capability the path's first segment names: its reply, or the file it answers, served sandboxed.
+     * The first of `READS` whose path matches the pathname, its params decoded: an API read answered and its reply
+     * written, any other route served; else the read of the extension whose capability the path's first segment names:
+     * its reply, or the file it answers, served sandboxed.
      */
     async function route(req: http.IncomingMessage, res: http.ServerResponse, pathname: string, search: string) {
       for (const entry of READS) {
         const match = entry.path.exec(pathname)
         if (!match) continue
         const params = Object.fromEntries(Object.entries(match.groups ?? {}).map(([name, value]) => [name, value === undefined ? undefined : decodeURIComponent(value)]))
-        const query = (entry.query ?? z.unknown()).safeParse(Object.fromEntries(new URLSearchParams(search)))
-        if (!query.success) return fail(res, 'invalid', z.prettifyError(query.error))
-        return entry.serve({ req, res, params, query: query.data, search })
+        if ('read' in entry) return write(req, res, await answered(entry, params, Object.fromEntries(new URLSearchParams(search)), callerOf(req)))
+        return entry.serve({ req, res, params, search })
       }
       const [, cap, ...rest] = pathname.split('/')
       const found = rest.length ? dispatch.readAt(cap, rest.join('/')) : undefined
@@ -972,27 +994,19 @@ export const httpServer = defineResource({
     }
 
     /**
-     * A core read by its name in `READS` (`conversations/<id>`), for an extension's `ctx.read`: served as over HTTP, its
-     * body taken back as JSON (an `ApiError` when it failed), or as text for a file.
+     * A core read by its name in `READS` (`conversations/<id>`), for an extension's `ctx.read`, answered as over HTTP for
+     * `caller`: its body (an `ApiError` when it failed), or a file's text as written.
      */
-    const read = (name: string, params: Record<string, string>, query: Record<string, string>, caller: Caller): Promise<unknown> => {
+    const read = async (name: string, params: Record<string, string>, query: Record<string, string>, caller: Caller): Promise<unknown> => {
       const deep = tooDeep(caller, `tower/${name}`)
-      if (deep) return Promise.resolve(apiError('refused', deep))
-      const entry = READS.find((e): e is Extract<(typeof READS)[number], { read: ReadName }> => 'read' in e && e.read === name)
-      if (!entry) return Promise.resolve(apiError('not_found', `The core has no read "${name}": \`tower api\` lists them`))
-      const parsed = (entry.query ?? z.unknown()).safeParse(query)
-      if (!parsed.success) return Promise.resolve(apiError('invalid', z.prettifyError(parsed.error)))
-      return new Promise((resolve) => {
-        let json = false
-        const taken = {
-          headersSent: false,
-          setHeader: () => taken,
-          writeHead: (_status: number, headers?: http.OutgoingHttpHeaders) => ((json = String(headers?.['content-type'] ?? '').startsWith('application/json')), taken),
-          end: (body?: string | Buffer) => resolve(json ? JSON.parse(String(body)) : String(body ?? '')),
-        }
-        const served = { req: undefined as unknown as http.IncomingMessage, res: taken as unknown as http.ServerResponse, params, query: parsed.data, search: '' }
-        Promise.resolve((entry.serve as (served: Served<z.ZodType>) => unknown)(served)).catch((err) => resolve(errorOf(err)))
-      })
+      if (deep) return apiError('refused', deep)
+      const entry = READS.find((e): e is Extract<(typeof READS)[number], ApiRoute> => 'read' in e && e.read === name)
+      if (!entry) return apiError('not_found', `The core has no read "${name}": \`tower api\` lists them`)
+      try {
+        return taken(await answered(entry, params, query, caller))
+      } catch (err) {
+        return errorOf(err)
+      }
     }
 
     async function handle(req: http.IncomingMessage, res: http.ServerResponse) {
