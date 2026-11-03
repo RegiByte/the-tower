@@ -22,7 +22,7 @@ import { addedKey, deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
-import { actionWords, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighbours, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { actionWords, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { probedLine } from '../../../extensions/quota/client/quota.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
@@ -458,7 +458,7 @@ function renderPanel() {
     if (s.deskTab === 'changes') drawChanges(c)
     $('desk-activity').innerHTML = activityHtml(c)
     $('desk-activity').dataset.tip = gistLine(c)
-    $('desk-moves').innerHTML = movesHtml(board, c, heed())
+    $('desk-moves').innerHTML = movesHtml(board, c, heed(), s.viewer.crewsOrder)
     $('desk-details').innerHTML = detailsHtml(board, c)
     $('desk-ask').innerHTML = askHtml(c)
     show('desk-ask', c.status === 'needs_input' || c.status === 'blocked')
@@ -1189,7 +1189,7 @@ const setPanel = (panel: Panel | undefined) => seeing.dispatch({ type: 'panel', 
  */
 function goMove(m: Move) {
   if (m !== 'waiting') {
-    const to = neighbours(s.board!, atDesk(), heed())[m]
+    const to = neighboursIn(s.board!, s.viewer.crewsOrder, atDesk(), heed())[m]
     return to && goDesk(to.id)
   }
   const step = nextWait(heededWaits(s.board!, heed()), s.visited, atDesk())

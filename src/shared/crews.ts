@@ -72,18 +72,44 @@ const reportsUpToDuty = (byId: Map<string, Card>, c: Card): boolean => {
   return up !== undefined && (up.onDuty || reportsUpToDuty(byId, up))
 }
 
+/** A worker's key across resumes: the first session of its lineage. A viewer's order of crews names workers by it. @since 1.143 */
+export const workerKeyOf = (c: Card) => c.lineage[0].id
+
+/** `heads` as the viewer ordered them: those `order` names first, in its order, then the rest by first start. */
+const inOrder = (heads: Card[], order: readonly string[]) => {
+  const at = new Map(order.map((key, i) => [key, i]))
+  const place = (c: Card) => at.get(workerKeyOf(c)) ?? order.length
+  return heads.toSorted((a, b) => place(a) - place(b) || byFirstStart(a, b))
+}
+
 /**
- * A floor's crews as a renderer lists them, by first start: each worker on duty that reports to nobody on duty, however high,
- * heads one, and everyone under it follows at its depth, on duty or not.
+ * A floor's crews as a renderer lists them: each worker on duty that reports to nobody on duty, however high, heads
+ * one, the heads in the viewer's `order` of worker keys (`workerKeyOf`, kept as `Viewer.crewsOrder`), those it doesn't
+ * name after, by first start; everyone under a head follows at its depth, on duty or not, by first start. @since 1.143
  */
-export const crewTree = (cards: Card[]): { card: Card; depth: number }[] => {
+export const crewTreeIn = (cards: Card[], order: readonly string[]): { card: Card; depth: number }[] => {
   const hires = hiresBy(cards)
   const byId = new Map(cards.map((c) => [c.id, c]))
   const under = (c: Card, depth: number): { card: Card; depth: number }[] => [{ card: c, depth }, ...hires(c).flatMap((h) => under(h, depth + 1))]
-  return cards
-    .filter((c) => c.onDuty && !reportsUpToDuty(byId, c))
-    .sort(byFirstStart)
-    .flatMap((c) => under(c, 0))
+  return inOrder(cards.filter((c) => c.onDuty && !reportsUpToDuty(byId, c)), order).flatMap((c) => under(c, 0))
+}
+
+/** A floor's crews by first start: `crewTreeIn` with no order of the viewer's. */
+export const crewTree = (cards: Card[]) => crewTreeIn(cards, [])
+
+/**
+ * The viewer's `order` with the crew headed by the worker keyed `key` moved before the head keyed `before`, or to the
+ * end of its floor when `before` is unset: its floor's heads in their new order, then the keys `order` holds for
+ * workers on other floors still on the board. Only a crew's head moves; its crew follows it. @since 1.143
+ */
+export const orderMoving = (board: Board, order: readonly string[], key: string, before: string | undefined): string[] => {
+  const floor = board.floors.find((f) => f.cards.some((c) => workerKeyOf(c) === key))!
+  const heads = crewTreeIn(floor.cards, order).filter(({ depth }) => depth === 0).map(({ card }) => workerKeyOf(card))
+  const rest = heads.filter((k) => k !== key)
+  const at = before === undefined ? rest.length : rest.indexOf(before)
+  if (at === -1) throw new Error(`orderMoving: ${before} heads no crew on the floor of ${key}`)
+  const onBoard = new Set(cardsOf(board).map(workerKeyOf))
+  return [...rest.slice(0, at), key, ...rest.slice(at), ...order.filter((k) => !heads.includes(k) && onBoard.has(k))]
 }
 
 /** A worker's current card by callsign: one on duty wins over past ones, and past ones by the latest start. */
@@ -92,9 +118,15 @@ export const workerNamed = (cards: Card[], name: string): Card | undefined => {
   return named.find((c) => c.onDuty) ?? named.sort((a, b) => b.id.localeCompare(a.id))[0]
 }
 
-/** Workers on duty in the order every renderer steps through them: the top floor first, each floor's crews in order (`crewTree`). */
-export const dutyOrder = (board: Board) =>
-  [...board.floors].reverse().flatMap((f) => crewTree(f.cards).map(({ card }) => card).filter((c) => c.onDuty))
+/**
+ * Workers on duty in the order every renderer steps through them: the top floor first, each floor's crews in the
+ * viewer's `order` (`crewTreeIn`). @since 1.143
+ */
+export const dutyOrderIn = (board: Board, order: readonly string[]) =>
+  [...board.floors].reverse().flatMap((f) => crewTreeIn(f.cards, order).map(({ card }) => card).filter((c) => c.onDuty))
+
+/** Workers on duty in the order every renderer steps through them, each floor's crews by first start: `dutyOrderIn` with no order of the viewer's. */
+export const dutyOrder = (board: Board) => dutyOrderIn(board, [])
 
 /** The card `by` steps away from `id` in `order`, wrapping round; from outside the order, the first forward and the last back. */
 export const stepFrom = (order: Card[], id: string | undefined, by: 1 | -1): Card | undefined => {

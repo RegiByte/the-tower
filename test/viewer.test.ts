@@ -6,8 +6,8 @@ import { readViewer, VIEWER_DEFAULT } from '../src/shared/viewer.ts'
 const storeOf = (kept: Record<string, unknown>) => async (key: string) => kept[key] ?? null
 
 test('a viewer reads back every setting under the key a browser already keeps it', async () => {
-  const kept = { 'waits.dismissed': ['w1'], 'waits.ring': 'remind', 'brief.markdown': 'raw', 'changes.layout': 'split', 'changes.tree': true, 'crews.unfolded': ['c1'], 'stats.range': 'month', 'tips.on': false, 'tips.dismissed': ['pattern/p1'], 'actions.seen': ['pulse/ping'] }
-  assert.deepEqual(await readViewer(storeOf(kept)), { dismissed: ['w1'], ring: 'remind', briefMarkdown: 'raw', diffLayout: 'split', changesTree: true, crewsUnfolded: ['c1'], statsRange: 'month', tips: false, tipsDismissed: ['pattern/p1'], seen: ['pulse/ping'] })
+  const kept = { 'waits.dismissed': ['w1'], 'waits.ring': 'remind', 'brief.markdown': 'raw', 'changes.layout': 'split', 'changes.tree': true, 'crews.unfolded': ['c1'], 'crews.order': ['s1'], 'stats.range': 'month', 'tips.on': false, 'tips.dismissed': ['pattern/p1'], 'actions.seen': ['pulse/ping'] }
+  assert.deepEqual(await readViewer(storeOf(kept)), { dismissed: ['w1'], ring: 'remind', briefMarkdown: 'raw', diffLayout: 'split', changesTree: true, crewsUnfolded: ['c1'], crewsOrder: ['s1'], statsRange: 'month', tips: false, tipsDismissed: ['pattern/p1'], seen: ['pulse/ping'] })
 })
 
 test('a setting never kept reads as its default', async () => {

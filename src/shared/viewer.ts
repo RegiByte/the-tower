@@ -1,7 +1,7 @@
 /**
  * What a viewer keeps in `tower.store` that every renderer of theirs reads alike, as one record: the waits and offers
  * they dismissed, how often a wait rings, how the brief draws prompts and answers, how Changes draws a diff and whether
- * it shows its file tree, the gone-home crews they unfolded, the Stats panel's range, whether tips show and those
+ * it shows its file tree, the gone-home crews they unfolded and the order they put crews in, the Stats panel's range, whether tips show and those
  * dismissed for good (`/capabilities.js`), and the actions they have seen. `readViewer(tower.store.get)`
  * reads it whole, each field under its key in `VIEWER_KEYS` and `VIEWER_DEFAULT`'s where nothing of its kind is kept; a
  * renderer writes a field with `tower.store.set(VIEWER_KEYS[field], value)`. `tower.store` has no change event: a
@@ -24,6 +24,8 @@ export type Viewer = {
   changesTree: boolean
   /** The hirers whose gone-home crew is unfolded, by card id. */
   crewsUnfolded: string[]
+  /** The crews' heads in the order the viewer put them, by worker key (`workerKeyOf`): `crewTreeIn`. @since 1.143 */
+  crewsOrder: string[]
   statsRange: StatsRange
   /** Whether tips show at all. */
   tips: boolean
@@ -44,13 +46,14 @@ export const VIEWER_KEYS = {
   diffLayout: 'changes.layout',
   changesTree: 'changes.tree',
   crewsUnfolded: 'crews.unfolded',
+  crewsOrder: 'crews.order',
   statsRange: 'stats.range',
   tips: 'tips.on',
   tipsDismissed: 'tips.dismissed',
   seen: 'actions.seen',
 } as const satisfies { [K in keyof Viewer]: string }
 
-export const VIEWER_DEFAULT: Viewer = { dismissed: [], ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', changesTree: false, crewsUnfolded: [], statsRange: 'week', tips: true, tipsDismissed: [], seen: null }
+export const VIEWER_DEFAULT: Viewer = { dismissed: [], ring: 'once', briefMarkdown: 'rendered', diffLayout: 'unified', changesTree: false, crewsUnfolded: [], crewsOrder: [], statsRange: 'week', tips: true, tipsDismissed: [], seen: null }
 
 const isStrings = (kept: unknown) => Array.isArray(kept) && kept.every((x) => typeof x === 'string')
 

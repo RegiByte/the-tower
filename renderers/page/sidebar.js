@@ -1,4 +1,4 @@
-import { addedActions, badgesOf, heldActions, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTree, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrder, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { addedActions, badgesOf, heldActions, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTreeIn, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrderIn, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
@@ -356,7 +356,7 @@ export async function sidebar(deps) {
 
   /** @param {Floor} f @param {number} i @param {Floor[]} all */
   const floorHtml = (f, i, all) => {
-    const heads = crewTree(f.cards).filter(({ depth }) => depth === 0).map(({ card }) => card)
+    const heads = crewTreeIn(f.cards, viewer().crewsOrder).filter(({ depth }) => depth === 0).map(({ card }) => card)
     const open = isOpen(f)
     const n = String(all.length - i).padStart(2, '0')
     const spawn = heldWhy('spawn') ? heldHtml('spawn', `new session on ${f.name}`, ICON.plus) : can(f, 'spawn') ? `<button data-spawn="${f.id}" aria-label="new session on ${esc(f.name)}" data-tip="new session">${ICON.plus}</button>` : ''
@@ -461,7 +461,7 @@ export async function sidebar(deps) {
   const railHtml = (waiting) =>
     `<button class="icon-btn" data-side aria-label="show the sidebar" ${keyedTip(board().keys, 'show the sidebar', 'sidebar')}>${ICON.sidebar}</button>
   ${waiting ? `<span class="count" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
-  ${dutyOrder(board()).map((c) => {
+  ${dutyOrderIn(board(), viewer().crewsOrder).map((c) => {
       const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
       return `<a class="lamp ${lampOf(c)} ${c.id === selected() ? 'sel' : ''}" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`
     }).join('')}`
