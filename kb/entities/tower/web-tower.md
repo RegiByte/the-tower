@@ -110,8 +110,8 @@ button, the palette or a chord, or once it is drawn in place in a focused window
 mounted on the window's focus. A region keeps the dot of what it saw in place until its view is hidden or it closes,
 so the viewer sees the dot once. The page reads its own layout (`layout.page` in `tower.store`, over the config's and
 its `renderer.json`'s) again on every board and every store event, so a choice another window makes isn't lost. A
-region whose layout in the config fails its check (`layoutProblems` on `GET /renderers`) is drawn by its default, and
-the sidebar's notes say so, each problem in the tip.
+region whose layout in the config fails its check (`layoutProblems` on `GET /renderers`) is drawn by its default, by
+the rule every renderer shares ([[region-overflow]]), and the sidebar's notes say so, each problem in the tip.
 
 A region is drawn in the form its layout picks among those it offers: `wrap` draws everything, and a worker's head
 offers `menu` first. Under `menu` the region draws on one row the prefix of its ranked items that fits and tucks the

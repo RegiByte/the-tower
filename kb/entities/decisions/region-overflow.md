@@ -12,6 +12,8 @@
     "hub/src/shared/regions.ts#Layout",
     "hub/src/shared/views.ts#layoutOf",
     "hub/src/shared/views.ts#declaredLayout",
+    "hub/src/shared/views.ts#usableConfigLayout",
+    "hub/src/shared/views.ts#layoutKey",
     "hub/src/shared/adds.ts#addedActions",
     "hub/src/shared/viewer.ts",
     "hub/renderers/page/renderer.json",
@@ -78,6 +80,9 @@ one renderer ([[renderer-is-disposable]]). And the tower stores only intent, fac
   - on a worker's head, `lines` is read by the head's row of lines (how many lines it shows), not by the fill.
   Forms are per region, not per scale: a choice for `card.head` applies in grid cells too. A form a region doesn't offer, a budget for something it doesn't hold and a pin
   where nothing pins are said by `tower config check` and on the board, and the region is drawn in its default.
+  Every renderer reads the config's layer through the same
+  [`usableConfigLayout`](ref:hub/src/shared/views.ts#usableConfigLayout), which leaves out each region whose entry
+  fails, and keeps the viewer's at [`layoutKey`](ref:hub/src/shared/views.ts#layoutKey).
   Each form is its own drawing function, not one function with a mode.
 - *Ranking in shared code.* Actions: the pinned first in their order, then the rest in board order, less what is
   hidden. Badges rank by severity, board order within a tone. A head interleaves them: the severe badges (broken,

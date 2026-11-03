@@ -79,8 +79,8 @@ sequenceDiagram
   ([`deskHeadHtml`](ref:hub/renderers/tower3d/src/ui.ts#deskHeadHtml)): its exemptions, then the badges most severe
   first, the lines and the verbs (never a client command: [`deskVerbs`](ref:hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs)),
   ranked by the shared code over Tower 3D's own layout of `card.desk`
-  ([`layoutNow`](ref:hub/renderers/tower3d/src/main.ts#layoutNow): its `renderer.json`'s, the config's, then the
-  viewer's `layout.tower3d`), pins first and the hidden left out ([[region-overflow]]). The region draws everything
+  ([`layoutNow`](ref:hub/renderers/tower3d/src/main.ts#layoutNow): its `renderer.json`'s, the config's less a region whose entry fails its
+  check, then the viewer's `layout.tower3d`), pins first and the hidden left out ([[region-overflow]]). The region draws everything
   (`wrap`, the one form [its `renderer.json`](ref:hub/renderers/tower3d/renderer.json) declares). A verb new to the
   viewer carries a dot and counts as seen once drawn in a focused window, the dot staying until the panel closes
   ([`sawDesk`](ref:hub/renderers/tower3d/src/main.ts#sawDesk)), in the seen set every renderer of theirs writes. A

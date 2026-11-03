@@ -1132,6 +1132,7 @@
       "displayed",
       "fill",
       "hashOf",
+      "layoutKey",
       "layoutOf",
       "locationOf",
       "offeredIn",
@@ -1141,6 +1142,7 @@
       "pickView",
       "shortHashOf",
       "shownOf",
+      "usableConfigLayout",
       "viewOn",
       "viewsOf"
     ],
