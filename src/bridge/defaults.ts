@@ -1,4 +1,4 @@
-import { launchFlags } from '../shared/launch.ts'
+import { launchOf } from '../shared/launch.ts'
 import type { Session } from './facts.ts'
 
 /**
@@ -11,7 +11,7 @@ export type ClaudeDefaults = { model?: string; effort?: string }
 /** The spawn whose main loop stepped last among `sessions`: a resume carries its conversation's choices. */
 const latestSpawn = (sessions: Session[]) =>
   sessions
-    .filter((s) => s.facts.steppedAt !== undefined && !s.header.argv.includes('--resume'))
+    .filter((s) => s.facts.steppedAt !== undefined && launchOf(s.header.argv).resume === undefined)
     .reduce<Session | undefined>((latest, s) => (latest && latest.facts.steppedAt! >= s.facts.steppedAt! ? latest : s), undefined)
 
 /**
@@ -21,7 +21,7 @@ const latestSpawn = (sessions: Session[]) =>
  * another model says nothing of it, and a default model that reports no effort leaves it unknown.
  */
 export const claudeDefaults = (sessions: Session[]): ClaudeDefaults => {
-  const model = latestSpawn(sessions.filter((s) => !launchFlags(s.header.argv).model))?.facts.model
-  const effort = latestSpawn(sessions.filter((s) => !launchFlags(s.header.argv).effort && s.facts.model === model))?.facts.effort
+  const model = latestSpawn(sessions.filter((s) => !launchOf(s.header.argv).model))?.facts.model
+  const effort = latestSpawn(sessions.filter((s) => !launchOf(s.header.argv).effort && s.facts.model === model))?.facts.effort
   return { model, effort }
 }

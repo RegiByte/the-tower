@@ -21,7 +21,7 @@
     "hub/src/bridge/legacy.ts#legacyCrew",
     "hub/src/bridge/legacy.ts#LEGACY_ACTIONS",
     "hub/extensions/reviews/client/reviews.ts#reviewerOf",
-    "hub/src/shared/launch.ts#launchPrompt",
+    "hub/src/shared/launch.ts#launchOf",
     "hub/src/shared/worker-details.ts#pairLineOf",
     "hub/src/mod/skills/review/SKILL.md",
     "hub/src/directory.ts",
@@ -107,7 +107,7 @@ and how its findings reach the author.
   reviews".
 - *Reviewers of before 1.95.* Every reviewer spawned before the facts existed is known only by its first prompt. A
   session that logged neither `tower.exempt` nor `tower.reports-to`, whose launch prompt
-  ([`launchPrompt`](ref:hub/src/shared/launch.ts#launchPrompt)) starts `/tower:review <CALLSIGN>`, reads through one
+  ([`launchOf`](ref:hub/src/shared/launch.ts#launchOf)) starts `/tower:review <CALLSIGN>`, reads through one
   `LEGACY` row ([`legacyReviewer`](ref:hub/src/bridge/legacy.ts#legacyReviewer)) as reviewing that callsign and exempt
   from hiring by reviews, and is put in its author's crew as the board names the author by callsign now
   ([`legacyCrew`](ref:hub/src/bridge/legacy.ts#legacyCrew), in [`withReports`](ref:hub/src/bridge/board.ts#withReports)),

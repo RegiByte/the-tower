@@ -110,18 +110,28 @@ const launchArgs = ({ model, effort, prompt }: Launch): string[] => [
   ...(prompt ? ['--', prompt] : []),
 ]
 
-/** The prompt a session was started with, read back from its argv. */
-export const launchPrompt = (argv: string[]): string | undefined => (argv.at(-2) === '--' ? argv.at(-1) : undefined)
-
 /**
- * The model and effort a session's launch asked for, read back from its argv: `launchArgs` puts them last, before the
- * prompt. The config's `argv` comes first, so its flags are never read as the launch's. A resume asks for neither.
+ * What a session's launch asked for, read back from its header's argv: the parts the composer places last, after the
+ * config's `argv` (whichever command it names) and the flags placed before them. `name`: the worker's callsign
+ * (`nameArgs`). `resume`: the conversation a resume continues (`resumeArgs`). `model` and `effort`: what a spawn asked
+ * for (`launchArgs`), never what the config passes every session; a resume asks for neither. `prompt`: Claude's first
+ * prompt, after `--`.
  */
-export const launchFlags = (argv: string[]): Pick<Launch, 'model' | 'effort'> => {
-  const flags = launchPrompt(argv) === undefined ? argv : argv.slice(0, -2)
+export type LaunchRead = { name?: string; resume?: string; model?: string; effort?: string; prompt?: string }
+
+/** The value after the last `flag` among `flags`: the composer's, as the config's `argv` comes first and no contributor passes a flag the core composes. */
+const lastValue = (flags: string[], flag: string): string | undefined => {
+  const at = flags.lastIndexOf(flag)
+  return at === -1 ? undefined : flags[at + 1]
+}
+
+export const launchOf = (argv: string[]): LaunchRead => {
+  const prompt = argv.at(-2) === '--' ? argv.at(-1) : undefined
+  const flags = prompt === undefined ? argv : argv.slice(0, -2)
   const effort = flags.at(-2) === '--effort' ? flags.at(-1) : undefined
   const rest = effort === undefined ? flags : flags.slice(0, -2)
-  return { model: rest.at(-2) === '--model' ? rest.at(-1) : undefined, effort }
+  const model = rest.at(-2) === '--model' ? rest.at(-1) : undefined
+  return { name: lastValue(flags, '--name'), resume: lastValue(flags, '--resume'), model, effort, prompt }
 }
 
 /** What a worker the host cut off mid-turn is told as it resumes (a card's `carry-on`). */

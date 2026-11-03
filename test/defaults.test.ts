@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf, type Session } from '../src/bridge/facts.ts'
 import { claudeDefaults } from '../src/bridge/defaults.ts'
-import { launchFlags } from '../src/shared/launch.ts'
+import { launchOf } from '../src/shared/launch.ts'
 import { fixture } from './replay.ts'
 
 const NONE = { model: undefined, effort: undefined }
@@ -14,10 +14,10 @@ function launchedAs(name: string, flags: string[], steppedAt: number): Session {
   return { header: { ...log.header, argv }, facts: { ...factsOf(log), steppedAt } }
 }
 
-test('launchFlags: reads the launch\'s model and effort before its prompt, never the config\'s', () => {
-  assert.deepEqual(launchFlags(['claude', '--model', 'opus', '--name', 'A-1', '--effort', 'low', '--', 'go']), { model: undefined, effort: 'low' })
-  assert.deepEqual(launchFlags(['claude', '--name', 'A-1', '--model', 'sonnet', '--effort', 'max']), { model: 'sonnet', effort: 'max' })
-  assert.deepEqual(launchFlags(['claude', '--name', 'A-1', '--resume', 'c1', '--', 'go']), { model: undefined, effort: undefined })
+test('launchOf: reads what the composer placed after the config\'s argv, never the config\'s own flags', () => {
+  assert.deepEqual(launchOf(['claude', '--model', 'opus', '--name', 'A-1', '--effort', 'low', '--', 'go']), { name: 'A-1', resume: undefined, model: undefined, effort: 'low', prompt: 'go' })
+  assert.deepEqual(launchOf(['claude', '--name', 'A-1', '--model', 'sonnet', '--effort', 'max']), { name: 'A-1', resume: undefined, model: 'sonnet', effort: 'max', prompt: undefined })
+  assert.deepEqual(launchOf(['claude', '--name', 'A-1', '--resume', 'c1', '--', 'go']), { name: 'A-1', resume: 'c1', model: undefined, effort: undefined, prompt: 'go' })
 })
 
 test('claudeDefaults: the latest step of the spawns that asked for neither tells both, a `/model` pick included', () => {
