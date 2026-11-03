@@ -181,8 +181,18 @@ export async function sidebar(deps) {
   /** A floor's crews' heads, keyed (`workerKeyOf`), in the viewer's order. @param {Floor} f */
   const headKeysOf = (f) => crewTreeIn(f.cards, viewer().crewsOrder).filter(({ depth }) => depth === 0).map(({ card }) => workerKeyOf(card))
 
-  /** Where `key` lands moved before `before`, or `null` when that is where it stands. @param {string[]} keys @param {string} key @param {string | undefined} before */
-  const landing = (keys, key, before) => (before === key || before === keys[keys.indexOf(key) + 1] ? null : before)
+  /** The heads of the floor `id` as the board has them now. @param {string} id */
+  const floorHeadKeys = (id) => headKeysOf(/** @type {Floor} */ (board().floors.find((g) => g.id === id)))
+
+  /**
+   * Where `key` lands moved before `before` among `keys`, the floor's heads now: at the floor's end when `before` no
+   * longer heads a crew there, and `null` when that is where it stands or `key` itself heads none.
+   * @param {string[]} keys @param {string} key @param {string | undefined} before
+   */
+  const landing = (keys, key, before) => {
+    const at = before !== undefined && keys.includes(before) ? before : undefined
+    return !keys.includes(key) || at === key || at === keys[keys.indexOf(key) + 1] ? null : at
+  }
 
   /** @param {string} key @param {string | undefined} before */
   function moveCrew(key, before) {
@@ -198,7 +208,6 @@ export async function sidebar(deps) {
   function dragCrew(e, grip, floors) {
     const floor = /** @type {string} */ (grip.dataset.floor)
     const key = /** @type {string} */ (grip.dataset.crewDrag)
-    const f = /** @type {Floor} */ (board().floors.find((g) => g.id === floor))
     e.preventDefault()
     floors.setPointerCapture(e.pointerId)
     dragging = { floor, key, before: null }
@@ -207,7 +216,7 @@ export async function sidebar(deps) {
     const move = (ev) => {
       const groups = [...floors.querySelectorAll(`.crew-group[data-floor="${CSS.escape(floor)}"]`)]
       const below = groups.find((g) => { const r = g.getBoundingClientRect(); return ev.clientY < r.top + r.height / 2 })
-      const before = landing(headKeysOf(f), key, /** @type {HTMLElement | undefined} */ (below)?.dataset.key)
+      const before = landing(floorHeadKeys(floor), key, /** @type {HTMLElement | undefined} */ (below)?.dataset.key)
       if (dragging && before !== dragging.before) (dragging = { ...dragging, before }, render())
     }
     /** @param {boolean} drop */
@@ -219,7 +228,8 @@ export async function sidebar(deps) {
       floors.removeEventListener('pointercancel', cancel)
       removeEventListener('keydown', escape, true)
       if (floors.hasPointerCapture(e.pointerId)) floors.releasePointerCapture(e.pointerId)
-      if (drop && at && at.before !== null) moveCrew(at.key, at.before)
+      const before = drop && at && at.before !== null ? landing(floorHeadKeys(at.floor), at.key, at.before) : null
+      if (at && before !== null) moveCrew(at.key, before)
       else render()
     }
     const up = () => end(true)
@@ -238,7 +248,7 @@ export async function sidebar(deps) {
     if (!by || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return
     e.preventDefault()
     const key = /** @type {string} */ (grip.dataset.crewDrag)
-    const keys = headKeysOf(/** @type {Floor} */ (board().floors.find((g) => g.id === grip.dataset.floor)))
+    const keys = floorHeadKeys(/** @type {string} */ (grip.dataset.floor))
     const at = keys.indexOf(key) + by
     if (at < 0 || at > keys.length) return
     moveCrew(key, keys[at])
@@ -257,12 +267,23 @@ export async function sidebar(deps) {
   }
 
   /**
-   * A crew as its floor lists it, its head first: with a grip that puts it where the viewer wants it among `count` crews,
-   * drawn where it is dragged to and from. @param {Crews} crews @param {Floor} f @param {Card} c @param {number} count
+   * The crew dragged on floor `f` and where it lands as the board has the floor's heads now (`landing`): before the head
+   * keyed `before`, at the end (`undefined`), or nowhere new (`null`).
+   * @param {Floor} f @param {Card[]} heads @returns {{ key: string, before: string | undefined | null } | undefined}
    */
-  const crewGroupHtml = (crews, f, c, count) => {
+  const dragOn = (f, heads) => {
+    if (dragging?.floor !== f.id) return undefined
+    const keys = heads.map(workerKeyOf)
+    return { key: dragging.key, before: dragging.before === null ? null : landing(keys, dragging.key, dragging.before) }
+  }
+
+  /**
+   * A crew as its floor lists it, its head first: with a grip that puts it where the viewer wants it among `count` crews,
+   * drawn where it is dragged to and from (`drag`, `dragOn`).
+   * @param {Crews} crews @param {Floor} f @param {Card} c @param {number} count @param {ReturnType<typeof dragOn>} drag
+   */
+  const crewGroupHtml = (crews, f, c, count, drag) => {
     const key = workerKeyOf(c)
-    const drag = dragging?.floor === f.id ? dragging : undefined
     const cls = [drag?.key === key ? 'dragged' : '', drag?.before === key ? 'drop-before' : ''].filter(Boolean).join(' ')
     const grip = count > 1 ? `<button class="crew-grip" data-crew-drag="${esc(key)}" data-floor="${esc(f.id)}" aria-label="move ${esc(callsign(c.id))}'s crew: ↑ and ↓" data-tip="drag, or ↑ and ↓, to put this crew where you want it">${ICON.grip}</button>` : ''
     return `<div class="crew-group${cls ? ` ${cls}` : ''}" data-floor="${esc(f.id)}" data-key="${esc(key)}">${grip}${crewHtml(crews, c)}</div>`
@@ -474,13 +495,16 @@ export async function sidebar(deps) {
   }
 
   /** @param {Floor} f @param {Card[]} heads @param {Crews} crews */
-  const floorBodyHtml = (f, heads, crews) => `
+  const floorBodyHtml = (f, heads, crews) => {
+    const drag = dragOn(f, heads)
+    return `
     <div class="dirs">${dirHtml(f, f.hub, true)}${f.repos.map((r) => dirHtml(f, r, false)).join('')}</div>
     ${shelfHtml(f)}
     ${floorAddsHtml(f)}
     ${asksHtml(board(), floorAsks(f), pageNow())}
-    <div class="sessions${dragging?.floor === f.id && dragging.before === undefined ? ' drop-end' : ''}">${heads.length ? heads.map((c) => crewGroupHtml(crews, f, c, heads.length)).join('') : '<div class="empty">lights off</div>'}</div>
+    <div class="sessions${drag && drag.before === undefined ? ' drop-end' : ''}">${heads.length ? heads.map((c) => crewGroupHtml(crews, f, c, heads.length, drag)).join('') : '<div class="empty">lights off</div>'}</div>
     ${traysHtml(f)}`
+  }
 
   /** A limit's meter, with a tick where an even pace through the week would be. @param {RateLimit} r @param {number} now */
   const limitHtml = (r, now) => {

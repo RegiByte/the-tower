@@ -120,6 +120,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .crew-group:is(:hover, :focus-within) > .crew-grip, .crew-grip:focus-visible { opacity: 1; }
 @media (hover: none) { .crew-grip { opacity: 1; } }
 .floors:has(.crew-group.dragged) { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .crew-group.dragged { opacity: .5; }
 .crew-group.drop-before::before, .sessions.drop-end::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; border-radius: 1px; background: var(--accent); pointer-events: none; }
 .crew-group.drop-before::before { top: calc(var(--sp-s) / -2 - 1px); }
