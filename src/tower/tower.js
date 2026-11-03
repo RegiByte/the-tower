@@ -234,11 +234,17 @@
   const blobOf = (res) => (res.ok ? res.blob() : answer(res))
 
   /**
-   * This page's viewer id, new on every load: a frame at the tower's origin, a reload and a duplicated tab are viewers
-   * of their own. `getRandomValues`, since `randomUUID` needs a secure context and a tower may be reached by a host
-   * name over http.
+   * `bytes` random bytes as hex. `getRandomValues`, since `randomUUID` needs a secure context and a tower may be
+   * reached by a host name over http.
+   * @param {number} bytes
    */
-  const viewerId = () => [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, '0')).join('')
+  const randomHex = (bytes) => [...crypto.getRandomValues(new Uint8Array(bytes))].map((b) => b.toString(16).padStart(2, '0')).join('')
+
+  /**
+   * This page's viewer id, new on every load: a frame at the tower's origin, a reload and a duplicated tab are viewers
+   * of their own.
+   */
+  const viewerId = () => randomHex(12)
 
   /** At the tower's origin: the board on first subscribe, and every stream on one connection (`/mux`). @returns {Api} */
   const viaRoutes = () => {
@@ -574,7 +580,7 @@
    * @type {Tower['relay']}
    */
   const relay = (frame, url, { self, ui, stored }) => {
-    const token = crypto.randomUUID()
+    const token = randomHex(16)
     let open = true
     let paired = false
     let helloSinceLoad = false
