@@ -19,11 +19,15 @@ Listen reads that section; From here reads from it to the end, the section being
 | --- | --- |
 | ![The gutter while Monday is read](shots/sections-light.png) | ![The gutter while Monday is read](shots/sections-dark.png) |
 
-**A notice at the bottom of the page** for as long as it reads, wherever you go on the page, with **Stop**.
+**A player at the bottom right of the page** for as long as it reads, wherever you go on the page: what it reads,
+**the speed**, and **Stop**. The speed opens a menu of 0.5, 0.7, 1, 1.2, 1.5, 1.7 and 2, a check by the one it reads
+at, as Google Docs' reader has; a pick speeds up the part sounding at once, documents and memos alike, and every page of
+yours reads at it from then on (it is kept in `tower.store`, under `narrate.speed`). A memo said while a document is
+read stands its own player above the document's.
 
 | Light | Dark |
 | --- | --- |
-| ![The Listening notice](shots/notice-light.png) | ![The Listening notice](shots/notice-dark.png) |
+| ![The player with its speed menu open](shots/player-light.png) | ![The player with its speed menu open](shots/player-dark.png) |
 
 **The memo strip at the top of the sidebar**: the latest memo a worker said and the rest of today's, each with
 **Hear again**.
@@ -34,6 +38,8 @@ Listen reads that section; From here reads from it to the end, the section being
 
 Listen also appears on every markdown or text kept item, beside each prompt and answer in a worker's Brief, and in
 the palette.
+
+**Read faster and Read slower in the palette** step the same speed along the menu's, a toast saying where it is.
 
 ### The workers
 

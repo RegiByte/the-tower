@@ -21,13 +21,16 @@
       "crop": ".doc-split", "pad": 0
     },
     {
-      "name": "notice", "open": "#$WORKER_1", "size": "1180x640",
+      "name": "player", "open": "#$WORKER_1", "size": "1180x640",
       "steps": [
         { "click": "button", "text": "field-notes.md" },
         { "click": ".doc-row button", "text": "From here" },
-        { "until": ".toasts .notice", "text": "Listening" }
+        { "until": "[data-narrate-player]", "text": "Listening" },
+        { "click": "[data-narrate-player] .speed" },
+        { "until": "[data-narrate-player] .speeds[data-placed]", "text": "1.7" },
+        { "eval": "document.querySelector('.toasts').style.visibility = 'hidden'" }
       ],
-      "crop": ".toasts .notice", "pad": 0
+      "crop": ["[data-narrate-players]", "[data-narrate-player] .speeds"]
     },
     { "name": "memos", "open": "#$WORKER_1", "steps": [{ "until": ".memos .memo" }], "crop": ".memos" }
   ],

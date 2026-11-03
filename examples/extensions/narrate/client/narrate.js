@@ -7,6 +7,8 @@
  * notice says what is read, with Stop.
  */
 import { textOf } from '/cards.js'
+import { openPlayer } from './player.js'
+import { speedOf, speedWords, step } from './speed.js'
 import * as voice from './voice.js'
 
 /** Narration's capability, which its marks on the bus are put under. */
@@ -37,10 +39,10 @@ const nameOf = (subject) => {
 }
 
 /**
- * A narration's track over `subjects`, read in order: the one sounding marked on the bus and named in a notice,
- * with Stop, until it ends.
+ * A narration's track over `subjects`, read in order: the one sounding marked on the bus and named in the player,
+ * with its speed and Stop, until it ends.
  */
-const tracking = (kit, subjects) => {
+const tracking = (tower, kit, subjects) => {
   let marked
   let notice
   const mark = (key) => {
@@ -54,7 +56,7 @@ const tracking = (kit, subjects) => {
       mark(s.key)
       const words = `Listening · ${nameOf(s)}${subjects.length > 1 ? ` (${part + 1} of ${subjects.length})` : ''}`
       if (notice) notice.say(words)
-      else notice = kit.notice(words, { label: 'Stop', run: voice.stop })
+      else notice = openPlayer({ tower, words, stop: voice.stop })
     },
     end() {
       mark(undefined)
@@ -65,9 +67,10 @@ const tracking = (kit, subjects) => {
 
 /** Reads `subjects` aloud in order, each one's text wherever the subject says it is. */
 async function read({ tower, kit }, subjects) {
-  const [texts, { command }] = await Promise.all([Promise.all(subjects.map((s) => textOf(tower, s))), tower.get('narrate/voice')])
+  const [texts, { command }, speed] = await Promise.all([Promise.all(subjects.map((s) => textOf(tower, s))), tower.get('narrate/voice'), speedOf(tower)])
+  voice.setSpeed(speed)
   const parts = texts.map(spoken)
-  const track = tracking(kit, subjects)
+  const track = tracking(tower, kit, subjects)
   return command ? voice.speakCommand(tower, parts, kit.toast, track) : voice.speakBrowser(parts, track)
 }
 
@@ -90,4 +93,19 @@ export function fromHere(ctx) {
 /** Stops reading. */
 export function stop() {
   voice.stop()
+}
+
+/** The viewer's speed stepped `by` along the speeds, read at from now, and toasted. */
+async function stepSpeed({ tower, kit }, by) {
+  kit.toast(`Reading at ${speedWords(await step(tower, by))}`)
+}
+
+/** Reads a step faster, from now and from then on. */
+export function faster(ctx) {
+  return stepSpeed(ctx, 1)
+}
+
+/** Reads a step slower, from now and from then on. */
+export function slower(ctx) {
+  return stepSpeed(ctx, -1)
 }

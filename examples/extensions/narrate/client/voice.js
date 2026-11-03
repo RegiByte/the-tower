@@ -13,6 +13,19 @@ export const CHUNK = 1800
 /** The audio element every chunk plays through. */
 export const audio = new Audio()
 
+/** How fast the voice reads, 1 being as voiced: the audio's rate, and each utterance's. */
+let speed = 1
+
+/**
+ * Reads at `rate` from now: the chunk sounding at once, and every one after it. A new source resets the audio's rate
+ * to its default, so both are set. The browser's speech takes it from its next utterance.
+ */
+export function setSpeed(rate) {
+  speed = rate
+  audio.defaultPlaybackRate = rate
+  audio.playbackRate = rate
+}
+
 /** Bumped by every speak and stop: a narration whose number is no longer current stops where it is. */
 let current = 0
 
@@ -213,6 +226,7 @@ export function speakBrowser(parts, track) {
  */
 const say = (text, onStart, onEnd) => {
   const utterance = new SpeechSynthesisUtterance(text)
+  utterance.rate = speed
   utterance.onstart = onStart
   utterance.onend = utterance.onerror = () => ((utterances = utterances.filter((u) => u !== utterance)), onEnd())
   utterances.push(utterance)
