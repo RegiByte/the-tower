@@ -419,8 +419,10 @@ curl -sN -m 2 $B/board | grep -m1 '^data:'      # the board, once: /board is a s
 ## Served modules
 
 The tower serves what its own renderers draw alike, for yours to import. Each is TypeScript from `src/shared`,
-served as one ES module bundled with what it imports, readable from a framed page too, and lent to
-extensions' server code as `tower:<name>.js` ([Extensions](#extensions)):
+served as an ES module, readable from a framed page too, and lent to extensions' server code as `tower:<name>.js`
+([Extensions](#extensions)). A page gets one instance of each module however many modules import it: every source
+file is served once at a URL of its own, and a served module re-exports its file from there. Those URLs
+(`/shared/…`, `/src/…`, `/vendor/<package>.js`) are internal and may change in any release: import the names below.
 
 | URL | What it holds |
 |---|---|

@@ -63,7 +63,9 @@ went wrong, and know which changes can break it.
   by a renderer copied out of the checkout, so they are versioned with the API: removing or renaming a name is a major,
   with a CHANGELOG line saying what to use instead; adding one is a minor; a name on its way out stays `@deprecated`
   until a major. The libraries served beside them (`/xterm.js`, `/marked.js`…) are those libraries' own APIs, outside
-  the contract. [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name as of the major it
+  the contract, and so are the internal URLs each served module's files and packages are loaded from (`/shared/…`,
+  `/src/…`, `/vendor/…`, [[renderer-shared-modules]]): a served module is a re-export of its file, and its names are
+  what a renderer imports. [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name as of the major it
   was written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major
   hasn't moved, and on any other difference, so an addition is a deliberate `npm run served:update` that shows in the
   diff. `window.tower` is typed once, as [`Tower`](ref:hub/src/shared/shelf-page.ts#Tower) beside the protocol it
