@@ -109,6 +109,16 @@ export function regions(deps) {
     el.innerHTML = `<p class="view-failed">${esc(id)} couldn't draw: ${esc(why)}</p>`
   }
 
+  /**
+   * A view whose module no longer links against the modules this page loaded: the page holds one version of each
+   * shared module, so a client the tower changed since the page loaded needs the page reloaded.
+   * @param {HTMLElement} el @param {string} id @param {string} why
+   */
+  const stale = (el, id, why) => {
+    el.innerHTML = `<p class="view-failed">${esc(id)} couldn't draw: the tower's code changed since this page loaded (${esc(why)}) <button data-reload-page>Reload</button></p>`
+    el.querySelector('[data-reload-page]')?.addEventListener('click', () => location.reload())
+  }
+
   /** `tower.store` under `view.<id>.<key>`: the view's own. @param {string} id */
   const stateOf = (id) => ({
     /** @param {string} key */
@@ -192,7 +202,16 @@ export function regions(deps) {
 
     const settle = async () => {
       try {
-        const module = await moduleOf(view)
+        /** @type {Record<string, unknown>} */
+        let module
+        try {
+          module = await moduleOf(view)
+        } catch (err) {
+          // A module that doesn't link (a SyntaxError from its import) is newer than the modules the page holds.
+          if (!(err instanceof SyntaxError)) throw err
+          if (!closed) dropped(() => stale(el, view.id, err.message))
+          return
+        }
         const mount = /** @type {Mount | undefined} */ (module[/** @type {string} */ (view.export)])
         if (typeof mount !== 'function') throw new Error(`${urlOf(view)} exports no function ${view.export}`)
         const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, scale, ...(args && { args }) }
@@ -213,17 +232,20 @@ export function regions(deps) {
       }
     }
 
-    /** @param {string} why */
-    const fail = (why) => {
+    /** What was mounted closed, and `draw` in its place. @param {() => void} draw */
+    const dropped = (draw) => {
       const was = mounted
       mounted = undefined
       try {
         was?.close()
       } finally {
         letGo()
-        failed(el, view.id, why)
+        draw()
       }
     }
+
+    /** @param {string} why */
+    const fail = (why) => dropped(() => failed(el, view.id, why))
 
     const letGo = () => {
       for (const t of own) t.close()
