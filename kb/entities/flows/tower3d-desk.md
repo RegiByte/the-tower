@@ -6,7 +6,7 @@
   "in": "tower-core",
   "reviewed": "2026-11-03",
   "involves": ["operator", "tower3d", "tower-server", "host-daemon", "claude-code", "system-root"],
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/desk-verbs.ts#addedKey", "hub/test/desk-verbs.test.ts", "hub/renderers/tower3d/src/main.ts#layoutNow", "hub/renderers/tower3d/src/main.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#keyWrites", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/desk-verbs.ts#addedKey", "hub/test/desk-verbs.test.ts", "hub/renderers/tower3d/src/main.ts#layoutNow", "hub/renderers/tower3d/src/main.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
 }
 ---
 ```mermaid
@@ -70,8 +70,10 @@ sequenceDiagram
   other terminals, so a shell claims on open. The rule is the shared machine every renderer's terminal runs
   ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers), in xterm by
   [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView), [[renderer-shared-modules]], [[machines]]).
-- **Keys in order.** [`keySender`](ref:hub/src/tower/tower.js#keySender) sends each chunk xterm produces as its own
-  `keys` request, the next only after the last answered: Claude reads text and Enter in one write as a paste. The Mac
+- **Keys in order.** [`keySender`](ref:hub/src/tower/tower.js#keySender) sends one `keys` request at a time, the next
+  only after the last answered; the keys typed meanwhile go as [`keyWrites`](ref:hub/src/tower/tower.js#keyWrites) of
+  them, a terminal's keys in a row joined into one write, so a page slow to hear answers types in fewer writes, not
+  later. A key holding Enter or an escape is a write of its own: Claude reads text and Enter in one write as a paste. The Mac
   editing keys are sent as readline keys by [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap)
   ([[renderer-shared-modules]]) at the chords `board.keys` binds ([[keymap]]). The host logs `i` before writing to
   the PTY ([`handle`](ref:hub/src/host/main.ts#handle)).
