@@ -41,17 +41,27 @@ export function draft(deps) {
   /** A new draft in the editor, or the one kept as `id`. @param {string} project @param {string} [id] */
   const openDraft = (project, id) => goTo({ view: EDITOR, subject: id === undefined ? `collection:${project}/${DRAFTS}` : `item.${DRAFTS}:${project}/${id}` })
 
-  /** The new-worker form on the draft kept as `id`, its text read as it is on disk now. @param {string} project @param {string} id */
-  async function spawnOn(project, id) {
+  /**
+   * The draft kept as `id` as the form opens on it, its text read as it is on disk now; nothing, said in a toast, when
+   * it can't be read or is gone.
+   * @param {string} project @param {string} id @returns {Promise<{ d: Draft, text: string } | undefined>}
+   */
+  async function sentOf(project, id) {
     const item = draftItem(board().floors, project, id)
     const d = item && (await loadDraft(draftIo, project, item).catch((err) => (toast(err.message), null)))
-    if (d === null) return
-    if (!d) return toast('That draft is gone')
-    openSpawn(project, { d, text: d.text })
+    if (d === null) return undefined
+    if (!d) return void toast('That draft is gone')
+    return { d, text: d.text }
+  }
+
+  /** The new-worker form on the draft kept as `id`. @param {string} project @param {string} id */
+  async function spawnOn(project, id) {
+    const sent = await sentOf(project, id)
+    if (sent) openSpawn(project, sent)
   }
 
   /** @param {Draft} d */
   const deleteSent = (d) => discard(draftIo, d)
 
-  return { draftIo, draftTitle, pruneDraftTitles, openDraft, spawnOn, deleteSent }
+  return { draftIo, draftTitle, pruneDraftTitles, openDraft, sentOf, spawnOn, deleteSent }
 }

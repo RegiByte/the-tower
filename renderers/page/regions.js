@@ -38,7 +38,7 @@ import { menu } from './menu.js'
  *   termFont: () => TermFont,
  *   scheme: () => Scheme,
  *   run: (id: string, e: KeyboardEvent) => boolean,
- *   commandKit: CommandKit & { go: (location: Location) => void, href: (to: Subject | Location) => string, location: () => Location | undefined },
+ *   commandKit: CommandKit & { go: (location: Location) => void, href: (to: Subject | Location) => string, location: () => Location | undefined, spawn: (on: Subject, open: () => boolean) => Promise<string | undefined> },
  *   tower: Tower,
  *   contributions: (el: HTMLElement, id: string, subject: Subject, options: { omit?: string[] }) => RegionHandle,
  *   subjectOf: (key: string) => Subject | undefined,
@@ -181,6 +181,7 @@ export function regions(deps) {
     /** @type {Kit} */
     const kit = {
       ...commandKit,
+      spawn: (on) => commandKit.spawn(on, () => !closed),
       showing,
       terminal,
       region: (host, id, at, opts) => {

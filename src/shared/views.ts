@@ -161,8 +161,13 @@ export const busOf = (): Bus => {
  * link in a frame where nothing runs (@since 1.121); `showing`, told by a view that shows a subject below its own (a
  * file its Files tab opened), which the renderer's location then names, so a reload or a link lands on it (@since
  * 1.124); `location`, where the renderer is now, read-only, for a view that marks what is open (a tray's row), told
- * again through `update` as it changes (@since 1.125). A renderer lends what its `renderer.json` kit names; a view uses
- * `href`, `showing` and `location` when they are lent, so a renderer without them still hosts the views that do.
+ * again through `update` as it changes (@since 1.125); `spawn`, the renderer's new-worker form on the floor `on` is or
+ * is of (a draft: on that draft) for a view that keeps its place: the id of the worker it started, which the renderer
+ * awaits as it arrives, or nothing once it closed without one or the view closed first (the renderer then goes to the
+ * worker), or when `on` is of no floor on the board; a form already open is brought back, answering nothing (@since
+ * 1.146); `run('spawn', on)` opens the same form and goes to the worker. A renderer lends what its `renderer.json` kit
+ * names; a view uses `href`, `showing`, `location` and `spawn` when they are lent, so a renderer without them still
+ * hosts the views that do.
  */
 export type Kit = {
   terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
@@ -177,6 +182,7 @@ export type Kit = {
   href?(to: Subject | Location): string
   showing?(subject: Subject): void
   location?(): Readonly<Location> | undefined
+  spawn?(on: Subject): Promise<string | undefined>
 }
 
 /**
