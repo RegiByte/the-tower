@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-02",
+  "reviewed": "2026-11-03",
   "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/cli.ts", "hub/package.json", "hub/README.md", "hub/docs/config.md"]
 }
 ---
@@ -21,8 +21,8 @@ command should reach a running tower with a worker to spawn.
 
 - **`tower init [hub] [repos...]`** ([`init`](ref:hub/src/init.ts#init)) writes a first config and refuses to touch
   one that exists: `argv: ["claude"]`, one project whose hub is the current directory or `hub` (its id the folder's
-  name), `repos` beside it, the `drafts`, `reviews` ([[review-threads]]) and `policies` ([[policies]]) collections, and
-  `user.name` from `git config user.name` when set ([`initialConfig`](ref:hub/src/init.ts#initialConfig)). The rest
+  name), `repos` beside it, no collections (the bundled `drafts`, `reviews` ([[review-threads]]) and `policies` ([[policies]])
+  extensions declare theirs), and `user.name` from `git config user.name` when set ([`initialConfig`](ref:hub/src/init.ts#initialConfig)). The rest
   keeps its defaults; `docs/config.md` documents every key.
 - **`tower doctor`** ([`doctor`](ref:hub/src/doctor.ts#doctor)) checks and fixes nothing. Each check is `ok`, `warn`
   (the tower runs with less: no editor command, a Claude newer than tested
