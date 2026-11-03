@@ -32,7 +32,7 @@
     "hub/src/shared/viewer.ts#VIEWER_KEYS",
     "hub/src/directory.ts#crewRows", "hub/src/directory.ts#floorLines",
     "hub/src/mod/skills/handbook/SKILL.md",
-    "hub/renderers/page/index.html", "hub/renderers/page/page.js",
+    "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/renderers/page/sidebar.js#dragCrew",
     "hub/src/shared/crews.ts#sentHome",
     "hub/src/shared/duty.ts#sendHomeAsk",
     "hub/src/shared/past.ts#pastCrews",
@@ -98,7 +98,11 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *The one way to end a worker.* Hires left running have no hirer to report to, so the chain is the unit: the
   renderers show Send home and no Kill. Ending a lead and leaving its hires running is the API's `kill` (`tower kill`).
 - *Drawn.* The tower page nests each crew in the sidebar under a rail; members gone home fold into one line under
-  their hirer that unfolds them, the unfolded hirers kept per viewer in `tower.store`. A member gone home with someone
+  their hirer that unfolds them, the unfolded hirers kept per viewer in `tower.store`. On a floor of two crews or more,
+  each head has a grip in the gutter beside it: dragged, it moves the whole crew, a line showing where it lands and
+  Escape putting it back; focused, ↑ and ↓ move it one place. Only the grip starts a drag, so a click anywhere else on
+  the row (a badge's action, a verb, the row itself) does what it did. The drag's pointer is captured by the sidebar,
+  which outlives the redraws a board makes mid-drag; the move is written as the viewer's order (`orderMoving`). A member gone home with someone
   on duty under it stays drawn, so the tree holds. Send home's confirm names everyone it ends, who is working and what
   a resume costs (`sendHomeAsk`). `tower agents` lists crews and whom each reports to, `tower agent` who is under a
   worker, and `tower home <CALLSIGN>` runs the card's call (the handbook says to read `tower agents` first and never
