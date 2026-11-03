@@ -683,10 +683,17 @@ export const httpServer = defineResource({
       send(res, reply.body)
     }
 
-    /** A read's reply as an extension takes it: a copy of the body, or a file's text as written. */
+    /** The media types beside `text/*` whose files are text. */
+    const TEXT_TYPES = new Set(['application/json', 'application/x-ndjson', 'image/svg+xml'])
+
+    const isText = (type: string) => type.startsWith('text/') || TEXT_TYPES.has(type)
+
+    /** A read's reply as an extension takes it: a copy of the body, or a text file's text as written; a file of any other type is refused, its bytes left to HTTP. */
     const taken = (reply: ReadReply): unknown => {
       if (reply.t === 'json') return JSON.parse(JSON.stringify(reply.body))
       if (!statSync(reply.file, { throwIfNoEntry: false })?.isFile()) return apiError('not_found', `"${reply.file}" is not a file`)
+      const type = mediaTypeOf(reply.file)
+      if (!isText(type)) return apiError('invalid', `"${reply.file}" is ${type}, not text: ctx.read answers a file's text, and GET of the read's path over HTTP serves its bytes`)
       return readFileSync(reply.file, 'utf8')
     }
 

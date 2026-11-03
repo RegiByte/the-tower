@@ -89,8 +89,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   an extension could answer JSON alone, and no view by type could draw a file it found.
 - **ctx calls what it declares.** `ctx.call` and `ctx.read` take qualified names and reach the core, the extension
   itself, and the capabilities it requires or wants (`refused`, "declare requires.X", otherwise); a core read answers
-  through the same code as over HTTP, for the extension's caller, its reply a copy of its body, or a file's text as
-  written, never framed ([`read`](ref:hub/src/tower/http.ts#read)). `ctx.deps.<cap>` holds one
+  through the same code as over HTTP, for the extension's caller, its reply a copy of its body, or a text file's text
+  as written, never framed, and any other file refused as `invalid`, its bytes left to HTTP
+  ([`read`](ref:hub/src/tower/http.ts#read)). `ctx.deps.<cap>` holds one
   function per verb and per read of each declared provider's manifest, `undefined` while a wanted one is missing, which
   `GET /extensions` notes on the extension (an `info` problem, `unmet` at `wants.<cap>`).
 - **A caller on every call.** [`Caller`](ref:hub/src/shared/extensions.ts#Caller) is `{t, id?, via, within}`. Over

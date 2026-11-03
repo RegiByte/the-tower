@@ -616,7 +616,8 @@ page loads what lies beside it by relative URL; `/schema` lists the read as `/<c
 names, the core's under `tower/`, and reach the core, the extension itself, and what it `requires` or `wants`;
 anything else is refused until declared. `ctx.deps.<capability>` holds the same calls as functions, one per verb and
 `read[<path>]` per read, `undefined` while a wanted one doesn't run. Each answers the reply, or an error as a value;
-a core read that serves a file (`tower/shelf/…`, `tower/collection/…`, `tower/shown/…`) answers its text as written.
+a core read that serves a file (`tower/shelf/…`, `tower/collection/…`, `tower/shown/…`) answers its text as written,
+and refuses a file that isn't text (an image, a video) as `invalid`: its bytes are the read's over HTTP.
 A handler's second argument is its `ctx` with the `caller` (`{t, id?, via, within}`: the user, a worker, the tower, or
 the extension itself from its `start` and timers), and the calls it makes carry that caller one step deeper, its verb
 added to `within`; past 8 deep a call is refused. `ctx.cards()` is every card the system holds, the ones the board
