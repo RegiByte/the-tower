@@ -506,15 +506,47 @@
     return stop
   }
 
+  /** @typedef {{ id: string, data: string }} Keys */
+
+  /** Keys that hold Enter or an escape (a named key, a paste, a focus report): Claude reads text and Enter arriving in one write as a paste. */
+  const writtenAlone = (/** @type {string} */ data) => /[\r\x1b]/.test(data)
+
   /**
-   * Each chunk is its own write, one at a time: Claude reads text and Enter arriving in one write as a paste.
+   * The writes that type `pending`, in order: keys typed for one terminal in a row join into one write, and keys
+   * `writtenAlone` are a write of their own.
+   * @param {Keys[]} pending
+   * @returns {Keys[]}
+   */
+  const keyWrites = (pending) =>
+    pending.reduce((/** @type {Keys[]} */ writes, keys) => {
+      const last = writes.at(-1)
+      const joins = last && last.id === keys.id && !writtenAlone(last.data) && !writtenAlone(keys.data)
+      return joins ? [...writes.slice(0, -1), { id: keys.id, data: last.data + keys.data }] : [...writes, keys]
+    }, [])
+
+  /**
+   * Keys are written one write at a time, each once the one before is answered; the keys typed meanwhile wait and go
+   * as `keyWrites` of them, so a page slow to hear answers types in fewer writes, not later.
    * @param {'keys' | 'shell/keys'} verb
    * @returns {(id: string, data: string) => void}
    */
   const keySender = (verb) => {
-    /** @type {Promise<unknown>} */
-    let queue = Promise.resolve()
-    return (id, data) => (queue = queue.then(() => api.call(verb, { id, data })).catch((err) => console.error(`tower.js ${verb}:`, err)))
+    /** @type {Keys[]} */
+    let pending = []
+    let writing = false
+    const write = async () => {
+      writing = true
+      while (pending.length) {
+        const writes = keyWrites(pending)
+        pending = []
+        for (const keys of writes) await api.call(verb, keys).catch((err) => console.error(`tower.js ${verb}:`, err))
+      }
+      writing = false
+    }
+    return (id, data) => {
+      pending.push({ id, data })
+      if (!writing) void write()
+    }
   }
 
   /** @type {Set<(key: string) => void>} */
