@@ -1,4 +1,4 @@
-import { cardSubject, esc, lampOf, statusName } from '/cards.js'
+import { can, cardSubject, esc, floorSubject, lampOf, statusName } from '/cards.js'
 import { ICON } from '/icons.js'
 
 /**
@@ -8,7 +8,11 @@ import { ICON } from '/icons.js'
  * (`cells.<floor key>`), so a reload opens the same cells; whether the cells show heads is kept beside it (`head`).
  * The grid's own controls go to each worker's head through its options: Open and ✕ as `acts`, and the callsign as a
  * `pick` of the floor's workers on duty, which puts the one picked in that cell (two cells swap when it has one). The
- * grid's bar adds a cell while it has room: Add worker, a menu of the floor's workers on duty not in a cell. Three
+ * grid's bar adds a cell while it has room: Add worker, a menu of the floor's workers on duty not in a cell, then New
+ * worker…, the tower's new-worker form on the floor (`kit.spawn`, where the renderer lends it; one row per floor on the
+ * board's grid), whose worker takes a new cell, drawn as starting until the board carries it, the page staying on the
+ * grid. A reload while it
+ * starts keeps its cell but not that it is starting: the cell shows the worker, or that it isn't on the board. Three
  * cells are two over one. A card displayed with this view joins its floor's grid.
  */
 
@@ -27,6 +31,8 @@ const STYLE = `
 :where([data-view="grid/grid"]) .grid-add button:hover, :where([data-view="grid/grid"]) .grid-add button:focus-visible { background: var(--panel-2); }
 :where([data-view="grid/grid"]) .grid-add small { margin-left: auto; padding-left: var(--sp-l); color: var(--muted); }
 :where([data-view="grid/grid"]) .grid-add .none { padding: var(--sp-xs) var(--sp-m); color: var(--muted); }
+:where([data-view="grid/grid"]) .grid-add [data-grid-new] { margin-top: var(--sp-xs); border-top: 1px solid var(--line); padding-top: var(--sp-s); }
+:where([data-view="grid/grid"]) .grid-add [data-grid-new] + [data-grid-new] { margin-top: 0; border-top: 0; padding-top: var(--sp-xs); }
 :where([data-view="grid/grid"]) .grid-cells { flex: 1; min-height: 0; display: grid; gap: var(--sp-s); grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); }
 :where([data-view="grid/grid"]) .grid-cells.three > .grid-cell:nth-child(3) { grid-column: 1 / -1; }
 :where([data-view="grid/grid"]) .grid-cell { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
@@ -40,8 +46,11 @@ const ACTS = [
   { id: 'drop', label: 'Take it out of the grid', icon: 'close' },
 ]
 
-/** Every card of the floor `key` names, or of every floor for the board's grid. */
-const cardsOf = (board, key) => board.floors.filter((f) => key === 'board' || `floor:${f.id}` === key).flatMap((f) => f.cards)
+/** The floor `key` names, or every floor for the board's grid. */
+const floorsOf = (board, key) => board.floors.filter((f) => key === 'board' || `floor:${f.id}` === key)
+
+/** Every card of the floors a grid holds. */
+const cardsOf = (board, key) => floorsOf(board, key).flatMap((f) => f.cards)
 
 /** The cells a grid opens with when it has none kept: its floor's workers on duty. */
 const seed = (board, key) => cardsOf(board, key).filter((c) => c.onDuty).slice(0, MAX).map((c) => c.id)
@@ -63,10 +72,12 @@ export async function mount(host, { board, subject, kit, state }) {
   let now = board
   /** Each cell's element, the `card.cell` region on its worker, and the options it was last given, by worker. @type {Map<string, { el: HTMLElement, region: ReturnType<typeof kit.region> | undefined, given: string }>} */
   const cells = new Map()
+  /** The workers this grid started whose cards the board doesn't carry yet: drawn as starting, not as gone. @type {Set<string>} */
+  const starting = new Set()
 
   const cardOf = (id) => now.floors.flatMap((f) => f.cards).find((c) => c.id === id)
   const keep = () => state.set(`cells.${key}`, ids)
-  const label = () => (key === 'board' ? 'every floor' : now.floors.find((f) => `floor:${f.id}` === key)?.name ?? key)
+  const label = () => (key === 'board' ? 'every floor' : floorsOf(now, key)[0]?.name ?? key)
 
   const pop = `grid-add-${uuid()}`
   host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div>`
@@ -84,12 +95,19 @@ export async function mount(host, { board, subject, kit, state }) {
 
   let painted = ''
 
-  /** The menu of workers to add: the floor's on duty and in no cell, each by its lamp, callsign and status. */
+  /** New worker…, on each floor the grid holds where a worker can start now (none while the host is down), when the renderer lends `kit.spawn`. */
+  const newRowsHtml = () =>
+    (kit.spawn ? floorsOf(now, key) : [])
+      .filter((f) => can(f, 'spawn'))
+      .map((f) => `<button data-grid-new="${esc(f.id)}">${ICON.plus}${key === 'board' ? `New worker on ${esc(f.name)}…` : 'New worker…'}</button>`)
+      .join('')
+
+  /** The menu of workers to add: the floor's on duty and in no cell, each by its lamp, callsign and status, then New worker…. */
   const addMenuHtml = () => {
     const rows = cardsOf(now, key)
       .filter((c) => c.onDuty && !ids.includes(c.id))
       .map((c) => `<button data-grid-add="${esc(c.id)}"><span class="lamp ${lampOf(c)}"></span>${esc(c.callsign)}<small>${esc(statusName(c))}</small></button>`)
-    return `<h3>Add a worker on duty</h3>${rows.join('') || '<div class="none">no other worker on duty</div>'}`
+    return `<h3>Add a worker on duty</h3>${rows.join('') || '<div class="none">no other worker on duty</div>'}${newRowsHtml()}`
   }
 
   /** What the worker in a cell is told: the heads toggle, the grid's controls, the floor's workers on duty to pick from, and no "Add to grid". */
@@ -122,6 +140,7 @@ export async function mount(host, { board, subject, kit, state }) {
     grid.style.setProperty('--cols', String(ids.length >= 3 ? 2 : Math.max(ids.length, 1)))
     grid.classList.toggle('three', ids.length === 3)
     for (const [id, cell] of cells) if (!ids.includes(id)) (letGo(cell), cell.el.remove(), cells.delete(id))
+    for (const id of starting) if (!ids.includes(id)) starting.delete(id)
     if (!ids.length) grid.innerHTML = `<p class="grid-note">No worker here yet. Add one with Add worker, or Add to grid on its bar.</p>`
     else grid.querySelector('.grid-note')?.remove()
     ids.forEach((id, n) => {
@@ -134,9 +153,11 @@ export async function mount(host, { board, subject, kit, state }) {
         cells.set(id, cell)
       }
       const c = cardOf(id)
+      if (c) starting.delete(id)
       const options = optionsOf(id)
       const given = JSON.stringify(options)
-      if (!c) (letGo(cell), (cell.el.innerHTML = `<p class="grid-note">${esc(id)} is no longer on the board <button class="icon-btn" data-grid-drop aria-label="Take it out of the grid">${ICON.close}</button></p>`))
+      const gone = starting.has(id) ? 'Starting a worker…' : `${esc(id)} is no longer on the board`
+      if (!c) (letGo(cell), (cell.el.innerHTML = `<p class="grid-note">${gone} <button class="icon-btn" data-grid-drop aria-label="Take it out of the grid">${ICON.close}</button></p>`))
       else if (!cell.region) cell.region = kit.region(cell.el, 'card.cell', cardSubject(c), options)
       else {
         cell.region.update(cardSubject(c))
@@ -150,6 +171,25 @@ export async function mount(host, { board, subject, kit, state }) {
   /** @param {string} id */
   const drop = (id) => ((ids = ids.filter((d) => d !== id)), keep(), draw())
 
+  /** The worker `id` takes a new cell; in a full grid, the first cell's place. @param {string} id */
+  const join = (id) => {
+    if (ids.includes(id)) return
+    ids = [...ids, id].slice(-MAX)
+    keep()
+    draw()
+  }
+
+  /** The tower's new-worker form on the floor `project`: the worker it starts takes a new cell. @param {string} project */
+  async function startOn(project) {
+    menu.hidePopover()
+    const f = now.floors.find((f) => f.id === project)
+    if (!f) return
+    const id = await kit.spawn(floorSubject(f))
+    if (!id) return
+    starting.add(id)
+    join(id)
+  }
+
   /** The worker `to` takes the cell of `from`: one already in a cell swaps places with it. */
   function swap(from, to) {
     const at = ids.indexOf(from)
@@ -162,7 +202,9 @@ export async function mount(host, { board, subject, kit, state }) {
   host.addEventListener('click', (e) => {
     if (e.target.closest('[data-grid-drop]')) return drop(e.target.closest('[data-cell]').dataset.cell)
     const added = e.target.closest('[data-grid-add]')
-    if (added) return (menu.hidePopover(), (ids = [...ids, added.dataset.gridAdd]), keep(), draw())
+    if (added) return (menu.hidePopover(), join(added.dataset.gridAdd))
+    const fresh = e.target.closest('[data-grid-new]')
+    if (fresh) return void startOn(fresh.dataset.gridNew)
     if (!e.target.closest('[data-grid-heads]')) return
     head = !head
     state.set('head', head)
@@ -188,7 +230,7 @@ export async function mount(host, { board, subject, kit, state }) {
     show(s) {
       if (s.key === key) return true
       if (s.kind !== 'card' || (key !== 'board' && `floor:${s.project}` !== key)) return false
-      if (!ids.includes(s.value.id)) (ids = [...ids, s.value.id].slice(-MAX), keep(), draw())
+      join(s.value.id)
       return true
     },
     close() {
