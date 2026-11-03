@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.87.1
+
+The page works when opened over plain http at an address other than `localhost`, such as a LAN IP named in `hosts`.
+No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config change, no API change. Reload
+open pages once after the restart.
+
+- **Grid and shelf pages draw over plain http at a LAN address.** Browsers offer `crypto.randomUUID` only on https or
+  `localhost`, so a page opened at an address like `http://192.168.0.6:4317` couldn't mount the grid or frame a shelf
+  page. Both now take their random ids from `crypto.getRandomValues`, which works everywhere (#374, by Vitor Aderaldo).
+
 ## v1.87.0
 
 Put a floor's crews in the order you want to check them, and a resumed worker keeps its place. No restart beyond the
