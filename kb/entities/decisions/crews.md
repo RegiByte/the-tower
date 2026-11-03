@@ -40,7 +40,8 @@
     "hub/src/shared/past.ts#pastSize",
     "hub/src/shared/past.ts#pastOf",
     "hub/renderers/tower3d/src/ui.ts#archiveListHtml",
-    "hub/test/past.test.ts"
+    "hub/test/past.test.ts",
+    "hub/test/crew-order.test.ts"
   ],
   "links": [
     { "to": "hiring-limits", "verb": "uses", "carries": "card.hiredBy, the fact a hire leaves" },
@@ -99,7 +100,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   renderers show Send home and no Kill. Ending a lead and leaving its hires running is the API's `kill` (`tower kill`).
 - *Drawn.* The tower page nests each crew in the sidebar under a rail; members gone home fold into one line under
   their hirer that unfolds them, the unfolded hirers kept per viewer in `tower.store`. On a floor of two crews or more,
-  each head has a grip in the gutter beside it: dragged, it moves the whole crew, a line showing where it lands and
+  each head's row shows a grip in its lamp's place while the pointer is on it (always where nothing hovers): dragged, it moves the whole crew, a line showing where it lands and
   Escape putting it back; focused, ↑ and ↓ move it one place. Only the grip starts a drag, so a click anywhere else on
   the row (a badge's action, a verb, the row itself) does what it did. The drag's pointer is captured by the sidebar,
   which outlives the redraws a board makes mid-drag; the move is written as the viewer's order (`orderMoving`). A member gone home with someone
