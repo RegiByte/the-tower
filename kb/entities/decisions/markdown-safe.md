@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-03",
   "refs": [
     "hub/src/shared/markdown.ts",
     "hub/src/shared/markdown.ts#markdownHtml",
@@ -40,12 +40,11 @@
   ]
 }
 ---
-**Problem.** Markdown was rendered with `marked` and nothing else, at each call site its own way. Raw HTML and `javascript:` links in
-Claude's answers reached the page: one `<style>` in an answer restyled the whole brief, `<img>` beacons loaded from the
-network, and the only thing standing between an `onerror` and the tower's API was the `sandbox` attribute repeated at
-each call site. The brief's frame is `allow-same-origin` with the tower, whose API spawns sessions; one
-`allow-scripts`, or a renderer that put marked's html inline, would have been code execution. The tower page's shelf
-also opened any link a document carried, `javascript:` included, from the unsandboxed page.
+**Problem.** Claude's answers, prompts and workers' words carry markdown a web page Claude read may have written:
+raw HTML (a `<style>` that restyles the page, an `<img>` beacon, an `onerror`) and `javascript:` links. The brief's
+frame is `allow-same-origin` with the tower, whose API spawns sessions, so a script that ran there, or html put
+inline by a renderer, would be code execution as the tower. Documents a worker shows or a shelf keeps are the user's
+own files and may use raw HTML on purpose.
 
 **Why.** Claude's words are not vetted: a web page Claude read can put anything in them. A guarantee held by an
 attribute at every call site is not held by anything a test can check. A renderer written from `docs/extending.md`
@@ -83,9 +82,10 @@ would reach for a markdown library's `parse` and draw it inline.
   and keys to check this, since `drive` is Chrome only.
 - Briefs and review notes in every renderer use `markdownHtml` as their `said` ([[brief-turns]]); shown, shelf and
   kept docs use `documentHtml` in the tower page (`tower/document`, [[ui-model]]); Tower 3D draws a kept item's
-  markdown with `markdownHtml`. `/marked.js` is still served, outside the contract; Tower 3D keeps marked's lexer to
-  typeset pages on canvas.
-- *The binding rule* (step 5c). A document's raw HTML can hold elements that mimic the renderer's (a
+  markdown with `markdownHtml`, and a shown or shelf document with `documentHtml` in a frame with neither scripts nor
+  the tower's origin ([`docHtml`](ref:hub/renderers/tower3d/src/ui.ts#docHtml)). `/marked.js` is served outside the
+  contract; Tower 3D keeps marked's lexer to typeset pages on canvas.
+- *The binding rule.* A document's raw HTML can hold elements that mimic the renderer's (a
   `<button data-action>`, a fake heading or section). So inside a document frame the renderer holds the elements it
   creates by reference, never delegates an event by selector and never finds one of its own by selector.
   [`tower/document`](ref:hub/src/views/document.ts#mount) makes each section's element with the frame's document
@@ -97,7 +97,7 @@ would reach for a markdown library's `parse` and draw it inline.
   and a `<base>` or `<meta http-equiv>` is removed: a nested frame would take the document frame's sandbox (top
   navigation included) with links no rule wrote, a base would move where every link resolves, and a meta refresh
   would navigate the frame away. Raw HTML otherwise stays as written.
-- *The gutter* (D11 of the UI model). Nothing of the renderer's that paints or takes a click lives in a document
+- *The gutter* ([[ui-model]]). Nothing of the renderer's that paints or takes a click lives in a document
   frame: a section's commands (`section.acts`) are drawn in a gutter beside the frame, in the page's own document,
   each row kept level with its section ([`followSections`](ref:hub/src/views/sections.ts#followSections): each
   animation frame while the view is seen it reads the frame's `scrollY`, and when that or the body's size changed

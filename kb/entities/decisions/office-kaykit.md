@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-10-30",
+  "reviewed": "2026-11-03",
   "refs": [
     "hub/scripts/tower3d-kit.ts",
     "hub/renderers/kaykit/src/scene.ts#layTheme",
@@ -61,7 +61,7 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
 
 **How.**
 - The playground (`renderers/kaykit`, a sibling renderer, [`README`](ref:hub/renderers/kaykit/README.md)). Its build
-  measures every glTF of the bundle (all 628 models, downloaded apart and passed as `--source`), and every GLB
+  measures every glTF of the bundle (downloaded apart and passed as `--source`), and every GLB
   of the forge's props vendored beside the office's ([[forge-kit]]), into `out/catalog.json` and packs the meshes into
   one buffer, each primitive bound to the surface it is drawn in (its pack's atlas, glass, decals); the source folders
   are read only and `out/` is derived. The catalog holds
@@ -97,9 +97,8 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
 - Two layers per level ([[tower3d-levels]]): the desks' props and the lobby's city model are refilled on every
   board; the zones on every rebuild of the building (its structure key, which also holds the month).
 - Zones from the plan. A floor's are placed from its named anchors
-  ([`anchorsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#anchorsOf): the elevator's doors, the desks' first and
-  last rows, the glass, the rooms' doors, the stair, the deck's rail, the lounge, the hero), so a deeper plate moves
-  each with what it is anchored to: each room's prefab stands at its door, turned to face out of it
+  ([`anchorsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#anchorsOf)), so a deeper plate moves each with what
+  it is anchored to: each room's prefab stands at its door, turned to face out of it
   ([`roomsOf`](ref:hub/renderers/tower3d/src/floorplan.ts#roomsOf)), and furniture that would stand inside a room is
   left out. [`furnish`](ref:hub/renderers/tower3d/src/zones.ts#furnish) adds each level's zones
   ([`floorZones`](ref:hub/renderers/tower3d/src/zones.ts#floorZones),
@@ -125,8 +124,8 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
 **Alternatives considered.**
 - *Two KayKit paths* (desk dressing's own and the playground's): zones would be code, and two scale rules drift.
 - *Embedding the playground's whole `out/`*: megabytes of meshes for the few models the office uses.
-- *Fetching the kit from beside the page*: blank when framed (opaque origin); CORS on loopback file routes would
-  let any site read them.
+- *The kit embedded in the bundle*: base64 decoded and parsed as script on every load; a renderer's files carry
+  CORS, so the page fetches it framed too ([[bundled-renderer]]).
 - *Re-pivoting every model to its base*: it throws away intended vendor frames (pre-hung cabinets, base-less
   buildings that stack); the check catches the real mistake, a centred frame sunk below the floor.
 - *A separate headless renderer*: two drawings to keep in step. *Scenes as a tower collection*: no history or
