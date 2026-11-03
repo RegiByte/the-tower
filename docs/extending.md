@@ -761,7 +761,8 @@ lends, `display`, `toast`, `notice`, `confirm`, `run` and `bus` (`CommandKit` in
 API 1.128), so "Add to grid" is `kit.display(target, { view: 'grid/grid' })`. `notice(text, action?)` is a toast that
 stays while what it tells goes on, standing above the toasts that leave until the command closes it: it answers
 `{ say(text), close() }`, and its action's button runs the action and leaves the notice for the command to close
-(narrate's "Listening · Notes" with Stop). `bus` is the page's viewer subjects ([the bus](#views)): a command on a
+(narrate's memo with Hear, on a page that can't play sound yet; a control a notice can't hold, such as narrate's speed
+menu, is an element of the command's own). `bus` is the page's viewer subjects ([the bus](#views)): a command on a
 section reads its document's other sections with `bus.under(target.value.of, 'section')`, and marks what it acts on.
 `runCommand` runs one with `NO_KIT`, whose every member throws naming itself, for a renderer that lends none. A renderer that can't import modules leaves commands out (`isCommand`).
 A command's `keys` (API 1.104) are its default chords: see [Views](#views), keys.

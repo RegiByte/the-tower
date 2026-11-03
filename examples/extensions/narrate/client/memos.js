@@ -7,6 +7,8 @@
  * silently, and one the user hasn't pressed or typed on yet, which the browser lets play nothing, shows it as a notice
  * to hear. What was on the board when the view mounted is never said on its own.
  */
+import { openPlayer } from './player.js'
+import { speedOf } from './speed.js'
 import * as voice from './voice.js'
 
 /** Today's memos, the newest first, each with its worker's callsign beside what its card carries. */
@@ -100,7 +102,7 @@ export function mount(host, { tower, board, kit, state }) {
         at() {
           sounding = memo.key
           draw()
-          notice ??= kit.notice(text, { label: 'Stop', run: voice.stop })
+          notice ??= openPlayer({ tower, words: text, stop: voice.stop })
         },
         end() {
           if (sounding === memo.key) sounding = undefined
@@ -108,7 +110,8 @@ export function mount(host, { tower, board, kit, state }) {
           notice?.close()
         },
       }
-      const { command } = await tower.get('narrate/voice')
+      const [{ command }, speed] = await Promise.all([tower.get('narrate/voice'), speedOf(tower)])
+      voice.setSpeed(speed)
       await voice.interject({ tower, text, track, toast: kit.toast }, command)
     } catch (err) {
       kit.toast(err.message)
