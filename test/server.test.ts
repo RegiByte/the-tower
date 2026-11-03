@@ -190,6 +190,7 @@ function seed(port: number) {
   writeFileSync(path.join(ROOT, 'collections', 'lab', 'roles', 'builder.md'), BUILDER)
   writeFileSync(SHOWN, '<!doctype html><title>report</title>')
   writeFileSync(path.join(HUB, 'report', '.secret'), 'hidden')
+  writeFileSync(path.join(HUB, 'report', 'chart.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]))
   writeFileSync(path.join(RENDERER, 'index.html'), '<!doctype html><title>renderer</title>')
   writeFileSync(path.join(RENDERER, '.secret'), 'hidden')
   writeFileSync(path.join(ROOT, 'collections', 'lab', 'policies', 'nightly.md'), POLICY)
@@ -742,13 +743,14 @@ test("server: an extension's verb is called for the caller the CLI's headers cla
   assert.equal(errorCode(await post('pulse/nothing', {})), 'not_found')
 })
 
-test("server: an extension's ctx.read of a core read answers as over HTTP: a file's text as written, and a legacy read", async () => {
+test("server: an extension's ctx.read of a core read answers as over HTTP: a text file's text as written, and a legacy read", async () => {
   const peek = async (read: string, params: Record<string, string>) => {
     const answered = await post('pulse/peek', { read, params })
     assert.equal(answered.status, 200, answered.body)
     return (JSON.parse(answered.body) as { answer: unknown }).answer
   }
   assert.equal(await peek('tower/shelf/<project>/<n>/<file>', { project: 'lab', n: '0', file: 'report/index.html' }), readFileSync(SHOWN, 'utf8'), 'an html shelf file, unframed')
+  assert.equal((await peek('tower/shelf/<project>/<n>/<file>', { project: 'lab', n: '0', file: 'report/chart.png' }) as { code: string }).code, 'invalid', 'a file that is no text, whose bytes are left to HTTP')
   assert.deepEqual(await peek('tower/reviews/<project>', { project: 'lab' }), JSON.parse((await get('/reviews/lab')).body))
 })
 
