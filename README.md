@@ -170,7 +170,7 @@ Requirements:
   tower
 
 ```sh
-git clone https://github.com/RegiByte/the-tower.git tower && cd tower
+git clone --single-branch https://github.com/RegiByte/the-tower.git tower && cd tower
 npm run setup        # install, write a first config, check the machine, start everything, open the tower
 ```
 
