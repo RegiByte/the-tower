@@ -2,7 +2,7 @@
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "description": "Logs a line at its interval and at each hour's slot while it runs, pings through chime, rings it for each new wait, reads its beat, keeps its beats and tells its hook's answerers of each, shows them on the board with a tidy entry it applies, and wraps chime's ring and the core's collection/create: the fixture the server test boots.",
+  "description": "Logs a line at its interval and at each hour's slot while it runs, pings through chime, rings it for each new wait, reads its beat and passes a core read through, keeps its beats and tells its hook's answerers of each, shows them on the board with a tidy entry it applies, and wraps chime's ring and the core's collection/create: the fixture the server test boots.",
   "requires": { "tower": "1.114", "chime": "1.0" },
   "server": "server.ts",
   "client": "client",
@@ -42,6 +42,16 @@
       "reply": { "type": "object", "required": ["item", "heard"], "properties": { "item": { "type": "string" }, "heard": { "type": "array" } } },
       "scope": "project",
       "words": { "label": "Beat", "hint": "keeps a beat on the floor, and as a fact of the session when one is named" }
+    },
+    "peek": {
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["read", "params"],
+        "properties": { "read": { "type": "string" }, "params": { "type": "object", "additionalProperties": { "type": "string" } } }
+      },
+      "reply": { "type": "object", "required": ["answer"] },
+      "scope": "system"
     }
   },
   "reads": {
