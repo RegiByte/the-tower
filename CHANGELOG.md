@@ -12,6 +12,30 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.86.0
+
+Debt wave A from the complexity audit: renderers agree on layouts and badge order, `tower doctor` checks the Claude
+your config runs, an extension's `ctx.read` of a core file works, and dead code goes. No restart beyond the tower's
+own (`tower down tower`, then `tower up tower`), no config change, API 1.142 (additions only).
+
+- **Tower 3D refuses a config layout the check rejects.** A region whose `renderers.<r>.layout` entry fails
+  `tower config check` is drawn by its default in Tower 3D, as the page already did. Both renderers share the rule:
+  `usableConfigLayout` and `layoutKey` in `/views.js` (#363).
+- **A worker's badges come in one order everywhere.** Its sidebar row, its floor's section and a showing's head and
+  tab rank badges as its head does, and every region takes only the kinds of action it holds (`heldActions` in
+  `/cards.js`) (#365).
+- **`tower doctor` checks the Claude your `argv` starts.** Each binary the config's commands name is checked, labelled
+  by its key, instead of `claude` on PATH; a binary that isn't executable fails with its fix instead of crashing the
+  doctor (#364).
+- **Launch contributions are checked against the command a session runs**, not the first in `argv`. A session's
+  launch is read from one place, and its `--name` and `--resume` can't be shadowed by flags the config's command
+  passes (#364).
+- **An extension's `ctx.read` of a core file read works.** Reading a shelf, collection or shown file, or a legacy
+  read, threw a `TypeError` instead of answering; core reads now answer as data, so HTTP and `ctx.read` take one path
+  and the caller's chain is kept. A file that isn't text is refused as `invalid`, naming its HTTP path (#366).
+- **`tower init` writes no collections into a first config**, and code and layout nothing read are gone, among them
+  the page's `item.row` region, which was declared but never drawn: a layout naming it now fails the check (#362).
+
 ## v1.85.1
 
 A terminal whose worker ends while it is open goes read-only. No restart beyond the tower's own (`tower down tower`,
