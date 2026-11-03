@@ -131,12 +131,15 @@ export async function snapshot(log: SessionLog): Promise<string> {
   return bytes
 }
 
+/** Bytes that redraw a screen, and the size they draw it at. */
+export type Frame = { data: string; cols: number; rows: number }
+
 /** A running session's screen, kept current as its log grows. */
 export type Mirror = {
   /** Draws an `o` or `r` event logged after those already drawn, in the order they were logged. */
   draw: (event: LogEvent) => void
-  /** Bytes that redraw the screen as the events drawn so far left it, as `snapshot` gives them. */
-  snapshot: () => Promise<string>
+  /** Bytes that redraw the screen as the events drawn so far left it, as `snapshot` gives them, at the size they left it. */
+  snapshot: () => Promise<Frame>
   dispose: () => void
 }
 
@@ -157,7 +160,7 @@ export async function mirrorOf(log: SessionLog): Promise<Mirror> {
         term.write('', () => term.resize(cols, rows))
       }
     },
-    snapshot: () => new Promise((resolve) => term.write('', () => resolve(serialized()))),
+    snapshot: () => new Promise((resolve) => term.write('', () => resolve({ data: serialized(), cols: term.cols, rows: term.rows }))),
     dispose: () => term.dispose(),
   }
 }

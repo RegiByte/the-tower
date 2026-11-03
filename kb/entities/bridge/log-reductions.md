@@ -58,7 +58,8 @@
   alternate screen, which would leave the empty normal screen under Claude's resume line ([[fullscreen-tui]]).
   `tower screen <id>` reads the same frame, or with a time the screen as it stood then.
   [`mirrorOf`](ref:hub/src/bridge/screen.ts#mirrorOf) keeps a running session's screen current from its replay on,
-  and a snapshot of it is the bytes a replay of the log so far gives (`test/screen.test.ts`).
+  and a snapshot of it is the bytes a replay of the log so far gives (`test/screen.test.ts`), with the size they draw
+  at, its terminal's then.
   Every headless screen is a [`headlessTerminal`](ref:hub/src/bridge/screen.ts#headlessTerminal), which gives a
   character the cells Claude Code does (xterm's unicode-graphemes addon: an emoji two, a grapheme cluster one
   character), the rule the viewers' terminals follow ([[renderer-shared-modules]]): a snapshot built under other

@@ -32,7 +32,7 @@ the host still runs the session and its log holds no exit yet (the host's live s
 session that just exited), then the log's output as it is appended. A running session's screen is one
 [mirror](ref:hub/src/tower/screens.ts#screenMirrors) shared by all its viewers: the first builds it, replaying the
 log once ([`mirrorOf`](ref:hub/src/bridge/screen.ts#mirrorOf)), it follows the log with one tail, and every later
-viewer is sent its snapshot, so a floor of monitors opening at once costs one replay per session, not one per
+viewer is sent its snapshot at the size the mirror drew it (a resize its replay took has no `r` to follow), so a floor of monitors opening at once costs one replay per session, not one per
 monitor. It outlives its last viewer briefly, so a reconnect finds it built, and is kept nowhere else. A session no longer running is sent its last frame, a
 [snapshot](ref:hub/src/bridge/screen.ts#snapshot) of the log, and no mirror. A log that holds its exit never changes,
 so its frame is computed once and kept in memory ([`lastFrames`](ref:hub/src/tower/screens.ts#lastFrames), bounded, guarded by the log's size). A session without an exit in its log (stranded by the host) is replayed on every

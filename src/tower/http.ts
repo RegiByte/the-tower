@@ -408,10 +408,9 @@ export const httpServer = defineResource({
       if (!session) return
       const { facts } = session
       const running = isLive(withLiveness(facts.state, id, system.live()?.ids ?? new Set()).status)
-      const sendSnapshot = (data: string, exited: boolean) => send({ t: 'snapshot', data, cols: facts.cols, rows: facts.rows, exited })
       if (running) {
         const stop = await mirrors.watch(id, {
-          snapshot: (data) => sendSnapshot(data, false),
+          snapshot: ({ data, cols, rows }) => send({ t: 'snapshot', data, cols, rows, exited: false }),
           event: (event) => {
             if (event[1] === 'o') send({ t: 'o', data: event[2] })
             if (event[1] === 'r') send({ t: 'r', size: event[2] })
@@ -420,7 +419,7 @@ export const httpServer = defineResource({
         })
         if (stop) return stop
       }
-      sendSnapshot(await lastFrameOf.frame(id), true)
+      send({ t: 'snapshot', data: await lastFrameOf.frame(id), cols: facts.cols, rows: facts.rows, exited: true })
       return () => {}
     }
 
