@@ -90,7 +90,7 @@
  * of a command or a read, answers `{t: 'error', code, message}` with the code's status (`ERROR_STATUS`).
  */
 import { defineResource, type StartedResource } from 'braided'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
@@ -187,13 +187,21 @@ export const httpServer = defineResource({
     /** The design and the renderers reach framed pages too, at an opaque origin: fonts and modules load only with CORS. */
     const ANY_ORIGIN = { 'access-control-allow-origin': '*' }
 
-    /** Every unhashed response is read afresh: with no validators a browser may keep it for the life of its process. */
+    /** A response a browser must not keep: with no validators it may hold one for the life of its process. */
     const FRESH = { 'cache-control': 'no-store' }
 
-    function design(res: http.ServerResponse, url: string) {
-      if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css', ...FRESH, ...ANY_ORIGIN }).end(designCss())
+    /** A text the browser keeps but asks about each time: answered 304 while its hash is the one it holds. */
+    function revalidated(req: http.IncomingMessage, res: http.ServerResponse, type: string, body: string | Buffer) {
+      const etag = `"${createHash('sha256').update(body).digest('base64url').slice(0, 22)}"`
+      const headers = { 'cache-control': 'no-cache', etag, ...ANY_ORIGIN }
+      if (req.headers['if-none-match'] === etag) return res.writeHead(304, headers).end()
+      res.writeHead(200, { 'content-type': type, ...headers }).end(body)
+    }
+
+    function design(req: http.IncomingMessage, res: http.ServerResponse, url: string) {
+      if (url === '/design.css') return revalidated(req, res, 'text/css', designCss())
       if (MODULES[url]) {
-        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(servedModule(url))
+        return revalidated(req, res, 'text/javascript', servedModule(url))
       }
       const font = fonts.find((f) => url === `/fonts/${f.file}`)
       if (!font) return fail(res, 'not_found', `No face at "${url}"`)
@@ -220,13 +228,13 @@ export const httpServer = defineResource({
      * A file's URL answers its text as it is now; a hashed URL, the text it named, cached for good, or, for a hash this
      * tower never named (a page still open across a restart), the text as it is now, not cached.
      */
-    async function served(res: http.ServerResponse, url: string) {
+    async function served(req: http.IncomingMessage, res: http.ServerResponse, url: string) {
       const base = unhashedUrl(url)
       const now = base === undefined ? undefined : sourceText(base)
       if (!now) {
         const plain = sourceText(url)
         if (!plain) return fail(res, 'not_found', `The tower serves no module at "${url}"`)
-        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(await plain)
+        return revalidated(req, res, 'text/javascript', await plain)
       }
       const text = await now
       const kept = hashedUrl(base!, text) === url ? text : named.get(url)
@@ -1106,12 +1114,12 @@ export const httpServer = defineResource({
       }
       const asset = STATIC[url]
       if (req.method === 'GET' && asset) {
-        res.writeHead(200, { 'content-type': asset[1], ...FRESH }).end(readFileSync(asset[0]))
+        revalidated(req, res, asset[1], readFileSync(asset[0]))
         return
       }
-      if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH }).end(towerClient())
-      if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(res, url)
-      if (req.method === 'GET' && /^\/(shared|src|vendor)\//.test(url)) return served(res, url.split('?')[0])
+      if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return revalidated(req, res, 'text/javascript', towerClient())
+      if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(req, res, url)
+      if (req.method === 'GET' && /^\/(shared|src|vendor)\//.test(url)) return served(req, res, url.split('?')[0])
       const legacy = legacyOf('module').find((e) => e.old === url)
       if (req.method === 'GET' && legacy) return legacyModule(res, legacy)
       const [pathname, search] = url.split('?')
