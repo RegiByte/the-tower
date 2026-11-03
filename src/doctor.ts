@@ -80,8 +80,9 @@ const gitVersion = async (): Promise<Verdict> => {
 }
 
 /**
- * A Claude the config's `argv` starts: `file`, the binary one or more of its commands name, as the host runs it, in the
- * config's `env` over the scrubbed environment. `names`: the commands that start it, none for the legacy array.
+ * A Claude the config's `argv` starts: `file`, the binary one or more of its commands name, checked alone (a command's
+ * own arguments may not be valid beside `--version` or `auth status`), in the config's `env` over the scrubbed
+ * environment, as the host builds it. `names`: the commands that start it, none for the legacy array.
  */
 type Claude = { file: string; names: string[]; env: NodeJS.ProcessEnv }
 
@@ -130,7 +131,13 @@ const claudeSignedIn = (claude: Claude, status: Ran): Verdict =>
 
 /** A Claude's version and sign-in, or the one line that says it isn't there. */
 const claudeVerdicts = async (claude: Claude): Promise<Verdict[]> => {
-  const version = await ranIn(claude.env, claude.file, ['--version'])
+  let version: Ran | undefined
+  try {
+    version = await ranIn(claude.env, claude.file, ['--version'])
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'EACCES') throw err
+    return [{ level: 'fail', what: `${claudeLabel(claude)}: ${claude.file} is not executable`, fix: claude.file.includes('/') ? `chmod +x ${claude.file}` : `chmod +x the ${claude.file} on the PATH` }]
+  }
   if (!version) return [missing(claude)]
   const status = (await ranIn(claude.env, claude.file, ['auth', 'status']))!
   return [claudeVersion(claude, version.stdout), claudeSignedIn(claude, status)]
