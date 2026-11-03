@@ -123,10 +123,13 @@ The ranking is shared code in `/cards.js`, so every renderer orders a region ali
 
 - `actionId(action)` and `lineId(line)`: the one id space pins, hides and the viewer's seen name, a command's
   `<cap>/<command>`, a verb's qualified name, and for lines the extension's capability.
+- `heldActions(holds, actions)`: the actions a region holding `holds` draws, as `landing` places them: commands where it
+  holds `commands`, verbs where it holds `verbs` (API 1.142).
 - `rankedActions(actions, entry)`: less the hidden, the pinned first in their order, then board order. Pass what you
-  draw, after leaving out what the holder omits: `rankedActions(omitted(addedActions(board, s), omit), entry)`.
+  draw, after leaving out what the holder omits: `rankedActions(omitted(heldActions(region.holds, addedActions(board, s)), omit), entry)`.
 - `rankedBadges(board, subject)`: the folds' badges by `SEVERITY`, board order within a tone. A card's exemptions are
-  apart (`exemptionsOf`): draw them with its identity and never tuck them.
+  apart (`exemptionsOf`): draw them with its identity and never tuck them. `badgesOf(board, subject)` is the two
+  together, exemptions first: the order a region that draws all of a subject's badges draws them in.
 - `rankedLines(board, card, entry)`: a card's lines, pinned capabilities first, then fold order.
 - `headRanked(badges, ranked)`: a head's fill order, the severe badges, the pinned actions, the other badges, the other
   actions.

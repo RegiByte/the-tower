@@ -77,7 +77,8 @@ sequenceDiagram
   the PTY ([`handle`](ref:hub/src/host/main.ts#handle)).
 - **The panel's head.** Beside the worker's callsign and status, what extensions add to its card
   ([`deskHeadHtml`](ref:hub/renderers/tower3d/src/ui.ts#deskHeadHtml)): its exemptions, then the badges most severe
-  first, the lines and the verbs (never a client command: [`deskVerbs`](ref:hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs)),
+  first, the lines and the actions its region holds, verbs alone as its `renderer.json` says (never a client command:
+  [`deskVerbs`](ref:hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs)),
   ranked by the shared code over Tower 3D's own layout of `card.desk`
   ([`layoutNow`](ref:hub/renderers/tower3d/src/main.ts#layoutNow): its `renderer.json`'s, the config's less a region whose entry fails its
   check, then the viewer's `layout.tower3d`), pins first and the hidden left out ([[region-overflow]]). The region draws everything

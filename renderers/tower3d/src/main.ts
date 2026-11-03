@@ -18,7 +18,7 @@ import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer } from '../../../s
 import { actionId, isFresh as isNewAction, offeredIds } from '../../../src/shared/adds.ts'
 import { declaredLayout, layoutKey, layoutOf, usableConfigLayout } from '../../../src/shared/views.ts'
 import type { Layout } from '../../../src/shared/regions.ts'
-import { addedKey, deskVerbs } from './desk-verbs.ts'
+import { addedKey, deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
@@ -450,7 +450,7 @@ function renderPanel() {
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
     if (!c) return unfocus()
-    $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskEntry(board), isArmed, dottedNow(board), held, tower.framed)
+    $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), isArmed, dottedNow(board), held, tower.framed)
     sawDesk(board, c)
     $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh))
     keepShownTabs($('desk-tabs').parentElement!, c.id)
@@ -1294,7 +1294,8 @@ function rereadLayout() {
  * their own regions, then the config's less the regions whose layout fails its check, then yours.
  */
 const layoutNow = (board: Board) => layoutOf(declaredLayout(board, s.declared?.layout ?? {}), s.declared ? usableConfigLayout(s.declared) : {}, s.storedLayout)
-const deskEntry = (board: Board) => layoutNow(board)['card.desk']
+/** The desk's region as Tower 3D draws it now: what its `renderer.json` says it holds, and its entry in the layout. */
+const deskNow = (board: Board): DeskRegion => ({ holds: s.declared?.regions?.find((r) => r.id === 'card.desk')?.holds ?? [], entry: layoutNow(board)['card.desk'] })
 
 /** The actions you have seen, by `actionId`, across every renderer of yours. */
 const seenNow = (board: Board) => seenOf(s.viewer.seen, offeredIds(board))
@@ -1320,7 +1321,7 @@ function sawDesk(board: Board, c: Card) {
   if (!document.hasFocus()) return
   const offered = offeredIds(board)
   const seen = seenNow(board)
-  const fresh = deskVerbs(board, c, deskEntry(board)).map((r) => r.id).filter((id) => isNewAction(offered, seen, id))
+  const fresh = deskVerbs(board, c, deskNow(board)).map((r) => r.id).filter((id) => isNewAction(offered, seen, id))
   for (const id of fresh) s.dotted.add(id)
   sawActions(board, fresh)
 }

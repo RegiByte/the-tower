@@ -5,7 +5,7 @@ import { SVG_PATH, type ICON } from './icons.ts'
 import type { Tower } from './shelf-page.ts'
 import { accepted } from './media.ts'
 import { onKind, type Subject, type Text } from './subjects.ts'
-import type { LayoutEntry } from './regions.ts'
+import type { Hold, LayoutEntry } from './regions.ts'
 import type { CommandKit } from './views.ts'
 
 /**
@@ -45,9 +45,15 @@ export const actionsOf = (board: Board, subject: Subject): ({ verb: string } | A
 
 /**
  * The badges extensions show beside `subject`: on a card, each exemption a launch contributor gave its worker, so no
- * limit is lifted unseen; then what folds add, in fold order.
+ * limit is lifted unseen; then what folds add, most severe first (`rankedBadges`). Every region draws them in this order.
  */
-export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => [...exemptionsOf(board, subject), ...(board.adds[subject.key]?.badges ?? [])]
+export const badgesOf = (board: Board, subject: Subject): Added<Badge>[] => [...exemptionsOf(board, subject), ...rankedBadges(board, subject)]
+
+/**
+ * The actions a region holding `holds` draws, as `landing` places them: a command where it holds commands, a verb
+ * where it holds verbs. @since 1.142
+ */
+export const heldActions = (holds: readonly Hold[], actions: Added<Action>[]): Added<Action>[] => actions.filter((a) => holds.includes(isCommand(a) ? 'commands' : 'verbs'))
 
 /**
  * The id an action is pinned, hidden and seen by (decision `region-overflow`): a command's `<cap>/<command>`, a verb's

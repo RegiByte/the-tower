@@ -15,14 +15,14 @@ const boardOf = (actions: Added<VerbAction>[]) => ({ extensions: [], adds: { 'ca
 
 /** Each verb the desk draws under `entry`, by its content, with the key it is armed under. */
 const keysUnder = (board: Board, entry: LayoutEntry | undefined) =>
-  new Map(placed(deskVerbs(board, card, entry)).map(({ action, k }) => [JSON.stringify(action), addedKey(card, action, k)]))
+  new Map(placed(deskVerbs(board, card, { holds: ['verbs'], entry })).map(({ action, k }) => [JSON.stringify(action), addedKey(card, action, k)]))
 
 test('desk verbs: a pin or a hide reorders the desk and never changes the key an action is armed under', () => {
   const board = boardOf([POKE, ZAP_ONE, WIPE, ZAP_TWO])
   const plain = keysUnder(board, undefined)
   assert.equal(new Set(plain.values()).size, 4, 'two actions sharing an id are armed apart')
   for (const entry of [{ pinned: ['crowd/zap'] }, { pinned: ['crowd/wipe', 'crowd/zap'] }, { hidden: ['crowd/poke'] }, { pinned: ['crowd/zap'], hidden: ['crowd/wipe'] }]) {
-    const drawn = deskVerbs(board, card, entry)
+    const drawn = deskVerbs(board, card, { holds: ['verbs'], entry })
     assert.notDeepEqual(
       drawn.map((r) => r.action),
       [POKE, ZAP_ONE, WIPE, ZAP_TWO],
