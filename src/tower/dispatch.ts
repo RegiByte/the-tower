@@ -594,7 +594,7 @@ export const dispatch = defineResource({
     const newLaunch = async (config: Config, projectId: string, at: Pick<SpawnLaunch, 'id' | 'name' | 'cwd' | 'dirs' | 'worktree'>, launch: Launch, spawn: Spawn): Promise<SpawnLaunch | ApiError> => {
       const badCommand = commandRefused(config, launch.command)
       if (badCommand) return badCommand
-      const runtime = 'claude'
+      const runtime: Runtime = 'claude'
       const now = Date.now()
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
       const merged = await contribute('spawn', runtime, { project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, spawnCommand(config, projectId, launch)))
