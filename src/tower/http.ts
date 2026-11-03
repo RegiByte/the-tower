@@ -59,6 +59,9 @@
  *   GET  /palette.js        the command palette's entries and their ranking for what the viewer typed (src/shared/palette.ts)
  *   GET  /verb-words.js     each verb the board offers in words: label, hint, whether it asks first, its API verb (src/shared/verb-words.ts)
  *   GET  /fonts/<file>  a face the design names
+ *   GET  /shared/<file>.js, /src/<path>.js, /vendor/<package>.js   internal, not contract: each file below src/ a served module,
+ *                       core view or client reaches, transpiled alone with its imports as URLs, and each npm package one
+ *                       imports, bundled as one module; every page gets one instance of each (src/tower/served.ts)
  *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?, hire?} | /resume {id, conversation, prompt?} | /keys {id, data, by?}
  *        | /resize {id, cols, rows} | /kill {id, by?}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
@@ -126,7 +129,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { bundled, bundledFile, CORE_VIEWS_DIR, FRAME_KEYS, MODULES, towerClient } from './served.ts'
+import { bundledFile, CORE_VIEWS_DIR, FRAME_KEYS, MODULES, servedModule, sourceModule, towerClient, urlSource, urlVendor, vendorModule } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
@@ -186,13 +189,27 @@ export const httpServer = defineResource({
     function design(res: http.ServerResponse, url: string) {
       if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css', ...ANY_ORIGIN }).end(designCss())
       if (MODULES[url]) {
-        return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(bundled(url).text)
+        return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(servedModule(url))
       }
       const font = fonts.find((f) => url === `/fonts/${f.file}`)
       if (!font) return fail(res, 'not_found', `No face at "${url}"`)
       res
         .writeHead(200, { 'content-type': 'font/woff2', 'cache-control': 'max-age=86400', ...ANY_ORIGIN })
         .end(readFileSync(fontFile(font)))
+    }
+
+    /** A file below `src/` or an npm package's module, each served once at its own URL for the served modules, core views and clients that import it. */
+    const sourceText = (url: string): Promise<string> | undefined => {
+      const file = urlSource(url)
+      if (file !== undefined) return sourceModule(file)
+      const specifier = urlVendor(url)
+      return specifier === undefined ? undefined : vendorModule(specifier)
+    }
+
+    async function served(res: http.ServerResponse, url: string) {
+      const text = sourceText(url)
+      if (!text) return fail(res, 'not_found', `The tower serves no module at "${url}"`)
+      res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(await text)
     }
 
     /**
@@ -1034,6 +1051,7 @@ export const httpServer = defineResource({
       }
       if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return res.writeHead(200, { 'content-type': 'text/javascript' }).end(towerClient())
       if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(res, url)
+      if (req.method === 'GET' && /^\/(shared|src|vendor)\//.test(url)) return served(res, url.split('?')[0])
       const legacy = legacyOf('module').find((e) => e.old === url)
       if (req.method === 'GET' && legacy) return legacyModule(res, legacy)
       const [pathname, search] = url.split('?')
