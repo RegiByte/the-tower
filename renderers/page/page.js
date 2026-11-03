@@ -8,7 +8,7 @@ import { wireSpawn } from '/spawn.js'
 import { attendNext, attending, watchedIn } from '/attend.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
-import { busOf, declaredLayout, displayed, fill, layoutOf, openable, viewOn, viewsOf } from '/views.js'
+import { busOf, declaredLayout, displayed, fill, layoutKey, layoutOf, openable, usableConfigLayout, viewOn, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
 import { shells } from './shells.js'
@@ -63,7 +63,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { Offer } from '../../extensions/policies/policies.ts'
  * @import { BoardAsk } from '../../src/shared/extensions.ts'
  * @import { CommandKit, Placing } from '../../src/shared/views.ts'
- * @import { Layout, LayoutProblem, Overflow, Region, KitMember } from '../../src/shared/regions.ts'
+ * @import { Layout, Overflow, Region, KitMember } from '../../src/shared/regions.ts'
  * @import { Openable } from '../../src/shared/palette.ts'
  */
 
@@ -447,18 +447,13 @@ const RENDERER = /^\/r\/([^/]+)\//.exec(location.pathname)?.[1] ?? renderers.def
 /** What this renderer declares in its `renderer.json` and the config's layout for it, as `GET /renderers` serves them. */
 const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ (renderers.renderers.find((r) => r.name === RENDERER))
 /** Where `tower.store` keeps the viewer's own layout of this renderer's regions. */
-const LAYOUT_KEY = `layout.${RENDERER}`
+const LAYOUT_KEY = layoutKey(RENDERER)
 /** What is wrong with the config's layout for this renderer, against the regions it and the extensions that would start declare. */
 const LAYOUT_PROBLEMS = declared.layoutProblems ?? []
-/** Whether `problem` is about the config's layout of region `id`: its key names one of that region's fields. @param {LayoutProblem} problem @param {string} id */
-const problemOf = (problem, id) => {
-  const at = `renderers.${RENDERER}.layout.${id}.`
-  return problem.key.startsWith(at) && !problem.key.slice(at.length).includes('.')
-}
-/** The regions whose layout in the config fails its check: each is drawn by its default, as the check says. */
-const LAYOUT_FAILED = Object.keys(declared.configLayout).filter((id) => LAYOUT_PROBLEMS.some((p) => p.level === 'fail' && problemOf(p, id)))
 /** The config's layout for this renderer, less the regions whose layout fails its check. */
-const CONFIG_LAYOUT = Object.fromEntries(Object.entries(declared.configLayout).filter(([id]) => !LAYOUT_FAILED.includes(id)))
+const CONFIG_LAYOUT = usableConfigLayout(declared)
+/** The regions whose layout in the config fails its check: each is drawn by its default, as the check says. */
+const LAYOUT_FAILED = Object.keys(declared.configLayout).filter((id) => !(id in CONFIG_LAYOUT))
 /**
  * The config's layout problems for this renderer, on the board: the regions drawn by their default when any fails, else
  * how many warnings, each problem in the tip as `tower config check` lists it.

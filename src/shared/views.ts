@@ -1,5 +1,6 @@
 import type { Board } from '../bridge/board.ts'
 import type { ExtensionViewEntry, Words } from './extensions.ts'
+import type { Renderer } from './model.ts'
 import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
 import type { Notice } from './toasts.ts'
@@ -338,6 +339,22 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
  */
 export const declaredLayout = (board: Board, declared: Layout): Layout =>
   layoutOf(Object.assign({}, ...board.extensions.filter((e) => e.state === 'started').map((e) => e.layout ?? {})), declared, undefined)
+
+/** Where `tower.store` keeps the viewer's own layout of renderer `name`'s regions: the top layer `layoutOf` lays. @since 1.142 */
+export const layoutKey = (name: string) => `layout.${name}`
+
+/**
+ * The config's layout for a renderer as it draws by it, the layer `layoutOf` takes as `configured`: `configLayout`
+ * less each region a `fail` among `layoutProblems` is about, a problem whose key names one of that region's fields.
+ * Such a region is drawn by its default (`Renderer`). @since 1.142
+ */
+export const usableConfigLayout = ({ name, configLayout, layoutProblems = [] }: Pick<Renderer, 'name' | 'configLayout' | 'layoutProblems'>): Layout => {
+  const failsAt = (id: string) => {
+    const at = `renderers.${name}.layout.${id}.`
+    return layoutProblems.some((p) => p.level === 'fail' && p.key.startsWith(at) && !p.key.slice(at.length).includes('.'))
+  }
+  return Object.fromEntries(Object.entries(configLayout).filter(([id]) => !failsAt(id)))
+}
 
 /** Whether a view's `on` holds `subject`: its kind, `item.*` for any collection's item, `collection.<id>` for that one collection. */
 export const viewOn = (on: readonly string[], subject: Pick<Subject, 'kind' | 'value'>) =>

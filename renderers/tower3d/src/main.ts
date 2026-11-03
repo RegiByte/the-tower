@@ -16,7 +16,7 @@ import { cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as f
 import type { NoteCall } from '../../../extensions/reviews/threads.ts'
 import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer } from '../../../src/shared/viewer.ts'
 import { actionId, isFresh as isNewAction, offeredIds } from '../../../src/shared/adds.ts'
-import { declaredLayout, layoutOf } from '../../../src/shared/views.ts'
+import { declaredLayout, layoutKey, layoutOf, usableConfigLayout } from '../../../src/shared/views.ts'
 import type { Layout } from '../../../src/shared/regions.ts'
 import { addedKey, deskVerbs } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
@@ -1277,9 +1277,6 @@ function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
   if (FIXTURE === undefined) tower.store.set(VIEWER_KEYS[field], value)
 }
 
-/** Your own layout of this renderer, as every renderer keeps the viewer's: `layout.<renderer>` in `tower.store`. */
-const layoutKey = (name: string) => `layout.${name}`
-
 /** Your layout as `tower.store` keeps it now, the desk drawn again when it changed. */
 function rereadLayout() {
   const name = s.declared?.name
@@ -1294,9 +1291,9 @@ function rereadLayout() {
 
 /**
  * The layout Tower 3D draws by (decision `region-overflow`): its `renderer.json`'s over what started extensions give
- * their own regions, then the config's, then yours.
+ * their own regions, then the config's less the regions whose layout fails its check, then yours.
  */
-const layoutNow = (board: Board) => layoutOf(declaredLayout(board, s.declared?.layout ?? {}), s.declared?.configLayout ?? {}, s.storedLayout)
+const layoutNow = (board: Board) => layoutOf(declaredLayout(board, s.declared?.layout ?? {}), s.declared ? usableConfigLayout(s.declared) : {}, s.storedLayout)
 const deskEntry = (board: Board) => layoutNow(board)['card.desk']
 
 /** The actions you have seen, by `actionId`, across every renderer of yours. */
