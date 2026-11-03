@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.86.1
+
+Terminals keep up with fast typing on a busy page, a terminal opens at the size it was drawn at, and the page loads
+each module once. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config change, no
+API change. Reload open pages once after the restart.
+
+- **Typing no longer lags behind on a busy page.** Keys typed while the previous one is still being answered go
+  together in one write, so a page busy drawing several terminals no longer echoes a fast-typed line one character at
+  a time. Enter, Ctrl+C and escape-led keys are still sent alone (#368).
+- **A terminal opens at the size its screen was drawn at.** A terminal opened right after another viewer resized the
+  session could open at the old size and draw wrapped lines until the next resize; an ended session's last screen had
+  the same race (#369).
+- **Each module loads once per page, and reloads are faster.** Every source file a page reaches is served once at its
+  own URL, named by hash in an import map and cached for good, so the page and its views share one instance of each
+  module (two copies of the same module could ignore each other's state). A reload fetches only what changed. A view
+  that no longer loads against a newer tower says so and offers a Reload (#370).
+
 ## v1.86.0
 
 Debt wave A from the complexity audit: renderers agree on layouts and badge order, `tower doctor` checks the Claude
