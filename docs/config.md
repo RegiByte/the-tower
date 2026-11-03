@@ -237,8 +237,8 @@ what a policy holds), is declared by the bundled policies extension, on every fl
 `policies` entry here overrides its `label` and `description`, and a floor with `capabilities.policies.off`, where nothing
 runs on a schedule, keeps the collection only where a config entry declares it, as a plain one. `drafts`, prompts
 waiting to start a worker or be sent to one, is declared by the bundled drafts extension, on every floor where its
-capability is on: a `drafts` entry here overrides its `label` and `description`, and stays a plain collection on a
-floor with `capabilities.drafts.off`. A floor keeping `games` shows each item as an arcade cabinet in
+capability is on: a `drafts` entry here overrides its `label` and `description`, and a floor with
+`capabilities.drafts.off` keeps the collection only where a config entry declares it, as a plain one. A floor keeping `games` shows each item as an arcade cabinet in
 Tower 3D.
 
 ## Worktrees
