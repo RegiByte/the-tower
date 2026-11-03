@@ -46,6 +46,8 @@ const cardsOf = (board, key) => board.floors.filter((f) => key === 'board' || `f
 /** The cells a grid opens with when it has none kept: its floor's workers on duty. */
 const seed = (board, key) => cardsOf(board, key).filter((c) => c.onDuty).slice(0, MAX).map((c) => c.id)
 
+let mounts = 0
+
 export async function mount(host, { board, subject, kit, state }) {
   const key = subject.key
   /** @type {string[]} */
@@ -59,7 +61,7 @@ export async function mount(host, { board, subject, kit, state }) {
   const keep = () => state.set(`cells.${key}`, ids)
   const label = () => (key === 'board' ? 'every floor' : now.floors.find((f) => `floor:${f.id}` === key)?.name ?? key)
 
-  const pop = `grid-add-${crypto.randomUUID()}`
+  const pop = `grid-add-${mounts++}`
   host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div>`
   const bar = host.querySelector('.grid-bar')
   const adder = bar.querySelector('[data-grid-open-add]')
