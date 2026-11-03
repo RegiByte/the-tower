@@ -29,7 +29,7 @@ export async function attach(paths: SystemPaths, id: string): Promise<void> {
   ensureOk(await host.request({ t: 'resize', id, ...size() }))
 
   const { log, offset } = readLog(logPath, screenEvents)
-  process.stdout.write(await snapshot(log))
+  process.stdout.write((await snapshot(log)).data)
 
   let detached = false
 

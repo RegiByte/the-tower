@@ -101,22 +101,22 @@ export function screenMirrors(logPathOf: (id: string) => string, graceMs: number
  * computation that failed, is not kept.
  */
 export function lastFrames(logPathOf: (id: string) => string, maxEntries: number) {
-  type Frame = { data: string; final: boolean }
-  const entries = new Map<string, { size: number; frame: Promise<Frame> }>()
+  type Last = { frame: Frame; final: boolean }
+  const entries = new Map<string, { size: number; frame: Promise<Last> }>()
 
-  const compute = async (logPath: string): Promise<Frame> => {
+  const compute = async (logPath: string): Promise<Last> => {
     const { log } = readLog(logPath, screenEvents)
-    return { data: await snapshot(log), final: log.events.some((event) => event[1] === 'x') }
+    return { frame: await snapshot(log), final: log.events.some((event) => event[1] === 'x') }
   }
 
-  const frame = async (id: string): Promise<string> => {
+  const frame = async (id: string): Promise<Frame> => {
     const logPath = logPathOf(id)
     const size = logSize(logPath)
     const existing = entries.get(id)
     if (existing?.size === size) {
       entries.delete(id)
       entries.set(id, existing)
-      return (await existing.frame).data
+      return (await existing.frame).frame
     }
     const entry = { size, frame: compute(logPath) }
     entries.set(id, entry)
@@ -128,7 +128,7 @@ export function lastFrames(logPathOf: (id: string) => string, maxEntries: number
       if (entries.size <= maxEntries) break
       entries.delete(oldest)
     }
-    return (await entry.frame).data
+    return (await entry.frame).frame
   }
 
   return { frame }

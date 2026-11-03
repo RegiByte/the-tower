@@ -419,7 +419,7 @@ export const httpServer = defineResource({
         })
         if (stop) return stop
       }
-      send({ t: 'snapshot', data: await lastFrameOf.frame(id), cols: facts.cols, rows: facts.rows, exited: true })
+      send({ t: 'snapshot', ...(await lastFrameOf.frame(id)), exited: true })
       return () => {}
     }
 

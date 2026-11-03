@@ -121,14 +121,14 @@ export const serializer = (term: Terminal): (() => string) => {
   }
 }
 
-/** Bytes that redraw the session's current screen, or an ended session's last frame, modes included, on a real terminal. */
-export async function snapshot(log: SessionLog): Promise<string> {
+/** Bytes that redraw the session's current screen, or an ended session's last frame, modes included, on a real terminal, at the size the replay left. */
+export async function snapshot(log: SessionLog): Promise<Frame> {
   const term = terminalFor(log)
   const serialized = serializer(term)
   await replayInto(term, lastFrame(log), Infinity)
-  const bytes = serialized()
+  const frame = { data: serialized(), cols: term.cols, rows: term.rows }
   term.dispose()
-  return bytes
+  return frame
 }
 
 /** Bytes that redraw a screen, and the size they draw it at. */

@@ -34,7 +34,7 @@ session that just exited), then the log's output as it is appended. A running se
 log once ([`mirrorOf`](ref:hub/src/bridge/screen.ts#mirrorOf)), it follows the log with one tail, and every later
 viewer is sent its snapshot at the size the mirror drew it (a resize its replay took has no `r` to follow), so a floor of monitors opening at once costs one replay per session, not one per
 monitor. It outlives its last viewer briefly, so a reconnect finds it built, and is kept nowhere else. A session no longer running is sent its last frame, a
-[snapshot](ref:hub/src/bridge/screen.ts#snapshot) of the log, and no mirror. A log that holds its exit never changes,
+[snapshot](ref:hub/src/bridge/screen.ts#snapshot) of the log at the size its replay drew it, and no mirror. A log that holds its exit never changes,
 so its frame is computed once and kept in memory ([`lastFrames`](ref:hub/src/tower/screens.ts#lastFrames), bounded, guarded by the log's size). A session without an exit in its log (stranded by the host) is replayed on every
 open. An interactive terminal opens the same stream as `terminal/<id>`
 ([`terminalStream`](ref:hub/src/tower/http.ts#terminalStream)), whose snapshot also says how many other terminals
