@@ -9,13 +9,18 @@ import { VIEWER_KEYS } from './viewer.ts'
 export const cardsOf = (board: Board) => board.floors.flatMap((f) => f.cards)
 export const findCard = (board: Board, id: string) => cardsOf(board).find((c) => c.id === id)
 
-/** The workers that report to a worker: its hires and its reviewers, by start. */
-export const hiresOf = (cards: Card[], c: Card) => cards.filter((h) => h.reportsTo === c.id).sort((a, b) => a.startedAt - b.startedAt)
+/** When the worker first started: its lineage's first session, so a resume keeps its place among its peers. */
+const firstStartOf = (c: Card) => c.lineage[0].startedAt
 
-/** Each worker's hires by start, `cards` indexed once: the lookup `hiresOf` makes per worker, linear over a floor's workers. */
+const byFirstStart = (a: Card, b: Card) => firstStartOf(a) - firstStartOf(b)
+
+/** The workers that report to a worker: its hires and its reviewers, by first start. */
+export const hiresOf = (cards: Card[], c: Card) => cards.filter((h) => h.reportsTo === c.id).sort(byFirstStart)
+
+/** Each worker's hires by first start, `cards` indexed once: the lookup `hiresOf` makes per worker, linear over a floor's workers. */
 export const hiresBy = (cards: Card[]): ((c: Card) => Card[]) => {
   const hires = Map.groupBy(cards, (h) => h.reportsTo)
-  for (const list of hires.values()) list.sort((a, b) => a.startedAt - b.startedAt)
+  for (const list of hires.values()) list.sort(byFirstStart)
   return (c) => hires.get(c.id) ?? []
 }
 
@@ -68,7 +73,7 @@ const reportsUpToDuty = (byId: Map<string, Card>, c: Card): boolean => {
 }
 
 /**
- * A floor's crews as a renderer lists them, by start: each worker on duty that reports to nobody on duty, however high,
+ * A floor's crews as a renderer lists them, by first start: each worker on duty that reports to nobody on duty, however high,
  * heads one, and everyone under it follows at its depth, on duty or not.
  */
 export const crewTree = (cards: Card[]): { card: Card; depth: number }[] => {
@@ -77,7 +82,7 @@ export const crewTree = (cards: Card[]): { card: Card; depth: number }[] => {
   const under = (c: Card, depth: number): { card: Card; depth: number }[] => [{ card: c, depth }, ...hires(c).flatMap((h) => under(h, depth + 1))]
   return cards
     .filter((c) => c.onDuty && !reportsUpToDuty(byId, c))
-    .sort((a, b) => a.startedAt - b.startedAt)
+    .sort(byFirstStart)
     .flatMap((c) => under(c, 0))
 }
 
