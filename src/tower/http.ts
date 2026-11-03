@@ -130,7 +130,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, hashedUrl, importMap, moduleGraph, moduleScripts, MODULES, servedModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withModules } from './served.ts'
+import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, hashedUrl, importMap, moduleGraph, moduleScripts, MODULES, servedModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withImportMap, withPreloads } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
@@ -207,7 +207,10 @@ export const httpServer = defineResource({
       return specifier === undefined ? undefined : vendorModule(specifier)
     }
 
-    /** Every hashed URL a page's import map named, with its text: a page still open asks for what its map named. */
+    /**
+     * Every hashed URL a page's import map named, with its text: a page still open asks for what its map named. It grows
+     * only as files change, by one text per change, for the life of the process.
+     */
     const named = new Map<string, string>()
 
     /**
@@ -590,10 +593,11 @@ export const httpServer = defineResource({
         return Promise.resolve(found && path.extname(found) === '.js' && statSync(found, { throwIfNoEntry: false })?.isFile() ? readFileSync(found, 'utf8') : undefined)
       }
       const modules = await moduleGraph(moduleScripts(html, url), textOf)
-      const imports = html.includes('type="importmap"') ? {} : importMap(modules)
+      const mapped = /<script\b[^>]*\btype\s*=\s*["']?importmap/i.test(html)
+      const imports = mapped ? {} : importMap(modules)
       for (const [plain, hashed] of Object.entries(imports)) if (!MODULES[plain]) named.set(hashed, modules.get(plain)!)
-      const preloads = [...new Set([...modules.keys()].map((m) => imports[m] ?? m))]
-      res.writeHead(200, { 'content-type': FILE_TYPES['.html'], 'cache-control': 'no-store', ...ANY_ORIGIN }).end(withModules(html, imports, preloads))
+      const preloads = withPreloads(html, [...new Set([...modules.keys()].map((m) => imports[m] ?? m))])
+      res.writeHead(200, { 'content-type': FILE_TYPES['.html'], 'cache-control': 'no-store', ...ANY_ORIGIN }).end(mapped ? preloads : withImportMap(preloads, imports))
     }
 
     /** A module's text as the tower serves it at `url`, if it serves one there: what a page's imports reach. */

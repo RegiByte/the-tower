@@ -199,9 +199,13 @@ export async function moduleGraph(entries: string[], textOf: (url: string) => Pr
   return modules
 }
 
-/** The URLs of an html page's module scripts (`<script type="module" src>`), the page served at `url`. */
+/** The URLs of an html page's module scripts (`<script type="module" src>`, its attributes in any order and quoting), the page served at `url`. */
 export const moduleScripts = (html: string, url: string): string[] =>
-  [...html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/g)].map(([, src]) => new URL(src!, `http://tower${url}`).pathname)
+  [...html.matchAll(/<script\b([^>]*)>/gi)]
+    .map(([, attributes]) => attributes!)
+    .filter((attributes) => /\btype\s*=\s*["']?module\b/i.test(attributes))
+    .flatMap((attributes) => /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i.exec(attributes)?.slice(1).filter(Boolean) ?? [])
+    .map((src) => new URL(src!, `http://tower${url}`).pathname)
 
 /** A file or package's URL with its text's hash in it: `/shared/press.js` as `/shared/press.3f9a0c21be.js`. */
 export const hashedUrl = (url: string, text: string) => url.replace(/\.js$/, `.${createHash('sha256').update(text).digest('hex').slice(0, 10)}.js`)
@@ -221,11 +225,10 @@ export function importMap(modules: Map<string, string>): Record<string, string> 
   return Object.fromEntries([...hashed, ...served])
 }
 
-/**
- * An html page that starts with `imports` as its import map, before its first script, and asks for each module of
- * `preloads` at once with a `modulepreload` link at the end of its head.
- */
-export const withModules = (html: string, imports: Record<string, string>, preloads: string[]): string =>
-  html
-    .replace(/<script\b|<\/head>/, (tag) => `<script type="importmap">${JSON.stringify({ imports })}</script>\n${tag}`)
-    .replace('</head>', `${preloads.map((m) => `<link rel="modulepreload" href="${m}">`).join('\n')}\n</head>`)
+/** An html page that starts with `imports` as its import map, before its first script. */
+export const withImportMap = (html: string, imports: Record<string, string>): string =>
+  html.replace(/<script\b|<\/head>/, (tag) => `<script type="importmap">${JSON.stringify({ imports })}</script>\n${tag}`)
+
+/** An html page asking for each module of `preloads` at once, with a `modulepreload` link at the end of its head. */
+export const withPreloads = (html: string, preloads: string[]): string =>
+  html.replace('</head>', `${preloads.map((m) => `<link rel="modulepreload" href="${m}">`).join('\n')}\n</head>`)
