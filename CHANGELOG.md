@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.87.0
+
+Put a floor's crews in the order you want to check them, and a resumed worker keeps its place. No restart beyond the
+tower's own (`tower down tower`, then `tower up tower`), no config change, API 1.143 (additions only). Reload open
+pages once after the restart.
+
+- **Drag a floor's crews into your own order.** Hover a crew's top worker in the sidebar and its lamp turns into a
+  grip: drag it to move the whole crew, or focus it and press ↑ and ↓. A line shows where the crew lands, and Escape
+  puts it back. Only the grip starts a drag, so badges, verbs and the row click as before. The order is yours, kept per
+  browser like the rest of your view: new workers join at the end, a crew's hires stay in the order they were hired,
+  and ⌥↑/⌥↓ step through workers in your order, on the page and in Tower 3D. Renderers read it through `crewTreeIn`,
+  `dutyOrderIn` and `neighboursIn`, and write it with `orderMoving` (#372).
+- **A resumed worker keeps its place.** Resuming a worker used to move it, with its crew, to the bottom of its floor:
+  crews now go by when each worker first started (#372).
+
 ## v1.86.1
 
 Terminals keep up with fast typing on a busy page, a terminal opens at the size it was drawn at, and the page loads
