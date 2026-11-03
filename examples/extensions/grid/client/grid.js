@@ -46,7 +46,14 @@ const cardsOf = (board, key) => board.floors.filter((f) => key === 'board' || `f
 /** The cells a grid opens with when it has none kept: its floor's workers on duty. */
 const seed = (board, key) => cardsOf(board, key).filter((c) => c.onDuty).slice(0, MAX).map((c) => c.id)
 
-let mounts = 0
+/** `randomUUID` needs a secure context, and a tower may be reached by a host name over plain http; `getRandomValues` does not. */
+const uuid = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
 
 export async function mount(host, { board, subject, kit, state }) {
   const key = subject.key
@@ -61,7 +68,7 @@ export async function mount(host, { board, subject, kit, state }) {
   const keep = () => state.set(`cells.${key}`, ids)
   const label = () => (key === 'board' ? 'every floor' : now.floors.find((f) => `floor:${f.id}` === key)?.name ?? key)
 
-  const pop = `grid-add-${mounts++}`
+  const pop = `grid-add-${uuid()}`
   host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div>`
   const bar = host.querySelector('.grid-bar')
   const adder = bar.querySelector('[data-grid-open-add]')
