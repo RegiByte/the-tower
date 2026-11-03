@@ -21,7 +21,7 @@ function run(events: SpawnEvent<string>[], state: Spawning<string> = spawnClosed
 const open: SpawnEvent<string> = { type: 'open', project: 'p', on: 'draft', text: 'go' }
 
 test('spawn: closing an unstarted form keeps its prompt; a started one closes without keeping', () => {
-  assert.deepEqual(run([open, { type: 'cancel' }, { type: 'closed', text: 'go on' }]), { state: { t: 'closed' }, effects: ['show', 'close', 'keep'] })
+  assert.deepEqual(run([open, { type: 'cancel' }, { type: 'closed', text: 'go on' }]), { state: { t: 'closed' }, effects: ['show', 'close', 'keep', 'dismissed'] })
   const started = run([open, { type: 'start', form }, { type: 'started', reply: { t: 'spawned', id: 's1' } }, { type: 'closed', text: 'go' }])
   assert.deepEqual(started, { state: { t: 'closed' }, effects: ['show', 'draw', 'run', 'draw', 'close', 'started'] })
 })
@@ -31,6 +31,7 @@ test('spawn: while Start waits nothing closes it but the browser, and it comes b
   assert.deepEqual(starting.effects, ['show', 'draw', 'run'])
   const failed = run([{ type: 'failed', message: 'refused' }], starting.state)
   assert.deepEqual(failed, { state: { t: 'editing', project: 'p', on: 'draft', error: 'refused' }, effects: ['draw'] })
+  assert.deepEqual(run([{ type: 'closed', text: 'go' }], starting.state).effects, [], 'a second Esc while Start waits is no dismissal')
   const forced = run([{ type: 'closed', text: 'go' }, { type: 'failed', message: 'refused' }], starting.state)
   assert.deepEqual(forced, { state: { t: 'editing', project: 'p', on: 'draft', error: 'refused' }, effects: ['reshow', 'draw'] })
   const reopened = run([{ type: 'closed', text: 'go' }, { ...open, project: 'q' }], starting.state)
