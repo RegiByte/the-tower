@@ -1,4 +1,4 @@
-import { DISMISS_ASK_TITLE, actionWords, addedActions, badgesOf, esc, glyphOf, isCommand, plural, span } from '/cards.js'
+import { DISMISS_ASK_TITLE, actionWords, badgesOf, esc, glyphOf, isCommand, plural, span } from '/cards.js'
 import { ICON } from '/icons.js'
 
 /**
@@ -105,12 +105,6 @@ export const iconButtonsHtml = (board, subject, actions) =>
       return `<button ${attrs} aria-label="${esc(words.label)}">${face}</button>`
     })
     .join('')
-
-/** A subject's added actions as buttons. @param {Board} board @param {Subject} subject */
-export const addedActionsHtml = (board, subject) => actionsHtml(board, subject, addedActions(board, subject))
-
-/** A subject's badges, then its added actions. @param {Board} board @param {Subject} subject */
-export const addsHtml = (board, subject) => `${badgesHtml(board, subject)}${addedActionsHtml(board, subject)}`
 
 /**
  * Asks as rows: what is asked and by whom, which opens its subject and says its hint on hover, its actions on its
