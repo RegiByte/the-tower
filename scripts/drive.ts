@@ -3,7 +3,9 @@
  * reused profile restores old tabs; a port still held attaches to an old browser), page errors printed as they
  * happen, audio muted. Steps run in order:
  *
- *   npm run drive -- <url> [--size 1280x800] [--scheme light|dark] [--motion reduce] step…
+ *   npm run drive -- <url> [--size 1280x800] [--scheme light|dark] [--motion reduce] [--throttle 40,20000] step…
+ *     --throttle <latencyMs>,<downKbps>   emulate a slower network from before the navigation: the latency added to
+ *                     every request and the download rate in kilobits a second (40,20000 is 40 ms and 20 Mbit/s)
  *     --eval '<js>'   evaluate in the page, awaited; prints the result as JSON (fails the run on a throw)
  *     --shot <file>   save a PNG of the page, DOM panels included
  *     --wait <ms>     wait in real time
@@ -39,13 +41,22 @@ function parse(argv: string[]) {
     args: argv,
     allowPositionals: true,
     tokens: true,
-    options: { size: { type: 'string', default: '1280x800' }, scheme: { type: 'string' }, motion: { type: 'string' }, ...Object.fromEntries(STEPS.map((s) => [s, { type: 'string', multiple: true }])) },
+    options: { size: { type: 'string', default: '1280x800' }, scheme: { type: 'string' }, motion: { type: 'string' }, throttle: { type: 'string' }, ...Object.fromEntries(STEPS.map((s) => [s, { type: 'string', multiple: true }])) },
   })
   const url = tokens.find((t) => t.kind === 'positional')?.value
-  if (!url) throw new Error('usage: npm run drive -- <url> [--size WxH] [--scheme light|dark] [--motion reduce] [--eval js | --shot file | --wait ms | --hover css | --wheel dy | --down b | --up b | --key chord | --type text | --drop file]…')
+  if (!url) throw new Error('usage: npm run drive -- <url> [--size WxH] [--scheme light|dark] [--motion reduce] [--throttle latencyMs,downKbps] [--eval js | --shot file | --wait ms | --hover css | --wheel dy | --down b | --up b | --key chord | --type text | --drop file]…')
   const steps: Step[] = tokens.flatMap((t) => (t.kind === 'option' && (STEPS as readonly string[]).includes(t.name) ? [{ kind: t.name as Step['kind'], value: t.value! }] : []))
   const [width, height] = values.size.split('x').map(Number)
-  return { url, steps, width, height, scheme: values.scheme, motion: values.motion }
+  return { url, steps, width, height, scheme: values.scheme, motion: values.motion, throttle: values.throttle === undefined ? undefined : throttleOf(values.throttle) }
+}
+
+/** A network to emulate: the latency added to every request, and the download rate. */
+export type Throttle = { latencyMs: number; downKbps: number }
+
+const throttleOf = (value: string): Throttle => {
+  const [latencyMs, downKbps] = value.split(',').map(Number)
+  if (!(latencyMs >= 0 && downKbps > 0)) throw new Error(`--throttle takes <latencyMs>,<downKbps>, such as 40,20000: not "${value}"`)
+  return { latencyMs, downKbps }
 }
 
 export const freePort = () => new Promise<number>((resolve, reject) => {
@@ -144,8 +155,9 @@ export type Page = {
 /**
  * Opens `url` in a fresh headless Chrome, runs `use` on it, and closes everything after. Page errors go to stderr.
  * `flags` are Chrome's own, after the driver's. `scale` is the device pixel ratio: 2 draws as a retina display does.
+ * `throttle` emulates its network from before the navigation.
  */
-export async function withPage<T>(url: string, { width = 1280, height = 800, scale = 1, scheme, motion, flags = [] }: { width?: number; height?: number; scale?: number; scheme?: string; motion?: string; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
+export async function withPage<T>(url: string, { width = 1280, height = 800, scale = 1, scheme, motion, throttle, flags = [] }: { width?: number; height?: number; scale?: number; scheme?: string; motion?: string; throttle?: Throttle; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
   const port = await freePort()
   const profile = mkdtempSync(path.join(os.tmpdir(), 'tower-drive-'))
   const chrome = spawn(CHROME, [
@@ -166,6 +178,10 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
     await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile: false })
     const features = [scheme && { name: 'prefers-color-scheme', value: scheme }, motion && { name: 'prefers-reduced-motion', value: motion }].filter(Boolean)
     if (features.length) await cdp.send('Emulation.setEmulatedMedia', { features })
+    if (throttle) {
+      await cdp.send('Network.enable')
+      await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: throttle.latencyMs, downloadThroughput: (throttle.downKbps * 1000) / 8, uploadThroughput: -1 })
+    }
     const loaded = new Promise((resolve) => cdp.on('Page.loadEventFired', resolve))
     await cdp.send('Page.navigate', { url })
     await loaded
@@ -221,8 +237,8 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
 }
 
 async function main() {
-  const { url, steps, width, height, scheme, motion } = parse(process.argv.slice(2))
-  await withPage(url, { width, height, scheme, motion }, async (page) => {
+  const { url, steps, width, height, scheme, motion, throttle } = parse(process.argv.slice(2))
+  await withPage(url, { width, height, scheme, motion, throttle }, async (page) => {
     for (const step of steps) {
       if (step.kind === 'wait') await sleep(Number(step.value))
       if (step.kind === 'shot') (await page.shot(step.value), console.log(`shot: ${step.value}`))
