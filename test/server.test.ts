@@ -610,6 +610,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
       { name: 'pulse/ping', scope: 'project', words: { label: 'Ping', hint: 'rings chime for the floor' } },
       { name: 'pulse/pong', scope: 'system', deprecated: { since: '1.0', use: 'pulse/ping', why: 'a ping names its floor' } },
       { name: 'pulse/beat', scope: 'project', words: { label: 'Beat', hint: 'keeps a beat on the floor, and as a fact of the session when one is named' } },
+      { name: 'pulse/peek', scope: 'system' },
     ],
     reads: [
       { path: 'page/<project>/<file...>', scope: 'project', description: 'A page of its own, below its pages folder.' },
@@ -739,6 +740,16 @@ test("server: an extension's verb is called for the caller the CLI's headers cla
   assert.equal(errorCode(await post('pulse/ping', { times: 1 })), 'invalid')
   assert.equal(errorCode(await post('pulse/ping', { project: 'nowhere' })), 'not_found')
   assert.equal(errorCode(await post('pulse/nothing', {})), 'not_found')
+})
+
+test("server: an extension's ctx.read of a core read answers as over HTTP: a file's text as written, and a legacy read", async () => {
+  const peek = async (read: string, params: Record<string, string>) => {
+    const answered = await post('pulse/peek', { read, params })
+    assert.equal(answered.status, 200, answered.body)
+    return (JSON.parse(answered.body) as { answer: unknown }).answer
+  }
+  assert.equal(await peek('tower/shelf/<project>/<n>/<file>', { project: 'lab', n: '0', file: 'report/index.html' }), readFileSync(SHOWN, 'utf8'), 'an html shelf file, unframed')
+  assert.deepEqual(await peek('tower/reviews/<project>', { project: 'lab' }), JSON.parse((await get('/reviews/lab')).body))
 })
 
 test("server: an extension's read answers by its path, and its deprecated verb says so in RFC 9745's headers", async () => {

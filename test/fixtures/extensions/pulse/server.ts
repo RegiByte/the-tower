@@ -19,6 +19,7 @@ const start: Start = (ctx) => {
     verbs: {
       ping: async ({ project, times }: { project: string; times?: number }, call) => ({ project, chimed: await call.deps.chime!.ring({ times }) }),
       pong: () => ({ pong: true }),
+      peek: async ({ read, params }: { read: string; params: Record<string, string> }, call) => ({ answer: await call.read(read, params) }),
       beat: async ({ project, session }: { project: string; session?: string }) => {
         const item = await ctx.collections.create(project, 'pulse', { name: 'beat', ext: 'md', content: `beat ${ctx.collections.list(project, 'pulse').length + 1}\n` })
         await ctx.streams.append('beats', { project }, 'b', { item: item.id })
