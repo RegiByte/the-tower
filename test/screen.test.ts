@@ -52,7 +52,7 @@ const assertMirrorsReplay = async (log: SessionLog) => {
   let drawn = cuts[0]
   for (const cut of cuts) {
     for (; drawn < cut; drawn++) mirror.draw(events[drawn])
-    assert.equal(await mirror.snapshot(), await snapshot({ header, events: events.slice(0, cut) }), `${header.id} cut at ${cut} of ${events.length} events`)
+    assert.equal((await mirror.snapshot()).data, await snapshot({ header, events: events.slice(0, cut) }), `${header.id} cut at ${cut} of ${events.length} events`)
   }
   mirror.dispose()
 }

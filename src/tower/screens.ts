@@ -1,9 +1,9 @@
-import { mirrorOf, snapshot, type Mirror } from '../bridge/screen.ts'
+import { mirrorOf, snapshot, type Frame, type Mirror } from '../bridge/screen.ts'
 import type { LogEvent } from '../shared/model.ts'
 import { logSize, readLog, screenEvents, tailLog } from '../tail.ts'
 
-/** What a viewer of a screen is sent: the snapshot once, then each `o`, `r` and `x` event as it is logged. */
-export type ScreenViewer = { snapshot: (data: string) => void; event: (event: LogEvent) => void }
+/** What a viewer of a screen is sent: the snapshot once, at the size its mirror held, then each `o`, `r` and `x` event as it is logged. */
+export type ScreenViewer = { snapshot: (frame: Frame) => void; event: (event: LogEvent) => void }
 
 /** A screen's viewers: one waiting for its snapshot holds the events logged meanwhile, sent once the snapshot is. */
 type Viewer = ScreenViewer & { held?: LogEvent[] }
