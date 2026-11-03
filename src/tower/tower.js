@@ -508,8 +508,12 @@
 
   /** @typedef {{ id: string, data: string }} Keys */
 
-  /** Keys that hold Enter or an escape (a named key, a paste, a focus report): Claude reads text and Enter arriving in one write as a paste. */
-  const writtenAlone = (/** @type {string} */ data) => /[\r\x1b]/.test(data)
+  /**
+   * Keys that hold Enter, an escape (a named key, a paste, a focus report) or Ctrl+C: Claude reads text and Enter
+   * arriving in one write as a paste, and the composer's fold reads Ctrl+C as emptying it only as a write by itself
+   * (`heldAfter`, src/bridge/composer.ts).
+   */
+  const writtenAlone = (/** @type {string} */ data) => /[\r\x1b\x03]/.test(data)
 
   /**
    * The writes that type `pending`, in order: keys typed for one terminal in a row join into one write, and keys
