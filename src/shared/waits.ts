@@ -1,7 +1,7 @@
 import type { Board, Wait, WaitReason } from '../bridge/board.ts'
 import type { Offer } from './policies-legacy.ts'
 import type { BoardAsk } from './extensions.ts'
-import { dutyOrder, findCard, stepFrom } from './crews.ts'
+import { dutyOrderIn, findCard, stepFrom } from './crews.ts'
 import { VIEWER_KEYS } from './viewer.ts'
 
 /**
@@ -16,9 +16,13 @@ export const waitingCards = (board: Board) => board.waiting.map((w) => findCard(
  * Where each way of moving between workers goes from `id`; `waiting` (`nextWait` over the waits `heed` leaves) is unset
  * when nobody else waits.
  */
-export const neighbours = (board: Board, id: string | undefined, heed: Heed) => {
+export const neighbours = (board: Board, id: string | undefined, heed: Heed) => neighboursIn(board, [], id, heed)
+
+/** `neighbours`, stepping through the floors' crews in the viewer's `order` of worker keys (`dutyOrderIn`). @since 1.143 */
+export const neighboursIn = (board: Board, order: readonly string[], id: string | undefined, heed: Heed) => {
   const to = nextWait(heededWaits(board, heed), heed.visited, id).to
-  return { prev: stepFrom(dutyOrder(board), id, -1), next: stepFrom(dutyOrder(board), id, 1), waiting: to && findCard(board, to.id) }
+  const duty = dutyOrderIn(board, order)
+  return { prev: stepFrom(duty, id, -1), next: stepFrom(duty, id, 1), waiting: to && findCard(board, to.id) }
 }
 export type Move = keyof ReturnType<typeof neighbours>
 
