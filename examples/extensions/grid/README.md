@@ -32,7 +32,9 @@ swaps places with it.
 | ![Swapping a cell's worker](shots/pick-light.png) | ![Swapping a cell's worker](shots/pick-dark.png) |
 
 **Add worker**, while the grid has fewer than four cells, lists the floor's workers on duty that are in no cell: the
-one picked takes a new cell.
+one picked takes a new cell. **New worker…** at its end opens the tower's new-worker form on the floor (on the grid of
+every floor, one row per floor): the worker it starts takes a new cell, saying Starting a worker… until it is on the
+board, and you stay on the grid. It shows where the tower lends that form to views (the tower page, from tower 1.146).
 
 | Light | Dark |
 | --- | --- |
@@ -75,8 +77,9 @@ Nothing. Its chord is the config's to change: `"keys": { "grid/grid": ["Meta+Shi
 
 Grid is client code only, a view, a region and a command. Each cell is the region `card.cell`, which the tower fills
 with the worker's own view at `cell` scale; the grid draws nothing in a cell itself, but hands the worker's head its
-Open and ✕ (`acts`) and the swap menu (`pick`). Which workers fill the cells, and whether heads show, are the view's
-own state, kept in `tower.store`.
+Open and ✕ (`acts`) and the swap menu (`pick`). New worker… is `kit.spawn`, the renderer's own form, which answers
+the worker it started, so the grid copies none of the form. Which workers fill the cells, and whether heads show, are
+the view's own state, kept in `tower.store`.
 
 ## Make it yours
 
