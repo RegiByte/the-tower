@@ -46,7 +46,8 @@ A project can prefer a named command when `argv` names more than one:
 A spawn or resume naming a command `argv` doesn't have fails, listing the names it does; this is also what a running
 session sees if its command is later dropped from `argv` and it is resumed. Each command must be its own executable on
 PATH, never a shell alias: see `argv`'s own doc comment in `src/shared/model.ts` for the wrapper-bin pattern a second
-account typically uses. Naming a command in a spawn needs the host at protocol 4 or later (`tower doctor`), since an
+account typically uses. `tower doctor` checks each command's binary, its version and its sign-in, in the config's
+`env`. Naming a command in a spawn needs the host at protocol 4 or later (`tower doctor`), since an
 older host spreads `argv` as its single array and fails on the named shape; a session already running under an older
 host resumes under `argv`'s first until the host restarts. A session resumed from before `command` existed on its
 header also resumes under `argv`'s first, not its floor's preferred one.

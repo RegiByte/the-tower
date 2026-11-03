@@ -17,7 +17,8 @@ import type { Check, RunResult } from './shared/extensions.ts'
 import { extensionLine, PROBLEM_FIX, problemLine } from './shared/cards.ts'
 import { CLAUDE_TESTED, claudeRange } from './shared/claude.ts'
 import { configProblems } from './config-check.ts'
-import { ConfigError, editorArgv, towerPort, type Config } from './shared/model.ts'
+import { ConfigError, commandNames, editorArgv, resolveCommand, towerPort, type Config } from './shared/model.ts'
+import { withoutParentSession } from './shared/env.ts'
 import type { SystemPaths } from './shared/paths.ts'
 import type { Reads } from './shared/shelf-page.ts'
 import { readConfig } from './system.ts'
@@ -32,10 +33,10 @@ const GIT_MINIMUM = [2, 38]
 
 type Ran = { code: number; stdout: string; stderr: string }
 
-/** A command run to its end, whatever it exits with; `undefined` when it isn't on the PATH. */
-const ran = async (file: string, args: string[]): Promise<Ran | undefined> => {
+/** A command run to its end in `env`, whatever it exits with; `undefined` when it isn't on the PATH. */
+const ranIn = async (env: NodeJS.ProcessEnv, file: string, args: string[]): Promise<Ran | undefined> => {
   try {
-    const { stdout, stderr } = await promisify(execFile)(file, args, { encoding: 'utf8' })
+    const { stdout, stderr } = await promisify(execFile)(file, args, { encoding: 'utf8', env })
     return { code: 0, stdout, stderr }
   } catch (err) {
     const failed = err as NodeJS.ErrnoException & { code: number | string; stdout: string; stderr: string }
@@ -44,6 +45,8 @@ const ran = async (file: string, args: string[]): Promise<Ran | undefined> => {
     return { code: failed.code, stdout: failed.stdout, stderr: failed.stderr }
   }
 }
+
+const ran = (file: string, args: string[]): Promise<Ran | undefined> => ranIn(process.env, file, args)
 
 /** On a platform the tower doesn't run on, the platform's own check fails first and names the fix that matters. */
 const installs = (tool: string): string => detected()?.installs(tool) ?? `install ${tool}`
@@ -76,30 +79,71 @@ const gitVersion = async (): Promise<Verdict> => {
     : { level: 'fail', what: `${what}, older than ${GIT_MINIMUM.join('.')}`, fix: detected()?.newerGit ?? 'install a newer git' }
 }
 
-const claudeVersion = async (): Promise<Verdict> => {
-  const run = await ran('claude', ['--version'])
-  if (!run) return { level: 'fail', what: 'claude is not on the PATH', fix: 'install Claude Code: https://docs.claude.com/en/docs/claude-code/setup' }
-  const version = run.stdout.trim()
+/**
+ * A Claude the config's `argv` starts: `file`, the binary one or more of its commands name, as the host runs it, in the
+ * config's `env` over the scrubbed environment. `names`: the commands that start it, none for the legacy array.
+ */
+type Claude = { file: string; names: string[]; env: NodeJS.ProcessEnv }
+
+/** Each distinct binary the config's `argv` commands start, so a Claude under several names is checked once. */
+const claudesOf = (config: Config): Claude[] => {
+  const byFile = new Map<string, string[]>()
+  for (const name of commandNames(config) ?? [undefined]) {
+    const [file] = resolveCommand(config, name)
+    byFile.set(file, [...(byFile.get(file) ?? []), ...(name === undefined ? [] : [name])])
+  }
+  const env = withoutParentSession({ ...process.env, ...config.env })
+  return [...byFile].map(([file, names]) => ({ file, names, env }))
+}
+
+/** How a line names a Claude: its binary, and the commands that start it when `argv` names several. */
+const claudeLabel = ({ file, names }: Claude): string => (names.length ? `${file} (${names.map((n) => `argv.${n}`).join(', ')})` : file)
+
+const missing = (claude: Claude): Verdict => ({
+  level: 'fail',
+  what: `${claudeLabel(claude)}: ${claude.file} ${claude.file.includes('/') ? 'does not exist' : 'is not on the PATH'}`,
+  fix: `install Claude Code (https://docs.claude.com/en/docs/claude-code/setup), or fix argv${claude.names.length ? `.${claude.names[0]}` : ''} in the config`,
+})
+
+/** A Claude's version, from its `--version`, against the tested range. */
+const claudeVersion = (claude: Claude, printed: string): Verdict => {
+  const label = claudeLabel(claude)
+  const version = printed.trim()
   const range = `${CLAUDE_TESTED.lowest} to ${CLAUDE_TESTED.highest}`
   switch (claudeRange(version)) {
     case 'tested':
-      return { level: 'ok', what: `claude ${version}, tested (${range})` }
+      return { level: 'ok', what: `${label} ${version}, tested (${range})` }
     case 'below':
-      return { level: 'fail', what: `claude ${version}, older than the tower was tested with (${range})`, fix: 'claude update' }
+      return { level: 'fail', what: `${label} ${version}, older than the tower was tested with (${range})`, fix: `${claude.file} update` }
     case 'above':
-      return { level: 'warn', what: `claude ${version}, newer than the tower was tested with (${range}): the board may read it wrong`, fix: 'carry on, and report what looks wrong' }
+      return { level: 'warn', what: `${label} ${version}, newer than the tower was tested with (${range}): the board may read it wrong`, fix: 'carry on, and report what looks wrong' }
     case 'unknown':
-      return { level: 'warn', what: `claude --version printed ${JSON.stringify(version)}, no version the tower can place against its tested range (${range})`, fix: 'check that claude on the PATH is Claude Code' }
+      return { level: 'warn', what: `${label} --version printed ${JSON.stringify(version)}, no version the tower can place against its tested range (${range})`, fix: `check that ${claude.file} runs Claude Code` }
   }
 }
 
 /** `claude auth status` exits 1 when no one is signed in. */
-const claudeSignedIn = async (): Promise<Verdict> => {
-  const run = await ran('claude', ['auth', 'status'])
-  if (!run) return { level: 'fail', what: 'claude sign-in: claude is not on the PATH', fix: 'install Claude Code first' }
-  return run.code === 0
-    ? { level: 'ok', what: 'claude signed in' }
-    : { level: 'warn', what: 'claude is not signed in: the first worker stops at its sign-in screen', fix: 'run claude once in a terminal and sign in, or sign in at the first worker' }
+const claudeSignedIn = (claude: Claude, status: Ran): Verdict =>
+  status.code === 0
+    ? { level: 'ok', what: `${claudeLabel(claude)} signed in` }
+    : { level: 'warn', what: `${claudeLabel(claude)} is not signed in: the first worker it starts stops at its sign-in screen`, fix: `run ${claude.file} once in a terminal and sign in, or sign in at the first worker` }
+
+/** A Claude's version and sign-in, or the one line that says it isn't there. */
+const claudeVerdicts = async (claude: Claude): Promise<Verdict[]> => {
+  const version = await ranIn(claude.env, claude.file, ['--version'])
+  if (!version) return [missing(claude)]
+  const status = (await ranIn(claude.env, claude.file, ['auth', 'status']))!
+  return [claudeVersion(claude, version.stdout), claudeSignedIn(claude, status)]
+}
+
+/**
+ * The Claude each of the config's `argv` commands starts, checked as the host would start it: its version against the
+ * tested range, and that someone is signed in. Unchecked until the config reads with an `argv` the tower can take.
+ */
+const claudes = async (config: Config | Error): Promise<Verdict[]> => {
+  if (config instanceof Error) return [{ level: 'warn', what: 'claude: unchecked until the config reads', fix: 'fix the config first' }]
+  if (configProblems(config).some((p) => p.key === 'argv')) return [{ level: 'warn', what: "claude: unchecked until the config's argv is fixed", fix: 'fix argv in the config' }]
+  return (await Promise.all(claudesOf(config).map(claudeVerdicts))).flat()
 }
 
 const writable = (paths: SystemPaths): Verdict => {
@@ -232,8 +276,7 @@ export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
   return [
     supported(),
     node(),
-    await claudeVersion(),
-    await claudeSignedIn(),
+    ...(await claudes(config)),
     await gitVersion(),
     await onPath('curl', ['--version'], installs('curl')),
     await onPath('lsof', ['-h'], installs('lsof')),
