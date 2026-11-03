@@ -61,7 +61,8 @@
  *   GET  /fonts/<file>  a face the design names
  *   GET  /shared/<file>.js, /src/<path>.js, /vendor/<package>.js   internal, not contract: each file below src/ a served module,
  *                       core view or client reaches, transpiled alone with its imports as URLs, and each npm package one
- *                       imports, bundled as one module; every page gets one instance of each (src/tower/served.ts)
+ *                       imports, bundled as one module; every page gets one instance of each (src/tower/served.ts). At
+ *                       `<url>.<hash>.js`, the text a renderer page's import map named, cached as immutable
  *   POST /spawn {project, cwd? | cut: {name?, branch?, base? | from}, model?, effort?, prompt?, by?, hire?} | /resume {id, conversation, prompt?} | /keys {id, data, by?}
  *        | /resize {id, cols, rows} | /kill {id, by?}   relayed to the host; a `cut` first cuts (or forks) a worktree in every dir of the project
  *   POST /worktree/recut {project, name} | /worktree/prune {project, name} | /worktree/remove {project, name}
@@ -116,7 +117,7 @@ import { attachShell } from '../shared/client.ts'
 import { designCss, fonts } from '../shared/design.ts'
 import { legacyOf, MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated, type LegacyEntry } from '../shared/extensions.ts'
 import { bundledClient, clientSource } from '../extensions.ts'
-import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerHosts, towerPort, type Config, type Project, type SessionLog, type ShelfEntry } from '../shared/model.ts'
+import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerHosts, towerPort, type Config, type Project, type Renderer, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
 import { MEDIA_TYPES, mediaTypeOf, UNKNOWN_TYPE } from '../shared/media.ts'
@@ -129,7 +130,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, MODULES, servedModule, sourceModule, towerClient, urlSource, urlVendor, vendorModule } from './served.ts'
+import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, hashedUrl, importMap, moduleGraph, moduleScripts, MODULES, servedModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withModules } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
@@ -206,10 +207,25 @@ export const httpServer = defineResource({
       return specifier === undefined ? undefined : vendorModule(specifier)
     }
 
+    /** Every hashed URL a page's import map named, with its text: a page still open asks for what its map named. */
+    const named = new Map<string, string>()
+
+    /**
+     * A file's URL answers its text as it is now; a hashed URL, the text it named, cached for good, or, for a hash this
+     * tower never named (a page still open across a restart), the text as it is now, not cached.
+     */
     async function served(res: http.ServerResponse, url: string) {
-      const text = sourceText(url)
-      if (!text) return fail(res, 'not_found', `The tower serves no module at "${url}"`)
-      res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(await text)
+      const base = unhashedUrl(url)
+      const now = base === undefined ? undefined : sourceText(base)
+      if (!now) {
+        const plain = sourceText(url)
+        if (!plain) return fail(res, 'not_found', `The tower serves no module at "${url}"`)
+        return res.writeHead(200, { 'content-type': 'text/javascript', ...ANY_ORIGIN }).end(await plain)
+      }
+      const text = await now
+      const kept = hashedUrl(base!, text) === url ? text : named.get(url)
+      if (kept === undefined) return res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store', ...ANY_ORIGIN }).end(text)
+      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'max-age=31536000, immutable', ...ANY_ORIGIN }).end(kept)
     }
 
     /**
@@ -529,9 +545,9 @@ export const httpServer = defineResource({
     const htmlPage = (res: http.ServerResponse, status: number, page: string) => res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }).end(page)
 
     /** A page opened in a browser tab, read with the config: a config it can't read shows as a page saying so. */
-    function withConfig(res: http.ServerResponse, serve: (config: Config) => void) {
+    function withConfig<T>(res: http.ServerResponse, serve: (config: Config) => T): T | undefined {
       try {
-        serve(readConfig())
+        return serve(readConfig())
       } catch (err) {
         if (!(err instanceof ConfigError)) throw err
         htmlPage(res, ERROR_STATUS.config, problemPage('The config needs a fix', err.message, `Fix <code>${esc(paths.config)}</code> and reload this page.`))
@@ -556,8 +572,47 @@ export const httpServer = defineResource({
         }
         const full = rendererFile(renderer, file || renderer.entry)
         if (!full || !statSync(full, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `The renderer "${name}" serves no "${file}"`)
-        serveFile(res, full, ANY_ORIGIN)
+        if (mediaTypeOf(full) !== 'text/html') return serveFile(res, full, ANY_ORIGIN)
+        return preloaded(res, renderer, `/r/${name}/${file}`, full)
       })
+
+    /**
+     * A renderer's html page with what its module scripts import, at any depth: an import map naming each file and
+     * package at its hashed URL, so a reload asks only for what changed, unless the page has its own map; and a
+     * `modulepreload` link for each module, so the browser asks for them all at once, not one level of imports after another.
+     */
+    async function preloaded(res: http.ServerResponse, renderer: Renderer, url: string, file: string) {
+      const html = readFileSync(file, 'utf8')
+      const own = `/r/${renderer.name}/`
+      const textOf = (module: string) => {
+        if (!module.startsWith(own)) return moduleText(module)
+        const found = rendererFile(renderer, decodeURIComponent(module.slice(own.length)))
+        return Promise.resolve(found && path.extname(found) === '.js' && statSync(found, { throwIfNoEntry: false })?.isFile() ? readFileSync(found, 'utf8') : undefined)
+      }
+      const modules = await moduleGraph(moduleScripts(html, url), textOf)
+      const imports = html.includes('type="importmap"') ? {} : importMap(modules)
+      for (const [plain, hashed] of Object.entries(imports)) if (!MODULES[plain]) named.set(hashed, modules.get(plain)!)
+      const preloads = [...new Set([...modules.keys()].map((m) => imports[m] ?? m))]
+      res.writeHead(200, { 'content-type': FILE_TYPES['.html'], 'cache-control': 'no-store', ...ANY_ORIGIN }).end(withModules(html, imports, preloads))
+    }
+
+    /** A module's text as the tower serves it at `url`, if it serves one there: what a page's imports reach. */
+    async function moduleText(url: string): Promise<string | undefined> {
+      if (MODULES[url]) return servedModule(url)
+      const source = sourceText(url)
+      if (source) return source
+      const client = /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/.exec(url)?.groups
+      const dir = client && (client.cap === 'tower' ? CORE_VIEWS_DIR : clientDirOf(client.cap!))
+      const found = dir ? clientSource(dir, client!.file!) : undefined
+      if (!found) return undefined
+      return path.extname(found) === '.ts' ? clientModule(found) : readFileSync(found, 'utf8')
+    }
+
+    /** The client folder of the extension providing `cap`: the running one's, else the bundled one's. */
+    function clientDirOf(cap: string): string | undefined {
+      const live = extensions.live(cap)
+      return live.t === 'up' ? live.a.manifest.client && path.join(live.a.dir, live.a.manifest.client) : bundledClient(cap)
+    }
 
     /**
      * A file of the client folder of the extension providing `cap`: the running one's, else the bundled one's, so a
@@ -565,8 +620,7 @@ export const httpServer = defineResource({
      */
     async function clientFile(res: http.ServerResponse, cap: string, file: string, headers: http.OutgoingHttpHeaders) {
       if (cap === 'tower') return coreViewFile(res, file)
-      const live = extensions.live(cap)
-      const dir = live.t === 'up' ? live.a.manifest.client && path.join(live.a.dir, live.a.manifest.client) : bundledClient(cap)
+      const dir = clientDirOf(cap)
       if (!dir) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
       const source = clientSource(dir, file)
       if (!source) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)

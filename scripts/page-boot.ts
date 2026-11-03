@@ -7,7 +7,7 @@
  * Then, over a second system holding one worker the host stopped mid-turn, its card opened on its Reviews tab: every
  * module loads once on the page. A served module and the file it re-exports are one instance (`pressing`, `drawPanel`);
  * a press through `/press.js` holds a request open, and a click on the Reviews tab's Add note, a control of the same
- * identity wired through the reviews client's own import, is ignored, sending nothing; and no `/shared/`, `/src/` or `/vendor/` URL is fetched twice.
+ * identity wired through the reviews client's own import, is ignored, sending nothing; and no file below `src/` or package is fetched twice, at its URL or at its hashed one.
  *
  *   npm run test:page-boot
  *
@@ -102,7 +102,7 @@ const ONCE = `(async () => {
   release()
   await held
   twin.remove()
-  const fetched = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((p) => /^\\/(shared|src|vendor)\\//.test(p))
+  const fetched = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((p) => /^\\/(shared|src|vendor)\\//.test(p)).map((p) => p.replace(/\\.[0-9a-f]{10}\\.js$/, '.js'))
   return { identical, busy, appends, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
 })()`
 

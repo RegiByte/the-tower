@@ -6,9 +6,11 @@
  * Every source file under `src/` that a page reaches is served once, at a URL of its own, so a module has one
  * instance on a page however many modules import it: a shared module is a re-export of its file's URL, and a core
  * view or a bundled client imports what it reaches under `src/` by URL. Those URLs (`/shared/…`, `/src/…`, and each npm
- * package at `/vendor/…`) are internal, not contract: renderers import the shared modules' names.
+ * package at `/vendor/…`, and their hashed forms a renderer's import map names) are internal, not contract: renderers
+ * import the shared modules' names.
  */
 import { build, buildSync, type BuildOptions, type Metafile, type Plugin } from 'esbuild'
+import { createHash } from 'node:crypto'
 import { readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { API_VERSION } from '../shared/api.ts'
@@ -156,3 +158,74 @@ export function towerClient() {
     return script.replace(declaration, (_, head) => head + JSON.stringify(value))
   }, readFileSync(FRAME_KEYS, 'utf8') + readFileSync(path.join(import.meta.dirname, 'tower.js'), 'utf8'))
 }
+
+/** Every import marked external as written, so a build reads a module's imports without resolving them. */
+const asWritten: Plugin = { name: 'as-written', setup: (b) => b.onResolve({ filter: /.*/ }, (args) => (args.kind === 'entry-point' ? undefined : { path: args.path, external: true })) }
+
+const importsCache = new Map<string, { text: string; imports: string[] }>()
+
+/** The URLs a module served at `url` imports statically (`import`, `export … from`), each resolved against `url`. */
+export async function staticImports(url: string, text: string): Promise<string[]> {
+  const hit = importsCache.get(url)
+  if (hit?.text === text) return hit.imports
+  const { metafile } = await build({ stdin: { contents: text, loader: 'js' }, bundle: true, format: 'esm', write: false, metafile: true, logLevel: 'silent', plugins: [asWritten] })
+  const imports = Object.values(metafile.inputs)
+    .flatMap((input) => input.imports)
+    .filter((i) => i.kind === 'import-statement')
+    .map((i) => new URL(i.path, `http://tower${url}`).pathname)
+  importsCache.set(url, { text, imports })
+  return imports
+}
+
+/**
+ * Every module `entries` import statically, at any depth, each once: what a page loads before its scripts run.
+ * `textOf` answers a URL's text as the tower serves it, or `undefined` for one it doesn't serve as a module.
+ */
+export async function moduleGraph(entries: string[], textOf: (url: string) => Promise<string | undefined>): Promise<Map<string, string>> {
+  const seen = new Set<string>()
+  const modules = new Map<string, string>()
+  for (let wave = entries; wave.length; ) {
+    wave.forEach((url) => seen.add(url))
+    const imports = await Promise.all(
+      wave.map(async (url) => {
+        const text = await textOf(url)
+        if (text === undefined) return []
+        modules.set(url, text)
+        return staticImports(url, text)
+      }),
+    )
+    wave = [...new Set(imports.flat())].filter((url) => !seen.has(url))
+  }
+  return modules
+}
+
+/** The URLs of an html page's module scripts (`<script type="module" src>`), the page served at `url`. */
+export const moduleScripts = (html: string, url: string): string[] =>
+  [...html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/g)].map(([, src]) => new URL(src!, `http://tower${url}`).pathname)
+
+/** A file or package's URL with its text's hash in it: `/shared/press.js` as `/shared/press.3f9a0c21be.js`. */
+export const hashedUrl = (url: string, text: string) => url.replace(/\.js$/, `.${createHash('sha256').update(text).digest('hex').slice(0, 10)}.js`)
+
+/** The unhashed URL a hashed one names, if it is one. */
+export const unhashedUrl = (url: string): string | undefined => /^(?<base>\/.+)\.[0-9a-f]{10}\.js$/.exec(url)?.groups?.base?.concat('.js')
+
+/**
+ * What a page loads by an import map, from its static module graph: each file below `src/` and each package at the
+ * URL of its text's hash, a served module at its file's, so a page that loaded them once asks for none again until
+ * one changes. Modules keep importing the unhashed URLs; the map resolves them, so each still has one record.
+ */
+export function importMap(modules: Map<string, string>): Record<string, string> {
+  const own = (url: string) => /^\/(shared|src|vendor)\//.test(url)
+  const hashed = new Map([...modules].filter(([url]) => own(url)).map(([url, text]) => [url, hashedUrl(url, text)]))
+  const served = [...modules.keys()].filter((url) => MODULES[url] && hashed.has(sourceUrl(MODULES[url]!))).map((url) => [url, hashed.get(sourceUrl(MODULES[url]!))!] as const)
+  return Object.fromEntries([...hashed, ...served])
+}
+
+/**
+ * An html page that starts with `imports` as its import map, before its first script, and asks for each module of
+ * `preloads` at once with a `modulepreload` link at the end of its head.
+ */
+export const withModules = (html: string, imports: Record<string, string>, preloads: string[]): string =>
+  html
+    .replace(/<script\b|<\/head>/, (tag) => `<script type="importmap">${JSON.stringify({ imports })}</script>\n${tag}`)
+    .replace('</head>', `${preloads.map((m) => `<link rel="modulepreload" href="${m}">`).join('\n')}\n</head>`)
