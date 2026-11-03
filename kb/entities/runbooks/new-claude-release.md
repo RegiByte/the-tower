@@ -22,7 +22,7 @@ What says a release is new to the tower:
   lists each such release a live worker runs once, as `board.claudeUntested`. The tower page and Tower 3D say
   `claude <version> untested` ([`claudeUntestedHtml`](ref:hub/src/shared/health.ts#claudeUntestedHtml)), with the
   reason on hover.
-- `doctor` checks the installed `claude --version` with
+- `doctor` checks the `--version` of each Claude the config's `argv` starts with
   [`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange): `below`, `tested`, `above`, or `unknown` for a version
   that doesn't read as a release, which is flagged too: a renamed or missing field is drift as well.
 - A session started before the mod reported versions has no `claude`, and is never flagged. So is a session whose
