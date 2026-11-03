@@ -87,11 +87,14 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   rest after), `hidden` (not offered there: views, and since API 1.138 actions and an extension's lines), `open` (the
   tab a tabs region opens on), `options` (each view's own settings there), and since API 1.138 `pinned`, `unpinned`,
   `overflow` and the budgets `lines`, `badges` and `actions` ([When a region is full](#when-a-region-is-full)). The
-  config's `renderers.<name>.layout` lies over it, and the viewer's, kept in `tower.store` under `layout.<name>`, over
-  both: `layoutOf(declared, configured, stored)` in `/views.js` takes each field from the highest layer that sets it;
+  config's `renderers.<name>.layout` lies over it, and the viewer's, kept in `tower.store` under `layoutKey(name)`
+  (`layout.<name>`), over both: `layoutOf(declared, configured, stored)` in `/views.js` takes each field from the highest layer that sets it;
   `hidden` from all of them, less an id a higher layer names in its `order`, or pins where that pin stands; and
   `pinned` from all of them, the highest layer's first, less an id a higher layer names in `unpinned`. `GET /renderers` serves the
-  config's as `configLayout` (API 1.104), and what is wrong with it as `layoutProblems` (API 1.138).
+  config's as `configLayout` (API 1.104), and what is wrong with it as `layoutProblems` (API 1.138). A region whose
+  config entry has a `fail` among them is drawn by its default: pass `usableConfigLayout(renderer)` as `configured`,
+  the config's layout less each such region, never `configLayout` itself (`layoutKey` and `usableConfigLayout` in
+  `/views.js`, API 1.142).
 - `entry`: the page the file declares for, `index.html` unless set. Two renderers may share a root with different
   entries (Tower 3D's Lab is its `out/` with `lab.html`): only the one whose `entry` matches reads the file.
 
