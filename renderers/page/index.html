@@ -114,11 +114,15 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .sess .branch { color: var(--faint); font: var(--fs-xs)/1.4 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sessions { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); padding: var(--sp-m) 0 0; }
 .crew-group { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); }
-.crew-grip { position: absolute; z-index: 1; right: 100%; top: var(--sp-m); width: 14px; height: var(--fs-m); display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--faint); cursor: grab; opacity: 0; touch-action: none; }
-.crew-grip .icon { width: var(--icon-s); height: var(--icon-s); }
-.crew-grip:hover { color: var(--ink); }
-.crew-group:is(:hover, :focus-within) > .crew-grip, .crew-grip:focus-visible { opacity: 1; }
-@media (hover: none) { .crew-grip { opacity: 1; } }
+.crew-grip { position: absolute; z-index: 1; left: 9px; top: 5px; width: 22px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: var(--radius-s); background: none; color: var(--muted); cursor: grab; opacity: 0; touch-action: none; }
+.crew-grip .icon { width: 16px; height: 16px; }
+.crew-grip:hover { color: var(--ink); background: color-mix(in oklab, var(--ink) 10%, transparent); }
+.crew-group:is(:has(> .sess:hover, > .crew-grip:hover, > .crew-grip:focus-visible), .dragged) > .crew-grip { opacity: 1; }
+.crew-group:is(:has(> .sess:hover, > .crew-grip:hover, > .crew-grip:focus-visible), .dragged):has(> .crew-grip) > .sess > .top > .lamp { visibility: hidden; }
+@media (hover: none) {
+  .crew-grip { opacity: 1; }
+  .crew-group:has(> .crew-grip) > .sess > .top > .lamp { visibility: hidden; }
+}
 .floors:has(.crew-group.dragged) { cursor: grabbing; user-select: none; -webkit-user-select: none; }
 body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .crew-group.dragged { opacity: .5; }
