@@ -66,7 +66,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 ```json
 {
   "regions": [{ "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header" }],
-  "kit": ["terminal", "region", "run", "display", "go", "toast", "confirm"],
+  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location", "spawn"],
   "keeps": [],
   "layout": { "floor.section": { "hidden": ["policies/policies"] } }
 }
@@ -79,7 +79,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   full](#when-a-region-is-full)). Only `regions` is required. `tower extensions check` and the table under
   [Extensions](#extensions) are read from them.
 - `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `notice`, `confirm`, `href`,
-  `showing`, `location`): a
+  `showing`, `location`, `spawn`): a
   view is offered only where the kit holds every member it `needs` ([Views](#views)).
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
@@ -457,7 +457,7 @@ file is served once at a URL of its own, and a served module re-exports its file
 | `/term-view.js` | a terminal a viewer has open on a PTY, as a machine on `loop`: `termHandlers` its steps (opening, watching, owning, exited), and `mountTermView(host, { Terminal, FitAddon }, io)` running it in xterm.js on a `terminal/<id>`, `screen/<id>` or `shell/<id>` stream. The PTY has one size: a terminal opened while nobody else views it takes the size (a shell's always), a resize from anyone else hands it back and the view follows at a font that fits, a key or a pointer press in the terminal, a paste or drop on it, or text the user gives it takes it again (nothing else does: a watching view sends the PTY only wheels, focus reports and that text; the pointer passing over it and xterm.js's answers to the program's queries are dropped), and a pane or font change fits the PTY only while this viewer holds it |
 | `/views.js` | views, the layout and navigation (API 1.104): `CORE_VIEWS` and `viewsOf(board)`, `layoutOf(declared, configured, stored)` and `declaredLayout(board, declared)` (the regions' defaults extensions give under a renderer's own, 1.114), `fill` (how many of a region's ranked items fit, 1.138), `viewOn`, `offeredIn` and `pickView` (which view a region draws a subject with) and `coreViewOf` (the core's view for a media type, 1.109), `displayed` (where display puts a subject) and `openable` (the "Open <label>" a region offers), `hashOf`, `locationOf` and `shortHashOf` (the location grammar and the tower page's older hashes, 1.108), and the types a view is written to: `Mount`, `ViewCtx`, `Mounted`, `Kit`, `CommandKit`, `Location` |
 | `/viewer.js` | what a viewer keeps in `tower.store` that every renderer reads alike, as one record (`Viewer`): dismissals, the ring, the brief rendered or raw, the diff layout, unfolded crews, the Stats range and the actions seen (`seen`, with `seenOf` and `sawAll`, 1.138), read whole by `readViewer(tower.store.get)`, each under its key in `VIEWER_KEYS` |
-| `/spawn.js` | the new-worker dialog as a machine on `loop`: `spawnHandlers` its steps (open, editing, starting, closed), and `wireSpawn(dialog, io)` running it in your `<dialog>` with the form of `/cards.js`, keeping a prompt it closes on as a draft (`keepUnsent`, from the drafts client your renderer passes as `io.drafts`) and handing you the worker it started |
+| `/spawn.js` | the new-worker dialog as a machine on `loop`: `spawnHandlers` its steps (open, editing, starting, closed), and `wireSpawn(dialog, io)` running it in your `<dialog>` with the form of `/cards.js`, keeping a prompt it closes on as a draft (`keepUnsent`, from the drafts client your renderer passes as `io.drafts`) and handing you the worker it started, or that it closed without one (`io.dismissed`, optional, API 1.146) |
 | `/attend.js` | what a viewer is told about the waits and offers asking for them, as a machine on `loop`: `attendHandlers` over the state `attending(eye)`, or `attendNext(state, event)` to run one event by hand. What the viewer looks at reaches it as events: the window's `focus` and `visible`, and `watch` with the worker their view is on (`watchedIn(state)` is the one they watch: the view's, while the window has their eye): what begins is said (`announce`), notified (`notify`, `unnotify` once over or dismissed) and rung (`sound`, a score of `SOUNDS` in `/cards.js`), a `remind` ring re-armed as a timer, dismissals and the ring setting kept (`keep`, a field of the viewer's record of `/viewer.js`, fed back as `stored` when read again); your executors play, notify and keep, or drop what you don't do |
 | `/media.js` | media types by file extension (API 1.131): `mediaTypeOf(path)` (what the tower serves a file as, `UNKNOWN_TYPE` for an extension it doesn't name), `MEDIA_TYPES`, and `accepted(accepts, type)` (whether a view's `accepts` takes a type, `image/*` included) |
 | `/repos.js` | a floor's checkouts and how the core names their repos (API 1.131): `projectDirs` (the hub, then the repos), `checkoutDirs(floor, checkout)` (a checkout's dir in each, `MAIN_CHECKOUT` or a worktree's, `worktreePath`), `repoName` (a repo as the Changes and review anchors name it) and `langOf` (a file's fence language) |
@@ -890,7 +890,12 @@ presses, such as `item.head`, API 1.108; or, for a region holding views, the vie
 tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
 `options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out, API 1.113; it answers `{ update(subject), show?(subject),
 visible?(on), options?(options), close() }`, passing `show`, `visible` and new options on to the views it holds), `run(command, on?)` (a keymap
-command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `display(subject, { view? })`,
+command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `spawn(on)` (the same form on the floor
+`on` is or is of, or on a draft, for a view that keeps its place, as the grid's New worker… does: it resolves with the
+id of the worker it started, which the renderer awaits as it arrives, so `display('card:<id>')` lands on it, or with
+nothing once the form closed without one or the view closed first (the renderer then goes to the worker), or when
+`on` is of no floor on the board; a form already open is brought back, answering nothing; where `run('spawn', on)`
+goes to the worker, it stays; API 1.146, and optional as `href` is), `display(subject, { view? })`,
 `go(location)` (API 1.108), `bus` (below, API 1.118), `toast(text, action?)`, `notice(text, action?)` (a toast standing
 until closed, API 1.128) and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
