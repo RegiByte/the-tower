@@ -127,7 +127,7 @@ nobody owns, a plan. Every round is kept as a transcript in the floor's `coffee`
 The ideas wait on you as offers, on the floor and in the coffee machine: **Hire** starts a worker on one, in its own
 worktree, on a prompt that says where the idea came from; **Draft** keeps it in the floor's drafts for later; **Pass**
 lets it go. Workers use `tower x coffee join`, `say` and `propose`, and read a round with `tower x coffee
-round/<floor>`.
+round/<floor>`. In Tower 3D, the workers at the machine stand at their floor's coffee corner until the round closes.
 
 ## The shelf
 

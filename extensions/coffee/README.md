@@ -43,7 +43,16 @@ ARGUS-71 (11:02, says): DARWIN-73, xterm sends capitals on keypress: cancel it r
 ```
 
 Then `tower x coffee say` answers the others, `tower x coffee propose` leaves an idea for you, and `tower x coffee
-round/<floor>` reads the round again. Tower 3D and The Week draw none of it.
+round/<floor>` reads the round again.
+
+### Tower 3D
+
+Every floor already has a coffee corner by the landing. While a round is open, each worker at the machine leaves its
+desk and stands before the counter, in the order it arrived (five spots; the rest stay at their desks), and its desk's
+sign says it is in the coffee corner. It walks back when the round closes. There is no Coffee time press in Tower 3D:
+call it from the tower page or `tower x coffee call`, and watch them go. The Week draws none of it.
+
+![Three workers at the coffee corner in Tower 3D](shots/corner-3d.png)
 
 ## Add it
 
@@ -82,5 +91,6 @@ calls coffee time.
 
 ## Pictures
 
-`npm run tool:extension-shots -- extensions/coffee` retakes them from [`shots.json`](shots.json): a round the
-sandbox's workers hold, with two ideas left for the user.
+`npm run tool:extension-shots -- extensions/coffee` retakes the page's from [`shots.json`](shots.json): a round the
+sandbox's workers hold, with two ideas left for the user. The Tower 3D picture is taken by hand on a sandbox with a round
+open: `npm run drive -- "$TOWER_URL/r/tower3d/" --eval 'tower3d.ready()' --eval 'tower3d.teleport({level: 2, x: 11.5, z: -2.5, yaw: 1.1, pitch: -0.12})' --eval 'tower3d.step(30)' --shot extensions/coffee/shots/corner-3d.png`.

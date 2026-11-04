@@ -1,3 +1,4 @@
+import { floorCoffee } from '../../../extensions/coffee/client/rounds.ts'
 import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
 import { floorThreadsOf, keepsThreads } from '../../../extensions/reviews/client/panel.ts'
 import type { FloorThread } from '../../../extensions/reviews/threads.ts'
@@ -133,7 +134,7 @@ export type StationSlot = { n: number; x: number; z: number; turn: number }
  * its `meeting` place in that room instead, as if at a desk there: its chair at the seat, or standing, playing a
  * cabinet (`play`) or not; `n` is still the workstation it keeps.
  */
-export type DeskSlot = StationSlot & { card: Card; beside?: string; meeting?: { room: RoomId; label: string; place: string; stand: boolean; play: boolean } }
+export type DeskSlot = StationSlot & { card: Card; beside?: string; meeting?: { room: RoomId | typeof COFFEE_CORNER.id; label: string; place: string; stand: boolean; play: boolean } }
 /** A worker's workstation while it is in a meeting room or the game room, with the room's name. */
 export type AwaySlot = StationSlot & { card: Card; room: string }
 /** A meeting room's long table on the level: its centre and turn, the state it is drawn in, the room's places with it so, and the floor it takes. */
@@ -495,6 +496,31 @@ const atPlace = (p: Place) => ({ ...fromDesk({ x: p.x, z: p.z, turn: p.turn }, 0
 /** How far before a cabinet's front its player stands. */
 const AT_CABINET = 0.5
 
+/**
+ * The coffee corner (decision `coffee-time`): the `office_coffee` prefab along the right glass beside the landing, its
+ * counter running from its origin along the glass, and five spots before the counter, clear of its table and stools,
+ * where the workers at coffee stand facing it. A worker present in the floor's open round stands here, whatever its
+ * meeting or break; the sixth and later stay at their desks.
+ */
+export const COFFEE_CORNER = { id: 'coffee', label: 'the coffee corner', from: 0.6, length: 6.6, stand: 1.25, spots: [0.6, 1.7, 2.9, 4.1, 5.1] } as const
+
+/** Where the coffee corner's prefab stands on a level: its origin at the right glass, turned to run along it. */
+export const coffeeCorner = (a: Anchors) => ({ x: a['glass.right'].x - WALL, z: a['elevator.doors'].z + COFFEE_CORNER.from, turn: 270 })
+
+/** The standing places before the coffee corner's counter, in level space, each facing the counter. */
+export const coffeePlaces = (a: Anchors): BreakPlace[] => {
+  const at = coffeeCorner(a)
+  return COFFEE_CORNER.spots.map((along, i) => ({ name: `coffee_${i + 1}`, x: at.x - COFFEE_CORNER.stand, z: at.z + along, turn: 90, stand: true, play: false }))
+}
+
+/** The workers of a floor at its coffee corner: those present in its open round, in the order they arrived, each at the next place; none past the places. */
+export const coffeeOf = (cards: Card[], floor: Floor, places: BreakPlace[]): { card: Card; place: BreakPlace }[] =>
+  (floorCoffee(floor).open?.present ?? []).flatMap((p, i) => {
+    const card = cards.find((c) => c.callsign === p.callsign)
+    const place = places[i]
+    return card && place ? [{ card, place }] : []
+  })
+
 /** The places in a game room with `arcade`'s cabinets: before each one, facing it, then `standing`. */
 const breakPlaces = (arcade: ArcadeSlot | undefined, standing: BreakPlace[]): BreakPlace[] => [
   ...(arcade?.cabinets ?? []).map((c) => ({ name: `cabinet_${c.id}`, x: c.x, z: c.z - CABINET.depth / 2 - AT_CABINET, turn: 0, stand: true, play: true })),
@@ -539,7 +565,12 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
     const gathered = new Map(meetings.flatMap((m) => m.seats.map(({ card, place }) => [card.id, { room: m.room, place: { ...place, play: false } }] as const)))
     const arcade = arcadeFor(floor, rooms)
     const onBreak = breaksOf(onDuty(floor.cards), breakPlaces(arcade, standing(gameRoom)), now)
-    const away = new Map([...gathered, ...onBreak.map(({ card, place }) => [card.id, { room: gameRoom, place }] as const)])
+    const atCoffee = coffeeOf(onDuty(floor.cards), floor, coffeePlaces(anchors))
+    const away = new Map<string, { room: { id: RoomId | typeof COFFEE_CORNER.id; label: string }; place: BreakPlace }>([
+      ...gathered,
+      ...onBreak.map(({ card, place }) => [card.id, { room: gameRoom, place }] as const),
+      ...atCoffee.map(({ card, place }) => [card.id, { room: COFFEE_CORNER, place }] as const),
+    ])
     const desks = onDuty(floor.cards).map((card): DeskSlot => {
       const seat = card.seat!
       const kept = 'n' in seat ? stationAt(seat.n) : own(seat.beside)

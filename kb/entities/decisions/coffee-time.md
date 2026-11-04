@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Coffee time: a shared coffee machine per floor, rounds kept as transcripts by the bundled coffee extension",
-  "summary": "The bundled extension coffee gives each floor a coffee machine: coffee/call opens a round and prompts every worker at its prompt to come (submit/at-prompt, the rest left alone), workers join, say and propose through tower x coffee, and the user hires a worker on an idea, keeps it as a draft or passes; every round is one append-only markdown file in the floor's owned coffee collection, written only by those verbs, from which the open round, who is present, the ideas waiting (each an ask) and a present worker's badge are folded; a floor's settings may schedule coffee time as a folded slot.",
+  "summary": "The bundled extension coffee gives each floor a coffee machine: coffee/call opens a round and prompts every worker at its prompt to come (submit/at-prompt, the rest left alone), workers join, say and propose through tower x coffee, and the user hires a worker on an idea, keeps it as a draft or passes; every round is one append-only markdown file in the floor's owned coffee collection, written only by those verbs, from which the open round, who is present, the ideas waiting (each an ask) and a present worker's badge are folded; a floor's settings may schedule coffee time as a folded slot; in Tower 3D the present workers stand at the floor's coffee corner.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-04",
@@ -21,15 +21,46 @@
     "hub/extensions/coffee/client/machine.ts#mount",
     "hub/extensions/coffee/client/tray.ts#mount",
     "hub/src/shared/extensions.ts#BUNDLED",
-    "hub/test/coffee.test.ts"
+    "hub/test/coffee.test.ts",
+    "hub/renderers/tower3d/src/layout.ts#coffeePlaces",
+    "hub/renderers/tower3d/src/layout.ts#coffeeOf"
   ],
   "links": [
-    { "to": "extensions", "verb": "follows", "carries": "a bundled extension: verbs, reads, an owned collection, folds and views, no core code" },
-    { "to": "collections", "verb": "amends", "carries": "an owned collection whose items are written only through the extension's verbs" },
-    { "to": "logs-are-facts", "verb": "follows", "carries": "one entry per act, everything else derived from the file" },
-    { "to": "submit-at-prompt", "verb": "follows", "carries": "a worker is called only while it sits at its prompt" },
-    { "to": "agents-have-every-capability", "verb": "follows", "carries": "any worker joins, speaks, proposes or calls a round" },
-    { "to": "attention-list", "verb": "follows", "carries": "an idea waiting on the user is an ask with the sound of an offer" }
+    {
+      "to": "extensions",
+      "verb": "follows",
+      "carries": "a bundled extension: verbs, reads, an owned collection, folds and views, no core code"
+    },
+    {
+      "to": "collections",
+      "verb": "amends",
+      "carries": "an owned collection whose items are written only through the extension's verbs"
+    },
+    {
+      "to": "logs-are-facts",
+      "verb": "follows",
+      "carries": "one entry per act, everything else derived from the file"
+    },
+    {
+      "to": "submit-at-prompt",
+      "verb": "follows",
+      "carries": "a worker is called only while it sits at its prompt"
+    },
+    {
+      "to": "agents-have-every-capability",
+      "verb": "follows",
+      "carries": "any worker joins, speaks, proposes or calls a round"
+    },
+    {
+      "to": "attention-list",
+      "verb": "follows",
+      "carries": "an idea waiting on the user is an ask with the sound of an offer"
+    },
+    {
+      "to": "whereabouts",
+      "verb": "amends",
+      "carries": "a worker at coffee stands at the floor's coffee corner in Tower 3D"
+    }
   ]
 }
 ---
@@ -75,7 +106,11 @@ else is stored ([[logs-are-facts]]). It is a bundled extension ([[extensions]]):
   and `coffee/tray` on the collection ([`mount`](ref:hub/extensions/coffee/client/tray.ts#mount)); the floor's section
   draws the action and the asks, every card its badge. Workers read `tower x coffee` (the manifest's guidance), call
   the verbs with `tower x coffee <verb> '<json>'` and read the round with `tower x coffee round/<floor>`; `tower
-  kept coffee` and `tower read <tag>` read the transcripts as any item. Tower 3D's coffee point draws none of it yet.
+  kept coffee` and `tower read <tag>` read the transcripts as any item. Tower 3D stands each present worker at the
+  floor's coffee corner, the `office_coffee` prefab by the landing, at one of five spots before its counter
+  ([`coffeePlaces`](ref:hub/renderers/tower3d/src/layout.ts#coffeePlaces),
+  [`coffeeOf`](ref:hub/renderers/tower3d/src/layout.ts#coffeeOf)), its desk saying so ([[whereabouts]]); it draws no
+  Coffee time press of its own, and the ideas ring there as any ask does.
 - *What it is not.* No core code: `coffee` joins [`BUNDLED`](ref:hub/src/shared/extensions.ts#BUNDLED) so a user
   extension can't take its id, and the API's minor moves for the addition. No facts in session logs: a worker's
   presence is the round's, not the worker's. No message transport: the round file is the shared place, read by

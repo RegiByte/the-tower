@@ -2,7 +2,7 @@ import { mixOklab } from '../../../src/shared/design.ts'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { DECK } from './floorplan.ts'
-import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, fromDesk, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, workstations, type Box, type Level, type Plan } from './layout.ts'
+import { COFFEE_CORNER, coffeeCorner, CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, fromDesk, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, workstations, type Box, type Level, type Plan } from './layout.ts'
 
 /**
  * The office's places beyond the desks, composed from the KayKit playground's scene documents
@@ -130,9 +130,6 @@ const RUG: Theme = { atlas: { furniture: 'alt_B' }, swaps: { furniture: [{ from:
 const BESIDE_DOORS = 3.3
 /** How far before the Running board its couch stands, facing it. */
 const RUNNING_VIEW = 5
-/** The coffee point's counter run, along the right glass from the landing's side. */
-const COFFEE = { length: 6.6 }
-
 /** Low planters along a stretch of glass from `from` to `to`, one every `TROUGH` metres, centred. */
 const TROUGH = 2.2
 const troughs = (from: number, to: number) => {
@@ -160,8 +157,8 @@ function floorZones(p: Plan, level: Extract<Level, { kind: 'floor' }>, tint: str
     { prefab: HEROES[(level.index - 1) % HEROES.length], x: a.hero.x, z: a.hero.z, turn: 180, theme: lit(tint) },
     ...stations.map((s) => ({ prefab: 'prefabs/desk_rug.json', ...fromDesk(s, RETURN.width / 2, -SEAT_OFFSET / 2 + 0.05), turn: s.turn, theme: RUG })),
     { prefab: 'prefabs/office_lounge.json', x: a.lounge.x, z: a.lounge.z, turn: 0, theme: own },
-    { prefab: 'prefabs/office_coffee.json', x: right, z: a['elevator.doors'].z + 0.6, turn: 270, theme: own },
-    ...troughs(a['elevator.doors'].z + 0.6 + COFFEE.length + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: right - 0.45, z, turn: 90, theme: own })),
+    { prefab: 'prefabs/office_coffee.json', ...coffeeCorner(a), theme: own },
+    ...troughs(coffeeCorner(a).z + COFFEE_CORNER.length + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: right - 0.45, z, turn: 90, theme: own })),
     ...troughs(a['deck.rail'].z + 1, front - 1.6).map((z) => ({ prefab: 'prefabs/planter_low.json', x: left + 0.45, z, turn: 90, theme: own })),
     ...[-1, 1].map((side) => ({ prefab: 'prefabs/planter.json', x: side * BESIDE_DOORS, z: a['elevator.doors'].z + 0.32, turn: 0, theme: own })),
     { prefab: 'prefabs/running_bench.json', x: running.x + RUNNING_VIEW, z: running.z, turn: 270, theme: own },

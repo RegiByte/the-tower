@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Whereabouts: a crew of three gathers in a meeting room until its lead goes home",
-  "summary": "Where a worker is in Tower 3D is a pure function of one board, in Tower 3D's code: a crew (a lead reporting to no one on its floor, and everyone under it) gathers in a meeting room once three of it, its lead among them, are on duty at once, and disperses only when its lead goes home. The first crew to gather takes Meeting · 8, the next Meeting · 4. Inside, the lead sits at the long table's head, members at its seats in the order they came, a reviewer next to its author or standing over its shoulder, the rest at the counter's laptops, then standing at the table's foot. Each keeps its desk, which says where it is; every walk between the two is on the floor's real paths.",
+  "summary": "Where a worker is in Tower 3D is a pure function of one board, in Tower 3D's code: a crew (a lead reporting to no one on its floor, and everyone under it) gathers in a meeting room once three of it, its lead among them, are on duty at once, and disperses only when its lead goes home. The first crew to gather takes Meeting \u00b7 8, the next Meeting \u00b7 4. Inside, the lead sits at the long table's head, members at its seats in the order they came, a reviewer next to its author or standing over its shoulder, the rest at the counter's laptops, then standing at the table's foot. Each keeps its desk, which says where it is; every walk between the two is on the floor's real paths. Since coffee time, a worker present in its floor's open coffee round stands at the floor's coffee corner instead, whatever its meeting or break, until the round closes or it leaves.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
-  "reviewed": "2026-11-02",
+  "reviewed": "2026-11-04",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/renderers/tower3d/src/meetings.ts#meetingKit",
@@ -35,12 +35,32 @@
     "hub/renderers/kaykit/scenes/prefabs/room_meeting_8.json",
     "hub/renderers/kaykit/scenes/prefabs/room_meeting_4.json",
     "hub/renderers/tower3d/src/fixtures.ts#crews",
-    "hub/renderers/tower3d/src/fixtures.ts#growing"
+    "hub/renderers/tower3d/src/fixtures.ts#growing",
+    "hub/renderers/tower3d/src/layout.ts#COFFEE_CORNER",
+    "hub/renderers/tower3d/src/layout.ts#coffeePlaces",
+    "hub/renderers/tower3d/src/layout.ts#coffeeOf"
   ],
   "links": [
-    { "to": "crews", "verb": "uses", "carries": "card.reportsTo, card.onDuty and today's sent-home cards: who a crew is and when each of it came and went" },
-    { "to": "prefab-editor", "verb": "uses", "carries": "the long table's states by crew size and the rooms' slots, placed by hand" },
-    { "to": "floor-plan", "verb": "uses", "carries": "the meeting rooms along the front glass" }
+    {
+      "to": "crews",
+      "verb": "uses",
+      "carries": "card.reportsTo, card.onDuty and today's sent-home cards: who a crew is and when each of it came and went"
+    },
+    {
+      "to": "prefab-editor",
+      "verb": "uses",
+      "carries": "the long table's states by crew size and the rooms' slots, placed by hand"
+    },
+    {
+      "to": "floor-plan",
+      "verb": "uses",
+      "carries": "the meeting rooms along the front glass"
+    },
+    {
+      "to": "coffee-time",
+      "verb": "amends",
+      "carries": "a third place away from the desk: the coffee corner, while the worker is in the open round"
+    }
   ]
 }
 ---
@@ -109,3 +129,12 @@ It can be a pure function of one board: the board keeps today's sent-home cards 
 [`crews`](ref:hub/renderers/tower3d/src/fixtures.ts#crews) and
 [`growing`](ref:hub/renderers/tower3d/src/fixtures.ts#growing) fixture boards cover gathering, overflow, two rooms, a
 waiting crew and the table growing.
+
+**Coffee time.** A worker whose callsign is among the open round's `present` on its floor (`floor.x.coffee.open`,
+[[coffee-time]]) stands at the floor's coffee corner, the `office_coffee` prefab along the right glass beside the
+landing: [`coffeePlaces`](ref:hub/renderers/tower3d/src/layout.ts#coffeePlaces) are five spots before its counter,
+clear of its table and stools, facing it, in level space from the plan's anchors
+([`COFFEE_CORNER`](ref:hub/renderers/tower3d/src/layout.ts#COFFEE_CORNER), which also places the prefab); each
+present worker takes the next spot in the order it arrived ([`coffeeOf`](ref:hub/renderers/tower3d/src/layout.ts#coffeeOf)),
+the sixth and later staying at their desks. Coffee wins over a meeting or a break: the worker steps out, its place
+kept, and walks there as to any standing place; its desk's sign and monitor say it is in the coffee corner.
