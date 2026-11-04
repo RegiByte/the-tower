@@ -20,7 +20,8 @@ Listen reads that section; From here reads from it to the end, the section being
 | ![The gutter while Monday is read](shots/sections-light.png) | ![The gutter while Monday is read](shots/sections-dark.png) |
 
 **A player at the bottom right of the page** for as long as it reads, wherever you go on the page: what it reads,
-**the speed**, and **Stop**. The speed opens a menu of 0.5, 0.7, 1, 1.2, 1.5, 1.7 and 2, a check by the one it reads
+**the speed**, **Pause**, and **Stop**. Pause holds the reading where it is and turns to **Resume**, which goes on from
+there; a memo that comes while it is paused waits for it. The speed opens a menu of 0.5, 0.7, 1, 1.2, 1.5, 1.7 and 2, a check by the one it reads
 at, as Google Docs' reader has; a pick speeds up the part sounding at once, documents and memos alike, and every page of
 yours reads at it from then on (it is kept in `tower.store`, under `narrate.speed`). A memo said while a document is
 read stands its own player above the document's.
@@ -40,6 +41,7 @@ Listen also appears on every markdown or text kept item, beside each prompt and 
 the palette.
 
 **Read faster and Read slower in the palette** step the same speed along the menu's, a toast saying where it is.
+**Pause listening**, **Resume listening** and **Stop listening** there do what the player's buttons do.
 
 ### The workers
 

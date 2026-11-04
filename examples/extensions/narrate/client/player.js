@@ -1,7 +1,8 @@
 /**
  * Narration's player: while something is read, a bar of narrate's own at the bottom right of the page says what is
- * read, with the speed and Stop. It answers what a notice answers (`say`, `close`), so a reading tells it as it would a
- * notice. The speed is a button that opens a menu of the speeds, a check by the one read at, as Google Docs' reader
+ * read, with the speed, Pause and Stop. It answers what a notice answers (`say`, `close`), so a reading tells it as it
+ * would a notice. Pause holds the voice where it is and turns to Resume, in every player at once, as the palette's
+ * Pause listening and Resume listening do. The speed is a button that opens a menu of the speeds, a check by the one read at, as Google Docs' reader
  * does: a popover, so a press elsewhere closes it, as Escape does (focus back on the button); the arrow keys move
  * along it. It follows the speed as this page changes it (the palette, another player) through `tower.store.on`, which
  * hears only the keys this page sets: a speed picked in another tab shows from its next reading. A memo said in the
@@ -9,6 +10,7 @@
  * removed as what it tells ends, their stack with the last.
  */
 import { chooseSpeed, SPEED_KEY, SPEEDS, speedOf, speedWords } from './speed.js'
+import * as voice from './voice.js'
 
 const STYLE = `
 [data-narrate-players] { position: fixed; right: 20px; bottom: 56px; z-index: 20; display: flex; flex-direction: column; align-items: flex-end;
@@ -18,6 +20,7 @@ const STYLE = `
 [data-narrate-player] .words { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 [data-narrate-player] button { flex: none; }
 [data-narrate-player] .speed { min-width: 3.5em; font-variant-numeric: tabular-nums; }
+[data-narrate-player] .pause { min-width: 5.5em; }
 [data-narrate-player] .speeds { position: fixed; inset: auto; margin: 0; padding: var(--sp-xs) 0; min-width: 6em; background: var(--panel); color: var(--ink);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 [data-narrate-player] .speeds button { display: grid; grid-template-columns: 1.5em auto; width: 100%; padding: var(--sp-xs) var(--sp-l) var(--sp-xs) var(--sp-m);
@@ -99,7 +102,22 @@ const speedMenu = (choose) => {
 }
 
 /**
- * Opens a player saying `words`, at the viewer's speed, its Stop running `stop`. Answers `say` to tell it anew and
+ * The pause button: Pause while the voice reads, Resume while it is paused, following the voice as any player or the
+ * palette pauses it. Answers the button and `close`, which stops following.
+ */
+const pauseButton = () => {
+  const button = el('button', 'pause')
+  const show = (paused) => {
+    button.textContent = paused ? 'Resume' : 'Pause'
+    button.setAttribute('aria-pressed', String(paused))
+  }
+  button.addEventListener('click', () => (voice.isPaused() ? voice.resume() : voice.pause()))
+  show(voice.isPaused())
+  return { button, close: voice.onPause(show) }
+}
+
+/**
+ * Opens a player saying `words`, at the viewer's speed, with Pause, its Stop running `stop`. Answers `say` to tell it anew and
  * `close` to remove it.
  */
 export function openPlayer({ tower, words, stop }) {
@@ -109,9 +127,10 @@ export function openPlayer({ tower, words, stop }) {
   bar.setAttribute('aria-label', 'Narration')
   const said = el('span', 'words', words)
   const speed = speedMenu((rate) => void chooseSpeed(tower, rate))
+  const hold = pauseButton()
   const halt = el('button', '', 'Stop')
   halt.addEventListener('click', () => void stop())
-  bar.append(said, speed.button, halt, speed.menu)
+  bar.append(said, speed.button, hold.button, halt, speed.menu)
   stackOf().prepend(bar)
 
   const shown = async () => speed.show(await speedOf(tower))
@@ -122,6 +141,7 @@ export function openPlayer({ tower, words, stop }) {
     say: (next) => void (said.textContent = next),
     close() {
       unhear()
+      hold.close()
       bar.remove()
       if (stack && !stack.querySelector('[data-narrate-player]')) (stack.remove(), (stack = undefined))
     },

@@ -4,7 +4,8 @@
  * and played in order through one audio element, the next voiced while one plays; without one, the browser's own
  * speech (`speechSynthesis`) reads them. A narration is told through its track: `at(part)` as a part starts sounding,
  * and `end()` once, as it ends or is stopped. A memo (`interject`) is said at once when nothing reads; while something
- * does, it waits for the chunk sounding to end, is said, and the reading goes on.
+ * does, it waits for the chunk sounding to end, is said, and the reading goes on. A narration paused holds where it is,
+ * the chunk sounding or the next about to, until it is resumed or stopped; a memo that comes meanwhile waits its turn.
  */
 
 /** The most characters voiced in one call: a chunk is cut at a paragraph, else a sentence, else a space. */
@@ -45,6 +46,28 @@ let waiting = []
 /** The track of the memo sounding between chunks, ended by a stop. @type {Track | undefined} */
 let saying
 
+/** Whether the narration is paused: from a pause until a resume, a stop or its end. */
+let paused = false
+
+/** The chunk's start a pause held back: it came due while paused, and sounds on resume. @type {(() => void) | undefined} */
+let held
+
+/**
+ * The chunk the audio holds, from its source set until it ends: `end` ends it, as a stop does (a paused audio fires no
+ * pause to end it), `fail` with an error. @type {{ end(): void, fail(err: Error): void } | undefined}
+ */
+let chunk
+
+/** Told of every pause and resume, with whether it is now paused. @type {Set<(paused: boolean) => void>} */
+const hearing = new Set()
+
+/** Tells those hearing whether the narration is paused now, as that changes. @param {boolean} now */
+const pausing = (now) => {
+  if (paused === now) return
+  paused = now
+  for (const heard of hearing) heard(now)
+}
+
 /** The current narration's utterances, held while they are read: WebKit fires no event on one nothing holds. */
 let utterances = []
 
@@ -84,21 +107,25 @@ const voiced = async (tower, text) => {
 const chunked = (parts) => parts.flatMap((text, part) => chunksOf(text).map((chunk) => ({ text: chunk, part })))
 
 /**
- * Plays `url` for narration `mine`, calling `onStart` once it sounds: to its end, or until a halt pauses it. A pause
- * from elsewhere (a media key) stays a pause. Rejects when it can't play.
+ * Plays `url` for narration `mine`, calling `onStart` once it sounds: to its end, or until a halt ends it. A pause,
+ * ours or from elsewhere (a media key), stays a pause; one that comes before it sounds holds its start until resumed.
+ * Rejects when it can't play.
  */
 const play = (url, mine, onStart) =>
   new Promise((resolve, reject) => {
     const done = (err) => {
       audio.onended = audio.onpause = audio.onerror = null
+      chunk = undefined
       URL.revokeObjectURL(url)
       err ? reject(err) : resolve()
     }
     audio.onended = () => done()
     audio.onpause = () => mine !== current && done()
     audio.onerror = () => done(new Error(`the voice's audio won't play: ${audio.error?.message || `media error ${audio.error?.code}`}`))
+    chunk = { end: () => done(), fail: done }
     audio.src = url
-    audio.play().then(onStart, (err) => done(mine === current ? err : undefined))
+    const start = () => void audio.play().then(onStart, (err) => done(mine === current ? err : undefined))
+    paused ? (held = start) : start()
   })
 
 /**
@@ -139,6 +166,8 @@ const once = (fn) => {
 const finish = (mine) => {
   if (mine !== current) return
   reading = false
+  held = undefined
+  pausing(false)
   const end = ending
   ending = () => {}
   end()
@@ -255,8 +284,12 @@ const sayingNow = (memo) => {
 /** Stops whichever voice reads, ends its track, and answers the number of a narration started now. */
 const halt = () => {
   speechSynthesis.cancel()
+  speechSynthesis.resume()
   utterances = []
   audio.pause()
+  chunk?.end()
+  held = undefined
+  pausing(false)
   reading = false
   saying?.end()
   saying = undefined
@@ -270,4 +303,32 @@ const halt = () => {
 export function stop() {
   waiting = []
   halt()
+}
+
+/** Pauses the narration where it is, the chunk sounding or the next about to, while one reads. */
+export function pause() {
+  if (!reading || paused) return
+  pausing(true)
+  speechSynthesis.pause()
+  audio.pause()
+}
+
+/** Goes on reading from where the narration was paused. */
+export function resume() {
+  if (!paused) return
+  pausing(false)
+  speechSynthesis.resume()
+  const start = held
+  held = undefined
+  if (start) start()
+  else if (chunk) audio.play().catch(chunk.fail)
+}
+
+/** Whether the narration is paused now. */
+export const isPaused = () => paused
+
+/** Calls `heard` with whether the narration is paused, at every pause and resume until the function answered is called. */
+export function onPause(heard) {
+  hearing.add(heard)
+  return () => void hearing.delete(heard)
 }

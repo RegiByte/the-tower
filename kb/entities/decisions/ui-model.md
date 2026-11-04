@@ -159,7 +159,7 @@ and a framed document's section are the same thing.
   by one rule as it is drawn ([`writeLinks`](ref:hub/src/views/frame.ts#writeLinks), [[markdown-safe]]). The narrate example
   ([`extension.json`](ref:hub/examples/extensions/narrate/extension.json)) is the proof: Listen on `section` and on
   `said`, From here on `section` (that section and the ones after it, read off the bus), Listen on the whole file
-  section by section where the page draws it so, the section read marked and a player of its own with the speed and Stop while it reads (an element of the command's, as a notice holds one action). Open: a chord on a viewer kind resolves only with the focus on that
+  section by section where the page draws it so, the section read marked and a player of its own with the speed, Pause and Stop while it reads (an element of the command's, as a notice holds one action). Open: a chord on a viewer kind resolves only with the focus on that
   subject's own region (a gutter row, a bubble), not the viewer subject under a subject in focus (`bus.under`, §10),
   which is ambiguous with many sections standing; the palette doesn't yet list commands on the viewer subjects in
   focus; `display` of a section of a `file` can't walk up, since [`displayed`](ref:hub/src/shared/views.ts#displayed)
