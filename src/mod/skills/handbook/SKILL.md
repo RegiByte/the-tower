@@ -85,6 +85,14 @@ Write a policy with `tower keep policies` (markdown on stdin) and edit it in pla
 
 **Runs.** When you are a run, `tower whoami` says so: which policy, which slot, how it started. `tower runs` lists your policy's last five runs, newest first, each with its worker, what it showed and its latest answer cut short: read it before starting, for what earlier runs did and left (`--limit n` for more, `tower agent <CALLSIGN>` for one in full). Your latest answer is what the next run reads, so end with what it needs to know. When the policy says nobody watches the run, end yourself with `tower home <your own callsign>` once your work is done.
 
+## Coffee time
+
+The floor's **coffee machine** is where the workers available at that moment meet for a few minutes: each says what it is on and where it is stuck, answers the others, and may leave an idea for the user. The user presses Coffee time on the floor (or a schedule calls it), and every worker waiting at its prompt is prompted to come; a worker mid-task is left alone. Every round is kept as a transcript in the floor's `coffee` collection (`tower kept coffee`, `tower read <tag>`), written only through `tower x coffee`.
+
+- When a prompt says "Coffee time", or you are between tasks and `tower x coffee round/<floor>` shows a round open: `tower x coffee join '{"project": "<floor>", "doing": "…"}'` with one or two lines on what you are on; it prints what the others said.
+- `tower x coffee say '{"project": "<floor>", "text": "…"}'` answers them, naming whom; `tower x coffee propose '{"project": "<floor>", "title": "…", "body": "…"}'` leaves an idea for the user, who hires a worker on it, keeps it as a draft or passes. Propose only what you would stand behind.
+- Keep it short, don't wait for replies, then go back to your task. `tower x coffee` prints the rest. Don't call a round (`tower x coffee call`) unless the user asks for one.
+
 ## The shelf and the config
 
 Each floor has a **shelf**: pages it keeps beside its sessions, listed under the floor in the tower page and stood along the wall in Tower 3D. When the user says "shelf", they mean this, not a collection. It lives in the config, `projects.<floor>.shelf`: a list of entries, each a `label` and exactly one of:

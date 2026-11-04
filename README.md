@@ -48,6 +48,9 @@ the tower, so most things start as a sentence:
 - **Policies.** Standing work on a schedule: a markdown file with a cron and a prompt. At each slot the tower starts a
   worker on it, or offers the slot to you first. An automatic policy runs only while you have approved its exact
   words.
+- **Coffee time.** A coffee machine per floor: a press calls the workers waiting at their prompt to say what they are
+  on, help each other think and leave ideas for you, each an offer you hire a worker on, keep as a draft or pass.
+  Every round is kept as a transcript.
 
 **Keep the rest of the work close.**
 
@@ -146,7 +149,7 @@ key.
 - **Extensions.** A folder with an `extension.json` manifest and optionally a server module, started beside the
   tower's own pieces. An extension can add verbs and reads to the API, collections, streams of facts, scheduled slots,
   views in the tower page and parts of every card on the board. Much of the tower is built this way: drafts, review
-  threads, policies, the quota probe and autotidy are bundled extensions. [`examples/extensions/`](examples/extensions/)
+  threads, policies, coffee time, the quota probe and autotidy are bundled extensions. [`examples/extensions/`](examples/extensions/)
   has ones to start from, such as `grid` (workers' terminals side by side). Run one in place by pointing
   `extensions.<id>.path` in the config at its folder in the checkout, so it follows `tower update` (`tower extensions
   restart <id>` takes the new code), or copy it out of the checkout to make it your own.

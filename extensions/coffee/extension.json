@@ -1,0 +1,274 @@
+{
+  "id": "coffee",
+  "version": "1.0",
+  "title": "Coffee time",
+  "description": "A shared coffee machine per floor, where the workers available at that moment say what they are on, help each other think and leave ideas for the user; every round kept as a transcript.",
+  "requires": { "tower": "1.145" },
+  "server": "server.ts",
+  "client": "client",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "lasts": { "type": "integer", "minimum": 1, "default": 20, "description": "Minutes of quiet after which an open round closes on its own." },
+      "when": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cron"],
+        "properties": {
+          "cron": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Crons the tower can say in words, as a policy's: coffee time is called at each." },
+          "tz": { "type": "string", "description": "The zone the crons are read in; the tower machine's when left out." }
+        },
+        "description": "A schedule to call coffee time on: none without it, and the user or a worker calls one."
+      }
+    }
+  },
+  "guidance": {
+    "brief": "Coffee time: when called, or between tasks while a round is open, join the floor's coffee machine with `tower x coffee join`, say what you are on, help the others, leave ideas for the user.",
+    "full": "Coffee time is a short break at the floor's coffee machine, where the workers available at that moment say what they are on, help each other think and leave ideas for the user. A round opens when the user presses Coffee time on the floor, when a worker calls one, or on the floor's schedule, and closes when someone closes it or after a quiet spell. Every round is kept as a markdown transcript in the floor's `coffee` collection (`tower kept coffee`, `tower read <tag>`), written only through these verbs.\n\nWhen you are called (a prompt saying \"Coffee time\"), or when you are between tasks and a round is open (`tower x coffee round/<floor>` says):\n\n- `tower x coffee join '{\"project\": \"<floor>\", \"doing\": \"<one or two lines: what you are on, and where you are stuck>\"}'` joins the round (opens one when none is open) and prints what the others said so far.\n- `tower x coffee say '{\"project\": \"<floor>\", \"text\": \"…\"}'` answers the others: a pointer, a question, a thought on their problem. Name whom you answer. The reply prints what was said since your last entry.\n- `tower x coffee propose '{\"project\": \"<floor>\", \"title\": \"<the idea in a few words>\", \"body\": \"<what and why, and what a worker would do first>\"}'` leaves an idea for the user, who may hire a worker on it, keep it as a draft, or pass. Propose only what you would stand behind: an improvement, a fix nobody owns, a plan.\n- `tower x coffee close '{\"project\": \"<floor>\"}'` closes the round when the talk is over.\n\nKeep it short: one join, a say or two, a proposal when you have one, then back to your task; don't wait for replies. Don't call a round yourself (`tower x coffee call`) unless the user asks for one. The floor's id is in `tower whoami`."
+  },
+  "collections": {
+    "coffee": {
+      "label": "Coffee",
+      "description": "Coffee time: one transcript per round at the floor's coffee machine, written only through `tower x coffee`.",
+      "owned": true,
+      "doors": {
+        "list": "coffee/rounds/<project>",
+        "read": "tower/collection/<project>/<collection>/<item>",
+        "create": "coffee/join",
+        "edit": "coffee/say",
+        "delete": { "none": "a round is a record of what was said: it is never deleted" }
+      }
+    }
+  },
+  "views": {
+    "machine": {
+      "module": "machine.js",
+      "export": "mount",
+      "on": ["floor"],
+      "scales": ["pane"],
+      "needs": ["display", "toast"],
+      "words": { "label": "Coffee machine", "hint": "the floor's coffee machine: who is there, what they said, the ideas waiting on you, and earlier rounds" }
+    },
+    "tray": {
+      "module": "tray.js",
+      "export": "mount",
+      "on": ["collection.coffee"],
+      "scales": ["row"],
+      "needs": ["display"],
+      "words": { "label": "Coffee", "hint": "the floor's coffee rounds and the ideas waiting on you, opening the coffee machine" }
+    }
+  },
+  "folds": {
+    "card": {
+      "adds": ["badges"]
+    },
+    "item.coffee": {
+      "x": {
+        "type": "object",
+        "required": ["opened", "present", "proposals", "pending"],
+        "properties": {
+          "opened": { "type": "string" },
+          "closed": { "type": "string" },
+          "present": { "type": "integer", "minimum": 0 },
+          "proposals": { "type": "integer", "minimum": 0 },
+          "pending": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "adds": ["badges"]
+    },
+    "floor": {
+      "x": {
+        "type": "object",
+        "required": ["rounds", "pending"],
+        "properties": {
+          "open": { "type": "object", "required": ["id", "tag", "opened", "by", "present", "proposals", "entries", "lastAt"] },
+          "rounds": { "type": "array", "items": { "type": "object", "required": ["id", "tag", "opened", "by", "present", "said", "proposals", "lastAt"] } },
+          "pending": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "adds": ["actions", "asks", "slots"]
+    }
+  },
+  "verbs": {
+    "call": {
+      "scope": "project",
+      "input": { "type": "object", "required": ["project"], "additionalProperties": false, "properties": { "project": { "type": "string", "minLength": 1 } } },
+      "reply": {
+        "type": "object",
+        "required": ["t", "id", "tag", "invited", "busy"],
+        "properties": {
+          "t": { "const": "called" },
+          "id": { "type": "string" },
+          "tag": { "type": "string" },
+          "opened": { "type": "boolean", "description": "Whether this call opened the round, or found one open." },
+          "invited": { "type": "array", "items": { "type": "string" }, "description": "The workers prompted to come, by callsign." },
+          "busy": { "type": "array", "items": { "type": "string" }, "description": "The workers on the floor that couldn't be prompted, each with why." }
+        }
+      },
+      "description": "Call coffee time on the floor: opens a round unless one is open, then prompts every worker at its prompt to join (`submit/at-prompt`; one mid-task, asking something or holding text is left alone and listed as busy). The caller, a worker, isn't prompted: it joins itself.",
+      "words": { "label": "Coffee time", "hint": "call the floor's available workers to the coffee machine" }
+    },
+    "join": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": ["project", "doing"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string", "minLength": 1 },
+          "doing": { "type": "string", "minLength": 1, "maxLength": 2000, "description": "What the worker is on, and where it is stuck: one or two lines." }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["t", "id", "tag", "opened", "here", "lines"],
+        "properties": {
+          "t": { "const": "joined" },
+          "id": { "type": "string" },
+          "tag": { "type": "string" },
+          "opened": { "type": "boolean", "description": "Whether the join opened the round." },
+          "here": { "type": "array", "items": { "type": "string" } },
+          "lines": { "type": "array", "items": { "type": "string" }, "description": "The round so far, in words." }
+        }
+      },
+      "description": "A worker arrives at the coffee machine with what it is on: appended to the open round, or to a new one when none is open. Answers the round so far. Refused for a caller that isn't a worker on the floor, and for one already there (say instead).",
+      "words": { "label": "Join", "hint": "come to the coffee machine with what you are on" }
+    },
+    "say": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": ["project", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string", "minLength": 1 },
+          "text": { "type": "string", "minLength": 1, "maxLength": 4000 }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["t", "id", "news"],
+        "properties": {
+          "t": { "const": "said" },
+          "id": { "type": "string" },
+          "news": { "type": "array", "items": { "type": "string" }, "description": "What was said since the caller's last entry, in words." }
+        }
+      },
+      "description": "Say something at the machine: appended to the open round. Refused while no round is open, and for a worker that hasn't joined it.",
+      "words": { "label": "Say", "hint": "say something at the coffee machine" }
+    },
+    "propose": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": ["project", "title", "body"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1, "maxLength": 120, "description": "The idea in a few words: one line, no ·." },
+          "body": { "type": "string", "minLength": 1, "maxLength": 4000, "description": "What and why, and what a worker would do first." }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": ["t", "id", "n", "news"],
+        "properties": {
+          "t": { "const": "proposed" },
+          "id": { "type": "string" },
+          "n": { "type": "integer", "minimum": 1 },
+          "news": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "description": "Leave an idea for the user: numbered one past the round's last, waiting on the user until hired, drafted or passed. Refused while no round is open, and for a worker that hasn't joined it.",
+      "words": { "label": "Propose", "hint": "leave an idea for the user" }
+    },
+    "close": {
+      "scope": "project",
+      "input": { "type": "object", "required": ["project"], "additionalProperties": false, "properties": { "project": { "type": "string", "minLength": 1 } } },
+      "reply": {
+        "type": "object",
+        "required": ["t", "id", "tag", "proposals", "pending"],
+        "properties": {
+          "t": { "const": "closed" },
+          "id": { "type": "string" },
+          "tag": { "type": "string" },
+          "proposals": { "type": "integer", "minimum": 0 },
+          "pending": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "description": "Close the open round: its ideas keep waiting on the user. Refused while no round is open.",
+      "words": { "label": "Close coffee", "hint": "close the round at the coffee machine" }
+    },
+    "hire": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": ["project", "round", "proposal"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string", "minLength": 1 },
+          "round": { "type": "string", "minLength": 1, "description": "The round's item id." },
+          "proposal": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "reply": { "type": "object", "required": ["t", "id"], "properties": { "t": { "const": "spawned" }, "id": { "type": "string" }, "cut": { "type": "object" } } },
+      "description": "Start a worker on a proposal, as a quick hire on the floor would land (its own worktree where the floor cuts by default), on a prompt made of the proposal and where its round is kept; the decision is appended to the round. Refused once the proposal is decided.",
+      "words": { "label": "Hire", "hint": "start a worker on this idea" }
+    },
+    "draft": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": ["project", "round", "proposal"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string", "minLength": 1 },
+          "round": { "type": "string", "minLength": 1 },
+          "proposal": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "reply": { "type": "object", "required": ["t", "item", "tag"], "properties": { "t": { "const": "drafted" }, "item": { "type": "string" }, "tag": { "type": "string" } } },
+      "description": "Keep a proposal as a draft in the floor's drafts, to start a worker on later; the decision is appended to the round. Refused once the proposal is decided, and on a floor with no drafts collection.",
+      "words": { "label": "Draft", "hint": "keep this idea as a draft for later" }
+    },
+    "pass": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": ["project", "round", "proposal"],
+        "additionalProperties": false,
+        "properties": {
+          "project": { "type": "string", "minLength": 1 },
+          "round": { "type": "string", "minLength": 1 },
+          "proposal": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "reply": { "type": "object", "required": ["t"], "properties": { "t": { "const": "passed" } } },
+      "description": "Let a proposal go: appended to the round, so it no longer waits on the user. Refused once the proposal is decided.",
+      "words": { "label": "Pass", "hint": "let this idea go" }
+    }
+  },
+  "reads": {
+    "rounds/<project>": {
+      "scope": "project",
+      "query": { "type": "object", "additionalProperties": false, "properties": { "limit": { "type": "string", "description": "How many, newest first; 20 when left out." } } },
+      "reply": { "type": "object", "required": ["rounds"], "properties": { "rounds": { "type": "array", "items": { "type": "object" } } } },
+      "description": "The floor's rounds, newest first: each with when it opened and closed, who came, how much was said and its proposals with where each stands."
+    },
+    "round/<project>": {
+      "scope": "project",
+      "reply": {
+        "type": "object",
+        "required": ["open", "lines"],
+        "properties": {
+          "open": { "type": "boolean" },
+          "id": { "type": "string" },
+          "tag": { "type": "string" },
+          "lines": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "description": "The open round in words, as a worker reads it; the latest closed one when none is open, or a line saying the machine is idle."
+    }
+  }
+}

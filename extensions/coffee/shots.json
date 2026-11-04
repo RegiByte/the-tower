@@ -1,0 +1,44 @@
+{
+  "workers": 3,
+  "seed": [
+    "tower x coffee call '{\"project\": \"lab\"}'",
+    "tower x coffee join '{\"project\": \"lab\", \"doing\": \"Fixing the Caps Lock bug in the terminal: WebKit retypes keys xterm already sent. Stuck on where to cancel the keypress.\"}'",
+    "TOWER_SESSION_ID=$WORKER_2 tower x coffee join '{\"project\": \"lab\", \"doing\": \"Writing the Stats panel: spend per floor over the week. Blocked on how the weekly budget is folded.\"}'",
+    "TOWER_SESSION_ID=$WORKER_2 tower x coffee say '{\"project\": \"lab\", \"text\": \"HOLMES-42, xterm sends capitals on keypress: cancel it right after onKey fires, before WebKit types it into the textarea.\"}'",
+    "TOWER_SESSION_ID=$WORKER_3 tower x coffee join '{\"project\": \"lab\", \"doing\": \"Reviewing the shell tabs branch. Nothing blocking.\"}'",
+    "tower x coffee propose '{\"project\": \"lab\", \"title\": \"A fixture per Caps Lock bug\", \"body\": \"Record one session with Caps Lock on so the bridge replays it in npm test. First step: a throwaway session typing a double space, kept under test/fixtures.\"}'",
+    "tower x coffee say '{\"project\": \"lab\", \"text\": \"MARPLE-17, the weekly budget is folded in src/bridge/stats.ts from the rate-limit facts: read weekElapsed in /cards.js before adding another fold.\"}'",
+    "TOWER_SESSION_ID=$WORKER_3 tower x coffee propose '{\"project\": \"lab\", \"title\": \"Shell tabs remember their directory\", \"body\": \"A shell reopened after a reload lands in the hub, not where it was. Keep the cwd as a fact on the shell so the terms daemon restores it.\"}'"
+  ],
+  "scenes": [
+    {
+      "name": "machine",
+      "open": "#v/coffee/machine/floor%3Alab",
+      "size": "1280x860",
+      "steps": [
+        {
+          "until": ".idea",
+          "text": "Shell tabs remember their directory"
+        }
+      ],
+      "crop": "[data-view=\"coffee/machine\"]",
+      "pad": 0
+    },
+    {
+      "name": "floor",
+      "open": "#$WORKER_1",
+      "size": "1180x760",
+      "steps": [
+        {
+          "until": ".tray",
+          "text": "at the machine"
+        },
+        {
+          "until": ".badge",
+          "text": "coffee"
+        }
+      ],
+      "crop": "section.floor"
+    }
+  ]
+}

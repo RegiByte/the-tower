@@ -207,6 +207,26 @@ A floor's own settings win per key (`projects.<id>.extensions.autotidy.settings`
 `"capabilities": { "autotidy": { "off": true } }` turns it off on one floor. The workers going home now are the
 floor's `x.autotidy.going` on the board.
 
+### Coffee time
+
+The bundled extension `coffee` gives each floor a coffee machine: **Coffee time** on the floor (or `tower x coffee
+call`, or the schedule below) opens a round and prompts every worker waiting at its prompt to come, say what it is on
+and leave ideas for you; each idea waits on you as an offer (Hire, Draft, Pass) until you decide. Every round is one
+markdown transcript in the floor's `coffee` collection, written only through `tower x coffee`.
+
+| Setting | Takes | Unset |
+|---|---|---|
+| `lasts` | Minutes of quiet after which an open round closes on its own. | `20` |
+| `when` | A schedule to call coffee time on: `cron`, one or more crons the tower can say in words (as a policy's), and `tz`, an IANA zone. | no schedule |
+
+```json
+"extensions": { "coffee": { "settings": { "lasts": 15, "when": { "cron": ["0 15 * * 1-5"], "tz": "Europe/Lisbon" } } } }
+```
+
+A floor's own settings win per key (`projects.<id>.extensions.coffee.settings`), and
+`"capabilities": { "coffee": { "off": true } }` turns it off on one floor; `"extensions": { "coffee": { "off": true } }`
+everywhere. Off, every round stays, and is back when it is on again.
+
 ## Shelf
 
 A project's shelf is a list of pages the user reads beside the floor's sessions, in the tower's sidebar and on Tower

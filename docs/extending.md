@@ -508,6 +508,10 @@ its policies (parsed, with where each stands) and open offers as `x.policies`, e
 and `policies/run`, `policies/pass` and `policies/approve` write its facts. Until 2.0 the board copies them to
 `floor.policies`, `card.run` and `board.offers`, and `policy/run`, `policy/pass` and `policy/approve` still answer,
 deprecated.
+`coffee`, one transcript per round at the floor's coffee machine, is the bundled coffee extension's, owned: written only
+through `coffee/call`, `coffee/join`, `coffee/say`, `coffee/propose`, `coffee/close` and the user's decisions
+(`coffee/hire`, `coffee/draft`, `coffee/pass`); each floor carries the open round, every round and the ideas waiting
+as `x.coffee`, each idea an ask in `board.asks`.
 An [extension](#extensions) may declare collections of its own, which carry its capability as `by` on the board; one
 it owns carries `owner` and `doors` too, and refuses the generic writes, naming the verb to use instead.
 
