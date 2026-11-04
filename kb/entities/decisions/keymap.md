@@ -49,9 +49,9 @@ every other key, and reach every renderer the way `user.name` does.
   [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) keeps xterm's input textarea empty of what xterm
   types on keypress (capitals, so the whole prompt with Caps Lock on, plus spaces and punctuation): xterm sends the
   key and left the browser to insert it too, so the textarea held the prompt until Enter
-  ([`keepTextareaEmpty`](ref:hub/src/shared/term-view.ts#keepTextareaEmpty)). A keypress with Cmd or Ctrl held is
-  left alone: xterm types none, and WebKit fires one for Cmd-V, which cancelled would never reach the Edit menu's
-  Paste. macOS edits text held there, and xterm
+  ([`keepTextareaEmpty`](ref:hub/src/shared/term-view.ts#keepTextareaEmpty)). A keypress with Cmd held, or Ctrl
+  without Alt, is left alone: xterm types none, and WebKit fires one for Cmd-V, which cancelled would never reach the
+  Edit menu's Paste. Ctrl with Alt is Windows' AltGr, which xterm types, so it is still kept out. macOS edits text held there, and xterm
   sends an edit as typed text: a period after a word on a double space swallowed the second space, and an inline
   prediction's replacement sent earlier text again. Composed and dictated text still pass through the textarea, so
   WebKit's inline predictions are off on it too (`writingsuggestions="false"`; xterm already turns autocorrect,
