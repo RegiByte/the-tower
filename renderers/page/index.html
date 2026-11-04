@@ -59,6 +59,8 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .limits :is(.probe, .extension):is(.working, .broken) { color: var(--muted); }
 .side-views { display: flex; gap: var(--sp-xs); padding: var(--sp-m) var(--sp-xl); border-bottom: 1px solid var(--line); }
 .side-views button { min-height: var(--control); padding: 0 var(--sp-m); border-color: transparent; background: none; color: var(--muted); }
+.side-views .board-sign { margin-left: auto; display: flex; gap: var(--sp-xs); }
+.side-views .board-sign:empty { display: none; }
 .stats-side { display: none; flex: 1; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .side.on-stats .stats-side { display: block; } .side.on-stats .floors { display: none; }
 .floors { flex: 1; overflow-y: auto; padding: var(--sp-l) var(--sp-xl) var(--sp-xl); display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--sp-xl);
@@ -427,7 +429,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
   <div class="side-notes" id="notes"></div>
   <div class="tally" id="tally"></div>
   <div class="limits-bar" id="limits-bar"><button class="chip" id="limits-open" popovertarget="limits"></button><div class="settings-pop limits" id="limits" popover></div></div>
-  <div class="side-views"><button class="eyebrow" data-side-view="floors">Floors</button><button class="eyebrow" data-side-view="stats" data-tip="spend, work and waits, from the logs">Stats</button></div>
+  <div class="side-views"><button class="eyebrow" data-side-view="floors">Floors</button><button class="eyebrow" data-side-view="stats" data-tip="spend, work and waits, from the logs">Stats</button><span class="board-sign" id="board-sign"></span></div>
   <nav class="floors" id="floors" aria-label="floors"></nav>
   <div class="stats-side" id="stats"></div>
   <div class="side-foot" id="side-foot"></div>

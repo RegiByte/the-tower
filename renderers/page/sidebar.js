@@ -1,4 +1,4 @@
-import { addedActions, badgesOf, heldActions, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTreeIn, orderMoving, workerKeyOf, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrderIn, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
+import { addedActions, badgesOf, heldActions, boardSubject, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTreeIn, orderMoving, workerKeyOf, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrderIn, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
 import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
@@ -484,6 +484,9 @@ export async function sidebar(deps) {
   </section>`
   }
 
+  /** What extensions add about no one floor (`board.sign`), beside Floors and Stats: their commands, each its icon. */
+  const boardSignHtml = () => iconButtonsHtml(board(), boardSubject(board()), heldActions(holdsOf('board.sign'), addedActions(board(), boardSubject(board()))))
+
   /** What extensions add to an open floor's sign: their commands, each its icon. @param {Floor} f */
   const signHtml = (f) => iconButtonsHtml(board(), floorSubject(f), heldActions(holdsOf('floor.sign'), addedActions(board(), floorSubject(f))))
 
@@ -618,5 +621,5 @@ export async function sidebar(deps) {
   /** Every renderer of the same system: this one, the others to open, and those not built yet. */
   told(tower.get('renderers')).then((r) => r && ($('renderers').innerHTML = renderersHtml(r.renderers, location.pathname.split('/')[2], tower.framed)))
 
-  return { wireCrewGrips, toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide }
+  return { wireCrewGrips, toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, boardSignHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide }
 }
