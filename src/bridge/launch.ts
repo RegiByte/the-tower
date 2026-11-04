@@ -9,7 +9,7 @@ import type { LaunchParts } from '../shared/extensions.ts'
 import { withoutParentSession } from '../shared/env.ts'
 import { CORE_FLAGS, flagName, type Contributed, type ResumeLaunch, type SpawnLaunch } from '../shared/launch.ts'
 import { RUNTIMES, type ModEvent, type Runtime } from '../shared/model.ts'
-import { EXEMPT, REPORTS_TO, type Session } from './facts.ts'
+import { EXEMPT, PROMPTED_BY, REPORTS_TO, type Session } from './facts.ts'
 import { extensionFactName } from './stores.ts'
 
 /** A runtime's flag as a contributor passes it: `--flag` or `--flag=value`, so no value is ever read as a positional. */
@@ -114,6 +114,12 @@ export const coreFacts = (merged: Merged, reportsTo: string | undefined): ModEve
   ...merged.exempt.map(({ from, by }) => ({ hook_event_name: EXEMPT, from, by })),
   ...(merged.reportsTo && reportsTo ? [{ hook_event_name: REPORTS_TO, callsign: merged.reportsTo.callsign, session: reportsTo, by: merged.reportsTo.by }] : []),
 ]
+
+/**
+ * A spawn on a prompt by another worker: that its first prompt is the worker's, logged with the spawn's other facts,
+ * before anything the session does, so no early exit can come between the spawn and its fact.
+ */
+export const promptedFacts = (prompt: string | undefined, by: string | undefined): ModEvent[] => (prompt && by ? [{ hook_event_name: PROMPTED_BY, by }] : [])
 
 /** A spawn's field values, by capability, as the facts the host logs: `tower.x.<cap>.<field>`. */
 export const fieldFacts = (x: Record<string, Record<string, unknown>>): ModEvent[] =>

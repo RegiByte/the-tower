@@ -16,7 +16,7 @@ import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsA
 import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
 import type { Status } from '../bridge/status.ts'
-import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
+import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, promptedFacts, takenEnv, takenFlags, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
@@ -329,16 +329,9 @@ export const dispatch = defineResource({
         }),
       )
 
-    /** A worker spawned on a prompt by another: its first prompt is that worker's. */
+    /** A worker spawned on a prompt by another: its first prompt is that worker's, logged with its spawn (`promptedFacts`). */
     const spawnedBy = (spawning: () => Answer | Promise<Answer>, prompt: string | undefined, by: string | undefined) =>
-      fromWorker(by, async () => {
-        const refused = prompt && by ? factRefused(PROMPT_FROM_WORKER) : undefined
-        if (refused) return refused
-        const answer = await spawning()
-        if (answer.t !== 'spawned' || !prompt || !by) return answer
-        const named = await actedBy((answer as Replies['spawn']).id, PROMPTED_BY, by)
-        return named.t === 'error' ? named : answer
-      })
+      fromWorker(by, () => (prompt && by ? factRefused(PROMPT_FROM_WORKER) : undefined) ?? spawning())
 
     /**
      * A worker's hires are taken one at a time, by its callsign (the name its hires are counted under, across resumes), each
@@ -613,7 +606,7 @@ export const dispatch = defineResource({
         kept: projectCollectionsPath(paths, projectId),
         plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
         contributed: merged.contributed,
-        facts: [...spawn.facts, ...coreFacts(merged, lead?.id)],
+        facts: [...spawn.facts, ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by)],
         launch: launchWithDefaults(config, projectId, launch, merged.defaults),
       }
     }
