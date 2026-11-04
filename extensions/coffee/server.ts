@@ -45,9 +45,9 @@ const floorOf = (board: Board, project: string): Floor | undefined => board.floo
 /** A floor's round files as the tower folds them, the ones it could parse, newest first: the first is the only one that can be open. */
 const newestFirst = <I extends { id: string; parsed: unknown }>(items: I[]): I[] => items.filter((i) => i.parsed !== undefined).sort((a, b) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0))
 
-/** Why a worker on the floor can't be prompted to come, by its card; `undefined` when it can. */
+/** Why a running worker can't be prompted to come, by its card; `undefined` when it can. */
 const busyWhy = (card: Card): string | undefined =>
-  !card.live ? 'not running' : callOf(card, 'prompt') ? undefined : card.status === 'working' ? 'working' : card.status === 'needs_input' || card.status === 'blocked' ? 'asking the user something' : 'holding text in its composer'
+  callOf(card, 'prompt') ? undefined : card.status === 'working' ? 'working' : card.status === 'needs_input' || card.status === 'blocked' ? 'asking the user something' : 'holding text in its composer'
 
 const start: Start = (ctx) => {
   /** The writes in flight, by floor: each reads the round as it is after the one before it. */
@@ -130,20 +130,21 @@ const start: Start = (ctx) => {
       const was = await openRound(project)
       const self = caller.t === 'worker' && caller.id ? callsignIn(cards())(caller.id) : undefined
       const here = was ? presentIn(was.round).map((p) => p.callsign) : []
-      const others = floor.cards.filter((c) => !c.continuedBy && c.callsign !== self && !here.includes(c.callsign))
+      const others = floor.cards.filter((c) => c.live && !c.continuedBy && c.callsign !== self && !here.includes(c.callsign))
       const invited: string[] = []
       const busy: string[] = []
-      for (const card of others) {
-        const why = busyWhy(card)
-        if (why) {
-          busy.push(`${card.callsign}: ${why}`)
-          continue
-        }
-        const [verb, input] = callOf(card, 'prompt')! as [string, object]
-        const reply = await call(`tower/${verb}`, { ...input, text: callPrompt(floor) })
-        if (isApiError(reply)) busy.push(`${card.callsign}: ${reply.message}`)
-        else invited.push(card.callsign)
-      }
+      await Promise.all(
+        others.map(async (card) => {
+          const why = busyWhy(card)
+          if (why) return void busy.push(`${card.callsign}: ${why}`)
+          const [verb, input] = callOf(card, 'prompt')! as [string, object]
+          const reply = await call(`tower/${verb}`, { ...input, text: callPrompt(floor) })
+          if (isApiError(reply)) busy.push(`${card.callsign}: ${reply.message}`)
+          else invited.push(card.callsign)
+        }),
+      )
+      invited.sort()
+      busy.sort()
       const body = [invited.length ? `invited ${invited.join(', ')}` : 'nobody to invite', busy.length ? `busy: ${busy.join('; ')}` : ''].filter(Boolean).join(' · ')
       const entry: Entry = { author, at: stamp(new Date()), act: { t: 'calls' }, body }
       const file = was ? await append(project, was, entry) : await open(project, entry)
