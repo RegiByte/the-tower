@@ -342,7 +342,8 @@ in the tower's own view when framed, else in a new tab.
 Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 
 - **Verbs**: `POST /<verb>` with a JSON body: `spawn`, `resume`, `submit`, `keys`, `kill`, `collection/create`,
-  `tidy` and the rest, and the extensions' verbs by their names (`reviews/append`). Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
+  `tidy`, `config/add` (a key the config doesn't hold yet, such as a floor, checked first; API 1.146) and the rest,
+  and the extensions' verbs by their names (`reviews/append`). Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
   the tower answers 403, its guard against other web pages.
 - **Prompts** (API 1.134): `submit` types after whatever the worker's composer holds and is queued while Claude
   works; it is refused (`not_at_prompt`) while the worker asks the user something or waits on one of Claude's

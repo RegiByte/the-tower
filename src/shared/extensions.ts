@@ -146,7 +146,7 @@ export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
  * runtimes and the core's subject kinds. A new top-level core name outside this list arrives only at an API major.
  */
 export const RESERVED = [
-  ...['spawn', 'resume', 'keys', 'submit', 'resize', 'kill', 'let-go', 'probe', 'reap', 'open', 'reveal', 'edit', 'shell', 'collection', 'review', 'worktree', 'branch', 'tidy'],
+  ...['spawn', 'resume', 'keys', 'submit', 'resize', 'kill', 'let-go', 'probe', 'reap', 'open', 'reveal', 'edit', 'shell', 'collection', 'review', 'worktree', 'branch', 'tidy', 'config'],
   ...['policy', 'mux', 'schema', 'board', 'origins', 'patterns', 'renderers', 'archive', 'conversations', 'changes', 'screen', 'terminal', 'stats', 'landing', 'runs', 'shelf', 'run', 'r', 'shown', 'x'],
   ...['tower', 'core', 'user', 'extension', 'extensions', 'slot', 'slots', 'fact', 'facts', 'stream', 'streams', 'hook', 'hooks', 'view', 'views', 'region', 'regions'],
   ...['ask', 'asks', 'adds', 'subject', 'subjects', 'command', 'commands'],
