@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "refs": [
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#markedChangesHtml",
