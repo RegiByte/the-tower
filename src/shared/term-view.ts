@@ -258,6 +258,15 @@ const base64Of = (file: File): Promise<string> =>
     reader.readAsDataURL(file)
   })
 
+/**
+ * Keeps a key xterm typed on keypress out of its input textarea. xterm sends capitals (to type them right with Caps Lock
+ * on), spaces and punctuation on keypress and leaves the browser to insert them as well, so the textarea would hold
+ * the prompt until Enter. macOS edits text held there, putting a period after a word on a double space or completing
+ * it inline, and xterm sends such an edit as typed text: a space swallowed, earlier text sent again. Composed text
+ * (dead keys, an IME) fires no keypress and still goes through the textarea.
+ */
+const keepTextareaEmpty = (e: KeyboardEvent) => e.preventDefault()
+
 /** Opens a view of a PTY's stream in `host`, which it fits and watches for resizes, until `close`. */
 export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): TermViewHandle {
   let term: Terminal | undefined
@@ -285,8 +294,8 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
           term.registerLinkProvider({ provideLinks: (y, done) => done(fileLinks(shown, y, edit)) })
         }
         term.open(host)
-        // xterm's input textarea keeps what it typed through keypress (capitals, spaces, punctuation) until Enter. On a
-        // Mac, WebKit's inline predictions complete and replace those words, and xterm sends each replaced value whole.
+        term.textarea!.addEventListener('keypress', keepTextareaEmpty)
+        // Composed and dictated text still pass through the textarea, which WebKit's inline predictions would rewrite.
         term.textarea!.setAttribute('writingsuggestions', 'false')
         term.write(data)
         if (exited) return term.attachCustomKeyEventHandler(terminalKeymap(io.keymap, io.run, () => {}))
