@@ -19,7 +19,7 @@ Commit messages hold the detail.
 
 - **⌘ shortcuts reach the app's menus from a terminal.** On macOS 26, WebKit fires a keypress for ⌘V, and v1.89.2
   cancelled every keypress on the terminal's textarea, so Edit > Paste never ran. A keypress with ⌘ held, or Ctrl
-  without Alt, is now left to the browser. Windows' AltGr (Ctrl with Alt) still types its character once. Thanks
+  without Alt, is now left to the browser. Windows' AltGr (Ctrl with Alt) still types its character once. By
   @CarlosBonetti (#393).
 
 ## v1.89.2
