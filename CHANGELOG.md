@@ -30,7 +30,8 @@ change, API 1.146 (additions only). The open page offers the reload.
 - **⌘↩ in the new-worker dialog no longer beeps in Tower.app.** The dialog started the worker but left the key
   uncancelled, so WebKit handed it back to macOS, which beeped. By @GlaucoNeves (#397).
 - CI: the required check runs on Linux. Tower.app's Swift typecheck runs on a Mac only when `apps/macos/` changes,
-  also required. A tag still runs every check on macOS (#400, #403).
+  also required. A tag still runs every check on macOS. Headless Chrome gets 30 s to start, and says why when it
+  fails (#400, #403, #405).
 
 ## v1.89.3
 
