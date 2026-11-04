@@ -4,7 +4,7 @@
   "name": "Checkout",
   "summary": "Where a worker's files are, across every dir of its project: a worktree's name, or main for the main checkouts. Review threads, forks and a card's checkout are all named by it.",
   "in": "tower",
-  "reviewed": "2026-11-02",
+  "reviewed": "2026-11-03",
   "refs": ["hub/src/shared/repos.ts#MAIN_CHECKOUT", "hub/src/shared/model.ts#checkoutOf", "hub/src/shared/repos.ts#checkoutDirs", "hub/src/shared/reviews.ts#threadId"]
 }
 ---

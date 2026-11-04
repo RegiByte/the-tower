@@ -145,11 +145,14 @@ export type TreeRead = Exposure &
 export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; head: string; base: string; tree?: string }
 
 /**
- * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `bases`: origin's
- * branches as `origin/<x>`, its default first, empty without an origin. `originHead`: that default, when the clone
- * recorded it (`origin/HEAD`). `main`: the main checkout's own work.
+ * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `at`: when the read
+ * began (epoch ms), so it says nothing of what was made after. `bases`: origin's branches as `origin/<x>`, its default
+ * first, empty without an origin. `originHead`: that default, when the clone recorded it (`origin/HEAD`). `main`: the
+ * main checkout's own work.
  */
-export type RepoRead = { dir: string; git: false } | { dir: string; git: true; bases: string[]; originHead: string | undefined; main: MainRead; trees: TreeRead[]; kept: BranchRead[] }
+export type RepoRead =
+  | { dir: string; at: number; git: false }
+  | { dir: string; at: number; git: true; bases: string[]; originHead: string | undefined; main: MainRead; trees: TreeRead[]; kept: BranchRead[] }
 
 /** The main checkout's unlanded work: `dirty` files (tracked or not), and commits `ahead` of its upstream (none without one). */
 export type MainRead = {
@@ -259,6 +262,13 @@ export const projectReads = (dirs: string[], repos: Map<string, RepoRead>): Repo
   const reads = dirs.map((dir) => repos.get(dir))
   return reads.every((r) => r !== undefined) ? (reads as RepoRead[]) : undefined
 }
+
+/**
+ * The project's reads as they speak for a session started at `startedAt`: `undefined` while any of them began before
+ * it, when the worktree the session runs in may have been cut after that read, and its absence there says nothing.
+ */
+export const readsSince = (reads: RepoRead[] | undefined, startedAt: number): RepoRead[] | undefined =>
+  reads?.every((r) => r.at >= startedAt) ? reads : undefined
 
 /**
  * How a worktree `name` whose folders are gone comes back, by what git reads of every dir of its project (`reads`):

@@ -575,7 +575,7 @@
             "gone"
           ],
           "additionalProperties": false,
-          "description": "The worktree its cwd is, by name, the branch checked out there (none on a detached HEAD, or before git is read) and, for a fork, the checkout it was forked from; `gone` once git no longer lists it with its folder in every repo of the project (`checkoutGone`)."
+          "description": "The worktree its cwd is, by name, the branch checked out there (none on a detached HEAD, or before git is read) and, for a fork, the checkout it was forked from; `gone` once git, read since the session started, no longer lists it with its folder in every repo of the project (`checkoutGone`)."
         },
         "reviews": {
           "type": "string",

@@ -387,7 +387,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       throw err
     }
   }
-  const repoWatch = watchRepos(configDirs, readRepos, onChange)
+  const startedWithin = (from: number, to: number) => [...sessions.values()].some(({ header }) => header.startedAt > from && header.startedAt <= to)
+  const repoWatch = watchRepos(configDirs, readRepos, startedWithin, onChange)
   const refreshRepos = repoWatch.refresh
 
   /** The processes are scanned, and the repos' git watched and read, only while someone observes the machine. */
