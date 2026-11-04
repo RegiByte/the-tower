@@ -2,10 +2,11 @@
  * Narration's player: while something is read, a bar of narrate's own at the bottom right of the page says what is
  * read, with the speed and Stop. It answers what a notice answers (`say`, `close`), so a reading tells it as it would a
  * notice. The speed is a button that opens a menu of the speeds, a check by the one read at, as Google Docs' reader
- * does: a popover, so a press elsewhere closes it, as Escape does (focus back on the button); the arrow keys move along it. It follows the viewer's speed
- * wherever it is changed (the palette, another tab), through `tower.store.on`. A memo said in the middle of a reading
- * stands its player above the reading's, as notices stack; the players are narrate's elements, each removed as what it
- * tells ends, their stack with the last.
+ * does: a popover, so a press elsewhere closes it, as Escape does (focus back on the button); the arrow keys move
+ * along it. It follows the speed as this page changes it (the palette, another player) through `tower.store.on`, which
+ * hears only the keys this page sets: a speed picked in another tab shows from its next reading. A memo said in the
+ * middle of a reading stands its player above the reading's, as notices stack; the players are narrate's elements, each
+ * removed as what it tells ends, their stack with the last.
  */
 import { chooseSpeed, SPEED_KEY, SPEEDS, speedOf, speedWords } from './speed.js'
 
