@@ -1,10 +1,10 @@
 /**
  * Narration's commands, run by renderers that import client modules: `speak` is offered on every markdown or text item
  * and file a worker showed, on each section of a markdown document and each prompt and answer of a brief; `fromHere`
- * on each section of a markdown document; `stop` in the palette. Each reads through `window.tower`, as any renderer
+ * on each section of a markdown document; `pause`, `resume` and `stop` in the palette. Each reads through `window.tower`, as any renderer
  * does, and speaks through `voice.js`: the voice command when narrate's settings set one, else the browser's own
  * speech. While it reads, the part being read is marked on the page's bus (a document draws its section marked) and a
- * notice says what is read, with Stop.
+ * player says what is read, with its speed, Pause and Stop.
  */
 import { textOf } from '/cards.js'
 import { openPlayer } from './player.js'
@@ -88,6 +88,16 @@ export function speak(ctx) {
 export function fromHere(ctx) {
   const { target, kit } = ctx
   return read(ctx, sectionsOf(kit.bus, target.value.of).filter((s) => s.value.n >= target.value.n))
+}
+
+/** Pauses reading where it is. */
+export function pause() {
+  voice.pause()
+}
+
+/** Goes on reading from where it was paused. */
+export function resume() {
+  voice.resume()
 }
 
 /** Stops reading. */
