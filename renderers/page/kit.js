@@ -64,8 +64,26 @@ const keyedTip = (keys, what, id) =>
 /** The close of a view in the main pane: back to the skyline. @param {Keys} keys */
 const closeHomeHtml = (keys) => `<button class="icon-btn" data-act="home" aria-label="back to the skyline" ${keyedTip(keys, 'back to the skyline', 'home')}>${ICON.close}</button>`
 
+/**
+ * `text` put on the clipboard by the document's copy command, from a field selected for the moment, the focus put back
+ * after. `navigator.clipboard` exists only in a secure context, and a tower may be reached by a host name over http.
+ * @param {string} text
+ */
+const copiedByCommand = (text) => {
+  const was = /** @type {HTMLElement | null} */ (document.activeElement)
+  const field = Object.assign(document.createElement('textarea'), { value: text, readOnly: true })
+  field.style.cssText = 'position: fixed; inset: 0 auto auto 0; opacity: 0'
+  document.body.append(field)
+  field.select()
+  const copied = document.execCommand('copy')
+  field.remove()
+  was?.focus({ preventScroll: true })
+  if (!copied) throw new Error('The browser refused to copy: select the text and copy it by hand')
+}
+
 /** @param {string} text @param {string} what */
-const copyText = (text, what) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err) => toast(err.message))
+const copyText = (text, what) =>
+  (window.isSecureContext ? navigator.clipboard.writeText(text) : new Promise((copied) => copied(copiedByCommand(text)))).then(() => toast(`Copied ${what}`), (err) => toast(err.message))
 
 /** The nearest element from `el` up that scrolls its content: the list itself, or in the short layout the sidebar around it. @param {HTMLElement | null} el */
 const scrollerOf = (el) => {
