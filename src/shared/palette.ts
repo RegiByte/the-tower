@@ -36,7 +36,10 @@ export type AddedPick = { t: 'added'; subject: string; action: Added<Action> }
 /** A view displaying the subject `subject` names, by its id (`/views.js`). @since 1.104 */
 export type OpenPick = { t: 'open'; subject: string; view: string }
 
-export type Pick = { t: 'command'; id: CommandId } | ActionPick | AddedPick | OpenPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
+/** Reloading the page, which runs code the tower no longer serves (`tower.stale()`). @since 1.144 */
+export type ReloadPick = { t: 'reload' }
+
+export type Pick = { t: 'command'; id: CommandId } | ActionPick | AddedPick | OpenPick | ReloadPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
 
 /** A view a renderer offers to open on a subject, as "Open <label>" in `group` (where it opens), about the floor `project` when it has one. @since 1.104 */
 export type Openable = { subject: string; view: string; words: Words; group: string; project?: string }
@@ -75,6 +78,8 @@ export type PaletteContext = {
   draftTitle: (project: string, item: FloorItem) => string
   /** The views the renderer offers to open where the viewer stands (`openable` in `/views.js`); none without it. @since 1.104 */
   opens?: readonly Openable[]
+  /** Whether the page runs code the tower no longer serves (`tower.stale()`): the palette offers to reload it. @since 1.144 */
+  stale?: boolean
 }
 
 /** What ranking favours: the worker selected and its floor, the ids picked lately, and who waits on the viewer, in the order to go to them. */
@@ -103,6 +108,16 @@ export const WEIGHTS = {
 }
 
 export const PATTERNS_ENTRY = 'patterns'
+
+/** The entry that reloads a page running code the tower no longer serves. */
+export const RELOAD_ENTRY: Entry = {
+  id: 'reload',
+  group: 'Tower',
+  label: 'Reload: the tower was updated',
+  hint: 'The tower restarted on new code; this page still runs the code it loaded with.',
+  keywords: ['refresh', 'update', 'stale', 'new version'],
+  does: { t: 'reload' },
+}
 
 /**
  * Verbs the palette leaves out: a prompt is typed in the worker's terminal, a worker is ended by sending it home, a
@@ -250,6 +265,7 @@ export const paletteEntries = (ctx: PaletteContext): Entry[] => {
     ...addedEntries(board, boardSubject(board), [...addedActions(board, boardSubject(board)), ...unboundCommands(board)], 'Extensions', {}),
   ]
   return [
+    ...(ctx.stale ? [RELOAD_ENTRY] : []),
     ...actions,
     ...board.floors.flatMap(floorEntries),
     ...extensions,
@@ -320,11 +336,11 @@ export const entryScore = (e: Entry, query: string, r: Ranking): number => {
 export type PaletteGroup = { group: string; entries: Entry[] }
 
 /**
- * The catalog's sections in order, below the opening groups: workers to go to, the commands, the floors' verbs and what
+ * The catalog's sections in order, below the opening groups: the reload a stale page offers, workers to go to, the commands, the floors' verbs and what
  * extensions offer, then the places (floors, shelf entries, drafts), and Learn last. Going to a worker is what the palette is opened for most;
  * commands are the same on every floor; places come after what can be done.
  */
-const SECTIONS = ['go:worker', 'command', 'action', 'added', 'open', 'go:floor', 'go:shelf', 'go:draft', 'learn']
+const SECTIONS = ['reload', 'go:worker', 'command', 'action', 'added', 'open', 'go:floor', 'go:shelf', 'go:draft', 'learn']
 
 const sectionOf = (e: Entry) => SECTIONS.indexOf(e.learn ? 'learn' : e.does.t === 'go' ? `go:${e.does.target.t}` : e.does.t)
 

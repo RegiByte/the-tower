@@ -27,7 +27,9 @@ same palette, and only the drawing is a renderer's.
   and the commands offered on no subject ([`unboundCommands`](ref:hub/src/shared/adds.ts#unboundCommands), [[extensions]]),
   each with its chords; and "Open <label>" for the views the renderer offers where the viewer stands, its `opens`,
   grouped by where each opens ([[ui-model]]))
-  and **learn** (capabilities that name no command; one entry for the patterns users are discovering).
+  and **learn** (capabilities that name no command; one entry for the patterns users are discovering). While the page
+  runs code the tower no longer serves (the context's `stale`, since 1.144), "Reload: the tower was updated" heads the
+  catalog ([[stale-page]]).
   Each entry's `does` is a tagged message the renderer runs; an extension's is `added`, its subject's key and the
   action, which a renderer that can't import modules leaves out when it is a command. The palette reads no layout,
   so it lists what a region hides or tucks too: it is the complete path to an extension's actions on the subjects it
