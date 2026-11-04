@@ -2,6 +2,10 @@
 # headless Chrome, then proves they left the tree as committed and the knowledge base consistent. A pull request runs on
 # its merge commit, whose first parent is the base it was merged onto: origin/<base> is set to it, so main moving during
 # the run leaves kb verify reading the same base.
+#
+# `check` runs on Linux: nothing in it needs macOS, and Linux runners are the ones GitHub has to spare. Only Tower.app's
+# Swift needs a Mac, so `swift` runs on one only when the change touches `apps/macos/`, and is skipped otherwise.
+# release.yml still runs every check on macOS, the platform the tower runs on.
 name: ci
 on:
   pull_request:
@@ -9,7 +13,9 @@ on:
     branches: [main]
 jobs:
   check:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    env:
+      CHROME: google-chrome
     steps:
       - uses: actions/checkout@v7
         with:
@@ -26,8 +32,6 @@ jobs:
         run: npm run test:tower3d-boot
       - name: The tower page boots in headless Chrome
         run: npm run test:page-boot
-      - name: Tower.app's Swift sources compile
-        run: xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift
       - name: Tests and builds added and rewrote no file
         run: test -z "$(git status --porcelain)" || { git status; git diff; exit 1; }
       - name: A pull request's base is the one its merge commit was made on
@@ -39,3 +43,30 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           node .claude/skills/kb/tool/kb.mjs verify --since "origin/${{ github.base_ref }}" | grep ': suspect: ' | while IFS= read -r line; do echo "::warning title=kb suspect::${line#"${line%%[![:space:]]*}"}"; done || true
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      swift: ${{ steps.diff.outputs.swift }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Whether the change touches apps/macos
+        id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "${{ github.event_name }}" = pull_request ]; then base=HEAD^1; else base="$BEFORE"; fi
+          if ! git cat-file -e "$base^{commit}" 2>/dev/null; then echo swift=true >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$base" HEAD -- apps/macos; then echo swift=false >> "$GITHUB_OUTPUT"
+          else echo swift=true >> "$GITHUB_OUTPUT"; fi
+
+  swift:
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Tower.app's Swift sources compile
+        run: xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift

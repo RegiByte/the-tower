@@ -7,8 +7,8 @@
  *
  * The page is served by a tower alone (`scripts/tower-alone.ts`) over a throwaway system root with no projects and the
  * quota probe off: a fixture board needs no host, terms or sessions, only the tower's routes (`/tower.js`, the
- * design, `/renderers`, `/origins`). Chrome uses the GPU where it finds one (on CI, the macOS runner's paravirtual
- * Metal device) and falls back to SwiftShader on a machine with none; the WebGL renderer it used is printed.
+ * design, `/renderers`, `/origins`). Chrome uses the GPU where it finds one and falls back to SwiftShader on a machine
+ * with none, such as CI's Linux runner; the WebGL renderer it used is printed.
  */
 import { existsSync } from 'node:fs'
 import path from 'node:path'
