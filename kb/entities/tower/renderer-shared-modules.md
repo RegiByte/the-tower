@@ -61,8 +61,12 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   measured in its face ([[viewer-prefs]]).
 - `term-view.ts`: a terminal a viewer has open on a PTY, as a machine on `loop`
   ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers): opening, watching, owning, exited): the PTY has
-  one size and whoever types holds it (a focus report, xterm's as its window gains or loses focus, is sent without
-  taking it), a resize from anyone else hands it back, a pane or font change fits the
+  one size, held by the viewer the user pressed a key or a pointer in last: a press in its page while it is seen
+  takes it, and nothing else does. A watching view sends the PTY only a wheel and a focus report (xterm's as its
+  window gains or loses focus), so neither the pointer passing over it under Claude's any-event mouse mode nor
+  xterm's own answers to Claude's terminal queries take the size or reach Claude twice; a stream that reconnects
+  keeps a watching view watching and an owning one holding only while nobody resized the PTY meanwhile. A resize
+  from anyone else hands it back, a pane or font change fits the
   PTY only while this viewer holds it, and a PTY that exits while viewed (its stream's `x`) leaves the view
   read-only, as a past session opens: a view still mounted on it, a kept worker or a grid cell, sizes nothing. [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) runs it in
   xterm.js, whose constructors the renderer passes in; every terminal of the tower page and Tower 3D is one
