@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "unknown",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "refs": [
     "hub/PRINCIPLES.md",
     "hub/src/shared/api.ts#ApiError",

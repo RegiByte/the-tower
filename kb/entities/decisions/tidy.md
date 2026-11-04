@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "refs": [
     "hub/src/bridge/prunable.ts#prunable",
     "hub/src/bridge/prunable.ts#isStuck",

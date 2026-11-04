@@ -3,7 +3,7 @@
   "type": "project",
   "name": "tower",
   "summary": "A local-first surface for managing many Claude Code sessions, where sessions are data and the presentation is swappable.",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "refs": ["hub/AGENTS.md", "hub/package.json", "hub/src/shared/model.ts"]
 }
 ---
@@ -24,7 +24,7 @@ capability is a primitive in the core, open to every renderer and every worker (
   [[tower-mod]] loaded into every session.
 - [[terms]]: a second detached process owning plain shells in project directories.
 - [[extensions]]: folders with a manifest and optional server code, each one capability the tower starts beside its
-  own pieces; the bundled ones (drafts, quota, policies, reviews, autotidy) live in `extensions/`.
+  own pieces; the bundled ones (drafts, quota, policies, reviews, autotidy, coffee) live in `extensions/`.
 - [[bridge]]: pure reductions over the logs and the live store a renderer subscribes to. This is the
   contract a new renderer plugs into.
 - [[tower-core]]: the tower server (the renderer API), the modules renderers share, git for worktrees, and the
