@@ -4,7 +4,7 @@
   "name": "Session stuck on booting",
   "summary": "A session that stays booting is Claude on a startup screen the bridge does not recognize (an external CLAUDE.md imports prompt, new dialog copy), or a launch that never drew Claude; recognized screens (trust, login) show as blocked.",
   "in": "host",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-04",
   "refs": ["hub/src/bridge/status.ts#BOOTING", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/composer.ts#AT_COMPOSER", "hub/src/cli.ts"]
 }
 ---
@@ -26,8 +26,8 @@ from the log) or `tower attach <id>` ([`cli.ts`](ref:hub/src/cli.ts)). Its log h
 - "Allow external CLAUDE.md imports?", or a screen whose copy changed in a new Claude version: add its wording to
   [`blockedBy`](ref:hub/src/bridge/blocked.ts#blockedBy)'s table, with a fixture recorded on a throwaway system.
 - The trust dialog is not raised in a folder inside a trusted one, worktrees included (they live under their trusted
-  repo's `.worktrees/`). A new hub, or a folder outside a trusted
-  repo, raises it.
+  repo's [`.worktrees/`](ref:hub/src/shared/repos.ts#WORKTREES_DIR)). A new hub, or a folder outside a trusted repo,
+  raises it.
 
 **Fix.** Answer the dialog in the session's terminal. For workspace trust: ↓ then Enter, sent as separate
 writes. A spawn with a first prompt (`-- <prompt>`) waits behind the dialog and runs the prompt once it is
