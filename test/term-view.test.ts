@@ -34,25 +34,44 @@ test('term view: a terminal nobody else views takes the size, one beside another
   assert.deepEqual(run(exited, { type: 'typed', data: 'x' }), [exited, []])
 })
 
-test('term view: a resize from someone else hands control back, the view follows, and typing takes it again with the keys after the resize', () => {
+test('term view: a resize from someone else hands control back, the view follows, and a press takes it again', () => {
   assert.deepEqual(run({ ...owning, asked: [] }, { type: 'resized', cols: 100, rows: 30 })[0].t, 'watching')
   const [watching, followed] = run(owning, { type: 'resized', cols: 90, rows: 20 })
   assert.deepEqual(watching, { t: 'watching', pty: { cols: 90, rows: 20 } })
   assert.deepEqual(followed, [{ type: 'follow', cols: 90, rows: 20 }, { type: 'mode', mode: { t: 'watching' } }])
   assert.deepEqual(run(watching, { type: 'resized', cols: 100, rows: 30 })[0], { t: 'watching', pty: { cols: 100, rows: 30 } })
-  assert.deepEqual(run(watching, { type: 'typed', data: 'a' }), [watching, [{ type: 'fit', then: 'a' }]])
-  assert.deepEqual(run(watching, { type: 'fitted', cols: 100, rows: 30, then: 'a' })[1], [
-    { type: 'resize', cols: 100, rows: 30 },
-    { type: 'send', data: 'a' },
-    { type: 'mode', mode: { t: 'owning', cols: 100, rows: 30 } },
-  ])
+  assert.deepEqual(run(watching, { type: 'pressed' }), [watching, [{ type: 'fit', then: '' }]])
+  const [taken, sized] = run(watching, { type: 'pressed' }, { type: 'fitted', cols: 100, rows: 30, then: '' }, { type: 'typed', data: 'a' })
+  assert.deepEqual([taken, sized], [{ t: 'owning', pty: { cols: 100, rows: 30 }, asked: [{ cols: 100, rows: 30 }] }, [{ type: 'send', data: 'a' }]])
+  assert.deepEqual(run(owning, { type: 'pressed' }), [owning, []])
   assert.deepEqual(run(owning, { type: 'typed', data: 'b' }), [owning, [{ type: 'send', data: 'b' }]])
+})
+
+test("term view: what a watching terminal sends on its own (the pointer passing over, xterm.js's answers to the program) neither reaches the PTY nor takes it", () => {
+  const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
+  for (const data of ['\x1b[<35;10;5M', '\x1b[<0;10;5m', '\x1b[?1;2c', '\x1bP>|xterm.js(5.5.0)\x1b\\', 'a']) assert.deepEqual(run(watching, { type: 'typed', data }), [watching, []])
+})
+
+test('term view: a wheel scrolls the program from a watching terminal too, and takes nothing', () => {
+  const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
+  const data = '\x1b[<65;10;5M'
+  assert.deepEqual(run(watching, { type: 'wheeled', data }), [watching, [{ type: 'send', data }]])
+  assert.deepEqual(run(owning, { type: 'wheeled', data }), [owning, [{ type: 'send', data }]])
+  assert.deepEqual(run({ t: 'exited', pty: { cols: 90, rows: 20 } }, { type: 'wheeled', data })[1], [])
+})
+
+test('term view: a stream that reconnects keeps a watching view watching, and an owning one holding only while nobody resized the PTY meanwhile', () => {
+  const watching: TermView = { t: 'watching', pty: { cols: 80, rows: 24 } }
+  const opened = { type: 'open', data: 'screen', cols: 80, rows: 24, exited: false }
+  assert.deepEqual(run(watching, snapshot(false))[1], [opened, { type: 'mode', mode: { t: 'watching' } }])
+  const held: TermView = { t: 'owning', pty: { cols: 80, rows: 24 }, asked: [] }
+  assert.deepEqual(run(held, snapshot(true))[1], [opened, { type: 'fit', then: '' }])
+  assert.deepEqual(run(owning, snapshot(false)), [watching, [opened, { type: 'mode', mode: { t: 'watching' } }]])
 })
 
 test('term view: a focus report from a watching view reaches the PTY and leaves it watching', () => {
   const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
   for (const data of ['\x1b[I', '\x1b[O']) assert.deepEqual(run(watching, { type: 'typed', data }), [watching, [{ type: 'send', data }]])
-  assert.deepEqual(run(watching, { type: 'typed', data: '\x1b[<35;10;5M' }), [watching, [{ type: 'fit', then: '\x1b[<35;10;5M' }]])
 })
 
 test('term view: a pane settles before it redraws, and a pane or font change fits the PTY only while this view holds it', () => {
