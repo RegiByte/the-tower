@@ -6,6 +6,9 @@
 # `check` runs on Linux: nothing in it needs macOS, and Linux runners are the ones GitHub has to spare. Only Tower.app's
 # Swift needs a Mac, so `swift` runs on one only when the change touches `apps/macos/`, and is skipped otherwise.
 # release.yml still runs every check on macOS, the platform the tower runs on.
+#
+# The main ruleset requires `check` and `swift` by name (a skipped `swift` passes): renaming either job leaves every
+# pull request waiting for a check that never reports, so a rename changes the ruleset too.
 name: ci
 on:
   pull_request:
