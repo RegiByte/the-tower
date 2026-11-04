@@ -29,7 +29,7 @@ function heldPage() {
   }
   page.window = page
   page.parent = page
-  vm.runInNewContext(towerClient(), page)
+  vm.runInNewContext(towerClient({ id: 'test', version: null }), page)
   const tower = page.tower as { keys(id: string, data: string): void }
   /** Lets every promise settle that can. */
   const settled = () => new Promise((resolve) => setImmediate(resolve))

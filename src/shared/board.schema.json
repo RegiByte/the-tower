@@ -11,12 +11,16 @@
               "type": "string",
               "description": "The API version (`major.minor`): `tower api` prints it."
             },
+            "served": {
+              "$ref": "#/definitions/Served"
+            },
             "board": {
               "$ref": "#/definitions/Board"
             }
           },
           "required": [
             "v",
+            "served",
             "board"
           ],
           "additionalProperties": false
@@ -28,18 +32,42 @@
               "type": "string",
               "description": "The API version (`major.minor`): `tower api` prints it."
             },
+            "served": {
+              "$ref": "#/definitions/Served"
+            },
             "error": {
               "$ref": "#/definitions/BoardError"
             }
           },
           "required": [
             "v",
+            "served",
             "error"
           ],
           "additionalProperties": false
         }
       ],
-      "description": "GET `/board` (SSE): the board, again whenever it changes, or why the tower can't build it until it can."
+      "description": "GET `/board` (SSE): the board, again whenever it changes, or why the tower can't build it until it can, with what the tower serves."
+    },
+    "Served": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "description": "What the tower runs and serves, read as it starts: `id` changes with any file of its code and stays the same on a start over the same files, so a page loaded with another runs code the tower no longer serves (`tower.stale()`); `version` is the checkout's release as `git describe --tags --always` says it (`v1.87.1`, `v1.87.1-3-gabc1234`), null outside git."
     },
     "Board": {
       "type": "object",
