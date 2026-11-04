@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.88.1
+
+A hire whose worker exits at once is answered and counted. No restart beyond the tower's own (`tower down tower`,
+then `tower up tower`), no config change, no API change.
+
+- **A hired worker that exits right away no longer reads as refused.** The fact naming who prompted a spawned worker
+  was written to its log after the spawn. When the worker exited at once, as on a failing launch flag, the host
+  refused that write while it flushed the exit. The hire then answered `refused` though the worker ran, and went
+  uncounted. The fact is now part of the spawn itself, so it is also never logged after the worker's first prompt
+  (#383).
+
 ## v1.88.0
 
 An open page now says when the tower it runs against was updated, and the version sits under the logo. No restart
