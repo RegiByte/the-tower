@@ -329,10 +329,6 @@ export const dispatch = defineResource({
         }),
       )
 
-    /** A worker spawned on a prompt by another: its first prompt is that worker's, logged with its spawn (`promptedFacts`). */
-    const spawnedBy = (spawning: () => Answer | Promise<Answer>, prompt: string | undefined, by: string | undefined) =>
-      fromWorker(by, () => (prompt && by ? factRefused(PROMPT_FROM_WORKER) : undefined) ?? spawning())
-
     /**
      * A worker's hires are taken one at a time, by its callsign (the name its hires are counted under, across resumes), each
      * until the system counts it, so the next one is weighed against it.
@@ -938,7 +934,7 @@ export const dispatch = defineResource({
         if ('t' in fields) return fields
         const launch = spawnLaunchOf({ model, effort, prompt, command })
         const spawn: Spawn = { ...fields, by, hire: hire ?? false, prompt, within: nestedIn(caller, 'tower/spawn') }
-        const spawning = () => spawnedBy(() => (cut ? spawnCut(project, cut, callsign, launch, spawn) : spawnIn(project, cwd, callsign, launch, spawn)), prompt, by)
+        const spawning = () => fromWorker(by, () => (cut ? spawnCut(project, cut, callsign, launch, spawn) : spawnIn(project, cwd, callsign, launch, spawn)))
         return hire ? hired(project, by!, spawning) : spawning()
       },
       resume: ({ id, conversation, prompt }, caller) => resume(id, conversation, prompt, nestedIn(caller, 'tower/resume')),

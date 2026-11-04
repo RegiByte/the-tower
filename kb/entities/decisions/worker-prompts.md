@@ -17,7 +17,6 @@
     "hub/src/tower/dispatch.ts#actedBy",
     "hub/src/tower/dispatch.ts#namedFirst",
     "hub/src/tower/dispatch.ts#submit",
-    "hub/src/tower/dispatch.ts#spawnedBy",
     "hub/src/bridge/launch.ts#promptedFacts",
     "hub/src/tower/dispatch.ts#kill",
     "hub/src/tower/dispatch.ts#inBurst",
@@ -51,11 +50,10 @@ then.
   `{"hook_event_name": "tower.prompt" | "tower.kill" | "tower.keys", "by": <id>}` to the target's log through the
   host's `fact` request ([`actedBy`](ref:hub/src/tower/dispatch.ts#actedBy)) before the act. A spawn is named only
   when it has a prompt, its `tower.prompt` among the spawn's own facts, which the host logs after the header and
-  before anything the session does ([`spawnedBy`](ref:hub/src/tower/dispatch.ts#spawnedBy),
-  [`promptedFacts`](ref:hub/src/bridge/launch.ts#promptedFacts)): a fact appended once the session has started could
+  before anything the session does ([`promptedFacts`](ref:hub/src/bridge/launch.ts#promptedFacts)): a fact appended once the session has started could
   come while a worker that exited at once is still writing its exit, which the host refuses. A kill is named
   only while the session runs, so a refused kill names nobody. While a host older than the `fact` request runs, a
-  named act refuses with `unavailable` and the restart to do, before anything happens
+  named prompt, kill or keys refuses with `unavailable` and the restart to do, before anything happens
   ([`factRefused`](ref:hub/src/tower/dispatch.ts#factRefused)).
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) keeps a `tower.prompt` as `promptedBy` until the next
   `prompt.submit` of a user origin, counts that prompt as `peer`, lets its wait go unanswered, and spends the mark. The
