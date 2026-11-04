@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-03",
-  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf"]
+  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#keepTextareaEmpty", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf"]
 }
 ---
 **Problem.** The keys lived in several places (shared constants, the page's shortcuts and hand-written `?` sheet,
@@ -46,11 +46,14 @@ every other key, and reach every renderer the way `user.name` does.
   ([`deadKeys`](ref:hub/src/shared/termkeys.ts#deadKeys)), and leaves a dead key, and a text key Firefox reports
   while the composition is still open, to the browser's composition, which xterm would end early, typing the dead
   key twice (`˜ã`, `'m'`) ([`leftToComposition`](ref:hub/src/shared/termkeys.ts#leftToComposition)).
-  [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) turns WebKit's inline predictions off on xterm's
-  input textarea (`writingsuggestions="false"`; xterm already turns autocorrect, autocapitalize and spellcheck off).
-  That textarea keeps what xterm typed through keypress (capitals, so the whole prompt with Caps Lock on, plus spaces
-  and punctuation) until Enter. A prediction completing or replacing those words reached xterm as a changed value,
-  which it sent to the PTY whole, so earlier text reappeared in Claude's prompt.
+  [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) keeps xterm's input textarea empty of what xterm
+  types on keypress (capitals, so the whole prompt with Caps Lock on, plus spaces and punctuation): xterm sends the
+  key and left the browser to insert it too, so the textarea held the prompt until Enter
+  ([`keepTextareaEmpty`](ref:hub/src/shared/term-view.ts#keepTextareaEmpty)). macOS edits text held there, and xterm
+  sends an edit as typed text: a period after a word on a double space swallowed the second space, and an inline
+  prediction's replacement sent earlier text again. Composed and dictated text still pass through the textarea, so
+  WebKit's inline predictions are off on it too (`writingsuggestions="false"`; xterm already turns autocorrect,
+  autocapitalize and spellcheck off).
 - Words come from the same data: [`keymapSheetHtml`](ref:hub/src/shared/keymap.ts#keymapSheetHtml) is the `?` sheet,
   [`keysHint`](ref:hub/src/shared/keymap.ts#keysHint) is a control's tip (`Esc outside a terminal or a text field`), so
   every button a command runs names its chords as the config binds them, and
