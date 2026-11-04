@@ -34,7 +34,7 @@ resumed from a checkpoint skips exactly what one from the start skips; an event 
 JSON, is kept for the fold to break on.
 
 **Change.** `onChange` fires only when something renderers read changed: every poll and rescan compares its read with
-the last by content. A repo read is compared without its `at`, but for a read that is the first to begin after a
+the last by content. A repo read is compared without its `at`, but for a read that is the first dated after a
 session started, which the board can read more from (below).
 
 **Collections and streams.** The collections directory, `streams/system/` and `streams/projects/` are each watched
@@ -85,8 +85,9 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   drops on overflow without a word), so every 10 s a few repos' own facts and main status are read, each once per `SAFETY_REPO_MS` (2 min), and a
   few worktrees' status, each once per `SAFETY_TREES_MS` (10 min): on 6 repos of 40 worktrees, 48 git a minute idle.
   Each tick also starts the watches the config added or that failed, and closes those it removed.
-- **Dated.** Each read records when it began (`at`). A session's card reads its worktree as gone, and can call it
-  `unresumable: 'gone'`, only from reads of its project that all began after the session started
+- **Dated.** Each read is dated (`at`) by when its repo's own facts, the worktree list among them, began to be read:
+  a partial read that keeps the last facts keeps their date. A session's card reads its worktree as gone, and can call it
+  `unresumable: 'gone'`, only from reads of its project all dated after the session started
   ([`readsSince`](ref:hub/src/bridge/worktrees.ts#readsSince)): an older read may predate the worktree's cut, and a
   worktree git hasn't been read with yet is not one that was removed. Until then the card says nothing is gone, as
   before the first read. While the board is observed, git is read only as its changes settle, and a session's log is

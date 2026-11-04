@@ -326,10 +326,12 @@ const countedIn = async (
 }
 
 /**
- * `heads`: each local branch's commit; `remotes`: the remote refs as `<commit> <ref>` lines; `ahead`: the main
- * checkout's commits its upstream doesn't have (none without one).
+ * `at`: when they began to be read (epoch ms), which dates every read that keeps them; `heads`: each local branch's
+ * commit; `remotes`: the remote refs as `<commit> <ref>` lines; `ahead`: the main checkout's commits its upstream
+ * doesn't have (none without one).
  */
 type RepoFacts = {
+  at: number
   entries: GitWorktree[]
   records: Map<string, TowerRecord>
   heads: Map<string, string>
@@ -359,6 +361,7 @@ const layoutOf = async (dir: string): Promise<Omit<RepoLayout, 'admins'> | undef
 }
 
 const factsOf = async (dir: string): Promise<RepoFacts> => {
+  const at = Date.now()
   const entries = await worktreeList(dir)
   const records = parseTowerRecords((await run(dir, ['config', '--get-regexp', '^branch\\..*\\.tower(base|name|fork|from)$'])).stdout)
   const refs = lines(await git(dir, ['for-each-ref', '--format=%(objectname) %(refname) %(symref)', 'refs/heads', 'refs/remotes'])).map((l) => l.split(' '))
@@ -370,7 +373,7 @@ const factsOf = async (dir: string): Promise<RepoFacts> => {
     commitsOf(dir, [originHead, ...[...records.values()].map((r) => r.base)]),
     upstream ? git(dir, ['rev-list', '--count', `${upstream}..HEAD`]).then(Number) : 0,
   ])
-  return { entries, records, heads, originHead, commits, remotes: remoteRefs.map(([commit, ref]) => `${commit} ${ref}\n`).join(''), ahead }
+  return { at, entries, records, heads, originHead, commits, remotes: remoteRefs.map(([commit, ref]) => `${commit} ${ref}\n`).join(''), ahead }
 }
 
 const statusOf = async (dir: string) => lines(await git(dir, ['status', '--porcelain']))
@@ -381,13 +384,13 @@ const statusOf = async (dir: string) => lines(await git(dir, ['status', '--porce
  * no `last`, or `stale` being `all`, everything is read.
  */
 export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale: Stale): Promise<RepoReading> => {
-  const at = Date.now()
   const prior = stale === 'all' ? undefined : last
   const fresh = stale === 'all' ? undefined : stale
+  const checked = Date.now()
   const located = prior && !fresh!.repo ? prior.layout : await layoutOf(dir)
-  if (!located) return { read: { dir, at, git: false } }
+  if (!located) return { read: { dir, at: checked, git: false } }
   const facts = prior && !fresh!.repo ? prior.facts : await factsOf(dir)
-  const { entries, records, heads, originHead, commits, remotes } = facts
+  const { at, entries, records, heads, originHead, commits, remotes } = facts
   const checkedOut = new Set(entries.flatMap((e) => (e.branch ? [e.branch] : [])))
   const towerEntries = entries.flatMap((e) => {
     const name = towerTreeName(dir, e.path)
