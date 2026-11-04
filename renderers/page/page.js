@@ -1707,6 +1707,12 @@ tower.onBoardError((error) => {
   if (opened()) render()
 })
 
+/** The release of the code this page runs, under the logo; pressing it copies it. */
+if (tower.served.version) {
+  const version = Object.assign($('version'), { textContent: tower.served.version, hidden: false })
+  Object.assign(version.dataset, { copy: tower.served.version, tip: `the tower's version, git describe: ${tower.served.version}. Press to copy it` })
+}
+
 /**
  * While the tower serves other code than this page loaded with (`tower.stale()`), a notice offers to reload the page,
  * never reloading it alone: a draft in progress would be lost. Its × hides it until the tower serves other code again.
