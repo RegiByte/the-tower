@@ -64,8 +64,8 @@ const asJson = (value: unknown): string | undefined => JSON.stringify(value, (_,
 const factsJson = (read: RepoRead | undefined) => read && asJson({ ...read, at: undefined })
 
 /**
- * Whether `read` changes what the board shows over `last`: by what git says, or by being the first read to begin after
- * a session started, which only a read begun since may say a worktree of is gone (`readsSince`).
+ * Whether `read` changes what the board shows over `last`: by what git says, or by being the first read dated after a
+ * session started, which only a read dated since may say a worktree of is gone (`readsSince`).
  */
 const moves = (last: RepoRead | undefined, read: RepoRead, startedWithin: (from: number, to: number) => boolean) =>
   factsJson(read) !== factsJson(last) || startedWithin(last!.at, read.at)

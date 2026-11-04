@@ -145,10 +145,11 @@ export type TreeRead = Exposure &
 export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; head: string; base: string; tree?: string }
 
 /**
- * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `at`: when the read
- * began (epoch ms), so it says nothing of what was made after. `bases`: origin's branches as `origin/<x>`, its default
- * first, empty without an origin. `originHead`: that default, when the clone recorded it (`origin/HEAD`). `main`: the
- * main checkout's own work.
+ * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `at`: when the facts
+ * worktrees are judged by (the worktree list, the records, the refs) began to be read, epoch ms; a partial read that
+ * keeps the last facts keeps their date, so it says nothing of what was made after. `bases`: origin's branches as
+ * `origin/<x>`, its default first, empty without an origin. `originHead`: that default, when the clone recorded it
+ * (`origin/HEAD`). `main`: the main checkout's own work.
  */
 export type RepoRead =
   | { dir: string; at: number; git: false }
@@ -264,8 +265,9 @@ export const projectReads = (dirs: string[], repos: Map<string, RepoRead>): Repo
 }
 
 /**
- * The project's reads as they speak for a session started at `startedAt`: `undefined` while any of them began before
- * it, when the worktree the session runs in may have been cut after that read, and its absence there says nothing.
+ * The project's reads as they speak for a session started at `startedAt`: `undefined` while any of them is dated
+ * before it, when the worktree the session runs in may have been cut after that read, and its absence there says
+ * nothing.
  */
 export const readsSince = (reads: RepoRead[] | undefined, startedAt: number): RepoRead[] | undefined =>
   reads?.every((r) => r.at >= startedAt) ? reads : undefined

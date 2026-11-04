@@ -1476,6 +1476,7 @@ test("server: resume recuts a worktree that was removed with its landed branch f
   gitIn(BARE, 'remote', 'add', 'origin', origin)
   gitIn(BARE, 'fetch', '-q', 'origin')
   gitIn(BARE, 'remote', 'set-head', 'origin', '--auto')
+  await boardWhere((b) => floorOf(b, 'bare').defaultBase === 'origin/main')
   const tree = (name: string) => path.join(BARE, '.worktrees', name)
   gitIn(BARE, 'worktree', 'add', '-q', '-b', 'tower/kite-9', tree('kite-9'), 'origin/main')
   gitIn(BARE, 'config', 'branch.tower/kite-9.towerBase', 'origin/main')
