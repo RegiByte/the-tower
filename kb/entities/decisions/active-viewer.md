@@ -62,4 +62,5 @@ name, with its own id. Narration's memos view ([`memos.js`](ref:hub/examples/ext
 says a worker's memo only on the tower page used last, and the
 page's rings, which today sound on every open page, can take it up later. A terminal's size does not follow `viewers.active`: focus
 makes a page active, and a window coming to the front must not reflow a session another machine is typing in. The
-shared terminal view takes the PTY's size only on a key or a pointer press in its page ([[renderer-shared-modules]]).
+shared terminal view takes the PTY's size only when the user acts on that terminal: a key or a pointer press in it, a
+paste or a drop on it ([[renderer-shared-modules]]).
