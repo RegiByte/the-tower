@@ -14,7 +14,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.145'
+export const API_VERSION = '1.146'
 
 const id = z.string().min(1)
 
@@ -308,6 +308,17 @@ export const VERBS = {
     reply: created,
   },
   'collection/delete': { input: z.object({ ...item, id: z.string().regex(ITEM_ID) }).describe('Delete an item.'), reply: ok },
+  'config/add': {
+    input: z
+      .strictObject({
+        key: z.array(z.string().min(1)).min(1).describe('The key path to add, from the top: `["projects", "my-app"]`. Objects missing on the way are made.'),
+        value: z.unknown().refine((v) => v !== undefined, 'a value').describe('What the key holds, as JSON.'),
+      })
+      .describe(
+        "Add a key the config doesn't hold yet, such as a floor at `projects.<id>`: the config with it checked as `tower config check` checks it, and written whole. Refused (`exists`) when the key is there, which only a hand edit changes; (`config`) when it would bring a fail, each named at its key; (`refused`) when a key on its path holds no object. The file is rewritten as JSON indented by two spaces. @since 1.146",
+      ),
+    reply: z.object({ t: z.literal('added'), key: z.string().describe('The key added, as `tower config check` names keys.') }),
+  },
   'review/append': {
     input: z
       .strictObject({

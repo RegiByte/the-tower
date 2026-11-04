@@ -1,6 +1,8 @@
 # The config
 
-`~/.tower/config.json` is the one file the user edits by hand (`TOWER_CONFIG` points elsewhere). The directory that
+`~/.tower/config.json` is the one file the user edits by hand (`TOWER_CONFIG` points elsewhere). The tower writes it in
+one case: `config/add` adds a key it doesn't hold yet (a new floor), checked first, the file then rewritten as JSON
+indented by two spaces. The directory that
 holds it is the system root: session logs, collections, sockets and the cache live next to it. The tower reads the
 file again whenever it changes, so an edit needs no restart, but for `port`.
 

@@ -435,6 +435,7 @@
       "reserved.collection",
       "reserved.command",
       "reserved.commands",
+      "reserved.config",
       "reserved.conversation",
       "reserved.conversations",
       "reserved.core",

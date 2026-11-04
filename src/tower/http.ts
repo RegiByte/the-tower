@@ -75,6 +75,7 @@
  *   POST /fact {name: show | keep | leave, value?}   a fact a running worker logs about its own session, through the host
  *   POST /collection/create {project, collection, name?, ext, content} | /collection/write {project, collection, id, content, modifiedAt}
  *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
+ *   POST /config/add {key, value}   a key the config doesn't hold yet, checked, then the file written whole (src/config-add.ts)
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
  *   POST /policy/run {project, policy, start, slot?, by?, check?} | /policy/pass {project, policy, slot, outcome, check?}
  *        | /policy/approve {project, policy, hash, by?}   a policy's facts in its project's streams (decision `policies`)

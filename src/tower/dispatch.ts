@@ -20,6 +20,7 @@ import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, promptedFacts,
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
+import { addToConfig, keyName } from '../config-add.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
 import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
@@ -979,6 +980,7 @@ export const dispatch = defineResource({
           const modifiedAt = restoreItem(paths, project, collection, id, content)
           return modifiedAt === undefined ? apiError('refused', `${project}/${collection} already holds an item "${id}"`) : { t: 'created', id, modifiedAt }
         }),
+      'config/add': ({ key, value }) => addToConfig(paths.config, key, value) ?? { t: 'added', key: keyName(key) },
       'collection/delete': ({ project, collection, id }) => toItem(project, collection, id, () => (deleteItem(paths, project, collection, id), OK)),
       'worktree/recut': ({ project, name }) =>
         onWorktrees(project, async (p, config) => (await recutWorktree(p, project, worktreesConfig(config, project).links, name, occupants()), OK)),
