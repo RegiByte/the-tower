@@ -5,9 +5,12 @@
  * stacked twice: the one showing moves to the end with its time anew, its action the newest, and counts the times
  * (`×2`). An action is one button that follows up what the toast tells (Resume after a kill, Undo after a delete):
  * pressing it closes the toast and runs it. The stack is a polite live region, so a screen reader says each toast as it
- * comes. A notice (`noticer`) stands in the same stack until it is closed. The tower serves this module as `/toasts.js`. Every toast in the stack is as wide as the widest, so their
+ * comes. A notice (`noticer`) stands in the same stack until it is closed, a closable one (`closableNoticer`) by its
+ * reader's × too. The tower serves this module as `/toasts.js`. Every toast in the stack is as wide as the widest, so their
  * edges and their actions line up.
  */
+
+import { ICON } from './icons.ts'
 
 export type ToastAction = { label: string; run: () => unknown }
 
@@ -91,22 +94,43 @@ export function toaster(stack: HTMLElement) {
  */
 export type Notice = { say(msg: string): void; close(): void }
 
+/** A notice's element in `stack`, below the notices standing there, above the toasts. */
+const standNotice = (stack: HTMLElement, msg: string, action?: ToastAction) => {
+  const el = document.createElement('div')
+  el.className = 'toast notice'
+  const words = Object.assign(document.createElement('span'), { textContent: msg })
+  el.append(words)
+  if (action) {
+    const button = Object.assign(document.createElement('button'), { textContent: action.label })
+    button.dataset.toastAction = action.label
+    button.onclick = () => void action.run()
+    el.append(button)
+  }
+  const after = [...stack.children].findLast((c) => c.classList.contains('notice'))
+  if (after) after.after(el)
+  else stack.prepend(el)
+  return { el, words }
+}
+
 /** Turns `stack`, the element `toaster` was given, into a stack that holds notices too, answering the function that opens one. */
 export function noticer(stack: HTMLElement) {
   return (msg: string, action?: ToastAction): Notice => {
-    const el = document.createElement('div')
-    el.className = 'toast notice'
-    const words = Object.assign(document.createElement('span'), { textContent: msg })
-    el.append(words)
-    if (action) {
-      const button = Object.assign(document.createElement('button'), { textContent: action.label })
-      button.dataset.toastAction = action.label
-      button.onclick = () => void action.run()
-      el.append(button)
-    }
-    const after = [...stack.children].findLast((c) => c.classList.contains('notice'))
-    if (after) after.after(el)
-    else stack.prepend(el)
+    const { el, words } = standNotice(stack, msg, action)
+    return { say: (next) => void (words.textContent = next), close: () => el.remove() }
+  }
+}
+
+/**
+ * Turns `stack` into one that holds notices the reader closes: each ends in a × that closes it and calls `closed`,
+ * while its action's button leaves it standing, as a notice's does. @since 1.144
+ */
+export function closableNoticer(stack: HTMLElement) {
+  return (msg: string, action: ToastAction | undefined, closed: () => void): Notice => {
+    const { el, words } = standNotice(stack, msg, action)
+    const close = Object.assign(document.createElement('button'), { className: 'icon-btn toast-close', innerHTML: ICON.close })
+    close.setAttribute('aria-label', 'Close')
+    close.onclick = () => (el.remove(), closed())
+    el.append(close)
     return { say: (next) => void (words.textContent = next), close: () => el.remove() }
   }
 }
@@ -121,4 +145,5 @@ export const toastsCss = `
 .toasts .toast-count { flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
 .toasts .toast-count:empty { display: none; }
 .toasts .toast button { flex: none; }
+.toasts .toast .toast-close { margin-inline: calc(-1 * var(--sp-m)); }
 `

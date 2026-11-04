@@ -57,7 +57,8 @@ them.
   and counts the times. Tower 3D draws its toasts through it too. A notice
   ([`noticer`](ref:hub/src/shared/toasts.ts#noticer), since 1.128) stands in the same stack, above the toasts that
   leave, until whoever opened it closes it: what goes on after a press (narration, with Stop), its action run without
-  closing it.
+  closing it. A closable notice ([`closableNoticer`](ref:hub/src/shared/toasts.ts#closableNoticer), since 1.144) also
+  ends in a × its reader closes it with, as the tower page's offer to reload a stale page ([[stale-page]]).
 - Send home still asks, saying what it costs ([`sendHomeAsk`](ref:hub/src/shared/duty.ts#sendHomeAsk)): a turn in
   flight is lost. A worker sent home alone gets a toast offering Resume: the card's own `resume` call, read when
   pressed from the board or its floor's archive ([[board-archive]]), so no renderer builds a call.
