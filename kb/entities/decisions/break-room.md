@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "The break room: a hire whose answer waits on its hirer passes the time in the game room",
-  "summary": "In Tower 3D, a worker the board says waits on its hirer (`card.waitsOn`) leaves its desk, or its seat in a meeting, for its floor's game room two minutes after its answer came, and plays at a free cabinet or stands about until someone prompts it or it goes home. Its desk reads AWAY in the Game room. A pure function of one board and the wall clock: the plan says when it next changes by time alone, and the page plans again then.",
+  "summary": "In Tower 3D, a worker the board says waits on its hirer (`card.waitsOn`) leaves its desk, or its seat in a meeting, for its floor's game room two minutes after its answer came, and plays at a free cabinet or stands about until someone prompts it or it goes home. Its desk reads AWAY in the Game room. A pure function of one board and the wall clock: the plan says when it next changes by time alone, and the page plans again then. A worker at coffee time stands at the coffee corner instead, its place in the game room kept, until the round closes.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "refs": [
     "hub/renderers/tower3d/src/breaks.ts#breaksOf",
     "hub/renderers/tower3d/src/breaks.ts#GRACE",
@@ -23,9 +23,26 @@
     "hub/src/bridge/board.ts#answerWait"
   ],
   "links": [
-    { "to": "whereabouts", "verb": "uses", "carries": "the place-in-a-room machinery: a desk at a place, the AWAY workstation, the walk on the floor's paths" },
-    { "to": "arcade", "verb": "uses", "carries": "the game room's cabinets, a place to play before each" },
-    { "to": "crews", "verb": "uses", "carries": "card.waitsOn: whose prompt a hire's unread answer answers" }
+    {
+      "to": "whereabouts",
+      "verb": "uses",
+      "carries": "the place-in-a-room machinery: a desk at a place, the AWAY workstation, the walk on the floor's paths"
+    },
+    {
+      "to": "arcade",
+      "verb": "uses",
+      "carries": "the game room's cabinets, a place to play before each"
+    },
+    {
+      "to": "crews",
+      "verb": "uses",
+      "carries": "card.waitsOn: whose prompt a hire's unread answer answers"
+    },
+    {
+      "to": "coffee-time",
+      "verb": "amends",
+      "carries": "coffee wins over a break while the worker is in the open round"
+    }
   ]
 }
 ---
@@ -76,3 +93,5 @@ nobody has typed to it since, its latest prompt was its hirer's and the hirer ru
 **Impact.** Tower 3D only; no board or API change. The `breakroom` fixture
 ([`breakroom`](ref:hub/renderers/tower3d/src/fixtures.ts#breakroom)) covers the cases, and frames' `break-room` and
 `reviewer-stays` stages look at them ([`frames.scenario.js`](ref:hub/scripts/frames.scenario.js)).
+
+**Coffee time.** A worker on a break that joins its floor's open coffee round stands at the coffee corner instead ([[coffee-time]], [[whereabouts]]); its place in the game room is kept, and it comes back to it when the round closes while it still waits on its hirer.
