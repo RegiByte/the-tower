@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-16",
-  "reviewed": "2026-11-01",
+  "reviewed": "2026-11-04",
   "refs": [
     "hub/renderers/kaykit/scenes/prefabs/meeting_long.json",
     "hub/renderers/tower3d/editor.html",
@@ -60,8 +60,6 @@ board.
   ([`place`](ref:hub/renderers/tower3d/src/editor.ts#place)), which is redrawn
   ([`redraw`](ref:hub/renderers/tower3d/src/editor.ts#redraw)). A box is resized along each axis on its own into its
   `size`. Documents are kept raw as their files hold them, and every edit is a copy, so undo steps through copies.
-  A turn from the gizmo is the yaw the proxy faces, written as the shortest way round from the element's own turn,
-  since an Euler's y alone folds a turn past 90° back.
 - States. A document's states may fall in `groups` that exclude each other
   ([`groupsOf`](ref:hub/renderers/kaykit/src/scene.ts#groupsOf)), such as the desk's status, pile and season; the
   picker shows one state of each, and the state picked last is the one edited. While it is, a shared thing's move is
