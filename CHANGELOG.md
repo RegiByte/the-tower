@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.89.3
+
+⌘V pastes into a terminal in Tower.app again on macOS 26. No restart beyond the tower's own (`tower down tower`, then
+`tower up tower`), no config change, no API change. The open page offers the reload.
+
+- **⌘ shortcuts reach the app's menus from a terminal.** On macOS 26, WebKit fires a keypress for ⌘V, and v1.89.2
+  cancelled every keypress on the terminal's textarea, so Edit > Paste never ran. A keypress with ⌘ held, or Ctrl
+  without Alt, is now left to the browser. Windows' AltGr (Ctrl with Alt) still types its character once. Thanks
+  @CarlosBonetti (#393).
+
 ## v1.89.2
 
 With Caps Lock on, a double space in a terminal is two spaces on a Mac. No restart beyond the tower's own (`tower down
