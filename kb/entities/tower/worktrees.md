@@ -4,7 +4,7 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "tower-core",
-  "reviewed": "2026-11-02",
+  "reviewed": "2026-11-03",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#restoreWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges", "hub/src/changed-files.ts#changedSince"]
 }
 ---

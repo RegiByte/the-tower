@@ -380,6 +380,16 @@ const firstEvent = (pathname: string): Promise<unknown> =>
     req.on('error', reject)
   })
 
+/**
+ * A board stream held open once its first event came, and its close: while one is open, git is read only as its changes
+ * settle, so a board can come before the tower has read what the test just did in git.
+ */
+const heldBoard = (): Promise<() => void> =>
+  new Promise((resolve, reject) => {
+    const req = http.get(`${base}/board`, { agent: false }, (res) => res.setEncoding('utf8').once('data', () => resolve(() => req.destroy())))
+    req.on('error', reject)
+  })
+
 const errorCode = (reply: Reply): string => ApiError.parse(JSON.parse(reply.body)).code
 
 test('server: one board event is a BoardMsg by the committed schema', async () => {
@@ -1460,6 +1470,7 @@ test('server: a prompt is refused where it would answer a question, and at-promp
 })
 
 test("server: resume recuts a worktree that was removed with its landed branch from origin's default, under its name, and tells the resumed session in its first prompt, before the prompt given; one on a detached HEAD whose folder is gone is unresumable and refused", async () => {
+  const release = await heldBoard()
   const origin = path.join(ROOT, 'bare-origin.git')
   execFileSync('git', ['clone', '-q', '--bare', BARE, origin])
   gitIn(BARE, 'remote', 'add', 'origin', origin)
@@ -1475,7 +1486,7 @@ test("server: resume recuts a worktree that was removed with its landed branch f
   gitIn(BARE, 'worktree', 'add', '-q', '--detach', tree('wren-4'), 'main')
   const sessions = { tidied: '20261004-213000-d1e2', detached: '20261004-213100-e3f4', quiet: '20261004-213200-f5a6' }
   const ended = (id: string, cwd: string, conversation: string) => {
-    const header = { id, project: 'bare', cwd, argv: ['bash'], startedAt: Date.now() - 60_000, cols: 80, rows: 24 }
+    const header = { id, project: 'bare', cwd, argv: ['bash'], startedAt: Date.now(), cols: 80, rows: 24 }
     const events = [
       [0.1, 'h', { hook_event_name: 'SessionStart', source: 'startup', session_id: conversation }],
       [0.2, 'h', { hook_event_name: 'UserPromptSubmit', session_id: conversation, prompt: 'Build it.' }],
@@ -1497,7 +1508,9 @@ test("server: resume recuts a worktree that was removed with its landed branch f
   assert.deepEqual(
     [cardOf(gone, sessions.tidied)!.unresumable, cardOf(gone, sessions.detached)!.unresumable],
     [undefined, 'gone'],
+    'a worktree is gone only by git read since its session started',
   )
+  release()
 
   const refused = await post('resume', { id: sessions.detached, conversation: 'c-detached' })
   assert.equal(errorCode(refused), 'lost')

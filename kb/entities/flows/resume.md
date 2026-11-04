@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-11-03",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#resumeOnce", "hub/src/tower/dispatch.ts#gate", "hub/src/cli.ts#towerCommand", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/status-words.ts#UNRESUMABLE_NAME", "hub/src/bridge/worktrees.ts#restoreOf", "hub/src/worktrees.ts#restoreWorktree", "hub/src/shared/launch.ts#Restored"]
+  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#resumeOnce", "hub/src/tower/dispatch.ts#gate", "hub/src/cli.ts#towerCommand", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/status-words.ts#UNRESUMABLE_NAME", "hub/src/bridge/worktrees.ts#restoreOf", "hub/src/bridge/worktrees.ts#readsSince", "hub/src/worktrees.ts#restoreWorktree", "hub/src/shared/launch.ts#Restored"]
 }
 ---
 ```mermaid
@@ -68,7 +68,8 @@ sequenceDiagram
   removes an occupied worktree, can't remove one a resume just recut before the resumed worker shows on the board.
 - **Whether it can be resumed is on the board, before the click.** A worker not running whose `cwd` is no longer in
   its floor is `unresumable: 'outside'`, one whose worktree is gone and can't be restored `'gone'`
-  ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt), [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone));
+  ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt), [`checkoutGone`](ref:hub/src/bridge/board.ts#checkoutGone)),
+  judged only by git read since the session started ([`readsSince`](ref:hub/src/bridge/worktrees.ts#readsSince));
   it offers no `resume`, a stranded one is not on duty, and every renderer and `tower agent` say why
   ([`UNRESUMABLE_NAME`](ref:hub/src/shared/status-words.ts#UNRESUMABLE_NAME)). A worktree the resume can restore
   leaves it resumable, the card's `worktree.gone` saying its folder is gone meanwhile.

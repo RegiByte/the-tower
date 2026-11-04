@@ -60,13 +60,25 @@ const roundSlice = <T>(items: T[], at: number, share: number): { slice: T[]; at:
 /** A value as JSON, Maps as arrays, so two reads compare by what they hold. */
 const asJson = (value: unknown): string | undefined => JSON.stringify(value, (_, v) => (v instanceof Map ? [...v] : v))
 
+/** What a read says, without when it began. */
+const factsJson = (read: RepoRead | undefined) => read && asJson({ ...read, at: undefined })
+
+/**
+ * Whether `read` changes what the board shows over `last`: by what git says, or by being the first read to begin after
+ * a session started, which only a read begun since may say a worktree of is gone (`readsSince`).
+ */
+const moves = (last: RepoRead | undefined, read: RepoRead, startedWithin: (from: number, to: number) => boolean) =>
+  factsJson(read) !== factsJson(last) || startedWithin(last!.at, read.at)
+
 /**
  * `dirs`: the project dirs as the config names them now, `undefined` while the config can't be read (every last read
- * kept). `read`: the reader. `changed`: called once a read changed what `repos` holds.
+ * kept). `read`: the reader. `startedWithin`: whether a session started after `from` and no later than `to` (epoch
+ * ms). `changed`: called once a read changed what the board shows (`moves`).
  */
 export const watchRepos = (
   dirs: () => string[] | undefined,
   read: (asks: RepoAsk[]) => Promise<PromiseSettledResult<RepoReading>[]>,
+  startedWithin: (from: number, to: number) => boolean,
   changed: () => void,
 ): RepoWatch => {
   const repos = new Map<string, RepoRead>()
@@ -112,10 +124,8 @@ export const watchRepos = (
         failing.delete(dir)
         if (result.value.parts) parts.set(dir, result.value.parts)
         else parts.delete(dir)
-        if (asJson(result.value.read) !== asJson(repos.get(dir))) {
-          repos.set(dir, result.value.read)
-          moved = true
-        }
+        if (moves(repos.get(dir), result.value.read, startedWithin)) moved = true
+        repos.set(dir, result.value.read)
         if (watching && watched.has(dir)) watchRoots(dir)
       }
       if (moved) changed()

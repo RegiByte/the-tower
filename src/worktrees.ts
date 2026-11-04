@@ -381,10 +381,11 @@ const statusOf = async (dir: string) => lines(await git(dir, ['status', '--porce
  * no `last`, or `stale` being `all`, everything is read.
  */
 export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale: Stale): Promise<RepoReading> => {
+  const at = Date.now()
   const prior = stale === 'all' ? undefined : last
   const fresh = stale === 'all' ? undefined : stale
   const located = prior && !fresh!.repo ? prior.layout : await layoutOf(dir)
-  if (!located) return { read: { dir, git: false } }
+  if (!located) return { read: { dir, at, git: false } }
   const facts = prior && !fresh!.repo ? prior.facts : await factsOf(dir)
   const { entries, records, heads, originHead, commits, remotes } = facts
   const checkedOut = new Set(entries.flatMap((e) => (e.branch ? [e.branch] : [])))
@@ -426,7 +427,7 @@ export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale
   ])
   const mainCounted = counted.get(MAIN_CHECKOUT)
   return {
-    read: { dir, git: true, bases: originBases(remotes, originHead), originHead, main: { dirty: main.length, ahead: facts.ahead, ...(mainCounted && { changed: mainCounted.changed }) }, trees, kept },
+    read: { dir, at, git: true, bases: originBases(remotes, originHead), originHead, main: { dirty: main.length, ahead: facts.ahead, ...(mainCounted && { changed: mainCounted.changed }) }, trees, kept },
     parts: { layout, facts, main, statuses, created, counted },
   }
 }

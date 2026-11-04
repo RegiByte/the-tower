@@ -4,8 +4,8 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-11-02",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo"],
+  "reviewed": "2026-11-03",
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo", "hub/src/bridge/worktrees.ts#readsSince"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
     { "to": "system-root", "verb": "reads", "carries": "streams/*/<folder>/YYYY-MM.jsonl, each stream an extension folds stepped on once a write settles" },
@@ -34,7 +34,8 @@ resumed from a checkpoint skips exactly what one from the start skips; an event 
 JSON, is kept for the fold to break on.
 
 **Change.** `onChange` fires only when something renderers read changed: every poll and rescan compares its read with
-the last by content.
+the last by content. A repo read is compared without its `at`, but for a read that is the first to begin after a
+session started, which the board can read more from (below).
 
 **Collections and streams.** The collections directory, `streams/system/` and `streams/projects/` are each watched
 recursively ([`subscribe`](ref:hub/src/subscribe.ts#subscribe)), each watching before its first read, and read again
@@ -84,6 +85,12 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   drops on overflow without a word), so every 10 s a few repos' own facts and main status are read, each once per `SAFETY_REPO_MS` (2 min), and a
   few worktrees' status, each once per `SAFETY_TREES_MS` (10 min): on 6 repos of 40 worktrees, 48 git a minute idle.
   Each tick also starts the watches the config added or that failed, and closes those it removed.
+- **Dated.** Each read records when it began (`at`). A session's card reads its worktree as gone, and can call it
+  `unresumable: 'gone'`, only from reads of its project that all began after the session started
+  ([`readsSince`](ref:hub/src/bridge/worktrees.ts#readsSince)): an older read may predate the worktree's cut, and a
+  worktree git hasn't been read with yet is not one that was removed. Until then the card says nothing is gone, as
+  before the first read. While the board is observed, git is read only as its changes settle, and a session's log is
+  folded at once, so without this a new session's card could show its new worktree gone.
 - **Fresh for verbs.** A worktree verb and `refreshRepos` read every part afresh: every destructive verb decides from
   a read made after its fetch, never from the board's ([[tower-cuts-worktrees]]).
 - **Platforms.** Every recursive watch is a `@parcel/watcher` subscription behind

@@ -25,7 +25,7 @@ const left = (log: SessionLog, pid: number): Resource => ({ pid, session: log.he
 const endOf = (log: SessionLog) => at(log, log.events.at(-1)![0])
 
 /** Git's read of the hub holding `trees`. */
-const hubRead = (trees: TreeRead[]) => new Map<string, RepoRead>([[HUB, { dir: HUB, git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+const hubRead = (trees: TreeRead[]) => new Map<string, RepoRead>([[HUB, { dir: HUB, at: Date.now(), git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
 /** Worktree odin-42, clean and pushed, its branch `absorbed` into its base or not. */
 const odin = (absorbed: boolean): TreeRead => ({ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: BRANCH, present: true, dirty: 0, unpushed: 0, absorbed, risk: [] })
 const REPOS = hubRead([odin(true)])

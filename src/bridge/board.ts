@@ -52,7 +52,7 @@ import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.
 import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
 import { deliveries, type Delivery } from './messages.ts'
-import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReads, restoreOf, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
+import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReads, readsSince, restoreOf, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
 
 /** Excerpts: the board goes to every viewer on every change; the full text is asked for per session. */
 const EXCERPT_CHARS = 280
@@ -92,8 +92,8 @@ export type Card = {
   cwd: string
   /**
    * The worktree its cwd is, by name, the branch checked out there (none on a detached HEAD, or before git is read) and,
-   * for a fork, the checkout it was forked from; `gone` once git no longer lists it with its folder in every repo of the
-   * project (`checkoutGone`).
+   * for a fork, the checkout it was forked from; `gone` once git, read since the session started, no longer lists it with
+   * its folder in every repo of the project (`checkoutGone`).
    */
   worktree?: { name: string; branch?: string; from?: string; gone: boolean }
   /**
@@ -485,7 +485,7 @@ export const unresumableAt = (project: Project | undefined, cwd: string, reads: 
   return checkoutGone(project, cwd, reads) && restoreOf(reads!, worktreeName(project, cwd)!).t === 'none' ? 'gone' : undefined
 }
 
-/** `projectRead`: the reads of the project's dirs, `undefined` until each was read once. */
+/** `projectRead`: the reads of the project's dirs, `undefined` until each was read once since the session started. */
 const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead[], projectRead: RepoRead[] | undefined): Card['worktree'] => {
   const name = project && worktreeName(project, cwd)
   const tree = treeAt(reads, cwd)
@@ -790,7 +790,8 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, rep
   const byId = new Map(sessions.map((s) => [s.header.id, s]))
   const callsignOf = (id: string) => nameOf(byId.get(id)!)
   const projectRead = (p: Project | undefined) => p && projectReads(projectDirs(p), repos)
-  const unresumableOf = ({ project, cwd }: Session['header']) => unresumableAt(config.projects[project], cwd, projectRead(config.projects[project]))
+  const sessionRead = ({ project, startedAt }: Session['header']) => readsSince(projectRead(config.projects[project]), startedAt)
+  const unresumableOf = (header: Session['header']) => unresumableAt(config.projects[header.project], header.cwd, sessionRead(header))
   const placed = sessions.map((s) =>
     card(
       s,
@@ -799,7 +800,7 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, rep
       host?.ids ?? new Set(),
       processes,
       peers,
-      cardWorktree(config.projects[s.header.project], s.header.cwd, reads, projectRead(config.projects[s.header.project])),
+      cardWorktree(config.projects[s.header.project], s.header.cwd, reads, sessionRead(s.header)),
       unresumableOf(s.header),
       hirers,
       delivered,
