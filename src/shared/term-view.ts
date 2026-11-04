@@ -285,6 +285,9 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
           term.registerLinkProvider({ provideLinks: (y, done) => done(fileLinks(shown, y, edit)) })
         }
         term.open(host)
+        // xterm's input textarea keeps what it typed through keypress (capitals, spaces, punctuation) until Enter. On a
+        // Mac, WebKit's inline predictions complete and replace those words, and xterm sends each replaced value whole.
+        term.textarea!.setAttribute('writingsuggestions', 'false')
         term.write(data)
         if (exited) return term.attachCustomKeyEventHandler(terminalKeymap(io.keymap, io.run, () => {}))
         term.attachCustomKeyEventHandler(terminalKeymap(io.keymap, io.run, typed))
