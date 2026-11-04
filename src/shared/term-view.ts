@@ -263,9 +263,11 @@ const base64Of = (file: File): Promise<string> =>
  * on), spaces and punctuation on keypress and leaves the browser to insert them as well, so the textarea would hold
  * the prompt until Enter. macOS edits text held there, putting a period after a word on a double space or completing
  * it inline, and xterm sends such an edit as typed text: a space swallowed, earlier text sent again. Composed text
- * (dead keys, an IME) fires no keypress and still goes through the textarea.
+ * (dead keys, an IME) fires no keypress and still goes through the textarea. A keypress with Cmd or Ctrl held is no
+ * typed key (xterm sends none) but a shortcut: WebKit fires one for Cmd-V, and cancelling it would take the key from
+ * the app's Edit menu, so nothing would be pasted.
  */
-const keepTextareaEmpty = (e: KeyboardEvent) => e.preventDefault()
+const keepTextareaEmpty = (e: KeyboardEvent) => e.metaKey || e.ctrlKey || e.preventDefault()
 
 /** Opens a view of a PTY's stream in `host`, which it fits and watches for resizes, until `close`. */
 export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): TermViewHandle {

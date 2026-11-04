@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#keepTextareaEmpty", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf"]
 }
 ---
@@ -49,7 +49,9 @@ every other key, and reach every renderer the way `user.name` does.
   [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView) keeps xterm's input textarea empty of what xterm
   types on keypress (capitals, so the whole prompt with Caps Lock on, plus spaces and punctuation): xterm sends the
   key and left the browser to insert it too, so the textarea held the prompt until Enter
-  ([`keepTextareaEmpty`](ref:hub/src/shared/term-view.ts#keepTextareaEmpty)). macOS edits text held there, and xterm
+  ([`keepTextareaEmpty`](ref:hub/src/shared/term-view.ts#keepTextareaEmpty)). A keypress with Cmd or Ctrl held is
+  left alone: xterm types none, and WebKit fires one for Cmd-V, which cancelled would never reach the Edit menu's
+  Paste. macOS edits text held there, and xterm
   sends an edit as typed text: a period after a word on a double space swallowed the second space, and an inline
   prediction's replacement sent earlier text again. Composed and dictated text still pass through the textarea, so
   WebKit's inline predictions are off on it too (`writingsuggestions="false"`; xterm already turns autocorrect,
