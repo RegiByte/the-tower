@@ -2,6 +2,7 @@
   "regions": [
     { "id": "board.main", "subject": "board", "holds": ["views"], "scale": "pane", "arity": "one", "description": "the main pane (a worker, the skyline, a floor's archive, a collection, a shelf entry)" },
     { "id": "board.strip", "subject": "board", "holds": ["views"], "scale": "row", "arity": "one", "description": "a strip at the top of the sidebar, its view mounted for as long as the page is open: what an extension keeps in sight, or plays, whatever the main pane shows" },
+    { "id": "board.sign", "subject": "board", "holds": ["commands"], "description": "beside the sidebar's Floors and Stats, and the palette: commands about no one floor, such as a new floor, each its icon alone, its label and hint the tip", "overflows": ["wrap"] },
     { "id": "board.notes", "subject": "board", "holds": ["asks"], "description": "the notes at the top of the sidebar, for asks about no floor", "overflows": ["wrap"] },
     { "id": "floor.sign", "subject": "floor", "holds": ["commands"], "description": "the floor's sign in the sidebar while the floor is open, and the palette: each command its icon alone, its label and hint the tip", "overflows": ["wrap"] },
     { "id": "floor.section", "subject": "floor", "holds": ["badges", "verbs", "asks", "tidy"], "description": "the floor's section in the sidebar, its Tidy and the palette", "overflows": ["wrap"] },
