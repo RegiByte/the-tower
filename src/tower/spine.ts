@@ -2,7 +2,8 @@
  * The tower process as a system of braided resources, each started once its dependencies have and halted before them
  * (decision `spine`). The core's pieces:
  *
- *   core:config     the config's path and the system root's, and the config as the file holds it now
+ *   core:config     the config's path and the system root's, the config as the file holds it now, and the code the
+ *                   tower started on (`servedNow`)
  *   core:system     the live view of every log, stream, collection and daemon (src/system.ts), and who hears it change
  *   core:publisher  the board, and the clients of `GET /board` (publisher.ts)
  *   core:dispatch   every verb's handler (dispatch.ts)
@@ -21,15 +22,17 @@ import { dispatch } from './dispatch.ts'
 import { extensions, type ExtensionsResource } from './extensions.ts'
 import { httpServer } from './http.ts'
 import { publisher, type PublisherResource } from './publisher.ts'
+import { servedNow } from './served.ts'
 
 /**
  * The config is read again on every call: the user edits it at any time, and every read sees the edit. Its old
- * spellings are read where they are now (`configNow`).
+ * spellings are read where they are now (`configNow`). `served` is the code the tower runs, read once as it starts:
+ * the process runs that code until it restarts.
  */
 export const config = defineResource({
   start: () => {
     const paths = systemPaths(configPath())
-    return { paths, read: () => configNow(readConfig(paths.config)) }
+    return { paths, read: () => configNow(readConfig(paths.config)), served: servedNow() }
   },
   halt: () => {},
 })

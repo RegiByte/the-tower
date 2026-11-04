@@ -67,6 +67,11 @@
  *   tower.store.on((key) => …)                      called on each key this page sets, a page it relays included; returns unsubscribe
  *   tower.framed                                    whether the page runs inside the tower
  *   tower.version                                   the API version this script speaks, `"<major>.<minor>"`, checked on every board
+ *   tower.served                                    what the tower served this script from: { id, version }, the code this page runs
+ *                                                   and its release (`git describe`, null outside git)
+ *   tower.stale() / tower.onStale((served) => …)    what the tower serves now, while its id isn't `tower.served.id`: the page runs
+ *                                                   code the tower no longer serves until it is reloaded (null while the
+ *                                                   same); `onStale` is called whenever that changes, returns unsubscribe
  *   tower.viewer                                    this page's viewer id: its board stream names it, and it says the user acted
  *                                                   on it (`viewer/active`) as they focus it, press or type; it is the page the
  *                                                   user is at while it is the board's `viewers.active` (undefined when framed)
@@ -93,6 +98,7 @@
    * @typedef {import('../shared/shelf-page.ts').BoardError} BoardError
    * @typedef {import('../shared/shelf-page.ts').BoardMsg} BoardMsg
    * @typedef {import('../shared/shelf-page.ts').FromPage} FromPage
+   * @typedef {import('../shared/shelf-page.ts').Served} Served
    * @typedef {import('../shared/shelf-page.ts').ShelfSelf} ShelfSelf
    * @typedef {import('../shared/shelf-page.ts').StreamMsg} StreamMsg
    * @typedef {import('../shared/shelf-page.ts').ToPage} ToPage
@@ -126,6 +132,9 @@
   /** Filled in by the tower as it serves this script, from src/shared/api.ts. @type {typeof import('../shared/api.ts').API_VERSION} */
   // @ts-expect-error a name src/tower/served.ts replaces with its value
   const VERSION = API_VERSION
+  /** Filled in by the tower as it serves this script: the code it runs and serves (`servedNow`, src/tower/served.ts). @type {Served} */
+  // @ts-expect-error a name src/tower/served.ts replaces with its value
+  const SERVED = SERVED
   /**
    * The appearance a viewer starts from and the families CSS names by keyword, from src/shared/prefs.ts; the shipped
    * faces each stack ends in, from src/shared/design.ts.
@@ -176,14 +185,32 @@
   const errorWatchers = new Set()
   /** The tower's latest word on the board: `{ board, self }`, or `{ error }` while it can't build one. @type {Latest | undefined} */
   let latest
+  /** What the tower serves, as its latest board said it. @type {Served | undefined} */
+  let serving
+  /** @type {Set<(served: Served | null) => void>} */
+  const staleWatchers = new Set()
+  const stale = () => (serving !== undefined && serving.id !== SERVED.id ? serving : null)
 
   /**
-   * A `/board` message: the board, or why the tower can't build it.
-   * @param {BoardMsg} msg
+   * The code the tower serves as a board says it, every `onStale` told when that moves `stale()`. A framing page of a
+   * tower before 1.144 relays none.
+   * @param {Served | undefined} served
+   */
+  const heardServed = (served) => {
+    if (served === undefined) return
+    const was = stale()?.id
+    serving = served
+    if (stale()?.id !== was) staleWatchers.forEach((fn) => fn(stale()))
+  }
+
+  /**
+   * A `/board` message, or the framing page's relay of one: the board, or why the tower can't build it.
+   * @param {BoardMsg | Extract<ToPage, { t: 'board' }>} msg
    * @param {ShelfSelf | undefined} self
    */
   const publish = (msg, self) => {
     checkVersion(msg.v)
+    heardServed(msg.served)
     if ('error' in msg) {
       latest = { error: failure(msg.error.message, msg.error.code) }
       for (const fn of errorWatchers) fn(latest.error)
@@ -594,8 +621,8 @@
     const toPage = (msg) => open && paired && frame.contentWindow?.postMessage(msg, '*')
     const sendBoard = () => {
       if (!latest) return
-      /** @type {{ t: 'board', v: typeof VERSION, self: ShelfSelf }} */
-      const msg = { t: 'board', v: VERSION, self }
+      /** @type {{ t: 'board', v: typeof VERSION, served: Served | undefined, self: ShelfSelf }} */
+      const msg = { t: 'board', v: VERSION, served: serving, self }
       toPage(latest.error ? { ...msg, error: { code: latest.error.code, message: latest.error.message } } : { ...msg, board: latest.board })
     }
     const sendPrefs = () => toPage({ t: 'prefs', prefs })
@@ -665,6 +692,13 @@
   window.tower = {
     framed,
     version: VERSION,
+    served: SERVED,
+    stale,
+    onStale(fn) {
+      staleWatchers.add(fn)
+      listen()
+      return () => staleWatchers.delete(fn)
+    },
     viewer: api.viewer,
     subscribe(fn) {
       subscribers.add(fn)

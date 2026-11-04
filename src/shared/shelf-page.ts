@@ -111,8 +111,16 @@ export type Topology = {
  */
 export type BoardError = { code: ErrorCode | 'disconnected'; message: string }
 
-/** GET `/board` (SSE): the board, again whenever it changes, or why the tower can't build it until it can. */
-export type BoardMsg = { v: typeof API_VERSION; board: Board } | { v: typeof API_VERSION; error: BoardError }
+/**
+ * What the tower runs and serves, read as it starts: `id` changes with any file of its code and stays the same on a
+ * start over the same files, so a page loaded with another runs code the tower no longer serves (`tower.stale()`);
+ * `version` is the checkout's release as `git describe --tags --always` says it (`v1.87.1`, `v1.87.1-3-gabc1234`),
+ * null outside git. @since 1.144
+ */
+export type Served = { id: string; version: string | null }
+
+/** GET `/board` (SSE): the board, again whenever it changes, or why the tower can't build it until it can, with what the tower serves. @since 1.144 for `served` */
+export type BoardMsg = { v: typeof API_VERSION; served: Served; board: Board } | { v: typeof API_VERSION; served: Served; error: BoardError }
 
 /** The messages of the screen stream, GET `/screen/<id>` (SSE). */
 export type ScreenMsg =
@@ -173,9 +181,12 @@ export type FromPage =
   | { t: 'key'; key: string; code: string; mods: ('Alt' | 'Ctrl' | 'Meta' | 'Shift')[]; editable: boolean }
 
 export type ToPage =
-  /** Sent after `hello`, then whenever the board changes: the board, or why the tower can't build it. */
-  | { t: 'board'; v: typeof API_VERSION; self: ShelfSelf; board: Board }
-  | { t: 'board'; v: typeof API_VERSION; self: ShelfSelf; error: BoardError }
+  /**
+   * Sent after `hello`, then whenever the board changes: the board, or why the tower can't build it, and the code the
+   * tower serves as the board said it (`BoardMsg`), none from a framing page of a tower before 1.144.
+   */
+  | { t: 'board'; v: typeof API_VERSION; served?: Served; self: ShelfSelf; board: Board }
+  | { t: 'board'; v: typeof API_VERSION; served?: Served; self: ShelfSelf; error: BoardError }
   | { t: 'answer'; id: number; data: unknown }
   | { t: 'answer'; id: number; error: string; code: ErrorCode }
   /** One message of a watched stream. */
@@ -207,6 +218,15 @@ export type Tower = {
    * framed shelf page, which is its framing page's. @since 1.129
    */
   viewer: string | undefined
+  /** What the tower served this page's `/tower.js` from: the code this page runs and its version. @since 1.144 */
+  served: Served
+  /**
+   * What the tower serves now, while its `id` isn't the one this page loaded with: the page runs code the tower no
+   * longer serves, until it is reloaded. Null while it is the same, and before the first board. @since 1.144
+   */
+  stale(): Served | null
+  /** Called whenever `stale()` changes to code of another id, or to null, with what it is now; returns unsubscribe. @since 1.144 */
+  onStale(fn: (served: Served | null) => void): () => void
   subscribe(fn: (board: Board, self: ShelfSelf | undefined) => void): () => void
   /** Why there is no live board, `code` config, internal or disconnected, until `subscribe` hands a board again. */
   onBoardError(fn: (err: Error & { code: BoardError['code'] }) => void): () => void

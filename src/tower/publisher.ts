@@ -25,7 +25,7 @@ type Deps = { 'core:config': ConfigResource; 'core:system': SystemResource; 'cor
 
 export const publisher = defineResource({
   dependencies: ['core:config', 'core:system', 'core:extensions'],
-  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:extensions': extensions }: Deps) => {
+  start: ({ 'core:config': { paths, read: readConfig, served }, 'core:system': system, 'core:extensions': extensions }: Deps) => {
     const boardClients = new Set<http.ServerResponse>()
     const boardListeners = new Set<(board: Board) => void>()
     /** The board every client and listener holds. */
@@ -35,11 +35,11 @@ export const publisher = defineResource({
     const built = (): { text: string; board?: Board } => {
       try {
         const board = boardOf()
-        return { text: JSON.stringify({ v: API_VERSION, board } satisfies BoardMsg), board }
+        return { text: JSON.stringify({ v: API_VERSION, served, board } satisfies BoardMsg), board }
       } catch (err) {
         const { code, message } = errorOf(err)
         if (code === 'internal') console.error('board:', err)
-        return { text: JSON.stringify({ v: API_VERSION, error: { code, message } } satisfies BoardMsg) }
+        return { text: JSON.stringify({ v: API_VERSION, served, error: { code, message } } satisfies BoardMsg) }
       }
     }
 

@@ -37,7 +37,7 @@ function towerMembers(): string[] {
   }
   page.window = page
   page.parent = page
-  vm.runInNewContext(towerClient(), page)
+  vm.runInNewContext(towerClient({ id: 'test', version: null }), page)
   const tower = page.tower as Record<string, unknown>
   return Object.entries(tower).flatMap(([name, member]) =>
     typeof member === 'object' ? Object.keys(member as object).map((key) => `${name}.${key}`) : [name],

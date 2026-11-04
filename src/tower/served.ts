@@ -9,11 +9,13 @@
  * package at `/vendor/…`, and their hashed forms a renderer's import map names) are internal, not contract: renderers
  * import the shared modules' names.
  */
+import { execFileSync } from 'node:child_process'
 import { build, buildSync, type BuildOptions, type Metafile, type Plugin } from 'esbuild'
 import { createHash } from 'node:crypto'
-import { readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { API_VERSION } from '../shared/api.ts'
+import type { Served } from '../shared/shelf-page.ts'
 import { type } from '../shared/design.ts'
 import { GENERIC_FACES, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES } from '../shared/prefs.ts'
 
@@ -145,13 +147,54 @@ export const clientModule = (file: string) => cached(`client:${file}`, () => esm
 /** `/frame-keys.js`: a framed page's keys sent to the tower framing it, run by every sandboxed html page and by `/tower.js`. */
 export const FRAME_KEYS = path.join(import.meta.dirname, 'frame-keys.js')
 
+/** The folders of the checkout whose files the tower runs or serves, and the lock that pins the packages it serves at `/vendor/`. */
+const CODE = { dirs: ['src', 'renderers', 'extensions'], files: ['package-lock.json'] }
+
 /**
- * `/tower.js` speaks the API version this tower serves, starts a viewer from the default appearance and knows the shipped
+ * An id of the code the tower runs and serves: a hash over every file of `CODE`, each by its path in the checkout and
+ * its bytes, read as the tower starts. It changes with any of them and is the same on every start over the same files;
+ * a page loaded with another id runs code the tower no longer serves (`tower.stale()` in `/tower.js`). A name starting
+ * with a dot is left out, file or folder: what the system and editors drop there (`.DS_Store`, swap files) is no code,
+ * and git-ignored files are kept, since a built renderer (`renderers/tower3d/out`) is served. A renderer or an
+ * extension the config roots outside the checkout is not in it.
+ */
+export function servedCode(): string {
+  const files = [
+    ...CODE.files,
+    ...CODE.dirs.flatMap((dir) =>
+      readdirSync(path.join(REPO, dir), { recursive: true, withFileTypes: true })
+        .filter((e) => e.isFile())
+        .map((e) => path.relative(REPO, path.join(e.parentPath, e.name)))
+        .filter((file) => !file.split(path.sep).some((name) => name.startsWith('.'))),
+    ),
+  ].sort()
+  const hash = createHash('sha256')
+  for (const file of files) hash.update(`${file}\0`).update(readFileSync(path.join(REPO, file))).update('\0')
+  return hash.digest('hex').slice(0, 16)
+}
+
+/**
+ * The checkout's release as `git describe --tags --always` says it: `v1.87.1` on a tag, `v1.87.1-3-gabc1234` ahead of
+ * one, the commit alone where no tag is reached. Null for a checkout outside git, which has none.
+ */
+export function servedVersion(): string | null {
+  try {
+    return execFileSync('git', ['describe', '--tags', '--always'], { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  } catch {
+    return null
+  }
+}
+
+/** What the tower runs and serves, read once as it starts: the process runs that code until it restarts. */
+export const servedNow = (): Served => ({ id: servedCode(), version: servedVersion() })
+
+/**
+ * `/tower.js` speaks the API version this tower serves, knows the code it was served from (`served`, from `servedNow`), starts a viewer from the default appearance and knows the shipped
  * faces: the script names each constant and it is filled in here, from api.ts, prefs.ts and design.ts. It sends a
  * framed page's keys as `/frame-keys.js` does, which runs first.
  */
-export function towerClient() {
-  const filled: Record<string, unknown> = { API_VERSION, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES, GENERIC_FACES, FACES: type }
+export function towerClient(served: Served) {
+  const filled: Record<string, unknown> = { API_VERSION, SERVED: served, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES, GENERIC_FACES, FACES: type }
   return Object.entries(filled).reduce((script, [name, value]) => {
     const declaration = new RegExp(`^(\\s*const \\w+ = )${name}$`, 'm')
     if (!declaration.test(script)) throw new Error(`tower.js no longer declares a constant as "${name}"`)

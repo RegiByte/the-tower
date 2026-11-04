@@ -171,7 +171,7 @@ type Deps = {
 /** The server on the config's port as it is at start: it serves there until it is halted. */
 export const httpServer = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:extensions'],
-  start: async ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, archivedCards, streamBoard }, 'core:dispatch': dispatch, 'core:extensions': extensions }: Deps) => {
+  start: async ({ 'core:config': { paths, read: readConfig, served: servedNow }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, archivedCards, streamBoard }, 'core:dispatch': dispatch, 'core:extensions': extensions }: Deps) => {
     const PORT = towerPort(readConfig())
 
     const STATIC: Record<string, [file: string, type: string]> = {
@@ -1117,7 +1117,7 @@ export const httpServer = defineResource({
         revalidated(req, res, asset[1], readFileSync(asset[0]))
         return
       }
-      if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return revalidated(req, res, 'text/javascript', towerClient())
+      if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return revalidated(req, res, 'text/javascript', towerClient(servedNow))
       if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(req, res, url)
       if (req.method === 'GET' && /^\/(shared|src|vendor)\//.test(url)) return served(req, res, url.split('?')[0])
       const legacy = legacyOf('module').find((e) => e.old === url)
