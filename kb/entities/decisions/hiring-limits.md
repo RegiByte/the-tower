@@ -22,8 +22,8 @@ the easy path stops them, as long as it is named for what it is.
 
 **How.**
 - *The fact.* A `spawn` with `hire: true` and `by` is `by`'s hire. The tower has the host append `tower.hire {id}` to
-  the hirer's own log through its `fact` request, right after the spawn ([[worker-prompts]] appends `tower.prompt`
-  the same way); the facts fold it into `hired`. A hire that can't be logged is killed, so none runs uncounted.
+  the hirer's own log through its `fact` request, right after the spawn (the spawned worker's own `tower.prompt` goes
+  with its spawn's facts, [[worker-prompts]]); the facts fold it into `hired`. A hire that can't be logged is killed, so none runs uncounted.
   `tower hire` and `tower review` spawn this way.
 - *The board.* [`hirersOf`](ref:hub/src/bridge/board.ts#hirersOf) maps each hired session to its hirer (session and
   callsign and floor); a card's `hiredBy` is the hirer of the first session of its worker's lineage, so it survives
