@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.89.2
+
+With Caps Lock on, a double space in a terminal is two spaces on a Mac. No restart beyond the tower's own (`tower down
+tower`, then `tower up tower`), no config change, no API change. The open page offers the reload.
+
+- **Keys a terminal sent no longer stay in its hidden textarea.** xterm.js sends capitals (with Caps Lock on), spaces
+  and punctuation on keypress, but WebKit also typed them into its textarea, where macOS's text substitutions could
+  rewrite them. "Add period with double-space" swallowed the second space. The keypress is now cancelled once
+  xterm.js has sent it. Composed text, such as dead-key accents and input methods, still passes through (#389).
+
 ## v1.89.1
 
 Typing in a terminal on a Mac with inline predictive text on no longer inserts text you didn't type. No restart
