@@ -44,7 +44,7 @@ export async function palette(deps) {
   let shown = []
   let active = 0
 
-  const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, heed: heed(), draftsOf, draftTitle, opens: opens() })
+  const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, heed: heed(), draftsOf, draftTitle, opens: opens(), stale: tower.stale() !== null })
 
   /** @param {Entry} e @param {number} n */
   const rowHtml = (e, n) => `<div class="pal-item${e.destructive ? ' danger' : ''}${e.learn ? ' learn' : ''}" role="option" id="pal-${n}" aria-selected="${n === active}" data-palette-entry="${esc(e.id)}">

@@ -1,7 +1,7 @@
 import { esc, gistOf, shownHref, shownKey, when } from '/cards.js'
 import { GIST_ICON, ICON } from '/icons.js'
 import { keepingFocus } from '/panels.js'
-import { noticer, toaster } from '/toasts.js'
+import { closableNoticer, noticer, toaster } from '/toasts.js'
 import { keysHint, keyshortcuts } from '/keymap.js'
 
 /**
@@ -121,6 +121,9 @@ const toast = toaster($('toasts'))
 /** Tells what goes on until it is closed, in the toasts' stack (`/toasts.js`' `noticer`). */
 const notice = noticer($('toasts'))
 
+/** A notice its reader closes with its ×, in the toasts' stack (`/toasts.js`' `closableNoticer`). */
+const closableNotice = closableNoticer($('toasts'))
+
 /**
  * A request whose failure is told in a toast, answering `undefined`.
  * @template T
@@ -129,4 +132,4 @@ const notice = noticer($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told }
