@@ -13,12 +13,13 @@ import { uploadRefusal } from './uploads.ts'
 
 /**
  * A terminal a viewer has open on a PTY, every renderer's: `termHandlers` its steps, `mountTermView` the xterm.js view
- * they run in. The PTY has one size, held by the viewer the user pressed a key or a pointer in last. A terminal opened
- * while nobody else views the PTY takes the size, fitting it to its pane (a shell's snapshot doesn't say, so a shell is
- * taken); a resize from anyone else hands it back, and the view follows the PTY at a font that fits; the user pressing
- * in its page while it is seen takes it again. Nothing else does: focus, a reload, a pane or font change, the pointer
- * passing over, a wheel, and what xterm.js answers the program on its own. A pane or font change fits the PTY again
- * only while this viewer holds it, and only the holder's terminal speaks to the PTY but for a wheel and a focus report.
+ * they run in. The PTY has one size, held by the terminal the user acted on last. A terminal opened while nobody else
+ * views the PTY takes the size, fitting it to its pane (a shell's snapshot doesn't say, so a shell is taken); a resize
+ * from anyone else hands it back, and the view follows the PTY at a font that fits; the user acting on the terminal
+ * takes it again: a key or a pointer press in it, a paste or files dropped on it, or text they give it. Nothing else
+ * does: focus, a reload, a pane or font change, a press elsewhere in the page, the pointer passing over, a wheel, and
+ * what xterm.js answers the program on its own. A pane or font change fits the PTY again only while this viewer holds
+ * it, and only the holder's terminal speaks to the PTY but for a wheel, a focus report and the user's text.
  * The tower serves this module as `/term-view.js`.
  */
 
@@ -41,10 +42,12 @@ export type TermMode = { t: 'owning'; cols: number; rows: number } | { t: 'watch
 /**
  * `snapshot`: the stream's, each time it connects, opening a fresh terminal (`others`: another terminal views the PTY); `resized`: the PTY's
  * size, set by anyone; `ended`: the PTY exited while viewed; `typed`: what the terminal sends the PTY, the user's keys and mouse among
- * xterm.js's own answers to the program; `wheeled`: a wheel turned over it, as wheel reports; `pressed`: the user pressed a key or a
- * pointer in the page while the view is seen; `pane`: the view's box changed, `settled` once it has stopped; `font`: the viewer's face
+ * xterm.js's own answers to the program, which a watching view takes the size for only when it is the user's text (`userText`);
+ * `wheeled`: a wheel turned over it, as wheel reports; `pressed`: a key or a pointer pressed in the terminal, or a paste or files
+ * dropped on it; `pane`: the view's box changed, `settled` once it has stopped; `font`: the viewer's face
  * or size changed and has loaded; `fitted`: the size the pane fits at the viewer's size, with the keys to send once it is taken.
- * @since 1.145 for `wheeled` and `pressed`
+ * @since 1.145 for `wheeled` and `pressed`, and for `typed` taking the size only for the user's text: a report (a mouse motion,
+ * an answer to the program's query) from a watching view is dropped.
  */
 export type TermEvent =
   | { type: 'snapshot'; data: string; cols: number; rows: number; exited: boolean; others: boolean }
@@ -83,7 +86,7 @@ export const modeOf = (s: TermView): TermMode =>
 
 /** How a view holds the PTY, in words. */
 export const modeText = (m: TermMode) =>
-  m.t === 'owning' ? `in control · ${m.cols}×${m.rows}` : m.t === 'watching' ? 'watching · click or type to take control' : 'past session · read-only'
+  m.t === 'owning' ? `in control · ${m.cols}×${m.rows}` : m.t === 'watching' ? 'watching · click or type here to take control' : 'past session · read-only'
 
 /**
  * What xterm.js sends as its window gains or loses focus while the program asks for focus events (mode 1004): not
@@ -92,7 +95,14 @@ export const modeText = (m: TermMode) =>
  */
 const FOCUS_REPORTS = new Set(['\x1b[I', '\x1b[O'])
 
-/** Keys that only modify another: pressed alone, they are no key the user typed in the page. */
+/**
+ * What the user gives a terminal as text, typed, pasted, dictated or picked from the symbols panel: anything not opening
+ * with an escape, or a bracketed paste. Mouse reports, focus reports and xterm.js's answers to the program's queries
+ * all open with one.
+ */
+const userText = (data: string) => !data.startsWith('\x1b') || data.startsWith('\x1b[200~')
+
+/** Keys that only modify another: pressed alone, they are no key the user typed in the terminal. */
 const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'FnLock', 'Hyper', 'Super', 'Symbol', 'SymbolLock', 'AltGraph'])
 
 const sameSize = (a: Size, b: Size) => a.cols === b.cols && a.rows === b.rows
@@ -126,7 +136,10 @@ export const termHandlers = (): Handlers<TermView, TermEvent, TermEffect> => ({
   },
   /** A PTY that exited takes no more sizes or keys: a view still mounted on it, unseen or not, stays read-only. */
   ended: (s) => (s.t === 'opening' || s.t === 'exited' ? [] : [state({ t: 'exited', pty: s.pty }), { type: 'mode', mode: { t: 'exited' } }]),
-  typed: (s, { data }) => (s.t === 'owning' || (s.t === 'watching' && FOCUS_REPORTS.has(data)) ? [{ type: 'send', data }] : []),
+  typed: (s, { data }) => {
+    if (s.t === 'owning' || (s.t === 'watching' && FOCUS_REPORTS.has(data))) return [{ type: 'send', data }]
+    return s.t === 'watching' && userText(data) ? [{ type: 'fit', then: data }] : []
+  },
   wheeled: (s, { data }) => (s.t === 'owning' || s.t === 'watching' ? [{ type: 'send', data }] : []),
   pressed: (s) => (s.t === 'watching' ? [{ type: 'fit', then: '' }] : []),
   pane: () => [{ type: 'timer/start', id: 'pane', ms: SETTLE_MS, fire: { type: 'settled' } }],
@@ -333,19 +346,19 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
     e.dataTransfer.dropEffect = 'copy'
   }
   /**
-   * The user pressing in the page: a key but a modifier alone (the first of a chord that leaves the window), a pointer,
-   * or files dropped on the terminal. Only a terminal they can see takes the size; a hidden one stays as it is.
+   * The user acting on this terminal: a key but a modifier alone (the first of a chord that leaves the window), a
+   * pointer pressed in it, a paste or files dropped on it. Heard as it starts down to the terminal, so the PTY is sized
+   * before xterm.js sends what it caused; a press lands in one terminal, so two views of one PTY never trade the size.
    */
-  const onPress = (e: KeyboardEvent | PointerEvent | DragEvent) => {
+  const onPress = (e: KeyboardEvent | PointerEvent | DragEvent | ClipboardEvent) => {
     if (!e.isTrusted || (e instanceof KeyboardEvent && MODIFIERS.has(e.key))) return
-    if (term && host.checkVisibility({ visibilityProperty: true })) machine.dispatch({ type: 'pressed' })
+    if (term) machine.dispatch({ type: 'pressed' })
   }
+  const PRESSES = ['keydown', 'pointerdown', 'paste', 'drop'] as const
+  for (const type of PRESSES) host.addEventListener(type, onPress as EventListener, { capture: true })
   host.addEventListener('paste', onPaste, { capture: true })
-  host.addEventListener('drop', onPress, { capture: true })
   host.addEventListener('drop', onDrop)
   host.addEventListener('dragover', onDragOver)
-  document.addEventListener('keydown', onPress, { capture: true })
-  document.addEventListener('pointerdown', onPress, { capture: true })
   const observer = new ResizeObserver(() => machine.dispatch({ type: 'pane' }))
   observer.observe(host)
   return {
@@ -363,10 +376,8 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
       stop()
       observer.disconnect()
       host.removeEventListener('paste', onPaste, { capture: true })
-      host.removeEventListener('drop', onPress, { capture: true })
+      for (const type of PRESSES) host.removeEventListener(type, onPress as EventListener, { capture: true })
       host.removeEventListener('drop', onDrop)
-      document.removeEventListener('keydown', onPress, { capture: true })
-      document.removeEventListener('pointerdown', onPress, { capture: true })
       host.removeEventListener('dragover', onDragOver)
       timing['timer/cancel']({ type: 'timer/cancel', id: 'pane' }, machine.dispatch)
       term?.dispose()

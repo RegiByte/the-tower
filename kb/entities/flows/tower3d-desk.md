@@ -59,15 +59,15 @@ sequenceDiagram
 - **Snapshot, then tail.** The screen stream sends the screen rebuilt from the log, then each `o`, `r` and `x` the
   host appends ([`screenStream`](ref:hub/src/tower/http.ts#screenStream)). A session that is no longer running
   sends only its snapshot: the terminal opens read-only, claims nothing and sends no keys.
-- **Claimed on open, when it is the only terminal.** One PTY, one size: the viewer the user pressed in last owns it. The desk opens the
+- **Claimed on open, when it is the only terminal.** One PTY, one size: the terminal the user acted on last owns it. The desk opens the
   `terminal/<id>` stream, whose snapshot says how many other terminals are open on the session
   ([`terminalStream`](ref:hub/src/tower/http.ts#terminalStream); a monitor's `screen/<id>` stream is not one).
   With none, [`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) fits the terminal to the modal at the
   viewer's font (`tower.prefs`) and sends `resize` as soon as the snapshot arrives, so typing works at once. Beside
   another it reads "watching" at a font that fits, so opening never reflows the session under whoever is working.
-  A key or a pointer press in the page while the terminal is seen claims, before the key or click reaches the PTY;
-  the pointer passing over it, xterm's answers to Claude's queries, focus and a reconnect don't. A watching view
-  sends only a wheel and a focus report, without claiming. A resize from another viewer hands the size back. A shell's stream says nothing of
+  A key or a pointer press in the terminal, a paste or a drop on it, or text given it with no key claims, before
+  what caused it reaches the PTY; the pointer passing over it, xterm's answers to Claude's queries, focus and a
+  reconnect don't. A watching view sends a wheel and a focus report without claiming. A resize from another viewer hands the size back. A shell's stream says nothing of
   other terminals, so a shell claims on open. The rule is the shared machine every renderer's terminal runs
   ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers), in xterm by
   [`mountTermView`](ref:hub/src/shared/term-view.ts#mountTermView), [[renderer-shared-modules]], [[machines]]).

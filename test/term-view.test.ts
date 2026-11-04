@@ -49,7 +49,19 @@ test('term view: a resize from someone else hands control back, the view follows
 
 test("term view: what a watching terminal sends on its own (the pointer passing over, xterm.js's answers to the program) neither reaches the PTY nor takes it", () => {
   const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
-  for (const data of ['\x1b[<35;10;5M', '\x1b[<0;10;5m', '\x1b[?1;2c', '\x1bP>|xterm.js(5.5.0)\x1b\\', 'a']) assert.deepEqual(run(watching, { type: 'typed', data }), [watching, []])
+  for (const data of ['\x1b[<35;10;5M', '\x1b[<0;10;5m', '\x1b[?1;2c', '\x1bP>|xterm.js(5.5.0)\x1b\\']) assert.deepEqual(run(watching, { type: 'typed', data }), [watching, []])
+})
+
+test('term view: text the user gives a watching terminal with no key pressed (a menu paste, dictation) takes the size and is sent after the resize', () => {
+  const watching: TermView = { t: 'watching', pty: { cols: 90, rows: 20 } }
+  for (const data of ['é', '\x1b[200~pasted\x1b[201~']) {
+    assert.deepEqual(run(watching, { type: 'typed', data }), [watching, [{ type: 'fit', then: data }]])
+    assert.deepEqual(run(watching, { type: 'fitted', cols: 100, rows: 30, then: data })[1], [
+      { type: 'resize', cols: 100, rows: 30 },
+      { type: 'send', data },
+      { type: 'mode', mode: { t: 'owning', cols: 100, rows: 30 } },
+    ])
+  }
 })
 
 test('term view: a wheel scrolls the program from a watching terminal too, and takes nothing', () => {
