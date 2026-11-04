@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.89.1
+
+Typing in a terminal on a Mac with inline predictive text on no longer inserts text you didn't type. No restart
+beyond the tower's own (`tower down tower`, then `tower up tower`), no config change, no API change. The open page
+offers the reload.
+
+- **macOS inline predictions no longer act on a terminal.** xterm.js keeps capitals, spaces and punctuation typed
+  with Caps Lock on in its hidden textarea until Enter. macOS's inline predictions completed those words, and xterm.js
+  sent each replaced value whole, so parts of the prompt reappeared in Claude's input. The textarea now carries
+  `writingsuggestions="false"`. Other macOS substitutions, such as the period after a double space, can still reach
+  it (#387).
+
 ## v1.89.0
 
 Two clients on one worker's terminal no longer fight over its size. No restart beyond the tower's own (`tower down
