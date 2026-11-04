@@ -181,7 +181,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
   dialog.addEventListener('cancel', (e) => (e.preventDefault(), machine.dispatch({ type: 'cancel' })))
   dialog.addEventListener('close', () => machine.dispatch({ type: 'closed', text: prompt().value }))
   dialog.addEventListener('keydown', (e) => {
-    if (commandOf(io.board().keys, e, 'field') === 'submit') startButton().click()
+    if (commandOf(io.board().keys, e, 'field') === 'submit') (e.preventDefault(), startButton().click())
   })
   return machine
 }
