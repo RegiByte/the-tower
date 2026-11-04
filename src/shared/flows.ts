@@ -141,6 +141,7 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   'collection/write': single('Save', "Replace an item's contents.", 'written'),
   'collection/restore': single('Restore', 'Put a deleted item back.', 'written'),
   'collection/delete': single('Delete', 'Remove an item.', 'removed'),
+  'config/add': single('Add to the config', "Add a key the config doesn't hold yet, checked.", 'written'),
   'worktree/recut': single('Recut', "Restore a lost worktree's folders from its branch.", 'restored'),
   'worktree/prune': single('Prune', 'Forget a lost worktree.', 'forgotten'),
   'worktree/remove': single('Remove', 'Remove a worktree in every repo.', 'removed'),
