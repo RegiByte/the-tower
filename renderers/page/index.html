@@ -23,9 +23,11 @@ a { color: var(--accent); }
 kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs); border-radius: var(--radius-s); background: var(--ink); color: var(--panel); }
 
 .side { display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-right: 1px solid var(--line); }
-.brand { display: flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-xl) var(--sp-l) var(--sp-l) var(--sp-xl); white-space: nowrap; }
+.brand { position: relative; display: flex; align-items: center; gap: var(--sp-xs); padding: var(--sp-xl) var(--sp-l) var(--sp-l) var(--sp-xl); white-space: nowrap; }
 .brand h1 { margin: 0; font: 900 var(--fs-2xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; }
 .brand .host { margin: 0 var(--sp-2xs) 0 auto; display: flex; }
+.brand .version { position: absolute; left: var(--sp-xl); top: calc(var(--sp-xl) + var(--fs-2xl) + 2px); max-width: calc(100% - 2 * var(--sp-xl)); padding: 0; border: 0; background: none; color: var(--muted); font: var(--fs-xs)/1 var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: copy; }
+.brand .version:hover { color: var(--ink); }
 .host-state { display: inline-flex; align-items: center; gap: var(--sp-xs); padding: 1px var(--sp-m) 1px var(--sp-s); border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: 700; color: var(--c); }
 .host-state.quiet { padding: 1px var(--sp-2xs); font-weight: 400; color: var(--faint); }
 .host-state.working, .host-state.broken { background: var(--c); color: var(--on); }
@@ -418,7 +420,7 @@ body.lost :is(#host, #tally, #limits-bar, #floors, #rail, #main, [data-view="tow
 </head>
 <body>
 <aside class="side" aria-label="sidebar">
-  <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><span class="host" id="host"></span>
+  <div class="brand"><h1 id="home" data-tip="back to the skyline">The Tower</h1><button class="version" id="version" hidden></button><span class="host" id="host"></span>
     <button class="icon-btn" id="settings-open" popovertarget="settings" aria-label="settings" data-tip="settings: alerts, sound and theme"></button><div id="settings" class="settings-pop" popover></div>
     <button class="icon-btn" id="keys-open" data-keys aria-label="shortcuts"></button><button class="icon-btn side-toggle" id="side-hide" data-side aria-label="hide the sidebar"></button></div>
   <div class="side-strip" id="strip"></div>

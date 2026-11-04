@@ -56,8 +56,8 @@ progress.
 - The tower page shows a notice in the toasts' stack, "The tower was updated" (naming the new version when it differs),
   with Reload and a × ([`closableNoticer`](ref:hub/src/shared/toasts.ts#closableNoticer)). It never times out and
   never takes focus; × hides it until the id moves again. The palette lists "Reload: the tower was updated" while the
-  page is stale ([`RELOAD_ENTRY`](ref:hub/src/shared/palette.ts#RELOAD_ENTRY), [[command-palette]]). Tower 3D does nothing
-  with it yet.
+  page is stale ([`RELOAD_ENTRY`](ref:hub/src/shared/palette.ts#RELOAD_ENTRY), [[command-palette]]). The page shows
+  `tower.served.version` under its logo, a button that copies it. Tower 3D does nothing with it yet.
 
 **Alternatives considered.**
 - The package version or the latest tag as the id: a worker's sandbox or a checkout with uncommitted changes runs new
