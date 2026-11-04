@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-09-29",
-  "reviewed": "2026-11-02",
+  "reviewed": "2026-11-03",
   "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/env.ts#withoutTerminal", "hub/src/terms/main.ts", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/git.ts", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/update.ts#update"]
 }
 ---

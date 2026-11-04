@@ -4,6 +4,7 @@
  * pid when it outlives its timeout or its `signal` aborts, so nothing it started is left behind.
  */
 import { spawn } from 'node:child_process'
+import { endInput } from './child-input.ts'
 import { withoutParentSession } from './shared/env.ts'
 import type { RunResult } from './shared/extensions.ts'
 
@@ -38,7 +39,7 @@ export const runProcess = (argv: string[], { cwd, timeoutMs, stdin, env, signal 
     }
     child.stdout!.on('data', (chunk) => (stdout = (stdout + chunk).slice(0, KEPT)))
     child.stderr!.on('data', (chunk) => (stderr = (stderr + chunk).slice(-KEPT)))
-    child.stdin?.end(stdin)
+    if (stdin !== undefined) endInput(child.stdin!, stdin)
     child.on('error', (err) => (done(), reject(err)))
     child.on('close', (exit, killedBy) => {
       done()
