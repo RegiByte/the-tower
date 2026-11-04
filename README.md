@@ -146,7 +146,7 @@ key.
 - **Extensions.** A folder with an `extension.json` manifest and optionally a server module, started beside the
   tower's own pieces. An extension can add verbs and reads to the API, collections, streams of facts, scheduled slots,
   views in the tower page and parts of every card on the board. Much of the tower is built this way: drafts, review
-  threads, policies, the quota probe and autotidy are bundled extensions. [`examples/extensions/`](examples/extensions/)
+  threads, policies, the quota probe, autotidy and new floors are bundled extensions. [`examples/extensions/`](examples/extensions/)
   has ones to start from, such as `grid` (workers' terminals side by side). Run one in place by pointing
   `extensions.<id>.path` in the config at its folder in the checkout, so it follows `tower update` (`tower extensions
   restart <id>` takes the new code), or copy it out of the checkout to make it your own.

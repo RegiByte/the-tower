@@ -1,0 +1,18 @@
+{
+  "provides": "floors",
+  "major": 1,
+  "names": [
+    "verbs.add",
+    "verbs.clone",
+    "verbs.start",
+    "reads.dirs",
+    "client.commands.js#newFloor",
+    "client.floor-form.js#SOURCES",
+    "client.floor-form.js#callOf",
+    "client.floor-form.js#derived",
+    "client.floor-form.js#missing",
+    "client.floor-form.js#repoNameOf",
+    "client.floor-form.js#slugOf",
+    "client.form.js#mount"
+  ]
+}

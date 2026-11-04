@@ -4,11 +4,11 @@
   "name": "User",
   "summary": "The one human running sessions, shells and projects from a renderer.",
   "in": "tower",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "clicks, keystrokes and spawn requests from a renderer in the browser, at the config's port" },
     { "to": "tower-cli", "verb": "uses", "carries": "tower commands in a terminal" }
   ]
 }
 ---
-Edits `~/.tower/config.json` by hand to declare projects; sessions may edit the shelf.
+Edits `~/.tower/config.json` by hand to declare projects, or adds a floor from a renderer's New floor form ([[new-floors]]); sessions may edit the shelf.

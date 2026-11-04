@@ -1,0 +1,292 @@
+{
+  "id": "floors",
+  "version": "1.0",
+  "title": "Floors",
+  "description": "New floors from the tower: a folder that already holds a project, a git repository cloned from its URL, or a new project started from scratch, each added to the config through config/add.",
+  "requires": {
+    "tower": "1.146"
+  },
+  "server": "server.ts",
+  "client": "client",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "root": {
+        "type": "string",
+        "pattern": "^/",
+        "description": "The absolute folder the New floor form starts in, and puts clones and new projects under. The user's home folder when unset."
+      }
+    }
+  },
+  "commands": {
+    "open": {
+      "module": "commands.js",
+      "export": "newFloor",
+      "on": [
+        "board"
+      ],
+      "words": {
+        "label": "New floor",
+        "hint": "a floor for a project folder, a cloned repository or a new project",
+        "icon": "plus"
+      }
+    }
+  },
+  "views": {
+    "form": {
+      "module": "form.js",
+      "export": "mount",
+      "on": [
+        "board"
+      ],
+      "scales": [
+        "pane"
+      ],
+      "needs": [
+        "display",
+        "toast"
+      ],
+      "words": {
+        "label": "New floor",
+        "hint": "a floor for a project folder, a cloned repository or a new project"
+      }
+    }
+  },
+  "verbs": {
+    "add": {
+      "scope": "system",
+      "description": "Add a floor whose hub is a folder that already exists, such as a project already on the machine. Refused when the folder doesn't exist, or the config already has a floor of that id.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "hub"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "description": "The floor's id in the config: letters, digits, `_` and `-`."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The name the floor is shown by."
+          },
+          "hub": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "The absolute folder its sessions start in."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "project",
+          "hub"
+        ],
+        "properties": {
+          "t": {
+            "const": "added"
+          },
+          "project": {
+            "type": "string",
+            "description": "The new floor's id."
+          },
+          "hub": {
+            "type": "string",
+            "description": "Its hub."
+          }
+        }
+      },
+      "words": {
+        "label": "Add a floor",
+        "hint": "a floor for a folder already on the machine"
+      }
+    },
+    "clone": {
+      "scope": "system",
+      "description": "Clone a git repository from its URL into a new folder, then add a floor whose hub is that folder. The clone runs without a terminal: a repository that asks for a password fails, saying so (set up an SSH key or a credential helper). Refused when the folder exists and isn't empty.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "url",
+          "into"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^-\\s]\\S*$",
+            "description": "What `git clone` takes: an https or ssh URL, or `git@host:owner/repo.git`."
+          },
+          "into": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "The absolute folder to clone into, made with its parents."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "project",
+          "hub"
+        ],
+        "properties": {
+          "t": {
+            "const": "added"
+          },
+          "project": {
+            "type": "string",
+            "description": "The new floor's id."
+          },
+          "hub": {
+            "type": "string",
+            "description": "Its hub."
+          }
+        }
+      },
+      "words": {
+        "label": "Clone a floor",
+        "hint": "a floor for a git repository, cloned from its URL"
+      }
+    },
+    "start": {
+      "scope": "system",
+      "description": "Start a project from scratch: a new folder, a git repository in it with a first commit holding a README (so worktrees can be cut from it), then a floor whose hub is that folder. Refused when the folder exists and isn't empty.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "into"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "into": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "The absolute folder to start the project in, made with its parents."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "project",
+          "hub"
+        ],
+        "properties": {
+          "t": {
+            "const": "added"
+          },
+          "project": {
+            "type": "string",
+            "description": "The new floor's id."
+          },
+          "hub": {
+            "type": "string",
+            "description": "Its hub."
+          }
+        }
+      },
+      "words": {
+        "label": "Start a project",
+        "hint": "a new folder and git repository, and a floor for it"
+      }
+    }
+  },
+  "reads": {
+    "dirs": {
+      "scope": "system",
+      "description": "The folders in a folder, to pick a floor's from: each one's name and whether it is a git repository. Dot folders are left out.",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "The absolute folder to list; the settings' root when left out."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "path",
+          "root",
+          "git",
+          "dirs"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The folder listed."
+          },
+          "parent": {
+            "type": "string",
+            "description": "The folder holding it; none at /."
+          },
+          "root": {
+            "type": "string",
+            "description": "Where the form starts, and puts clones and new projects: the settings' root, or the home folder."
+          },
+          "git": {
+            "type": "boolean",
+            "description": "Whether the folder listed is a git repository's top."
+          },
+          "dirs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "git"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "git": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "guidance": {
+    "brief": "New floors: `tower x floors add|clone|start` adds a floor for a folder on the machine, a repository cloned from its URL, or a new project.",
+    "full": "When the user asks for a new floor, use this extension's verbs rather than editing config.json by hand: `add` for a folder already on the machine (`{\"id\", \"name\", \"hub\"}`), `clone` for a git repository by URL (`{\"id\", \"name\", \"url\", \"into\"}`), `start` for a project from scratch (`{\"id\", \"name\", \"into\"}`, a git repository with a first commit). Each adds `projects.<id>` with no repos; other keys (repos, color, shelf) are a hand edit after. `tower x floors dirs '{\"path\": \"/abs\"}'` lists a folder's folders."
+  }
+}

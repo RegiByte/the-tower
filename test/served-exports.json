@@ -396,6 +396,7 @@
       "adds.tidy",
       "bundled.autotidy",
       "bundled.drafts",
+      "bundled.floors",
       "bundled.policies",
       "bundled.quota",
       "bundled.reviews",

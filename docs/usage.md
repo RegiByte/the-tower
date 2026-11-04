@@ -22,6 +22,8 @@ Shelf paths are relative to the hub.
 > "Add a floor for my-app: the hub is ~/code/my-app, with ~/code/my-app-api and ~/code/my-app-web as its repos."
 > "Put the notes folder on this floor's shelf."
 
+The `+` beside Floors in the tower page's sidebar adds a floor for a folder already on your machine, a repository
+cloned from its URL, or a new project started from scratch (a worker asked for one does the same, `tower x floors`).
 The floors live in `~/.tower/config.json`, the one file you edit by hand (a worker edits it when you ask). The tower
 reads it again on every save. `tower config check` reads it the way the tower does and prints each problem at its
 key; `tower doctor` checks that and everything else the tower needs. Every key is in [config.md](config.md).

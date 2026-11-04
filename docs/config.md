@@ -209,6 +209,24 @@ A floor's own settings win per key (`projects.<id>.extensions.autotidy.settings`
 `"capabilities": { "autotidy": { "off": true } }` turns it off on one floor. The workers going home now are the
 floor's `x.autotidy.going` on the board.
 
+### Floors
+
+The bundled extension `floors` adds floors from the tower: the `+` beside Floors and Stats in the tower page's sidebar
+(or New floor in the palette) opens a form for a folder already on the machine, a git repository cloned from its URL,
+or a new project (a folder, `git init` and a first commit holding a README, so worktrees can be cut from it). Each adds
+`projects.<id>` with its `name`, its `hub` and no `repos`, through the core's `config/add`, which refuses an id the
+config has and a floor the tower can't take; repos, a color or a shelf are a hand edit after. A clone runs without a
+terminal, so a repository that asks for a password fails, saying so: set up an SSH key or a credential helper. Workers
+reach the same through `tower x floors add|clone|start`.
+
+| Setting | Takes | Unset |
+|---|---|---|
+| `root` | The absolute folder the form starts browsing in, and puts clones and new projects under (`<root>/<id>`, which the form lets you change). | the home folder |
+
+```json
+"extensions": { "floors": { "settings": { "root": "/abs/path/to/code" } } }
+```
+
 ## Shelf
 
 A project's shelf is a list of pages the user reads beside the floor's sessions, in the tower's sidebar and on Tower
