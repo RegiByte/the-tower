@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.89.0
+
+Two clients on one worker's terminal no longer fight over its size. No restart beyond the tower's own (`tower down
+tower`, then `tower up tower`), no config change, API 1.145 (additions only). The open page offers the reload.
+
+- **Only acting on a terminal takes its size.** Claude Code turns on mouse tracking, so the pointer passing over a
+  terminal, even in a background window, sent motion reports. Every client's xterm.js also answered Claude's terminal
+  queries. Either one let a watching client resize the PTY, and two clients at different sizes traded it back and
+  forth. A client now takes the size only on a key, a pointer press, a paste or a drop on that terminal. A watching
+  client sends only scrolls and focus reports, so Claude's queries are answered once, by the client that holds the
+  size. A reconnect, focus or reload never takes it. The terminal machine's `typed` no longer takes the size from a
+  watching view, and its new `pressed` and `wheeled` events do: input that wasn't the user's taking the size was the
+  bug, not the contract (#385).
+
 ## v1.88.1
 
 A hire whose worker exits at once is answered and counted. No restart beyond the tower's own (`tower down tower`,
