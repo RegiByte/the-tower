@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.90.0
+
+Narration reads at the speed you pick, and the grid starts a new worker in a cell. No restart beyond the tower's own
+(`tower down tower`, then `tower up tower`), no config change, API 1.146 (additions only). The open page offers the
+reload.
+
+- **Narration has a player with a speed menu.** While narrate reads, a player at the bottom right says what it reads,
+  with the speed and Stop. The speed opens a menu of 0.5 to 2×, and a pick speeds up the part sounding at once,
+  documents and memos alike. It is kept per viewer in `tower.store` (`narrate.speed`), so every page of yours reads at
+  it. Read faster and Read slower in the palette step along the same speeds. A memo said mid-reading stands its own
+  player above the reading's. narrate 1.8. By @GlaucoNeves (#395).
+- **New worker… on the grid's Add worker menu.** The grid opens the tower's new-worker form and puts the worker it
+  starts in a new cell, while the page stays on the grid. Views reach the form through `kit.spawn(on)`, which
+  resolves with the started worker's id, or with nothing if the form closes without one. The new-worker dialog now
+  says when it was dismissed (`SpawnIo.dismissed`, optional). grid 2.3. By @GlaucoNeves (#396, landed as #401).
+- CI: the required check runs on Linux. Tower.app's Swift typecheck runs on a Mac only when `apps/macos/` changes,
+  also required. A tag still runs every check on macOS (#400, #403).
+
 ## v1.89.3
 
 ⌘V pastes into a terminal in Tower.app again on macOS 26. No restart beyond the tower's own (`tower down tower`, then
