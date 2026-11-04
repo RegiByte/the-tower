@@ -24,7 +24,7 @@
  *
  * Chrome is found at CHROME, else the macOS default install.
  */
-import { spawn } from 'node:child_process'
+import { type ChildProcess, spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import os from 'node:os'
@@ -68,14 +68,32 @@ export const freePort = () => new Promise<number>((resolve, reject) => {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function pageSocket(port: number): Promise<string> {
-  for (let i = 0; i < 100; i++) {
+/** How long a cold Chrome may take to open its first page: a busy CI runner has taken over 10 s. */
+const START_MS = 30_000
+
+/** A browser being started: its process, and the last lines it wrote to stderr, for saying why it failed. */
+type Started = { child: ChildProcess; said: string[] }
+
+const startChrome = (args: string[]): Started => {
+  const child = spawn(CHROME, args, { stdio: ['ignore', 'ignore', 'pipe'] })
+  const said: string[] = []
+  child.stderr!.on('data', (chunk) => (said.push(...String(chunk).split('\n').filter(Boolean)), said.splice(0, said.length - 20)))
+  return { child, said }
+}
+
+const lastWords = ({ said }: Started) => (said.length ? `; its last stderr lines:\n  ${said.join('\n  ')}` : '; it wrote nothing to stderr')
+
+async function pageSocket(port: number, chrome: Started): Promise<string> {
+  const deadline = Date.now() + START_MS
+  while (Date.now() < deadline) {
+    const { exitCode, signalCode } = chrome.child
+    if (exitCode !== null || signalCode !== null) throw new Error(`Chrome exited (${signalCode ?? exitCode}) before opening a page${lastWords(chrome)}`)
     const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((r) => r.json() as Promise<{ type: string; webSocketDebuggerUrl: string }[]>, () => [])
     const page = targets.find((t) => t.type === 'page')
     if (page) return page.webSocketDebuggerUrl
     await sleep(100)
   }
-  throw new Error(`Chrome did not open a page on port ${port}`)
+  throw new Error(`Chrome did not open a page on port ${port} in ${START_MS / 1000} s${lastWords(chrome)}`)
 }
 
 /** One CDP connection: `send` answers with the command's result; `on` hears events by method. */
@@ -160,12 +178,13 @@ export type Page = {
 export async function withPage<T>(url: string, { width = 1280, height = 800, scale = 1, scheme, motion, throttle, flags = [] }: { width?: number; height?: number; scale?: number; scheme?: string; motion?: string; throttle?: Throttle; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
   const port = await freePort()
   const profile = mkdtempSync(path.join(os.tmpdir(), 'tower-drive-'))
-  const chrome = spawn(CHROME, [
+  const started = startChrome([
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},${height}`,
     '--no-first-run', '--no-default-browser-check', '--mute-audio', '--hide-scrollbars', ...flags, 'about:blank',
-  ], { stdio: 'ignore' })
+  ])
+  const chrome = started.child
   try {
-    const cdp = connect(await pageSocket(port))
+    const cdp = connect(await pageSocket(port, started))
     await cdp.opened
     const errors: string[] = []
     const report = (line: string) => (errors.push(line), console.error(line))
