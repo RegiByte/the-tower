@@ -52,7 +52,7 @@ then `kb/entities/**/<id>.md`. A change that alters what an entity claims update
 
 - TypeScript on Node ≥24, run with `tsx`, checked by `npm run typecheck`, which also checks the JavaScript served as
   written through JSDoc (`tsconfig.client.json`, `tsconfig.page.json`).
-- A fresh clone runs with `npm run setup`.
+- A fresh clone runs with `npm run setup`, which also configures and starts the real system. A worktree installs with `npm ci` only.
 - Tests replay recorded session logs (`test/fixtures/*.jsonl`) through the bridge, check Tower 3D's models against
   their contract, and drive the tower's API over HTTP once (`test/server.test.ts`): `npm test`. Fixtures are real
   sessions recorded in a throwaway system, expectations written by hand from what was observed live. Add a fixture
