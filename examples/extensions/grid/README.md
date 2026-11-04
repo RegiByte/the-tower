@@ -40,6 +40,16 @@ board, and you stay on the grid. It shows where the tower lends that form to vie
 | --- | --- |
 | ![The Add worker menu](shots/add-light.png) | ![The Add worker menu](shots/add-dark.png) |
 
+**A cell flashes while its worker waits on you**, in the colour of its lamp: red while it needs you (a permission or a
+question), green while its answer is unread, the failed colour after a failed turn. It is the tower page's waiting on
+you, cell by cell: typing to the worker ends the flash, and so does **dismiss** on its head. A worker at work, or one
+whose answer goes to the worker that hired it, stays still. With reduced motion, a cell flashes once and keeps the
+colour.
+
+| Light | Dark |
+| --- | --- |
+| ![Cells flashing for workers that wait on you](shots/flash-light.png) | ![Cells flashing for workers that wait on you](shots/flash-dark.png) |
+
 **Hide heads** shrinks each cell's head to one row of its lamp, callsign and tabs, for more terminal; **Show heads**
 brings them back. Each cell keeps its tab and scroll either way.
 
@@ -79,12 +89,14 @@ Grid is client code only, a view, a region and a command. Each cell is the regio
 with the worker's own view at `cell` scale; the grid draws nothing in a cell itself, but hands the worker's head its
 Open and ✕ (`acts`) and the swap menu (`pick`). New worker… is `kit.spawn`, the renderer's own form, which answers
 the worker it started, so the grid copies none of the form. Which workers fill the cells, and whether heads show, are
-the view's own state, kept in `tower.store`.
+the view's own state, kept in `tower.store`. A cell flashes for its worker's wait in the board's `waiting`, unless the
+viewer dismissed it (`heededWaits`, the dismissals read from the viewer's record in `tower.store`), coloured by its
+attention; nothing about it is kept.
 
 ## Make it yours
 
 In your copy, `client/grid.js` holds it all: `MAX` and `STYLE` for how many cells and how they sit, `ACTS` for what a
-cell's head offers, `seed` for which workers a new grid opens with.
+cell's head offers, `FLASH` for which attentions flash and how fast, `seed` for which workers a new grid opens with.
 
 Its imports come from [the library](../../../docs/extending.md#the-library) (`/lib/*.js`), so a copy loads at any path. To have your editor read them in a
 copy, run [`tower types .`](../../../docs/extending.md#types-outside-the-checkout) in it and write a `tsconfig.json` of

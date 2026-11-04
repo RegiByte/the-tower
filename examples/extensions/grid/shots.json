@@ -1,5 +1,9 @@
 {
   "workers": 5,
+  "seed": [
+    "curl -s --unix-socket \"$TOWER_SANDBOX/hooks.sock\" -d '{\"hook_event_name\":\"Stop\",\"stop_hook_active\":false,\"last_assistant_message\":\"The migration is written.\",\"background_tasks\":[],\"session_crons\":[]}' http://host/hooks/$WORKER_3 >/dev/null",
+    "curl -s --unix-socket \"$TOWER_SANDBOX/hooks.sock\" -d '{\"hook_event_name\":\"PermissionRequest\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"npm run migrate\"}}' http://host/hooks/$WORKER_4 >/dev/null"
+  ],
   "scenes": [
     {
       "name": "floor",
@@ -43,6 +47,27 @@
         {
           "until": ".grid-cell:nth-child(4) .pill [data-since]",
           "text": "s"
+        }
+      ],
+      "crop": "[data-view=\"grid/grid\"]"
+    },
+    {
+      "name": "flash",
+      "open": "#v/grid/grid/floor%3Alab",
+      "size": "1280x800",
+      "steps": [
+        {
+          "until": ".grid-cell[data-flash=\"ready\"] .bar-info .call"
+        },
+        {
+          "until": ".grid-cell[data-flash=\"needs\"] .bar-info .call"
+        },
+        {
+          "until": ".grid-cell:nth-child(4) .pill [data-since]",
+          "text": "s"
+        },
+        {
+          "eval": "document.getAnimations().filter((a) => a.animationName === 'grid-flash').forEach((a) => { a.pause(); a.currentTime = 0 })"
         }
       ],
       "crop": "[data-view=\"grid/grid\"]"

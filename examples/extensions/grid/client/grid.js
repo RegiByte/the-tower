@@ -1,6 +1,7 @@
 import { can, cardSubject, floorSubject } from '/lib/board.js'
-import { lampOf, statusName } from '/lib/cards.js'
+import { heededWaits, lampOf, statusName } from '/lib/cards.js'
 import { ICON } from '/lib/view.js'
+import { VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 
 /**
@@ -15,10 +16,16 @@ import { esc } from '/lib/words.js'
  * board's grid), whose worker takes a new cell, drawn as starting until the board carries it, the page staying on the
  * grid. A reload while it
  * starts keeps its cell but not that it is starting: the cell shows the worker, or that it isn't on the board. Three
- * cells are two over one. A card displayed with this view joins its floor's grid.
+ * cells are two over one. A card displayed with this view joins its floor's grid. A cell whose worker waits on you
+ * (`heededWaits`: the board's waits the viewer hasn't dismissed, the tower page's "waiting on you") flashes in its
+ * attention's colour (`FLASH`): red while it needs you, green while its answer is unread, the failed colour after a
+ * failed turn. It stops when the wait is over, as typing to the worker ends it, or when the viewer dismisses it.
  */
 
 const MAX = 4
+
+/** The attentions a cell flashes in, each in its palette colour, and how long one flash takes. */
+const FLASH = { needs: '1.1s', ready: '2.2s', broken: '2.2s' }
 
 const STYLE = `
 :where([data-view="grid/grid"]) { display: flex; flex-direction: column; gap: var(--sp-s); }
@@ -39,6 +46,9 @@ const STYLE = `
 :where([data-view="grid/grid"]) .grid-cells.three > .grid-cell:nth-child(3) { grid-column: 1 / -1; }
 :where([data-view="grid/grid"]) .grid-cell { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 :where([data-view="grid/grid"]) .grid-cell:focus-within { border-color: var(--ink); }
+${Object.entries(FLASH).map(([a, d]) => `:where([data-view="grid/grid"]) .grid-cell[data-flash="${a}"] { --flash: var(--${a}); animation-duration: ${d}; }`).join('\n')}
+:where([data-view="grid/grid"]) .grid-cell[data-flash] { border-color: var(--flash); box-shadow: 0 0 0 2px var(--flash), 0 0 12px var(--flash); animation-name: grid-flash; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+@keyframes grid-flash { 50% { border-color: var(--line); box-shadow: 0 0 0 0 transparent; } }
 :where([data-view="grid/grid"]) .grid-note { margin: auto; color: var(--muted); font-size: var(--fs-s); }
 `
 
@@ -66,7 +76,7 @@ const uuid = () => {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-export async function mount(host, { board, subject, kit, state }) {
+export async function mount(host, { tower, board, subject, kit, state }) {
   const key = subject.key
   /** @type {string[]} */
   let ids = (await state.get(`cells.${key}`)) ?? seed(board, key)
@@ -76,6 +86,10 @@ export async function mount(host, { board, subject, kit, state }) {
   const cells = new Map()
   /** The workers this grid started whose cards the board doesn't carry yet: drawn as starting, not as gone. @type {Set<string>} */
   const starting = new Set()
+  /** The waits the viewer dismissed, as every renderer of theirs keeps them, read again when the page sets them. */
+  const dismissedNow = async () => new Set(/** @type {string[] | undefined} */ (await tower.store.get(VIEWER_KEYS.dismissed)) ?? [])
+  let dismissed = await dismissedNow()
+  const unhear = tower.store.on((k) => k === VIEWER_KEYS.dismissed && void dismissedNow().then((d) => ((dismissed = d), draw())))
 
   const cardOf = (id) => now.floors.flatMap((f) => f.cards).find((c) => c.id === id)
   const keep = () => state.set(`cells.${key}`, ids)
@@ -143,6 +157,7 @@ export async function mount(host, { board, subject, kit, state }) {
     grid.classList.toggle('three', ids.length === 3)
     for (const [id, cell] of cells) if (!ids.includes(id)) (letGo(cell), cell.el.remove(), cells.delete(id))
     for (const id of starting) if (!ids.includes(id)) starting.delete(id)
+    const waits = new Set(heededWaits(now, { dismissed }).map((w) => w.id))
     if (!ids.length) grid.innerHTML = `<p class="grid-note">No worker here yet. Add one with Add worker, or Add to grid on its bar.</p>`
     else grid.querySelector('.grid-note')?.remove()
     ids.forEach((id, n) => {
@@ -156,6 +171,8 @@ export async function mount(host, { board, subject, kit, state }) {
       }
       const c = cardOf(id)
       if (c) starting.delete(id)
+      if (c && waits.has(id) && c.attention in FLASH) cell.el.dataset.flash = c.attention
+      else delete cell.el.dataset.flash
       const options = optionsOf(id)
       const given = JSON.stringify(options)
       const gone = starting.has(id) ? 'Starting a worker…' : `${esc(id)} is no longer on the board`
@@ -236,6 +253,7 @@ export async function mount(host, { board, subject, kit, state }) {
       return true
     },
     close() {
+      unhear()
       for (const cell of cells.values()) letGo(cell)
       cells.clear()
     },
