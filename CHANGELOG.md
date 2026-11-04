@@ -12,6 +12,29 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.88.0
+
+An open page now says when the tower it runs against was updated, and the version sits under the logo. No restart
+beyond the tower's own (`tower down tower`, then `tower up tower`), no config change, API 1.144 (additions only).
+Reload open pages once after the restart. From this release on, the page says when to reload.
+
+- **The page offers a reload when the tower's code changed.** After a restart on new code, an open page kept running
+  its old code: only its stream reconnected. Each `/board` message now carries `served: {id, version}`, and
+  `tower.js` exposes `tower.stale()` and `tower.onStale(fn)` to any renderer. The page shows "The tower was updated",
+  with Reload and a ×, and a palette entry. It never reloads on its own (#381).
+- **The running version under the logo.** It is read from `git describe`, and a click copies it (#381).
+- **Copying works over plain http at a LAN address.** The page's copy needed a secure context. It now falls back
+  when there is none (#381).
+- **A child that exits before reading its input no longer ends the tower.** An extension's `ctx.run`, or a
+  policy's `check`, whose command ignored its stdin could crash the tower with `EPIPE` (#379).
+- **A worker's new worktree no longer reads gone for a moment.** The board could judge a just-cut worktree against
+  a git read taken before it was cut. A card now uses only reads whose facts were read after its session started
+  (#378).
+- **Unhashed responses revalidate or aren't kept.** `/tower.js`, `/design.css` and the unhashed modules answer with
+  an `ETag`, so a reload over a slow link is a 304. Every other unhashed response is `no-store` (#376).
+- Docs: install with `git clone --single-branch`, which skips the PR screenshots' branch (#377). Contributors' agents
+  install a worktree with `npm ci` (#380).
+
 ## v1.87.1
 
 The page works when opened over plain http at an address other than `localhost`, such as a LAN IP named in `hosts`.
