@@ -1,5 +1,5 @@
 /**
- * The coffee extension (decision `coffee-time`): one coffee machine per floor, where the workers available at that
+ * The coffee extension (decision `coffee-time`), an example to copy: one coffee machine per floor, where the workers available at that
  * moment say what they are on, help each other think and leave ideas for the user. A round is one append-only
  * markdown file in its owned `coffee` collection, written only here: `call` opens it and prompts every worker at its
  * prompt to join; `join`, `say` and `propose` append a worker's entries; `close` ends it, as the timer does after a
@@ -7,13 +7,17 @@
  * the open round, every round summarized and the ideas waiting, each an ask with those three actions; a present
  * worker's card wears a badge; a floor whose settings name a schedule gets a slot that calls coffee time.
  */
-import type { Board, Card, Floor } from '../../src/bridge/board.ts'
-import { apiError, isApiError } from '../../src/shared/api.ts'
-import type { Ask, CallCtx, Caller, FoldCtx, Part, Slot, Start } from '../../src/shared/extensions.ts'
-import { callOf } from '../../src/shared/offered.ts'
-import { cronProblem, type When } from '../../src/shared/slots.ts'
-import { tagOf } from '../../src/shared/tags.ts'
+import type { Board, Card, Floor } from '../../../src/bridge/board.ts'
+import type { Ask, CallCtx, Caller, FoldCtx, Part, Slot, Start } from '../../../src/shared/extensions.ts'
+import type { When } from '../../../src/shared/slots.ts'
+import { callOf, tagOf } from 'tower:cards.js'
+import { cronProblem } from 'tower:slots.js'
 import { appended, authorProblem, clockOf, COFFEE, gist, isOpen, msOf, nextProposal, opened, parseRound, presentIn, proposalProblem, proposalsOf, roundLines, roundView, stamp, type Entry, type FloorCoffee, type Round, type RoundView } from './client/rounds.ts'
+
+/** A refusal, as the API answers one: a code a caller branches on and a message that names the fix. */
+type ApiError = { t: 'error'; code: 'invalid' | 'refused' | 'not_found'; message: string }
+const apiError = (code: ApiError['code'], message: string): ApiError => ({ t: 'error', code, message })
+const isApiError = (reply: unknown): reply is { t: 'error'; code: string; message: string } => typeof reply === 'object' && reply !== null && (reply as { t?: unknown }).t === 'error'
 
 const CAP = 'coffee'
 

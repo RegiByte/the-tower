@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Whereabouts: a crew of three gathers in a meeting room until its lead goes home",
-  "summary": "Where a worker is in Tower 3D is a pure function of one board, in Tower 3D's code: a crew (a lead reporting to no one on its floor, and everyone under it) gathers in a meeting room once three of it, its lead among them, are on duty at once, and disperses only when its lead goes home. The first crew to gather takes Meeting \u00b7 8, the next Meeting \u00b7 4. Inside, the lead sits at the long table's head, members at its seats in the order they came, a reviewer next to its author or standing over its shoulder, the rest at the counter's laptops, then standing at the table's foot. Each keeps its desk, which says where it is; every walk between the two is on the floor's real paths. Since coffee time, a worker present in its floor's open coffee round stands at the floor's coffee corner instead, whatever its meeting or break, until the round closes or it leaves.",
+  "summary": "Where a worker is in Tower 3D is a pure function of one board, in Tower 3D's code: a crew (a lead reporting to no one on its floor, and everyone under it) gathers in a meeting room once three of it, its lead among them, are on duty at once, and disperses only when its lead goes home. The first crew to gather takes Meeting \u00b7 8, the next Meeting \u00b7 4. Inside, the lead sits at the long table's head, members at its seats in the order they came, a reviewer next to its author or standing over its shoulder, the rest at the counter's laptops, then standing at the table's foot. Each keeps its desk, which says where it is; every walk between the two is on the floor's real paths. Where the coffee example extension is on, a worker present in its floor's open coffee round stands at the floor's coffee corner instead, whatever its meeting or break, until the round closes or it leaves.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
@@ -130,8 +130,8 @@ It can be a pure function of one board: the board keeps today's sent-home cards 
 [`growing`](ref:hub/renderers/tower3d/src/fixtures.ts#growing) fixture boards cover gathering, overflow, two rooms, a
 waiting crew and the table growing.
 
-**Coffee time.** A worker whose callsign is among the open round's `present` on its floor (`floor.x.coffee.open`,
-[[coffee-time]]) stands at the floor's coffee corner, the `office_coffee` prefab along the right glass beside the
+**Coffee time.** Where a user runs the coffee example, a worker whose callsign is among the open round's `present` on its floor (`floor.x.coffee.open`,
+[[coffee-time]]; read from the board, the example never imported) stands at the floor's coffee corner, the `office_coffee` prefab along the right glass beside the
 landing: [`coffeePlaces`](ref:hub/renderers/tower3d/src/layout.ts#coffeePlaces) are five spots before its counter,
 clear of its table and stools, facing it, in level space from the plan's anchors
 ([`COFFEE_CORNER`](ref:hub/renderers/tower3d/src/layout.ts#COFFEE_CORNER), which also places the prefab); each

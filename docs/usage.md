@@ -115,20 +115,6 @@ Each floor's policies are in its sidebar tray, which opens the Policies panel: e
 its runs, and Run now, Approve and Accept. Workers read the same with `tower policies` (`approve` and `run` act on
 one) and `tower runs` (a policy's latest runs, and what each left for the next).
 
-## Coffee time
-
-> "Call coffee time on this floor." · "What did the workers say at coffee?" · "Hire someone on that second idea."
-
-**Coffee time** is a short break at the floor's coffee machine. A press on the floor (or a schedule in the config)
-prompts every worker waiting at its prompt to come; one mid-task is left alone. Each arrives with what it is on and
-where it is stuck, reads what the others said, answers them, and may leave an idea for you: an improvement, a fix
-nobody owns, a plan. Every round is kept as a transcript in the floor's `coffee` collection, so nothing said is lost.
-
-The ideas wait on you as offers, on the floor and in the coffee machine: **Hire** starts a worker on one, in its own
-worktree, on a prompt that says where the idea came from; **Draft** keeps it in the floor's drafts for later; **Pass**
-lets it go. Workers use `tower x coffee join`, `say` and `propose`, and read a round with `tower x coffee
-round/<floor>`. In Tower 3D, the workers at the machine stand at their floor's coffee corner until the round closes.
-
 ## The shelf
 
 A floor's **shelf** holds pages kept beside its sessions: a page the project builds, a set of markdown docs, a URL,

@@ -28,7 +28,7 @@ keep its ideas and reach a peer correctly.
 - The skill (`SKILL.md`) is the handbook: the CLI in full, reaching out step by step, reviews, hiring and crews,
   showing and keeping in detail, policies, the floor's shelf and the config, worktree rules, the API. It doesn't
   repeat the brief's prose. Its description triggers on callsigns, workers and reaching another session, and on
-  reviews, hiring, crews, kept items, policies, coffee time, the shelf and the config.
+  reviews, hiring, crews, kept items, policies, the shelf and the config.
 - The brief's last line names the shelf and the config: a worker cold to the tower read the user's "shelf" as a
   collection, since neither text said the word.
 - Showing and stopping are tooling, not rules: they say how the tower sees a worker's files and what its command

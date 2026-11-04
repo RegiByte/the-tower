@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { appended, isOpen, msOf, nextProposal, opened, parseRound, presentIn, proposalsOf, roundLines, roundView, type Entry } from '../extensions/coffee/client/rounds.ts'
+import { appended, isOpen, msOf, nextProposal, opened, parseRound, presentIn, proposalsOf, roundLines, roundView, type Entry } from '../examples/extensions/coffee/client/rounds.ts'
 
 const entry = (author: string, at: string, act: Entry['act'], body = ''): Entry => ({ author, at, act, body })
 

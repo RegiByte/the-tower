@@ -210,10 +210,9 @@ and a framed document's section are the same thing.
   collections keep today's order, and its own trays (worktrees, stranded, archive, Tidy) follow them.
   [`tower/tray`](ref:hub/src/views/tray.ts#mount) draws any collection
   ([`mountKeptTray`](ref:hub/src/shared/items.ts#mountKeptTray): its count, its newest items unfolded, a way to all of
-  them); the drafts, reviews, policies and coffee extensions draw their own collections'
+  them); the drafts, reviews and policies extensions draw their own collections'
   ([`drafts/tray`](ref:hub/extensions/drafts/client/tray.ts#mount),
   [`reviews/tray`](ref:hub/extensions/reviews/client/tray.ts#mount),
-  [`coffee/tray`](ref:hub/extensions/coffee/client/tray.ts#mount),
   [`policies/tray`](ref:hub/extensions/policies/client/tray.ts#mount)), picked by the owner rule above with no layout
   line, each marking what the main pane has open through `kit.location`. A tray's unfolded part is an element of class
   `tray-open`, which the row's flex layout places under every tray; whether a tray is unfolded is the view's state.

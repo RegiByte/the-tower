@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The break room: a hire whose answer waits on its hirer passes the time in the game room",
-  "summary": "In Tower 3D, a worker the board says waits on its hirer (`card.waitsOn`) leaves its desk, or its seat in a meeting, for its floor's game room two minutes after its answer came, and plays at a free cabinet or stands about until someone prompts it or it goes home. Its desk reads AWAY in the Game room. A pure function of one board and the wall clock: the plan says when it next changes by time alone, and the page plans again then. A worker at coffee time stands at the coffee corner instead, its place in the game room kept, until the round closes.",
+  "summary": "In Tower 3D, a worker the board says waits on its hirer (`card.waitsOn`) leaves its desk, or its seat in a meeting, for its floor's game room two minutes after its answer came, and plays at a free cabinet or stands about until someone prompts it or it goes home. Its desk reads AWAY in the Game room. A pure function of one board and the wall clock: the plan says when it next changes by time alone, and the page plans again then. Where the coffee example extension is on, a worker at coffee time stands at the coffee corner instead, its place in the game room kept, until the round closes.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",

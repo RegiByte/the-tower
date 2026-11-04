@@ -56,13 +56,20 @@ call it from the tower page or `tower x coffee call`, and watch them go. The Wee
 
 ## Add it
 
-It ships with the tower and is on for every floor. `"extensions": { "coffee": { "off": true } }` turns it off
-everywhere, `"capabilities": { "coffee": { "off": true } }` in a project's entry on one floor. Off, nobody is called
-and nothing is folded, but every round stays: on again, the rounds and the ideas waiting are back.
+An example: nothing runs until the config names it. Run it in place from the checkout, so it follows `tower update`
+(`tower extensions restart coffee` takes new code), or copy the folder out and name the copy:
+
+```json
+"extensions": { "coffee": { "path": "/path/to/the-tower/examples/extensions/coffee" } }
+```
+
+It is then on for every floor; `"capabilities": { "coffee": { "off": true } }` in a project's entry turns it off on
+one. Off, nobody is called and nothing is folded, but every round stays: on again, the rounds and the ideas waiting
+are back.
 
 ## What it needs from you
 
-Nothing: **Coffee time** on a floor calls its available workers. Two settings, in the config under
+Nothing beyond the config line: **Coffee time** on a floor calls its available workers. Two settings, under
 `extensions.coffee.settings` for every floor or `capabilities.coffee.settings` on one:
 
 | Key | Takes | Unset |
@@ -85,6 +92,9 @@ calls coffee time.
 
 ## Make it yours
 
+- **Your own copy**: copy the folder out of the checkout and name its path; its server imports the tower's helpers by
+  their served names (`tower:cards.js`, `tower:slots.js`), so it loads anywhere, and its views import `/cards.js`,
+  `/items.js`, `/panels.js` and `/press.js` from the tower that serves them.
 - **A ritual**: `when` in its settings, such as every weekday at 15:00, so the floor's workers meet without you.
 - **Shorter breaks**: a smaller `lasts`, so a round the workers left closes sooner.
 - **Your own words to the workers**: `"guidance": { "also": "…" }` in its config entry, read by `tower x coffee`.

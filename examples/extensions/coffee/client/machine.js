@@ -1,12 +1,8 @@
-import type { Board, Floor } from '../../../src/bridge/board.ts'
-import { esc, plural } from '../../../src/shared/cards.ts'
-import { drawPanel } from '../../../src/shared/panel-kit.ts'
-import { panelsCss } from '../../../src/shared/panels-css.ts'
-import { pressing } from '../../../src/shared/press.ts'
-import { itemKey } from '../../../src/shared/subjects.ts'
-import type { Mount } from '../../../src/shared/views.ts'
-import { closeHtml, viewCss } from '../../../src/views/parts.ts'
-import { clockOf, COFFEE, floorCoffee, type Decision, type Entry, type Proposal, type RoundView } from './rounds.ts'
+import { esc, itemKey, plural } from '/cards.js'
+import { ICON } from '/icons.js'
+import { drawPanel, panelsCss } from '/panels.js'
+import { pressing } from '/press.js'
+import { clockOf, COFFEE, floorCoffee } from './rounds.js'
 
 /**
  * `coffee/machine`, the coffee extension's view of a floor: the round open now (who is at the machine and what they
@@ -17,9 +13,15 @@ import { clockOf, COFFEE, floorCoffee, type Decision, type Entry, type Proposal,
 const ID = 'coffee/machine'
 
 const STYLE = `${panelsCss}
-${viewCss(
-  ID,
-  `& .coffee-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-l); display: flex; flex-direction: column; gap: var(--sp-xl); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+:where([data-view="${ID}"]) {
+  gap: var(--sp-m);
+  & .shelf-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-l); padding: var(--sp-m) var(--sp-xl); background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); white-space: nowrap; }
+  & .shelf-head .label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font: 800 var(--fs-xl)/1 var(--display); text-transform: uppercase; letter-spacing: .06em;
+    color: color-mix(in oklab, var(--p, var(--ink)) var(--p-text-mix), var(--ink)); }
+  & .shelf-head .dim { color: var(--faint); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; }
+  & .shelf-head .actions { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--sp-s) var(--sp-l); font-size: var(--fs-m); }
+  & .coffee-body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--sp-l); display: flex; flex-direction: column; gap: var(--sp-xl); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
     scrollbar-width: thin; scrollbar-color: var(--line) transparent; scrollbar-gutter: stable; }
   & h2 { margin: 0 0 var(--sp-s); font: 700 var(--fs-s)/1.4 var(--ui); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
   & .machine { padding: var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
@@ -48,27 +50,27 @@ ${viewCss(
   & .round-row .tag { font: var(--fs-xs)/1.4 var(--mono); color: var(--faint); }
   & .round-row .meta { color: var(--faint); font-size: var(--fs-xs); white-space: nowrap; }
   & .none { color: var(--faint); font-style: italic; font-size: var(--fs-s); }
-  & button.link { display: inline; min-height: 0; margin: 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }`,
-)}`
+  & button.link { display: inline; min-height: 0; margin: 0; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+}`
 
-const callsignOf = (board: Board, session: string) => board.floors.flatMap((f) => f.cards).find((c) => c.id === session || c.lineage.some((l) => l.id === session))?.callsign
+const callsignOf = (board, session) => board.floors.flatMap((f) => f.cards).find((c) => c.id === session || c.lineage.some((l) => l.id === session))?.callsign
 
-const decisionHtml = (board: Board, d: Decision) =>
+const decisionHtml = (board, d) =>
   d.t === 'hire'
     ? `hired <button class="link" data-worker="${esc(d.session)}">${esc(callsignOf(board, d.session) ?? d.session)}</button> on it · ${esc(d.by)}, ${esc(clockOf(d.at))}`
     : d.t === 'draft'
       ? `kept as a draft · ${esc(d.by)}, ${esc(clockOf(d.at))}`
       : `passed · ${esc(d.by)}, ${esc(clockOf(d.at))}`
 
-const ideaHtml = (board: Board, project: string, round: RoundView, p: Proposal) => {
-  const call = (verb: string) => esc(JSON.stringify([`coffee/${verb}`, { project, round: round.id, proposal: p.n }]))
+const ideaHtml = (board, project, round, p) => {
+  const call = (verb) => esc(JSON.stringify([`coffee/${verb}`, { project, round: round.id, proposal: p.n }]))
   const acts = p.decision
     ? decisionHtml(board, p.decision)
     : `<button class="primary" data-coffee-call="${call('hire')}" data-tip="start a worker on this idea">Hire</button><button data-coffee-call="${call('draft')}" data-tip="keep it as a draft for later">Draft</button><button data-coffee-call="${call('pass')}" data-tip="let it go">Pass</button>`
   return `<div class="idea${p.decision ? ' decided' : ''}"><span class="t">${esc(p.title)}</span><span class="by">p${p.n} · ${esc(p.by)}, ${esc(clockOf(p.at))} · round ${esc(round.tag)}</span><div class="body">${esc(p.body)}</div><div class="acts">${acts}</div></div>`
 }
 
-const entryHtml = (board: Board, e: Entry) => {
+const entryHtml = (board, e) => {
   const act = e.act
   const what =
     act.t === 'proposes' ? `<span class="act">proposes p${act.n} · </span><b>${esc(act.title)}</b>${e.body ? `\n${esc(e.body)}` : ''}`
@@ -82,17 +84,16 @@ const entryHtml = (board: Board, e: Entry) => {
   return `<li><span class="who">${esc(e.author)}<small>${esc(clockOf(e.at))}</small></span><span class="what">${what}</span></li>`
 }
 
-export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
+export function mount(host, { tower, board: first, subject, kit }) {
   let board = first
-  const project = (subject.value as Floor).id
-  const floor = () => board.floors.find((f) => f.id === project) as Floor
+  const project = subject.value.id
+  const floor = () => board.floors.find((f) => f.id === project)
 
   host.innerHTML = `<style>${STYLE}</style><div class="shelf-head"></div><div class="coffee-body"></div>`
-  const [head, body] = [host.querySelector<HTMLElement>('.shelf-head')!, host.querySelector<HTMLElement>('.coffee-body')!]
+  const [head, body] = [host.querySelector('.shelf-head'), host.querySelector('.coffee-body')]
 
   const html = () => {
-    const f = floor()
-    const { open, rounds } = floorCoffee(f)
+    const { open, rounds } = floorCoffee(floor())
     const waiting = rounds.flatMap((r) => r.proposals.filter((p) => !p.decision).map((p) => ({ r, p })))
     const machine = open
       ? `<div class="machine"><h2>At the machine</h2><div class="since">open since ${esc(clockOf(open.opened))}, called by ${esc(open.by)}${open.present.length ? ` · ${plural(open.present.length, 'worker')} here` : ' · nobody has joined yet'}</div>
@@ -116,30 +117,30 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     const act = open
       ? `<button data-coffee-call="${esc(JSON.stringify(['coffee/close', { project }]))}" data-tip="close the round: its ideas keep waiting on you">Close round</button>`
       : `<button class="primary" data-coffee-call="${esc(JSON.stringify(['coffee/call', { project }]))}" data-tip="call the floor's available workers to the coffee machine">☕ Coffee time</button>`
-    const h = `<span class="label">Coffee machine</span><span class="dim">${esc(f.name)}</span><span class="actions">${act}${closeHtml(board.keys)}</span>`
+    const h = `<span class="label">Coffee machine</span><span class="dim">${esc(f.name)}</span><span class="actions">${act}<button class="icon-btn" data-home aria-label="back to the skyline" data-tip="back to the skyline">${ICON.close}</button></span>`
     if (head.innerHTML !== h) head.innerHTML = h
     drawPanel(body, html(), {})
   }
 
-  const press = async (button: Element, [verb, input]: [string, Record<string, unknown>]) => {
-    const reply = await pressing(button, () => tower.call(verb as never, input as never) as Promise<Record<string, unknown>>).catch((err: Error) => void kit.toast(err.message))
+  const press = async (button, [verb, input]) => {
+    const reply = await pressing(button, () => tower.call(verb, input)).catch((err) => void kit.toast(err.message))
     if (!reply) return
     if (reply.t === 'error') return void kit.toast(String(reply.message))
-    if (reply.t === 'called') kit.toast(`Coffee time: ${(reply.invited as string[]).length ? `invited ${(reply.invited as string[]).join(', ')}` : 'nobody free to invite'}${(reply.busy as string[]).length ? ` · busy: ${(reply.busy as string[]).length}` : ''}`)
-    else if (reply.t === 'closed') kit.toast(`Round closed: ${plural(reply.proposals as number, 'idea')}${(reply.pending as number) ? `, ${reply.pending} waiting on you` : ''}`)
-    else if (reply.t === 'spawned') (kit.toast('Hired a worker on it'), kit.display(`card:${reply.id as string}`))
-    else if (reply.t === 'drafted') kit.toast(`Kept as draft ${reply.tag as string}`)
+    if (reply.t === 'called') kit.toast(`Coffee time: ${reply.invited.length ? `invited ${reply.invited.join(', ')}` : 'nobody free to invite'}${reply.busy.length ? ` · busy: ${reply.busy.length}` : ''}`)
+    else if (reply.t === 'closed') kit.toast(`Round closed: ${plural(reply.proposals, 'idea')}${reply.pending ? `, ${reply.pending} waiting on you` : ''}`)
+    else if (reply.t === 'spawned') (kit.toast('Hired a worker on it'), kit.display(`card:${reply.id}`))
+    else if (reply.t === 'drafted') kit.toast(`Kept as draft ${reply.tag}`)
     else if (reply.t === 'passed') kit.toast('Passed')
   }
 
   host.addEventListener('click', (e) => {
-    const target = e.target as Element
+    const target = e.target
     if (target.closest('[data-home]')) return kit.display('board')
-    const call = target.closest<HTMLElement>('[data-coffee-call]')
-    if (call) return void press(call, JSON.parse(call.dataset.coffeeCall!))
-    const round = target.closest<HTMLElement>('[data-round]')?.dataset.round
+    const call = target.closest('[data-coffee-call]')
+    if (call) return void press(call, JSON.parse(call.dataset.coffeeCall))
+    const round = target.closest('[data-round]')?.dataset.round
     if (round !== undefined) return kit.display(itemKey(project, COFFEE, round))
-    const worker = target.closest<HTMLElement>('[data-worker]')?.dataset.worker
+    const worker = target.closest('[data-worker]')?.dataset.worker
     if (worker) kit.display(`card:${worker}`)
   })
 

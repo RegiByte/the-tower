@@ -1,4 +1,3 @@
-import { floorCoffee } from '../../../extensions/coffee/client/rounds.ts'
 import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
 import { floorThreadsOf, keepsThreads } from '../../../extensions/reviews/client/panel.ts'
 import type { FloorThread } from '../../../extensions/reviews/threads.ts'
@@ -513,9 +512,12 @@ export const coffeePlaces = (a: Anchors): BreakPlace[] => {
   return COFFEE_CORNER.spots.map((along, i) => ({ name: `coffee_${i + 1}`, x: at.x - COFFEE_CORNER.stand, z: at.z + along, turn: 90, stand: true, play: false }))
 }
 
+/** The coffee extension's part of a floor (`examples/extensions/coffee`, when the config names it), as much as the corner reads: who is present in the open round. */
+type FloorCoffee = { open?: { present: { callsign: string }[] } }
+
 /** The workers of a floor at its coffee corner: those present in its open round, in the order they arrived, each at the next place; none past the places. */
 export const coffeeOf = (cards: Card[], floor: Floor, places: BreakPlace[]): { card: Card; place: BreakPlace }[] =>
-  (floorCoffee(floor).open?.present ?? []).flatMap((p, i) => {
+  ((floor.x?.coffee as FloorCoffee | undefined)?.open?.present ?? []).flatMap((p, i) => {
     const card = cards.find((c) => c.callsign === p.callsign)
     const place = places[i]
     return card && place ? [{ card, place }] : []

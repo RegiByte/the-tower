@@ -1,8 +1,6 @@
-import type { Floor, FloorCollection } from '../../../src/bridge/board.ts'
-import { plural } from '../../../src/shared/cards.ts'
-import { itemsCss, pressTrayHtml } from '../../../src/shared/items.ts'
-import type { Mount } from '../../../src/shared/views.ts'
-import { floorCoffee } from './rounds.ts'
+import { plural } from '/cards.js'
+import { itemsCss, pressTrayHtml } from '/items.js'
+import { floorCoffee } from './rounds.js'
 
 /**
  * `coffee/tray`, the coffee collection in a floor's row of trays: whether a round is open and who is there, and the
@@ -14,14 +12,14 @@ const ID = 'coffee/tray'
 
 const VIEW = 'coffee/machine'
 
-export const mount: Mount = (host, { board: first, subject, kit }) => {
+export function mount(host, { board: first, subject, kit }) {
   let board = first
-  const project = (subject.value as FloorCollection & { project: string }).project
+  const project = subject.value.project
   const floorKey = `floor:${project}`
   let painted = ''
 
   const draw = () => {
-    const { open, rounds, pending } = floorCoffee(board.floors.find((f) => f.id === project) as Floor)
+    const { open, rounds, pending } = floorCoffee(board.floors.find((f) => f.id === project))
     const at = kit.location?.()
     const label = open
       ? `☕ <b>${open.present.length}</b> at the machine${pending ? ` <i class="needs">${plural(pending, 'idea')} for you</i>` : ''}`
@@ -31,7 +29,7 @@ export const mount: Mount = (host, { board: first, subject, kit }) => {
   }
 
   host.addEventListener('click', (e) => {
-    if ((e.target as Element).closest('[data-tray]')) kit.display(floorKey, { view: VIEW })
+    if (e.target.closest('[data-tray]')) kit.display(floorKey, { view: VIEW })
   })
 
   draw()

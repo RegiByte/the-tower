@@ -160,7 +160,7 @@ export const RESERVED = [
  * addition, so it arrives at an API minor: a user's extension of that id is then refused until it is renamed or
  * provides the capability on purpose, said in the changelog. One that acts once it ships arrives at an API major.
  */
-export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts', 'autotidy', 'coffee'] as const
+export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts', 'autotidy'] as const
 
 
 /** Every problem an extension can have, by what it is. */

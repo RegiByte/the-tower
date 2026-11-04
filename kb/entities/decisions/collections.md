@@ -75,10 +75,10 @@ primitives every renderer can reach.
   and its `owner` and `doors`. On a floor
   where the extension is off, a collection the config also declares is a plain open one, and one only the extension
   declares is gone.
-- Three collections are bundled extensions' with a meaning of their own: `reviews`, the review threads, owned by the
-  reviews extension and written only by appending through `reviews/append` ([[review-threads]]); `policies`, standing work the tower starts at its slots, whose facts live
-  in the project's streams, never beside the file ([[policies]]); and `coffee`, one transcript per round at the floor's
-  coffee machine, owned by the coffee extension and written only through its verbs ([[coffee-time]]).
+- Two collections are bundled extensions' with a meaning of their own: `reviews`, the review threads, owned by the
+  reviews extension and written only by appending through `reviews/append` ([[review-threads]]), and `policies`, standing work the tower starts at its slots, whose facts live
+  in the project's streams, never beside the file ([[policies]]). The coffee example's `coffee`, one transcript per
+  round, is owned the same way, on the floors where a user runs it ([[coffee-time]]).
 - Drafts are the bundled drafts extension's ([[extensions]]): an open collection, so its doors are the generic
   verbs, declared by `extensions/drafts` and on every floor where the capability is on, with no server code. A
   config's `collections.drafts` line overrides its label and description; on a floor with
