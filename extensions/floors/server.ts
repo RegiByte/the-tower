@@ -176,7 +176,8 @@ const start: Start = (ctx) => {
         const dir = clone.into
         if (c.board().jobs.some((j) => j.state === 'running' && (j.cwd === dir || j.cwd.startsWith(`${dir}/`) || j.argv.includes(dir))))
           return apiError('refused', `A running job works in ${dir}: let it end first`)
-        if (c.board().floors.some((f) => f.hub === dir || f.repos.includes(dir))) return apiError('refused', `${dir} is a floor's: remove it from the floor first`)
+        const within = (d: string) => d === dir || d.startsWith(`${dir}/`)
+        if (c.board().floors.some((f) => within(f.hub) || f.repos.some(within))) return apiError('refused', `${dir} is, or holds, a floor's folder: remove it from the floor first`)
         if (!existsSync(dir)) return { ok: true }
         if (!isRepo(dir)) return apiError('refused', `${dir} holds no .git, so git didn't start it: remove it by hand if you mean to`)
         rmSync(dir, { recursive: true, force: true })
