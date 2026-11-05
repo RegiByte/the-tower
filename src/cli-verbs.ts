@@ -54,6 +54,11 @@ export const CLI_VERBS = {
     usage: 'app',
     help: 'open the tower as a Mac app, built from this checkout on first use or when its source changed (`src/app.ts`); the browser stays the default',
   },
+  types: {
+    of: 'user',
+    usage: 'types <dir>',
+    help: "write the library's declarations and a tsconfig to extend to <dir>/.tower/, so an extension outside the checkout typechecks; run it again to refresh them",
+  },
   whoami: {
     of: 'worker',
     usage: 'whoami',

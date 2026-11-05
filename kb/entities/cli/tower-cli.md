@@ -2,10 +2,10 @@
 {
   "type": "container",
   "name": "tower",
-  "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app, beside the workers' verbs of the same command.",
+  "summary": "tower init | doctor | config check | up | down | update | spawn | resume | submit | kill | live | ls | ps | reap | screen | attach | app | types, beside the workers' verbs of the same command.",
   "in": "cli",
   "reviewed": "2026-11-05",
-  "refs": ["hub/src/cli.ts", "hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/cli.ts#USER_RUNS", "hub/src/directory.ts#WORKER_RUNS", "hub/src/shared/api.ts#callerHeaders", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/docs/config.md"],
+  "refs": ["hub/src/cli.ts", "hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/cli.ts#USER_RUNS", "hub/src/directory.ts#WORKER_RUNS", "hub/src/shared/api.ts#callerHeaders", "hub/src/cli.ts#towerCommand", "hub/src/cli.ts#readSessions", "hub/src/mod/bin/tower", "hub/package.json", "hub/src/checkpoints.ts#foldLog", "hub/src/attach.ts#attach", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/init.ts#init", "hub/src/doctor.ts#doctor", "hub/src/update.ts#update", "hub/src/config-check.ts#configProblems", "hub/src/cli-error.ts#reported", "hub/src/app.ts#openApp", "hub/src/types.ts#writeTypes", "hub/docs/config.md"],
   "links": [
     { "to": "host-daemon", "verb": "calls", "carries": "write, resize, kill, live and fact (a worker's kill named in the target's log) over control.sock" },
     { "to": "host-daemon", "verb": "triggers", "carries": "tower up: starts it detached, unless its socket already answers" },
@@ -15,6 +15,7 @@
     { "to": "system-root", "verb": "writes", "carries": "host.pid, terms.pid, jobs.pid and tower.pid on tower up; removes them on tower down; config.json once, on tower init, when none exists" },
     { "to": "system-root", "verb": "reads", "carries": "every session log from its checkpoint on for ls and kill, a whole log for screen and resume's conversation; tails one for attach (ps reads the process table only; reap reads it and checks each session's log in the root)" },
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8, the checkpoints of the logs ls and kill fold" },
+    { "to": "system-root", "verb": "writes", "carries": "cache/types/<API_VERSION>-<hash>/, the declarations tower types builds" },
     { "to": "tower-server", "verb": "calls", "carries": "tower spawn and tower resume: POST /spawn and POST /resume, so every session is started by the tower; refused with the fix `tower up` when it is not running" },
     { "to": "tower-server", "verb": "triggers", "carries": "tower update: stops it, moves the checkout to the newest release, starts it again" },
     { "to": "log-reductions", "verb": "uses", "carries": "foldLog, withLiveness, screenAt, snapshot, conversationsOf" }
@@ -57,6 +58,10 @@ terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `up` an
 ([[bring-up]]). `init` and `doctor`: [[setup]]. `update` moves the checkout to the newest release and restarts the
 tower, never the host ([[releases]]). `app` builds the Mac app from this checkout when its source changed and opens it
 ([[macos-app]]).
+
+`types <dir>` ([`writeTypes`](ref:hub/src/types.ts#writeTypes)) needs no daemon: it builds the library's declarations
+with the checkout's own TypeScript into `cache/types/` and copies them to `<dir>/.tower/`, so an extension outside the
+checkout typechecks ([[library]]).
 
 `tower config check` reads the config as the tower does
 ([`configProblems`](ref:hub/src/config-check.ts#configProblems)): the tower's own validators, then the shape of each

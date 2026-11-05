@@ -27,6 +27,7 @@
   ],
   "exclude": [
     "src/tower/client.d.ts",
-    "test/runtimes"
+    "test/runtimes",
+    "test/outside"
   ]
 }

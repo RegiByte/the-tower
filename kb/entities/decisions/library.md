@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-05",
   "reviewed": "2026-11-05",
-  "refs": ["hub/src/lib/words.ts", "hub/src/lib/extension.ts", "hub/src/tower/served.ts#LIBRARY", "hub/src/tower/served.ts#SERVER_ONLY", "hub/src/tower/served.ts#serverOnlyModule", "hub/src/lent-modules.ts", "hub/test/library.ts#shapeOf", "hub/test/library.ts#declarationDigests", "hub/test/library.ts#reachNow", "hub/test/library.ts#libraryInCore", "hub/test/library.test.ts", "hub/test/runtimes/generic.json", "hub/test/library-reach.json"]
+  "refs": ["hub/src/lib/words.ts", "hub/src/lib/extension.ts", "hub/src/tower/served.ts#LIBRARY", "hub/src/tower/served.ts#SERVER_ONLY", "hub/src/tower/served.ts#serverOnlyModule", "hub/src/lent-modules.ts", "hub/src/types.ts#writeTypes", "hub/test/types.test.ts", "hub/tsconfig.types.json", "hub/test/library.ts#shapeOf", "hub/test/library.ts#declarationDigests", "hub/test/library.ts#reachNow", "hub/test/library.ts#libraryInCore", "hub/test/library.test.ts", "hub/test/runtimes/generic.json", "hub/test/library-reach.json"]
 }
 ---
 **Problem.** The contract for code outside the core was whatever `src/shared` happened to export through a barrel:
@@ -50,6 +50,12 @@ contract if authors can find everything they need on it.
   view by URL.
 - **The old way out.** The 28 served modules answer with `Deprecation` and a `Link` to the library's docs until 2.0
   removes them. A page's import map names their files' hashed URLs, so only an unmapped client sees the header.
+- **Types outside the checkout.** `tower types <dir>` ([`writeTypes`](ref:hub/src/types.ts#writeTypes)) writes the
+  declarations the checkout's TypeScript emits for the library and the bundled clients (`tsconfig.types.json`, comments
+  kept so `@deprecated` reaches editors) into `<dir>/.tower/types/`, with a tsconfig to extend that maps `/lib/*.js`,
+  `/tower.js` and `/x/<cap>/*.js`. Every package the tree names is vendored, worked out from the declarations, since a
+  missing package under `skipLibCheck` silently turns the types it reaches into `any`. A fixture in `test/outside/`,
+  importing from every module, typechecks in a temporary folder against that tree alone with every declaration checked.
 
 **Alternatives considered.** Keeping the 28 modules with named lists fixes accidents but keeps the grab-bags. Two
 surfaces, one for authors and one for renderers, means two contracts. An npm package needs an account and a release

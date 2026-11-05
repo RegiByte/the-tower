@@ -31,7 +31,8 @@
   items. A collection an extension owns is written only by that extension ([[extensions]]): a `reviews` thread only
   through the reviews extension's `reviews/append` ([[review-threads]]).
 - `cache/`: computed and kept to skip computing it again, never authoritative, safe to delete:
-  `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]).
+  `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]); `cache/types/<API_VERSION>-<hash>/`, the
+  declarations `tower types` copies out, one version of the code at a time ([[library]]).
 - `control.sock`, `hooks.sock` ([[host-daemon]]), `terms.sock` ([[terms-daemon]]) and `jobs.sock` ([[jobs-daemon]]).
 - `host.log`, `terms.log`, `jobs.log`, `tower.log` and `host.pid`, `terms.pid`, `jobs.pid`, `tower.pid`: what the daemons print and their
   pids, written when `tower up` starts them; `tower down` removes the pids.
