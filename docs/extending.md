@@ -360,7 +360,7 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   renderer: one page, across every machine reading the tower, for what only one should do (play a sound, speak). The
   tower holds them in memory and never logs them. `tower.js` does all of it for a page, as `tower.viewer`.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
-  `/conversations/<id>` (each turn with Claude's `steps` since 1.133), `/conversations/<id>/<conversation>` (one
+  `/conversations/<id>` (each turn with Claude's `steps` since 1.133: its words, its tool calls and the messages it sent), `/conversations/<id>/<conversation>` (one
   conversation, every turn) and `/conversations/<id>/tool/<call>` (one tool call: its input, its permission check, how
   it ended; both 1.133), `/archive/<project>`, `/collection/<project>/<collection>/<item>`, `/reviews/<project>`
   (deprecated since 1.93: the reviews extension's `/reviews/history/<project>`),
@@ -1337,8 +1337,9 @@ Only the host writes them. Everything the tower shows is computed from them, the
 
 - **The host** (`src/host`). It owns every session's terminal, and changing it ends every running session. It stays
   small and knows no Claude flags; what sessions start with is the config's `argv`, `env` and `plugins`.
-- **Writing to the logs.** A log holds facts the host observed. A line written by anyone else is a fact that never
-  happened, and every view computed from it inherits the lie. Keep your own data in a collection.
+- **Writing to the log files.** A log holds facts the host observed. A line written into one by anyone else is a fact
+  that never happened, and every view computed from it inherits the lie. To say something on a session's log, declare
+  a [fact](#extensions): the host writes it. Keep other data of your own in a stream or a collection.
 - **Editing the checkout's renderers in place.** `tower update` moves the checkout to the next release, so your edits
   conflict with it, and the renderers there move with the tower, unpinned. Copy one out instead.
 
@@ -1348,3 +1349,19 @@ keeping every copy working across changes beyond it.
 
 Changing the core itself, rather than building on it: the rules a change to this repository keeps are in
 [PRINCIPLES.md](../PRINCIPLES.md).
+
+## Keeping a fork
+
+A fork that carries its own changes can follow upstream's `main`, by a policy if you like. What it can rely on is the
+contract above; anything else may move on any merge. A few habits keep the merges small:
+
+- **Keep what you can in files of your own.** An extension or a renderer doesn't conflict; lines inside the core's files
+  do, at every merge. When you carry a core change through a merge, check whether a door for it has landed since.
+- **Merge often.** Most of a merge's cost is the size of the gap.
+- **Leave `API_VERSION` as upstream has it.** An addition of yours breaks nothing, so the fork still meets upstream's
+  number. A number of your own claims a version upstream will later give another meaning, and git shows no conflict
+  when both sides reach it.
+- **Regenerate generated files** (`npm run schema:board`, `npm run served:update`), never merge them by hand.
+- **Leave `CHANGELOG.md`, the tags and the kb's `reviewed` dates to upstream.** A `reviewed` date says someone checked
+  an entity's claims, which a merge doesn't. Keep yours on the entities you own, and take upstream's when a date
+  conflicts.
