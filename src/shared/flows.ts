@@ -137,6 +137,8 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   'shell/keys': single('Type in a shell', 'Write keys to a shell.', 'written'),
   'shell/resize': single('Resize a shell', 'Resize a shell.', 'resized'),
   'shell/kill': single('Close a shell', 'End a shell.', 'killed'),
+  'job/start': single('Start a job', 'A command run to its end by the jobs daemon.', 'started'),
+  'job/cancel': single('Cancel a job', 'Stop a running job and its process group.', 'cancelled'),
   'collection/create': single('Keep', 'A new item in a collection.', 'written'),
   'collection/write': single('Save', "Replace an item's contents.", 'written'),
   'collection/restore': single('Restore', 'Put a deleted item back.', 'written'),

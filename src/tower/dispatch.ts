@@ -22,7 +22,7 @@ import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { editConfig, keyName, type ConfigEdit } from '../config-edit.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
-import { hostRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
+import { hostRequest, jobsRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
 import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
@@ -56,6 +56,7 @@ import { promptPastes, sessionKeys, type FromHost, type ToHost } from '../shared
 import { REVIEWS } from '../shared/reviews.ts'
 import { STATUS_NAME } from '../shared/status-words.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
+import type { FromJobs, ToJobs } from '../shared/jobs.ts'
 import { briefFor, cut, restoreWorktree, deleteBranch, discard, discardable, fork, linkedSources, nameIsFree, pruneWorktree, recutBranch, recutWorktree, removeWorktree, rollback, tidyable, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { extensionCalls } from './calls.ts'
@@ -116,7 +117,7 @@ export const dispatch = defineResource({
     const keptOf = (kept: string[]) => (kept.length ? { kept } : {})
 
     /** A daemon that answers no refuses, or says what it doesn't know; one that doesn't answer is unavailable. */
-    async function daemon(ask: () => Promise<FromHost | FromTerms>): Promise<Answer> {
+    async function daemon(ask: () => Promise<FromHost | FromTerms | Exclude<FromJobs, { t: 'error' }>>): Promise<Answer> {
       try {
         const reply = await ask()
         return reply.t === 'error' ? apiError('code' in reply && reply.code ? reply.code : 'refused', reply.message) : reply
@@ -148,6 +149,19 @@ export const dispatch = defineResource({
       void system.refreshShells()
       return answer
     }
+
+    /** The jobs daemon's `ended` (a cancel or resize of a job that ended) is the API's `refused`. A job answers once the system holds it. */
+    async function jobs(msg: ToJobs): Promise<Answer> {
+      const answer = await daemon(async () => {
+        const reply = await jobsRequest(paths, msg)
+        return reply.t === 'error' ? { t: 'error', message: reply.message, ...(reply.code === 'not_found' && { code: reply.code }) } : reply
+      })
+      await system.refreshJobs()
+      return answer
+    }
+
+    /** Who owns what a caller starts: a worker's session or an extension's capability by its id, else what it is (`user`). */
+    const ownerOf = (caller: Caller): string => caller.id ?? caller.t
 
     const withSession = (id: string, act: () => Answer | Promise<Answer>) =>
       system.session(id) ? act() : apiError('not_found', `No session "${id}"`)
@@ -975,6 +989,8 @@ export const dispatch = defineResource({
       'shell/keys': ({ id, data }) => terms({ t: 'write', id, data }),
       'shell/resize': ({ id, cols, rows }) => terms({ t: 'resize', id, cols, rows }),
       'shell/kill': ({ id }) => terms({ t: 'kill', id }),
+      'job/start': ({ argv, cwd, env, label }, caller) => jobs({ t: 'start', argv, cwd, env, label, owner: ownerOf(caller) }),
+      'job/cancel': ({ id }, caller) => jobs({ t: 'cancel', id, by: ownerOf(caller) }),
       'collection/create': ({ project, collection, name, ext, content }) =>
         inCollection(project, collection, () => ({ t: 'created', ...createItem(paths, project, collection, name, ext, content) })),
       'collection/write': ({ project, collection, id, content, modifiedAt }) =>

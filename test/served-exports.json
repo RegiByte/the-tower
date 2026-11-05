@@ -368,6 +368,8 @@
       "start.every",
       "start.facts.append",
       "start.id",
+      "start.jobs.cancel",
+      "start.jobs.start",
       "start.log",
       "start.on",
       "start.own.collections",
