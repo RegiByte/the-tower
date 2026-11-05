@@ -7,8 +7,8 @@ import { callOf, derived, missing, SOURCES, type Fields, type Source } from './f
 
 /**
  * `floors/form`, the New floor form on the board: where the hub comes from (a folder on the machine, picked by browsing
- * `floors/dirs`, or a new project), the floor's name and id, the folder a new project goes in, each derived until
- * typed, and an existing folder's repos, each picked with the same browser. Sending calls the source's verb; the floor
+ * `floors/dirs`, a repository cloned by URL, or a new project), the floor's name and id, the folder a clone or a new
+ * project goes in, under a parent folder picked with the same browser, each derived until typed, and an existing folder's repos, each picked with the same browser. Sending calls the source's verb; the floor
  * is on the board once the tower reads the config it added.
  */
 
@@ -79,12 +79,17 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
       <div data-browse="hub"></div>
       <input type="text" name="hub" autocomplete="off" spellcheck="false" placeholder="pick a folder above, or type its absolute path">
     </div>
-    <label class="field" data-for="new"><span>Hub</span>
-      <small class="hint">${esc(HUB_HINT)} Made with its parents; it must not exist yet, or be empty.</small>
-      <input type="text" name="into" autocomplete="off" spellcheck="false"></label>
+    <label class="field" data-for="clone"><span>Repository URL</span>
+      <small class="hint">No password or token in it: the jobs log keeps it. Use an SSH key or a credential helper.</small>
+      <input type="text" name="url" autocomplete="off" spellcheck="false" placeholder="https://github.com/owner/repo.git or git@github.com:owner/repo.git"></label>
     <div class="row">
       <label class="field"><span>Name</span><input type="text" name="name" autocomplete="off" spellcheck="false"></label>
       <label class="field"><span>Id</span><input type="text" name="id" autocomplete="off" spellcheck="false" pattern="[A-Za-z0-9_\\-]+"></label>
+    </div>
+    <div class="field" data-for="clone new"><span>Hub</span>
+      <small class="hint">${esc(HUB_HINT)} It goes under the folder picked here, named by the id, unless you type another; it must not exist yet, or be empty.</small>
+      <div data-browse="parent"></div>
+      <input type="text" name="into" autocomplete="off" spellcheck="false">
     </div>
     <div class="field" data-for="add"><span>Repos <small>optional</small></span>
       <small class="hint">Other folders its sessions also work in. A project in one repository leaves this empty.</small>
@@ -114,7 +119,10 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   })
   const repoPicker = browser($('[data-browse="repo"]'), tower, { listed: () => draw(), failed })
 
-  const root = () => hubs.listing()?.root ?? ''
+  const parents = browser($('[data-browse="parent"]'), tower, { listed: () => draw(), failed })
+
+  /** The folder a clone or a new project goes under: the one the parent browser is at. */
+  const root = () => parents.listing()?.path ?? hubs.listing()?.root ?? ''
 
   const draw = () => {
     paintOnce($('.shelf-head .actions'), closeHtml(board.keys))
@@ -134,13 +142,15 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
     const blocked = missing(d)
     const source = SOURCES.find((s) => s.id === fields.source)!
     const button = $<HTMLButtonElement>('footer .primary')
-    button.textContent = sending ? 'Adding…' : source.submit
+    button.textContent = sending ? (fields.source === 'clone' ? 'Starting the clone…' : 'Adding…') : source.submit
     button.disabled = sending || blocked !== undefined
     const hub = d.source === 'add' ? d.hub : d.into
     const repos = d.source === 'add' && d.repos.length ? `, and ${d.repos.length === 1 ? 'one repo' : `${d.repos.length} repos`} beside it` : ''
     $('.summary').innerHTML = blocked
       ? esc(blocked)
-      : `Adds the floor <b>${esc(d.name.trim())}</b> (<code>${esc(d.id)}</code>), its sessions starting in <code>${esc(hub)}</code>${repos}${d.source === 'new' ? ', a new git repository' : ''}.`
+      : d.source === 'clone'
+        ? `Clones <code>${esc(d.url.trim())}</code> into <code>${esc(hub)}</code> as a job, then adds the floor <b>${esc(d.name.trim())}</b> (<code>${esc(d.id)}</code>) once it's done. A note at the top of the sidebar follows it.`
+        : `Adds the floor <b>${esc(d.name.trim())}</b> (<code>${esc(d.id)}</code>), its sessions starting in <code>${esc(hub)}</code>${repos}${d.source === 'new' ? ', a new git repository' : ''}.`
   }
 
   form.addEventListener('input', (e) => {
@@ -190,8 +200,8 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
     draw()
     const [verb, body] = callOf(d)
     try {
-      const reply = (await tower.call(verb as never, body as never)) as unknown as { project: string; hub: string }
-      kit.toast(`The floor ${d.name.trim()} is up, at ${reply.hub}`)
+      const reply = (await tower.call(verb as never, body as never)) as unknown as { t: 'added'; hub: string } | { t: 'started'; job: string }
+      kit.toast(reply.t === 'started' ? `Cloning ${d.url.trim()}: the floor ${d.name.trim()} is added once it's done` : `The floor ${d.name.trim()} is up, at ${reply.hub}`)
       kit.display('board')
     } catch (err) {
       error.textContent = (err as Error).message
@@ -203,6 +213,7 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
 
   draw()
   hubs.browse()
+  parents.browse()
 
   return {
     update(next: Board) {
