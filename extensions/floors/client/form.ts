@@ -2,18 +2,20 @@ import type { Board } from '../../../src/bridge/board.ts'
 import { esc } from '../../../src/shared/cards.ts'
 import type { Mount } from '../../../src/shared/views.ts'
 import { closeHtml, paintOnce, viewCss } from '../../../src/views/parts.ts'
+import { browser, DIRS_CSS } from './dirs.ts'
 import { callOf, derived, missing, SOURCES, type Fields, type Source } from './floor-form.ts'
 
 /**
  * `floors/form`, the New floor form on the board: where the hub comes from (a folder on the machine, picked by browsing
- * `floors/dirs`, or a new project), the floor's name and id, and the folder a new project goes in, each derived until
- * typed. Sending calls the source's verb; the floor is on the board once the
- * tower reads the config it added.
+ * `floors/dirs`, or a new project), the floor's name and id, the folder a new project goes in, each derived until
+ * typed, and an existing folder's repos, each picked with the same browser. Sending calls the source's verb; the floor
+ * is on the board once the tower reads the config it added.
  */
 
 const ID = 'floors/form'
 
-type Listing = { path: string; parent?: string; root: string; git: boolean; dirs: { name: string; git: boolean }[] }
+/** What the form says the hub is, wherever it comes from. */
+const HUB_HINT = 'Where its sessions start by default; the new-worker form can start one elsewhere.'
 
 const STYLE = viewCss(
   ID,
@@ -29,21 +31,17 @@ const STYLE = viewCss(
   & .sources span, & .hint, & .summary { color: var(--muted); font-size: var(--fs-s); }
   & .field { display: flex; flex-direction: column; gap: var(--sp-xs); }
   & .field > span { font-weight: 600; font-size: var(--fs-s); }
+  & .field > span small { font-weight: 400; color: var(--muted); }
   & .row { display: grid; grid-template-columns: 2fr 1fr; gap: var(--sp-l); }
   & input[type=text] { padding: var(--sp-m) var(--sp-l); font: var(--fs-m)/1.3 var(--mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line-strong); border-radius: var(--radius); }
   & input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  & .browse { display: flex; flex-direction: column; gap: var(--sp-s); }
-  & .crumb { display: flex; align-items: center; gap: var(--sp-m); font: var(--fs-s)/1.3 var(--mono); color: var(--muted); }
-  & .crumb code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
-  & .dirs { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); scrollbar-width: thin; }
-  & .dirs button { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-s) var(--sp-l); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none;
-    color: var(--ink); text-align: left; font: var(--fs-m)/1.3 var(--mono); cursor: pointer; }
-  & .dirs button:last-child { border-bottom: 0; }
-  & .dirs button:hover, & .dirs button:focus-visible { background: var(--panel-2); }
-  & .dirs .git { margin-left: auto; font: var(--fs-xs)/1 var(--mono); color: var(--muted); }
-  & .dirs .empty { padding: var(--sp-m) var(--sp-l); color: var(--faint); }
-  & .chosen { font-size: var(--fs-s); }
-  & .chosen code { font-family: var(--mono); }
+  ${DIRS_CSS}
+  & .repos { display: flex; flex-direction: column; gap: var(--sp-xs); margin: 0; padding: 0; list-style: none; }
+  & .repos li { display: flex; align-items: center; gap: var(--sp-m); font: var(--fs-s)/1.3 var(--mono); }
+  & .repos li code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  & .picker { display: flex; flex-direction: column; gap: var(--sp-s); padding: var(--sp-m); border: 1px dashed var(--line-strong); border-radius: var(--radius); }
+  & .picker-actions { display: flex; align-items: center; gap: var(--sp-m); }
+  & .picker-actions .hint { flex: 1; min-width: 0; }
   & .error { margin: 0; color: var(--broken); }
   & .error:empty { display: none; }
   & footer { display: flex; align-items: center; gap: var(--sp-l); margin-top: auto; }
@@ -58,27 +56,45 @@ const sourcesHtml = (source: Source) =>
     (s) => `<label><input type="radio" name="source" value="${s.id}"${s.id === source ? ' checked' : ''}><b>${esc(s.label)}</b><span>${esc(s.hint)}</span></label>`,
   ).join('')
 
+/** Why the folder the repo picker is at can't be added as a repo: none when it can. */
+const repoWhy = (dir: string | undefined, hub: string, repos: string[]) => {
+  if (!dir) return 'browse to a folder'
+  if (dir === hub) return 'this is the hub'
+  if (repos.includes(dir)) return 'a repo already'
+  return undefined
+}
+
 export const mount: Mount = (host, { tower, board: first, kit }) => {
   let board: Board = first
-  let fields: Fields = { source: 'add' }
-  let listing: Listing | undefined
+  let fields: Fields = { source: 'add', repos: [] }
+  let picking = false
   let sending = false
 
   host.innerHTML = `<style>${STYLE}</style>
   <div class="shelf-head"><span class="label">New floor</span><span class="dim">a floor for a project</span><span class="actions"></span></div>
   <form class="floor-form" novalidate>
     <fieldset class="sources" aria-label="where the project comes from">${sourcesHtml(fields.source)}</fieldset>
-    <div class="field browse" data-for="add"><span>Folder</span>
-      <div class="crumb"><button type="button" data-up aria-label="the folder above">↑ up</button><code></code></div>
-      <div class="dirs" role="list"></div>
+    <div class="field" data-for="add"><span>Hub</span>
+      <small class="hint">${esc(HUB_HINT)}</small>
+      <div data-browse="hub"></div>
       <input type="text" name="hub" autocomplete="off" spellcheck="false" placeholder="pick a folder above, or type its absolute path">
     </div>
+    <label class="field" data-for="new"><span>Hub</span>
+      <small class="hint">${esc(HUB_HINT)} Made with its parents; it must not exist yet, or be empty.</small>
+      <input type="text" name="into" autocomplete="off" spellcheck="false"></label>
     <div class="row">
       <label class="field"><span>Name</span><input type="text" name="name" autocomplete="off" spellcheck="false"></label>
       <label class="field"><span>Id</span><input type="text" name="id" autocomplete="off" spellcheck="false" pattern="[A-Za-z0-9_\\-]+"></label>
     </div>
-    <label class="field" data-for="new"><span>Into folder</span><input type="text" name="into" autocomplete="off" spellcheck="false">
-      <small class="hint">made with its parents; it must not exist yet, or be empty</small></label>
+    <div class="field" data-for="add"><span>Repos <small>optional</small></span>
+      <small class="hint">Other folders its sessions also work in. A project in one repository leaves this empty.</small>
+      <ul class="repos"></ul>
+      <button type="button" data-pick>Add a repo…</button>
+      <div class="picker" hidden>
+        <div data-browse="repo"></div>
+        <div class="picker-actions"><span class="hint"></span><button type="button" data-cancel>Cancel</button><button type="button" data-add-repo>Add this folder</button></div>
+      </div>
+    </div>
     <p class="error" role="alert"></p>
     <footer><p class="summary"></p><button type="submit" class="primary"></button></footer>
   </form>`
@@ -86,49 +102,45 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   const form = $<HTMLFormElement>('form')
   const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement
   const error = $<HTMLElement>('.error')
+  const failed = (message: string) => void (error.textContent = message)
 
-  const root = () => listing?.root ?? ''
+  const hubs = browser($('[data-browse="hub"]'), tower, {
+    went: (dir) => {
+      fields = { ...fields, hub: dir }
+      input('hub').value = dir
+    },
+    listed: () => draw(),
+    failed,
+  })
+  const repoPicker = browser($('[data-browse="repo"]'), tower, { listed: () => draw(), failed })
+
+  const root = () => hubs.listing()?.root ?? ''
 
   const draw = () => {
     paintOnce($('.shelf-head .actions'), closeHtml(board.keys))
     const d = derived(fields, root())
     for (const el of host.querySelectorAll<HTMLElement>('[data-for]')) el.hidden = !el.dataset.for!.split(' ').includes(fields.source)
     for (const name of ['name', 'id', 'into'] as const) input(name).placeholder = d[name] || (name === 'name' ? 'shown on the floor' : name === 'id' ? 'from the name' : '')
-    if (listing) {
-      paintOnce($('.crumb code'), `<bdi>${esc(listing.path)}</bdi>`)
-      $<HTMLButtonElement>('[data-up]').disabled = !listing.parent
-      paintOnce(
-        $('.dirs'),
-        listing.dirs.length
-          ? listing.dirs.map((x) => `<button type="button" role="listitem" data-dir="${esc(x.name)}">📁 ${esc(x.name)}${x.git ? '<span class="git">git</span>' : ''}</button>`).join('')
-          : '<div class="empty">no folders here</div>',
-      )
-    }
-    const why = missing(d)
+    paintOnce(
+      $('.repos'),
+      d.repos.map((r) => `<li><code title="${esc(r)}">${esc(r)}</code><button type="button" data-unrepo="${esc(r)}" aria-label="remove ${esc(r)} from the repos">Remove</button></li>`).join(''),
+    )
+    $<HTMLElement>('[data-pick]').hidden = picking
+    $<HTMLElement>('.picker').hidden = !picking
+    const at = repoPicker.listing()?.path
+    const why = repoWhy(at, d.hub, d.repos)
+    $('.picker-actions .hint').textContent = why ?? (at ? `adds ${at}` : '')
+    $<HTMLButtonElement>('[data-add-repo]').disabled = why !== undefined
+    const blocked = missing(d)
     const source = SOURCES.find((s) => s.id === fields.source)!
     const button = $<HTMLButtonElement>('footer .primary')
     button.textContent = sending ? 'Adding…' : source.submit
-    button.disabled = sending || why !== undefined
+    button.disabled = sending || blocked !== undefined
     const hub = d.source === 'add' ? d.hub : d.into
-    $('.summary').innerHTML = why
-      ? esc(why)
-      : `Adds the floor <b>${esc(d.name.trim())}</b> (<code>${esc(d.id)}</code>), its sessions starting in <code>${esc(hub)}</code>${d.source === 'new' ? ', a new git repository' : ''}.`
-  }
-
-  const browse = async (dir?: string) => {
-    try {
-      listing = (await tower.get(`floors/dirs${dir ? `?path=${encodeURIComponent(dir)}` : ''}` as never)) as unknown as Listing
-      draw()
-    } catch (err) {
-      error.textContent = (err as Error).message
-    }
-  }
-
-  /** The folder picked: listed, and the hub unless the user typed one. */
-  const pick = async (dir: string) => {
-    fields = { ...fields, hub: dir }
-    input('hub').value = dir
-    await browse(dir)
+    const repos = d.source === 'add' && d.repos.length ? `, and ${d.repos.length === 1 ? 'one repo' : `${d.repos.length} repos`} beside it` : ''
+    $('.summary').innerHTML = blocked
+      ? esc(blocked)
+      : `Adds the floor <b>${esc(d.name.trim())}</b> (<code>${esc(d.id)}</code>), its sessions starting in <code>${esc(hub)}</code>${repos}${d.source === 'new' ? ', a new git repository' : ''}.`
   }
 
   form.addEventListener('input', (e) => {
@@ -140,15 +152,33 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   })
   input('hub').addEventListener('change', () => {
     const dir = input('hub').value.trim()
-    if (dir.startsWith('/')) browse(dir)
+    if (dir.startsWith('/')) hubs.browse(dir)
   })
 
   host.addEventListener('click', (e) => {
     const target = e.target as Element
     if (target.closest('[data-home]')) return kit.display('board')
-    if (target.closest('[data-up]') && listing?.parent) return void pick(listing.parent)
-    const dir = target.closest<HTMLElement>('[data-dir]')?.dataset.dir
-    if (dir && listing) return void pick(`${listing.path.replace(/\/$/, '')}/${dir}`)
+    if (target.closest('[data-pick]')) {
+      picking = true
+      draw()
+      return void repoPicker.browse(fields.hub ? fields.hub.replace(/\/[^/]+\/?$/, '') || '/' : undefined)
+    }
+    if (target.closest('[data-cancel]')) {
+      picking = false
+      return draw()
+    }
+    if (target.closest('[data-add-repo]')) {
+      const at = repoPicker.listing()?.path
+      if (!at || repoWhy(at, derived(fields, root()).hub, fields.repos)) return
+      fields = { ...fields, repos: [...fields.repos, at] }
+      picking = false
+      return draw()
+    }
+    const unrepo = target.closest<HTMLElement>('[data-unrepo]')?.dataset.unrepo
+    if (unrepo !== undefined) {
+      fields = { ...fields, repos: fields.repos.filter((r) => r !== unrepo) }
+      return draw()
+    }
   })
 
   form.addEventListener('submit', async (e) => {
@@ -172,7 +202,7 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   })
 
   draw()
-  browse()
+  hubs.browse()
 
   return {
     update(next: Board) {

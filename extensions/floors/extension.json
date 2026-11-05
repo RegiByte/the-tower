@@ -29,7 +29,7 @@
       "words": {
         "label": "New floor",
         "hint": "a floor for a project folder or a new project",
-        "icon": "plus"
+        "icon": "new-floor.svg"
       }
     }
   },
@@ -50,6 +50,23 @@
       "words": {
         "label": "New floor",
         "hint": "a floor for a project folder or a new project"
+      }
+    },
+    "repos": {
+      "module": "repos.js",
+      "export": "mount",
+      "on": [
+        "floor"
+      ],
+      "scales": [
+        "pane"
+      ],
+      "needs": [
+        "display"
+      ],
+      "words": {
+        "label": "Repos",
+        "hint": "the folders this floor's sessions work in besides its hub"
       }
     }
   },
