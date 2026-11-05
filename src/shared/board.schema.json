@@ -5610,7 +5610,8 @@
         "not_at_prompt",
         "composer_holds",
         "moved",
-        "not_plain"
+        "not_plain",
+        "changed"
       ]
     }
   }

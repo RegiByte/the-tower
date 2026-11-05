@@ -252,6 +252,7 @@ const CORE_READS: string[] = Object.keys({
   landing: true,
   renderers: true,
   origins: true,
+  config: true,
   patterns: true,
   'shelf/<project>/<n>': true,
   'shelf/<project>/<n>/<file>': true,

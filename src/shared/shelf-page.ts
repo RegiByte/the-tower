@@ -17,7 +17,7 @@ import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from './api.t
 import type { Scheme } from './design.ts'
 import type { ExtensionView } from './extensions.ts'
 import type { Pattern } from './capabilities.ts'
-import type { Renderer } from './model.ts'
+import type { Config, Renderer } from './model.ts'
 import type { Prefs } from './prefs.ts'
 import type { ShellStream } from './terms.ts'
 import type { Subject } from './subjects.ts'
@@ -55,6 +55,11 @@ export type Reads = {
   renderers: { default: string; renderers: Renderer[] }
   /** The web page of each project directory's origin remote, by directory. */
   origins: Record<string, string>
+  /**
+   * The config file as it holds it now, parsed: what the config verbs edit, and the value a `config/set` or
+   * `config/remove` names as its `was`. @since 1.147
+   */
+  config: Config
   /** What users found doing with the tower, one story each, from the checkout's `docs/patterns/` (`/capabilities.js`). */
   patterns: Pattern[]
   /** The files of a project's nth shelf entry, relative to its hub. */
