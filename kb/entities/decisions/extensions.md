@@ -227,8 +227,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   [`runCommand`](ref:hub/src/shared/adds.ts#runCommand), which imports the module and calls its export with
   `{tower, board, subject, target, args}`: `subject` the subject's value until 2.0, `target` the subject itself. Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
   prints a card's lines. The tower page draws a card's, a floor's and an item's badges and actions where it draws
-  their own ([`added.js`](ref:hub/renderers/page/added.js)), a floor's commands on its sign and a showing's inside its
-  tab, each its glyph alone (`floor.sign` since 1.132, `shown.tab` since 1.130), a showing's badges and verbs beside
+  their own ([`added.js`](ref:hub/renderers/page/added.js)), a floor's commands on its sign, commands about no one
+  floor beside the sidebar's Floors and Stats and a showing's inside its tab, each its glyph alone (`floor.sign` since
+  1.132, `board.sign`, `shown.tab` since 1.130), a showing's badges and verbs beside
   its tabs while it is open, asks as rows whose title opens their subject and says their `hint` (since 1.132) on
   hover, and the palette lists them
   ([[command-palette]]); Tower 3D draws a desk's badges and verbs, and leaves commands out, as the CLI does.

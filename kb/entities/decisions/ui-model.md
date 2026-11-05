@@ -329,6 +329,7 @@ flowchart LR
   board --> main["board.main: one view, pane scale"]
   board --> dock["board.dock: shells"]
   side --> strip["board.strip: one view of the board, row"]
+  side --> bsign["board.sign: commands about no floor, as icons"]
   side --> sign["floor.sign: commands, as icons"]
   side --> fsec["floor.section: badges, verbs, asks, tidy"]
   fsec --> row["card.row: badges, lines"]
