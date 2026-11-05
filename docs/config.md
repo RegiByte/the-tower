@@ -213,6 +213,24 @@ use, stays for you to Tidy by hand.
 "extensions": { "autotidy": { "settings": { "reap": true, "worktrees": true, "branches": true, "extensions": true } } }
 ```
 
+### Floors
+
+The bundled extension `floors` adds floors from the tower and changes a floor's repos. New floor, beside Floors and
+Stats in the tower page's sidebar (and in the palette), opens a form for a folder already on the machine or a new
+project (a folder, `git init` and a first commit holding a README, so worktrees can be cut from it). The hub is where
+the floor's sessions start by default; an existing folder also takes repos, the other folders its sessions work in,
+each picked with the same folder browser. Each adds `projects.<id>` through `config/add`. A floor's Repos view shows
+its hub and repos: removing one leaves the folder as it is. Workers reach the same through `tower x floors
+add|start|add-repo|remove-repo`.
+
+| Setting | Takes | Unset |
+|---|---|---|
+| `root` | The absolute folder the form starts browsing in, and puts new projects under (`<root>/<id>`, which the form lets you change). | the home folder |
+
+```json
+"extensions": { "floors": { "settings": { "root": "/abs/path/to/code" } } }
+```
+
 A floor's own settings win per key (`projects.<id>.extensions.autotidy.settings`), and
 `"capabilities": { "autotidy": { "off": true } }` turns it off on one floor. The workers going home now are the
 floor's `x.autotidy.going` on the board.

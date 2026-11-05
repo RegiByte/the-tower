@@ -46,7 +46,8 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   later arrives at a minor, a user's extension of it refused until renamed, as `config` did at 1.147), and a bundled
   capability's id is the bundled extension's ([`BUNDLED`](ref:hub/src/shared/extensions.ts#BUNDLED)): a user replaces
   one by providing it on purpose. A new bundled extension that does nothing until its settings turn it on is an
-  addition and arrives at an API minor (autotidy, 1.105), a user's extension of its id then refused until renamed or
+  addition and arrives at an API minor (autotidy, 1.105; floors, 1.148, which acts only when its form or a verb is
+  used), a user's extension of its id then refused until renamed or
   set to provide it, said in the changelog; one that acts once it ships arrives at a major. [`LEGACY`](ref:hub/src/shared/extensions.ts#LEGACY), the built-ins' old names as
   they move into extensions, is a fixed list of tagged entries (`module`, `verb`, `read`, `stream`, `board`, each
   `old`, `now` and `since`), read by kind with `legacyOf`. A `module` entry's old URL serves what it is now, with
