@@ -18,9 +18,11 @@ const typed = <T>(value: Typed<T>) => value
 
 export const reach = [boardSubject, tipsOf, BLOCKED_TEXT, palettes, repoName, loop, markdownHtml, hours, nextSlot]
 
-export const start: Start = (ctx) => {
+const start: Start = (ctx) => {
   const board: Board = typed(ctx.board())
   const problems = typed(spawnProblems({ cwd: 'hub' }))
   const refused = typed(apiError('invalid', problems.map((p) => p.message).join(', ')))
   return { reads: { said: () => esc(createHash('sha256').update(`${board.floors.length} ${refused.code}`).digest('hex')) } }
 }
+
+export default start

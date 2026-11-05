@@ -504,7 +504,11 @@ Add this to the folder's own `tsconfig.json`, which `tower types` also prints:
 - **Refreshing:** run it again after the tower moves. `.tower/types/stamp.json` names the API version the folder was
   typed against. The same code gives the same files.
 - **Committing them:** `.tower/.gitignore` keeps the folder out of git, since a committed copy goes stale against the
-  tower. If your own CI needs to typecheck, delete that file: a later `tower types` leaves it deleted.
+  tower. If your own CI needs to typecheck, replace that file's contents with the one line `!node_modules`, which
+  beats a root `.gitignore`'s `node_modules` so the vendored packages are committed too. A later `tower types` leaves
+  your file as it is.
+- **`skipLibCheck` is off** in the tsconfig you extend, so a package missing from the declarations is an error and
+  not a quiet `any`. If a package of your own has broken types, turn it on in your tsconfig, knowing that.
 
 The declarations are built by the checkout's own TypeScript, so a checkout needs `npm ci` with its dev dependencies, and
 kept in `<root>/cache/types/`, a cache keyed by the code. A file's path under `.tower/types/` is no more contract than
