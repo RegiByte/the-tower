@@ -1,0 +1,15 @@
+{
+  "extends": "./browser.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "typeRoots": ["../../node_modules/@types"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "removeComments": true,
+    "rootDir": "../../src"
+  },
+  "files": ["../../src/lib/attend.ts", "../../src/lib/board.ts", "../../src/lib/brief.ts", "../../src/lib/capabilities.ts", "../../src/lib/cards.ts", "../../src/lib/changes.ts", "../../src/lib/chrome.ts", "../../src/lib/client.ts", "../../src/lib/design.ts", "../../src/lib/extension.ts", "../../src/lib/files.ts", "../../src/lib/keys.ts", "../../src/lib/layout.ts", "../../src/lib/machine.ts", "../../src/lib/markdown.ts", "../../src/lib/palette.ts", "../../src/lib/settings.ts", "../../src/lib/spawn.ts", "../../src/lib/stats.ts", "../../src/lib/terminal.ts", "../../src/lib/time.ts", "../../src/lib/view.ts", "../../src/lib/viewer.ts", "../../src/lib/words.ts"]
+}

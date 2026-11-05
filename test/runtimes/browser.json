@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "es2024",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true
+  },
+  "files": [
+    "../../src/lib/view.ts",
+    "../../src/lib/keys.ts",
+    "../../src/lib/layout.ts",
+    "../../src/lib/brief.ts",
+    "../../src/lib/changes.ts",
+    "../../src/lib/terminal.ts",
+    "../../src/lib/spawn.ts",
+    "../../src/lib/attend.ts",
+    "../../src/lib/settings.ts",
+    "../../src/lib/palette.ts",
+    "../../src/lib/chrome.ts",
+    "../../src/lib/viewer.ts",
+    "../../src/lib/client.ts"
+  ]
+}

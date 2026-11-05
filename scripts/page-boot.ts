@@ -18,6 +18,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
 import { withPage } from './drive.ts'
 import { withTower } from './tower-alone.ts'
 
@@ -91,7 +92,9 @@ function seedWorker(root: string) {
 /** In the page: what says each module loaded once, with the card view and the Reviews tab mounted. */
 const ONCE = `(async () => {
   const same = async (served, file, name) => (await import(served))[name] === (await import(file))[name]
-  const identical = { pressing: await same('/press.js', '/shared/press.js', 'pressing'), drawPanel: await same('/panels.js', '/shared/panel-kit.js', 'drawPanel') }
+  const identical = { pressing: await same('/press.js', '/shared/press.js', 'pressing'), drawPanel: await same('/panels.js', '/shared/panel-kit.js', 'drawPanel'), libraryPressing: await same('/lib/view.js', '/shared/press.js', 'pressing'), libraryDrawPanel: await same('/lib/view.js', '/shared/panel-kit.js', 'drawPanel') }
+  const library = await Promise.allSettled(${JSON.stringify(libraryUrls())}.map((url) => import(url)))
+  const unloaded = ${JSON.stringify(libraryUrls())}.filter((_, n) => library[n].status === 'rejected')
   const add = document.querySelector('[data-view="reviews/thread"] [data-note-add]')
   const twin = add.cloneNode(true)
   twin.hidden = true
@@ -109,14 +112,15 @@ const ONCE = `(async () => {
   await held
   twin.remove()
   const fetched = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((p) => /^\\/(shared|src|vendor)\\//.test(p)).map((p) => p.replace(/\\.[0-9a-f]{10}\\.js$/, '.js'))
-  return { identical, busy, appends, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
+  return { identical, unloaded, busy, appends, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
 })()`
 
-type Once = { identical: Record<string, boolean>; busy: boolean; appends: number; fetched: number; twice: string[] }
+type Once = { identical: Record<string, boolean>; unloaded: string[]; busy: boolean; appends: number; fetched: number; twice: string[] }
 
 /** What a page loading each module once fails to show, in words. */
 const onceProblems = (o: Once, errors: string[]) => [
   ...Object.entries(o.identical).flatMap(([name, same]) => (same ? [] : [`${name} is two instances: the served module's is not its file's`])),
+  ...(o.unloaded.join() === SERVER_ONLY.join() ? [] : [`the library modules a browser couldn't load are ${o.unloaded.join(', ') || 'none'}, not ${SERVER_ONLY.join(', ')} alone`]),
   ...(o.busy ? [] : ["the Reviews tab's Add note isn't busy while a control of its identity is pressed through /press.js"]),
   ...(o.appends === 0 ? [] : [`the Reviews tab's Add note sent ${o.appends} note(s) while a control of its identity was in flight`]),
   ...(o.fetched ? [] : ['the page fetched no /shared/, /src/ or /vendor/ module']),
