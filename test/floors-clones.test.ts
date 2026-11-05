@@ -23,8 +23,19 @@ test("a clone holds its id and folder while running, while its floor is still to
   assert.deepEqual(holding(state, jobs, 'floors', 5_000).map((c) => c.id).sort(), ['done', 'fresh', 'run'])
 })
 
-test("a clone's ask follows what its job came to: running, refused, failed, lost; none once added or dismissed", () => {
-  const state = fold([started('j1', 'a'), started('j2', 'b'), started('j3', 'c'), started('j4', 'd'), started('j5', 'e'), [3_000, 'r', { job: 'j2', message: 'taken' }], [3_000, 'd', { job: 'j5' }]])
+test("a clone's ask follows what its job came to: running, refused, failed, lost; none once added, after a refusal too, or dismissed", () => {
+  const state = fold([
+    started('j1', 'a'),
+    started('j2', 'b'),
+    started('j3', 'c'),
+    started('j4', 'd'),
+    started('j5', 'e'),
+    started('j7', 'g'),
+    [3_000, 'r', { job: 'j2', message: 'taken' }],
+    [3_000, 'd', { job: 'j5' }],
+    [3_000, 'r', { job: 'j7', message: 'taken' }],
+    [4_000, 'a', { job: 'j7', project: 'g' }],
+  ])
   const jobs = [
     job('j1', {}),
     job('j2', { state: 'ended', exit: 0, endedAt: 2_000 }),
@@ -32,6 +43,7 @@ test("a clone's ask follows what its job came to: running, refused, failed, lost
     job('j4', { state: 'lost' }),
     job('j5', { state: 'ended', exit: 1, endedAt: 2_000 }),
     job('j6', { owner: 'someone-else' }),
+    job('j7', { state: 'ended', exit: 0, endedAt: 2_000 }),
   ]
   const asks = asksOf(clonesOf(state, jobs, 'floors'))
   assert.deepEqual(

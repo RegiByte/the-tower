@@ -131,7 +131,7 @@ export const asksOf = (clones: readonly Clone[]): Ask[] =>
         },
       ]
     if (c.outcome === 'cloned') {
-      if (!c.refused) return []
+      if (c.added || !c.refused) return []
       return [
         {
           key: c.job,
