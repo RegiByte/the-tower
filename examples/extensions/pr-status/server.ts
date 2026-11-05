@@ -9,8 +9,8 @@
  * backs off while GitHub keeps saying the same (`BACKOFF`), since a new one most often shows at a turn's end. Each
  * round is one GraphQL query per GitHub host and `CHUNK` branches, every branch an alias in it.
  */
-import type { Board, Card } from '../../../src/bridge/board.ts'
-import type { FoldCtx, Start, StreamFact, TriggerCall } from '../../../src/shared/extensions.ts'
+import type { Board, Card } from '/lib/board.js'
+import type { FoldCtx, Start, StreamFact, TriggerCall } from '/lib/extension.js'
 
 type Settings = { every: string; gh: string[] }
 type Review = 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED'

@@ -7,10 +7,9 @@
 import { createHash } from 'node:crypto'
 import { open, readdir, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { mediaTypeOf } from 'tower:media.js'
-import { checkoutDirs, repoName } from 'tower:repos.js'
-import type { Card, Floor } from '../../../src/bridge/board.ts'
-import type { CallCtx, StartCtx } from '../../../src/shared/extensions.ts'
+import type { Card, Floor } from '/lib/board.js'
+import type { CallCtx, StartCtx } from '/lib/extension.js'
+import { checkoutDirs, mediaTypeOf, repoName } from '/lib/files.js'
 
 type Refusal = { t: 'error'; code: 'not_found' | 'refused' | 'invalid'; message: string }
 type Repo = { repo: string; dir: string }

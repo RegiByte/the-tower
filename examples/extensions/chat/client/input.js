@@ -1,5 +1,6 @@
-import { callOf, cardSubject, esc } from '/cards.js'
-import { chordLabel, commandOf } from '/keymap.js'
+import { callOf, cardSubject } from '/lib/board.js'
+import { chordLabel, commandOf } from '/lib/keys.js'
+import { esc } from '/lib/words.js'
 
 /**
  * `chat/input`: a plain text box at the foot of a worker's Brief (`card.composer`). The keymap's `submit` chord or Send
