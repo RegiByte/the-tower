@@ -209,9 +209,13 @@ export const httpServer = defineResource({
       res.writeHead(200, { 'content-type': type, ...headers }).end(body)
     }
 
+    /** What the served modules' `Deprecation` links to: the library, which replaces them, one old module splitting into several of its modules. */
+    const LIBRARY_DOCS = 'https://github.com/RegiByte/the-tower/blob/main/docs/extending.md#the-library'
+
     function design(req: http.IncomingMessage, res: http.ServerResponse, url: string) {
       if (url === '/design.css') return revalidated(req, res, 'text/css', designCss())
       if (MODULES[url]) {
+        res.setHeader('deprecation', '@0').setHeader('link', `<${LIBRARY_DOCS}>; rel="deprecation"`)
         return revalidated(req, res, 'text/javascript', servedModule(url))
       }
       const font = fonts.find((f) => url === `/fonts/${f.file}`)

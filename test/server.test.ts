@@ -535,6 +535,13 @@ test('server: a page loading /lib/view.js and /lib/changes.js gets one press.ts,
   assert.equal(pressing.length, 1, 'one file holds the in-flight set')
 })
 
+test('server: the old served modules say they are deprecated, and link to what replaces them', async () => {
+  const { headers } = await get('/cards.js')
+  assert.equal(headers.deprecation, '@0')
+  assert.match(headers.link as string, /^<https:[^>]+#the-library>; rel="deprecation"$/)
+  assert.equal((await get('/lib/words.js')).headers.deprecation, undefined)
+})
+
 test('server: a sandboxed html file read by a script is the file as written; loaded any other way, its frame keys follow it', async () => {
   const page = '/shelf/lab/0/report/index.html'
   const read = await request(page, { headers: { 'sec-fetch-dest': 'empty' } })
