@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.91.0
+
+The tower can write its own config, through four checked verbs, and the page has a place for commands about no one
+floor. A folded floor's counts read in one tone on every floor. No restart beyond the tower's own (`tower down tower`,
+then `tower up tower`), no config change, API 1.147 (additions only). The open page offers the reload.
+
+- **The config is written through the API, checked.** `config/add` adds a key the config doesn't hold yet,
+  `config/append` pushes onto an array (a value already in it answers `unchanged`), and `config/set` and
+  `config/remove` replace or delete a value only while it is still `was`, the value the caller read, so an edit never
+  overwrites a hand edit at its key. Every edit is refused when it would give the config a problem `tower config
+  check` names, a warning included, that it didn't have; problems already there don't hold it back. `GET /config`
+  reads the file as it holds it. The tower writes the file as JSON indented by two spaces, beside its real path, and
+  reads it again at once; a config that is a link is now also watched in its target's folder, so hand edits there
+  are seen. `config` is now a reserved name: a user extension called `config` is refused until it is renamed. Started
+  by @gasparitiago (#391, landed as #409).
+- **`board.sign` on the tower page:** commands about no one floor, as icons beside Floors and Stats. It takes no room
+  when no extension adds one. By @gasparitiago (#391, landed as #410).
+- **A folded floor's count numbers take the page's ink,** not the floor's tint, so they read alike on every floor
+  (#411).
+
 ## v1.90.0
 
 Narration reads at the speed you pick, the grid starts a new worker in a cell, and ⌘↩ in the new-worker dialog no
