@@ -1,6 +1,7 @@
 /**
  * The jobs daemon's one promise about processes, checked on whatever platform runs the tests (CI's is Linux): a daemon
- * killed outright takes its jobs' process groups with it, and the next daemon ends what a job that ignores SIGHUP left.
+ * killed outright takes its jobs' process groups with it, the next daemon ends what a job that ignores SIGHUP left, and a
+ * cancel ends a job's whole group.
  */
 import assert from 'node:assert/strict'
 import { spawn, type ChildProcess } from 'node:child_process'
@@ -88,4 +89,17 @@ test('a job that ignores SIGHUP outlives a daemon killed outright, and the next 
   const next = await startDaemon(paths)
   await until(async () => !(await alive(group)), 10_000, 'the next daemon ends the group the job left')
   next.kill('SIGTERM')
+})
+
+test('a cancel ends the whole group: a member that ignores TERM and HUP is killed once the grace runs out', async () => {
+  const paths = newRoot()
+  const daemon = await startDaemon(paths)
+  const group = await startJob(paths, `(trap '' TERM HUP; exec sleep 300) & wait`, 2)
+  const jobs = await connectJobs(paths.jobsSocket)
+  const listed = await jobs.request({ t: 'list' })
+  const { id } = (listed as { jobs: { id: string; pid: number }[] }).jobs.find((j) => j.pid === group.pid)!
+  assert.equal((await jobs.request({ t: 'cancel', id, by: 'test' })).t, 'ok')
+  jobs.close()
+  await until(async () => !(await alive(group)), 10_000, "the job's group ends, the member ignoring TERM included")
+  daemon.kill('SIGTERM')
 })

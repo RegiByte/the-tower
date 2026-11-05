@@ -26,9 +26,11 @@ no `write`: nobody types into a job.
 - **Its end** is appended as `ended`, normalized from node-pty's pair ([`jobEnd`](ref:hub/src/jobs/main.ts#jobEnd)):
   a signal by name and `exit: null`, or the exit status and `signal: null`. Never a verdict.
 - **Cancel** appends `cancelled {id, by}`, then sends the job's group SIGTERM and, after 5 s, SIGKILL to what still
-  runs ([`cancelJob`](ref:hub/src/jobs/main.ts#cancelJob)); its `ended` follows. A cancel or resize of a job that
+  runs in the group ([`cancelJob`](ref:hub/src/jobs/main.ts#cancelJob), [`endGroup`](ref:hub/src/jobs/groups.ts#endGroup)):
+  the group decides, not its leader, since a member that ignores TERM outlives a leader that ends on it. Its `ended`
+  follows when the leader exits. A cancel or resize of a job that
   already ended is refused, `ended`. Stopping the daemon (`tower down jobs`) stops every running job the same way and
-  exits once their ends are written.
+  exits once their groups have ended and their ends are written.
 - **Attach** turns the connection into the job's stream ([`JobStream`](ref:hub/src/shared/jobs.ts#JobStream)): a
   snapshot, then `o`, `r` and `x` as they happen, held and sent in order as terms does
   ([`joinViewer`](ref:hub/src/shared/viewers.ts#joinViewer)); a job already ended sends its `x` right after the
