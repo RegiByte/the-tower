@@ -123,8 +123,8 @@ function holdRow(list, anchor) {
 /** Writes `html` into `el` only when it changed, so a focused or hovered control in it survives a render. @type {WeakMap<HTMLElement, string>} */
 const painted = new WeakMap()
 
-/** @param {HTMLElement} el @param {string} html */
-const paintOnce = (el, html) => painted.get(el) === html || (painted.set(el, html), (el.innerHTML = html))
+/** Whether it wrote. @param {HTMLElement} el @param {string} html */
+const paintOnce = (el, html) => painted.get(el) !== html && (painted.set(el, html), (el.innerHTML = html), true)
 
 /** `paintOnce`, the control that had focus in `el` keeping it. */
 /** @param {HTMLElement} el @param {string} html */

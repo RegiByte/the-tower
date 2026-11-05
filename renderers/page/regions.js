@@ -1096,6 +1096,18 @@ export function regions(deps) {
         }
         for (const key of [...held.keys()]) if (!subjectOf(key)) drop(key)
       },
+      /**
+       * Updates the rows in `root` where they stand, when its paint wrote nothing new: one whose pick changed is mounted
+       * afresh in its place. Those whose subject left the board are closed. @param {HTMLElement} root
+       */
+      refresh(root) {
+        for (const el of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(`.region-row[data-region="${CSS.escape(id)}"]`))) {
+          const subject = subjectOf(/** @type {string} */ (el.dataset.subject))
+          const now = subject && hostOf(subject)
+          if (now && now !== el) el.replaceWith(now)
+        }
+        for (const key of [...held.keys()]) if (!subjectOf(key)) drop(key)
+      },
     }
   }
 
