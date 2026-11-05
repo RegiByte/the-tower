@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto'
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { libraryUrls, MODULES, urlSource } from '../src/tower/served.ts'
+import { LIBRARY, libraryUrls, MODULES, urlSource, urlVendor } from '../src/tower/served.ts'
 
 export const REPO = path.join(import.meta.dirname, '..')
 const TSC = path.join(REPO, 'node_modules', '.bin', 'tsc')
@@ -125,14 +125,14 @@ export function declarationDigests(): Map<string, string> {
 }
 
 /** The library as it stands now, each name with the `since` `listed` gives it, a new one with `since`. */
-export function libraryNow(listed: Library | undefined, since: string): Library {
+export function libraryNow(listed: Library, since: string): Library {
   const digests = declarationDigests()
   const stamped = (names: Shape['values'], kept: Record<string, LibraryName> | undefined) =>
     Object.fromEntries([...names].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, mark]) => [name, { since: kept?.[name]?.since ?? since, ...mark }]))
   return Object.fromEntries(
     [...libraryShapes()].map(([url, { values, types }]) => [
       url,
-      { runtime: runtimeOf(url), digest: digests.get(url)!, values: stamped(values, listed?.[url]?.values), types: stamped(types, listed?.[url]?.types) },
+      { runtime: runtimeOf(url), digest: digests.get(url)!, values: stamped(values, listed[url]?.values), types: stamped(types, listed[url]?.types) },
     ]),
   )
 }
@@ -152,11 +152,11 @@ const sourcesIn = (dir: string): string[] =>
 export const specifiersOf = (text: string): string[] =>
   [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)(['"])([^'"\n]+)\1/gm)].map((m) => m[2]!)
 
-/** A file's way into the core outside the library: a path below `src/`, a served module's URL, or a loan from `tower:`. */
-const reachesCore = (file: string, specifier: string): boolean =>
+/** A file's way into the core outside the library: a path below `src/`, a served module's URL, a loan from `tower:`, or an internal URL. */
+export const reachesCore = (file: string, specifier: string): boolean =>
   specifier.startsWith('.')
     ? path.resolve(REPO, path.dirname(file), specifier).startsWith(path.join(REPO, 'src') + path.sep)
-    : specifier.startsWith('tower:') || Boolean(MODULES[specifier])
+    : specifier.startsWith('tower:') || Boolean(MODULES[specifier]) || (specifier.startsWith('/') && !specifier.startsWith(LIBRARY) && (urlSource(specifier) ?? urlVendor(specifier)) !== undefined)
 
 /** Each way into the core outside the library from code that isn't the core, once per file: `<file> -> <specifier>`. */
 export const reachNow = (): string[] => [

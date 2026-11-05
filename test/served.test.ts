@@ -103,7 +103,7 @@ test('the served modules keep every export renderers may import, until the API m
   const heldBy = (mod: Library[string] | undefined) => ({ ...mod?.values, ...mod?.types })
   const gone = [
     ...Object.entries(listed.served).flatMap(([url, names]) => names.filter((n) => !now[url]?.includes(n)).map((n) => `  ${url}  ${n}`)),
-    ...Object.entries(listed.library ?? {}).flatMap(([url, mod]) => Object.keys(heldBy(mod)).filter((n) => !(n in heldBy(library[url]))).map((n) => `  ${url}  ${n}`)),
+    ...Object.entries(listed.library).flatMap(([url, mod]) => Object.keys(heldBy(mod)).filter((n) => !(n in heldBy(library[url]))).map((n) => `  ${url}  ${n}`)),
   ]
   if (gone.length && major === listed.major) {
     assert.fail(
