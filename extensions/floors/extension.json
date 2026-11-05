@@ -2,9 +2,9 @@
   "id": "floors",
   "version": "1.0",
   "title": "Floors",
-  "description": "New floors from the tower, and a floor's repos: a floor for a folder that already holds a project, or a new project started from scratch, added to the config through config/add; a floor's repos changed through config/append and config/remove.",
+  "description": "New floors from the tower, and a floor's repos: a floor for a folder that already holds a project, a git repository cloned from its URL as a job, or a new project started from scratch, added to the config through config/add; a floor's repos changed through config/append and config/remove.",
   "requires": {
-    "tower": "1.147"
+    "tower": "1.150"
   },
   "server": "server.ts",
   "client": "client",
@@ -30,6 +30,15 @@
         "label": "New floor",
         "hint": "a floor for a project folder or a new project",
         "icon": "new-floor.svg"
+      }
+    },
+    "watch": {
+      "module": "commands.js",
+      "export": "watchClones",
+      "words": {
+        "label": "Watch clones",
+        "hint": "the screens of the clones running or just ended",
+        "icon": "shell"
       }
     }
   },
@@ -67,6 +76,24 @@
       "words": {
         "label": "Repos",
         "hint": "the folders this floor's sessions work in besides its hub"
+      }
+    },
+    "clones": {
+      "module": "clones.js",
+      "export": "mount",
+      "on": [
+        "board"
+      ],
+      "scales": [
+        "pane"
+      ],
+      "needs": [
+        "terminal",
+        "display"
+      ],
+      "words": {
+        "label": "Clones",
+        "hint": "floors' clones and their screens"
       }
     }
   },
@@ -134,6 +161,63 @@
         "hint": "a floor for a folder already on the machine"
       }
     },
+    "clone": {
+      "scope": "system",
+      "description": "Clone a git repository from its URL into a new folder as a job of the jobs daemon, so a restart of the tower doesn't stop it, then add a floor whose hub is that folder once it ends with exit 0. Nothing types into a job: a repository that asks for a password or a host key fails, saying so (set up an SSH key or a credential helper). The job's argv, with the URL, is kept in the jobs log for as long as the log is kept, and its env never: a URL carrying credentials is refused. Refused when the floor's id or the folder is taken, or held by a clone in flight, or the folder exists and isn't empty.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "url",
+          "into"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "description": "The floor's id in the config: letters, digits, `_` and `-`."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The name the floor is shown by."
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^-\\s]\\S*$",
+            "description": "What `git clone` takes: an https or ssh URL, or `git@host:owner/repo.git`. No credentials in it."
+          },
+          "into": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "The absolute folder to clone into, made with its parents: it must not exist yet, or be empty."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "job"
+        ],
+        "properties": {
+          "t": {
+            "const": "started"
+          },
+          "job": {
+            "type": "string",
+            "description": "The clone's job: its screen at GET /job/<id>/screen, its state on board.jobs."
+          }
+        }
+      },
+      "words": {
+        "label": "Clone a floor",
+        "hint": "a floor for a git repository, cloned from its URL"
+      }
+    },
     "start": {
       "scope": "system",
       "description": "Start a project from scratch: a new folder, a git repository in it with a first commit holding a README (so worktrees can be cut from it), then a floor whose hub is that folder. Refused when the folder exists and isn't empty.",
@@ -185,6 +269,186 @@
       "words": {
         "label": "Start a project",
         "hint": "a new folder and git repository, and a floor for it"
+      }
+    },
+    "adopt": {
+      "scope": "system",
+      "description": "Add the floor for a clone that ended with exit 0, and record that floors did: the board trigger calls it once per clone, and a floor removed by hand later is never added back. A floor of that id and hub already there counts as added. A refusal is recorded, and the clone's ask offers it again.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job"
+        ],
+        "properties": {
+          "job": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The clone's job id, as `floors/clone` answered it and `board.jobs` carries it."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "project",
+          "hub"
+        ],
+        "properties": {
+          "t": {
+            "const": "added"
+          },
+          "project": {
+            "type": "string"
+          },
+          "hub": {
+            "type": "string"
+          }
+        }
+      },
+      "words": {
+        "label": "Add as floor",
+        "hint": "add the floor for a finished clone"
+      }
+    },
+    "cancel": {
+      "scope": "system",
+      "description": "Stop a running clone: its job is cancelled, and what it left in its folder stays until Remove.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job"
+        ],
+        "properties": {
+          "job": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The clone's job id, as `floors/clone` answered it and `board.jobs` carries it."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        }
+      },
+      "words": {
+        "label": "Cancel the clone",
+        "hint": "stop it",
+        "destructive": true
+      }
+    },
+    "remove": {
+      "scope": "system",
+      "description": "Delete the folder a clone that failed, was stopped or was lost left behind: only that clone's folder, only while no running job works in it and no floor holds it, and only when it holds a .git, so git started it.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job"
+        ],
+        "properties": {
+          "job": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The clone's job id, as `floors/clone` answered it and `board.jobs` carries it."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        }
+      },
+      "words": {
+        "label": "Remove the clone's folder",
+        "hint": "delete what a failed clone left",
+        "destructive": true
+      }
+    },
+    "retry": {
+      "scope": "system",
+      "description": "Clone again, as a new job, a clone that failed, was stopped or was lost: refused while its folder holds anything (Remove first). The old clone is dismissed.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job"
+        ],
+        "properties": {
+          "job": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The clone's job id, as `floors/clone` answered it and `board.jobs` carries it."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "job"
+        ],
+        "properties": {
+          "t": {
+            "const": "started"
+          },
+          "job": {
+            "type": "string",
+            "description": "The clone's job: its screen at GET /job/<id>/screen, its state on board.jobs."
+          }
+        }
+      },
+      "words": {
+        "label": "Retry the clone",
+        "hint": "clone it again into the same folder"
+      }
+    },
+    "dismiss": {
+      "scope": "system",
+      "description": "Forget a clone: its ask goes, and its folder stays as it is.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "job"
+        ],
+        "properties": {
+          "job": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The clone's job id, as `floors/clone` answered it and `board.jobs` carries it."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        }
+      },
+      "words": {
+        "label": "Dismiss the clone",
+        "hint": "forget it"
       }
     },
     "add-repo": {
@@ -352,7 +616,133 @@
     }
   },
   "guidance": {
-    "brief": "New floors and a floor's repos: `tower x floors add|start` adds a floor for a folder on the machine or a new project; `add-repo` and `remove-repo` change a floor's repos.",
-    "full": "When the user asks for a new floor or to change a floor's repos, use this extension's verbs rather than editing config.json by hand: `add` for a folder already on the machine (`{\"id\", \"name\", \"hub\", \"repos\"?}`), `start` for a project from scratch (`{\"id\", \"name\", \"into\"}`, a git repository with a first commit), `add-repo` and `remove-repo` (`{\"project\", \"path\"}`) for the other folders a floor's sessions work in. The hub is where its sessions start by default; repos are other folders they also work in. `tower x floors dirs '{\"path\": \"/abs\"}'` lists a folder's folders."
+    "brief": "New floors: `tower x floors add|clone|start` adds a floor for a folder, a cloned repository or a new project; `add-repo` and `remove-repo` change its repos.",
+    "full": "When the user asks for a new floor or to change a floor's repos, use this extension's verbs rather than editing config.json by hand: `add` for a folder already on the machine (`{\"id\", \"name\", \"hub\", \"repos\"?}`), `clone` for a git repository by URL (`{\"id\", \"name\", \"url\", \"into\"}`: a job that outlives the tower; the floor is added when it ends with exit 0, and `board.x.floors.clones` says where each stands), `start` for a project from scratch (`{\"id\", \"name\", \"into\"}`, a git repository with a first commit), `add-repo` and `remove-repo` (`{\"project\", \"path\"}`) for the other folders a floor's sessions work in. A failed clone: `remove` deletes what it left, `retry` clones again, `dismiss` forgets it (each `{\"job\"}`). The hub is where its sessions start by default; repos are other folders they also work in. `tower x floors dirs '{\"path\": \"/abs\"}'` lists a folder's folders."
+  },
+  "streams": {
+    "clones": {
+      "scope": "system",
+      "description": "What floors did about each clone it ran as a job, by job: the clone it started and the floor it is for, the floor it added from it, why adding it was refused, and a clone the user dismissed. What a clone came to is the job's, read from board.jobs.",
+      "facts": {
+        "s": {
+          "description": "A clone started as a job: the floor it is for and where it goes.",
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "job",
+              "id",
+              "name",
+              "url",
+              "into"
+            ],
+            "properties": {
+              "job": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "into": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "a": {
+          "description": "The floor added from a clone that ended with exit 0.",
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "job",
+              "project"
+            ],
+            "properties": {
+              "job": {
+                "type": "string"
+              },
+              "project": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "r": {
+          "description": "Adding a clone's floor was refused, and why: the trigger leaves it to the user.",
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "job",
+              "message"
+            ],
+            "properties": {
+              "job": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "d": {
+          "description": "A clone the user dismissed, or retried as another job.",
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "job"
+            ],
+            "properties": {
+              "job": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "folds": {
+    "board": {
+      "x": {
+        "type": "object",
+        "required": [
+          "clones"
+        ],
+        "properties": {
+          "clones": {
+            "type": "array",
+            "description": "Floors' clones whose job the board holds, newest first: each the floor it is for, what its job came to (running, cloned, failed, cancelled, lost) and what floors did about it.",
+            "items": {
+              "type": "object",
+              "required": [
+                "job",
+                "id",
+                "name",
+                "url",
+                "into",
+                "startedAt",
+                "outcome"
+              ]
+            }
+          }
+        }
+      },
+      "adds": [
+        "asks"
+      ]
+    }
+  },
+  "triggers": {
+    "board": {}
   }
 }
