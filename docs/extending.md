@@ -1202,7 +1202,14 @@ appears taken as already there, so a restart or a floor turned on replays nothin
 5 minutes. A throw, or a call that fails, is a problem of the extension's. `checks.<name>: { "words", "run" | "read",
 "fix"? }` are lines of `tower doctor`: a command run from the folder (env scrubbed, killed at 10 s; exit 0 passes), or
 one of its own reads taking no params, which says "tower down" while the tower is. `ctx.run(argv, { cwd, timeoutMs?,
-stdin?, env? })` runs a command the same way, killed at its timeout (60 s) and at halt. `/slots.js` says a rule in words and
+stdin?, env? })` runs a command the same way, killed at its timeout (60 s) and at halt. Work that must outlive a restart of
+the tower or the extension (a clone, an install, a build) is a job: `ctx.jobs.start(argv, { cwd, env?, label })`
+answers `{ id }` and `ctx.jobs.cancel(id)` stops it (1.149). The jobs daemon runs it in a PTY nobody types into, so
+`env` must stop prompts (`GIT_TERMINAL_PROMPT=0`); `env` is never logged, while `argv` is kept in the jobs log every
+renderer and worker reads, so a secret never goes in `argv`. The job is the capability's, even when a handler starts
+it for someone else. What it led to is the extension's to decide: read the ended jobs it owns on `board.jobs` (a
+`board` trigger reading only the next board), act through a verb of its own, and record what it did in a stream of
+its own, so a restart that fires the trigger again changes nothing. `/slots.js` says a rule in words and
 finds its next slot (`ruleWords`, `nextSlot`, `slotWords`); the board lists each extension's `slots`.
 
 **The author's loop.** `tower extensions check <dir>` reads a folder as the tower would, resolves it against the

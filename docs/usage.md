@@ -104,6 +104,12 @@ every item gets a two-word tag to refer to it by (`ivory-otter`). `tower kept` l
 `tower read <tag>` reads one item in full. A draft starts a worker from the tower page, or `tower hire <tag>`. Declare your own collections in the config (notes, reports, templates…): the tower keeps the
 files, and you and your workers decide what they mean.
 
+**Jobs** are commands run to their end outside the tower, in the jobs daemon: a clone, an install, a build. A job
+outlives a tower restart, takes no input, and ends with a jobs daemon restart. A worker starts one with
+`tower job start --label <words> -- <command>`, passing `--env GIT_TERMINAL_PROMPT=0` and the like to stop prompts;
+`tower job list` says how each stands, and its screen streams at `/job/<id>/screen` while the daemon keeps it. Its
+command is kept in the jobs log, which everyone reads: secrets go in `--env`, which is never logged.
+
 ## Standing work: policies
 
 > "Every weekday at 9, have a worker check the dependency updates and open a PR."
