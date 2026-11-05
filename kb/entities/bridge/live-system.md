@@ -2,9 +2,9 @@
 {
   "type": "library",
   "name": "Live system",
-  "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
+  "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, the jobs log and the jobs daemon's jobs, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-11-04",
+  "reviewed": "2026-11-05",
   "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo", "hub/src/bridge/worktrees.ts#readsSince"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
@@ -14,6 +14,7 @@
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8, each log's checkpoint" },
     { "to": "host-daemon", "verb": "calls", "carries": "live (ids of running sessions and the host protocol it speaks) every 1 s" },
     { "to": "terms-daemon", "verb": "calls", "carries": "list (shells with foreground process and title) every 1 s" },
+    { "to": "jobs-daemon", "verb": "calls", "carries": "list (the jobs it holds, running or kept) every 1 s, and after every job request" },
     { "to": "claude-code", "verb": "reads", "carries": "~/.claude/sessions/<pid>.json, each running Claude's registration (pid, peer name), every 5 s while observed" },
     { "to": "log-reductions", "verb": "uses", "carries": "factsAfter as the fold step for each event" },
     { "to": "system-root", "verb": "reads", "carries": "config.json, for the project dirs whose git it reads; its directory watched for the config changing" },
@@ -55,7 +56,10 @@ brings the board back ([[board-errors]]). `refreshConfig` signals the same chang
 after the tower's own write ([[config-writes]]).
 [`readConfig`](ref:hub/src/system.ts#readConfig) throws a `ConfigError` naming the file for JSON that doesn't parse.
 
-**The machine.** `live()` and `shells()` poll the host and the terms daemon every 1 s, `undefined` while either is down.
+**The machine.** `live()`, `shells()` and `heldJobs()` poll the host, the terms daemon and the jobs daemon every 1 s,
+`undefined` while each is down. `jobs()` is the jobs log folded ([`jobsOf`](ref:hub/src/bridge/jobs.ts#jobsOf)), read
+again as `jobs/` changes and right after a job request, since the daemon logs a job's start before it answers; a log
+the fold can't read keeps the last read, and the tower's log says why ([[jobs]]).
 `running()` (leftover processes) and `peers()` (the peer names of sessions' Claudes, [[agent-directory]]), both from one
 `ps` scan, are read every 5 s, and `repos()` as git changes, only while someone [`observe`s](ref:hub/src/system.ts#watchSystem);
 the first observer after none waits for a fresh read. A board client of the tower observes while it holds the board, a

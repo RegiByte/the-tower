@@ -253,6 +253,8 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     claudeUntested: [],
     shells: extra.shells ?? [],
     termsUp: true,
+    jobs: [],
+    jobsUp: true,
   }
   archives.set(board, seated.filter((c) => !kept(c)).sort((a, b) => b.startedAt - a.startedAt))
   return board

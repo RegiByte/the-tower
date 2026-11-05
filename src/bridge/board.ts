@@ -53,6 +53,8 @@ import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectio
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
 import { deliveries, type Delivery } from './messages.ts'
 import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReads, readsSince, restoreOf, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
+import { jobsNow, recentJobs, type Job, type JobRecord } from './jobs.ts'
+import type { HeldJob } from '../shared/jobs.ts'
 
 /** Excerpts: the board goes to every viewer on every change; the full text is asked for per session. */
 const EXCERPT_CHARS = 280
@@ -442,6 +444,14 @@ export type Board = {
   claudeUntested: string[]
   shells: (Shell & { activity: string })[]
   termsUp: boolean
+  /**
+   * Every owner's jobs (`src/jobs`) running now or over within the last day, newest first; `GET /jobs` has them all. A
+   * job whose end was never logged reads `lost` while the jobs daemon doesn't hold it, every such job while it doesn't
+   * run. @since 1.149
+   */
+  jobs: Job[]
+  /** Whether the jobs daemon answers: while it doesn't, no job runs and every job without an end reads `lost`. @since 1.149 */
+  jobsUp: boolean
 }
 
 const REASON_OF: Partial<Record<Status, WaitReason>> = { blocked: 'blocked', needs_input: 'asks', failed: 'failed', done: 'done' }
@@ -825,6 +835,9 @@ export type SystemView = {
   processes: Resource[]
   peers: Peer[]
   shells: Shell[] | undefined
+  /** Every job the jobs log holds, and the ones the jobs daemon holds now, `undefined` while it isn't running. */
+  jobs: JobRecord[]
+  heldJobs: HeldJob[] | undefined
   items: CollectionItem[]
   repos: Map<string, RepoRead>
   logFiles: Map<string, LogFile>
@@ -949,5 +962,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     claudeUntested: [...new Set(cards.filter((c) => c.live && c.claudeUntested).map((c) => c.claude!))],
     shells: (shells ?? []).map((shell) => ({ ...shell, activity: shellActivity(shell) })),
     termsUp: shells !== undefined,
+    jobs: recentJobs(jobsNow(view.jobs, view.heldJobs && new Set(view.heldJobs.map((j) => j.id))), now),
+    jobsUp: view.heldJobs !== undefined,
   }
 }
