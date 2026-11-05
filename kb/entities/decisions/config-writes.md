@@ -41,7 +41,9 @@ leave the config worse than it found it, since the tower is what still stands wh
 - **No new problems.** [`checkedEdit`](ref:hub/src/config-edit.ts#checkedEdit) refuses (`config`) an edit that would
   bring any problem `tower config check` names that the config didn't have before
   ([`newProblems`](ref:hub/src/config-edit.ts#newProblems)), warnings included: a key the tower would ignore, such as
-  a typo, is refused, each problem named at its key. Problems the user already had don't hold an edit back.
+  a typo, is refused, each problem named at its key. Problems the user already had don't hold an edit back: they are
+  counted as a multiset by level, words and key with its array indexes taken out, so a broken repo that only moved up
+  when an element before it was removed is still one the config had.
 - **The write and the reread.** [`editConfig`](ref:hub/src/config-edit.ts#editConfig) reads, edits, checks and writes
   in one synchronous step, so two edits in the tower never interleave; it writes two-space JSON beside the file's real
   path with its mode and renames it into place, so a config that is a link stays one. Then the verb has the tower take

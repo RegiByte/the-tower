@@ -116,12 +116,24 @@ export const edited = (config: Config, edit: ConfigEdit): Edited | ApiError => {
   }
 }
 
-const problemKey = (p: ConfigProblem) => `${p.level}\n${p.key}\n${p.problem}`
+/**
+ * A problem as an edit compares it: its key without array indexes, since removing an element renumbers the problems
+ * after it. The problem's words name the value, so a problem that only moved still tells apart from a new one.
+ */
+const problemKey = (p: ConfigProblem) => `${p.level}\n${p.key.replace(/\[\d+\]/g, '[]')}\n${p.problem}`
 
-/** The problems `after` has that `before` didn't, of any level: what an edit would break. Pure but for reading extensions' folders. */
+/**
+ * The problems `after` has that `before` didn't, of any level, counted as a multiset: what an edit would break. Pure
+ * but for reading extensions' folders.
+ */
 export const newProblems = (before: Config, after: Config): ConfigProblem[] => {
-  const had = new Set(configProblems(before).map(problemKey))
-  return configProblems(after).filter((p) => !had.has(problemKey(p)))
+  const had = new Map<string, number>()
+  for (const p of configProblems(before)) had.set(problemKey(p), (had.get(problemKey(p)) ?? 0) + 1)
+  return configProblems(after).filter((p) => {
+    const left = had.get(problemKey(p)) ?? 0
+    had.set(problemKey(p), left - 1)
+    return left <= 0
+  })
 }
 
 /** The edit, refused when it would bring a new problem, each named at its key. Pure but for reading extensions' folders. */
