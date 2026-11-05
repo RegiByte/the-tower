@@ -877,7 +877,8 @@ stand now, drawn in place, and a view without it is mounted afresh when they cha
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
 where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its
 location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
-`shell/<id>` with the renderer's xterm, font, scheme and keymap), `href(to)` (the hash of the renderer's page
+`shell/<id>` with the renderer's xterm, font, scheme and keymap, or on `job/<id>`, a job's screen, read only and at
+the job's size, API 1.150), `href(to)` (the hash of the renderer's page
 that displays `to`, a subject, or goes to `to`, a location, when a link takes the page there, for a link drawn in a
 frame where nothing runs, which can only navigate: for a subject, the location it is displayed at, which a reload
 reads again; API 1.121, and optional: no view needs it, and in a renderer that doesn't lend it `tower/document` and

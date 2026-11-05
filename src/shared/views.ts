@@ -170,7 +170,8 @@ export const busOf = (): Bus => {
  * hosts the views that do.
  */
 export type Kit = {
-  terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}`): TermViewHandle
+  /** `job/<id>`: a job's screen, read only, following the job's size (@since 1.150). */
+  terminal(host: HTMLElement, path: `terminal/${string}` | `shell/${string}` | `job/${string}`): TermViewHandle
   region(host: HTMLElement, id: string, subject: Subject, options?: RegionOptions): RegionHandle
   run(command: string, on?: Subject): Promise<boolean>
   display(subject: Subject | string, opts?: { view?: string }): void

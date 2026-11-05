@@ -17,6 +17,7 @@ import { menu } from './menu.js'
  * @import { TermViewHandle } from '../../src/shared/term-view.ts'
  * @import { Tower, TerminalMsg } from '../../src/shared/shelf-page.ts'
  * @import { ShellStream } from '../../src/shared/terms.ts'
+ * @import { JobStream } from '../../src/shared/jobs.ts'
  * @import { Scheme } from '../../src/shared/design.ts'
  * @import { MenuItem } from './menu.js'
  * @import { TermFont } from '../../src/shared/terminal.ts'
@@ -149,8 +150,40 @@ export function regions(deps) {
     /** @type {boolean | undefined} */
     let seen
 
-    /** @param {HTMLElement} host @param {`terminal/${string}` | `shell/${string}`} path @returns {TermViewHandle} */
+    /**
+     * A job's screen, read only: its snapshot marked as viewed elsewhere, so the view follows the job's size and never
+     * resizes it, and keys go nowhere, since nothing types into a job.
+     * @param {HTMLElement} host @param {string} id @returns {TermViewHandle}
+     */
+    const jobTerminal = (host, id) => {
+      const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
+        watch: (on) =>
+          tower.watch(`job/${id}/screen`, (msg) => {
+            const job = /** @type {JobStream} */ (msg)
+            if (job.t === 'snapshot') return on({ ...job, terminals: 1 })
+            if (job.t === 'x') return on({ t: 'x', exitCode: job.exit ?? 1 })
+            on(job)
+          }),
+        resize: () => Promise.resolve(),
+        send: () => {},
+        claude: false,
+        scrollback: SHELL_SCROLLBACK,
+        font: termFont,
+        scheme,
+        keymap: () => board().keys,
+        run,
+        mode: () => {},
+        end: () => {},
+        error: (err) => commandKit.toast(err.message),
+      })
+      terminals.add(handle)
+      own.add(handle)
+      return { ...handle, close: () => (terminals.delete(handle), own.delete(handle), handle.close()) }
+    }
+
+    /** @param {HTMLElement} host @param {`terminal/${string}` | `shell/${string}` | `job/${string}`} path @returns {TermViewHandle} */
     const terminal = (host, path) => {
+      if (path.startsWith('job/')) return jobTerminal(host, path.slice('job/'.length))
       const [stream, id] = /** @type {['terminal' | 'shell', string]} */ (path.split('/'))
       const shell = stream === 'shell'
       host.classList.toggle('claude-term', !shell)
