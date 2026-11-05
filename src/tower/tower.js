@@ -94,6 +94,8 @@
  * routes directly, every stream multiplexed on one connection.
  */
 ;(() => {
+  if (window.tower) return
+
   /**
    * @typedef {import('../shared/shelf-page.ts').BoardError} BoardError
    * @typedef {import('../shared/shelf-page.ts').BoardMsg} BoardMsg
