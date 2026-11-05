@@ -20,6 +20,8 @@ import type { Pattern } from './capabilities.ts'
 import type { Config, Renderer } from './model.ts'
 import type { Prefs } from './prefs.ts'
 import type { ShellStream } from './terms.ts'
+import type { Job } from '../bridge/jobs.ts'
+import type { JobStream } from './jobs.ts'
 import type { Subject } from './subjects.ts'
 import type { Location } from './views.ts'
 
@@ -38,6 +40,8 @@ export type Reads = {
   'conversations/<id>/tool/<call>': ToolCall
   /** A project's cards the board leaves out (`onBoard`), newest first: the same cards, read again when `board.archiveAt` or the floor's `archived` moves. */
   'archive/<project>': Card[]
+  /** Every job the jobs log holds, newest first, each in its state: `board.jobs` keeps only the recent ones. @since 1.149 */
+  jobs: Job[]
   /** What changed in each of the session's repos, as git reads it now, `changes/<id>?scope` (`Queries['changes/<id>']`): all since the base, uncommitted, or one commit. */
   'changes/<id>': RepoChanges[]
   /** A project's review threads, live and landed (Tidy files a landed one as `<checkout>@<time>.md`), and each author's notes, replies and verdicts. */
@@ -142,8 +146,8 @@ export type ScreenMsg =
  */
 export type TerminalMsg = Exclude<ScreenMsg, { t: 'snapshot' }> | (Extract<ScreenMsg, { t: 'snapshot' }> & { terminals: number })
 
-/** SSE streams: `screen/<id>` carries `ScreenMsg`, `terminal/<id>` `TerminalMsg`, `shell/<id>` `ShellStream`. */
-export type Streams = { 'screen/<id>': ScreenMsg; 'terminal/<id>': TerminalMsg; 'shell/<id>': ShellStream }
+/** SSE streams: `screen/<id>` carries `ScreenMsg`, `terminal/<id>` `TerminalMsg`, `shell/<id>` `ShellStream`, `job/<id>/screen` `JobStream` (@since 1.149). */
+export type Streams = { 'screen/<id>': ScreenMsg; 'terminal/<id>': TerminalMsg; 'shell/<id>': ShellStream; 'job/<id>/screen': JobStream }
 
 /** What a page asks of the tower page that frames it, not of the system. */
 export type TowerVerb =

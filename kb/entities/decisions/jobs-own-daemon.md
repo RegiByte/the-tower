@@ -39,6 +39,10 @@ and read back like every other fact ([[logs-are-facts]]).
   says so otherwise, as it does for the host ([`updateJobs`](ref:hub/src/update.ts#updateJobs)): a restart ends every
   running job.
 
+- **The tower's verbs.** `job/start` and `job/cancel` act for their caller, who owns the job. They do no more than
+  `spawn` can, so the same-user trust and the Origin rules cover them ([[agents-have-every-capability]]). Extensions
+  start jobs through `ctx.jobs`, owned by their capability; `ctx.run` stays for short commands.
+
 **Alternatives considered.**
 
 - **Jobs in terms.** Terms keeps the user's shells and never logs, on purpose, since users paste credentials into
@@ -53,4 +57,4 @@ and read back like every other fact ([[logs-are-facts]]).
 
 **Consequences.** The log format is a contract read by every renderer and extension. A tower restart no longer stops a
 job; a jobs daemon restart does, and a job's screen is lost with it. The tower's side, the verbs, `board.jobs` and the
-extensions' `ctx.jobs`, reads this log and the daemon's list.
+extensions' `ctx.jobs`, reads this log and the daemon's list ([[jobs]]).

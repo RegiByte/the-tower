@@ -14,7 +14,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.148'
+export const API_VERSION = '1.149'
 
 const id = z.string().min(1)
 
@@ -296,6 +296,25 @@ export const VERBS = {
   'shell/keys': { input: z.object({ id, data: z.string() }).describe('Keys reach a shell in order, one request at a time.'), reply: ok },
   'shell/resize': { input: z.object({ id, ...size }).describe("Resize the shell's PTY."), reply: ok },
   'shell/kill': { input: z.object({ id }).describe('End the shell.'), reply: ok },
+  'job/start': {
+    input: z
+      .strictObject({
+        argv: z.array(z.string()).min(1).describe('The command, its program first: a name on the job\'s PATH, or a path from `cwd`.'),
+        cwd: absolute.describe('The folder it runs in: any folder that exists.'),
+        env: z.record(z.string(), z.string()).optional().describe("Set over the jobs daemon's scrubbed environment, and never logged: where a secret goes. Nothing can answer a prompt, so this is also how to stop one (`GIT_TERMINAL_PROMPT=0`)."),
+        label: z.string().describe('What the job is, in words, as renderers show it.'),
+      })
+      .describe(
+        "Run a command to its end in the jobs daemon, outside the tower: it outlives a tower restart, ends with a jobs daemon restart, and takes no input. The caller owns it (`board.jobs[].owner`: the user, a worker's session, an extension's capability). Its start, a cancel and its end are facts in the jobs log, which every renderer and worker reads for as long as the log is kept: `argv` is kept there, `env` and the output never. Its screen streams at `GET /job/<id>/screen`. `not_found` when the program isn't there; `unavailable` while the jobs daemon doesn't run. @since 1.149",
+      ),
+    reply: z.object({ t: z.literal('started'), id: z.string() }),
+  },
+  'job/cancel': {
+    input: z
+      .object({ id })
+      .describe("Stop a running job: SIGTERM to its process group, SIGKILL to what still runs in it 5 s later. Its `ended` follows. `refused` once it ended; `not_found` for a job the daemon doesn't hold. @since 1.149"),
+    reply: ok,
+  },
   'collection/create': {
     input: z
       .object({
