@@ -4,6 +4,8 @@
   "names": [
     "verbs.add",
     "verbs.start",
+    "verbs.add-repo",
+    "verbs.remove-repo",
     "reads.dirs",
     "client.commands.js#newFloor",
     "client.floor-form.js#SOURCES",

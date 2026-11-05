@@ -2,7 +2,7 @@
   "id": "floors",
   "version": "1.0",
   "title": "Floors",
-  "description": "New floors from the tower: a folder that already holds a project, or a new project started from scratch, each added to the config through config/add.",
+  "description": "New floors from the tower, and a floor's repos: a floor for a folder that already holds a project, or a new project started from scratch, added to the config through config/add; a floor's repos changed through config/append and config/remove.",
   "requires": {
     "tower": "1.147"
   },
@@ -56,7 +56,7 @@
   "verbs": {
     "add": {
       "scope": "system",
-      "description": "Add a floor whose hub is a folder that already exists, such as a project already on the machine. Refused when the folder doesn't exist, or the config already has a floor of that id.",
+      "description": "Add a floor whose hub is a folder that already exists, such as a project already on the machine, with the other folders its sessions also work in as its repos. Refused when a folder doesn't exist, a repo is the hub or is named twice, or the config already has a floor of that id.",
       "input": {
         "type": "object",
         "additionalProperties": false,
@@ -79,7 +79,15 @@
           "hub": {
             "type": "string",
             "pattern": "^/",
-            "description": "The absolute folder its sessions start in."
+            "description": "The absolute folder its sessions start in by default; the new-worker form can start one elsewhere."
+          },
+          "repos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^/"
+            },
+            "description": "Other absolute folders its sessions also work in, none when left out: each must exist and not be the hub."
           }
         }
       },
@@ -161,6 +169,107 @@
         "label": "Start a project",
         "hint": "a new folder and git repository, and a floor for it"
       }
+    },
+    "add-repo": {
+      "scope": "project",
+      "description": "Add a folder to a floor's repos, the folders its sessions also work in besides the hub, through config/append. A folder the floor's repos hold already answers `unchanged`. Refused when the folder doesn't exist or is the hub.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "project",
+          "path"
+        ],
+        "properties": {
+          "project": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "description": "The floor's id."
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "The absolute folder to add."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "project",
+          "path"
+        ],
+        "properties": {
+          "t": {
+            "enum": [
+              "added",
+              "unchanged"
+            ]
+          },
+          "project": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "The repo, as the config holds it."
+          }
+        }
+      },
+      "words": {
+        "label": "Add a repo",
+        "hint": "another folder this floor's sessions work in"
+      }
+    },
+    "remove-repo": {
+      "scope": "project",
+      "description": "Remove a folder from a floor's repos, through config/remove with the repo as read: refused (`changed`) when the repos changed in between, so read them again. The folder itself is left as it is.",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "project",
+          "path"
+        ],
+        "properties": {
+          "project": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "description": "The floor's id."
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/",
+            "description": "The repo to remove, as the config holds it."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "t",
+          "project",
+          "path"
+        ],
+        "properties": {
+          "t": {
+            "enum": [
+              "removed"
+            ]
+          },
+          "project": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "The repo, as the config holds it."
+          }
+        }
+      },
+      "words": {
+        "label": "Remove a repo",
+        "hint": "the folder stays; the floor's sessions stop working in it"
+      }
     }
   },
   "reads": {
@@ -226,7 +335,7 @@
     }
   },
   "guidance": {
-    "brief": "New floors: `tower x floors add|start` adds a floor for a folder on the machine or a new project.",
-    "full": "When the user asks for a new floor, use this extension's verbs rather than editing config.json by hand: `add` for a folder already on the machine (`{\"id\", \"name\", \"hub\"}`), `start` for a project from scratch (`{\"id\", \"name\", \"into\"}`, a git repository with a first commit). Each adds `projects.<id>` with no repos; other keys (repos, color, shelf) are a hand edit after. `tower x floors dirs '{\"path\": \"/abs\"}'` lists a folder's folders."
+    "brief": "New floors and a floor's repos: `tower x floors add|start` adds a floor for a folder on the machine or a new project; `add-repo` and `remove-repo` change a floor's repos.",
+    "full": "When the user asks for a new floor or to change a floor's repos, use this extension's verbs rather than editing config.json by hand: `add` for a folder already on the machine (`{\"id\", \"name\", \"hub\", \"repos\"?}`), `start` for a project from scratch (`{\"id\", \"name\", \"into\"}`, a git repository with a first commit), `add-repo` and `remove-repo` (`{\"project\", \"path\"}`) for the other folders a floor's sessions work in. The hub is where its sessions start by default; repos are other folders they also work in. `tower x floors dirs '{\"path\": \"/abs\"}'` lists a folder's folders."
   }
 }
