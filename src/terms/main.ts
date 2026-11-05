@@ -10,26 +10,22 @@ import net from 'node:net'
 import path from 'node:path'
 import * as pty from '@lydell/node-pty'
 import { endOnReadError } from '../shared/pty.ts'
-import { headlessTerminal, serializer, type Terminal } from '../bridge/screen.ts'
+import { headlessTerminal, serializer } from '../bridge/screen.ts'
 import { withoutParentSession, withoutTerminal } from '../shared/env.ts'
 import { sessionDirs, type Config } from '../shared/model.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
 import { checkSize, frame, jsonObject, onLines } from '../shared/protocol.ts'
 import { claimSocket } from '../shared/socket.ts'
+import { broadcast, joinViewer, socketViewer, type Screened } from '../shared/viewers.ts'
 import { SHELL_SCROLLBACK, type FromTerms, type Shell, type ShellStream, type ToTerms } from '../shared/terms.ts'
 
 const SHELL = process.env.SHELL
 if (!SHELL) throw new Error('SHELL is not set: the terms daemon starts every shell with it')
 
-type Viewer = (msg: ShellStream) => void
-
-type LiveShell = {
+type LiveShell = Screened<ShellStream> & {
   shell: Omit<Shell, 'process' | 'title'>
   proc: pty.IPty
-  screen: Terminal
-  snapshot: () => string
   title?: string
-  viewers: Set<Viewer>
 }
 
 const paths = systemPaths(configPath())
@@ -39,16 +35,6 @@ const liveShell = (id: string): LiveShell => {
   const s = shells.get(id)
   if (!s) throw Object.assign(new Error(`No shell "${id}"`), { code: 'not_found' as const })
   return s
-}
-
-const broadcast = (s: LiveShell, msg: ShellStream) => {
-  for (const viewer of s.viewers) viewer(msg)
-}
-
-/** A shell's exit ends its viewers' connections. */
-const socketViewer = (sock: net.Socket): Viewer => (msg) => {
-  sock.write(frame(msg))
-  if (msg.t === 'x' || msg.t === 'error') sock.end()
 }
 
 function spawnShell({ project: projectId, cwd, cols, rows }: Extract<ToTerms, { t: 'spawn' }>): string {
@@ -111,24 +97,12 @@ function handle(msg: Exclude<ToTerms, { t: 'attach' }>): FromTerms {
   }
 }
 
-/**
- * The viewer joins before the snapshot is taken, and the snapshot waits for the screen to parse everything written
- * before it: output that arrives meanwhile is held back and sent after the snapshot, so none is lost or repeated.
- */
+/** A shell's exit ends its viewers' connections. */
 function attach(sock: net.Socket, id: string) {
-  const viewer = socketViewer(sock)
+  const viewer = socketViewer<ShellStream>(sock)
   const s = shells.get(id)
   if (!s) return viewer({ t: 'error', message: `No shell "${id}"` })
-  const held: ShellStream[] = []
-  const hold: Viewer = (msg) => held.push(msg)
-  s.viewers.add(hold)
-  s.screen.write('', () => {
-    s.viewers.delete(hold)
-    viewer({ t: 'snapshot', data: s.snapshot(), cols: s.shell.cols, rows: s.shell.rows })
-    held.forEach(viewer)
-    if (shells.has(id) && !sock.destroyed) s.viewers.add(viewer)
-  })
-  sock.on('close', () => s.viewers.delete(viewer))
+  void joinViewer<ShellStream>(s, viewer, sock, (data) => ({ t: 'snapshot', data, cols: s.shell.cols, rows: s.shell.rows }), () => shells.has(id))
 }
 
 const reply = (msg: Exclude<ToTerms, { t: 'attach' }>): FromTerms => {
