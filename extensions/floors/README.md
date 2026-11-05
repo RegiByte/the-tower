@@ -22,14 +22,26 @@ picks where the hub comes from:
 The name and id are derived as you type (the id from the name, the name from the folder or the URL), and the line
 above the button says what will happen.
 
+| Light | Dark |
+| --- | --- |
+| ![The New floor form with its three sources and a folder browser](shots/form-light.png) | ![The New floor form with its three sources and a folder browser](shots/form-dark.png) |
+
 **A clone is a job** of the jobs daemon, so restarting the tower doesn't stop it (restarting the jobs daemon does). A
 note at the top of the sidebar follows it: *Cloning …* with Stop and Watch while it runs; once it ends with exit 0 the
 floor is added and the note goes. A clone that failed, was stopped or was lost keeps a note with Remove (deletes its
 folder, only if git started it, asking first), Retry and Dismiss. **Watch clones**, in the palette, shows each running
 clone's screen, and a failed one's for a few minutes. The floor is on the board as soon as the tower reads the config it added.
 
+| Light | Dark |
+| --- | --- |
+| ![A failed clone's screen with its URL and what it came to](shots/clones-light.png) | ![A failed clone's screen with its URL and what it came to](shots/clones-dark.png) |
+
 **Open Repos** under a floor's folders (and in the palette on a floor) shows its hub and repos in the main pane:
 remove a repo, or browse to a folder and add it.
+
+| Light | Dark |
+| --- | --- |
+| ![A floor's repos: its hub, its repos and the folder browser](shots/repos-light.png) | ![A floor's repos: its hub, its repos and the folder browser](shots/repos-dark.png) |
 
 ### The API
 
