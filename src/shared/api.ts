@@ -122,6 +122,23 @@ export const SPAWN_FIELDS = z.strictObject({
     ),
 })
 
+const pathWords = (path: PropertyKey[]): string =>
+  path.reduce<string>((at, key) => (typeof key === 'number' ? `${at}[${key}]` : at ? `${at}.${String(key)}` : String(key)), '')
+
+/**
+ * What is wrong with some of a spawn's fields, each problem at its path (`cut.name`): none for fields a spawn would
+ * take. For code that holds spawn fields of its own to check before any spawn, such as a policy's `hire`.
+ */
+export function spawnProblems(fields: unknown): { path: string; message: string }[] {
+  const parsed = SPAWN_FIELDS.partial().safeParse(fields)
+  if (parsed.success) return []
+  return parsed.error.issues.flatMap((issue) =>
+    issue.code === 'unrecognized_keys'
+      ? issue.keys.map((key) => ({ path: pathWords([...issue.path, key]), message: 'unknown key' }))
+      : [{ path: pathWords(issue.path), message: issue.message }],
+  )
+}
+
 /** A policy's item id in its project's `policies` collection. */
 const policy = z.string().regex(ITEM_ID).describe("The policy: its item's id in the project's `policies` collection.")
 
