@@ -8,11 +8,14 @@
     "verbs.remove-repo",
     "reads.dirs",
     "client.commands.js#newFloor",
+    "client.dirs.js#DIRS_CSS",
+    "client.dirs.js#browser",
     "client.floor-form.js#SOURCES",
     "client.floor-form.js#callOf",
     "client.floor-form.js#derived",
     "client.floor-form.js#missing",
     "client.floor-form.js#slugOf",
-    "client.form.js#mount"
+    "client.form.js#mount",
+    "client.repos.js#mount"
   ]
 }

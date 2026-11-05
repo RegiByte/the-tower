@@ -7,14 +7,21 @@ repos of a floor.
 
 ### The tower page
 
-**A `+` beside Floors and Stats** in the sidebar (the page's `board.sign` region), and **New floor** in the palette,
-open the form in the main pane. It picks where the hub comes from:
+**New floor beside Floors and Stats** in the sidebar (the page's `board.sign` region, drawn as stacked floors under
+a small plus, since a `+` on a floor's row is a new worker), and in the palette, opens the form in the main pane. It
+picks where the hub comes from:
 
-- **Existing folder**: browse the machine's folders (`git` marks a repository) or type an absolute path.
-- **New project**: a new folder (`<root>/<id>` unless you name another), `git init` and a first commit holding a README, so worktrees can be cut from it.
+- **Existing folder**: browse the machine's folders (`git` marks a repository) or type an absolute path. **Repos**,
+  optional, are the other folders its sessions also work in, each picked with the same browser; a project in one
+  repository leaves them empty.
+- **New project**: a new folder (`<root>/<id>` unless you name another), `git init` and a first commit holding a
+  README, so worktrees can be cut from it.
 
-The name and id are derived as you type (the id from the name, the name from the folder), and the line
-above the button says what will happen. The floor is on the board as soon as the tower reads the config it added.
+The name and id are derived as you type (the id from the name, the name from the folder), and the line above the
+button says what will happen. The floor is on the board as soon as the tower reads the config it added.
+
+**Open Repos** under a floor's folders (and in the palette on a floor) shows its hub and repos in the main pane:
+remove a repo, or browse to a folder and add it.
 
 ### The API
 
