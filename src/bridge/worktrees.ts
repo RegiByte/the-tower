@@ -310,5 +310,5 @@ export const treeAt = (reads: RepoRead[], cwd: string): TreeRead | undefined =>
  * `dirty` uncommitted files on top of it; `unpushed` names the commits of it on no remote.
  */
 /** `base`: recorded when the tower cut `branch`; a branch it didn't cut is kept. */
-export type Tip = { dir: string; branch?: string; base?: string; tip: string; head: string; dirty: number; unpushed: string[] }
+export type CheckoutTip = { dir: string; branch?: string; base?: string; tip: string; head: string; dirty: number; unpushed: string[] }
 

@@ -32,7 +32,7 @@ import {
   type LandingRead,
   type Occupant,
   type RepoRead,
-  type Tip,
+  type CheckoutTip,
   type TowerRecord,
   type TreeRead,
   type WorktreeState,
@@ -837,7 +837,7 @@ export type Held = { dir: string; head: string; dirty: number }
  * The at-risk worktree `name` after a fetch, each repo as `held` says the board showed it, with what each holds as a
  * tip: its HEAD, or a snapshot of it with its uncommitted files (`snapshot`), on no branch. Refused when any moved.
  */
-export const discardable = async (project: Project, projectId: string, name: string, occupants: Occupant[], held: Held[]): Promise<Tip[]> => {
+export const discardable = async (project: Project, projectId: string, name: string, occupants: Occupant[], held: Held[]): Promise<CheckoutTip[]> => {
   const tree = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['at-risk'])
   const moved = tree.repos.filter((r) => !held.some((h) => h.dir === r.dir && h.head === r.head && h.dirty === r.dirty))
   if (moved.length || held.length !== tree.repos.length)
@@ -856,7 +856,7 @@ export const discardable = async (project: Project, projectId: string, name: str
 }
 
 /** Each repo's worktree removed with `--force`, and its branch deleted at the head `discardable` read, once noted. */
-export const discard = async (name: string, tips: Tip[]) => {
+export const discard = async (name: string, tips: CheckoutTip[]) => {
   for (const t of tips) await wholeTree(t.dir, ['worktree', 'remove', '--force', worktreePath(t.dir, name)])
   return deleteBranches(tips)
 }

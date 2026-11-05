@@ -3,7 +3,7 @@
  * (`landedThreadId`), and a discard's recovery note, each repo's branch and tip, left on the thread before it is filed.
  */
 import type { FloorThread } from './threads.ts'
-import type { Tip } from '../../src/bridge/worktrees.ts'
+import type { CheckoutTip } from '../../src/bridge/worktrees.ts'
 import type { TidyEntry } from '../../src/shared/extensions.ts'
 
 /** A floor's Tidy entry per thread whose work has landed, keyed by its checkout and belonging to it. */
@@ -20,7 +20,7 @@ export const tidyEntries = (threads: FloorThread[]): TidyEntry[] =>
     }))
 
 /** The note a discard leaves on the checkout's thread: what each repo held, and how to get it back while git keeps it. */
-export const discardNote = (name: string, tips: Tip[]): string =>
+export const discardNote = (name: string, tips: CheckoutTip[]): string =>
   [
     `Discarded the worktree ${name}: its work never landed. The branches the tower cut are deleted and their tips are on no branch, kept by git until it collects them (two weeks by default). To get one back, in its repo: \`git branch <name> <tip>\`.`,
     '',

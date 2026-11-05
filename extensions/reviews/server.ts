@@ -11,7 +11,7 @@
  * `tower.exempt`.
  */
 import type { Board, Card, Floor } from '../../src/bridge/board.ts'
-import type { Tip } from '../../src/bridge/worktrees.ts'
+import type { CheckoutTip } from '../../src/bridge/worktrees.ts'
 import { apiError, isApiError, type ApiError, type RouteInput } from '../../src/shared/api.ts'
 import { workerNamed } from '../../src/shared/crews.ts'
 import type { CallCtx, FoldCtx, LaunchParts, LaunchRequest, Part, Start } from '../../src/shared/extensions.ts'
@@ -189,7 +189,7 @@ const start: Start = (ctx) => {
         }
         return { done, skipped }
       },
-      'tower/discard.record': async ({ project, name, author, tips }: { project: string; name: string; author: string; tips: Tip[] }, { call }: CallCtx) => {
+      'tower/discard.record': async ({ project, name, author, tips }: { project: string; name: string; author: string; tips: CheckoutTip[] }, { call }: CallCtx) => {
         const noted = (await call('reviews/append', { project, checkout: name, author, anchors: [], body: discardNote(name, tips) })) as Appended | ApiError
         if (isApiError(noted)) return { ...noted, message: `the discard of "${name}" wasn't noted on its thread: ${noted.message}` }
         return { note: `noted as n${noted.n} on ${noted.id}`, item: { collection: REVIEWS, id: noted.id } }
