@@ -11,14 +11,17 @@ import { bundled, bundledFile, MODULES, towerClient } from '../src/tower/served.
 import { FACT_KINDS } from '../src/shared/rate-limits.ts'
 import { CLI_REGIONS, type Region } from '../src/shared/regions.ts'
 import { declaredAt } from '../src/renderers.ts'
+import { libraryNow, type Library } from './library.ts'
 
 /**
  * Holds what the tower serves to `test/served-exports.json`, and what extensions build on beside it: a removal without a
- * major, or any other difference from the list, fails. `npm run served:update` (`UPDATE_SERVED=1`) rewrites the list from what is served now; commit it.
+ * major, or any other difference from the list, fails. `npm run served:update` (`UPDATE_SERVED=1`) rewrites the list from what is served now, a new
+ * library name stamped with this minor, a known one keeping its `since`; commit it. A library module's digest moving means a type it reaches changed: the
+ * pull request says whether that is a minor or a major.
  */
 
 /** What renderers may build on, by URL, as of the API major it was written at. */
-type Served = { major: number; served: Record<string, string[]> }
+type Served = { major: number; served: Record<string, string[]>; library: Library }
 
 const REPO = path.join(import.meta.dirname, '..')
 const LIST = path.join(import.meta.dirname, 'served-exports.json')
@@ -96,7 +99,12 @@ test('the served modules keep every export renderers may import, until the API m
   const listed: Served = JSON.parse(readFileSync(LIST, 'utf8'))
   const now = servedNow()
   const major = Number(API_VERSION.split('.')[0])
-  const gone = Object.entries(listed.served).flatMap(([url, names]) => names.filter((n) => !now[url]?.includes(n)).map((n) => `  ${url}  ${n}`))
+  const library = libraryNow(listed.library, API_VERSION)
+  const heldBy = (mod: Library[string] | undefined) => ({ ...mod?.values, ...mod?.types })
+  const gone = [
+    ...Object.entries(listed.served).flatMap(([url, names]) => names.filter((n) => !now[url]?.includes(n)).map((n) => `  ${url}  ${n}`)),
+    ...Object.entries(listed.library ?? {}).flatMap(([url, mod]) => Object.keys(heldBy(mod)).filter((n) => !(n in heldBy(library[url]))).map((n) => `  ${url}  ${n}`)),
+  ]
   if (gone.length && major === listed.major) {
     assert.fail(
       [
@@ -108,7 +116,7 @@ test('the served modules keep every export renderers may import, until the API m
       ].join('\n'),
     )
   }
-  const written = `${JSON.stringify({ major, served: now } satisfies Served, null, 2)}\n`
+  const written = `${JSON.stringify({ major, served: now, library } satisfies Served, null, 2)}\n`
   if (process.env.UPDATE_SERVED) return writeFileSync(LIST, written)
   assert.equal(readFileSync(LIST, 'utf8'), written, `${path.relative(process.cwd(), LIST)} is stale: what the tower serves changed. Run \`${UPDATE}\` and commit it.`)
 })

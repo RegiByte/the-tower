@@ -21,7 +21,8 @@ import type { FloorPart } from '../extensions/reviews/threads.ts'
 import { BUNDLED, type Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import type { Card } from '../src/bridge/board.ts'
-import { CORE_VIEWS_DIR, MODULES, sourceUrl } from '../src/tower/served.ts'
+import { CORE_VIEWS_DIR, MODULES, sourceUrl, libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
+import type { Library } from './library.ts'
 import { bundledClient } from '../src/extensions.ts'
 import { decide, standing } from '../extensions/policies/client/policies.ts'
 import { slotWords } from '../src/shared/slots.ts'
@@ -193,6 +194,7 @@ function seed(port: number) {
   writeFileSync(path.join(HUB, 'report', '.secret'), 'hidden')
   writeFileSync(path.join(HUB, 'report', 'chart.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]))
   writeFileSync(path.join(RENDERER, 'index.html'), '<!doctype html><title>renderer</title>')
+  writeFileSync(path.join(RENDERER, 'library.html'), '<!doctype html><html><head><title>library</title><script type="module" src="/lib/view.js"></script><script type="module" src="/lib/changes.js"></script></head></html>')
   writeFileSync(path.join(RENDERER, '.secret'), 'hidden')
   writeFileSync(path.join(ROOT, 'collections', 'lab', 'policies', 'nightly.md'), POLICY)
   mkdirSync(path.join(ROOT, 'streams', 'system', 'probe.quota'), { recursive: true })
@@ -496,6 +498,41 @@ test("server: a page gets one copy of each module: no served module, core view o
     const copied = [...text.matchAll(/^\/\/ (src\/\S+\.ts)$/gm)].map(([, at]) => at).filter((at) => sourceUrl(path.join(REPO, at!)) !== url)
     assert.deepEqual(copied, [], `${url} inlines files the tower serves at their own URLs`)
   }
+})
+
+/** The names a served module's text exports, as esbuild writes them: `export {\n  a,\n  b\n} from "…"` and `export const a`. */
+const exportedNames = (text: string) =>
+  [...text.matchAll(/^export \{([^}]*)\}/gm)].flatMap(([, list]) => list!.split(',').map((name) => name.trim()).filter(Boolean)).concat([...text.matchAll(/^export const (\w+)/gm)].map(([, name]) => name!)).sort()
+
+test('server: each /lib/ URL exports what the list says, at one URL, and a browser is told that server code is not for it', async () => {
+  const { library } = JSON.parse(readFileSync(path.join(REPO, 'test', 'served-exports.json'), 'utf8')) as { library: Library }
+  assert.deepEqual(Object.keys(library).sort(), libraryUrls())
+  for (const url of libraryUrls()) {
+    const reply = await get(url)
+    assert.equal(reply.status, 200, `${url}: ${reply.body.slice(0, 300)}`)
+    assert.equal(reply.headers['access-control-allow-origin'], '*', url)
+    assert.deepEqual(exportedNames(reply.body), Object.keys(library[url]!.values).sort(), url)
+    assert.equal(/throw new Error/.test(reply.body), SERVER_ONLY.includes(url), url)
+  }
+  assert.equal((await get('/src/lib/words.js')).status, 404)
+  const told = (await get('/lib/extension.js')).body
+  assert.match(told, /server code/)
+  assert.match(told, /import type/)
+})
+
+test('server: a page loading /lib/view.js and /lib/changes.js gets one press.ts, and the library keeps its hashed URLs and preloads', async () => {
+  const page = (await get('/r/plain/library.html')).body
+  const map = JSON.parse(/<script type="importmap">(.*?)<\/script>/.exec(page)![1]!) as { imports: Record<string, string> }
+  const preloads = [...page.matchAll(/<link rel="modulepreload" href="([^"]+)">/g)].map(([, url]) => url!)
+  for (const url of ['/lib/view.js', '/lib/changes.js', '/shared/press.js']) {
+    assert.match(map.imports[url] ?? '', /\.[0-9a-f]{10}\.js$/, `${url} has no hashed URL in the page's map`)
+    assert.ok(preloads.includes(map.imports[url]!), `${url} is not preloaded at its hashed URL`)
+    assert.match((await get(map.imports[url]!)).headers['cache-control'] as string, /immutable/, url)
+  }
+  assert.deepEqual(preloads.filter((url) => /\/press(\.[0-9a-f]{10})?\.js$/.test(url)), [map.imports['/shared/press.js']], 'one press.ts on the page')
+  const texts = await Promise.all(preloads.map(async (url) => (await get(url)).body))
+  const pressing = texts.filter((text) => /\binFlight\d*\s*=\s*(?:\/\* @__PURE__ \*\/ )?new (?:Map|Set|WeakMap|WeakSet)\b/.test(text))
+  assert.equal(pressing.length, 1, 'one file holds the in-flight set')
 })
 
 test('server: a sandboxed html file read by a script is the file as written; loaded any other way, its frame keys follow it', async () => {

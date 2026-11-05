@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "es2024",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "es2024"
+    ],
+    "types": [],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "highlight.js": [
+        "./highlight.d.ts"
+      ],
+      "highlight.js/*": [
+        "./highlight.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "globals.d.ts",
+    "../../src/lib/board.ts",
+    "../../src/lib/words.ts",
+    "../../src/lib/markdown.ts",
+    "../../src/lib/machine.ts",
+    "../../src/lib/time.ts",
+    "../../src/lib/files.ts",
+    "../../src/lib/design.ts",
+    "../../src/lib/cards.ts",
+    "../../src/lib/stats.ts",
+    "../../src/lib/capabilities.ts"
+  ]
+}
