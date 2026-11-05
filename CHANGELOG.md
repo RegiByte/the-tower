@@ -12,6 +12,33 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.92.0
+
+Long-running work gets its own daemon, and floors can be added from the tower: a folder, a new project, or a
+repository cloned by URL. No host restart and no config change. API 1.150 (additions only). A fourth daemon, `jobs`,
+joins the host, terms and the tower: run `tower up` once after updating to start it (`tower down tower`, then
+`tower up`, also restarts the tower on the new code). The open page offers the reload.
+
+- **Jobs: a command run to its end, outside the tower.** The jobs daemon (`jobs.sock`) runs each job in its own PTY
+  and alone writes `~/.tower/jobs/YYYY-MM.jsonl`: when a job started, ended (its exit code or signal) and was
+  cancelled. It never logs a job's output or its `env`; its argv is kept with the log, so secrets go in `env`. A job
+  outlives tower and extension restarts; restarting the jobs daemon ends what it runs, and a job it no longer holds
+  reads as lost. Cancel and stop end the job's whole process group. `board.jobs` holds the jobs running or ended in
+  the last day, `board.jobsUp` says whether the daemon answers, and `GET /jobs` reads them all. `job/start` and
+  `job/cancel` start and cancel one, `GET /job/<id>/screen` streams its screen, extensions start their own with
+  `ctx.jobs`, workers use `tower job start|cancel|list`, and a view draws a job's screen with the kit's terminal.
+  Tidy archives the jobs log's closed months. `tower update` restarts the jobs daemon when its code changed and no
+  job runs, and says so otherwise (#416, #417).
+- **New floors from the tower: the bundled floors extension.** New floor, beside Floors and Stats, adds a floor for a
+  folder already on the machine, starts a new project (a folder, a git repository and a first commit), or clones a
+  repository by URL. The form explains the hub, where the floor's sessions start, and picks its other repos with
+  the same folder browser; a floor's Repos view adds and removes them. A clone runs as a job, so it survives a tower
+  restart, and the floor is added once it ends well. A clone that fails or is lost offers Remove (only the folder it
+  made), Retry and Dismiss, and Watch shows a running clone's screen. Workers reach the same verbs with
+  `tower x floors`. Built from Thiago de Gaspari's #391 (#415, #418).
+- **An ask's title stays readable.** When its actions don't fit beside it, the title takes its own line above them,
+  and the dismiss stays beside the title (#419).
+
 ## v1.91.1
 
 A press on the sidebar is no longer lost to a board update that changes nothing in it. No restart beyond the tower's
