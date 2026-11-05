@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.93.0
+
+Narration pauses and resumes. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config
+change, API 1.150 (unchanged). The open page offers the reload.
+
+- **Narration pauses where it is.** The player gains Pause beside the speed and Stop; it holds the voice mid-chunk and
+  turns to Resume, which goes on from there, in every player on the page at once. Pause listening and Resume listening
+  in the palette do the same. It works with the voice command and the browser's speech; a memo that comes while paused
+  waits its turn, and Stop while paused clears the pause. narrate 1.9. By @GlaucoNeves (#408).
+
 ## v1.92.0
 
 Long-running work gets its own daemon, and floors can be added from the tower: a folder, a new project, or a
