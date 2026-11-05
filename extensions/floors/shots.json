@@ -1,0 +1,61 @@
+{
+  "settings": {
+    "root": "$EXT/shots/seed/projects"
+  },
+  "seed": [
+    "tower x floors clone \"{\\\"id\\\": \\\"widgets\\\", \\\"name\\\": \\\"Widgets\\\", \\\"url\\\": \\\"https://example.invalid/acme/widgets.git\\\", \\\"into\\\": \\\"$TOWER_SANDBOX/clones/widgets\\\"}\""
+  ],
+  "scenes": [
+    {
+      "name": "form",
+      "open": "#v/floors/form",
+      "size": "1180x820",
+      "steps": [
+        {
+          "until": ".floor-form .sources"
+        },
+        {
+          "until": ".floor-form .summary"
+        },
+        {
+          "until": ".dirs [data-dir]",
+          "text": "atlas"
+        },
+        {
+          "eval": "document.querySelectorAll('.floor-form .crumb code').forEach((c) => { c.textContent = 'the projects folder' })"
+        }
+      ],
+      "crop": "[data-view=\"floors/form\"]",
+      "pad": 0
+    },
+    {
+      "name": "repos",
+      "open": "#v/floors/repos/floor%3Alab",
+      "size": "1180x560",
+      "steps": [
+        {
+          "until": "[data-view=\"floors/repos\"] [data-repos] li"
+        }
+      ],
+      "crop": "[data-view=\"floors/repos\"]",
+      "pad": 0
+    },
+    {
+      "name": "clones",
+      "open": "#v/floors/clones",
+      "size": "1180x760",
+      "steps": [
+        {
+          "until": ".clone",
+          "text": "widgets"
+        },
+        {
+          "until": ".clone .state",
+          "text": "failed"
+        }
+      ],
+      "crop": "[data-view=\"floors/clones\"]",
+      "pad": 0
+    }
+  ]
+}
