@@ -32,7 +32,8 @@ export type Browser = {
 
 /**
  * The browser drawn in `el`: a click on a folder goes into it, `↑ up` to its parent. `went` is told each folder a
- * click goes to, `listed` each listing drawn, and `failed` why one couldn't be read.
+ * click goes to, `listed` each listing drawn, and `failed` why one couldn't be read. Only the latest browse is drawn: a
+ * slower listing of a folder clicked before it is dropped.
  */
 export const browser = (
   el: HTMLElement,
@@ -40,6 +41,7 @@ export const browser = (
   on: { went?(dir: string): void; listed?(listing: Listing): void; failed(message: string): void },
 ): Browser => {
   let listing: Listing | undefined
+  let latest = 0
   el.classList.add('browse')
   el.innerHTML = `<div class="crumb"><button type="button" data-up aria-label="the folder above">↑ up</button><code></code></div><div class="dirs" role="list"></div>`
 
@@ -55,12 +57,15 @@ export const browser = (
   }
 
   const browse = async (dir?: string) => {
+    const n = ++latest
     try {
-      listing = (await tower.get(`floors/dirs${dir ? `?path=${encodeURIComponent(dir)}` : ''}` as never)) as unknown as Listing
+      const read = (await tower.get(`floors/dirs${dir ? `?path=${encodeURIComponent(dir)}` : ''}` as never)) as unknown as Listing
+      if (n !== latest) return
+      listing = read
       draw(listing)
       on.listed?.(listing)
     } catch (err) {
-      on.failed((err as Error).message)
+      if (n === latest) on.failed((err as Error).message)
     }
   }
 
