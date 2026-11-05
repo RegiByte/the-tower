@@ -4,7 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { spawnProblems } from '/lib/extension.js'
 import { libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
-import { checkRuntime, libraryInCore, libraryShapes, modulesOf, namedTwice, reachNow, REPO, RUNTIMES, shapeOf, type Library } from './library.ts'
+import { checkRuntime, libraryInCore, libraryShapes, modulesOf, namedTwice, reachesCore, reachNow, REPO, RUNTIMES, shapeOf, type Library } from './library.ts'
 
 const REACH = path.join(import.meta.dirname, 'library-reach.json')
 const listedLibrary = () => (JSON.parse(readFileSync(path.join(import.meta.dirname, 'served-exports.json'), 'utf8')) as { library: Library }).library
@@ -94,6 +94,12 @@ test('library: spawnProblems says what is wrong with spawn fields, each at its p
   assert.deepEqual(spawnProblems({ cwd: 'hub', model: 'opus' }), [])
   assert.deepEqual(spawnProblems({ nope: 1 }), [{ path: 'nope', message: 'unknown key' }])
   assert.deepEqual(spawnProblems({ cut: { name: 1 } }).map((p) => p.path), ['cut.name'])
+})
+
+test('library: the reach check counts every way in but the library', () => {
+  const reaching = (specifier: string) => reachesCore('extensions/autotidy/server.ts', specifier)
+  for (const specifier of ['../../src/shared/press.ts', '/cards.js', 'tower:media.js', '/shared/press.js', '/src/bridge/board.js', '/x/tower/parts.js', '/vendor/marked.js']) assert.ok(reaching(specifier), specifier)
+  for (const specifier of ['/lib/words.js', '/tower.js', './own.ts', 'zod']) assert.ok(!reaching(specifier), specifier)
 })
 
 test('library: the core never imports it by path, and only a core view imports it by URL', () => {
