@@ -808,7 +808,7 @@ has its `ctx.board`.
 `client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`, with
 its own modules and packages, and what it imports from the tower's `src/` loaded from the URL the tower serves it at,
 so it shares one instance with the page. An import of the library (`/lib/…`), of `/tower.js` or of an extension's client
-(`/x/…`) stays that URL, in a checkout or out of it, so a client outside the tower's folder imports them the same way. Each
+(`/x/…`) stays that URL, in a checkout or out of it, so a client outside the tower's folder imports them the same way. `/tower.js` run on a page that already has `window.tower` leaves it as it is. Each
 of `commands` is one of its modules' exports, with `words`, which may name its `icon` (API 1.130): one of the core's
 icons by name (`ICON` in `/icons.js`, `"play"`), or an SVG of its client folder by its path there (`"speaker.svg"`),
 which renderers draw as a mask in the ink of the control, so one glyph serves both palettes; a path to no file there
