@@ -1,5 +1,7 @@
-import { can, cardSubject, esc, floorSubject, lampOf, statusName } from '/cards.js'
-import { ICON } from '/icons.js'
+import { can, cardSubject, floorSubject } from '/lib/board.js'
+import { lampOf, statusName } from '/lib/cards.js'
+import { ICON } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 
 /**
  * The grid: a view on a floor (or the board) drawing up to four workers side by side, each cell the tower's `card.cell`

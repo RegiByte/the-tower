@@ -1,5 +1,7 @@
-import { esc, fileSubject } from '/cards.js'
-import { fileButtonsHtml, fileCall } from '/panels.js'
+import { fileSubject } from '/lib/board.js'
+import { MAIN_CHECKOUT } from '/lib/files.js'
+import { fileButtonsHtml, fileCall } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 
 /**
  * `files/explorer`: a worker's checkout as a tree beside the file opened from it, in the worker's tabs. Each repo of
@@ -83,7 +85,7 @@ const sizeWords = (bytes) => (bytes < 1024 ? `${bytes} B` : bytes < 1024 ** 2 ? 
 const dirtyOf = (board, card) => {
   const floor = board.floors.find((f) => f.id === card.project)
   if (!floor) return undefined
-  if (card.checkout === 'main') return floor.main?.dirty
+  if (card.checkout === MAIN_CHECKOUT) return floor.main?.dirty
   const tree = floor.worktrees.find((w) => w.name === card.checkout)
   return tree && tree.repos.reduce((n, r) => n + r.dirty, 0)
 }

@@ -4,7 +4,7 @@
   "title": "PR status",
   "description": "A badge on a worker's card naming the pull request of its branch and where it stands: open, draft, merged or closed.",
   "requires": {
-    "tower": "1.129"
+    "tower": "1.151"
   },
   "server": "server.ts",
   "settings": {

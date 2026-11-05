@@ -6,7 +6,7 @@
  * speech. While it reads, the part being read is marked on the page's bus (a document draws its section marked) and a
  * player says what is read, with its speed, Pause and Stop.
  */
-import { textOf } from '/cards.js'
+import { textOf } from '/lib/board.js'
 import { openPlayer } from './player.js'
 import { speedOf, speedWords, step } from './speed.js'
 import * as voice from './voice.js'

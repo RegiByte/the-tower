@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Chat",
   "description": "A plain text box at the foot of a worker's Brief that sends a prompt while the worker waits at its prompt, for people who would rather not type into a terminal.",
-  "requires": { "tower": "1.135" },
+  "requires": { "tower": "1.151" },
   "client": "client",
   "views": {
     "input": {
