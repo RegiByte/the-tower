@@ -213,7 +213,9 @@ and a framed document's section are the same thing.
   names where it sits, on the floor) at `row` scale, drawn once per collection of an open floor
   ([`rows`](ref:hub/renderers/page/regions.js#regions)): the page's sidebar paints a placeholder per collection, and
   the region moves into it a host kept mounted by the collection's key, through redraws and folds, closed when the
-  collection leaves the board or its pick changes. A row region's layout `order` also places its rows, those drawn by
+  collection leaves the board or its pick changes. A redraw that paints the sidebar as it was writes nothing: the
+  hosts are updated where they stand, and every control keeps its node, so a press that went down on one before the
+  board arrived still clicks it. A row region's layout `order` also places its rows, those drawn by
   a view it names first; the page's `renderer.json` names `drafts/tray`, `reviews/tray` and `policies/tray`, so the
   collections keep today's order, and its own trays (worktrees, stranded, archive, Tidy) follow them.
   [`tower/tray`](ref:hub/src/views/tray.ts#mount) draws any collection

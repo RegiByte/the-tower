@@ -125,8 +125,9 @@ function render() {
   const floors = $('floors')
   // The selected worker's row stays where a move or a click left it while in sight, so a move key's target stays in view.
   const anchor = sightAnchorOf(floors, selected()) ?? topAnchorOf(floors)
+  // A board that changes nothing drawn here keeps every control, so a press already down on one still clicks it.
   keepingFocus(floors, () => {
-    floors.innerHTML = floorsTopDown().map(floorHtml).join('')
+    if (!paintOnce(floors, floorsTopDown().map(floorHtml).join(''))) return floorTrays.refresh(floors)
     floorTrays.place(floors)
     holdRow(floors, anchor)
   })
