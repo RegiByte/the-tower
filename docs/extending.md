@@ -418,7 +418,69 @@ curl -s -XPOST $B/spawn -H "origin: $B" -H 'content-type: application/json' \
 curl -sN -m 2 $B/board | grep -m1 '^data:'      # the board, once: /board is a stream that never ends
 ```
 
+## The library
+
+The library is what code outside the core builds on: 24 modules at `/lib/<module>.js`, each a file of `src/lib/` that
+names what it re-exports and holds nothing else (API 1.151). One line works everywhere, so a module an extension's
+server and client share can use it:
+
+```js
+import { esc } from '/lib/words.js'
+```
+
+- **In a browser** it is a URL. A page gets one instance of each module however many modules import it.
+- **In an extension's server code** the tower's resolve hook maps the prefix to the same source it runs. A name the
+  library doesn't hold fails at import, listing the modules it has.
+- **In a bundler or an editor** it is a tsconfig path: `"/lib/*.js": ["<tower>/src/lib/*.ts"]`.
+
+Only `/lib/` is contract. A file's path under `src/`, its URL under `/shared/` or `/src/`, and anything else a checkout
+lets you reach can change in any release, whatever it happens to export. A name not in the library isn't lost: it
+joins as a minor the day something uses it.
+
+| Module | Runs | For | What it holds |
+|---|---|---|---|
+| `/lib/board.js` | generic | authors | the board's types and pure readings of it: subjects, what is offered and its calls, crews, checkouts |
+| `/lib/extension.js` | server | server | server code's types (Start, ctx, folds, parts, the shape of tower/config), API errors, and checking a spawn's fields |
+| `/lib/words.js` | generic | authors | text: escaping, plurals, spans, times, tags and item titles |
+| `/lib/view.js` | browser | authors | a view's types and chrome, panels drawn and kept, controls pressed, files and items, icons, highlighted code |
+| `/lib/markdown.js` | generic | authors | markdown as safe html, and its stylesheet |
+| `/lib/machine.js` | generic | authors | the loop machines run on, and held reads |
+| `/lib/time.js` | generic | authors | crons and periods: slots and their words |
+| `/lib/files.js` | generic | authors | media types, a floor's checkouts and repo names |
+| `/lib/keys.js` | browser | authors | the keymap: commands, chords and their labels |
+| `/lib/design.js` | generic | authors | palettes, type, the terminal theme, the sky |
+| `/lib/cards.js` | generic | renderers | a worker and a floor in words: status, health, duty, waits, rings, tidy, worktrees, limits |
+| `/lib/layout.js` | browser | renderers | regions, contributions ranked and fitted, views picked, locations and display |
+| `/lib/brief.js` | browser | renderers | a worker's brief |
+| `/lib/changes.js` | browser | renderers | the Changes panel, its reads and its line picking |
+| `/lib/stats.js` | generic | renderers | the Stats panel and its words |
+| `/lib/terminal.js` | browser | renderers | a browser terminal: face, size, keys, the view machine, a shell's stream |
+| `/lib/spawn.js` | browser | renderers | the new-worker dialog and its form |
+| `/lib/attend.js` | browser | renderers | what a viewer is told about waits |
+| `/lib/settings.js` | browser | renderers | the settings popover |
+| `/lib/palette.js` | browser | renderers | the command palette |
+| `/lib/chrome.js` | browser | renderers | toasts and tooltips |
+| `/lib/viewer.js` | browser | renderers | what a viewer keeps, and their appearance |
+| `/lib/capabilities.js` | generic | renderers | what the tower can teach, as tips |
+| `/lib/client.js` | browser | renderers | window.tower's types, the /tower.js client |
+
+Each module says where it runs. **generic** code runs anywhere (data, words, html as strings); **browser** code uses the
+platform's APIs; **server** code uses node's. `/lib/extension.js` is lent to node and not served to browsers: a browser
+that loads it gets an error saying so, and a client takes its types with `import type`, which leaves no import behind.
+A TypeScript client can't import the library yet: a JavaScript client can, by URL.
+
+**Versioning.** The library has no version of its own: `API_VERSION` is it, and `requires.tower` or a renderer's
+`/tower.js?v=` covers it. `test/served-exports.json` lists each module's runtime, its names with the minor each arrived
+in, and a digest of the declarations it reaches. Adding a name is a minor. Removing, renaming or changing the meaning of
+one is a major, after a deprecation: the name stays as an alias marked `@deprecated`, with its replacement, until that
+major. A digest that moves means a type a library name reaches changed, and the pull request says which kind of change
+that is. A name marked `@provisional` has met one consumer: it may change in a minor, with a `CHANGELOG.md` line saying
+what to use, and is never removed without a replacement before a major. A second consumer promotes it, for good.
+
 ## Served modules
+
+These modules are deprecated since 1.151 and go at 2.0, when each name that stays lives in [the library](#the-library):
+each answers with a `Deprecation` header. They keep working until then.
 
 The tower serves what its own renderers draw alike, for yours to import. Each is TypeScript from `src/shared`,
 served as an ES module, readable from a framed page too, and lent to extensions' server code as `tower:<name>.js`
@@ -574,7 +636,8 @@ calls, its stores, `raise` and `run`. The manifest's keys, the ctx members and t
 the served modules: removing one is a major.
 
 Server code reaches the tower's helpers by name, never by a path into its checkout, so a folder copied anywhere still
-loads: `import { mediaTypeOf } from 'tower:media.js'` imports the [served module](#served-modules) `/media.js`, the
+loads: `import { esc } from '/lib/words.js'` imports [the library](#the-library), the same line a client writes (since
+1.151). Until 2.0 the served modules are lent too: `import { mediaTypeOf } from 'tower:media.js'` imports the [served module](#served-modules) `/media.js`, the
 same instance the tower runs (since 1.131). Every served module is lent as `tower:<name>.js`, and a name the tower
 doesn't serve fails at import, saying which it lends. Only lent names cross over: a relative import into the tower's
 `src/` works only from inside the checkout. `import type` lines are erased before the module runs, so they never break
