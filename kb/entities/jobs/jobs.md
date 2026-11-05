@@ -18,7 +18,8 @@ the daemon answers; `GET /jobs` holds them all ([`jobsNow`](ref:hub/src/bridge/j
 [`recentJobs`](ref:hub/src/bridge/jobs.ts#recentJobs)). `job/start {argv, cwd, env?, label}` and `job/cancel {id}` act
 for their caller, who owns the job: a worker's session, an extension's capability (`ctx.jobs`, as the capability even
 inside a handler answering someone else), or the user. A job answers once the tower holds it, since the daemon logs
-its start before replying. Its screen streams at `/job/<id>/screen`, and on the mux. Tidy archives the log's closed
+its start before replying. Its screen streams at `/job/<id>/screen`, and on the mux; a view draws it with the kit's
+`terminal(host, 'job/<id>')`, read only and at the job's size, as floors' Watch does ([[new-floors]]). Tidy archives the log's closed
 months with the system's streams ([[log-retention]]).
 
 A job's state is derived, never logged ([`jobState`](ref:hub/src/bridge/jobs.ts#jobState)): `ended` or `cancelled`
