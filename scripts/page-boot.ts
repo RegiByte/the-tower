@@ -56,13 +56,19 @@ const DRAWN = `({
 
 type Drawn = { floors: number; floor: string | null; buildings: number; welcome: boolean }
 
-/** In the page: the drafts its floor's tray counts, once unfolded. */
-const DRAFTS = `document.querySelector('#floors .floor [data-view="drafts/tray"] .tray')?.textContent.match(/(\\d+) in drafts/)?.[1] ?? null`
+/** In the page: whether the click unfolded the floor, and the drafts its tray counts. */
+const UNFOLDED = `({
+  unfolded: document.querySelector('#floors .floor [data-floor-fold]')?.getAttribute('aria-expanded') === 'true',
+  drafts: document.querySelector('#floors .floor [data-view="drafts/tray"] .tray')?.textContent.match(/(\\d+) in drafts/)?.[1] ?? null,
+})`
+
+type Unfolded = { unfolded: boolean; drafts: string | null }
 
 /** What a booted page fails to show, in words. */
-const problems = (d: Drawn, drafts: string | null, errors: string[]) => [
+const problems = (d: Drawn, { unfolded, drafts }: Unfolded, errors: string[]) => [
   ...(d.floors === 1 && d.floor === 'lab' ? [] : [`the sidebar drew ${d.floors} floors${d.floor ? ` (first ${d.floor})` : ''}, not the floor lab`]),
-  ...(drafts === '1' ? [] : [`the unfolded floor counts ${drafts ?? 'no'} drafts, not the one kept`]),
+  ...(unfolded ? [] : ["a click on the floor's sign left it folded"]),
+  ...(!unfolded || drafts === '1' ? [] : [`the unfolded floor counts ${drafts ?? 'no'} drafts, not the one kept`]),
   ...(d.buildings === 1 ? [] : [`the skyline drew ${d.buildings} buildings, not one`]),
   ...(d.welcome ? [] : ['no welcome on the skyline']),
   ...errors,
@@ -134,7 +140,7 @@ async function once() {
 async function main() {
   await withTower('page-boot', seed, async (url) => {
     const started = Date.now()
-    const { drawn, drafts, errors } = await withPage(`${url}/`, {}, async (page) => {
+    const { drawn, tray, errors } = await withPage(`${url}/`, {}, async (page) => {
       await page.eval(until('#floors .floor .sign', '[data-view="tower/skyline"] .city .building'))
       const drawn = (await page.eval(DRAWN)) as Drawn
       if (drawn.floors) {
@@ -143,10 +149,10 @@ async function main() {
         await page.press('left', false)
         await page.eval(until('#floors .floor [data-view="drafts/tray"] .tray'))
       }
-      return { drawn, drafts: (await page.eval(DRAFTS)) as string | null, errors: page.errors }
+      return { drawn, tray: (await page.eval(UNFOLDED)) as Unfolded, errors: page.errors }
     })
-    console.log(`drawn in ${Date.now() - started} ms: ${JSON.stringify({ ...drawn, drafts })}`)
-    const failed = problems(drawn, drafts, errors)
+    console.log(`drawn in ${Date.now() - started} ms: ${JSON.stringify({ ...drawn, ...tray })}`)
+    const failed = problems(drawn, tray, errors)
     if (failed.length) throw new Error(`the tower page did not boot clean:\n  ${failed.join('\n  ')}`)
   })
 }
