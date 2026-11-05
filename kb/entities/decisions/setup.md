@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Setup in one command",
-  "summary": "npm run setup takes a fresh clone to a running tower: npm ci, tower init writes a first config unless one exists, the doctor's checks stop it on a failure, and tower up starts the host, the terms daemon and the tower, detached.",
+  "summary": "npm run setup takes a fresh clone to a running tower: npm ci, tower init writes a first config unless one exists, the doctor's checks stop it on a failure, and tower up starts the host, the terms daemon, the jobs daemon and the tower, detached.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-04",
+  "reviewed": "2026-11-05",
   "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#claudes", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/cli.ts", "hub/package.json", "hub/README.md", "hub/docs/config.md"]
 }
 ---
@@ -36,7 +36,7 @@ command should reach a running tower with a worker to spawn.
   are of what the tower runs: each distinct binary the config's `argv` commands name, once however many commands name
   it, in the config's `env` over the scrubbed environment, so a second account's wrapper or config dir is checked as
   its own; unchecked until the config reads with an `argv` it can take. Sign-in is `<binary> auth status`; signing in can also happen at the first worker, whose sign-in screen reads `blocked` ([[stuck-booting]]).
-- **`tower up` starts the tower too**, after the host and the terms daemon, and takes daemons by name
+- **`tower up` starts the tower too**, after the host, the terms daemon and the jobs daemon, and takes daemons by name
   ([[bring-up]]): `tower down tower && tower up tower` restarts the tower alone, never the host, which ends every
   session.
 - **`npm run setup`** ([`setup.ts`](ref:hub/scripts/setup.ts)): `npm ci`, `init` unless a config exists (its project

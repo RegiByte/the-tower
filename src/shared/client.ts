@@ -1,5 +1,6 @@
 import net from 'node:net'
 import { frame, onLines, type FromHost, type ToHost } from './protocol.ts'
+import type { FromJobs, JobStream, ToJobs } from './jobs.ts'
 import type { FromTerms, ShellStream, ToTerms } from './terms.ts'
 
 export type Client<Request, Reply> = {
@@ -75,16 +76,27 @@ export const connectHost = (socketPath: string): Promise<HostClient> =>
 export const connectTerms = (socketPath: string): Promise<Client<ToTerms, FromTerms>> =>
   connect<ToTerms, FromTerms>(socketPath, 'terms daemon', 'npm run terms')
 
-/** Streams a shell to `onMessage` until the returned function closes it. A failure arrives as an `error` message. */
-export const attachShell = (socketPath: string, id: string, onMessage: (msg: ShellStream) => void): (() => void) => {
+export const connectJobs = (socketPath: string): Promise<Client<ToJobs, FromJobs>> =>
+  connect<ToJobs, FromJobs>(socketPath, 'jobs daemon', 'npm run jobs')
+
+/** Streams what `id` names to `onMessage` until the returned function closes it. A failure arrives as an `error` message. */
+const attachStream = <M>(socketPath: string, server: string, start: string, id: string, onMessage: (msg: M | { t: 'error'; message: string }) => void): (() => void) => {
   const sock = net.createConnection(socketPath)
-  sock.on('error', (err) => onMessage({ t: 'error', message: `No terms daemon on ${socketPath} (${err.message}). Start it with: npm run terms` }))
-  sock.once('connect', () => sock.write(frame({ t: 'attach', id } satisfies ToTerms)))
+  sock.on('error', (err) => onMessage({ t: 'error', message: `No ${server} on ${socketPath} (${err.message}). Start it with: ${start}` }))
+  sock.once('connect', () => sock.write(frame({ t: 'attach', id })))
   onLines(sock, (line) => {
     const msg = parseLine(line)
-    if ('json' in msg) return onMessage(msg.json as ShellStream)
-    onMessage({ t: 'error', message: notJson('terms daemon', socketPath, line, msg.error).message })
+    if ('json' in msg) return onMessage(msg.json as M)
+    onMessage({ t: 'error', message: notJson(server, socketPath, line, msg.error).message })
     sock.destroy()
   })
   return () => sock.destroy()
 }
+
+/** Streams a shell to `onMessage` until the returned function closes it. A failure arrives as an `error` message. */
+export const attachShell = (socketPath: string, id: string, onMessage: (msg: ShellStream) => void): (() => void) =>
+  attachStream(socketPath, 'terms daemon', 'npm run terms', id, onMessage)
+
+/** Streams a job's screen to `onMessage` until the returned function closes it. A failure arrives as an `error` message. */
+export const attachJob = (socketPath: string, id: string, onMessage: (msg: JobStream) => void): (() => void) =>
+  attachStream(socketPath, 'jobs daemon', 'npm run jobs', id, onMessage)

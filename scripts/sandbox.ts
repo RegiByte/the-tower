@@ -6,7 +6,7 @@
  * own `/tmp/tower-<callsign>`, else `/tmp/tower-sandbox`. A new sandbox at `/tmp/tower-sandbox` gets port 4399, any
  * other a free port, so workers running at once never share one: run yours with no root or port.
  *
- *   npm run sandbox -- up [--port <n>]   write the config when the sandbox has none, start the host, terms and tower,
+ *   npm run sandbox -- up [--port <n>]   write the config when the sandbox has none, start the host, terms, jobs and tower,
  *                                        and print how to reach it; an existing config stays as it is (hand-edit it:
  *                                        `hiring`, more projects), only --port is written into it, and a later `up`
  *                                        without --port keeps the port. A config from an older script keeps its old

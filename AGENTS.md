@@ -18,6 +18,7 @@ claude (PTY) ──bytes──▶ host ──append──▶ ~/.tower/sessions/<
 claude hooks ──curl───▶ host ┤  (hooks.sock)
 tower mod ────fetch───▶ host ┘
 shells (PTY) ◀──────▶ terms ◀──terms.sock──▶ renderers
+jobs (PTY) ◀────────▶ jobs ──append──▶ ~/.tower/jobs/YYYY-MM.jsonl  (jobs.sock)
 ```
 
 Each piece, and the kb entity that holds the rest:
@@ -27,6 +28,8 @@ Each piece, and the kb entity that holds the rest:
   `tower:*` skills. `tower-mod`
 - **cli** (`src/cli.ts`, `src/directory.ts`): the `tower` command, the user's verbs and the workers'. `tower-cli`
 - **terms** (`src/terms`): owns shell PTYs in project dirs, logs nothing. `terms-daemon`
+- **jobs** (`src/jobs`): runs each job, one command, to its end in a PTY, sole writer of the jobs log; never its output
+  or env. `jobs-daemon`
 - **bridge** (`src/bridge`): pure reductions over the logs, the `board` every renderer reads, stats. `log-reductions`
 - **system** (`src/system.ts`): the live view a renderer subscribes to. `live-system`
 - **shared** (`src/shared`): the data model, the protocols, and what every renderer draws alike, served as

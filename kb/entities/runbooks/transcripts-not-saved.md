@@ -4,7 +4,7 @@
   "name": "Transcripts not saved",
   "summary": "A Claude started with a parent Claude session's variables believes it is a child session and saves no transcript, so its conversations cannot be resumed; the scrub in env.ts is what prevents it.",
   "in": "host",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/terms/main.ts#spawnShell", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/git.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/shared/model.ts#ClaudeHookInput"]
 }
 ---
@@ -24,7 +24,8 @@ whether or not Claude wrote its transcript. The session may also reach the paren
 - A Claude Code release added a marker the scrub does not drop
   ([`withoutParentSession`](ref:hub/src/shared/env.ts#withoutParentSession), [[env-scrub]]).
 - A child started by a path that skips the scrub. The host's sessions, the terms daemon's shells
-  ([`spawnShell`](ref:hub/src/terms/main.ts#spawnShell)), the daemons `tower up` starts
+  ([`spawnShell`](ref:hub/src/terms/main.ts#spawnShell)), the jobs daemon's jobs
+  ([`startJob`](ref:hub/src/jobs/main.ts#startJob)), the daemons `tower up` starts
   ([`startDetached`](ref:hub/src/machine.ts#startDetached)), the quota extension's Claude (`ctx.run`), policies' checks and git all go
   through it; anything new that starts a child must too.
 

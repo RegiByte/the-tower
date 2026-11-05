@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-31",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": ["hub/src/platform.ts#Platform", "hub/src/platform.ts#detected", "hub/src/platform.ts#platform", "hub/src/platform.ts#startWindows", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#readiness", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#servesConfig", "hub/src/machine.ts#reveal", "hub/src/bridge/resources.ts#underHosts", "hub/src/bridge/resources.ts#resources", "hub/scripts/setup.ts"]
 }
 ---
