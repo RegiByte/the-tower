@@ -7,7 +7,7 @@ import { $, toast } from './kit.js'
 /**
  * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { StatsRange } from '../../src/shared/panels.ts'
+ * @import { StatsRange } from '../../src/shared/viewer.ts'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
  * @import { MainView } from './view.js'
  * @import { ReadEffect, ReadEvent, Reads } from '../../src/shared/reads.ts'

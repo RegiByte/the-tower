@@ -21,7 +21,7 @@
  * `/reviews.js` through `LEGACY` until 2.0); the names the core shares with it come from `src/shared/reviews.ts`.
  */
 import type { Card } from '../../../src/bridge/board.ts'
-import type { RepoChanges } from '../../../src/changes.ts'
+import type { RepoChanges } from '../../../src/shared/repo-changes.ts'
 import { repoName, type Anchor, type Message, type Quote, type ReviewThread } from '../../../src/shared/reviews.ts'
 
 export {

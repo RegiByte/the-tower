@@ -14,7 +14,8 @@ import { promisify } from 'node:util'
 import { CliError } from './cli-error.ts'
 import { REPO } from './machine.ts'
 import { fnv1a } from './shared/hash.ts'
-import { DEFAULT_CONFIG, type SystemPaths } from './shared/paths.ts'
+import { DEFAULT_CONFIG } from './shared/paths.ts'
+import type { SystemPaths } from './shared/model.ts'
 
 const run = promisify(execFile)
 

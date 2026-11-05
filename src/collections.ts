@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync,
 import path from 'node:path'
 import { ITEM_EXT, ITEM_ID } from './shared/api.ts'
 import type { CollectionItem } from './shared/model.ts'
-import type { SystemPaths } from './shared/paths.ts'
+import type { SystemPaths } from './shared/model.ts'
 
 /** An item's version: its modification time in whole milliseconds, as the board carries it. */
 const versionOf = (stat: Stats): number => Math.floor(stat.mtimeMs)

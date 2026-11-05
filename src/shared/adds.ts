@@ -1,12 +1,11 @@
 import type { Board, Card } from '../bridge/board.ts'
+import { commandOf, towerOf } from './added-commands.ts'
 import { exemptionWords } from './crews.ts'
 import type { Action, Added, AddedLine, AddedMark, Badge, BadgeTone, CommandAction, ExtensionCommand, VerbAction, Words } from './extensions.ts'
 import { SVG_PATH, type ICON } from './icons.ts'
-import type { Tower } from './shelf-page.ts'
 import { accepted } from './media.ts'
 import { onKind, type Subject, type Text } from './subjects.ts'
 import type { Hold, LayoutEntry } from './regions.ts'
-import type { CommandKit } from './views.ts'
 
 /**
  * What extensions add to the board's subjects, as every renderer draws it (decision `extensions`): a subject's actions
@@ -127,10 +126,6 @@ export const linesOf = (board: Board, card: string): string[] => (board.adds[`ca
 /** The marks extensions put on the lines the worker of `card` changed, in fold order. @since 1.116 */
 export const marksOf = (board: Board, card: string): AddedMark[] => board.adds[`card:${card}`]?.marks ?? []
 
-/** An extension's command as the board shows it, while its extension runs. */
-const commandOf = (board: Board, action: Added<CommandAction>): ExtensionCommand | undefined =>
-  board.extensions.find((e) => e.provides === action.cap && e.state === 'started')?.commands.find((c) => c.name === action.command)
-
 /** An action in words: its own, as its fold gave them; else its verb's, as its provider's manifest says them, or its command's; its name when it has none. */
 export const actionWords = (board: Board, action: Added<Action>): Words => {
   if (action.words) return action.words
@@ -153,42 +148,5 @@ export const glyphOf = (board: Board, action: Added<Action>): Glyph | undefined 
   return SVG_PATH.test(icon) ? { t: 'svg', href: commandUrl(action.cap, icon) } : { t: 'core', name: icon as keyof typeof ICON }
 }
 
-/**
- * Runs a client command on `subject` with what the renderer running it lends (`kit`, since 1.104): imports its module
- * from `/x/<cap>/` and calls its export with the tower, the board, `target`, the subject, `subject`, its value until
- * 2.0, the action's `args` and the kit. Only a renderer that imports modules runs one: the CLI leaves commands out.
- */
-export const runCommandWith = async (board: Board, action: Added<CommandAction>, subject: Subject, kit: CommandKit): Promise<unknown> => {
-  const command = commandOf(board, action)
-  if (!command) throw new Error(`${action.cap} offers no command ${action.command} now`)
-  const module = await import(commandUrl(action.cap, command.module))
-  if (typeof module[command.export] !== 'function') throw new Error(`${commandUrl(action.cap, command.module)} exports no function ${command.export}`)
-  return module[command.export]({ tower: towerOf(), board, subject: subject.value, target: subject, args: action.args, kit })
-}
-
-const unlent = (member: string) => () => {
-  throw new Error(`this renderer lends no ${member}: a command that uses kit.${member} runs where a renderer's kit holds it`)
-}
-
-/** The kit of a renderer that lends a command nothing: every member fails, naming itself. */
-export const NO_KIT: CommandKit = {
-  display: unlent('display'),
-  toast: unlent('toast'),
-  notice: unlent('notice'),
-  confirm: unlent('confirm'),
-  run: unlent('run'),
-  bus: { publish: unlent('bus'), clear: unlent('bus'), at: unlent('bus'), under: unlent('bus'), on: unlent('bus'), mark: unlent('bus'), marks: unlent('bus'), onMark: unlent('bus') },
-}
-
-/** Runs a client command on `subject` in a renderer that lends it no kit (`runCommandWith`). */
-export const runCommand = (board: Board, action: Added<CommandAction>, subject: Subject): Promise<unknown> => runCommandWith(board, action, subject, NO_KIT)
-
 /** Calls a verb an extension offers, with its call: no subject needed, the call holds what it acts on. */
 export const runVerb = (action: VerbAction): Promise<unknown> => towerOf().call(action.verb as never, action.call as never)
-
-/** Runs an action an extension added: its verb called with its call, or its command run on `subject`. */
-export const runAdded = (board: Board, action: Added<Action>, subject: Subject): Promise<unknown> =>
-  isCommand(action) ? runCommand(board, action, subject) : runVerb(action)
-
-/** The page's `tower`, from `/tower.js`. */
-const towerOf = (): Tower => (globalThis as unknown as { tower: Tower }).tower

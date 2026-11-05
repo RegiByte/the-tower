@@ -2,7 +2,6 @@ import type { Board, Card, CardConversation, CardShown, Floor, FloorCollection, 
 import type { ExtensionSubject } from './extensions.ts'
 import { mediaTypeOf } from './media.ts'
 import type { ShelfEntry } from './model.ts'
-import type { Tower } from './shelf-page.ts'
 import { shownHref } from './worker-details.ts'
 
 /**
@@ -286,7 +285,7 @@ export const subjectAt = (board: Board, key: string): Subject | undefined => {
 }
 
 /** A subject's text: its `body`, or what its read path `text` reads. A subject that bears neither has none to read. @since 1.98 */
-export const textOf = async (tower: Tower, subject: Subject): Promise<string> => {
+export const textOf = async (tower: { text(path: string): Promise<string> }, subject: Subject): Promise<string> => {
   const { text, body } = subject.value as Text
   if (body !== undefined) return body
   if (text === undefined) throw new Error(`${subject.key} bears no text: a command that reads it accepts the types of subjects that do`)

@@ -1,4 +1,3 @@
-import type net from 'node:net'
 import type { ModEvent } from './model.ts'
 
 /**
@@ -57,8 +56,8 @@ export const checkSize = (cols: unknown, rows: unknown): void => {
   if (!side(cols) || !side(rows)) throw new Error(`A terminal's size is whole cols and rows from 1 to ${MAX_TERMINAL_SIDE}, not ${JSON.stringify(cols)}x${JSON.stringify(rows)}`)
 }
 
-/** Calls `onLine` with each complete newline-delimited line received on `sock`. */
-export const onLines = (sock: net.Socket, onLine: (line: string) => void): void => {
+/** Calls `onLine` with each complete newline-delimited line received on `sock`, a socket as far as lines are read from one. */
+export const onLines = (sock: { setEncoding(encoding: 'utf8'): unknown; on(event: 'data', listener: (chunk: string) => void): unknown }, onLine: (line: string) => void): void => {
   let buffered = ''
   sock.setEncoding('utf8')
   sock.on('data', (chunk: string) => {

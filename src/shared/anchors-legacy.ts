@@ -5,8 +5,7 @@
  * @deprecated since 1.116: the reviews extension's client (`/x/reviews/anchors.js`); Changes and reviews meet through
  * the `lines` subject, a card's `marks` and the `lines.acts` region. These copies go at 2.0.
  */
-import type { RepoChanges } from '../changes.ts'
-import type { DiffFile } from '../bridge/diff.ts'
+import type { DiffFile, RepoChanges } from './repo-changes.ts'
 import { esc } from './cards.ts'
 import { linesSpot, pickedLines, type LinePick } from './changes-lines.ts'
 import { changesPanelHtml, type PanelView, type ReadView } from './changes-panel.ts'

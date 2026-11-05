@@ -11,7 +11,7 @@ import { parseListening, parseProcesses, peers, resources, type ClaudeRegistrati
 import { connectHost, connectJobs, connectTerms } from './shared/client.ts'
 import { withoutParentSession } from './shared/env.ts'
 import { platform } from './platform.ts'
-import type { SystemPaths } from './shared/paths.ts'
+import type { SystemPaths } from './shared/model.ts'
 import { answers } from './shared/socket.ts'
 import { promptPastes, SUBMIT_KEY, type FromHost, type HostLive, type ToHost } from './shared/protocol.ts'
 import type { FromJobs, HeldJob, ToJobs } from './shared/jobs.ts'

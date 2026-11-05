@@ -10,9 +10,16 @@
  *
  * The tower serves this module as `/viewer.js`.
  */
-import type { BriefMarkdown } from './brief.ts'
-import type { Ring } from './cards.ts'
-import type { DiffLayout, StatsRange } from './panels.ts'
+import type { Ring } from './rings.ts'
+
+/** How a viewer reads prompts and answers: markdown rendered, or the text as written. */
+export type BriefMarkdown = 'rendered' | 'raw'
+
+/** How the Changes panel draws a file's diff: one column of lines, or the old side and the new side by side. */
+export type DiffLayout = 'unified' | 'split'
+
+/** How far back the Stats panel reads: today by hour, or the last 7 or 30 local days by day. */
+export type StatsRange = 'today' | 'week' | 'month'
 
 export type Viewer = {
   /** The keys of the waits and offers dismissed (`dismissing`). */

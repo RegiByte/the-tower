@@ -27,7 +27,7 @@ import type { CardShown, LineageSession } from '../bridge/board.ts'
 import type { SessionRef } from '../bridge/chains.ts'
 import type { Brief, BriefSession, Step, ToolCall, ToolOutcome, Turn } from '../bridge/turns.ts'
 import { ago, clockAt, esc, plural } from './cards.ts'
-import { VIEWER_KEYS } from './viewer.ts'
+import { VIEWER_KEYS, type BriefMarkdown } from './viewer.ts'
 
 /** One session's part of a brief: its place in the worker's lineage (`n` of `of`, from 1) and its conversations, in order. */
 export type BriefPart = { session: BriefSession; n: number; of: number; threads: Brief[] }
@@ -67,8 +67,6 @@ export const resumedIdle = (briefs: Brief[], session: Pick<BriefSession, 'id' | 
 /** What a viewer reads beside a `resumedIdle` session: `mark` short, `means` in full. */
 export const RESUMED_IDLE = { mark: 'resumed, no new turns', means: 'resumed but never given a prompt: its conversation and last screen are those of the session it resumed' }
 
-/** How a viewer reads prompts and answers: markdown rendered, or the text as written. */
-export type BriefMarkdown = 'rendered' | 'raw'
 export const BRIEF_MARKDOWNS: BriefMarkdown[] = ['rendered', 'raw']
 /** Where a viewer's `BriefMarkdown` is kept in `tower.store`; rendered while unset. */
 export const BRIEF_MARKDOWN_KEY = VIEWER_KEYS.briefMarkdown

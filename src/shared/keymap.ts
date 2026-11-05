@@ -235,7 +235,7 @@ export const addedCommandOf = (keys: Keys, e: KeyPress, focus: Focus): string | 
 export const DEFAULT_KEYS: Keys = keymapOf({})
 
 /** The parts of a keydown a chord depends on. */
-export type KeyPress = Pick<KeyboardEvent, 'code' | 'key' | 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>
+export type KeyPress = { code: string; key: string; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
 
 const HELD: Record<Modifier, keyof KeyPress> = { Ctrl: 'ctrlKey', Alt: 'altKey', Shift: 'shiftKey', Meta: 'metaKey' }
 

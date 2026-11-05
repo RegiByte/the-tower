@@ -2,20 +2,19 @@
  * The Changes panel: what changed in a worker's repos, each file's diff highlighted, unified or split, the changed files
  * as a tree, lines marked, and a place under picked lines for what acts on them. Bundled into `/panels.js`.
  */
-import type { RepoChanges } from '../changes.ts'
 import type { CheckoutState } from '../bridge/checkouts.ts'
-import type { DiffFile, Hunk } from '../bridge/diff.ts'
+import type { DiffFile, Hunk, RepoChanges } from './repo-changes.ts'
 import { esc, plural } from './cards.ts'
 import { ICON } from './icons.ts'
 import { highlightLines, highlightOpen } from './highlight.ts'
 import { markRanges, wordRanges } from './words.ts'
 import type { AddedMark } from './extensions.ts'
 import { langOf, repoName } from './repos.ts'
-import { VIEWER_KEYS } from './viewer.ts'
+import { VIEWER_KEYS, type DiffLayout } from './viewer.ts'
 import { isCommitScope, type ChangesRead, type ChangesScope } from './changes-reads.ts'
 import { changedFiles, fileKey, fileRows, isFolded, isViewed, livePick, pickRange, splitRows, viewedCount, type LinePick, type Row } from './changes-lines.ts'
 import { fileButtonsHtml } from './file-acts.ts'
-import { failedHtml, settledHtml } from './panel-kit.ts'
+import { failedHtml, settledHtml } from './panel-html.ts'
 
 /**
  * What every Changes panel draws from: `folds` are the files folded or unfolded against what their viewed mark says, by
@@ -75,8 +74,6 @@ export const markedChangesHtml = (v: MarkedChangesView) =>
 /** Where a viewer's choice to show the file tree beside the diffs is kept in `tower.store`; hidden while none is. */
 export const CHANGES_TREE_KEY = VIEWER_KEYS.changesTree
 
-/** How the Changes panel draws a file's diff: one column of lines, or the old side and the new side by side. */
-export type DiffLayout = 'unified' | 'split'
 export const DIFF_LAYOUTS: DiffLayout[] = ['unified', 'split']
 /** Where a viewer's layout is kept in `tower.store`; `unified` while none is. */
 export const DIFF_LAYOUT_KEY = VIEWER_KEYS.diffLayout

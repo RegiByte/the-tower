@@ -3,7 +3,7 @@
  * kept for the deprecated copy of the panel `/panels.js` serves until 2.0, and the shapes the board's old fields hold.
  * Renderers read the extension's client, `/x/reviews/reviews.js` and `/x/reviews/panel.js`.
  */
-import type { RepoChanges } from '../changes.ts'
+import type { RepoChanges } from './repo-changes.ts'
 import type { CheckoutState, FiledThread } from '../bridge/checkouts.ts'
 import type { NoteAction, NoteCalls, NoteVerb } from '../bridge/verbs.ts'
 import { repoName, type Anchor, type Message, type Quote, type ReviewThread } from './reviews.ts'

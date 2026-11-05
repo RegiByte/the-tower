@@ -3,7 +3,7 @@ import { base, esc, onDisk, rendererUrl, shelfKind, shelfPage, shelfPaths, shelf
 import { fileButtonsHtml, fileCall } from '../shared/file-acts.ts'
 import { ICON } from '../shared/icons.ts'
 import type { ShelfEntry } from '../shared/model.ts'
-import { failedHtml } from '../shared/panel-kit.ts'
+import { failedHtml } from '../shared/panel-html.ts'
 import type { RelayedUi } from '../shared/shelf-page.ts'
 import type { Mount } from '../shared/views.ts'
 import { decoded, NO_HREF, type LinkTo } from './frame.ts'

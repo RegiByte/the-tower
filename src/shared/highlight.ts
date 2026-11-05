@@ -19,7 +19,7 @@ import typescript from 'highlight.js/lib/languages/typescript'
 import xml from 'highlight.js/lib/languages/xml'
 import yaml from 'highlight.js/lib/languages/yaml'
 import type { LanguageFn } from 'highlight.js'
-import { esc } from './cards.ts'
+import { esc } from './format.ts'
 
 /** A grammar for each fence language `langOf` names. */
 const GRAMMARS: Record<string, LanguageFn> = {

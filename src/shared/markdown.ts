@@ -12,7 +12,7 @@
  * document the same way.
  */
 import { Marked, type Token, type Tokens, type TokensList } from 'marked'
-import { esc } from './cards.ts'
+import { esc } from './format.ts'
 import { fenceLang, highlightCss, highlightLines } from './highlight.ts'
 
 /** Where a relative URL is resolved for checking: a path of the tower's, whatever origin the tower answers at. */
@@ -141,7 +141,7 @@ export function sectionLabels(sections: Section[]): string[] {
 }
 
 /** The code of the fence a `data-copy-code` button sits in, as written. */
-export const fenceText = (button: Element) => button.closest('figure.code')?.querySelector('code')?.textContent ?? ''
+export const fenceText = (button: { closest(selector: string): { querySelector(selector: string): { textContent: string | null } | null } | null }) => button.closest('figure.code')?.querySelector('code')?.textContent ?? ''
 
 /** `markdownHtml` drawn inside an element of class `md`, at any width; reads the design's tokens from `/design.css`. */
 export const markdownCss = `.md { overflow-wrap: anywhere; }

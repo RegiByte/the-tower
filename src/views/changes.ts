@@ -1,17 +1,17 @@
 import type { Board, Card } from '../bridge/board.ts'
-import type { DiffFile } from '../bridge/diff.ts'
-import type { RepoChanges } from '../changes.ts'
+import type { DiffFile, RepoChanges } from '../shared/repo-changes.ts'
 import { addedActions, marksOf } from '../shared/adds.ts'
 import { loop, timers } from '../shared/loop.ts'
 import {
   CHANGES_TREE_KEY, DIFF_LAYOUT_KEY, changedFiles, changesFailure, changesHandlers, changesOf, changesPath, drawPanel, fileCall, fileKey, isFolded, keepingFileTop, keepingViewedFileTop,
   linesSpot, livePick, markedChangesHtml, marksToggled, noChanges, picked, pickedLines, readChanges, scopeOf, spanned, spotSelector, viewedCount, watchPickDrag,
-  type ChangesEvent, type ChangesScope, type DiffLayout, type LinePick, type NamedLines,
+  type ChangesEvent, type ChangesScope, type LinePick, type NamedLines,
 } from '../shared/panels.ts'
 import { panelsCss } from '../shared/panels-css.ts'
 import { reading } from '../shared/reads.ts'
 import { changedIn } from '../shared/checkouts.ts'
 import { linesAt, linesSubject, type Lines } from '../shared/subjects.ts'
+import type { DiffLayout } from '../shared/viewer.ts'
 import { viewsOf, type Mount, type RegionHandle, type Tab } from '../shared/views.ts'
 
 /**

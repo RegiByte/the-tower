@@ -1,4 +1,4 @@
-import type { Gist } from './cards.ts'
+import type { Gist } from './status-words.ts'
 
 /** An icon on a 16 unit grid, `class="icon"` (sized by design.css's `--icon-s`, `--icon-m`) and hidden from assistive tech. */
 const icon = (paint: string, body: string) => `<svg class="icon" viewBox="0 0 16 16" aria-hidden="true" ${paint}>${body}</svg>`

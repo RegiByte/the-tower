@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import type { DiffFile } from '../src/bridge/diff.ts'
-import type { RepoChanges } from '../src/changes.ts'
+import type { DiffFile, RepoChanges } from '../src/shared/repo-changes.ts'
 import { anchorState, appended, bodyProblem, nextNumber, parseThread, printThread, unseenBy, type Anchor } from '../extensions/reviews/client/reviews.ts'
 
 /** Written by `review/append` on the sandbox: an anchored note, a reply, a diff quote beside a plain one, a bare anchor. */

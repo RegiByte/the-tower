@@ -3,15 +3,15 @@
  * Bundled into `/panels.js`.
  */
 import { bucketStart, type ScopeStats, type Spread, type Stats, type StatsQuery } from '../bridge/stats.ts'
-import { esc, paceWords, plural, tokenCount as tokens } from './cards.ts'
+import { esc, plural, tokenCount as tokens } from './format.ts'
+import { paceWords } from './limits.ts'
 import { ICON } from './icons.ts'
-import { failedHtml } from './panel-kit.ts'
+import { failedHtml } from './panel-html.ts'
+import type { StatsRange } from './viewer.ts'
 
 /** The Stats panel's tab that covers every project. */
 export const STATS_ALL = '*'
 
-/** How far back the Stats panel reads: today by hour, or the last 7 or 30 local days by day. */
-export type StatsRange = 'today' | 'week' | 'month'
 const RANGES: [StatsRange, string][] = [['today', 'Today'], ['week', '7 days'], ['month', '30 days']]
 const RANGE_DAYS: Record<StatsRange, number> = { today: 1, week: 7, month: 30 }
 
