@@ -61,7 +61,29 @@ const vendor = (tree: string) => {
   }
 }
 
-/** The declarations of this code, built when no earlier run built them; an older version's go, being a cache. */
+const emit = (outDir: string) => {
+  try {
+    execFileSync(TSC, ['-p', EMIT_CONFIG, '--outDir', outDir], { cwd: REPO, encoding: 'utf8' })
+  } catch (err) {
+    throw new CliError(`The checkout's declarations don't typecheck:\n${(err as { stdout: string }).stdout}`, `fix the errors above in ${REPO}, or check out a commit whose typecheck passes`)
+  }
+}
+
+/** Moves a built tree into its place, unless a run sharing the cache got there first. */
+const placed = (staging: string, tree: string): boolean => {
+  try {
+    renameSync(staging, tree)
+    return true
+  } catch (err) {
+    if (existsSync(tree)) return false
+    throw err
+  }
+}
+
+/**
+ * The declarations of this code, built when no earlier run built them. Runs share the cache, so one that finds its
+ * tree built meanwhile takes that one; the run that placed it clears older versions, being a cache.
+ */
 const typesTree = (cache: string): string => {
   const types = path.join(cache, 'types')
   const tree = path.join(types, `${API_VERSION}-${typesSource()}`)
@@ -70,16 +92,15 @@ const typesTree = (cache: string): string => {
   const staging = path.join(types, `.staging-${process.pid}`)
   mkdirSync(types, { recursive: true })
   try {
-    execFileSync(TSC, ['-p', EMIT_CONFIG, '--outDir', staging], { cwd: REPO, encoding: 'utf8' })
-  } catch (err) {
+    emit(staging)
+    cpSync(path.join(REPO, TOWER_GLOBAL), path.join(staging, TOWER_GLOBAL))
+    vendor(staging)
+    writeFileSync(path.join(staging, 'stamp.json'), `${JSON.stringify({ api: API_VERSION }, null, 2)}\n`)
+    if (!placed(staging, tree)) return tree
+  } finally {
     rmSync(staging, { recursive: true, force: true })
-    throw new CliError(`The checkout's declarations don't typecheck:\n${(err as { stdout: string }).stdout}`, `fix the errors above in ${REPO}, or check out a commit whose typecheck passes`)
   }
-  cpSync(path.join(REPO, TOWER_GLOBAL), path.join(staging, TOWER_GLOBAL))
-  vendor(staging)
-  writeFileSync(path.join(staging, 'stamp.json'), `${JSON.stringify({ api: API_VERSION }, null, 2)}\n`)
-  renameSync(staging, tree)
-  for (const older of readdirSync(types)) if (older !== path.basename(tree)) rmSync(path.join(types, older), { recursive: true, force: true })
+  for (const older of readdirSync(types)) if (older !== path.basename(tree) && !older.startsWith('.')) rmSync(path.join(types, older), { recursive: true, force: true })
   return tree
 }
 
@@ -95,7 +116,10 @@ const pathsOf = (tree: string, dir: string): Record<string, string[]> => ({
   ),
 })
 
-/** The tsconfig a folder extends: both a server's and a client's code live in one extension, so it holds both runtimes' types. */
+/**
+ * The tsconfig a folder extends. A server's and a client's code live in one extension, so it holds both runtimes'
+ * types. `skipLibCheck` stays off: with it on, a package missing from the declarations turns what it reaches into `any`, unsaid.
+ */
 const folderConfig = (tree: string) => ({
   compilerOptions: {
     target: 'es2024',
@@ -105,7 +129,7 @@ const folderConfig = (tree: string) => ({
     types: ['node'],
     strict: true,
     noEmit: true,
-    skipLibCheck: true,
+    skipLibCheck: false,
     allowImportingTsExtensions: true,
     paths: pathsOf(tree, '.'),
   },
@@ -125,7 +149,7 @@ export const advice = (dir: string, paths: Record<string, string[]>): string[] =
 
 /**
  * Writes `<dir>/.tower/`: the declarations, the tsconfig to extend and a `.gitignore`, since a committed copy goes
- * stale against the tower. An author whose own CI typechecks deletes that file, so only a first run writes it.
+ * stale against the tower. An author whose own CI typechecks changes that file, so only a first run writes it.
  */
 export const writeTypes = (cache: string, dir: string): string[] => {
   const tree = typesTree(cache)
