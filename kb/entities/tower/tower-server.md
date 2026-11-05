@@ -98,7 +98,7 @@ The design system's `/design.css` and faces, `/tower.js` and the shared modules
 ([[renderer-shared-modules]]) are served readable from any origin, each source file once at its own internal URL
 (`/shared/`, `/src/`, `/vendor/`, [`served`](ref:hub/src/tower/http.ts#served)) so a page holds one instance of
 every module, and the library, at `/lib/`, is served the same way ([[library]]); a core view or a bundled client's `.ts` is bundled with its own modules and packages, what it reaches
-below `src/` imported by URL ([`clientModule`](ref:hub/src/tower/served.ts#clientModule)). A renderer's html page is
+below `src/` imported by URL, and the library, `/tower.js` and `/x/` kept as the URLs they are, in a checkout or out of it ([`clientModule`](ref:hub/src/tower/served.ts#clientModule)). A renderer's html page is
 served with its module scripts' static graph ([`preloaded`](ref:hub/src/tower/http.ts#preloaded),
 [`moduleGraph`](ref:hub/src/tower/served.ts#moduleGraph)): an import map
 ([`importMap`](ref:hub/src/tower/served.ts#importMap)) naming each file and package at the hash of its text, served

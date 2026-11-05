@@ -431,6 +431,7 @@ import { esc } from '/lib/words.js'
 - **In a browser** it is a URL. A page gets one instance of each module however many modules import it.
 - **In an extension's server code** the tower's resolve hook maps the prefix to the same source it runs. A name the
   library doesn't hold fails at import, listing the modules it has.
+- **In an extension's `.ts` client** the tower's bundling leaves the import as it is, the URL a browser loads.
 - **In a bundler or an editor** it is a tsconfig path: `"/lib/*.js": ["<tower>/src/lib/*.ts"]`.
 
 Only `/lib/` is contract. A file's path under `src/`, its URL under `/shared/` or `/src/`, and anything else a checkout
@@ -806,7 +807,8 @@ has its `ctx.board`.
 
 `client` names a folder served at `/x/<cap>/`, with CORS; a `<name>.ts` there is served bundled as `<name>.js`, with
 its own modules and packages, and what it imports from the tower's `src/` loaded from the URL the tower serves it at,
-so it shares one instance with the page. Each
+so it shares one instance with the page. An import of the library (`/lib/…`), of `/tower.js` or of an extension's client
+(`/x/…`) stays that URL, in a checkout or out of it, so a client outside the tower's folder imports them the same way. Each
 of `commands` is one of its modules' exports, with `words`, which may name its `icon` (API 1.130): one of the core's
 icons by name (`ICON` in `/icons.js`, `"play"`), or an SVG of its client folder by its path there (`"speaker.svg"`),
 which renderers draw as a mask in the ink of the control, so one glyph serves both palettes; a path to no file there
