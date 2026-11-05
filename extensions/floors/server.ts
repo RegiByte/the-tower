@@ -13,10 +13,8 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { apiError, isApiError, type ApiError } from '../../src/shared/api.ts'
-import type { Board } from '../../src/bridge/board.ts'
-import type { CallCtx, FoldCtx, RunResult, Start, StartCtx } from '../../src/shared/extensions.ts'
-import type { Config } from '../../src/shared/model.ts'
+import type { Board } from '/lib/board.js'
+import { apiError, type ApiError, type CallCtx, type Config, type FoldCtx, isApiError, type RunResult, type Start, type StartCtx } from '/lib/extension.js'
 import { adoptCalls, asksOf, carriesCredentials, CLONES, clonesOf, holding, NO_CLONES, step, type Clone, type CloneStarted, type ClonesState } from './clones.ts'
 
 /** How long a local git step may run. */

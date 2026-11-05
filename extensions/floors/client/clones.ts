@@ -1,8 +1,7 @@
-import type { Board } from '../../../src/bridge/board.ts'
-import { esc } from '../../../src/shared/cards.ts'
-import type { TermViewHandle } from '../../../src/shared/term-view.ts'
-import type { Mount } from '../../../src/shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from '../../../src/views/parts.ts'
+import type { Board } from '/lib/board.js'
+import type { TermViewHandle } from '/lib/terminal.js'
+import { closeHtml, type Mount, paintOnce, viewCss } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 import type { Clone } from '../clones.ts'
 
 /**

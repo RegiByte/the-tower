@@ -1,6 +1,6 @@
-import { esc } from '../../../src/shared/cards.ts'
-import type { Tower } from '../../../src/shared/shelf-page.ts'
-import { paintOnce } from '../../../src/views/parts.ts'
+import type { Tower } from '/lib/client.js'
+import { paintOnce } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 
 /**
  * A browser of the machine's folders, read from `floors/dirs`: the form picks a floor's hub and repos with it, and the
