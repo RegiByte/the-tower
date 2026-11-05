@@ -113,3 +113,10 @@ test('an edit bringing a new problem is refused, a warning included; problems th
   assert.equal(done.t, 'added')
   assert.equal(ok(checkedEdit(warned, { t: 'append', key: ['projects', 'lab', 'repos'], value: '/elsewhere/a' })).t, 'unchanged')
 })
+
+test('removing a repo before one the user already had broken is not refused for the broken one moving up', () => {
+  const removed = checkedEdit(CONFIG, { t: 'remove', key: ['projects', 'lab', 'repos', '0'], was: '/elsewhere/a' })
+  assert.notEqual(removed.t, 'error', JSON.stringify(removed))
+  const doubled = { ...CONFIG, projects: { lab: { ...CONFIG.projects.lab, repos: [HUB, '/elsewhere/b'] } } }
+  refused(checkedEdit(doubled, { t: 'set', key: ['projects', 'lab', 'repos', '0'], value: '/elsewhere/b', was: HUB }), 'config')
+})
