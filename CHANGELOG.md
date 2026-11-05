@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.91.1
+
+A press on the sidebar is no longer lost to a board update that changes nothing in it. No restart beyond the tower's
+own (`tower down tower`, then `tower up tower`), no config change, no API change. The open page offers the reload.
+
+- **A click on the sidebar survives a board update that draws it the same.** The page rewrote the floors on every
+  board, even an identical one, so a press held across that repaint fired no click: a floor's sign could stay folded.
+  Now an unchanged sidebar keeps its elements and only its rows update in place. A board that changes the sidebar
+  still replaces it, so a click can still be lost then; drawing each floor by key is the follow-up. This was also
+  why `test:page-boot` failed about one run in three on Linux CI; it now says when the click didn't unfold the floor
+  (#413).
+
 ## v1.91.0
 
 The tower can write its own config, through four checked verbs, and the page has a place for commands about no one
