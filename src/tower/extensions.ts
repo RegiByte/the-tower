@@ -16,7 +16,7 @@ import { importFresh } from '../fresh-imports.ts'
 import { rendererRegions } from '../renderers.ts'
 import '../lent-modules.ts'
 import { runProcess } from '../run.ts'
-import { API_VERSION, apiError, COMPOSITES, type ApiError } from '../shared/api.ts'
+import { API_VERSION, apiError, COMPOSITES, isApiError, type ApiError } from '../shared/api.ts'
 import { EXTENSION_STATE_NAME } from '../shared/extension-words.ts'
 import {
   nestedIn,
@@ -396,6 +396,19 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     holder.problem(a.id, { lane, level: 'warn', code: 'deprecated', message, at: Date.now() })
   }
 
+  /** The capability's jobs: always its own, whoever a handler answers, and nested in the caller's `within`. */
+  const jobsOf = (within: string[]): StartCtx['jobs'] => {
+    const job = async (verb: 'job/start' | 'job/cancel', input: unknown) => {
+      const answer = await dispatch.call(`tower/${verb}`, input, { t: 'extension', id: a.provides, via: 'ctx', within })
+      if (isApiError(answer)) throw Object.assign(new Error(answer.message), { code: answer.code })
+      return answer
+    }
+    return {
+      start: async (argv, { cwd, env, label }) => ({ id: ((await job('job/start', { argv, cwd, env, label })) as unknown as { id: string }).id }),
+      cancel: async (id) => void (await job('job/cancel', { id })),
+    }
+  }
+
   /** `call`, `read`, `deps` and `raise` for calls made as `caller`. */
   const callsOf = (caller: Caller): Pick<StartCtx, 'call' | 'read' | 'deps' | 'raise'> => {
     const call: StartCtx['call'] = async (verb, input = {}) => {
@@ -444,11 +457,12 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       return { argv: resolveCommand(now, undefined), env: now.env ?? {} }
     },
     ...callsOf({ t: 'extension', id: a.provides, via: 'ctx', within: [] }),
+    jobs: jobsOf([]),
     ...stores.ctx,
   }
   /** The ctx a handler of `qualified` gets: its caller, and calls made one step deeper. */
   const cards = () => publisher.everyCard(Date.now())
-  const handlerCtx = (caller: Caller, qualified: string): CallCtx => ({ ...ctx, caller, cards, ...callsOf(nestedIn(caller, qualified)) })
+  const handlerCtx = (caller: Caller, qualified: string): CallCtx => ({ ...ctx, caller, cards, ...callsOf(nestedIn(caller, qualified)), jobs: jobsOf(nestedIn(caller, qualified).within) })
   /** What a start returned, halted: it started something, and won't run. */
   const haltLate = (started: Started) =>
     void Promise.resolve()

@@ -48,6 +48,8 @@ const CALLSIGN_OF = '1.92'
 const REVIEWS_MOVED = '1.93'
 /** The minor the reviews extension answered the core's hooks in: tidy entries' words, `ctx.collections.rename`, resolve. */
 const REVIEWS_HOOKS = '1.94'
+/** The minor jobs arrived in: `ctx.jobs`. */
+const JOBS = '1.149'
 
 /** The minor reviewers moved to the reviews extension's launch in: the `of` fact, its crew edge and exemption. */
 const REVIEWERS_MOVED = '1.95'
@@ -609,6 +611,17 @@ export type StartCtx = {
    */
   run(argv: string[], opts: { cwd: string; timeoutMs?: number; stdin?: string; env?: Record<string, string> }): Promise<RunResult>
   /**
+   * Jobs owned by the capability (`tower/job/start`, `tower/job/cancel`): a command run to its end by the jobs daemon,
+   * outside the tower, so it outlives a restart of the tower or the extension, which `run` does not. What happened to it
+   * is on the board's `jobs`; a reaction reads it there and records what it did in a stream of its own. `argv` is kept
+   * in the jobs log, read by every renderer and worker; `env` and the output never are. Each rejects with an Error whose
+   * `code` is the API's. @since 1.149
+   */
+  jobs: {
+    start(argv: string[], opts: { cwd: string; env?: Record<string, string>; label: string }): Promise<{ id: string }>
+    cancel(id: string): Promise<void>
+  }
+  /**
    * How the config starts a session of `runtime`, as it says now: the command before the arguments the tower adds, and
    * the env set over the scrubbed one. What runs the runtime outside a session (`ctx.run`) runs it the same way. @since 1.90
    */
@@ -743,6 +756,7 @@ export const CTX_SINCE: {
     collections: { list: STORES, read: STORES, create: STORES, write: STORES, put: REVIEWS_MOVED, rename: REVIEWS_HOOKS, delete: STORES },
     own: { streams: STORES, collections: STORES, facts: STORES },
     run: TRIGGERS,
+    jobs: { start: JOBS, cancel: JOBS },
     runtime: KINDS,
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS }, cards: GATE },
