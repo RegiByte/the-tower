@@ -8,7 +8,7 @@
   "refs": ["hub/src/jobs/main.ts#startJob", "hub/src/jobs/main.ts#cancelJob", "hub/src/jobs/main.ts#attach", "hub/src/jobs/main.ts#endLeftovers", "hub/src/jobs/main.ts#keep", "hub/src/jobs/main.ts#programFile", "hub/src/jobs/main.ts#jobEnd", "hub/src/jobs/groups.ts#jobGroup", "hub/src/jobs/groups.ts#endGroup", "hub/src/jobs/groups.ts#bootTime", "hub/src/shared/jobs.ts#ToJobs", "hub/src/shared/jobs.ts#JobFact", "hub/src/shared/jobs.ts#JobStream", "hub/src/shared/viewers.ts#joinViewer", "hub/src/bridge/jobs.ts#jobsOf", "hub/test/jobs-daemon.test.ts"],
   "links": [
     { "to": "system-root", "verb": "writes", "carries": "jobs/YYYY-MM.jsonl in the streams' format: started {id, pid, argv, cwd, owner, label}, cancelled {id, by}, ended {id, exit, signal}" },
-    { "to": "system-root", "verb": "reads", "carries": "jobs/*.jsonl on start: the jobs an earlier daemon left without an end" }
+    { "to": "system-root", "verb": "reads", "carries": "every month of jobs/ on start, archived ones too: the jobs an earlier daemon left without an end" }
   ]
 }
 ---
@@ -39,8 +39,8 @@ no `write`: nobody types into a job.
 - **List** answers the jobs it holds, running or kept, which is what tells a job running from a job lost.
 
 **After a crash.** Each job leads its own session on its PTY, so a daemon killed outright takes its jobs with it as
-their PTYs hang up, except a job that ignores SIGHUP and what it started. On start, the daemon reads the jobs log for
-jobs without an end ([`jobsOf`](ref:hub/src/bridge/jobs.ts#jobsOf)) and ends what is left of each
+their PTYs hang up, except a job that ignores SIGHUP and what it started. On start, the daemon reads every month of the jobs log,
+archived ones too since a job's end may fall in a later month than its start, for jobs without an end ([`jobsOf`](ref:hub/src/bridge/jobs.ts#jobsOf)) and ends what is left of each
 ([`endLeftovers`](ref:hub/src/jobs/main.ts#endLeftovers)): one started before the machine booted is skipped
 ([`bootTime`](ref:hub/src/jobs/groups.ts#bootTime)); otherwise its group is listed by exact pgid and taken as the
 job's only while every member started at or after the job, since no process takes a pid that still names a group, and

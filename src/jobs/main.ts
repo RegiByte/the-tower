@@ -10,7 +10,7 @@
  * command run to its end, not a supervisor of what it starts.
  */
 import { randomBytes } from 'node:crypto'
-import { accessSync, constants, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { accessSync, constants, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
@@ -27,6 +27,7 @@ import { claimSocket } from '../shared/socket.ts'
 import { SHELL_SCROLLBACK } from '../shared/terms.ts'
 import { broadcast, joinViewer, socketViewer, type Screened } from '../shared/viewers.ts'
 import { appendFact } from '../streams.ts'
+import { logBytes, logFilesIn } from '../tail.ts'
 import { bootTime, endGroup, signalGroup } from './groups.ts'
 
 type LiveJob = Screened<JobStream> & { job: HeldJob; proc: pty.IPty; end?: JobEnd; forget?: NodeJS.Timeout }
@@ -213,13 +214,16 @@ const control = net.createServer((sock) => {
   })
 })
 
-const MONTH_FILE = /^\d{4}-\d{2}\.jsonl$/
+const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
 
-/** The jobs an earlier daemon started and never logged the end of: read before this daemon starts any. Archived months are long over. */
+/**
+ * The jobs an earlier daemon started and never logged the end of: read before this daemon starts any. Every month is
+ * read, archived ones too, as the tower reads them: a job's end may fall in a later month than its start.
+ */
 const openJobs = () => {
   if (!existsSync(paths.jobs)) return []
-  const files = readdirSync(paths.jobs).filter((f) => MONTH_FILE.test(f)).sort()
-  const facts = files.flatMap((f) => streamFacts(readFileSync(path.join(paths.jobs, f), 'utf8')).facts)
+  const files = logFilesIn(readdirSync(paths.jobs).filter((f) => MONTH_FILE.test(f))).sort()
+  const facts = files.flatMap((f) => streamFacts(logBytes(path.join(paths.jobs, f)).toString('utf8')).facts)
   return jobsOf(facts).filter((job) => !job.ended)
 }
 
