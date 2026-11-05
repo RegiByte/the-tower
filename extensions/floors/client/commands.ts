@@ -1,5 +1,5 @@
-import type { Subject } from '../../../src/shared/subjects.ts'
-import type { CommandKit } from '../../../src/shared/views.ts'
+import type { Subject } from '/lib/board.js'
+import type { CommandKit } from '/lib/view.js'
 
 /** `floors/open`, on the board: the New floor form in the main pane. */
 export const newFloor = ({ kit }: { target: Subject; kit: CommandKit }) => kit.display('board', { view: 'floors/form' })

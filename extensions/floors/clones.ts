@@ -4,9 +4,8 @@
  * `r` why adding it was refused, `d` a clone the user dismissed. What a clone came to is derived from its job, so a
  * floor the user removed by hand is never added back, and a restart that replays the trigger changes nothing. Pure.
  */
-import type { Job } from '../../src/bridge/jobs.ts'
-import type { StreamFact } from '../../src/bridge/streams.ts'
-import type { Ask, TriggerCall } from '../../src/shared/extensions.ts'
+import type { Job } from '/lib/board.js'
+import type { Ask, StreamFact, TriggerCall } from '/lib/extension.js'
 
 export const CLONES = 'clones'
 

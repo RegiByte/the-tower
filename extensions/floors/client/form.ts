@@ -1,7 +1,6 @@
-import type { Board } from '../../../src/bridge/board.ts'
-import { esc } from '../../../src/shared/cards.ts'
-import type { Mount } from '../../../src/shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from '../../../src/views/parts.ts'
+import type { Board } from '/lib/board.js'
+import { closeHtml, type Mount, paintOnce, viewCss } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 import { browser, DIRS_CSS } from './dirs.ts'
 import { callOf, derived, missing, SOURCES, type Fields, type Source } from './floor-form.ts'
 
