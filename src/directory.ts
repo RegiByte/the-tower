@@ -39,6 +39,7 @@ import { checkFolder, freezeFolder } from './extension-check.ts'
 import { plural } from './shared/format.ts'
 import { usageLine, type Run, type VerbOf } from './cli-verbs.ts'
 import { SHELF_KINDS } from './shelf.ts'
+import { recentJobs, type Job } from './bridge/jobs.ts'
 
 /** The running tower's URL, from the config's `port`. */
 const towerAt = (): string => towerUrl(readConfig(configPath()))
@@ -626,6 +627,32 @@ const runsArgs = (args: string[]): { policy?: string; limit: number } => {
   return { policy: rest[0], limit }
 }
 
+/** `job start`'s flags, then `--` and the command. */
+const jobStartOf = (args: string[]): { argv: string[]; cwd: string; label: string; env: Record<string, string> } => {
+  const dash = args.indexOf('--')
+  const argv = args.slice(dash + 1)
+  if (dash === -1 || !argv.length) throw new CliError(usageLine('job'))
+  const flags = args.slice(0, dash)
+  let cwd = process.cwd()
+  let label: string | undefined
+  const env: Record<string, string> = {}
+  for (let i = 0; i < flags.length; i += 2) {
+    const [flag, value] = [flags[i], flags[i + 1]]
+    if (value === undefined) throw new CliError(usageLine('job'))
+    if (flag === '--cwd') cwd = path.resolve(value)
+    else if (flag === '--label') label = value
+    else if (flag === '--env' && value.includes('=')) env[value.slice(0, value.indexOf('='))] = value.slice(value.indexOf('=') + 1)
+    else throw new CliError(usageLine('job'))
+  }
+  return { argv, cwd, label: label ?? argv.join(' '), env }
+}
+
+/** A job in one line: its id, state, label, owner, when it started, and how it ended. */
+const jobLine = (j: Job): string => {
+  const end = j.exit === undefined ? '' : j.signal ? `, ${j.signal}` : `, exit ${j.exit}`
+  return `${j.id}  ${j.state}${end}  ${j.label}  · ${j.owner}, started ${ago(now - j.startedAt)} ago in ${j.cwd}`
+}
+
 const showOrOpen =
   (verb: 'show' | 'open'): Run =>
   async ([target, ...title]) => {
@@ -841,6 +868,19 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const title = titleIn(id, content)
     console.log(`Kept ${title ? `"${title}" ` : ''}in ${collection.label} on ${floorTitle(floor)} as ${tagOf(id)}: ${collection.dir}/${id}`)
     if (isFailure(announced)) throw new CliError(`The item is kept, but its card won't name you as its keeper: ${refusedLine('fact', announced)}`, 'it needs no second keep: `tower kept` lists it')
+  },
+  job: async ([sub, ...rest]) => {
+    if (sub === 'start') {
+      const { id } = await command<{ id: string }>('job/start', jobStartOf(rest))
+      return console.log(`Started ${id}: \`tower job list\` says how it stands, ${towerAt()}/job/${id}/screen streams its screen`)
+    }
+    if (sub === 'cancel' && rest.length === 1) return void (await command('job/cancel', { id: rest[0] }), console.log(`Asked ${rest[0]} to stop: its end follows`))
+    if (sub !== 'list' || rest.some((a) => a !== '--all')) throw new CliError(usageLine('job'))
+    const res = await towerGet('/jobs')
+    if (!res.ok) throw new CliError(`The tower answered ${res.status} for its jobs: ${await res.text()}`)
+    const all: Job[] = await res.json()
+    const jobs = rest.length ? all : recentJobs(all, now)
+    console.log(jobs.length ? jobs.map(jobLine).join('\n') : rest.length ? 'The jobs log holds no job.' : 'No job ran within the last day: --all lists every job the log holds.')
   },
   kept: async ([collectionName]) => {
     const floor = ownFloor(await readBoard(), me)

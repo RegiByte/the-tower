@@ -22,7 +22,8 @@
 }
 ---
 One command for the user and the workers: the verbs above are the user's, the rest the workers', run by the tower's
-directory (`src/directory.ts`, [[agent-directory]]). The tower mod puts the command on every session's PATH; `npm link`
+directory (`src/directory.ts`, [[agent-directory]]); among them `tower job start|cancel|list`, a worker's own [[jobs]]
+over `job/start`, `job/cancel` and `GET /jobs`, its env given by `--env`, never logged. The tower mod puts the command on every session's PATH; `npm link`
 puts it on the user's (`bin` in `package.json`).
 
 The verbs are data: one table, [`CLI_VERBS`](ref:hub/src/cli-verbs.ts#CLI_VERBS), each entry's name, whose it is
