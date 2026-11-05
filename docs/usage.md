@@ -23,7 +23,8 @@ Shelf paths are relative to the hub.
 > "Put the notes folder on this floor's shelf."
 
 New floor, beside Floors in the tower page's sidebar, adds a floor for a folder already on your machine, with its
-repos, or a new project started from scratch; a floor's Repos view adds and removes its repos (a worker asked for one
+repos, a repository cloned from its URL (as a job that outlives a tower restart), or a new project started from
+scratch; a floor's Repos view adds and removes its repos (a worker asked for one
 does the same, `tower x floors`).
 
 The floors live in `~/.tower/config.json`, which you can also edit by hand (a worker edits it when you ask). The tower

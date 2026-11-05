@@ -216,16 +216,19 @@ use, stays for you to Tidy by hand.
 ### Floors
 
 The bundled extension `floors` adds floors from the tower and changes a floor's repos. New floor, beside Floors and
-Stats in the tower page's sidebar (and in the palette), opens a form for a folder already on the machine or a new
-project (a folder, `git init` and a first commit holding a README, so worktrees can be cut from it). The hub is where
+Stats in the tower page's sidebar (and in the palette), opens a form for a folder already on the machine, a git
+repository cloned from its URL, or a new project (a folder, `git init` and a first commit holding a README, so
+worktrees can be cut from it). A clone runs as a job, so restarting the tower doesn't stop it, and a note in the
+sidebar follows it until its floor is added; nothing can type into it, so a repository that asks for a password fails,
+saying so: set up an SSH key or a credential helper. The hub is where
 the floor's sessions start by default; an existing folder also takes repos, the other folders its sessions work in,
 each picked with the same folder browser. Each adds `projects.<id>` through `config/add`. A floor's Repos view shows
 its hub and repos: removing one leaves the folder as it is. Workers reach the same through `tower x floors
-add|start|add-repo|remove-repo`.
+add|clone|start|add-repo|remove-repo`.
 
 | Setting | Takes | Unset |
 |---|---|---|
-| `root` | The absolute folder the form starts browsing in, and puts new projects under (`<root>/<id>`, which the form lets you change). | the home folder |
+| `root` | The absolute folder the form starts browsing in, and puts clones and new projects under (`<root>/<id>`, which the form lets you change). | the home folder |
 
 ```json
 "extensions": { "floors": { "settings": { "root": "/abs/path/to/code" } } }
