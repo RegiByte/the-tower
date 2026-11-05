@@ -49,7 +49,8 @@ again once a write settles: only facts past where it stood are stepped, from `in
 (`threw`, a `threw` problem on the extension at its next board), and the state is frozen ([[extensions]]). A stream file at the same size, and a `reviews` item at the same `modifiedAt` (an extension's collection item: its
 `parse`, cached the same way), is not read again.
 
-**Config.** The config's directory is watched for the config file (an editor's save replaces it); a change signals, and a config fixed after it broke
+**Config.** The config's directory is watched for the config file (an editor's save replaces it), and so is its
+target's directory when the config is a link into another folder, where its writes land; a change signals, and a config fixed after it broke
 brings the board back ([[board-errors]]). `refreshConfig` signals the same change at once, called by the config verbs
 after the tower's own write ([[config-writes]]).
 [`readConfig`](ref:hub/src/system.ts#readConfig) throws a `ConfigError` naming the file for JSON that doesn't parse.

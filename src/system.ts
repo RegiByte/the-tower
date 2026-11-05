@@ -440,7 +440,13 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     repoWatch.reconcile()
     onChange()
   }
-  watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && configChanged())), paths.config)
+  /** Watches the folder holding `file` for changes to it. */
+  const watchingConfig = (file: string) =>
+    watching(watch(path.dirname(file), logged('config', (_: string, changed: string | null) => changed === path.basename(file) && configChanged())), file)
+  watchingConfig(paths.config)
+  /** A config that is a link is written in its target's folder, which a watch of the link's folder doesn't see. */
+  const target = realpathSync(paths.config)
+  if (path.dirname(target) !== realpathSync(path.dirname(paths.config))) watchingConfig(target)
   await refreshLive()
   await refreshShells()
   const livePolls = [setInterval(refreshLive, LIVE_POLL_MS), setInterval(refreshShells, LIVE_POLL_MS)]
