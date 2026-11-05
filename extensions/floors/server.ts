@@ -2,18 +2,28 @@
  * The floors extension: new floors from the tower, and the repos of one. `add` and `start` ready the floor's hub (a
  * folder already there, or a new repository with a first commit) and add `projects.<id>` through the core's
  * `config/add`, which checks the config with it and refuses an id already taken. `add-repo` and `remove-repo` change a
- * floor's `repos` through `config/append` and `config/remove`. Git runs through `ctx.run`, its env scrubbed of the
- * parent session.
+ * floor's `repos` through `config/append` and `config/remove`. Local git steps run through `ctx.run`, its env scrubbed
+ * of the parent session.
+ *
+ * `clone` runs `git clone` as a job of the jobs daemon, so it outlives a restart of the tower, and records the clone it
+ * started in floors' own stream. The board trigger reads the board's jobs: each clone that ended with exit 0 and whose
+ * floor isn't added, refused or dismissed is handed to `adopt`, which adds the floor and records that it did
+ * (`clones.ts`).
  */
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { apiError, isApiError, type ApiError } from '../../src/shared/api.ts'
-import type { CallCtx, RunResult, Start } from '../../src/shared/extensions.ts'
+import type { Board } from '../../src/bridge/board.ts'
+import type { CallCtx, FoldCtx, RunResult, Start, StartCtx } from '../../src/shared/extensions.ts'
 import type { Config } from '../../src/shared/model.ts'
+import { adoptCalls, asksOf, carriesCredentials, CLONES, clonesOf, holding, NO_CLONES, step, type Clone, type CloneStarted, type ClonesState } from './clones.ts'
 
 /** How long a local git step may run. */
 const GIT_MS = 30_000
+
+/** A clone asks no one for a password or a host key: nothing types into a job, so a prompt fails it, saying so. */
+const NO_PROMPT = { GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: 'ssh -o BatchMode=yes' }
 
 type Settings = { root?: string }
 type Added = { t: 'added'; project: string; hub: string }
@@ -72,8 +82,123 @@ const start: Start = (ctx) => {
 
   const git = (c: CallCtx, argv: string[], cwd: string) => c.run(['git', ...argv], { cwd, timeoutMs: GIT_MS })
 
+  /** Floors' clones on the board now. */
+  const clones = (c: StartCtx): Clone[] => clonesOf(c.own.streams(CLONES) as ClonesState, c.board().jobs, c.provides)
+
+  /** One of floors' clones on the board, or why there is none. */
+  const cloneOf = (c: StartCtx, job: string): Clone | ApiError =>
+    clones(c).find((x) => x.job === job) ?? apiError('not_found', `No clone of floors is job "${job}" on the board: \`tower job list\` lists the jobs`)
+
+  /** The clones being started now, before their fact is written: a second clone checked meanwhile sees them. */
+  const starting = new Map<string, Pick<CloneStarted, 'id' | 'into'>>()
+
+  /** Refused when a clone starting, running, or cloned and not added yet, holds the id or the folder. */
+  const reserved = (c: StartCtx, id: string, into: string): ApiError | undefined => {
+    const held = [...holding(c.own.streams(CLONES) as ClonesState, c.board().jobs, c.provides, Date.now()), ...starting.values()]
+    if (held.some((x) => x.id === id)) return apiError('exists', `A clone in flight is for the floor "${id}": pick another id, or wait for it`)
+    if (held.some((x) => x.into === into)) return apiError('exists', `A clone in flight goes into ${into}: pick another folder, or wait for it`)
+    return undefined
+  }
+
+  /** The clone started as a job of floors, and recorded as floors' own fact. */
+  const startClone = async (c: CallCtx, { id, name, url, into }: Omit<CloneStarted, 'job'>): Promise<{ t: 'started'; job: string } | ApiError> => {
+    const parent = path.dirname(into)
+    const key = `${id}\n${into}`
+    starting.set(key, { id, into })
+    try {
+      mkdirSync(parent, { recursive: true })
+      const job = (await c.jobs.start(['git', 'clone', '--', url, into], { cwd: parent, env: NO_PROMPT, label: `Clone ${url}` })).id
+      await c.streams.append(CLONES, {}, 's', { job, id, name, url, into } satisfies CloneStarted)
+      return { t: 'started', job }
+    } catch (err) {
+      const { code, message } = err as Error & { code?: ApiError['code'] }
+      return apiError(code ?? 'internal', message)
+    } finally {
+      starting.delete(key)
+    }
+  }
+
+  /** Adds in flight, so a trigger that fires again before one is recorded asks for nothing twice. */
+  const adopting = new Set<string>()
+
   return {
+    reduce: { [CLONES]: { init: NO_CLONES, step } },
+    folds: {
+      board: (board: Board, { own }: FoldCtx) => {
+        const all = clonesOf(own.streams[CLONES] as ClonesState, board.jobs, ctx.provides)
+        const asks = asksOf(all)
+        return { x: { clones: all }, ...(asks.length && { asks }) }
+      },
+    },
+    board: (_prev: Board, next: Board) => adoptCalls(((next.x?.[ctx.provides] as { clones?: Clone[] } | undefined)?.clones) ?? []),
     verbs: {
+      clone: async ({ id, name, url, into }: { id: string; name: string; url: string; into: string }, c: CallCtx) => {
+        if (carriesCredentials(url)) return apiError('refused', `${url} carries credentials, which the jobs log would keep: use a credential helper or an SSH key`)
+        const dir = path.resolve(into)
+        return idTaken(c, id) ?? reserved(c, id, dir) ?? takenWhy(dir) ?? startClone(c, { id, name, url, into: dir })
+      },
+      adopt: async ({ job }: { job: string }, c: CallCtx) => {
+        const clone = cloneOf(c, job)
+        if (isApiError(clone)) return clone
+        if (clone.added) return { t: 'added', project: clone.added, hub: clone.into }
+        if (clone.outcome !== 'cloned') return apiError('refused', `The clone of ${clone.url} hasn't cloned: it ${clone.outcome === 'running' ? 'is still running' : `came to ${clone.outcome}`}`)
+        if (adopting.has(job)) return apiError('refused', `The floor for ${clone.url} is being added`)
+        adopting.add(job)
+        try {
+          const added = await register(c, clone.id, clone.name, clone.into, [])
+          const same = isApiError(added) && added.code === 'exists' && c.board().floors.some((f) => f.id === clone.id && f.hub === clone.into)
+          if (isApiError(added) && !same) {
+            await c.streams.append(CLONES, {}, 'r', { job, message: added.message })
+            return added
+          }
+          await c.streams.append(CLONES, {}, 'a', { job, project: clone.id })
+          return { t: 'added', project: clone.id, hub: clone.into }
+        } finally {
+          adopting.delete(job)
+        }
+      },
+      cancel: async ({ job }: { job: string }, c: CallCtx) => {
+        const clone = cloneOf(c, job)
+        if (isApiError(clone)) return clone
+        if (clone.outcome !== 'running') return apiError('refused', `The clone of ${clone.url} isn't running`)
+        try {
+          await c.jobs.cancel(job)
+        } catch (err) {
+          const { code, message } = err as Error & { code?: ApiError['code'] }
+          return apiError(code ?? 'internal', message)
+        }
+        return { ok: true }
+      },
+      remove: async ({ job }: { job: string }, c: CallCtx) => {
+        const clone = cloneOf(c, job)
+        if (isApiError(clone)) return clone
+        if (clone.outcome === 'running' || clone.outcome === 'cloned') return apiError('refused', `The clone of ${clone.url} ${clone.outcome === 'running' ? 'is running: cancel it first' : 'cloned: its folder is the floor\'s'}`)
+        const dir = clone.into
+        if (c.board().jobs.some((j) => j.state === 'running' && (j.cwd === dir || j.cwd.startsWith(`${dir}/`) || j.argv.includes(dir))))
+          return apiError('refused', `A running job works in ${dir}: let it end first`)
+        if (c.board().floors.some((f) => f.hub === dir || f.repos.includes(dir))) return apiError('refused', `${dir} is a floor's: remove it from the floor first`)
+        if (!existsSync(dir)) return { ok: true }
+        if (!isRepo(dir)) return apiError('refused', `${dir} holds no .git, so git didn't start it: remove it by hand if you mean to`)
+        rmSync(dir, { recursive: true, force: true })
+        return { ok: true }
+      },
+      retry: async ({ job }: { job: string }, c: CallCtx) => {
+        const clone = cloneOf(c, job)
+        if (isApiError(clone)) return clone
+        if (clone.outcome === 'running' || clone.outcome === 'cloned') return apiError('refused', `The clone of ${clone.url} ${clone.outcome === 'running' ? 'is running' : 'cloned'}: nothing to retry`)
+        const { id, name, url, into } = clone
+        const refused = idTaken(c, id) ?? reserved(c, id, into) ?? takenWhy(into)
+        if (refused) return { ...refused, message: `${refused.message}${existsSync(into) ? ': Remove deletes what the clone left' : ''}` }
+        const started = await startClone(c, { id, name, url, into })
+        if (!isApiError(started)) await c.streams.append(CLONES, {}, 'd', { job })
+        return started
+      },
+      dismiss: async ({ job }: { job: string }, c: CallCtx) => {
+        const clone = cloneOf(c, job)
+        if (isApiError(clone)) return clone
+        if (!clone.dismissed) await c.streams.append(CLONES, {}, 'd', { job })
+        return { ok: true }
+      },
       add: async ({ id, name, hub, repos = [] }: { id: string; name: string; hub: string; repos?: string[] }, c: CallCtx) => {
         const dir = path.resolve(hub)
         if (!isDir(dir)) return apiError('not_found', `${dir} is no folder on this machine: pick one that exists, or start a project there`)
