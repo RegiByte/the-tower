@@ -1,7 +1,7 @@
 /**
  * A running view of the whole system: every session folded from its log and kept current as the host appends
  * to it, every stream an extension folds kept current, the items of every collection, the host's live set, the terms daemon's shells,
- * what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
+ * the jobs log and the jobs the jobs daemon holds, what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
 import { once } from 'node:events'
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher } from 'node:fs'
@@ -16,11 +16,13 @@ import type { RepoRead } from './bridge/worktrees.ts'
 import { scanCollections } from './collections.ts'
 import { watchRepos, type RepoAsk } from './repo-watch.ts'
 import type { RepoReading } from './worktrees.ts'
-import { hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
+import { heldJobs, hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
 import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
 import { projectsStreamsPath, systemStreamsPath, type SystemPaths } from './shared/paths.ts'
 import type { HostLive } from './shared/protocol.ts'
 import type { Shell } from './shared/terms.ts'
+import type { HeldJob } from './shared/jobs.ts'
+import { jobsOf, type JobRecord } from './bridge/jobs.ts'
 import type { LogFile, StreamMonth } from './bridge/retention.ts'
 import { factEvents, isArchived, logBytes, logFilesIn, logIdOf, tailLog } from './tail.ts'
 import { exitUnwatched, logged, loggedRead, serially, watchedOrExit } from './logged.ts'
@@ -135,6 +137,10 @@ export type System = {
   peers: () => Peer[]
   /** `undefined` while no terms daemon is running. */
   shells: () => Shell[] | undefined
+  /** Every job the jobs log holds, as last read: a log the fold can't read keeps the last read, and the tower's log says why. */
+  jobs: () => JobRecord[]
+  /** The jobs the jobs daemon holds; `undefined` while it isn't running. */
+  heldJobs: () => HeldJob[] | undefined
   /** Every project dir's git, by dir, read without fetching: remote refs are as of the last fetch. */
   repos: () => Map<string, RepoRead>
   /** Ask the host again now, after a request that changed what it runs. */
@@ -147,6 +153,8 @@ export type System = {
   refreshRunning: () => Promise<void>
   /** Ask the terms daemon again now, after a request that changed its shells. */
   refreshShells: () => Promise<void>
+  /** Read the jobs log and ask the jobs daemon again now, after a request that changed its jobs. */
+  refreshJobs: () => Promise<void>
   /** Read every project dir's git again now, after a request that changed its worktrees or branches. */
   refreshRepos: () => Promise<void>
   /** Take the config again now, as a change to its file would, after the tower wrote it. */
@@ -163,7 +171,7 @@ export type System = {
 
 /**
  * `onChange` is called after anything the system holds changes: a logged event, a stream's fact, a collection's items, the live set,
- * the shells, the processes, git, or the config file.
+ * the shells, the jobs log or the daemon's jobs, the processes, git, or the config file.
  */
 export const watchSystem = async (paths: SystemPaths, notify: () => void): Promise<System> => {
   /** Each `until` waiting: its check, and how it is done. */
@@ -184,6 +192,9 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let running: Resource[] = []
   let peers: Peer[] = []
   let shells: Shell[] | undefined
+  let jobs: JobRecord[] = []
+  let jobFiles = new Map<string, HeldFacts>()
+  let held: HeldJob[] | undefined
   const awaited = new Map<string, () => void>()
   /** Each stream fold: its files as read, and where it stands, by project (`''` for the system's). */
   const folds = new Map<StreamFold, { files: Map<string, HeldFacts>; at: Map<string, Folded> }>()
@@ -338,6 +349,29 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     onChange()
   })
 
+  /** The jobs daemon appends a line per fact: the log is read again once the write settles, each month file only once its size changed. */
+  let jobsTimer: NodeJS.Timeout | undefined
+  const readJobs = logged('jobs log', () => {
+    const files = new Map<string, HeldFacts>()
+    const next = jobsOf(streamIn(paths.jobs, jobFiles, files))
+    jobFiles = files
+    if (asJson(next) === asJson(jobs)) return
+    jobs = next
+    onChange()
+  })
+  const scheduleJobs = () => {
+    jobsTimer ??= setTimeout(() => ((jobsTimer = undefined), readJobs()), RESCAN_DEBOUNCE_MS)
+  }
+
+  /** The jobs daemon logs a job's start before it answers, so after a request the log is read too, not left to the watch. */
+  const refreshJobs = loggedRead('jobs daemon', async () => {
+    readJobs()
+    const next = await heldJobs(paths)
+    if (asJson(next) === asJson(held)) return
+    held = next
+    onChange()
+  })
+
   const refreshRunning = serially(loggedRead('processes', async () => {
     const scan = await scanProcesses()
     const next = { running: await resourcesIn(scan), peers: peersIn(scan) }
@@ -435,6 +469,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   items = scanCollections(paths)
   await subscribed(systemStreamsPath(paths), scheduleStreams)
   await subscribed(projectsStreamsPath(paths), scheduleProjectStreams)
+  await subscribed(paths.jobs, scheduleJobs)
+  readJobs()
   rescanMonths()
   const configChanged = () => {
     repoWatch.reconcile()
@@ -449,7 +485,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   if (path.dirname(target) !== realpathSync(path.dirname(paths.config))) watchingConfig(target)
   await refreshLive()
   await refreshShells()
-  const livePolls = [setInterval(refreshLive, LIVE_POLL_MS), setInterval(refreshShells, LIVE_POLL_MS)]
+  await refreshJobs()
+  const livePolls = [setInterval(refreshLive, LIVE_POLL_MS), setInterval(refreshShells, LIVE_POLL_MS), setInterval(refreshJobs, LIVE_POLL_MS)]
 
   return {
     sessions: () => [...sessions.values()].sort((a, b) => b.header.startedAt - a.header.startedAt),
@@ -470,6 +507,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     running: () => running,
     peers: () => peers,
     shells: () => shells,
+    jobs: () => jobs,
+    heldJobs: () => held,
     repos: repoWatch.repos,
     refreshLive,
     tracked: (id, ms) =>
@@ -490,6 +529,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       }),
     refreshRunning,
     refreshShells,
+    refreshJobs,
     refreshRepos,
     refreshConfig: configChanged,
     observe,
@@ -501,7 +541,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       for (const stopTail of tails.values()) stopTail()
       tails.clear()
       ;[...livePolls, ...machinePolls].forEach(clearInterval)
-      ;[rescanTimer, streamsTimer, projectStreamsTimer].forEach(clearTimeout)
+      ;[rescanTimer, streamsTimer, projectStreamsTimer, jobsTimer].forEach(clearTimeout)
       for (const done of [...awaited.values()]) done()
       for (const done of [...waiters.values()]) done()
       const ending = reader

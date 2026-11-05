@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/facts.ts#Broken",

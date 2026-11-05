@@ -100,6 +100,8 @@ export const publisher = defineResource({
       processes: system.running(),
       peers: system.peers(),
       shells: system.shells(),
+      jobs: system.jobs(),
+      heldJobs: system.heldJobs(),
       items: system.items(),
       repos: system.repos(),
       logFiles: system.logs(),

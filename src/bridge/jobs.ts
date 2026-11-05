@@ -53,3 +53,34 @@ export const jobsOf = (facts: StreamFact[]): JobRecord[] => {
 /** `held`: the ids the jobs daemon holds now; `undefined` while it isn't running, when every job not ended is lost. */
 export const jobState = (job: JobRecord, held: ReadonlySet<string> | undefined): JobState =>
   job.ended ? (job.cancelled ? 'cancelled' : 'ended') : held?.has(job.id) ? 'running' : 'lost'
+
+/** A job as renderers and extensions read it: its facts and its state, its end flattened. Times are epoch ms. */
+export type Job = {
+  id: string
+  owner: string
+  label: string
+  argv: string[]
+  cwd: string
+  state: JobState
+  startedAt: number
+  /** When it ended; none while it runs, or when it was lost. */
+  endedAt?: number
+  /** Its exit status, `null` when a signal ended it; none until it ended. */
+  exit?: number | null
+  /** The signal that ended it, by name, `null` when it exited; none until it ended. */
+  signal?: string | null
+}
+
+/** Every job, newest first, each in its state: `held`, the ids the jobs daemon holds now (`jobState`). */
+export const jobsNow = (jobs: JobRecord[], held: ReadonlySet<string> | undefined): Job[] =>
+  jobs
+    .map((job) => {
+      const { id, owner, label, argv, cwd, startedAt, ended } = job
+      return { id, owner, label, argv, cwd, state: jobState(job, held), startedAt, ...(ended && { endedAt: ended.at, exit: ended.exit, signal: ended.signal }) }
+    })
+    .sort((a, b) => b.startedAt - a.startedAt)
+
+const DAY_MS = 86_400_000
+
+/** The jobs the board keeps: running, or over within the last day (a lost one by when it started). */
+export const recentJobs = (jobs: Job[], now: number): Job[] => jobs.filter((j) => j.state === 'running' || (j.endedAt ?? j.startedAt) > now - DAY_MS)

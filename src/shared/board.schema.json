@@ -346,6 +346,17 @@
         },
         "termsUp": {
           "type": "boolean"
+        },
+        "jobs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Job"
+          },
+          "description": "Every owner's jobs (`src/jobs`) running now or over within the last day, newest first; `GET /jobs` has them all. A job whose end was never logged reads `lost` while the jobs daemon doesn't hold it, every such job while it doesn't run."
+        },
+        "jobsUp": {
+          "type": "boolean",
+          "description": "Whether the jobs daemon answers: while it doesn't, no job runs and every job without an end reads `lost`."
         }
       },
       "required": [
@@ -368,7 +379,9 @@
         "claudeDefaults",
         "claudeUntested",
         "shells",
-        "termsUp"
+        "termsUp",
+        "jobs",
+        "jobsUp"
       ],
       "additionalProperties": false
     },
@@ -5566,6 +5579,74 @@
       },
       "additionalProperties": false,
       "description": "What Claude runs a new worker on when the launch asks for no model or effort, as observed: settings files, env, plan and `/model` decide it. One value for the machine, as a `/model` pick is saved in the user's settings: a project whose own settings pin a model is not told apart. Absent until a session shows it."
+    },
+    "Job": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/JobState"
+        },
+        "startedAt": {
+          "type": "number"
+        },
+        "endedAt": {
+          "type": "number",
+          "description": "When it ended; none while it runs, or when it was lost."
+        },
+        "exit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Its exit status, `null` when a signal ended it; none until it ended."
+        },
+        "signal": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The signal that ended it, by name, `null` when it exited; none until it ended."
+        }
+      },
+      "required": [
+        "id",
+        "owner",
+        "label",
+        "argv",
+        "cwd",
+        "state",
+        "startedAt"
+      ],
+      "additionalProperties": false,
+      "description": "A job as renderers and extensions read it: its facts and its state, its end flattened. Times are epoch ms."
+    },
+    "JobState": {
+      "type": "string",
+      "enum": [
+        "running",
+        "ended",
+        "cancelled",
+        "lost"
+      ],
+      "description": "`cancelled`: it ended after someone asked it to stop. `lost`: its end was never written, and the daemon doesn't hold it."
     },
     "BoardError": {
       "type": "object",
