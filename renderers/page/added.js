@@ -112,7 +112,7 @@ export const asksHtml = (board, asks, now) =>
     ? `<div class="offers">${asks
         .map(
           (a) => `<div class="offer-row ask-row ${a.sound === 'wait' ? 'needs' : 'offered'}" data-hold="ask:${esc(a.key)}"><button class="what" data-open-view="${esc(JSON.stringify({ subject: a.subject }))}"${a.hint ? ` data-tip="${esc(a.hint)}"` : ''}><b>${esc(a.title)}</b> <span>${esc(a.cap)} asks · ${esc(span(now - a.since))} ago</span></button>
-    ${a.actions.map((action) => actionHtml(board, a.subject, action)).join('')}
+    <span class="acts">${a.actions.map((action) => actionHtml(board, a.subject, action)).join('')}</span>
     <button class="icon-btn" data-dismiss="${esc(a.key)}" aria-label="${DISMISS_ASK_TITLE}" data-tip="${DISMISS_ASK_TITLE}">${ICON.close}</button></div>`,
         )
         .join('')}</div>`
