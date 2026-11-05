@@ -2,9 +2,8 @@
  * What autotidy applies, pure over the board: the workers going home now, and the part of each floor's Tidy that is
  * theirs. Tidy's own conditions hold (a worktree only once nobody is in it and its work landed); autotidy only picks.
  */
-import type { Board, Card, Floor, TidyPlan } from '../../src/bridge/board.ts'
-import { checkoutLanded, checkoutsOn } from '../../src/bridge/checkouts.ts'
-import type { AddedTidy } from '../../src/shared/extensions.ts'
+import { checkoutLanded, checkoutsOn, type Board, type Card, type Floor, type TidyPlan } from '/lib/board.js'
+import type { AddedTidy } from '/lib/extension.js'
 
 export const CAP = 'autotidy'
 
