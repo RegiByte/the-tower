@@ -26,6 +26,7 @@
     "client.floor-form.js#callOf",
     "client.floor-form.js#derived",
     "client.floor-form.js#missing",
+    "client.floor-form.js#repoNameOf",
     "client.floor-form.js#slugOf",
     "client.form.js#mount",
     "client.repos.js#mount"
