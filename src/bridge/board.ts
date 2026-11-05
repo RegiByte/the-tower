@@ -899,7 +899,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
   const limits = accountLimits(sessions.map((s) => s.facts), readings)
-  const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/')), config.retention?.days, now)
+  const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/') || m.file.startsWith('jobs/')), config.retention?.days, now)
   return {
     user: { name: userName(config) },
     keys,

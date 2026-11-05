@@ -9,7 +9,7 @@ import { defineResource, type StartedResource } from 'braided'
 import { z } from 'zod'
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
-import { archiveLog, archiveStream } from '../archive.ts'
+import { archiveLog, archiveStream, monthPath } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import type { Occupant } from '../bridge/worktrees.ts'
 import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
@@ -864,7 +864,7 @@ export const dispatch = defineResource({
     let streamArchiving: Promise<unknown> = Promise.resolve()
     const archiveMonth = (file: string): Promise<boolean> => {
       const archived = streamArchiving.then(async () => {
-        if (!existsSync(path.join(paths.streams, file))) return false
+        if (!existsSync(monthPath(paths, file))) return false
         await archiveStream(paths, file)
         return true
       })

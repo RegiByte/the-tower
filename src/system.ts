@@ -73,17 +73,18 @@ const streamIn = (dir: string, held: Map<string, HeldFacts>, files: Map<string, 
 
 /**
  * Every stream's month files under `streams/`, the system's (`system/<stream>/`) and each project's
- * (`projects/<project>/<stream>/`), whoever writes them: the core's and the extensions' alike. Read by size only.
+ * (`projects/<project>/<stream>/`), whoever writes them: the core's and the extensions' alike; and the jobs log's,
+ * as `jobs/<month>`. Read by size only.
  */
 const streamMonthsIn = (paths: SystemPaths): StreamMonth[] => {
   const streamDirs = (root: string) => readdirSync(root, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? [path.join(root, d.name)] : []))
   const dirs = [...streamDirs(systemStreamsPath(paths)), ...streamDirs(projectsStreamsPath(paths)).flatMap(streamDirs)]
-  return dirs.flatMap((dir) =>
+  const monthsIn = (dir: string, named: (file: string) => string) =>
     logFilesIn(readdirSync(dir).filter((f) => MONTH_FILE.test(f))).map((f) => {
       const file = path.join(dir, f)
-      return { file: path.relative(paths.streams, file), archived: isArchived(file), bytes: statSync(file).size }
-    }),
-  )
+      return { file: named(file), archived: isArchived(file), bytes: statSync(file).size }
+    })
+  return [...dirs.flatMap((dir) => monthsIn(dir, (file) => path.relative(paths.streams, file))), ...monthsIn(paths.jobs, (file) => path.join('jobs', path.basename(file)))]
 }
 
 /** A stream folded as its facts arrive: `system`'s one, or each project's. */
@@ -360,7 +361,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     onChange()
   })
   const scheduleJobs = () => {
-    jobsTimer ??= setTimeout(() => ((jobsTimer = undefined), readJobs()), RESCAN_DEBOUNCE_MS)
+    jobsTimer ??= setTimeout(() => ((jobsTimer = undefined), readJobs(), logged('streams', rescanMonths)()), RESCAN_DEBOUNCE_MS)
   }
 
   /** The jobs daemon logs a job's start before it answers, so after a request the log is read too, not left to the watch. */

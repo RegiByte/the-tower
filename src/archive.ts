@@ -30,5 +30,9 @@ export const archiveLog = async (paths: SystemPaths, id: string) => {
   await gzipInPlace(plain)
 }
 
-/** A stream's closed month, by its path under `streams/` (`system/probe.quota/2026-09.jsonl`). */
-export const archiveStream = (paths: SystemPaths, file: string) => gzipInPlace(path.join(paths.streams, file))
+/** Where a stream's month is: by its path under `streams/` (`system/probe.quota/2026-09.jsonl`), or the jobs log's (`jobs/2026-09.jsonl`). */
+export const monthPath = (paths: SystemPaths, file: string): string =>
+  file.startsWith('jobs/') ? path.join(paths.jobs, file.slice('jobs/'.length)) : path.join(paths.streams, file)
+
+/** A stream's closed month, named as `monthPath` names it. */
+export const archiveStream = (paths: SystemPaths, file: string) => gzipInPlace(monthPath(paths, file))

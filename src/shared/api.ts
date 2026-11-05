@@ -482,7 +482,7 @@ export const VERBS = {
             streams: z
               .array(z.object({ file: z.string().min(1), bytes: z.int().nonnegative() }))
               .default([])
-              .describe("Stream month files, by path under the system root's `streams/`."),
+              .describe("Stream month files, by path under the system root's `streams/`, or the jobs log's as `jobs/<month>` (@since 1.149)."),
             x: z
               .record(z.string(), z.array(z.string()))
               .optional()
@@ -491,7 +491,7 @@ export const VERBS = {
           .describe("The floor's `tidy` as the board listed it, and the extensions' tidy entries it lists in `board.adds`, or any part of them: refused when anything in it no longer qualifies."),
       })
       .describe(
-        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the stream months closed that long, the system's and the project's, the extensions' streams among them: each gzipped in place as `<file>.gz`, read the same as before. Then each extension applies its entries of `plan.x`, by its answer to the hook `tower/tidy.apply`.",
+        "Apply the project's Tidy as listed: remove its removable worktrees, delete its absorbed kept branches, end the processes left by sessions no longer running, kill the hired workers done with their purpose, their work landed (resumable), and archive the logs of workers ended more than the config's `retention.days` ago and the stream months closed that long, the system's and the project's, the extensions' streams and the jobs log among them: each gzipped in place as `<file>.gz`, read the same as before. Then each extension applies its entries of `plan.x`, by its answer to the hook `tower/tidy.apply`.",
       ),
     reply: z.object({
       t: z.literal('tidied'),
@@ -502,7 +502,7 @@ export const VERBS = {
       killed: z.array(z.string()),
       skipped: z.array(z.string()).describe('Branches kept instead of deleted, workers left alive (no longer idle when their turn came, or their kill failed) and stream months another floor\'s Tidy archived meanwhile, each with why.'),
       archived: z.array(z.string()).describe('The sessions whose logs were archived.'),
-      streams: z.array(z.string()).describe('The stream month files archived, by path under `streams/`.'),
+      streams: z.array(z.string()).describe('The stream month files archived, by path under `streams/`, or the jobs log\'s as `jobs/<month>`.'),
       x: z
         .record(z.string(), z.union([tidyApplied, z.object({ code: z.string(), message: z.string() }).describe('Why its answer failed: nothing of it was applied, as far as the tower knows.')]))
         .optional()
