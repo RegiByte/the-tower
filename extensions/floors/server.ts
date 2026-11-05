@@ -110,10 +110,10 @@ const start: Start = (ctx) => {
         if (isApiError(config)) return config
         const repos = Object.hasOwn(config.projects, project) ? config.projects[project]!.repos : undefined
         if (!repos) return apiError('not_found', `No floor "${project}" is in the config: \`tower x floors\` adds one`)
-        const i = repos.indexOf(repo)
+        const i = repos.findIndex((r) => r === repo || path.resolve(r) === path.resolve(repo))
         if (i < 0) return apiError('not_found', `${repo} is not one of ${project}'s repos: they are ${repos.join(', ') || 'none'}`)
-        const reply = await c.call('tower/config/remove', { key: ['projects', project, 'repos', String(i)], was: repo })
-        return isApiError(reply) ? reply : { t: 'removed', project, path: repo }
+        const reply = await c.call('tower/config/remove', { key: ['projects', project, 'repos', String(i)], was: repos[i] })
+        return isApiError(reply) ? reply : { t: 'removed', project, path: repos[i]! }
       },
     },
     reads: {
