@@ -27,7 +27,7 @@ import { claimSocket } from '../shared/socket.ts'
 import { SHELL_SCROLLBACK } from '../shared/terms.ts'
 import { broadcast, joinViewer, socketViewer, type Screened } from '../shared/viewers.ts'
 import { appendFact } from '../streams.ts'
-import { bootTime, endGroup, signalGroup, TERM_GRACE_MS } from './groups.ts'
+import { bootTime, endGroup, signalGroup } from './groups.ts'
 
 type LiveJob = Screened<JobStream> & { job: HeldJob; proc: pty.IPty; end?: JobEnd; forget?: NodeJS.Timeout }
 
@@ -129,22 +129,23 @@ function startJob(start: JobStart): string {
     j.job = { ...j.job, endedAt }
     broadcast(j, { t: 'x', ...end })
     keep(j)
-    if (stopping && !running().length) process.exit(0)
+    void stopping?.then(exitIfIdle)
   })
   return id
 }
 
-/** SIGTERM to the job's group, and SIGKILL to what still runs after `TERM_GRACE_MS`. */
-const stopJob = (j: LiveJob) => {
-  signalGroup(j.job.pid, 'SIGTERM')
-  setTimeout(() => j.end || signalGroup(j.job.pid, 'SIGKILL'), TERM_GRACE_MS).unref()
-}
+/** Ends the job's whole group (`endGroup`): its end is logged when its leader exits, whatever of its group outlived it. */
+const stopJob = (j: LiveJob): Promise<void> =>
+  endGroup(j.job.pid, j.job.startedAt).then(
+    () => undefined,
+    (err) => console.error(`job ${j.job.id}: ending its group failed:`, err),
+  )
 
 function cancelJob({ id, by }: Extract<ToJobs, { t: 'cancel' }>) {
   if (typeof by !== 'string' || !by) throw new Error('A cancel names who asked (`by`)')
   const j = runningJob(id)
   log(Date.now(), 'cancelled', { id, by })
-  stopJob(j)
+  void stopJob(j)
 }
 
 /** The screen is resized once it has parsed everything written before, so earlier output lays out at its own size. */
@@ -229,14 +230,17 @@ async function endLeftovers(open: ReturnType<typeof openJobs>) {
   for (const [id, members] of ended) if (members) console.log(`job ${id}: ended ${members} process(es) left running by an earlier jobs daemon`)
 }
 
-let stopping = false
+/** Set once the daemon stops: settles when every running job's group has ended. */
+let stopping: Promise<unknown> | undefined
+
+/** The daemon exits once every group it stopped has ended and every job's end is logged. */
+const exitIfIdle = () => running().length || process.exit(0)
 
 function stop() {
-  stopping = true
+  if (stopping) return
   control.close()
-  const left = running()
-  if (!left.length) process.exit(0)
-  left.forEach(stopJob)
+  stopping = Promise.all(running().map(stopJob))
+  void stopping.then(exitIfIdle)
 }
 
 mkdirSync(paths.jobs, { recursive: true })
