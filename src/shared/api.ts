@@ -14,7 +14,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.146'
+export const API_VERSION = '1.147'
 
 const id = z.string().min(1)
 
@@ -154,6 +154,20 @@ const policyRunBase = {
   by: actor('named on the run fact as the session that accepted or started it.'),
   check: checkResult.optional().describe('The check that let it run.'),
 }
+
+const configKey = z
+  .array(z.string().min(1))
+  .min(1)
+  .describe('A key path from the top; an element of an array by its index, `"0"`.')
+const configValue = z.unknown().refine((v) => v !== undefined, 'a value')
+const configWas = z
+  .unknown()
+  .refine((v) => v !== undefined, 'the value read at the key')
+  .describe('The value read at the key, as JSON (`GET /config`): the edit applies only while the key still holds it, deep-equal.')
+const configReply = <T extends string>(t: T) => z.object({ t: z.literal(t), key: z.string().describe('The key edited, its segments joined by dots: `projects.my-app.repos.0`.') })
+/** What every config verb does around its edit. */
+const CONFIG_WRITE =
+  "Refused (`config`) when the config after it would have a problem `tower config check` names, a warning included, that it didn't have before, each named at its key; problems it already had don't hold an edit back. The file is rewritten as JSON indented by two spaces, and the tower reads it again before the reply."
 
 export const VERBS = {
   spawn: {
@@ -311,13 +325,47 @@ export const VERBS = {
   'config/add': {
     input: z
       .strictObject({
-        key: z.array(z.string().min(1)).min(1).describe('The key path to add, from the top: `["projects", "my-app"]`. Objects missing on the way are made.'),
-        value: z.unknown().refine((v) => v !== undefined, 'a value').describe('What the key holds, as JSON.'),
+        key: configKey.describe('The key path to add, from the top: `["projects", "my-app"]`. Objects missing on the way are made; an array on the way is refused (`config/append` adds to one).'),
+        value: configValue.describe('What the key holds, as JSON.'),
       })
       .describe(
-        "Add a key the config doesn't hold yet, such as a floor at `projects.<id>`: the config with it checked as `tower config check` checks it, and written whole. Refused (`exists`) when the key is there, which only a hand edit changes; (`config`) when it would bring a fail, each named at its key; (`refused`) when a key on its path holds no object. The file is rewritten as JSON indented by two spaces. @since 1.146",
+        `Add a key the config doesn't hold yet, such as a floor at \`projects.<id>\`. Refused (\`exists\`) when the key is there: change it with \`config/set\`; (\`refused\`) when a key on its path holds no object. ${CONFIG_WRITE} @since 1.147`,
       ),
-    reply: z.object({ t: z.literal('added'), key: z.string().describe('The key added, as `tower config check` names keys.') }),
+    reply: configReply('added'),
+  },
+  'config/append': {
+    input: z
+      .strictObject({
+        key: configKey.describe('The key path of an array the config holds, from the top: `["projects", "my-app", "repos"]`.'),
+        value: configValue.describe('What to push onto it, as JSON.'),
+      })
+      .describe(
+        `Push a value onto an array the config holds, such as a floor's repo. A value the array already holds, deep-equal, answers \`unchanged\` and writes nothing, so a retry is harmless. Refused (\`not_found\`) when the key isn't there; (\`refused\`) when it holds no array. ${CONFIG_WRITE} @since 1.147`,
+      ),
+    reply: z.union([configReply('appended'), configReply('unchanged')]),
+  },
+  'config/set': {
+    input: z
+      .strictObject({
+        key: configKey.describe('The key path of a value the config holds, from the top; an array\'s element by its index: `["projects", "my-app", "repos", "0"]`.'),
+        value: configValue.describe('What the key holds instead, as JSON.'),
+        was: configWas,
+      })
+      .describe(
+        `Replace a value the config holds, such as \`renderers.page.layout\`, while it is still \`was\`. Refused (\`not_found\`) when the key isn't there: add it with \`config/add\`; (\`changed\`) when it no longer holds \`was\`. ${CONFIG_WRITE} @since 1.147`,
+      ),
+    reply: configReply('set'),
+  },
+  'config/remove': {
+    input: z
+      .strictObject({
+        key: configKey.describe('The key path to remove, from the top; an array\'s element by its index, spliced out: `["projects", "my-app", "repos", "0"]`.'),
+        was: configWas,
+      })
+      .describe(
+        `Remove a key the config holds, or an element of an array, while it still holds \`was\`. Refused (\`not_found\`) when the key isn't there; (\`changed\`) when it no longer holds \`was\`. ${CONFIG_WRITE} @since 1.147`,
+      ),
+    reply: configReply('removed'),
   },
   'review/append': {
     input: z
@@ -530,7 +578,8 @@ export const TRANSPORT = {
  * the stack). Renderers branch on the code; the message is for people.
  */
 /** `not_at_prompt`, `composer_holds`, `moved`: why a prompt was not submitted (`submit/at-prompt`). @since 1.134. `not_plain`: its text opens as a command. @since 1.136 */
-export const ERROR_CODES = ['invalid', 'not_found', 'refused', 'unavailable', 'exists', 'would_lose', 'lost', 'offline', 'worktree_failed', 'config', 'limited', 'internal', 'not_at_prompt', 'composer_holds', 'moved', 'not_plain'] as const
+/** `changed`: the config's value at the key is no longer the `was` the caller read (`config/set`, `config/remove`): read it again. @since 1.147 */
+export const ERROR_CODES = ['invalid', 'not_found', 'refused', 'unavailable', 'exists', 'would_lose', 'lost', 'offline', 'worktree_failed', 'config', 'limited', 'internal', 'not_at_prompt', 'composer_holds', 'moved', 'not_plain', 'changed'] as const
 export const ApiError = z.object({ t: z.literal('error'), code: z.enum(ERROR_CODES), message: z.string() })
 
 export type ErrorCode = (typeof ERROR_CODES)[number]
@@ -553,6 +602,7 @@ export const ERROR_STATUS: Record<ErrorCode, number> = {
   composer_holds: 409,
   moved: 409,
   not_plain: 409,
+  changed: 409,
 }
 
 export const apiError = (code: ErrorCode, message: string): ApiError => ({ t: 'error', code, message })

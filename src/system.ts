@@ -149,6 +149,8 @@ export type System = {
   refreshShells: () => Promise<void>
   /** Read every project dir's git again now, after a request that changed its worktrees or branches. */
   refreshRepos: () => Promise<void>
+  /** Take the config again now, as a change to its file would, after the tower wrote it. */
+  refreshConfig: () => void
   /**
    * Keeps `running` and `peers` current, re-read every 5 s, and `repos`, read as their git changes (`repo-watch.ts`),
    * until the returned function is called; nobody observing, they are not read or watched at all. Resolves once they
@@ -434,11 +436,11 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   await subscribed(systemStreamsPath(paths), scheduleStreams)
   await subscribed(projectsStreamsPath(paths), scheduleProjectStreams)
   rescanMonths()
-  watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => {
-        if (file !== path.basename(paths.config)) return
-        repoWatch.reconcile()
-        onChange()
-      })), paths.config)
+  const configChanged = () => {
+    repoWatch.reconcile()
+    onChange()
+  }
+  watching(watch(path.dirname(paths.config), logged('config', (_: string, file: string | null) => file === path.basename(paths.config) && configChanged())), paths.config)
   await refreshLive()
   await refreshShells()
   const livePolls = [setInterval(refreshLive, LIVE_POLL_MS), setInterval(refreshShells, LIVE_POLL_MS)]
@@ -483,6 +485,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     refreshRunning,
     refreshShells,
     refreshRepos,
+    refreshConfig: configChanged,
     observe,
     stop: async () => {
       stopped = true

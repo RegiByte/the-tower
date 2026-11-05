@@ -20,7 +20,7 @@ import { coreFacts, fieldFacts, forkFacts, mergeParts, placeable, promptedFacts,
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
-import { addToConfig, keyName } from '../config-add.ts'
+import { editConfig, keyName, type ConfigEdit } from '../config-edit.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
 import { hostRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
 import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
@@ -793,6 +793,14 @@ export const dispatch = defineResource({
         return existsSync(file) ? change(file) : apiError('not_found', `${project}/${collection} holds no item "${id}"`)
       })
 
+    /** One edit of the config file, then the config taken again at once: a link's target folder raises no watch event. */
+    const configEdited = (edit: ConfigEdit) => {
+      const done = editConfig(paths.config, edit)
+      if (isApiError(done)) return done
+      if (done !== 'unchanged') system.refreshConfig()
+      return { t: done, key: keyName(edit.key) }
+    }
+
     /**
      * A worktree whose work never landed, thrown away as the board showed it, in order: its tips read, the floor's recovery
      * record made by the answers to `tower/discard.record`, then each repo's worktree removed with force and its branch
@@ -980,7 +988,10 @@ export const dispatch = defineResource({
           const modifiedAt = restoreItem(paths, project, collection, id, content)
           return modifiedAt === undefined ? apiError('refused', `${project}/${collection} already holds an item "${id}"`) : { t: 'created', id, modifiedAt }
         }),
-      'config/add': ({ key, value }) => addToConfig(paths.config, key, value) ?? { t: 'added', key: keyName(key) },
+      'config/add': ({ key, value }) => configEdited({ t: 'add', key, value }),
+      'config/append': ({ key, value }) => configEdited({ t: 'append', key, value }),
+      'config/set': ({ key, value, was }) => configEdited({ t: 'set', key, value, was }),
+      'config/remove': ({ key, was }) => configEdited({ t: 'remove', key, was }),
       'collection/delete': ({ project, collection, id }) => toItem(project, collection, id, () => (deleteItem(paths, project, collection, id), OK)),
       'worktree/recut': ({ project, name }) =>
         onWorktrees(project, async (p, config) => (await recutWorktree(p, project, worktreesConfig(config, project).links, name, occupants()), OK)),

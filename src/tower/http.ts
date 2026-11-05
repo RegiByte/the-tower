@@ -24,6 +24,7 @@
  *                       `?v=<major>.<minor>` pins the version the page was written against
  *   GET  /frame-keys.js a framed page's keys sent to the tower framing it, appended to every html page served sandboxed
  *   GET  /origins       the web page of each project directory's origin remote, by directory
+ *   GET  /config        the config file as it holds it now, parsed: what the config verbs edit (src/config-edit.ts)
  *   GET  /patterns      what users found doing with the tower, from the checkout's docs/patterns/*.md (src/shared/capabilities.ts)
  *   GET  /conversations/<id>  the saved conversations of every session its worker ran as up to it, its own first, each with its session, latest prompt and answer and last `brief.pairs` turns in full, read from the logs
  *   GET  /conversations/<id>/<conversation>  one of the session's saved conversations with every one of its turns
@@ -75,7 +76,8 @@
  *   POST /fact {name: show | keep | leave, value?}   a fact a running worker logs about its own session, through the host
  *   POST /collection/create {project, collection, name?, ext, content} | /collection/write {project, collection, id, content, modifiedAt}
  *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
- *   POST /config/add {key, value}   a key the config doesn't hold yet, checked, then the file written whole (src/config-add.ts)
+ *   POST /config/add {key, value} | /config/append {key, value} | /config/set {key, value, was} | /config/remove {key, was}
+ *        one edit of the config file, `was` the value read at the key, checked, the file written whole and read again (src/config-edit.ts)
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
  *   POST /policy/run {project, policy, start, slot?, by?, check?} | /policy/pass {project, policy, slot, outcome, check?}
  *        | /policy/approve {project, policy, hash, by?}   a policy's facts in its project's streams (decision `policies`)
@@ -123,6 +125,7 @@ import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
 import { MEDIA_TYPES, mediaTypeOf, UNKNOWN_TYPE } from '../shared/media.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
+import { readConfig as readConfigFile } from '../system.ts'
 import { everyEvent, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
@@ -924,6 +927,7 @@ export const httpServer = defineResource({
       streamRead({ description: 'The screen, terminal and shell streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
       plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema()) }),
       apiRead('origins', { path: /^\/origins$/, answer: () => origins() }),
+      apiRead('config', { path: /^\/config$/, answer: () => json(readConfigFile(paths.config) satisfies Reads['config']) }),
       apiRead('extensions', {
         path: /^\/extensions$/,
         answer: () => {

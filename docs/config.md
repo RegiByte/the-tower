@@ -1,10 +1,18 @@
 # The config
 
-`~/.tower/config.json` is the one file the user edits by hand (`TOWER_CONFIG` points elsewhere). The tower writes it in
-one case: `config/add` adds a key it doesn't hold yet (a new floor), checked first, the file then rewritten as JSON
-indented by two spaces. The directory that
-holds it is the system root: session logs, collections, sockets and the cache live next to it. The tower reads the
-file again whenever it changes, so an edit needs no restart, but for `port`.
+`~/.tower/config.json` is the user's intent (`TOWER_CONFIG` points elsewhere). The directory that holds it is the
+system root: session logs, collections, sockets and the cache live next to it. The tower reads the file again whenever
+it changes, so an edit needs no restart, but for `port`.
+
+The file has two writers: the user, by hand, and the tower, through its config verbs (`GET /config` reads it as the file
+holds it). `config/add` adds a key it doesn't hold yet, such as a floor; `config/append` pushes a value onto an array;
+`config/set` and `config/remove` replace or remove a value, given `was`, the value the caller read at that key, and are
+refused as `changed` when a hand edit has changed it since. An edit at one key never conflicts with a change at
+another. Each is refused when it would bring a problem `tower config check` names, a warning included, that the config
+didn't have before; problems already there don't hold an edit back. A write rewrites the whole file as JSON indented by
+two spaces, beside the file's real path when it is a link. An editor holding unsaved changes to the file overwrites a
+write the tower made when it saves: the tower can't see that, so save or reload the file before editing it through the
+tower.
 
 `tower config check` reads the config the way the tower does and prints each problem at its key path
 (`projects.my-app.shelf[0]`), exiting 1 on any the tower can't take. A key the tower doesn't know, at any depth, is a warning: the tower ignores it, and
