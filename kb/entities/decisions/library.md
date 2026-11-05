@@ -53,9 +53,10 @@ contract if authors can find everything they need on it.
 - **Types outside the checkout.** `tower types <dir>` ([`writeTypes`](ref:hub/src/types.ts#writeTypes)) writes the
   declarations the checkout's TypeScript emits for the library and the bundled clients (`tsconfig.types.json`, comments
   kept so `@deprecated` reaches editors) into `<dir>/.tower/types/`, with a tsconfig to extend that maps `/lib/*.js`,
-  `/tower.js` and `/x/<cap>/*.js`. Every package the tree names is vendored, worked out from the declarations, since a
-  missing package under `skipLibCheck` silently turns the types it reaches into `any`. A fixture in `test/outside/`,
-  importing from every module, typechecks in a temporary folder against that tree alone with every declaration checked.
+  `/tower.js` and `/x/<cap>/*.js`. Every package the tree names is vendored, worked out from the declarations, and the
+  written tsconfig leaves `skipLibCheck` off, since with it on a missing package turns what it reaches into `any`
+  unsaid. A fixture in `test/outside/`,
+  importing from every module, typechecks in a temporary folder against that tree alone.
 
 **Alternatives considered.** Keeping the 28 modules with named lists fixes accidents but keeps the grab-bags. Two
 surfaces, one for authors and one for renderers, means two contracts. An npm package needs an account and a release

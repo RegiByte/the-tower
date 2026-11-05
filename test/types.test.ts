@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { cpSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { after, test } from 'node:test'
@@ -19,7 +20,7 @@ const outsideFolder = (name: string): string => {
   const folder = path.join(scratch, name)
   cpSync(FIXTURE, folder, { recursive: true })
   for (const dep of ['@types/node', 'undici-types']) cpSync(path.join(REPO, 'node_modules', dep), path.join(folder, 'node_modules', dep), { recursive: true })
-  writeFileSync(path.join(folder, 'tsconfig.json'), JSON.stringify({ extends: './.tower/tsconfig.json', compilerOptions: { skipLibCheck: false } }))
+  writeFileSync(path.join(folder, 'tsconfig.json'), JSON.stringify({ extends: './.tower/tsconfig.json' }))
   writeTypes(cache, folder)
   return folder
 }
@@ -58,12 +59,18 @@ test('tower types gives identical files, built twice or refreshed', () => {
   assert.deepEqual(written(folder), first)
 })
 
-test('tower types writes a .gitignore once: an author who deletes it keeps it deleted', () => {
+test('tower types keeps .tower out of git, and an author who changes its .gitignore commits the vendored packages too', () => {
   const folder = outsideFolder('committed')
-  assert.equal(readFileSync(path.join(folder, '.tower', '.gitignore'), 'utf8'), '*\n')
-  rmSync(path.join(folder, '.tower', '.gitignore'))
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: folder, encoding: 'utf8' })
+  git('init', '-q')
+  writeFileSync(path.join(folder, '.gitignore'), 'node_modules\n')
+  git('add', '-A')
+  assert.ok(!git('ls-files').includes('.tower/'))
+  writeFileSync(path.join(folder, '.tower', '.gitignore'), '!node_modules\n')
   writeTypes(cache, folder)
-  assert.ok(!existsSync(path.join(folder, '.tower', '.gitignore')))
+  git('add', '-A')
+  assert.ok(git('ls-files').includes('.tower/types/node_modules/zod/package.json'))
+  assert.ok(!git('ls-files').split('\n').some((file) => file.startsWith('node_modules/')))
 })
 
 test('tower types keeps one version of the code in its cache', () => {
