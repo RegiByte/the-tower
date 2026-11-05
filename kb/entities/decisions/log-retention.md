@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": [
     "hub/src/bridge/retention.ts#oldLogs",
     "hub/src/bridge/retention.ts#LogFile",
@@ -70,7 +70,9 @@ times over: compressing keeps every fact readable and gives back most of the spa
 - *Streams' months* ([[probes]]): a stream's file is its UTC month's, appended to only during that month, so a
   month that ended more than `retention.days` ago is eligible ([`oldStreams`](ref:hub/src/bridge/retention.ts#oldStreams)).
   Streams under `streams/system/` belong to no floor, so every floor's Tidy lists them in the plan's `streams`, each
-  `{file, bytes}` by its path under `streams/`, as one row; whichever
+  `{file, bytes}` by its path under `streams/`, as one row; so does the jobs log, written by the [[jobs-daemon]] in the
+  streams' format outside `streams/`, its months listed as `jobs/<month>` (no stream folder is named `jobs`) and
+  archived from the system root; whichever
   floor applies it archives them, and the others' plans move on. Two floors' Tidy pressed together pass the same check,
   so the tower archives stream months one at a time and skips, naming it in `skipped`, a month already gone. A project's own streams (`streams/projects/<project>/`,
   [[policies]]' runs and approvals) are listed in that floor's Tidy alone, after the system's. [`archiveStream`](ref:hub/src/archive.ts#archiveStream) gzips in place the same way, with

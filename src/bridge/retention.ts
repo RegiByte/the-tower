@@ -27,7 +27,10 @@ export const oldLogs = (cards: Card[], logs: Map<string, LogFile>, days: number 
     .map((c) => ({ id: c.id, bytes: logs.get(c.id)!.bytes }))
 }
 
-/** A stream's month file on disk, by its path under `streams/` (`system/probe.quota/2026-09.jsonl`), and its size in bytes on disk. */
+/**
+ * A stream's month file on disk, by its path under `streams/` (`system/probe.quota/2026-09.jsonl`), or the jobs log's as
+ * `jobs/<month>` (`jobs/2026-09.jsonl`), and its size in bytes on disk.
+ */
 export type StreamMonth = { file: string; archived: boolean; bytes: number }
 
 /** A plain month file Tidy would archive. */
