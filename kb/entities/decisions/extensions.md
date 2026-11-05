@@ -42,7 +42,8 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.
 - **One capability per extension.** `provides` defaults to `id`; everything an extension shows others is named by its
   capability, so a replacement providing the same capability takes over its names. Names are lowercase words joined by
-  single dashes, never the core's ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)), and a bundled
+  single dashes, never the core's ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED); a name the core takes
+  later arrives at a minor, a user's extension of it refused until renamed, as `config` did at 1.147), and a bundled
   capability's id is the bundled extension's ([`BUNDLED`](ref:hub/src/shared/extensions.ts#BUNDLED)): a user replaces
   one by providing it on purpose. A new bundled extension that does nothing until its settings turn it on is an
   addition and arrives at an API minor (autotidy, 1.105), a user's extension of its id then refused until renamed or

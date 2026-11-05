@@ -12,6 +12,7 @@
     { "to": "terms-daemon", "verb": "calls", "carries": "spawn, write, resize, kill and attach over terms.sock" },
     { "to": "system-root", "verb": "reads", "carries": "config.json on every request; shelf files under each project's hub, or a shelf item in its collection" },
     { "to": "operator", "verb": "opens", "carries": "a path the system names in Finder (reveal) or the user's editor (edit), project dirs in a new editor window (open)" },
+    { "to": "system-root", "verb": "writes", "carries": "config.json, one checked edit per config verb, then read again at once" },
     { "to": "system-root", "verb": "writes", "carries": "collection items: create, write, delete inside declared collections; review threads appended (review/append), and filed by tidy once their checkout landed (`<checkout>@<time>.md`), read back as history at /reviews/<project>" }
   ]
 }
@@ -23,7 +24,8 @@ extension ([[spine]], [[extensions]]): this server is `core:http`, over `core:di
 `core:config`, and beside it the slot loop ([`runSlots`](ref:hub/src/slots.ts#runSlots): the extensions' slots, the policies extension's among them, [[policies]]), each on a tick of
 their own. SIGTERM (`tower down`) or SIGINT halts them in reverse: the server closes every connection, its streams
 stop with them and its screen mirrors are dropped. `GET /extensions` answers every extension and the resources'
-topology, and `GET /schema` serves an extension's manifest as `extension`. The board (floors of cards, rate limits, today's stats, extensions, shells) is
+topology, and `GET /schema` serves an extension's manifest as `extension`. `GET /config` reads the config file as it
+holds it, and the config verbs edit it one key at a time ([[config-writes]]). The board (floors of cards, rate limits, today's stats, extensions, shells) is
 derived by [`board`](ref:hub/src/bridge/board.ts#board), with the running extensions' folds on it
 ([`boardOf`](ref:hub/src/tower/publisher.ts#boardOf): a fold that calls `ctx.board()` throws, since it holds the board), and pushed over SSE, debounced: it carries the present, and
 every other card is read at [`/archive/<project>`](ref:hub/src/tower/http.ts#archive) ([[board-archive]]). A session screen is

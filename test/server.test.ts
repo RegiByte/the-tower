@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { appendFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
@@ -408,6 +408,7 @@ test('server: every read answers', async () => {
     ['/extensions', 'application/json', has('extensions', 'topology')],
     ['/renderers', 'application/json', has('default', 'renderers')],
     ['/origins', 'application/json', has()],
+    ['/config', 'application/json', has('argv', 'projects')],
     [`/conversations/${SESSION}`, 'application/json', isArray],
     ['/archive/lab', 'application/json', isArray],
     ['/reviews/lab', 'application/json', has('threads', 'authors')],
@@ -1119,6 +1120,88 @@ test('server: a collection item is created, written, read back and deleted', asy
   assert.equal((await get(at)).body, '# A draft, again\n')
   await command('collection/delete', { ...item, id: created.id })
   assert.equal(errorCode(await get(at)), 'not_found')
+})
+
+const CONFIG = path.join(ROOT, 'config.json')
+const configNow = () => JSON.parse(readFileSync(CONFIG, 'utf8'))
+/** An edit of the config file as the user makes one by hand. */
+const handEdit = (change: (config: Record<string, any>) => void) => {
+  const config = configNow()
+  change(config)
+  writeFileSync(CONFIG, JSON.stringify(config))
+}
+
+/**
+ * The first board that `holds` on one stream held open, once `act` has run, or a failure `ms` after it ran. `act` runs
+ * once the stream has been quiet for a second: the boards an opening stream brings (it starts reading the machine) are
+ * past, so a board that comes after `act` was published for what it did.
+ */
+const boardAfter = (act: () => Promise<unknown>, holds: (board: Board) => boolean, ms: number): Promise<void> =>
+  new Promise((resolve, reject) => {
+    let quiet: NodeJS.Timeout | undefined
+    let deadline: NodeJS.Timeout | undefined
+    let acted = false
+    const done = (err?: Error) => (clearTimeout(quiet), clearTimeout(deadline), req.destroy(), err ? reject(err) : resolve())
+    const actWhenQuiet = () => {
+      clearTimeout(quiet)
+      quiet = setTimeout(() => {
+        acted = true
+        deadline = setTimeout(() => done(new Error(`no board held it within ${ms} ms`)), ms)
+        act().catch(done)
+      }, 1000)
+    }
+    const req = http.get(`${base}/board`, { agent: false }, (res) => {
+      let text = ''
+      res.setEncoding('utf8').on('data', (chunk) => {
+        text += chunk
+        for (let end = text.indexOf('\n\n'); end >= 0; end = text.indexOf('\n\n')) {
+          const event = JSON.parse(text.slice(0, end).replace(/^data: /, '')) as BoardMsg
+          text = text.slice(end + 2)
+          if (!acted) actWhenQuiet()
+          else if ('board' in event && holds(event.board)) done()
+        }
+      })
+    })
+    req.on('error', done)
+  })
+
+test('server: GET /config is the config file as it holds it, parsed', async () => {
+  assert.deepEqual(JSON.parse((await get('/config')).body), configNow())
+})
+
+test('server: config/set applies while its key still holds was, a hand edit elsewhere aside, and is refused as changed after one at its key; append answers unchanged for a value the array holds', async () => {
+  const name = ['projects', 'bare', 'name']
+  handEdit((c) => (c.projects.bare.name = 'bare by hand'))
+  const stale = await post('config/set', { key: name, value: 'Bare', was: 'bare' })
+  assert.equal(errorCode(stale), 'changed', stale.body)
+  assert.equal(configNow().projects.bare.name, 'bare by hand')
+  handEdit((c) => ((c.projects.bare.name = 'bare'), (c.retention.days = 2)))
+  assert.deepEqual(await command('config/set', { key: name, value: 'Bare', was: 'bare' }), { t: 'set', key: 'projects.bare.name' })
+  assert.equal(configNow().projects.bare.name, 'Bare')
+  assert.equal(configNow().retention.days, 2)
+  const report = configNow().projects.lab.shelf[0]
+  assert.deepEqual(await command('config/append', { key: ['projects', 'lab', 'shelf'], value: report }), { t: 'unchanged', key: 'projects.lab.shelf' })
+  await command('config/set', { key: name, value: 'bare', was: 'Bare' })
+  handEdit((c) => (c.retention.days = 1))
+})
+
+test("server: a floor config/add adds is on the board at once, though the config is a link into a folder the tower doesn't watch", async () => {
+  const target = path.join(ROOT, 'dotfiles', 'config.json')
+  const hub = path.join(ROOT, 'added')
+  mkdirSync(path.dirname(target), { recursive: true })
+  mkdirSync(hub, { recursive: true })
+  renameSync(CONFIG, target)
+  symlinkSync(target, CONFIG)
+  const floor = { name: 'added', hub, repos: [] }
+  const onBoard = (board: Board) => board.floors.some((f) => f.id === 'added')
+  try {
+    await boardAfter(() => command('config/add', { key: ['projects', 'added'], value: floor }), onBoard, 2000)
+    assert.ok(lstatSync(CONFIG).isSymbolicLink())
+    await boardAfter(() => command('config/remove', { key: ['projects', 'added'], was: floor }), (board) => !onBoard(board), 2000)
+  } finally {
+    rmSync(CONFIG)
+    renameSync(target, CONFIG)
+  }
 })
 
 test('server: a review note is appended to its thread', async () => {

@@ -4,7 +4,7 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-04",
   "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo", "hub/src/bridge/worktrees.ts#readsSince"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
@@ -49,8 +49,9 @@ again once a write settles: only facts past where it stood are stepped, from `in
 (`threw`, a `threw` problem on the extension at its next board), and the state is frozen ([[extensions]]). A stream file at the same size, and a `reviews` item at the same `modifiedAt` (an extension's collection item: its
 `parse`, cached the same way), is not read again.
 
-**Config.** The config's directory is watched for the config file (an editor's save replaces it); a change signals,
-and a config fixed after it broke brings the board back ([[board-errors]]).
+**Config.** The config's directory is watched for the config file (an editor's save replaces it); a change signals, and a config fixed after it broke
+brings the board back ([[board-errors]]). `refreshConfig` signals the same change at once, called by the config verbs
+after the tower's own write ([[config-writes]]).
 [`readConfig`](ref:hub/src/system.ts#readConfig) throws a `ConfigError` naming the file for JSON that doesn't parse.
 
 **The machine.** `live()` and `shells()` poll the host and the terms daemon every 1 s, `undefined` while either is down.
