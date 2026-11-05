@@ -2,8 +2,7 @@
  * The lines of a worker's Changes: each file's rows, unified and side by side, which files are viewed, lines picked,
  * and where lines named by repo, path and number stand among them. Bundled into `/panels.js`.
  */
-import type { RepoChanges } from '../changes.ts'
-import type { DiffFile, Hunk } from '../bridge/diff.ts'
+import type { DiffFile, Hunk, RepoChanges } from './repo-changes.ts'
 import { langOf, repoName } from './repos.ts'
 import type { ChangesRead, Viewed } from './changes-reads.ts'
 

@@ -7,9 +7,10 @@
 import { constants } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { join } from 'node:path'
-import { beforeCount, linesThrough, MAX_BEFORE_LINES, parseDiff, withBefore, type DiffFile } from './bridge/diff.ts'
+import { beforeCount, linesThrough, MAX_BEFORE_LINES, parseDiff, withBefore } from './bridge/diff.ts'
 import { DIFF, MAX_UNTRACKED, sinceOf, untrackedIn } from './changed-files.ts'
 import { git, gitBytes, run } from './git.ts'
+import type { Commit, DiffFile, RepoChanges } from './shared/repo-changes.ts'
 import { againstFor, isRepo } from './worktrees.ts'
 
 /** Commits listed since the base past this many are a branch that was never rebased, not a review. */
@@ -17,17 +18,6 @@ const MAX_COMMITS = 200
 
 /** What a read shows: everything since the base, only what isn't committed (since `HEAD`), or one commit's own changes. */
 export type ChangesScope = 'all' | 'uncommitted' | { commit: string }
-
-/** A commit since the base: its hash, the first line of its message, and when it was made (ISO). */
-export type Commit = { sha: string; subject: string; at: string }
-
-/**
- * One repo's changes. `against`: the ref they're counted from (the branch's base, its upstream, or `HEAD`), and `since` the commit
- * that is (the merge-base with that base). `commits`: the commits since then, newest first, whatever the scope.
- * `shows`: what `files` hold, `all`, `uncommitted`, or a commit of `commits` (none, in a repo without that commit).
- * `more`: untracked files left out past `MAX_UNTRACKED`.
- */
-export type RepoChanges = { dir: string; against: string; since: string; commits: Commit[]; shows: 'all' | 'uncommitted' | string; files: DiffFile[]; more: number }
 
 /** An untracked file as a diff against nothing: `--no-index` exits 1 when there is a difference, which there always is. */
 const untrackedDiff = async (dir: string, file: string): Promise<string> => {

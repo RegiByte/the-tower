@@ -1,4 +1,4 @@
-import type { RepoChanges } from '../../../src/changes.ts'
+import type { RepoChanges } from '../../../src/shared/repo-changes.ts'
 import { loop, timers } from '../../../src/shared/loop.ts'
 import {
   changesFailure, changesHandlers, changesPath, changesOf as changesIn, noChanges, readChanges, scopeOf as scopeIn,

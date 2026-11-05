@@ -5,7 +5,7 @@
  * model, puts the html in an element with `drawPanel` and wires the attributes below. The tower serves it as
  * `/panels.js`, bundled with the modules it gathers: `changes-reads.ts`, `changes-lines.ts` and `changes-panel.ts`,
  * `anchors-legacy.ts` (deprecated since 1.116, review notes' anchors and the note box, now the reviews extension's),
- * `reviews-panel.ts`, `stats-panel.ts`, `policies-panel.ts`, `file-acts.ts`, `panel-kit.ts` and `panels-css.ts`.
+ * `reviews-panel.ts`, `stats-panel.ts`, `policies-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts` and `panels-css.ts`.
  *
  * The protocol a renderer wires, by the attribute on the element clicked (`closest`):
  *
@@ -77,14 +77,15 @@ export {
 } from './changes-lines.ts'
 export {
   CHANGES_TREE_KEY, DIFF_LAYOUTS, DIFF_LAYOUT_KEY, DIFF_LAYOUT_LABEL, DIFF_LAYOUT_MEANS, markedChangesHtml, markedLines, keepingFileTop, keepingViewedFileTop,
-  type MarkedChangesView, type DiffLayout,
+  type MarkedChangesView,
 } from './changes-panel.ts'
 export { pickAnchor, anchorWhere, notedLines, anchorSpot, anchorOf, changesHtml, type ChangesView } from './anchors-legacy.ts'
 export {
   threadItemFiles, threadFiles, cardThread, floorThread, threadSlot, threadWant, heldThread, threadFailure, readThread, threadViewOf, reviewsHtml,
   type ThreadView, type ThreadFiles, type ThreadPlace, type ThreadAt, type ThreadViewer,
 } from './reviews-panel.ts'
-export { STATS_ALL, statsQuery, usd, hours, duration, statsHtml, type StatsRange, type StatsProject, type StatsView } from './stats-panel.ts'
+export { STATS_ALL, statsQuery, usd, hours, duration, statsHtml, type StatsProject, type StatsView } from './stats-panel.ts'
 export { policyZone, offerWords, policiesHtml, policyDoneLine, type PoliciesView } from './policies-panel.ts'
-export { failedHtml, drawPanel, keepingFocus, keepShownTabs, type TextBox } from './panel-kit.ts'
+export { failedHtml } from './panel-html.ts'
+export { drawPanel, keepingFocus, keepShownTabs, type TextBox } from './panel-kit.ts'
 export { panelsCss } from './panels-css.ts'

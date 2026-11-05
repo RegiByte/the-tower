@@ -3,33 +3,13 @@
  * renderers, which number the lines from each hunk's start.
  */
 import { fnv1a } from '../shared/hash.ts'
+import type { DiffFile, Hunk } from '../shared/repo-changes.ts'
 
 /** A file's lines past this many changed are left out: a lockfile or a build output, not something to read. */
 export const MAX_FILE_LINES = 2000
 
 /** A file's unchanged lines before its hunks past this many would be a large file changed near its end: it isn't read for them (`beforeCount`). */
 export const MAX_BEFORE_LINES = 1000
-
-/**
- * One region of a file: `old` and `new` are the first line's numbers, each line keeps git's mark (` `, `+`, `-`, `\`).
- * `before`: the unchanged lines since the last hunk (or the file's start), the same on both sides, so a renderer reads
- * each hunk in the code it stands in (a comment or a string opened above it). On every hunk of a file or on none: absent when `withBefore` didn't read them.
- */
-export type Hunk = { old: number; new: number; heading: string; lines: string[]; before?: string[] }
-
-export type DiffFile = {
-  path: string
-  /** The path it was renamed from. */
-  from?: string
-  change: 'added' | 'deleted' | 'modified' | 'renamed'
-  binary: boolean
-  added: number
-  removed: number
-  /** Changes whenever the file's diff does: a mark set on one version of the file holds only for that version. */
-  hash: string
-  /** Absent for a binary file, or one past `MAX_FILE_LINES`. */
-  hunks?: Hunk[]
-}
 
 const C_ESCAPES: Record<string, string> = { a: '\x07', b: '\b', f: '\f', n: '\n', r: '\r', t: '\t', v: '\v', '\\': '\\', '"': '"' }
 

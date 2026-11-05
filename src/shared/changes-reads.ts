@@ -2,7 +2,7 @@
  * A worker's Changes as a viewer reads them: what they compare (`ChangesScope`), where its viewed marks are kept, and
  * the machine that reads them again as the worker works. Bundled into `/panels.js`.
  */
-import type { RepoChanges } from '../changes.ts'
+import type { RepoChanges } from './repo-changes.ts'
 import type { Card } from '../bridge/board.ts'
 import type { Handlers, StateEffect, TimerEffect } from './loop.ts'
 import { failRead, failureAt, landRead, noReads, refreshRead, stepped, valueAt, type Held, type ReadEffect, type ReadEvent, type Reads } from './reads.ts'

@@ -4,7 +4,8 @@ import { nextState, readsOutput, type SessionState } from './bridge/status.ts'
 import type { FoldEvent, Unreadable } from './bridge/facts.ts'
 import type { LogEvent, SessionHeader } from './shared/model.ts'
 import { firstLine } from './shared/log-file.ts'
-import { sessionLogPath, type SystemPaths } from './shared/paths.ts'
+import { sessionLogPath } from './shared/paths.ts'
+import type { SystemPaths } from './shared/model.ts'
 import { logged, watchedLoudly } from './logged.ts'
 
 const READ_CHUNK = 64 * 1024

@@ -93,7 +93,7 @@ export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
 const fieldName = (cap: string, name: string) => `x.${cap}.${name}`
 
 /** The form's values from its fields' entries (`new FormData(form)`), the defaults under them; `x.<cap>.<field>` gathered in `x`. */
-export const spawnForm = (f: Floor, entries: Iterable<[string, FormDataEntryValue]>): SpawnForm => {
+export const spawnForm = (f: Floor, entries: Iterable<[string, unknown]>): SpawnForm => {
   const all = [...entries].map(([k, v]): [string, string] => [k, String(v)])
   const x: SpawnForm['x'] = {}
   for (const [key, value] of all.filter(([k]) => k.startsWith('x.'))) {

@@ -3,7 +3,8 @@ import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createGzip } from 'node:zlib'
 import { foldLog } from './checkpoints.ts'
-import { sessionLogPath, type SystemPaths } from './shared/paths.ts'
+import { sessionLogPath } from './shared/paths.ts'
+import type { SystemPaths } from './shared/model.ts'
 import { ARCHIVED } from './tail.ts'
 
 /**

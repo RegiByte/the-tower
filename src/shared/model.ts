@@ -435,3 +435,34 @@ export type LogEvent =
   | [t: number, code: 'x', exit: { exitCode: number; signal?: number; hostStopped?: true }]
 
 export type SessionLog = { header: SessionHeader; events: LogEvent[] }
+
+/** Where a system keeps what it runs on, every path below its root (`systemPaths`). */
+export type SystemPaths = {
+  config: string
+  sessions: string
+  /** `<project>/<collection>/<item>`: the files of every project's collections. */
+  collections: string
+  /** What is computed from the stored state and kept to skip computing it again: safe to delete at any time. */
+  cache: string
+  /**
+   * Logs of facts the tower observes that belong to no session, one writer each: `system/<stream>/YYYY-MM.jsonl`, the
+   * system's (`probe.quota`), and `projects/<project>/<stream>/…`, a project's (`runs`, `approvals`).
+   */
+  streams: string
+  /** The jobs log, `YYYY-MM.jsonl` in the streams' format, which the jobs daemon alone writes. */
+  jobs: string
+  control: string
+  hooks: string
+  terms: string
+  jobsSocket: string
+  /** What the host, the terms daemon, the jobs daemon and the tower print, when `tower up` starts them. */
+  hostLog: string
+  termsLog: string
+  jobsLog: string
+  towerLog: string
+  /** The pid of each daemon, written by `tower up` when it starts it, removed by `tower down`. */
+  hostPid: string
+  termsPid: string
+  jobsPid: string
+  towerPid: string
+}

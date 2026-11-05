@@ -5,7 +5,7 @@
 import { snapshot } from './bridge/screen.ts'
 import type { LogEvent } from './shared/model.ts'
 import { connectHost } from './shared/client.ts'
-import type { SystemPaths } from './shared/paths.ts'
+import type { SystemPaths } from './shared/model.ts'
 import { sessionKeys, type FromHost } from './shared/protocol.ts'
 import { logFileOf, readLog, screenEvents, tailLog } from './tail.ts'
 import { CliError } from './cli-error.ts'

@@ -4,7 +4,7 @@
  * marked as the Changes find them. Bundled into `/panels.js`.
  * @deprecated since 1.93: the reviews extension's panel, `/x/reviews/panel.js`; this copy goes at 2.0.
  */
-import type { RepoChanges } from '../changes.ts'
+import type { RepoChanges } from './repo-changes.ts'
 import type { CheckoutState } from '../bridge/checkouts.ts'
 import type { Board, Card, Floor } from '../bridge/board.ts'
 import type { NoteAction } from '../bridge/verbs.ts'
@@ -18,7 +18,7 @@ import { anchorState, parseThread, unseenBy, type AnchorState, type FloorThread 
 import { failureOf, valueOf, type ReadEvent, type Reads } from './reads.ts'
 import { anchorWhere } from './anchors-legacy.ts'
 import { fileButtonsHtml } from './file-acts.ts'
-import { failedHtml, settledHtml } from './panel-kit.ts'
+import { failedHtml, settledHtml } from './panel-html.ts'
 
 /** A worker as the Reviews panel names it. */
 type Worker = { id: string; callsign: string; checkout: string }

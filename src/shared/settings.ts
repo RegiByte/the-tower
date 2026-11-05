@@ -20,7 +20,8 @@
  * Every control carries its `data-tip`. The tower serves this module as `/settings.js`.
  */
 import type { SchemeChoice } from './shelf-page.ts'
-import { BRIEF_MARKDOWNS, BRIEF_MARKDOWN_LABEL, BRIEF_MARKDOWN_MEANS, type BriefMarkdown } from './brief.ts'
+import { BRIEF_MARKDOWNS, BRIEF_MARKDOWN_LABEL, BRIEF_MARKDOWN_MEANS } from './brief.ts'
+import type { BriefMarkdown } from './viewer.ts'
 import { REMIND_MS, RINGS, esc, type Ring, type Sound } from './cards.ts'
 import { ICON } from './icons.ts'
 import { GENERIC_FACES, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES, faceFamily, type Prefs } from './prefs.ts'
