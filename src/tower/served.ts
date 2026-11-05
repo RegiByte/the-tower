@@ -127,6 +127,15 @@ const servedImports = (name: string, served: (file: string) => { path: string; e
 /** Every import of a file transpiled alone stays an import: of a file below `src/` at its URL, of a package at its `/vendor/` URL. */
 const sourceImports = servedImports('source-imports', (file) => ({ path: sourceUrl(file), external: true }), (specifier) => ({ path: vendorUrl(specifier), external: true }))
 
+/** An import of a URL the tower serves stays that URL, whatever a tsconfig path would make of it: the library, `/tower.js` and an extension's client. */
+const SERVED_URL = /^\/(?:lib\/|x\/|tower\.js$)/
+const servedUrls: Plugin = {
+  name: 'served-urls',
+  setup(b) {
+    b.onResolve({ filter: SERVED_URL }, (args) => ({ path: args.path, external: true }))
+  },
+}
+
 /** A client imports what it reaches below `src/` by URL, and bundles its own modules and packages. */
 const clientImports = servedImports('client-imports', (file) => (file.startsWith(SRC + path.sep) ? { path: sourceUrl(file), external: true } : { path: file }), () => undefined)
 
@@ -168,8 +177,8 @@ export const serverOnlyModule = (url: string) =>
 /** An npm package's module bundled as one ES module. */
 export const vendorModule = (specifier: string) => cached(`vendor:${specifier}`, () => esm({ entryPoints: [specifier], platform: 'browser' }))
 
-/** A core view or a client's `.ts` module bundled with its own modules and packages, what it reaches below `src/` imported by URL. */
-export const clientModule = (file: string) => cached(`client:${file}`, () => esm({ entryPoints: [file], plugins: [clientImports] }))
+/** A core view or a client's `.ts` module bundled with its own modules and packages, what it reaches below `src/` imported by URL, and the library, `/tower.js` and `/x/` kept as the URLs they are. */
+export const clientModule = (file: string) => cached(`client:${file}`, () => esm({ entryPoints: [file], plugins: [servedUrls, clientImports] }))
 
 /** `/frame-keys.js`: a framed page's keys sent to the tower framing it, run by every sandboxed html page and by `/tower.js`. */
 export const FRAME_KEYS = path.join(import.meta.dirname, 'frame-keys.js')

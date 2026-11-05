@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import vm from 'node:vm'
@@ -7,7 +8,7 @@ import { API_VERSION, HOOKS } from '../src/shared/api.ts'
 import { designCss } from '../src/shared/design.ts'
 import { bundledClient, clientSource } from '../src/extensions.ts'
 import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, legacyOf, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
-import { bundled, bundledFile, MODULES, towerClient } from '../src/tower/served.ts'
+import { bundled, bundledFile, clientModule, MODULES, towerClient } from '../src/tower/served.ts'
 import { FACT_KINDS } from '../src/shared/rate-limits.ts'
 import { CLI_REGIONS, type Region } from '../src/shared/regions.ts'
 import { declaredAt } from '../src/renderers.ts'
@@ -162,4 +163,32 @@ test("docs/extending.md's renderers table is the renderers' declarations", () =>
   const written = docs.replace(TABLE, (_, open: string, close: string) => `${open}${regionsTable()}\n${close}`)
   if (process.env.UPDATE_SERVED) return writeFileSync(DOCS, written)
   assert.equal(docs, written, `docs/extending.md's renderers table is stale: a renderer.json or cli.regions changed. Run \`${UPDATE}\` and commit it.`)
+})
+
+test("a bundled client's imports of the library, /tower.js and an extension's client stay those URLs, in the checkout or out of it", async () => {
+  const source = [
+    "import { esc } from '/lib/words.js'",
+    "import { other } from '/x/other/o.js'",
+    "import { own } from './own.ts'",
+    "export const run = () => [esc, other, own, window.tower]",
+    "import '/tower.js'",
+  ].join('\n')
+  const outside = mkdtempSync(path.join(os.tmpdir(), 'client-'))
+  const inside = mkdtempSync(path.join(REPO, 'test', '.client-'))
+  try {
+    const texts = []
+    for (const dir of [outside, inside]) {
+      writeFileSync(path.join(dir, 'own.ts'), 'export const own = 1\n')
+      writeFileSync(path.join(dir, 'client.ts'), source)
+      texts.push(await clientModule(path.join(dir, 'client.ts')))
+    }
+    for (const text of texts) {
+      for (const url of ['/lib/words.js', '/x/other/o.js', '/tower.js']) assert.match(text, new RegExp(`from "${url.replace(/\./g, '\\.')}"|import "${url.replace(/\./g, '\\.')}"`), url)
+      assert.doesNotMatch(text, /src\/lib/)
+      assert.match(text, /own = 1/)
+    }
+  } finally {
+    rmSync(outside, { recursive: true })
+    rmSync(inside, { recursive: true })
+  }
 })
