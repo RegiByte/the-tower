@@ -1,0 +1,9 @@
+{
+  "id": "outside",
+  "version": "1.0",
+  "title": "Outside",
+  "description": "A fixture: an extension in a folder of its own, typechecked against what `tower types` writes.",
+  "requires": { "tower": "1.151" },
+  "wants": { "drafts": "1.0" },
+  "server": "server.ts"
+}

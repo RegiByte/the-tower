@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.client.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": ".",
+    "allowJs": false,
+    "checkJs": false,
+    "paths": { "/lib/*.js": ["./src/lib/*.ts"] }
+  },
+  "include": ["src/lib/*.ts", "extensions/*/client/*.ts"]
+}
