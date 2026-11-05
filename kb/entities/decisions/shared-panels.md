@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-04",
+  "reviewed": "2026-11-05",
   "refs": [
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#markedChangesHtml",
@@ -25,7 +25,7 @@
     "hub/src/shared/file-acts.ts#fileCall",
     "hub/src/shared/panels-css.ts#panelsCss",
     "hub/src/shared/changes-panel.ts#rowCode",
-    "hub/src/shared/panel-kit.ts#failedHtml",
+    "hub/src/shared/panel-html.ts#failedHtml",
     "hub/src/shared/highlight.ts#highlightLines",
     "hub/src/shared/words.ts#markRanges",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
@@ -94,7 +94,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   renderer adds it as a `<style>` and sizes the element the panel is drawn in. It also lays out a worker's tab row,
   its showings kept in place across redraws by [`keepShownTabs`](ref:hub/src/shared/panel-kit.ts#keepShownTabs).
 - *A read that failed says so.* Each view takes `failed`, drawn while nothing is read:
-  [`failedHtml`](ref:hub/src/shared/panel-kit.ts#failedHtml) names what couldn't be read and why, with Read again. A
+  [`failedHtml`](ref:hub/src/shared/panel-html.ts#failedHtml) names what couldn't be read and why, with Read again. A
   failure over a read already held leaves it drawn and toasts (`Held`, `/reads.js`).
 - *Syntax* ([`highlightLines`](ref:hub/src/shared/highlight.ts#highlightLines)): code in Changes and quotes in
   Reviews are highlighted with highlight.js, bundled into the served modules and Tower 3D's bundle (local-first:
