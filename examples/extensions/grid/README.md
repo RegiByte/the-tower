@@ -86,6 +86,10 @@ the view's own state, kept in `tower.store`.
 In your copy, `client/grid.js` holds it all: `MAX` and `STYLE` for how many cells and how they sit, `ACTS` for what a
 cell's head offers, `seed` for which workers a new grid opens with.
 
+Its imports come from [the library](../../../docs/extending.md#the-library) (`/lib/*.js`), so a copy loads at any path. To have your editor read them in a
+copy, run [`tower types .`](../../../docs/extending.md#types-outside-the-checkout) in it and write a `tsconfig.json` of
+`{ "extends": "./.tower/tsconfig.json", "compilerOptions": { "allowJs": true } }`.
+
 ## Pictures
 
 `npm run tool:extension-shots -- examples/extensions/grid` retakes them from [`shots.json`](shots.json).

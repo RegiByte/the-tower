@@ -137,6 +137,9 @@ arrive while its page is the one you used last.
 - **In your copy**: where Listen appears is `commands.speak.on` and `accepts` in `extension.json`, and how a memo is
   drawn and said is `client/memos.js`.
 
+Its imports come from [the library](../../../docs/extending.md#the-library) (`/lib/*.js`), so a copy loads at any path. To typecheck a copy, run [`tower types .`](../../../docs/extending.md#types-outside-the-checkout)
+in it, write a `tsconfig.json` of `{ "extends": "./.tower/tsconfig.json" }`, and add `@types/node`.
+
 ## Pictures
 
 `npm run tool:extension-shots -- examples/extensions/narrate` retakes them from [`shots.json`](shots.json),

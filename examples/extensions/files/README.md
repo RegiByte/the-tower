@@ -85,6 +85,9 @@ the rest. A view of yours on `file` takes code over with one config line:
 In a copy: another language is a file `client/langs/<id>.ts` re-exporting `shiki/langs/<id>.mjs` and a line in
 `client/code.ts`'s maps, which also holds the themes.
 
+Its imports come from [the library](../../../docs/extending.md#the-library) (`/lib/*.js`), so a copy loads at any path. To typecheck a copy, run [`tower types .`](../../../docs/extending.md#types-outside-the-checkout)
+in it, write a `tsconfig.json` of `{ "extends": "./.tower/tsconfig.json" }`, and add `@types/node`.
+
 ## Pictures
 
 `npm run tool:extension-shots -- examples/extensions/files` retakes them from [`shots.json`](shots.json), on a

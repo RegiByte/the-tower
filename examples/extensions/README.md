@@ -1,7 +1,8 @@
 # Example extensions
 
-Folders to copy and make your own: none runs until the config names it (`extensions.<id>.path`). Their server
-code imports the tower's helpers by name (`tower:<module>.js`), so a copy anywhere loads. `npm test` loads
+Folders to copy and make your own: none runs until the config names it (`extensions.<id>.path`). They import the
+tower's helpers from [the library](../../docs/extending.md#the-library) (`/lib/*.js`) and nothing else of it, so a copy
+anywhere loads, and [`tower types`](../../docs/extending.md#types-outside-the-checkout) types a copy. `npm test` loads
 each one as `tower extensions check` does, so every example here works with the tower it ships with.
 
 - [`narrate`](narrate/): Listen on drafts, shown files and sections, and workers' memos said aloud; the voice a command

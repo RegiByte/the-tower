@@ -80,6 +80,9 @@ a resumed worker keeps its line.
 
 In your copy: drop `self` or `user` from `facts.line.writable` in `extension.json` to say who may write a line.
 
+It imports nothing. A client or server you add imports from [the library](../../../docs/extending.md#the-library) (`/lib/*.js`), and
+[`tower types .`](../../../docs/extending.md#types-outside-the-checkout) in your copy types those imports.
+
 ## Pictures
 
 `npm run tool:extension-shots -- examples/extensions/tabline` retakes them from [`shots.json`](shots.json); the desk
