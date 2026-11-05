@@ -185,6 +185,7 @@ tower config check                   # check the config as the tower reads it
 tower update                         # move to the newest release; says if the host needs a restart
 tower spawn <project> [-- <prompt>]  # start a worker
 tower app                            # open the tower as a Mac app
+tower types <dir>                    # type an extension outside the checkout against the library
 ```
 
 Stopping the host ends its sessions (they can be resumed); the tower itself restarts freely. Releases are tags

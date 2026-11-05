@@ -432,10 +432,11 @@ import { esc } from '/lib/words.js'
 - **In an extension's server code** the tower's resolve hook maps the prefix to the same source it runs. A name the
   library doesn't hold fails at import, listing the modules it has.
 - **In an extension's `.ts` client** the tower's bundling leaves the import as it is, the URL a browser loads.
-- **In a bundler or an editor** it is a tsconfig path: `"/lib/*.js": ["<tower>/src/lib/*.ts"]`.
+- **In a bundler or an editor** it is a tsconfig path, which [`tower types`](#types-outside-the-checkout) writes for
+  you.
 
-Only `/lib/` is contract. A file's path under `src/`, its URL under `/shared/` or `/src/`, and anything else a checkout
-lets you reach can change in any release, whatever it happens to export. A name not in the library isn't lost: it
+Only `/lib/` is contract. A file's path under `src/`, its URL under `/shared/` or `/src/`, a file `tower types` wrote
+under `.tower/types/` that isn't a library module's, and anything else a checkout lets you reach can change in any release, whatever it happens to export. A name not in the library isn't lost: it
 joins as a minor the day something uses it.
 
 | Module | Runs | For | What it holds |
@@ -468,7 +469,6 @@ joins as a minor the day something uses it.
 Each module says where it runs. **generic** code runs anywhere (data, words, html as strings); **browser** code uses the
 platform's APIs; **server** code uses node's. `/lib/extension.js` is lent to node and not served to browsers: a browser
 that loads it gets an error saying so, and a client takes its types with `import type`, which leaves no import behind.
-A TypeScript client can't import the library yet: a JavaScript client can, by URL.
 
 **Versioning.** The library has no version of its own: `API_VERSION` is it, and `requires.tower` or a renderer's
 `/tower.js?v=` covers it. `test/served-exports.json` lists each module's runtime, its names with the minor each arrived
@@ -477,6 +477,38 @@ one is a major, after a deprecation: the name stays as an alias marked `@depreca
 major. A digest that moves means a type a library name reaches changed, and the pull request says which kind of change
 that is. A name marked `@provisional` has met one consumer: it may change in a minor, with a `CHANGELOG.md` line saying
 what to use, and is never removed without a replacement before a major. A second consumer promotes it, for good.
+
+
+### Types outside the checkout
+
+`tower types <dir>` makes a folder anywhere typecheck against this tower's library. It needs no
+running tower:
+
+```sh
+tower types .
+```
+
+It writes `<dir>/.tower/`: the declarations TypeScript emits for the library and the bundled extensions' clients, those
+of every package they name (zod and xterm today, worked out from the declarations), and a `tsconfig.json` to extend.
+Add this to the folder's own `tsconfig.json`, which `tower types` also prints:
+
+```json
+{ "extends": "./.tower/tsconfig.json" }
+```
+
+- **What it maps:** `/lib/*.js`, `/tower.js` (`window.tower`, with its `tower` global) and `/x/<cap>/*.js` for each
+  bundled extension's client, so an extension that `wants` drafts is typed against drafts' client.
+- **What you bring:** `@types/node`, in the folder. Server code needs it anyway, and the tsconfig names it.
+- **`paths` of your own** replace the ones you extend, as a tsconfig's `paths` always do. `tower types` warns when your
+  tsconfig has them and prints the lines to copy in.
+- **Refreshing:** run it again after the tower moves. `.tower/types/stamp.json` names the API version the folder was
+  typed against. The same code gives the same files.
+- **Committing them:** `.tower/.gitignore` keeps the folder out of git, since a committed copy goes stale against the
+  tower. If your own CI needs to typecheck, delete that file: a later `tower types` leaves it deleted.
+
+The declarations are built by the checkout's own TypeScript, so a checkout needs `npm ci` with its dev dependencies, and
+kept in `<root>/cache/types/`, a cache keyed by the code. A file's path under `.tower/types/` is no more contract than
+its path under `src/`: import from `/lib/`.
 
 ## Served modules
 
@@ -646,12 +678,9 @@ a copy at run time.
 
 Types: inside the tower's checkout, `tsconfig.json` maps `tower:*` to `src/shared/*`, so `npm run typecheck` checks
 the examples' server code against what it imports (the mapping also admits shared modules that aren't served, which
-then fail at import: keep to the table). A copy elsewhere gets no types from the tower yet: no package of its
-declarations is published. To type one against a tower checkout, map the lent names in the copy's own
-`tsconfig.json` (`"paths": { "tower:*": ["<tower>/src/shared/*"] }`), and rewrite its `import type` lines, which
-name the checkout by relative path, to that checkout's absolute path: `<tower>/src/shared/extensions.ts` for
-`Start` and its ctx, `<tower>/src/bridge/board.ts` for `Card` and `Floor`. Without that, the editor reports those
-imports unresolved and the extension still runs.
+then fail at import: keep to the table). A copy elsewhere types itself with
+[`tower types`](#types-outside-the-checkout) and imports its types from the library, not from a checkout's path.
+Without that, the editor reports those imports unresolved and the extension still runs.
 
 An extension with npm dependencies of its own declares them in its own `package.json` and installs them in its
 folder: its server code and its client's TypeScript, which the tower bundles at serve time, resolve packages from the
