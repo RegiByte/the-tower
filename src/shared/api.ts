@@ -126,8 +126,9 @@ const pathWords = (path: PropertyKey[]): string =>
   path.reduce<string>((at, key) => (typeof key === 'number' ? `${at}[${key}]` : at ? `${at}.${String(key)}` : String(key)), '')
 
 /**
- * What is wrong with some of a spawn's fields, each problem at its path (`cut.name`): none for fields a spawn would
- * take. For code that holds spawn fields of its own to check before any spawn, such as a policy's `hire`.
+ * What is wrong with the spawn fields given, each problem at its path (`cut.name`): any field a spawn takes passes, and
+ * none is required. Which fields a caller accepts, and the rules between them (`cwd` or `cut`, not both), are the
+ * caller's: a policy's `hire` takes four fields and refuses the rest itself.
  */
 export function spawnProblems(fields: unknown): { path: string; message: string }[] {
   const parsed = SPAWN_FIELDS.partial().safeParse(fields)
