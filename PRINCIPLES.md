@@ -24,9 +24,10 @@ change that has to break one says so in its pull request and changes the rule an
 ## State
 
 - **Observe, don't store.** Three kinds of stored state, nothing else: the config (intent), the logs (facts, one
-  writer each: the host's `sessions/`, the tower's `streams/`) and the collections (files kept for later). Anything
-  computable from them is computed. A diff that persists anything else is wrong, unless it is a cache: keyed by the
-  code that made it, never authoritative, safe to delete. (`logs-are-facts`, `fold-checkpoints`)
+  writer each: the host's `sessions/`, the jobs daemon's `jobs/`, the tower's `streams/`) and the collections (files
+  kept for later). Anything computable from them is computed. A diff that persists anything else is wrong, unless it
+  is a cache: keyed by the code that made it, never authoritative, safe to delete. (`logs-are-facts`,
+  `fold-checkpoints`, `jobs-own-daemon`)
 - **A fact is what happened.** A log line records an event, not an interpretation of it and not a copy of a tool's
   output. Meaning is derived when the log is read, so it can change without a migration. (`logs-are-facts`)
 

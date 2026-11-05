@@ -1,8 +1,8 @@
 /**
  * The tower from a fresh clone, run by `npm run setup` once `npm ci` has installed it: a first config unless one
  * exists (its project from the directories given, this checkout when none are), the doctor's checks of the machine and
- * the config, then the host, the terms daemon and the tower, detached. A check that fails stops it before anything starts;
- * a daemon's place held by something else stops it too.
+ * the config, then the host, the terms daemon, the jobs daemon and the tower, detached. A check that fails stops it
+ * before anything starts; a daemon's place held by something else stops it too.
  *
  *   npm run setup                              the first project is this checkout
  *   npm run setup -- <hub> [repos...]          the first project is <hub>, beside [repos], relative to where npm ran

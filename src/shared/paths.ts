@@ -13,16 +13,21 @@ export type SystemPaths = {
    * system's (`probe.quota`), and `projects/<project>/<stream>/…`, a project's (`runs`, `approvals`).
    */
   streams: string
+  /** The jobs log, `YYYY-MM.jsonl` in the streams' format, which the jobs daemon alone writes. */
+  jobs: string
   control: string
   hooks: string
   terms: string
-  /** What the host, the terms daemon and the tower print, when `tower up` starts them. */
+  jobsSocket: string
+  /** What the host, the terms daemon, the jobs daemon and the tower print, when `tower up` starts them. */
   hostLog: string
   termsLog: string
+  jobsLog: string
   towerLog: string
-  /** The pid of the host, the terms daemon and the tower, written by `tower up` when it starts them, removed by `tower down`. */
+  /** The pid of each daemon, written by `tower up` when it starts it, removed by `tower down`. */
   hostPid: string
   termsPid: string
+  jobsPid: string
   towerPid: string
 }
 
@@ -39,14 +44,18 @@ export const systemPaths = (config: string): SystemPaths => {
     collections: path.join(root, 'collections'),
     cache: path.join(root, 'cache'),
     streams: path.join(root, 'streams'),
+    jobs: path.join(root, 'jobs'),
     control: path.join(root, 'control.sock'),
     hooks: path.join(root, 'hooks.sock'),
     terms: path.join(root, 'terms.sock'),
+    jobsSocket: path.join(root, 'jobs.sock'),
     hostLog: path.join(root, 'host.log'),
     termsLog: path.join(root, 'terms.log'),
+    jobsLog: path.join(root, 'jobs.log'),
     towerLog: path.join(root, 'tower.log'),
     hostPid: path.join(root, 'host.pid'),
     termsPid: path.join(root, 'terms.pid'),
+    jobsPid: path.join(root, 'jobs.pid'),
     towerPid: path.join(root, 'tower.pid'),
   }
 }

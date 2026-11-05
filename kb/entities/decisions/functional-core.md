@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "unknown",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": [
     "hub/PRINCIPLES.md",
     "hub/src/bridge/facts.ts#factsOf",
@@ -22,7 +22,7 @@
   ]
 }
 ---
-**Problem.** The tower is many small programs (host, terms, the tower, the CLI, renderers in more than one language)
+**Problem.** The tower is many small programs (host, terms, jobs, the tower, the CLI, renderers in more than one language)
 over the same facts. Logic mixed with I/O can be checked only by running the whole system, and data hidden in objects
 with behaviour can't cross a socket, a log line or a `postMessage` without a translation per hop.
 

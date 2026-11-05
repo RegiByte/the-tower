@@ -3,12 +3,13 @@
  * CHANGELOG.md entries it passes, checks the tag out (refused while tracked files have changes), installs, rebuilds
  * Tower 3D when it was built, and restarts the tower when it was running. The host is never restarted, since that
  * ends every session: when a file the host's code is built from changed after the running host started (its control
- * socket was made), the update says so, after this update or any before it.
+ * socket was made), the update says so, after this update or any before it. The jobs daemon is restarted when its code
+ * changed so and it runs no job, since a restart ends every running job; while one runs, the update says so instead.
  */
 import { execFileSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { bringDown, bringUp, daemonsNamed, hostLive, REPO, startedPid } from './machine.ts'
+import { bringDown, bringUp, daemonsNamed, heldJobs, hostLive, JOBS_SCRIPT, REPO, startedPid, type Daemon } from './machine.ts'
 import { towerPort } from './shared/model.ts'
 import type { SystemPaths } from './shared/paths.ts'
 import { readConfig } from './system.ts'
@@ -26,11 +27,11 @@ export const releasesBetween = (tags: string[], from: string | undefined, to: st
 export const entriesFor = (changelog: string, releases: string[]): string[] =>
   changelog.split(/^(?=## )/m).filter((section) => releases.includes(section.split('\n')[0].slice('## '.length).trim()))
 
-/** Every file the host's code is built from, relative to the checkout, read from its imports. */
-const hostSources = async (): Promise<string[]> => {
+/** Every file a daemon's code is built from, relative to the checkout, read from the imports of its `script`. */
+const sourcesOf = async (script: string): Promise<string[]> => {
   const { build } = await import('esbuild')
   const { metafile } = await build({
-    entryPoints: ['src/host/main.ts'],
+    entryPoints: [script],
     absWorkingDir: REPO,
     bundle: true,
     platform: 'node',
@@ -57,7 +58,7 @@ export async function update(paths: SystemPaths): Promise<void> {
   console.log(`${from ?? 'this checkout'} → ${newest}\n\n${entriesFor(changelog, releasesBetween(tags, from, newest)).join('').trim()}\n`)
   if ((await git(REPO, ['status', '--porcelain', '--untracked-files=no'])).trim()) throw new CliError(`${REPO} has uncommitted changes: commit or stash them, then update again`)
 
-  const [tower] = daemonsNamed(paths, towerPort(readConfig(paths.config)), ['tower'])
+  const [jobs, tower] = daemonsNamed(paths, towerPort(readConfig(paths.config)), ['jobs', 'tower'])
   const towerUp = (await tower.holder()).t === 'ours' || (await startedPid(tower)) !== undefined
   const tower3d = existsSync(path.join(REPO, 'renderers', 'tower3d', 'out'))
   if (towerUp) console.log(`tower: ${await bringDown(tower)}`)
@@ -70,11 +71,33 @@ export async function update(paths: SystemPaths): Promise<void> {
     if (towerUp) console.log(`tower: ${await bringUp(tower)} · ${tower.where}`)
   }
 
+  await updateJobs(paths, jobs)
   if (!(await hostLive(paths))) return
-  const started = statSync(paths.control).birthtimeMs
-  const changed = (await hostSources()).filter((file) => statSync(path.join(REPO, file)).mtimeMs > started)
+  const changed = await changedSince(paths.control, 'src/host/main.ts')
   if (changed.length)
     console.log(
       `\nThe running host is older than this checkout (${changed.join(', ')}): it updates when restarted (tower down, then tower up), which ends every session and shell. Restart it when no session is mid-turn; sessions can be resumed.`,
     )
+}
+
+/** The files `script` is built from that changed after the daemon serving at `socket` started, when it made the socket. */
+const changedSince = async (socket: string, script: string): Promise<string[]> => {
+  const started = statSync(socket).birthtimeMs
+  return (await sourcesOf(script)).filter((file) => statSync(path.join(REPO, file)).mtimeMs > started)
+}
+
+/** Restarts the jobs daemon when its code changed since it started and it runs no job; says why not otherwise. */
+const updateJobs = async (paths: SystemPaths, jobs: Daemon) => {
+  const held = await heldJobs(paths)
+  if (!held) return console.log(`jobs: not running · tower up starts it`)
+  const changed = await changedSince(jobs.where, JOBS_SCRIPT)
+  if (!changed.length) return
+  const running = held.filter((job) => job.endedAt === undefined)
+  if (!running.length) {
+    console.log(`jobs: ${await bringDown(jobs)}`)
+    return console.log(`jobs: ${await bringUp(jobs)} · ${jobs.where}`)
+  }
+  console.log(
+    `\nThe running jobs daemon is older than this checkout (${changed.join(', ')}), and runs ${running.length} job(s): it updates when restarted (tower down jobs, then tower up jobs), which ends every running job. Restart it once they end.`,
+  )
 }

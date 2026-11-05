@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-09-30",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": ["hub/src/shared/model.ts#LogEvent", "hub/src/bridge/facts.ts#factsOf", "hub/src/bridge/chains.ts#resumes", "hub/src/host/session.ts#hookFact", "hub/src/bridge/status.ts#HOOK_STATUS"]
 }
 ---
@@ -20,8 +20,9 @@ derived from Claude's `session_id` in the hooks, never written down. The rule:
 - **Three kinds of stored state.** The config (intent), the logs (facts) and the collections ([[collections]]):
   files a project keeps for later, which are neither intent nor facts about a session.
 - **One writer per log.** The host writes the session logs (`sessions/`) and stays the single writer of everything
-  about a session; the tower writes the logs of what it observes that belong to no session, and each project's
-  (`streams/`, [[probes]], [[policies]]). A stream is a log.
+  about a session; the jobs daemon writes the jobs log (`jobs/`), what happened to each command it runs, since a job's
+  end must be written by what outlives the tower ([[jobs-own-daemon]]); the tower writes the logs of what it observes
+  that belong to no session, and each project's (`streams/`, [[probes]], [[policies]]). A stream is a log.
 - **A fact is what happened, not a copy.** The host appends a hook as [`hookFact`](ref:hub/src/host/session.ts#hookFact)
   of its body: `PostToolUse` without its `tool_response`, everything else as posted. The event stays, with its
   `tool_name`, `tool_input` and `tool_use_id` (the bridge reads it only as a `working` signal,

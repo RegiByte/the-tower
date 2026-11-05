@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-04",
-  "refs": ["hub/src/update.ts#update", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#hostSources", "hub/src/cli.ts", "hub/CHANGELOG.md#L3-L13", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO"]
+  "reviewed": "2026-11-05",
+  "refs": ["hub/src/update.ts#update", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#sourcesOf", "hub/src/update.ts#changedSince", "hub/src/update.ts#updateJobs", "hub/src/cli.ts", "hub/CHANGELOG.md#L3-L13", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO"]
 }
 ---
 **Problem.** A `git pull` says nothing about whether it changed the host, whose restart ends every session, and gives
@@ -31,10 +31,13 @@ their sessions; an update has to tell them what it asks of them, and never end t
   3. refuses while tracked files have changes, then stops the tower if it runs, checks the tag out (a detached
      `HEAD`: a branch of the user's stays as it was), `npm ci`, rebuilds Tower 3D when its `out/` exists, and starts
      the tower again;
-  4. never touches the host. When the host runs and a file its code is built from
-     ([`hostSources`](ref:hub/src/update.ts#hostSources): the imports of `src/host/main.ts`, read by esbuild) was
-     written after the host started (its control socket's birth time), it names the files and says to restart the
-     host when no session is mid-turn.
+  4. restarts the jobs daemon only when its code changed since it started and it runs no job, since a restart ends
+     every running job; otherwise it names the files and says to restart it once they end
+     ([`updateJobs`](ref:hub/src/update.ts#updateJobs), [[jobs-own-daemon]]);
+  5. never touches the host. When the host runs and a file its code is built from
+     ([`sourcesOf`](ref:hub/src/update.ts#sourcesOf): the imports of `src/host/main.ts`, read by esbuild) was
+     written after the host started (its control socket's birth time, [`changedSince`](ref:hub/src/update.ts#changedSince)),
+     it names the files and says to restart the host when no session is mid-turn.
 
 **Alternatives considered.**
 - A GitHub release per merge with generated notes: a release no one chose to cut, and notes that flag nothing.

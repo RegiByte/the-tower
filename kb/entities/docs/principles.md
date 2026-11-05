@@ -4,7 +4,7 @@
   "name": "PRINCIPLES.md",
   "summary": "The rules a change to the repository keeps, each with its reason and the decision behind it; loaded into every agent's context and taking precedence over a contributor's own or their agent's general instructions when working here.",
   "in": "tower",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": ["hub/PRINCIPLES.md", "hub/CLAUDE.md", "hub/AGENTS.md"]
 }
 ---

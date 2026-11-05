@@ -3,7 +3,7 @@
   "type": "project",
   "name": "tower",
   "summary": "A local-first surface for managing many Claude Code sessions, where sessions are data and the presentation is swappable.",
-  "reviewed": "2026-11-04",
+  "reviewed": "2026-11-05",
   "refs": ["hub/AGENTS.md", "hub/package.json", "hub/src/shared/model.ts"]
 }
 ---
@@ -23,6 +23,7 @@ capability is a primitive in the core, open to every renderer and every worker (
 - [[host]]: the detached process that owns every session PTY and writes the logs, plus the
   [[tower-mod]] loaded into every session.
 - [[terms]]: a second detached process owning plain shells in project directories.
+- [[jobs]]: a third, running commands to their end outside the tower and writing what happened to each in the jobs log.
 - [[extensions]]: folders with a manifest and optional server code, each one capability the tower starts beside its
   own pieces; the bundled ones (drafts, quota, policies, reviews, autotidy, floors) live in `extensions/`.
 - [[bridge]]: pure reductions over the logs and the live store a renderer subscribes to. This is the
@@ -31,8 +32,8 @@ capability is a primitive in the core, open to every renderer and every worker (
   disposable renderers it serves: the tower page ([[web-tower]]), [[tower3d]] and The Week ([[renderers-in-config]]).
 - [[cli]]: the `tower` command, a terminal renderer and control surface.
 
-**Data.** [[system-root]] holds the only stored state: the config (intent), the logs (facts: the host's session logs
-and the tower's streams) and the collections (files kept for later). Everything else is computed from them ([[logs-are-facts]]); what is kept to skip
+**Data.** [[system-root]] holds the only stored state: the config (intent), the logs (facts: the host's session logs,
+the jobs daemon's jobs log and the tower's streams) and the collections (files kept for later). Everything else is computed from them ([[logs-are-facts]]); what is kept to skip
 computing it again lives in a cache that is never authoritative ([[fold-checkpoints]]).
 
 **Where to start.** [[principles]] for the rules a change keeps, `AGENTS.md` for the map and the checks, then [[session-lifecycle]] for one session end to end, then

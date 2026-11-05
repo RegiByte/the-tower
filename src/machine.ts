@@ -1,4 +1,4 @@
-/** The machine outside the logs: the host's live sessions, the terms daemon's shells, processes, git remotes, and the editor. */
+/** The machine outside the logs: the host's live sessions, the terms daemon's shells, the jobs daemon's jobs, processes, git remotes, and the editor. */
 import { execFile, execFileSync, spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
@@ -8,12 +8,13 @@ import { promisify } from 'node:util'
 import { CliError } from './cli-error.ts'
 import { run as runGit } from './git.ts'
 import { parseListening, parseProcesses, peers, resources, type ClaudeRegistration, type Peer, type Process, type Resource } from './bridge/resources.ts'
-import { connectHost, connectTerms } from './shared/client.ts'
+import { connectHost, connectJobs, connectTerms } from './shared/client.ts'
 import { withoutParentSession } from './shared/env.ts'
 import { platform } from './platform.ts'
 import type { SystemPaths } from './shared/paths.ts'
 import { answers } from './shared/socket.ts'
 import { promptPastes, SUBMIT_KEY, type FromHost, type HostLive, type ToHost } from './shared/protocol.ts'
+import type { FromJobs, HeldJob, ToJobs } from './shared/jobs.ts'
 import type { FromTerms, Shell, ToTerms } from './shared/terms.ts'
 
 export const hostRequest = async (paths: SystemPaths, msg: ToHost): Promise<FromHost> => {
@@ -80,6 +81,25 @@ export const termsShells = async (paths: SystemPaths): Promise<Shell[] | undefin
     const reply = await termsRequest(paths, { t: 'list' })
     if (reply.t !== 'shells') throw new Error(`Unexpected reply to list: ${JSON.stringify(reply)}`)
     return reply.shells
+  } catch (err) {
+    if (isNoHost(err)) return undefined
+    throw err
+  }
+}
+
+export const jobsRequest = async (paths: SystemPaths, msg: ToJobs): Promise<FromJobs> => {
+  const jobs = await connectJobs(paths.jobsSocket)
+  const reply = await jobs.request(msg)
+  jobs.close()
+  return reply
+}
+
+/** The jobs the jobs daemon holds; `undefined` when none is running. */
+export const heldJobs = async (paths: SystemPaths): Promise<HeldJob[] | undefined> => {
+  try {
+    const reply = await jobsRequest(paths, { t: 'list' })
+    if (reply.t !== 'jobs') throw new Error(`Unexpected reply to list: ${JSON.stringify(reply)}`)
+    return reply.jobs
   } catch (err) {
     if (isNoHost(err)) return undefined
     throw err
@@ -227,6 +247,7 @@ export type Daemon = { name: string; script: string; config: string; log: string
 const socketHolder = (socket: string) => async (): Promise<Holder> => ((await answers(socket)) ? { t: 'ours' } : { t: 'nothing' })
 
 const TOWER_SCRIPT = 'src/tower/server.ts'
+export const JOBS_SCRIPT = 'src/jobs/main.ts'
 
 /** The pid listening on a loopback TCP port; lsof exits 1 when none does. */
 const listenerOn = async (port: number): Promise<number | undefined> => {
@@ -263,6 +284,7 @@ const towerHolder = (paths: SystemPaths, port: number) => async (): Promise<Hold
 export const daemons = (paths: SystemPaths, port: number): Daemon[] => [
   { name: 'host', script: 'src/host/main.ts', config: paths.config, log: paths.hostLog, pid: paths.hostPid, where: paths.control, holder: socketHolder(paths.control) },
   { name: 'terms', script: 'src/terms/main.ts', config: paths.config, log: paths.termsLog, pid: paths.termsPid, where: paths.terms, holder: socketHolder(paths.terms) },
+  { name: 'jobs', script: JOBS_SCRIPT, config: paths.config, log: paths.jobsLog, pid: paths.jobsPid, where: paths.jobsSocket, holder: socketHolder(paths.jobsSocket) },
   { name: 'tower', script: TOWER_SCRIPT, config: paths.config, log: paths.towerLog, pid: paths.towerPid, where: `http://127.0.0.1:${port}`, holder: towerHolder(paths, port) },
 ]
 

@@ -4,7 +4,7 @@
   "name": "No host answering",
   "summary": "Nothing answers on control.sock: the board shows the host down, running sessions turn lost, and every session verb fails as unavailable until a host is started.",
   "in": "host",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/client.ts#connectHost", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/shared/socket.ts#claimSocket", "hub/src/bridge/status.ts#withLiveness", "hub/src/tower/dispatch.ts#daemon"]
 }
 ---
@@ -25,8 +25,8 @@ refuses, naming the restart (a `fact` below protocol 2, a spawn's facts below 3)
 
 **Where to look first.** The system root, the directory holding `config.json` (`TOWER_CONFIG` overrides
 `~/.tower/config.json`), holds every path ([`systemPaths`](ref:hub/src/shared/paths.ts#systemPaths)):
-`control.sock` and `hooks.sock` (the host), `terms.sock`, and, when `tower up` started the daemons, `host.log`,
-`host.pid`, `terms.log`, `terms.pid`. Read the end of `host.log` first. Check which system the renderer reads:
+`control.sock` and `hooks.sock` (the host), `terms.sock`, `jobs.sock`, and, when `tower up` started the daemons,
+`host.log`, `host.pid`, `terms.log`, `terms.pid`, `jobs.log`, `jobs.pid`. Read the end of `host.log` first. Check which system the renderer reads:
 a tower started with another `TOWER_CONFIG` looks at another root.
 
 **Likely causes.**
