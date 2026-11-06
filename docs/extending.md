@@ -680,9 +680,8 @@ doesn't serve fails at import, saying which it lends. Only lent names cross over
 `src/` works only from inside the checkout. `import type` lines are erased before the module runs, so they never break
 a copy at run time.
 
-Types: inside the tower's checkout, `tsconfig.json` maps `/lib/*.js` to `src/lib/*` and `tower:*` to `src/shared/*`, so
-`npm run typecheck` checks server code against what it imports (the `tower:*` mapping also admits shared modules that
-aren't served, which then fail at import: keep to the table). A copy elsewhere types itself with
+Types: inside the tower's checkout, `tsconfig.json` maps `/lib/*.js` to `src/lib/*`, so `npm run typecheck` checks
+server code against what it imports. A `tower:*` import has no types: move it to the library. A copy elsewhere types itself with
 [`tower types`](#types-outside-the-checkout) and imports its types from the library, not from a checkout's path.
 Without that, the editor reports those imports unresolved and the extension still runs.
 

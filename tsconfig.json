@@ -13,7 +13,6 @@
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "paths": {
-      "tower:*": ["./src/shared/*"],
       "/lib/*.js": ["./src/lib/*.ts"]
     }
   },

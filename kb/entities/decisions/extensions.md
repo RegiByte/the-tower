@@ -142,9 +142,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   `tower:<name>.js`, which a resolve hook maps to the source behind the served module `/<name>.js`
   ([`lent-modules.ts`](ref:hub/src/lent-modules.ts)), so a folder copied anywhere loads, the core's instance shared
   ([[renderer-shared-modules]]): one list and one exports contract for clients and servers. A name not served fails at
-  import, listing the lent ones. `import type` lines are erased before the module runs; inside the checkout
-  `tsconfig.json` maps `tower:*` to `src/shared/*` for the examples' typecheck, and a copy elsewhere gets no types
-  from the tower. An extension with npm dependencies declares them in its own `package.json` and installs them in its
+  import, listing the lent ones. `import type` lines are erased before the module runs; types come from the
+  library, by `tsconfig.json`'s `/lib/*.js` path inside the checkout and by `tower types` in a copy elsewhere, and
+  `tower:*` imports have none. An extension with npm dependencies declares them in its own `package.json` and installs them in its
   folder: its server code and its client's TypeScript, bundled at serve time, resolve packages from the folder up
   (the `files` example's Shiki).
 - **Off by capability, per floor, derived.** `extensions.<id>.off` turns one off everywhere;
