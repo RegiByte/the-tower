@@ -5,7 +5,7 @@
  * check the policy asks for, then runs or passes the slot through its own verbs, as any other runner would.
  */
 import type { Board, Card, Floor } from '/lib/board.js'
-import { apiError, isApiError, type ApiError, type Ask, type Badge, type CallCtx, type Part, type Reduce, type Replies, type RouteInput, type Slot, type Start, type StreamFact } from '/lib/extension.js'
+import { apiError, isApiError, type ApiError, type Ask, type Badge, type CallCtx, type Part, type Reduce, type Replies, type Slot, type Start, type StreamFact } from '/lib/extension.js'
 import { ruleWords, slotsBetween, slotWords } from '/lib/time.js'
 import { tagOf } from '/lib/words.js'
 import { runCheck } from './check.ts'
@@ -22,15 +22,18 @@ import {
   slotName,
   slotSeen,
   type ApprovalFact,
+  type ApproveInput,
   type CardRun,
   type CheckResult,
   type FloorPolicies,
   type Parsed,
   type PassFact,
+  type PassInput,
   type PolicyFacts,
   type PolicyFile,
   type RunFact,
-  type RunStart,
+  type RunInput,
+  type RunReply,
 } from './policies.ts'
 import { hashOf, parsePolicy } from './policy-file.ts'
 
@@ -58,9 +61,6 @@ const APPROVALS_REDUCE: Reduce = {
   init: { approvals: [] } satisfies Approvals,
   step: (state: Approvals, [at, code, fact]: StreamFact): Approvals => (code === 'a' ? { approvals: [...state.approvals, [at, fact as ApprovalFact]] } : state),
 }
-
-/** A run's input: `slot` with `auto` and `offer`, none `hand`. */
-type RunInput = { project: string; policy: string; start: RunStart; slot?: number; by?: string; check?: CheckResult }
 
 const factsOf = ({ runs, approvals }: OwnStreams): PolicyFacts => ({ runs: runs.runs, passes: runs.passes, approvals: approvals.approvals })
 
@@ -162,7 +162,7 @@ const start: Start = (ctx) => {
       return Promise.resolve(apiError('invalid', input.start === 'hand' ? 'slot: a run by hand takes no slot' : `slot: a run that starts ${input.start === 'auto' ? 'on its own' : 'from an offer'} names its slot`))
     const [slot, startFact] = input.start === 'hand' ? [undefined, { start: 'hand', slot: null } as const] : [input.slot!, { start: input.start, slot: slotName(input.slot!) } as const]
     return fromWorker(by, () =>
-      onPolicy(project, policy, async (): Promise<Replies['policy/run'] | ApiError> => {
+      onPolicy(project, policy, async (): Promise<RunReply | ApiError> => {
         const file = await fileOf(project, policy)
         if ('t' in file) return file
         const refused = slotRefusal(policy, file.parsed, slot)
@@ -192,7 +192,7 @@ const start: Start = (ctx) => {
   }
 
   /** A slot the runner saw and didn't start, and why: refused once the slot has a fact. */
-  const pass = ({ project, policy, slot, outcome, check }: RouteInput['policy/pass']) =>
+  const pass = ({ project, policy, slot, outcome, check }: PassInput) =>
     onPolicy(project, policy, async () => {
       const file = await fileOf(project, policy)
       if ('t' in file) return file
@@ -205,7 +205,7 @@ const start: Start = (ctx) => {
     })
 
   /** An approval of the words the approver read: refused unless `hash` is the file's now. */
-  const approve = ({ project, policy, hash, by }: RouteInput['policy/approve']) =>
+  const approve = ({ project, policy, hash, by }: ApproveInput) =>
     fromWorker(by, () =>
       onPolicy(project, policy, async () => {
         const file = await fileOf(project, policy)
@@ -338,8 +338,8 @@ const start: Start = (ctx) => {
     },
     verbs: {
       run: (input: RunInput, { call }: CallCtx) => run(input, call),
-      pass: (input: RouteInput['policy/pass']) => pass(input),
-      approve: (input: RouteInput['policy/approve']) => approve(input),
+      pass: (input: PassInput) => pass(input),
+      approve: (input: ApproveInput) => approve(input),
     },
     reads: {
       'runs/<project>': ({ params, query }: { params: Record<string, string>; query: { policy: string; limit?: string } }) => runs(params.project, query.policy, query.limit === undefined ? 20 : Number(query.limit)),
