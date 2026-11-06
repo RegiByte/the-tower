@@ -54,7 +54,7 @@ Every worker's `tower whoami` carries narrate's one-line guidance:
 A worker says a memo with
 
 ```sh
-tower x narrate memo '{"text": "The search fix is ready for your review."}'
+tower x narrate memo --text 'The search fix is ready for your review.'
 ```
 
 The tower page you used last says it aloud as "GAGARIN-40 says: …", in the same voice as Listen, waiting its turn if

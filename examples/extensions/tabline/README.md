@@ -45,10 +45,10 @@ writing the migration
 A worker writes its own line with
 
 ```sh
-tower x tabline facts/line '{"value": "writing the migration"}'
+tower x tabline facts/line --value 'writing the migration'
 ```
 
-and clears it with `'{"value": null}'`. The Week and the CLI's other commands don't show it; it is on each worker's
+and clears it with `--value ''`. The Week and the CLI's other commands don't show it; it is on each worker's
 card for any renderer to draw.
 
 ## Add it

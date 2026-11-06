@@ -3,7 +3,7 @@
     "root": "$EXT/shots/seed/projects"
   },
   "seed": [
-    "tower x floors clone \"{\\\"id\\\": \\\"widgets\\\", \\\"name\\\": \\\"Widgets\\\", \\\"url\\\": \\\"https://example.invalid/acme/widgets.git\\\", \\\"into\\\": \\\"$TOWER_SANDBOX/clones/widgets\\\"}\""
+    "tower x floors clone --id widgets --name Widgets --url https://example.invalid/acme/widgets.git --into \"$TOWER_SANDBOX/clones/widgets\""
   ],
   "scenes": [
     {
