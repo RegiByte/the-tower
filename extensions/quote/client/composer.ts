@@ -5,10 +5,10 @@ import { type Mount, pressing, viewCss } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
 /**
- * `quote/composer`: a prompt about a passage picked in a markdown document a worker showed, typed into that worker's
- * prompt and submitted (the core's `submit`, queued while it works). The prompt quotes the passage and names the file,
- * its lines and its section (`askPrompt`). Once it is sent, or cancelled, the view says it is `done` (a bubbling event
- * on its host), and the document lets the pick go.
+ * `quote/composer`: a prompt about a passage picked in a markdown, text, code or html file a worker showed, typed into
+ * that worker's prompt and submitted (the core's `submit`, queued while it works). The prompt names the file and its
+ * lines, where it has them, and quotes the passage (`askPrompt`). Once it is sent, or cancelled, the view says it is
+ * `done` (a bubbling event on its host), and the file lets the pick go.
  */
 
 const ID = 'quote/composer'
