@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.96.2
+
+A worker that goes home no longer stays on duty when a notice arrives as it leaves, and typing stops republishing the
+board on every key. Restart the tower with this release (`tower down tower`, then `tower up tower`). No host restart, no
+config change, no API change.
+
+- **Going home.** Any prompt cancelled a `tower home`, and nothing armed it again. A message or a cross-session notice
+  delivered as the turn ended could leave a run on duty for hours. Only the user typing to a worker cancels it now; the
+  worker answers anything else and goes when that turn ends, or goes without answering if it arrives first.
+- **Typing.** `card.typedAt` moved with every key, so each key sent a whole board to every viewer, the flicker while
+  typing into a worker. The card now carries it to 5 seconds. Waits still read the exact time.
+- **Shell here defaults to ⌘J**, with ⌃\` still there for WSL. A `keys` entry of your own stays as it is.
+- **`kb verify --since` follows the first parent**, so merging upstream into a fork no longer flags what upstream
+  touched. A merged side branch's commits aren't counted either.
+
 ## v1.96.1
 
 A command that ended just as its timeout fired no longer takes the tower down. Restart the tower with this release
