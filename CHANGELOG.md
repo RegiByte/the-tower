@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.94.0
+
+The library: one surface for code outside the core, typed from outside the checkout. No restart beyond the tower's own
+(`tower down tower`, then `tower up tower`), no config change, API 1.151 (additions only). The open page offers the
+reload. This is the first wave of the road to 2.0: nothing you run changes, and what you build gets a contract.
+
+- **`/lib/<module>.js`, 24 modules.** The names an extension or a renderer builds on, each with a `since`, held by
+  checks on their shape, declarations, reach, runtimes and direction. `docs/extending.md` has the section.
+- **The 28 served modules are deprecated.** `/cards.js`, `/panels.js` and their kin keep working until 2.0, and now
+  answer with a `Deprecation` header. New code imports `/lib/`.
+- **`tower types`.** Writes the library's declarations into your extension's `.tower/`, so it typechecks with no path
+  into the tower's checkout. It replaces the hand-mapped `tower:*` paths; `tower:*.js` imports still work until 2.0.
+- **Bundled clients keep `/lib/*`, `/x/*` and `/tower.js` as URLs,** in a checkout or out of it, so a `.ts` client
+  outside the tower's folder imports them the same way. `/tower.js` runs once per page.
+- **The six examples, autotidy and floors build on `/lib/` alone,** and each example's README says how to type a copy
+  of it. Floors gains its pictures.
+
 ## v1.93.0
 
 Narration pauses and resumes. No restart beyond the tower's own (`tower down tower`, then `tower up tower`), no config
