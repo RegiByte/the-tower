@@ -51,6 +51,9 @@ export const afterBreak: EventFilter = (line) => (codeOf(line) === 'h' && line.i
 /** What draws a session's screen, and the exit that ends it. */
 export const screenEvents: EventFilter = (line) => ('orx'.includes(codeOf(line)) ? parseWhole(line) : undefined)
 
+/** What a worker's brief and its tool calls are read from (`turns.ts`): Claude's hooks and the mod's events, its output and input unread. */
+export const hookEvents: EventFilter = (line) => (codeOf(line) === 'h' ? parseWhole(line) : undefined)
+
 const HOOK_NAME = '"hook_event_name":"'
 const POST_TOOL_USE = `${HOOK_NAME}PostToolUse"`
 const AGENT_ID = /"agent_id":"([^"]*)"/
