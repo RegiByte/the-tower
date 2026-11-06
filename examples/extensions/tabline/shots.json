@@ -1,6 +1,6 @@
 {
   "seed": [
-    "tower x tabline facts/line '{\"value\": \"writing the migration\"}'"
+    "tower x tabline facts/line --value 'writing the migration'"
   ],
   "scenes": [
     {

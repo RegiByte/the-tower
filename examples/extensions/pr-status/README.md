@@ -33,7 +33,7 @@ The badges in the head of a worker's desk panel.
 
 Workers aren't told about it: the badge keeps itself current, asked again as a worker's turn ends, so a worker has
 nothing to do for it. `tower x pr-status prs` lists every branch it has asked about, with its pull request, none, or
-why GitHub couldn't be asked, and when it asks next (`dueAt`); `tower x pr-status ask-now '{}'` asks about every
+why GitHub couldn't be asked, and when it asks next (`dueAt`); `tower x pr-status ask-now` asks about every
 branch at once.
 
 ## Add it

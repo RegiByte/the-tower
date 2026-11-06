@@ -65,8 +65,8 @@ finish (add it as an existing folder). `add-repo` appends to the floor's `repos`
 `remove-repo` reads the config (`GET /config`), finds the repo's index and removes it through `config/remove` with
 the repo as read, so a hand edit of the repos in between is refused (`changed`), not overwritten.
 
-Workers: `tower x floors add '{"id": "my-app", "name": "my-app", "hub": "/abs/my-app", "repos": ["/abs/my-app-api"]}'`,
-`tower x floors add-repo '{"project": "my-app", "path": "/abs/my-app-web"}'`.
+Workers: `tower x floors add --id my-app --name my-app --hub /abs/my-app --repos /abs/my-app-api`,
+`tower x floors add-repo --project my-app --path /abs/my-app-web`.
 
 ### Clones as facts
 

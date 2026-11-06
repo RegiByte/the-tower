@@ -4,7 +4,7 @@
   "title": "Floors",
   "description": "New floors from the tower, and a floor's repos: a floor for a folder that already holds a project, a git repository cloned from its URL as a job, or a new project started from scratch, added to the config through config/add; a floor's repos changed through config/append and config/remove.",
   "requires": {
-    "tower": "1.151"
+    "tower": "1.153"
   },
   "server": "server.ts",
   "client": "client",
@@ -617,7 +617,7 @@
   },
   "guidance": {
     "brief": "New floors: `tower x floors add|clone|start` adds a floor for a folder, a cloned repository or a new project; `add-repo` and `remove-repo` change its repos.",
-    "full": "When the user asks for a new floor or to change a floor's repos, use this extension's verbs rather than editing config.json by hand: `add` for a folder already on the machine (`{\"id\", \"name\", \"hub\", \"repos\"?}`), `clone` for a git repository by URL (`{\"id\", \"name\", \"url\", \"into\"}`: a job that outlives the tower; the floor is added when it ends with exit 0, and `board.x.floors.clones` says where each stands), `start` for a project from scratch (`{\"id\", \"name\", \"into\"}`, a git repository with a first commit), `add-repo` and `remove-repo` (`{\"project\", \"path\"}`) for the other folders a floor's sessions work in. A failed clone: `remove` deletes what it left, `retry` clones again, `dismiss` forgets it (each `{\"job\"}`). The hub is where its sessions start by default; repos are other folders they also work in. `tower x floors dirs '{\"path\": \"/abs\"}'` lists a folder's folders."
+    "full": "When the user asks for a new floor or to change a floor's repos, use this extension's verbs rather than editing config.json by hand: `tower x floors add --id my-app --name 'My app' --hub /abs/my-app [--repos /abs/other …]` for a folder already on the machine, `clone --id … --name … --url … --into /abs/folder` for a git repository by URL (a job that outlives the tower; the floor is added when it ends with exit 0, and `board.x.floors.clones` says where each stands), `start --id … --name … --into /abs/folder` for a project from scratch (a git repository with a first commit), `add-repo --path /abs/folder` and `remove-repo --path /abs/folder` for the other folders a floor's sessions work in, your floor's unless `--project` names another. A failed clone: `remove` deletes what it left, `retry` clones again, `dismiss` forgets it (each `--job <id>`). The hub is where its sessions start by default; repos are other folders they also work in. `tower x floors dirs --path /abs` lists a folder's folders."
   },
   "streams": {
     "clones": {

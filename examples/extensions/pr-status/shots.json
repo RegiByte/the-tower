@@ -6,7 +6,7 @@
   },
   "seed": [
     "for name in search-draft fix-merged tidy-up old-closed ci-failing; do curl -s -XPOST $TOWER_URL/spawn -H \"origin: $TOWER_URL\" -H 'content-type: application/json' -d '{\"project\":\"lab\",\"cut\":{\"name\":\"'$name'\"}}' >/dev/null; done",
-    "sleep 3 && tower x pr-status ask-now '{}' >/dev/null"
+    "sleep 3 && tower x pr-status ask-now >/dev/null"
   ],
   "scenes": [
     {
