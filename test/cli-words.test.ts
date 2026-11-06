@@ -110,7 +110,33 @@ test('a JSON argument is still read, and says what to type instead', () => {
   assert.equal(jsonDeprecatedLine('typed', word('note'), { body: 'b', at: ['a:b:1', 'a:c d:2'], re: 3 }), "A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x typed note --re 3 --at a:b:1 --at 'a:c d:2' <<'EOF' … EOF")
   assert.equal(typedLine('typed', word('review'), { of: 'ODIN-7', tell: true }), 'tower x typed review ODIN-7 --tell')
   assert.equal(typedLine('typed', word('shape'), { box: { w: 1 } }), `tower x typed shape --box '{"w":1}'`)
-  assert.equal(jsonDeprecatedLine('typed', word('count'), [1]), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x typed count --help')
+  const help = (name: string) => `A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x typed ${name} --help`
+  assert.equal(jsonDeprecatedLine('typed', word('count'), [1]), help('count'))
+  assert.equal(jsonDeprecatedLine('typed', word('tags'), { tag: 'x' }), help('tags'))
+  assert.equal(jsonDeprecatedLine('typed', word('tags'), { tag: null }), help('tags'))
+  assert.equal(jsonDeprecatedLine('typed', word('tags'), { n: ['x'] }), help('tags'))
+  assert.equal(jsonDeprecatedLine('typed', word('resolve'), { notes: 3 }), help('resolve'))
+  assert.equal(jsonDeprecatedLine('typed', word('count'), { times: 3, other: 1 }), help('count'))
+  assert.equal(jsonDeprecatedLine('typed', word('echo'), { text: null }), help('echo'))
+  assert.equal(jsonDeprecatedLine('typed', word('echo'), { text: 3 }), help('echo'))
+})
+
+test('a door sends none with a bare --no-value, never by itself, and the JSON argument is typed that way', () => {
+  const tabline = Manifest.parse(JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'examples', 'extensions', 'tabline', 'extension.json'), 'utf8')))
+  const door = wordNamed(wordsOf(tabline), 'facts/line')!
+  assert.deepEqual(parseWord('tabline', door, ['--no-value']), { t: 'input', input: { value: null } })
+  assert.deepEqual(parseWord('tabline', door, ['--value', 'null']), { t: 'input', input: { value: 'null' } })
+  assert.deepEqual(parseWord('tabline', door, []), { t: 'input', input: {} })
+  assert.equal(missingLine('tabline', door, {}), 'facts/line needs --value: tower x tabline facts/line --value <value>')
+  assert.equal(missingLine('tabline', door, { value: null }), undefined)
+  const both = "--value and --no-value can't go together: one sets it, the other sends none"
+  for (const args of [['--value', 'a', '--no-value'], ['--no-value', '--value', 'a']]) assert.equal((parseWord('tabline', door, args) as { message: string }).message, both)
+  assert.equal((parseWord('tabline', door, ['--no-value=x']) as { message: string }).message, '--no-value takes no value')
+  assert.equal(usageOf(door), 'facts/line (--value <value> | --no-value) [--session <session>]')
+  assert.equal(helpLines('tabline', door).at(-1), '  --no-value  sends none, in place of --value')
+  assert.equal(jsonDeprecatedLine('tabline', door, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --no-value')
+  assert.equal(jsonDeprecatedLine('tabline', door, { value: 'on it' }), "A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value 'on it'")
+  assert.equal((parseWord('typed', word('echo'), ['--no-value']) as { message: string }).message, 'echo has no --no-value')
 })
 
 test('printing names a string or lines, and a field the reply left out prints nothing', () => {

@@ -712,7 +712,8 @@ whoami` names).
 **Words** (API 1.153) type an extension's verbs and reads like commands, on the same terms for bundled extensions and
 yours. Every verb is a word by its name, with nothing to declare; a read is a word when its `cli` names one, and any
 read is reached by its path too (`tower x policies runs/app --policy nightly`). `facts/<fact>` is a writable fact's
-door, typed `--value …`. What `tower x <cap> <name>` reaches is, in order: a word, a door or verb by its name, then the
+door, typed `--value …`, or a bare `--no-value` to send none, whatever the fact's schema. A door needs one of the two,
+and refuses both. What `tower x <cap> <name>` reaches is, in order: a word, a door or verb by its name, then the
 read whose path matches.
 
 - **Flags come from the input schema**, one per top-level field: `--re 3`, `--re=3`. A read's are its path's params and

@@ -608,6 +608,16 @@ test('server: an error in a word says what to do next and exits non-zero, and a 
   assert.deepEqual(JSON.parse(raw.stdout).input, { times: 3 })
   assert.match(typed(SESSION, ['note', '{"body": "b"}']).stdout, /"project":"lab"/)
   assert.deepEqual(JSON.parse(typed(SESSION, ['plain/42', '{"limit": "3"}']).stdout), { id: '42', limit: '3' })
+  const offShape = typed(SESSION, ['tags', '{"tag": "x"}'])
+  assert.equal(offShape.status, 1, offShape.stderr)
+  assert.match(offShape.stderr, /^A JSON argument .*tower x typed tags --help\ntower: The tower refused typed\/tags: /)
+  assert.equal(typed('gone', ['note'], 'Body.').stderr, 'tower: The tower has no session "gone"\n  → --project <id> names the floor\n')
+})
+
+test('server: a door is typed by --value, and --no-value clears it through the door', async () => {
+  const door = (...args: string[]) => JSON.parse(cli(SESSION, 'x', 'tabline', 'facts/line', ...args))
+  assert.deepEqual(door('--value', 'on it'), { session: SESSION, value: 'on it' })
+  assert.deepEqual(door('--no-value'), { session: SESSION, value: null })
 })
 
 test('server: tower x lists capabilities, tower x <cap> its words before its raw calls, and a word its flags', async () => {

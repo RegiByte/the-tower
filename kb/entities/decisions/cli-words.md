@@ -36,6 +36,9 @@ with a core word by construction, so there is nothing to reserve.
   caller and reads the board.
 - **Help and errors say what to do next.** `tower x` lists capabilities, `tower x <cap>` words before raw calls; a
   missing input names it with an example, a wrong value names its type, and an unknown word or flag names the nearest.
+- **A door says none with `--no-value`.** A door takes null whatever its fact's schema, which no value of `--value`
+  can say, so every door word takes a bare `--no-value`, derived from its being a door with no `cli` key. It needs one
+  of the two, so a bare door word clears nothing.
 - **A word's shape is its verb's.** A word wanting friendlier input is a verb of its own over the same function, never
   a mode on one verb. A word's name and shape are `contract.json` names, so a replacement must offer them.
 - **The JSON argument goes at 2.0.** Until then it works, is filled the same way, and says what to type instead,
