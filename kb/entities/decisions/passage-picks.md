@@ -74,7 +74,9 @@ sentence the user picked.
   document). Focus moving to the box leaves the frame's selection as it was. A held pick that a new selection grows
   out of (keys extending it) puts the box aside until the new one settles.
 - *Nothing of the renderer's goes in the frame.* The passage is lit by the CSS Custom Highlight API, registered on
-  the frame's window from the page (`::highlight(tower-passage)`), so the document's DOM is untouched. What acts on
+  the frame's window from the page (`::highlight(tower-passage)`), so the document's DOM is untouched. The frame's
+  `::selection` takes the same color: Chrome paints the selection of a frame that lost the focus (to the box) in its
+  own dark grey over the highlight, which on a dark code block hid the pick. What acts on
   it is the `passage.acts` region (commands and one view at `row` scale, like `lines.acts`), drawn in a box in the
   page's own document positioned over the frame: under the passage, or over it where there is no room below, kept
   within the frame as it scrolls. A view there dispatches a bubbling `done` to let the pick go, as the reviews

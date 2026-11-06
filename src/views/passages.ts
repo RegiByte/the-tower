@@ -22,9 +22,13 @@ export const PASSAGE_RULES = `& .passage-box { position: absolute; top: 0; left:
   & .passage-box[hidden] { display: none; }
   & .passage-box.moving { visibility: hidden; }`
 
-/** The name the frame's highlight registry keeps the held passage under, and its look in the frame. */
+/**
+ * The name the frame's highlight registry keeps the held passage under, and its look in the frame: the selection's
+ * too, so a pick reads the same while it is being made and once held, with the focus in the box. Chrome paints a
+ * selection whose frame lost the focus over the highlight, in its own dark grey, unless the page styles it.
+ */
 const HIGHLIGHT = 'tower-passage'
-const HIGHLIGHT_CSS = `::highlight(${HIGHLIGHT}) { background-color: color-mix(in oklab, var(--accent) 28%, transparent); }`
+const HIGHLIGHT_CSS = `::highlight(${HIGHLIGHT}), ::selection { background-color: color-mix(in oklab, var(--accent) 40%, transparent); }`
 
 type FrameWindow = Window & typeof globalThis
 

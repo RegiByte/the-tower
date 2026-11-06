@@ -1191,7 +1191,7 @@ for the links to the page, and what in a document could hold one of its own (a n
 emptied, and a `<base>` or meta refresh removed, before it is drawn. The gutter follows the frame's scroll position
 from the page, each animation frame while the view is seen, and the frame's selection is read from the page too
 (`/picks.js` says when it has stopped changing long enough to be a pick, since nothing is heard in the frame); the
-passage picked is lit by a highlight (`::highlight(tower-passage)`), not by an element written into the document. Keys pressed with the focus in a document frame reach
+passage picked is lit by a highlight (`::highlight(tower-passage)`, the frame's `::selection` the same color), not by an element written into the document. Keys pressed with the focus in a document frame reach
 the page's keymap in Chrome only: in WebKit a click outside the frame gives the page its keys back.
 
 **A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
