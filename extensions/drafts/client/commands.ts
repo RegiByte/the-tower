@@ -1,5 +1,5 @@
-import type { Subject } from '../../../src/shared/subjects.ts'
-import type { CommandKit } from '../../../src/shared/views.ts'
+import type { Subject } from '/lib/board.js'
+import type { CommandKit } from '/lib/view.js'
 import { DRAFTS } from './drafts.ts'
 
 /** `drafts/new`, on a floor: a new draft on it, in the drafts editor. */

@@ -1,11 +1,8 @@
-import type { Card, Floor, FloorCollection } from '../../../src/bridge/board.ts'
-import { can, esc, gistOf, HOST_MEANS, offeredCall, statusName, whyNot } from '../../../src/shared/cards.ts'
-import { fileButtonsHtml, fileCall } from '../../../src/shared/file-acts.ts'
-import { GIST_ICON } from '../../../src/shared/icons.ts'
-import { commandOf } from '../../../src/shared/keymap.ts'
-import { itemSubject } from '../../../src/shared/subjects.ts'
-import type { Mount } from '../../../src/shared/views.ts'
-import { closeHtml, viewCss } from '../../../src/views/parts.ts'
+import { type Card, can, type Floor, type FloorCollection, itemSubject, offeredCall } from '/lib/board.js'
+import { gistOf, HOST_MEANS, statusName, whyNot } from '/lib/cards.js'
+import { commandOf } from '/lib/keys.js'
+import { closeHtml, fileButtonsHtml, fileCall, GIST_ICON, type Mount, viewCss } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 import {
   AUTOSAVE_MS, DRAFT_STATE, DRAFTS, discard, draftItem, draftPath, draftsOf, draftState, edit, follow, keepsApart, leave, newDraft, openDraft, restore, save, sendable, settle, titleOf,
   type Draft, type DraftIo,
