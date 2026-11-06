@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.95.0
+
+Each Claude account gets its own limits. No restart beyond the tower's own (`tower down tower`, then `tower up tower`),
+no config change, API 1.152 (additions only). The open page offers the reload. One `argv` command sees nothing change.
+
+- **Limits per command.** With several named `argv` commands, `board.limits` has one entry each, in `argv`'s order, and
+  the sidebar draws them all. Each reading names its command, and a turn's is its session's. The top-level limit fields
+  stay as the default command's. In `/lib/board.js`: `limitsOf`, `defaultLimits`, `floorLimits`, `CommandLimits`.
+- **The quota probe reads every command,** each on its own schedule, one at a time, with a failed read's fix naming the
+  command. `quota/read-now` takes a `command`, and `tower probes run quota` says what it read. quota 1.1.
+- **The weekly budget and `/stats`' `budget`, `weekly` and `outside` read the default command only,** so several
+  accounts aren't mixed in one number.
+- **`ctx.commands(runtime)`** gives an extension every command of a runtime. `ctx.runtime(runtime)` is its default, and
+  refuses a runtime the tower doesn't know.
+- **Quota, drafts and policies build on `/lib/` alone,** and policies owns its shapes. Tower 3D's node scripts load the
+  library through `npm run tower3d:kit`.
+
 ## v1.94.0
 
 The library: one surface for code outside the core, typed from outside the checkout. No restart beyond the tower's own
