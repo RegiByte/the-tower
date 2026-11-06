@@ -6,4 +6,4 @@ repository of its own, to take KayKit's place in Tower 3D over time. They are CC
 `catalog.json` lists every prop's sidecar and how each of the three materials binds the textures in `textures/`;
 `props/<category>/<name>.glb` carry the meshes, with no images. `npm run tower3d` measures the props the office
 places into the renderer's kit, as the pack `forge` (ids `forge/<category>/<name>`). Replace the snapshot with a
-newer `dist/`: `tsx scripts/tower3d-kit.ts vendor-forge <dist>`.
+newer `dist/`: `npm run tower3d:kit -- vendor-forge <dist>`.
