@@ -614,12 +614,13 @@ test('server: an error in a word says what to do next and exits non-zero, and a 
   assert.equal(typed('gone', ['note'], 'Body.').stderr, 'tower: The tower has no session "gone"\n  → --project <id> names the floor\n')
 })
 
-test('server: a door word with no --value clears through the door, which reads a value left out as null; its listing says so', async () => {
+test('server: a door takes --value as typed, a blank as an empty string, and a null only as the API does; a bare door word clears nothing', async () => {
   const door = (...args: string[]) => JSON.parse(cli(SESSION, 'x', 'tabline', 'facts/line', ...args))
   assert.deepEqual(door('--value', 'on it'), { session: SESSION, value: 'on it' })
-  assert.deepEqual(door(), { session: SESSION, value: null })
+  assert.deepEqual(door('--value', ''), { session: SESSION, value: '' })
   assert.deepEqual(door('{"value": null}'), { session: SESSION, value: null })
-  assert.ok(cli(SESSION, 'x', 'tabline').split('\n').includes('  tower x tabline facts/line [--value <value>] [--session <session>] (no --value clears it)'))
+  const bare = spawnSync(process.execPath, ['--import', 'tsx', path.join('src', 'cli.ts'), 'x', 'tabline', 'facts/line'], { cwd: REPO, env: { ...ENV, TOWER_SESSION_ID: SESSION }, encoding: 'utf8' })
+  assert.deepEqual([bare.status, bare.stderr], [1, 'tower: facts/line needs --value: tower x tabline facts/line --value <value>\n'])
 })
 
 test('server: tower x lists capabilities, tower x <cap> its words before its raw calls, and a word its flags', async () => {

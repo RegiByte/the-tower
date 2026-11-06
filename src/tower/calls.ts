@@ -116,7 +116,7 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
   }
 
   /**
-   * The door of `cap`'s writable fact `name`: `{ session?, value? }`, the value by the fact's schema, or null or left out for none,
+   * The door of `cap`'s writable fact `name`: `{ session?, value }`, the value by the fact's schema or null for none,
    * logged on the session for a caller its manifest's `writable` names, on a floor where `cap` is on.
    */
   const door = async (cap: string, name: string, input: unknown, caller: Caller): Promise<Reply> => {
@@ -125,7 +125,7 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     const { a, instance } = found
     const writers = a.manifest.facts?.[name]?.writable
     if (!writers) return apiError('not_found', `${cap} declares no writable fact "${name}": facts/<name> is the door of a fact its manifest says is writable`)
-    const parsed = z.strictObject({ session: z.string().min(1).optional(), value: a.schemas.facts.get(name)!.nullish() }).safeParse(input)
+    const parsed = z.strictObject({ session: z.string().min(1).optional(), value: a.schemas.facts.get(name)!.nullable() }).safeParse(input)
     if (!parsed.success) return apiError('invalid', z.prettifyError(parsed.error))
     const by = writerOf(caller, parsed.data.session)
     if ('t' in by) return by
@@ -134,9 +134,8 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     if (project === undefined) return apiError('not_found', `No session "${by.session}"`)
     const refused = floorRefusal(readConfig(), a, project)
     if (refused) return refused
-    const value = parsed.data.value ?? null
-    await instance.writeFact(by.session, name, value)
-    return { session: by.session, value }
+    await instance.writeFact(by.session, name, parsed.data.value)
+    return { session: by.session, value: parsed.data.value }
   }
 
   /** A verb or read of an extension that is on its way out, as its manifest says. */

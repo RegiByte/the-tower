@@ -36,9 +36,10 @@ with a core word by construction, so there is nothing to reserve.
   caller and reads the board.
 - **Help and errors say what to do next.** `tower x` lists capabilities, `tower x <cap>` words before raw calls; a
   missing input names it with an example, a wrong value names its type, and an unknown word or flag names the nearest.
-- **A door word with no `--value` clears.** A command line has no null, only absence, so a door's `--value` is optional
-  and the word says so in its usage. The core's door reads a `value` left out as none, the same as `null`, in that one
-  place, since a door has no extension code.
+- **A door's `--value` is required.** A bare door word is the missing-flag error, so it clears nothing by accident.
+  `--value ""` reaches the door as an empty string, and clearing is that value on purpose, for a fact that reads a blank
+  as cleared. `null` stays at the API; a null in a JSON argument on a string door is typed `--value ""`, and on any
+  other door has no typed form, so a door that needs one offers a verb.
 - **A word's shape is its verb's.** A word wanting friendlier input is a verb of its own over the same function, never
   a mode on one verb. A word's name and shape are `contract.json` names, so a replacement must offer them.
 - **The JSON argument goes at 2.0.** Until then it works, is filled the same way, and says what to type instead,
