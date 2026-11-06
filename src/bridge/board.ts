@@ -408,18 +408,20 @@ export type Board = {
   archiveAt: number
   /** One entry per `argv` command, in its order, the default command's first; the only one in single-command mode. @since 1.152 */
   limits: CommandLimits[]
-  /** The default command's rate limits, as `limits` holds them: `defaultLimits` reads them there. */
+  /** The default command's rate limits. @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0. */
   rateLimits: RateLimit[]
   /**
-   * When the rate limits were read (epoch ms): a session's turn reads them, and the quota probe while no turn does,
-   * so they age only while neither reads.
+   * When the default command's rate limits were read (epoch ms): a session's turn reads them, and the quota probe
+   * while no turn does, so they age only while neither reads.
+   * @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0.
    */
   rateLimitsAt?: number
-  /** Whose reading the rate limits are: a session's turn, or a probe's read. */
+  /** Whose reading the default command's rate limits are: a session's turn, or a probe's read. @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0. */
   rateLimitsFrom?: LimitsFrom
   /**
-   * The newest reading a session's turn took, beside the account's: what a probe of the limits waits on while turns
-   * read them. @since 1.90
+   * The newest reading a turn of the default command's sessions took, beside the account's: what a probe of its
+   * limits waits on while turns read them. @since 1.90
+   * @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0.
    */
   turnLimits?: { at: number; limits: RateLimit[] }
   /**
@@ -428,7 +430,7 @@ export type Board = {
    * @deprecated since 1.90: read `x.quota`, and call `quota/read-now`.
    */
   probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] })[]
-  /** The account's extra usage, as the probes' newest answer that had it said. */
+  /** The default command's extra usage, as the probes' newest answer that had it said. @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0. */
   extraUsage?: ExtraUsage
   /** Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`). */
   extensions: ExtensionView[]
