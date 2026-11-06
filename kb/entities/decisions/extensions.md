@@ -351,7 +351,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
 - **Fact kinds (1.90).** A stream's fact code may declare a `kind` the core folds, its facts checked against the
   kind's schema too; an unknown kind, or `tower/rate-limits` in a project stream, is `invalid`. The one kind is
   `tower/rate-limits` ([`RateLimitsReading`](ref:hub/src/shared/rate-limits.ts#RateLimitsReading): `limits`,
-  `extraUsage?`, `runtime?`, Claude's when it names none), which the core folds per started extension's stream beside
+  `extraUsage?`, `runtime?`, Claude's when it names none, `command?`, the default command's when it names none), which the core folds per started extension's stream beside
   the sessions' turns' ([[probes]]), from every manifest resolved, started, off or failed, but one refused as
   `invalid` ([`readingStreams`](ref:hub/src/bridge/rate-limits.ts#readingStreams)).
 - **Writable facts (1.126): a value with no server code.** A fact declaring `writable` (`user`, `self`) has a door,
@@ -370,7 +370,8 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   The card line (`examples/extensions/tabline`) is the proof: a manifest, and a client command that asks for the line.
 - **Stored facts fold from the manifest, never from running code.** What an extension stored is folded by what its
   manifest declares, whether the extension is on, off or failed at start; only a manifest refused as `invalid`, whose
-  declarations can't be trusted, is not read. `ctx.runtime(runtime)` gives the config's `argv` and `env`, and `ctx.run` takes
+  declarations can't be trusted, is not read. `ctx.runtime(runtime)` gives the config's default command and `env`, `ctx.commands(runtime)` all of them
+  ([`runtimeCommands`](ref:hub/src/shared/model.ts#runtimeCommands)), and `ctx.run` takes
   `env`, so an extension runs Claude as the sessions do.
 - **The built-ins move, one at a time (1.90 on).** The first is the quota probe, `extensions/quota` ([[probes]]). A
   bundled extension's server module imports the core's shared code (`src/shared`), never the reverse. Its old names

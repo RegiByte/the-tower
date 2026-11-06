@@ -19,6 +19,9 @@
     "hub/src/shared/rate-limits.ts#usageReading",
     "hub/src/bridge/rate-limits.ts#limitsStep",
     "hub/src/bridge/rate-limits.ts#accountLimits",
+    "hub/src/bridge/rate-limits.ts#accountsOf",
+    "hub/src/bridge/rate-limits.ts#commandLimits",
+    "hub/src/bridge/rate-limits.ts#streamLimitsStep",
     "hub/src/bridge/legacy.ts#LEGACY_READINGS",
     "hub/src/bridge/legacy.ts#respelled",
     "hub/src/bridge/rate-limits.ts#readingStreams",
@@ -74,10 +77,17 @@ core code it replaced.
   manifest is folded by the core ([`readingStreams`](ref:hub/src/bridge/rate-limits.ts#readingStreams),
   [`limitsStep`](ref:hub/src/bridge/rate-limits.ts#limitsStep)), and an old `p` through
   [`LEGACY_READINGS`](ref:hub/src/bridge/legacy.ts#LEGACY_READINGS), so turning the probe off stops new reads and
-  keeps every past one. The board's `rateLimits` are the newest of sessions ∪ streams
+  keeps every past one. Each `argv` command is an account ([`accountsOf`](ref:hub/src/bridge/rate-limits.ts#accountsOf)):
+  a turn's reading is its session header's command's, a stream's its `command`'s, kept apart within the stream
+  ([`streamLimitsStep`](ref:hub/src/bridge/rate-limits.ts#streamLimitsStep)), and what names none the default
+  command's, derived when read, so old readings need no migration. What names a command `argv` no longer holds is no
+  account's. `board.limits` has one entry per command in `argv`'s order
+  ([`commandLimits`](ref:hub/src/bridge/rate-limits.ts#commandLimits)), each the newest of its sessions ∪ streams
   ([`accountLimits`](ref:hub/src/bridge/rate-limits.ts#accountLimits)), each limit only the other reads carried
-  from a recent reading of the other; the weekly budget, its pace and the use from outside the tower read both
-  ([[stats]]).
+  from a recent reading of the other; the top-level `rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and
+  `extraUsage` are the default command's copies until 2.0, and the weekly budget, its pace and the use from outside
+  the tower read both of its sources ([[stats]]). The probe reads the default command only, so another command's
+  entry holds what its turns read.
 - *How it stands, derived.* The extension folds its stream ([`step`](ref:hub/extensions/quota/status.ts#step),
   [`statusOf`](ref:hub/extensions/quota/status.ts#statusOf)) into `x.quota` on the board: its state, last read, last
   error and `nextAt`, times rather than "due now". Its client draws it under the limits

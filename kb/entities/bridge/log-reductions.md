@@ -79,9 +79,10 @@
   rate limits, `today` ([[stats]]) and shells. The core's board is built first; then each running extension's folds put
   its part at a subject's `x`, its contributions at `board.adds` and its asks at `board.asks`
   ([`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard), [[extensions]]): the core's never reads them. Its shape, field by field with their docs, is the board schema
-  (`src/shared/board.schema.json`, `npm run schema:board`, served at `GET /schema`). The rate limits are the latest
-  reading of any session's turn or any extension's reading of kind `tower/rate-limits` ([`accountLimits`](ref:hub/src/bridge/rate-limits.ts#accountLimits)),
-  with when and whose it is (`rateLimitsAt`, `rateLimitsFrom`): a reading arrives only with a turn or a read
+  (`src/shared/board.schema.json`, `npm run schema:board`, served at `GET /schema`). The rate limits, one entry of `limits` per `argv`
+  command, are the latest reading of that command's sessions' turns or of its extensions' readings of kind
+  `tower/rate-limits` ([`accountLimits`](ref:hub/src/bridge/rate-limits.ts#accountLimits)), with when and whose it is
+  (`rateLimitsAt`, `rateLimitsFrom`); the top-level fields copy the default command's: a reading arrives only with a turn or a read
   ([[probes]]), so renderers show its age. The tower draws it and relays it to shelf pages ([[renderer-api]]).
 
 Fixtures in `test/fixtures/*.jsonl` are real recorded sessions; `npm test` replays them against hand-written

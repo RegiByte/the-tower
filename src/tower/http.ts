@@ -104,6 +104,7 @@ import http from 'node:http'
 import path from 'node:path'
 import { z } from 'zod'
 import { LEGACY_READS, legacyNamed } from '../bridge/legacy.ts'
+import { accountsOf } from '../bridge/rate-limits.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { briefOf, toolCallOf, wholeConversation } from '../bridge/turns.ts'
@@ -395,8 +396,8 @@ export const httpServer = defineResource({
       const reads = await Promise.all(dirs.map((dir) => readLanded(dir, from, to)))
       const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
       const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
-      const readings = extensions.readings()
-      return json({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(sessions, readings, now), weekly: weeklyRead(sessions, readings, { from, to }), outside: outsideIn(sessions, readings, { from, to }) } satisfies Stats)
+      const [account] = accountsOf(readConfig(), sessions, extensions.readings())
+      return json({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(account.sessions, account.streams, now), weekly: weeklyRead(account.sessions, account.streams, { from, to }), outside: outsideIn(account.sessions, account.streams, { from, to }) } satisfies Stats)
     }
 
     async function origins(): Promise<ReadReply> {

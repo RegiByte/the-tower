@@ -3,10 +3,11 @@
  * readings every started extension appends to a stream fact of that kind. The core folds each such stream into
  * `LimitFacts`, and reads the board's limits, extra usage, the weekly budget and outside use from them and the sessions.
  */
-import type { Board } from './board.ts'
+import type { CommandLimits } from './board.ts'
 import { limitsRead, type Facts, type RateLimit } from './facts.ts'
 import type { StreamFact } from './streams.ts'
 import { capabilityOf, streamFolder, type Manifest } from '../shared/extensions.ts'
+import { commandNames, type Config, type SessionHeader } from '../shared/model.ts'
 import type { RateLimitsReading } from '../shared/rate-limits.ts'
 import { LEGACY_READINGS } from './legacy.ts'
 
@@ -19,8 +20,10 @@ export type ExtraUsage = { at: number; enabled: boolean; used: number; limit: nu
 /** A limit's percent climbed `points` from the reading at `from` to the next at `to` (epoch ms), in the window resetting at `resetsAt`. */
 export type Rise = [from: number, to: number, points: number, resetsAt: string]
 
-/** What one stream of rate-limit readings says. */
+/** What one stream's rate-limit readings naming one `argv` command say. */
 export type LimitFacts = {
+  /** The command they name; absent for readings that name none. */
+  command?: string
   limitReadings: Facts['limitReadings']
   rateLimits?: Facts['rateLimits']
   /** By limit kind, each climb between two readings in a row of the same window: the readings of one source round alike. */
@@ -43,6 +46,7 @@ const risesTo = (rises: LimitFacts['rises'], before: Facts['rateLimits'], at: nu
 export const limitsStep = (facts: LimitFacts, at: number, { limits, extraUsage }: RateLimitsReading): LimitFacts => {
   const extra = extraUsage ? { at, ...extraUsage } : facts.extraUsage
   return {
+    ...facts,
     limitReadings: limitsRead(facts.limitReadings, at, limits),
     rateLimits: limits.length ? { at, limits } : facts.rateLimits,
     rises: risesTo(facts.rises, facts.rateLimits, at, limits),
@@ -50,17 +54,23 @@ export const limitsStep = (facts: LimitFacts, at: number, { limits, extraUsage }
   }
 }
 
+/** One reading folded onto a stream's facts, kept apart by the command it names: two accounts' readings make no climb. */
+export const streamLimitsStep = (state: LimitFacts[], at: number, read: RateLimitsReading): LimitFacts[] => {
+  const own = state.find((f) => f.command === read.command) ?? { ...NO_LIMITS, ...(read.command !== undefined && { command: read.command }) }
+  return [...state.filter((f) => f !== own), limitsStep(own, at, read)]
+}
+
 /** A stream's readings folded: each fact the `reading` of its code says is one, the rest passed over. */
-export const limitFacts = (facts: StreamFact[], reading: (code: string, fact: unknown) => RateLimitsReading | undefined): LimitFacts =>
-  facts.reduce((state, [at, code, fact]) => {
+export const limitFacts = (facts: StreamFact[], reading: (code: string, fact: unknown) => RateLimitsReading | undefined): LimitFacts[] =>
+  facts.reduce<LimitFacts[]>((state, [at, code, fact]) => {
     const read = reading(code, fact)
-    return read ? limitsStep(state, at, read) : state
-  }, NO_LIMITS)
+    return read ? streamLimitsStep(state, at, read) : state
+  }, [])
 
 export type LimitsFrom = 'session' | 'probe'
 
-/** The board's account limits: the newest reading of any session's turn or any extension's stream. */
-export type LimitsRead = Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'rateLimitsFrom'>
+/** One account's limits: the newest reading of its sessions' turns or its streams. */
+export type LimitsRead = Pick<CommandLimits, 'rateLimits' | 'rateLimitsAt' | 'rateLimitsFrom'>
 
 /** The newest of the readings. */
 export const newestReading = (readings: Facts['rateLimits'][]): Facts['rateLimits'] =>
@@ -90,6 +100,36 @@ export const accountLimits = (sessions: Pick<Facts, 'rateLimits'>[], streams: Li
 export const extraUsageOf = (streams: LimitFacts[]): { extraUsage?: ExtraUsage } => {
   const newest = streams.reduce<ExtraUsage | undefined>((a, s) => (s.extraUsage && (!a || s.extraUsage.at > a.at) ? s.extraUsage : a), undefined)
   return newest ? { extraUsage: newest } : {}
+}
+
+/** What one account's limits are read from: `command` in `argv`, absent in single-command mode. */
+export type Account<S> = { command?: string; sessions: S[]; streams: LimitFacts[] }
+
+/**
+ * Every command's sessions and streams of readings, in `argv`'s order, the default command's first. What names no
+ * command is the default's; what names one `argv` no longer has is no account's. In single-command mode the one
+ * account holds everything.
+ */
+export const accountsOf = <S extends { header: Pick<SessionHeader, 'command'> }>(config: Config, sessions: S[], streams: LimitFacts[]): Account<S>[] => {
+  const names = commandNames(config)
+  if (names === undefined) return [{ sessions, streams }]
+  const named = (command: string, name: string | undefined) => (name ?? names[0]) === command
+  return names.map((command) => ({
+    command,
+    sessions: sessions.filter((s) => named(command, s.header.command)),
+    streams: streams.filter((f) => named(command, f.command)),
+  }))
+}
+
+/** One account's entry of `board.limits`. */
+export const commandLimits = ({ command, sessions, streams }: Account<{ facts: Pick<Facts, 'rateLimits'> }>): CommandLimits => {
+  const turnLimits = newestReading(sessions.map((s) => s.facts.rateLimits))
+  return {
+    ...(command !== undefined && { command }),
+    ...accountLimits(sessions.map((s) => s.facts), streams),
+    ...(turnLimits && { turnLimits }),
+    ...extraUsageOf(streams),
+  }
 }
 
 /** A system stream whose facts hold rate-limit readings: its folder, and what of a fact is one (`undefined` for none). */

@@ -13,10 +13,10 @@ import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { continuations, lineage, namer, threads, type SessionRef, type Thread } from './chains.ts'
 import type { CardRun, Offer, PolicyView } from '../shared/policies-legacy.ts'
 import { legacyCrew, legacyReviewer, type ProbeStatus } from './legacy.ts'
-import { accountLimits, extraUsageOf, newestReading, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
+import { accountsOf, commandLimits, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
-import { bucketStart, nextBucket, today, type Today } from './stats.ts'
+import { bucketStart, nextBucket, today, weeklyBudget, type Today } from './stats.ts'
 import { withLiveness, type Status } from './status.ts'
 import { promptRefusal } from './composer.ts'
 import { awaitsResume, lifeOf, type Attention } from './life.ts'
@@ -371,6 +371,21 @@ export type Wait = { id: string; key: string; reason: WaitReason; since: number;
  */
 export type Viewers = { active?: string; last?: Record<string, string> }
 
+/** One `argv` command's account limits, an entry of `board.limits`. @since 1.152 */
+export type CommandLimits = {
+  /** The `argv` command; absent in single-command mode. */
+  command?: string
+  rateLimits: RateLimit[]
+  /** When they were read (epoch ms). */
+  rateLimitsAt?: number
+  /** Whose reading they are: a session's turn, or a probe's read. */
+  rateLimitsFrom?: LimitsFrom
+  /** The newest reading a turn of this command's sessions took. */
+  turnLimits?: { at: number; limits: RateLimit[] }
+  /** The account's extra usage, as the newest answer that had it said. */
+  extraUsage?: ExtraUsage
+}
+
 export type Board = {
   /** The person running the tower: `name` signs the notes renderers write for them (`user.name` in the config). */
   user: { name: string }
@@ -391,6 +406,9 @@ export type Board = {
    * it again when this or the floor's `archived` moves.
    */
   archiveAt: number
+  /** One entry per `argv` command, in its order, the default command's first; the only one in single-command mode. @since 1.152 */
+  limits: CommandLimits[]
+  /** The default command's rate limits, as `limits` holds them: `defaultLimits` reads them there. */
   rateLimits: RateLimit[]
   /**
    * When the rate limits were read (epoch ms): a session's turn reads them, and the quota probe while no turn does,
@@ -882,12 +900,6 @@ const keysOf = (config: Config, extensions: ExtensionView[], keeps: string[], no
   return { keys: { ...core, ...keys }, extensions: withDropped(extensions, dropped, now) }
 }
 
-/** The newest reading any session's turn took. */
-const turnLimitsOf = (sessions: Session[]): Pick<Board, 'turnLimits'> => {
-  const newest = newestReading(sessions.map((s) => s.facts.rateLimits))
-  return newest ? { turnLimits: newest } : {}
-}
-
 export const board = (view: SystemView): Board => boardOf(view, allCards(view))
 
 /** The board of `view` from its cards (`allCards`), built once by a caller that reads them too. */
@@ -898,7 +910,9 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
   const kept = onBoard(bucketStart(now, 'day'))
   const keptBy = keepers(sessions, namer(continued, callsignsOf(config)))
   const occupants = occupantsOf(cards, shells)
-  const limits = accountLimits(sessions.map((s) => s.facts), readings)
+  const accounts = accountsOf(config, sessions, readings)
+  const limits = accounts.map(commandLimits)
+  const { command: _, ...defaults } = limits[0]
   const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/') || m.file.startsWith('jobs/')), config.retention?.days, now)
   return {
     user: { name: userName(config) },
@@ -947,14 +961,13 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     waiting: waitingOrder(cards),
     offers: [],
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
-    ...limits,
-    ...turnLimitsOf(sessions),
-    ...extraUsageOf(readings),
+    limits,
+    ...defaults,
     probes: [],
     extensions,
     adds: absentAdds(config, stores),
     asks: [],
-    today: today(sessions, readings, now),
+    today: today(sessions, weeklyBudget(accounts[0].sessions, accounts[0].streams, now), now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
     claudeDefaults: claudeDefaults(sessions),
