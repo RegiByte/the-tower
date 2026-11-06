@@ -95,7 +95,7 @@ if (cmd === "tree") {
   if (flags.includes("--since")) {
     const since = flags[flags.indexOf("--since") + 1];
     if (!since || since.startsWith("--")) { console.error("usage: verify --since <rev>"); process.exit(1); }
-    const hashes = execFileSync("git", ["rev-list", `${since}..HEAD`], { encoding: "utf8" }).split("\n").filter(Boolean);
+    const hashes = execFileSync("git", ["rev-list", "--first-parent", `${since}..HEAD`], { encoding: "utf8" }).split("\n").filter(Boolean);
     console.log(`\nsuspects caused by ${hashes.length} commit(s) in ${since}..HEAD`);
     diagnostics = suspectsSince(diagnostics, hashes);
   }
