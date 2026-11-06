@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process'
 import { endInput } from './child-input.ts'
 import { withoutParentSession } from './shared/env.ts'
 import type { RunResult } from './shared/extensions.ts'
+import { signalGroup } from './signal-group.ts'
 
 /** The most of each stream kept: stdout's beginning, stderr's end. */
 const KEPT = 64 * 1024
@@ -21,13 +22,7 @@ export const runProcess = (argv: string[], { cwd, timeoutMs, stdin, env, signal 
     let stdout = ''
     let stderr = ''
     let timedOut = false
-    const kill = () => {
-      try {
-        process.kill(-child.pid!, 'SIGKILL')
-      } catch (err) {
-        if ((err as NodeJS.ErrnoException).code !== 'ESRCH') throw err
-      }
-    }
+    const kill = () => signalGroup(child.pid!, 'SIGKILL')
     const timer = setTimeout(() => {
       timedOut = true
       kill()

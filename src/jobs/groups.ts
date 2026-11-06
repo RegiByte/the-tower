@@ -6,6 +6,7 @@
 import { execFile } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { promisify } from 'node:util'
+import { signalGroup } from '../signal-group.ts'
 
 const run = async (file: string, args: string[]): Promise<string> => (await promisify(execFile)(file, args, { encoding: 'utf8' })).stdout
 
@@ -61,16 +62,6 @@ export const jobGroup = async (pgid: number, startedAt: number): Promise<Member[
   const leader = members.find((m) => m.pid === pgid)
   const ours = members.every((m) => m.startedAt >= startedAt - CLOCK_SLACK_MS) && (!leader || leader.startedAt <= startedAt + CLOCK_SLACK_MS)
   return ours ? members : []
-}
-
-/** Signals the whole group; one that ended since it was listed is not an error (macOS answers EPERM for a group of zombies). */
-export const signalGroup = (pgid: number, signal: NodeJS.Signals): void => {
-  try {
-    process.kill(-pgid, signal)
-  } catch (err) {
-    const { code } = err as NodeJS.ErrnoException
-    if (code !== 'ESRCH' && code !== 'EPERM') throw err
-  }
 }
 
 /** How long a group has to end on SIGTERM before it gets SIGKILL: git clone removes its partial folder on TERM. */

@@ -26,9 +26,10 @@ import { endOnReadError } from '../shared/pty.ts'
 import { claimSocket } from '../shared/socket.ts'
 import { SHELL_SCROLLBACK } from '../shared/terms.ts'
 import { broadcast, joinViewer, socketViewer, type Screened } from '../shared/viewers.ts'
+import { signalGroup } from '../signal-group.ts'
 import { appendFact } from '../streams.ts'
 import { logBytes, logFilesIn } from '../tail.ts'
-import { bootTime, endGroup, signalGroup } from './groups.ts'
+import { bootTime, endGroup } from './groups.ts'
 
 type LiveJob = Screened<JobStream> & { job: HeldJob; proc: pty.IPty; end?: JobEnd; forget?: NodeJS.Timeout }
 
