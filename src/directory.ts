@@ -263,15 +263,17 @@ const extensionCliLines = (e: Reads['extensions']['extensions'][number]): string
 
 const deprecatedWords = (deprecated: Deprecated | undefined) => (deprecated ? ` · deprecated since ${deprecated.since}${deprecated.use ? `: use ${deprecated.use}` : ''}` : '')
 
+const FLOOR_FILLED = " (your floor's unless --project names one)"
+
 /** An extension's doors, verbs and reads, each as `tower x` calls it, in its words. */
 const extensionCallLines = (e: ExtensionView): string[] => [
   `${e.provides}  ${extensionLine(e)}`,
-  ...doorsOf(e).map((f) => `  tower x ${e.provides} ${FACT_DOOR}${f.name}  ${f.description ?? `writes its fact ${f.name}`} (written by ${f.writable!.join(', ')}; input {"value": …})`),
+  ...doorsOf(e).map((f) => `  tower x ${e.provides} ${FACT_DOOR}${f.name}  ${f.description ?? `writes its fact ${f.name}`} (written by ${f.writable!.join(', ')})`),
   ...e.verbs.map((v) => {
     const words = v.words ? `${v.words.label}${v.words.hint ? `: ${v.words.hint}` : ''}` : (v.description ?? '')
-    return `  tower x ${v.name.replace('/', ' ')}  ${words}${v.scope === 'project' ? ' (its input names the project)' : ''}${deprecatedWords(v.deprecated)}`
+    return `  tower x ${v.name.replace('/', ' ')}  ${words}${v.scope === 'project' ? FLOOR_FILLED : ''}${deprecatedWords(v.deprecated)}`
   }),
-  ...e.reads.map((r) => `  tower x ${e.provides} ${r.path}  ${r.description ?? 'a read'}${r.scope === 'project' ? ' (it names the project)' : ''}${deprecatedWords(r.deprecated)}`),
+  ...e.reads.map((r) => `  tower x ${e.provides} ${r.path}  ${r.description ?? 'a read'}${r.scope !== 'project' ? '' : r.path.includes('<project>') ? ' (it names the project)' : FLOOR_FILLED}${deprecatedWords(r.deprecated)}`),
 ]
 
 /** A capability in `tower x`'s listing: what it says of itself in one line. */
@@ -318,7 +320,10 @@ const withStdin = async (word: Word, input: Record<string, unknown>): Promise<Re
 /** `input` with the floor of the worker running the command as its `project`, where a project-scoped word takes one and nothing named it. */
 const withCallerFloor = async (word: Word, input: unknown): Promise<unknown> => {
   const open = word.scope === 'project' && word.fields.some((f) => f.name === 'project') && me !== undefined && typeof input === 'object' && input !== null && !('project' in input)
-  return open ? { ...input, project: ownFloor(await readBoard(), me).id } : input
+  if (!open) return input
+  const floor = (await readBoard()).floors.find((f) => f.cards.some((c) => c.id === me))
+  if (!floor) throw new CliError(`The tower has no session "${me}"`, `--project <id> names the floor`)
+  return { ...input, project: floor.id }
 }
 
 /** The string or lines a word's `cli.print` names, else its reply as JSON. */
