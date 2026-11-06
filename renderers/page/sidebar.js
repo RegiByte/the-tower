@@ -1,5 +1,5 @@
 import { addedActions, badgesOf, heldActions, boardSubject, cardSubject, floorSubject, heededAsks, projectOfKey, ATTENTION_NAME, WAITING_NAME, crewFoldsOf, crewTreeIn, orderMoving, workerKeyOf, hiresBy, goneHome, goneHomeLine, loudest, lampOf, heededWaits, addedTidyOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines, tidyLine, tidyRows, editedRows, carriedLine, LIMITS_STALE_MS, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, base, branchLine, callOf, can, dutyOrderIn, esc, pastCount, renderersHtml, shelfKind, shelfSource, risky, gistLine, goneBases, keptBranchLines, paceLine, pairLineOf, resetLine, span, statusName, statusWord, weekElapsed, worktreeBranch, worktreeRisk, strandedOf, workersIn, noun, plural, statusTitle, satellitesOf, subagentTitle, SUBAGENT_FADE_MS, tidyRowAsk } from '/cards.js'
-import { PROBE_ATTENTION, probeLine, probeTitle, quotaOf } from '/x/quota/quota.js'
+import { commandProbes, PROBE_ATTENTION, probeLine, probeTitle } from '/x/quota/quota.js'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '/icons.js'
 import { onDuty, lineOf, $, fillOf, keyedTip, told } from './kit.js'
 import { keyshortcuts } from '/keymap.js'
@@ -13,6 +13,7 @@ import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, iconButtonsHtm
  * @import { Hold, LayoutEntry, Overflow, Region } from '../../src/shared/regions.ts'
  * @import { FloorBranch, FloorWorktree } from '../../src/bridge/worktrees.ts'
  * @import { RateLimit } from '../../src/bridge/facts.ts'
+ * @import { CommandLimits } from '../../src/bridge/board.ts'
  * @import { EditedRow, Heed, TidyRow, DaemonVerb } from '../../src/shared/cards.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { ShelfEntry } from '../../src/shared/model.ts'
@@ -519,52 +520,63 @@ export async function sidebar(deps) {
     <div class="meter" style="--fill:${fillOf(pct, 85)}"><i style="width:${pct}%"></i>${pace}</div></div>`
   }
 
-  /** The quota probe under the limits while it runs: its line, its state's colour on the lamp, and in full on hover. @param {number} now */
-  const probesHtml = (now) => {
-    const p = quotaOf(board())
-    return p
-      ? `<small class="probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}<button class="probe-run" data-probe-run="quota" data-tip="read it now: at most once a minute">read now</button></small>`
-      : ''
+  /**
+   * A command's quota probe under its limits while it runs: its line, its state's colour on the lamp, and in full on hover.
+   * @param {CommandLimits} entry @param {number} now
+   */
+  const probeHtml = (entry, now) => {
+    const p = commandProbes(board()).find((probe) => probe.command === entry.command)
+    if (!p) return ''
+    const named = entry.command === undefined ? '' : ` data-probe-command="${esc(entry.command)}"`
+    return `<small class="probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}<button class="probe-run" data-probe-run="quota"${named} data-tip="read it now: at most once a minute">read now</button></small>`
   }
 
   /** Each extension the tower found, after the probes: its line, its state's colour on the lamp, and in full on hover. */
   const extensionsHtml = () =>
     board().extensions.map((e) => `<small class="extension ${EXTENSION_ATTENTION[e.state]}" data-tip="${esc(extensionTitle(e))}"><span class="lamp"></span>${esc(extensionLine(e))}</small>`).join('')
 
-  /** Extra usage while it is on, as the probe last read it. @param {number} now */
-  const extraHtml = (now) => {
-    const e = board().extraUsage
-    return e?.enabled ? `<small class="extra${e.reached ? ' spent' : ''}" data-tip="credits spent past the plan's limits, read ${span(now - e.at)} ago">${esc(extraUsageLine(e))}</small>` : ''
-  }
+  /** Extra usage while it is on, as the probe last read it. @param {CommandLimits} entry @param {number} now */
+  const extraHtml = ({ extraUsage: e }, now) =>
+    e?.enabled ? `<small class="extra${e.reached ? ' spent' : ''}" data-tip="credits spent past the plan's limits, read ${span(now - e.at)} ago">${esc(extraUsageLine(e))}</small>` : ''
 
   /**
-   * The rate limits as of their reading, dimmed once it is old enough to have moved, then extra usage and the probes that
-   * read them. Rate limits on the board come with when they were read.
-   * @param {number} now
+   * A command's rate limits as of their reading, dimmed once it is old enough to have moved, then its extra usage and
+   * the probe that reads them, under its name where `argv` names its commands.
+   * @param {CommandLimits} entry @param {number} now
    */
-  const limitsHtml = (now) => {
-    if (!board().rateLimits.length) return `<small>no rate-limit reading yet</small>${extraHtml(now)}${probesHtml(now)}${extensionsHtml()}`
-    const age = now - /** @type {number} */ (board().rateLimitsAt)
-    return `${board().rateLimits.map((r) => limitHtml(r, now)).join('')}
-    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="${esc(limitsFromTitle(board()))}">as of ${span(age)} ago</small>${extraHtml(now)}${probesHtml(now)}${extensionsHtml()}`
+  const commandLimitsHtml = (entry, now) => {
+    const name = entry.command === undefined ? '' : `<small class="command">${esc(entry.command)}</small>`
+    const after = `${extraHtml(entry, now)}${probeHtml(entry, now)}`
+    if (!entry.rateLimits.length) return `<div class="account">${name}<small>no rate-limit reading yet</small>${after}</div>`
+    const age = now - /** @type {number} */ (entry.rateLimitsAt)
+    return `<div class="account">${name}${entry.rateLimits.map((r) => limitHtml(r, now)).join('')}
+    <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="${esc(limitsFromTitle(entry))}">as of ${span(age)} ago</small>${after}</div>`
   }
 
-  /** The limit closest to running out: the one with the most used. @param {RateLimit[]} limits */
-  const tightestLimit = (limits) => limits.reduce((a, r) => (r.percentUsed > a.percentUsed ? r : a))
+  /** Each command's limits, then the extensions. Rate limits on the board come with when they were read. @param {number} now */
+  const limitsHtml = (now) => `${board().limits.map((entry) => commandLimitsHtml(entry, now)).join('')}${extensionsHtml()}`
+
+  /** The limit closest to running out, of any command: the one with the most used, with the entry it is of. */
+  const tightestLimit = () =>
+    board()
+      .limits.flatMap((entry) => entry.rateLimits.map((limit) => ({ limit, entry })))
+      .reduce((a, b) => (b.limit.percentUsed > a.limit.percentUsed ? b : a))
 
   /** A meter's tone as an attention class, by the thresholds `fillOf` colours it with. @param {number} pct */
   const limitTone = (pct) => (pct > 85 ? 'broken' : 'quiet')
 
   /** The limits folded into one chip: the tightest limit's name and percentage, loud once it is hot. @param {number} now */
   const limitsPill = (now) => {
-    if (!board().rateLimits.length) return { cls: 'chip quiet', html: '<span class="lamp"></span>no limits read', tip: 'no rate-limit reading yet: click for the probes' }
-    const r = tightestLimit(board().rateLimits)
+    const all = board().limits.flatMap((entry) => entry.rateLimits)
+    if (!all.length) return { cls: 'chip quiet', html: '<span class="lamp"></span>no limits read', tip: 'no rate-limit reading yet: click for the probes' }
+    const { limit: r, entry } = tightestLimit()
     const tone = limitTone(r.percentUsed)
     const name = r.kind.replace('five_hour', '5h').replace('seven_day', 'week').replaceAll('_', ' ')
-    const age = now - /** @type {number} */ (board().rateLimitsAt)
+    const age = now - /** @type {number} */ (entry.rateLimitsAt)
     const stale = age > LIMITS_STALE_MS
+    const whose = entry.command === undefined ? '' : `${entry.command}'s `
     return { cls: `chip ${tone}${tone === 'broken' ? ' some' : ''}${stale ? ' stale' : ''}`, html: `<span class="lamp"></span>${esc(name)} <b>${r.percentUsed}%</b>`,
-      tip: `${r.kind.replaceAll('_', ' ')}: ${r.percentUsed}% used, the tightest of ${plural(board().rateLimits.length, 'limit')}, as of ${span(age)} ago: click for all of them` }
+      tip: `${whose}${r.kind.replaceAll('_', ' ')}: ${r.percentUsed}% used, the tightest of ${plural(all.length, 'limit')}, as of ${span(age)} ago: click for all of them` }
   }
 
   let limitsPainted = ''

@@ -24,7 +24,7 @@ import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
 import { actionWords, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
-import { probedLine } from '../../../extensions/quota/client/quota.ts'
+import { probedLines, type ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
 import { hueOf } from './avatar.ts'
@@ -2081,7 +2081,7 @@ $('hud').addEventListener('click', (e) => {
   if (el.closest('[data-stop-share]')) endShare()
   if (el.closest('[data-shown]')) lookAtNew()
   const probeRun = el.closest<HTMLElement>('[data-probe-run]')
-  if (probeRun) void pressing(probeRun, () => tried(() => runVerb({ verb: 'quota/read-now', call: {} }) as Promise<{ ms: number; ok: boolean; error?: string }>)).then((r) => r && toast(probedLine('quota', r)))
+  if (probeRun) void pressing(probeRun, () => tried(() => runVerb({ verb: 'quota/read-now', call: {} }) as Promise<ReadAnswer>)).then((r) => r && toast(probedLines(r)))
 })
 $('watch').addEventListener('click', (e) => {
   const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act

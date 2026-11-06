@@ -48,7 +48,9 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .limits .row b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .limits .row small { margin-left: auto; color: var(--faint); font-size: var(--fs-s); }
 .limits .asof { color: var(--faint); }
-.limits:has(.asof.stale) > div { opacity: .5; }
+.limits .account { display: grid; gap: var(--sp-m); }
+.limits .command { color: var(--ink); }
+.limits .account:has(.asof.stale) > div { opacity: .5; }
 .limits .asof.stale { color: var(--ink); }
 .limits :is(.probe, .extension) { display: flex; align-items: center; gap: var(--sp-xs); margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
 .limits :is(.probe, .extension) .lamp { width: 7px; height: 7px; }

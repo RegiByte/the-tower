@@ -1,5 +1,5 @@
 import { actionWords, addedActions, boardSubject, heldActions, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighboursIn, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, lineId, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
-import { probedLine } from '/x/quota/quota.js'
+import { probedLines } from '/x/quota/quota.js'
 import { itemsCss } from '/items.js'
 import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
 import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
@@ -51,6 +51,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { Subject } from '../../src/shared/subjects.ts'
  * @import { BriefMarkdown } from '../../src/shared/viewer.ts'
  * @import { Call } from '../../src/shared/api.ts'
+ * @import { ReadAnswer } from '../../extensions/quota/client/quota.ts'
  * @import { Viewer } from '../../src/shared/viewer.ts'
  * @import { StatsRange } from '../../src/shared/viewer.ts'
  * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
@@ -1531,7 +1532,8 @@ document.addEventListener('click', async (e) => {
   }
   const probeRun = target.closest('[data-probe-run]')
   if (probeRun) {
-    return told(pressing(probeRun, () => runVerb({ verb: 'quota/read-now', call: {} }))).then((r) => r && toast(probedLine('quota', /** @type {{ ms: number, ok: boolean, error?: string }} */ (r))))
+    const { probeCommand } = /** @type {HTMLElement} */ (probeRun).dataset
+    return told(pressing(probeRun, () => runVerb({ verb: 'quota/read-now', call: probeCommand === undefined ? {} : { command: probeCommand } }))).then((r) => r && toast(probedLines(/** @type {ReadAnswer} */ (r))))
   }
   const tidyCall = target.closest('[data-tidy-call]')
   if (tidyCall) return (await ask(/** @type {string} */ (tidyCall.dataset.tidyAsk), 'Tidy')) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
