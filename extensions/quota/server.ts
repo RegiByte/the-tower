@@ -67,12 +67,18 @@ const start: Start = (ctx) => {
     return { ...named, at, ms, ok: true }
   }
 
-  /** Reads each command in turn, so two accounts never run Claude at once and one failing doesn't stop the next. */
+  /**
+   * Reads each command in turn, so two accounts never run Claude at once and one failing doesn't stop the next. A stop
+   * ends the walk: a read started after it could not be killed, and would run beside the next instance's.
+   */
   const readInTurn = async (each: Command[]) => {
     reading = true
     try {
       const done = []
-      for (const command of each) done.push(await read(command))
+      for (const command of each) {
+        if (ctx.signal.aborted) break
+        done.push(await read(command))
+      }
       return done
     } finally {
       reading = false
@@ -113,6 +119,7 @@ const start: Start = (ctx) => {
           return apiError('refused', `${reads} start at least ${FLOOR_MS / 1000}s apart: the next can start in ${Math.ceil((flooredUntil(soonest) - now) / 1000)}s`)
         }
         const done = await readInTurn(ready)
+        if (!done.length) return apiError('unavailable', 'The quota extension stopped before it read: `tower extensions` says how it stands')
         return { ...done[0], commands: done }
       },
     },
