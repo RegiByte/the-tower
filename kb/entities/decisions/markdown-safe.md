@@ -30,7 +30,8 @@
     "hub/src/views/link.ts#mount",
     "hub/src/views/brief.ts#mount",
     "hub/renderers/tower3d/src/ui.ts#docHtml",
-    "hub/renderers/tower3d/src/showing.ts"
+    "hub/renderers/tower3d/src/showing.ts",
+    "hub/src/shared/picks.ts"
   ],
   "links": [
     { "to": "renderer-shared-modules", "verb": "extends", "carries": "/markdown.js" },
@@ -109,6 +110,11 @@ would reach for a markdown library's `parse` and draw it inline.
   misalignment (a file's CSS moving its headings, an inner scroller of its own, an offset changing with no resize or
   scroll of the frame): a correctly
   labelled button beside the wrong text.
+- *Picks are read from the page* ([[passage-picks]]). Text the user selects in a document is read from the page
+  on the same animation frame as the gutter, through `contentDocument.getSelection()`. It is lit by a highlight the
+  page registers on the frame's window, not by an element written into the document, and what acts on it is drawn
+  in a box in the page's own document over the frame. [`sectionsHtml`](ref:hub/src/shared/markdown.ts#sectionsHtml)
+  writes a comment naming each top-level block's source lines before its html, which draws nothing.
 - *Links are data* ([`writeLinks`](ref:hub/src/views/frame.ts#writeLinks), one rule every document frame shares,
   [`linkTo`](ref:hub/src/views/frame.ts#linkTo)). As the view draws a document it writes each `a` and `area` (an SVG
   link's `xlink:href` read as its href) where it goes, so pressing one needs nothing heard: a `#fragment` naming an

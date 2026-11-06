@@ -122,6 +122,9 @@ and a framed document's section are the same thing.
   over the views by type on it, and the tabs region hands the file to that view, which opens it there.
   Viewer kinds, `file` and `lines`, are spelled one way in a manifest: views, commands and regions may be on one, and
   no fold may (since 1.116), since the board never carries a viewer subject to fold.
+  Text picked in a document drawn by sections is a `passage` viewer subject since 1.154
+  ([`passageSubject`](ref:hub/src/shared/subjects.ts#passageSubject), [[passage-picks]]): it lives only in the
+  `passage.acts` region the document asks for under the pick, and is never published on the bus.
 - *Viewer subjects and the bus* (step 5c, since 1.118). A prompt, an answer, or Claude's words or message on the way
   (side `step.<n>`, since 1.133) in the Brief ([`saidSubject`](ref:hub/src/shared/subjects.ts#saidSubject), of its conversation) and a section of a markdown
   document ([`sectionSubject`](ref:hub/src/shared/subjects.ts#sectionSubject), of the showing or item it is part of)
