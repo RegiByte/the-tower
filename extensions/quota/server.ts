@@ -6,7 +6,7 @@
 import os from 'node:os'
 import { defaultLimits, limitsOf, type Board } from '/lib/board.js'
 import { apiError, type Start, type StartCtx, type StreamFact } from '/lib/extension.js'
-import { commandProbe, PROBE_STATE_NAME, probedLine, probeLine, probeName } from './client/quota.ts'
+import { commandProbe, PROBE_STATE_NAME, probedLine, probedLines, probeLine, probeName } from './client/quota.ts'
 import { due, FLOOR_MS, NO_COMMAND_READS, periodMs, readOf, statusOf, stepByCommand, withReads, type Answered, type CommandStatus, type Failed, type QuotaPart, type Read, type ReadsByCommand } from './status.ts'
 import { USAGE_ARGS, usageRan, usageReading, USAGE_REQUEST, USAGE_TIMEOUT_MS } from './usage.ts'
 
@@ -120,7 +120,8 @@ const start: Start = (ctx) => {
         }
         const done = await readInTurn(ready)
         if (!done.length) return apiError('unavailable', 'The quota extension stopped before it read: `tower extensions` says how it stands')
-        return { ...done[0], commands: done }
+        const answer = { ...done[0], commands: done }
+        return { ...answer, said: probedLines(answer) }
       },
     },
     reads: {

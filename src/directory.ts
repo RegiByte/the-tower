@@ -720,10 +720,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
       return
     }
     if (sub !== 'run' || name !== 'quota') throw new CliError(usageLine('probes'))
-    await command('quota/read-now', {})
-    const said = await quotaSaid()
-    if (!said.last) throw new CliError('The quota probe read, then stopped answering before it said what the read came to', '`tower extensions` says why')
-    console.log(said.last)
+    console.log((await command<{ said: string }>('quota/read-now', {})).said)
   },
   extensions: async ([sub, arg, ...rest]) => {
     if (!sub) {

@@ -99,14 +99,15 @@
       "input": { "type": "object", "additionalProperties": false, "properties": { "command": { "type": "string", "description": "The `argv` command to read: every command in turn when left out." } } },
       "reply": {
         "type": "object",
-        "description": "The first read's fields, and each read in `commands`.",
-        "required": ["at", "ms", "ok", "commands"],
+        "description": "The first read's fields, each read in `commands`, and what they came to in `said`.",
+        "required": ["at", "ms", "ok", "commands", "said"],
         "properties": {
           "command": { "type": "string" },
           "at": { "type": "integer", "description": "When the read started, epoch ms." },
           "ms": { "type": "integer" },
           "ok": { "type": "boolean" },
           "error": { "type": "string", "description": "Why the read has no answer." },
+          "said": { "type": "string", "description": "What this call read, in words (`quota probe answered in 1.4s`)." },
           "commands": {
             "type": "array",
             "description": "Each read it made, in `argv`'s order.",

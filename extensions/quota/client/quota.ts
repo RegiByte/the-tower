@@ -14,7 +14,7 @@ export type ProbeStatus = QuotaStatus & { name: string }
 /** A read now, as these words read it. */
 export type ReadNow = { ms: number; ok: boolean; error?: string }
 
-/** What `quota/read-now` answers: each command it read, in `argv`'s order. */
+/** What `quota/read-now` answers, as these words read it: each command it read, in `argv`'s order. */
 export type ReadAnswer = ReadNow & { commands: (ReadNow & { command?: string })[] }
 
 /** The quota probe as the quota extension's part on the board says it stands, by its name: none while it doesn't run. */
