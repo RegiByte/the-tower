@@ -54,7 +54,7 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .limits .asof.stale { color: var(--ink); }
 .limits :is(.probe, .extension) { display: flex; align-items: center; gap: var(--sp-xs); margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
 .limits :is(.probe, .extension) .lamp { width: 7px; height: 7px; }
-.limits .probe-run { margin-left: auto; padding: 0 var(--sp-xs); border: 0; background: none; color: var(--muted); font-size: inherit; text-decoration: underline dotted; cursor: pointer; }
+.limits .probe-run { flex: none; margin-left: auto; padding: 0 var(--sp-xs); border: 0; background: none; color: var(--muted); font-size: inherit; text-decoration: underline dotted; cursor: pointer; }
 .limits .probe-run:hover { color: var(--ink); }
 .limits .extra { margin-top: calc(-1 * var(--sp-s)); color: var(--faint); }
 .limits .extra.spent { color: var(--broken-text); }

@@ -166,10 +166,10 @@ read it only when it reads it again: the brief at its next `whoami`, the full te
 
 ### The quota probe
 
-The bundled extension `quota` reads the account's rate limits from Claude (`/usage`'s data, the `get_usage` control
-request to `argv`'s first command when it names more than one: no prompt, $0) while no session's turn has reported
-them within `every`, so the board's limits and the weekly budget stay current while nobody works. Each read is
-appended to its stream, `streams/system/probe.quota/YYYY-MM.jsonl` beside the config, the folder it kept from before
+The bundled extension `quota` reads each `argv` command's rate limits from Claude (`/usage`'s data, the `get_usage`
+control request: no prompt, $0) while no turn of that command has reported them within `every`, so the board's limits
+and the weekly budget stay current while nobody works. Each command is an account with its own schedule and backoff,
+and reads run one at a time. Each read is appended to its stream, naming its command when `argv` names them, `streams/system/probe.quota/YYYY-MM.jsonl` beside the config, the folder it kept from before
 it was an extension.
 
 | Setting | Takes | Unset |
@@ -181,10 +181,11 @@ it was an extension.
 ```
 
 `"extensions": { "quota": { "off": true } }` turns it off: the limits then refresh only during sessions' turns. How it
-stands (its last read, why it failed, when it reads next) is the board's `x.quota`, drawn under the limits in both
-renderers, in `tower probes` and in `tower doctor` (its check, `quota/reading`); its latest reads are at
+stands (its last read, why it failed, when it reads next) is the board's `x.quota`, the default command's with every
+command's in `commands`, drawn under the limits in both renderers (Tower 3D draws the default command's), in `tower probes` and in `tower doctor` (its check, `quota/reading`); its latest reads are at
 `GET /quota/reads`. A press of "read now" in either renderer, `tower probes run quota`, `tower x quota read-now` or
-`POST /quota/read-now` reads at once, at most once a minute. The old spelling, `"probes": { "quota": { "off": true } }`,
+`POST /quota/read-now` reads at once, each command at most once a minute: `{ "command": "work" }` reads one, and left
+out it reads every command in turn. The old spelling, `"probes": { "quota": { "off": true } }`,
 is honoured until 2.0, and `tower config check` warns with the line to write instead.
 
 ### Autotidy

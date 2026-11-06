@@ -782,8 +782,8 @@ kind's schema as well as their own. The one kind is `tower/rate-limits`, a readi
 (`{ limits: [{kind, percentUsed, resetsAt?}], extraUsage?, runtime?, command? }`, Claude's when it names no `runtime`), in a
 system stream: the core folds every started extension's readings beside the sessions' turns' into the board's
 `limits`, `rateLimits`, `extraUsage`, the weekly budget and `/stats`. The bundled quota probe (`extensions/quota`) is one: its
-`u` facts are readings, read by its `tick` slot while `board.turnLimits`, the newest reading a session's turn took,
-is older than its `every`. `ctx.runtime('claude')` says how the config starts a session by its default command
+`u` facts are readings naming their `command`, read by its `tick` slot for each command whose entry of `board.limits`
+has a `turnLimits`, the newest reading a turn of it took, older than its `every`. `ctx.runtime('claude')` says how the config starts a session by its default command
 (`argv`, `env`), `ctx.commands('claude')` lists every command the config names (`name?`, `argv`, `env`, in `argv`'s
 order, API 1.152), both refuse a runtime the tower doesn't know, and `ctx.run(argv, { …, env })` runs a command with
 `env` set over the scrubbed one, so a reader runs Claude as the sessions do.
