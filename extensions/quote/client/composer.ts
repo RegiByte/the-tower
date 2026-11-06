@@ -29,18 +29,18 @@ const STYLE = viewCss(
   & textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   & .actions { display: flex; align-items: center; gap: var(--sp-s); margin-top: var(--sp-s); }
   & .actions .hint { margin-left: auto; color: var(--faint); font-size: var(--fs-xs); }
-  & .why { color: var(--muted); font-size: var(--fs-s); }`,
+  & .why { color: var(--muted); font-size: var(--fs-s); }
+`,
 )
 
-/** Where a passage is, in words: its file, its lines and its section. */
+/** Where a passage is, in words: its file and its lines, where it has them. The quote says the rest. */
 const whereOf = (p: Passage) => {
-  const lines = p.from === undefined ? '' : p.from === p.to ? `line ${p.from}` : `lines ${p.from}–${p.to}`
-  const parts = [lines, p.heading === undefined ? '' : `under "${p.heading}"`].filter(Boolean)
-  return `${p.file ?? 'the document you showed'}${parts.length ? ` (${parts.join(', ')})` : ''}`
+  const lines = p.from === undefined ? '' : p.from === p.to ? ` (line ${p.from})` : ` (lines ${p.from}–${p.to})`
+  return `${p.file ?? 'the document you showed'}${lines}`
 }
 
 /** Files whose passages are prose, quoted as a blockquote: any other is code or data, quoted as written in a fence. */
-const PROSE = /\.(md|markdown|txt)$/i
+const PROSE = /\.(md|markdown|txt|html?)$/i
 
 /** A passage quoted: prose as a blockquote; code in a fence longer than any run of backticks in it, named by its file's extension. */
 const quoted = (p: Passage) => {
@@ -88,8 +88,9 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
 
   /**
    * The box: the prompt, its placeholder naming who it goes to and its title where the passage is, or why there is
-   * none. The passage is lit in the document, so it isn't drawn again here. Drawn again on every board, it takes the
-   * focus only as the prompt is made: a board moving it back from Cancel would let an Enter meant there send.
+   * none. The passage is lit in the file, or selected in the page, so it isn't drawn again here, whoever read it.
+   * Drawn again on every board, it takes the focus only as the prompt is made: a board moving it back from Cancel
+   * would let an Enter meant there send.
    */
   function draw() {
     const card = cardOf()

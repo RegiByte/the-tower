@@ -2,7 +2,7 @@
   "id": "quote",
   "version": "1.0",
   "title": "Quote to worker",
-  "description": "Pick text in a markdown, text or code file a worker showed and write the worker a prompt about it: the prompt quotes the passage and says where it is in the file.",
+  "description": "Pick text in a markdown, text, code or html file a worker showed and write the worker a prompt about it: the prompt quotes the passage and says where it is in the file.",
   "requires": { "tower": "1.154" },
   "client": "client",
   "views": {
