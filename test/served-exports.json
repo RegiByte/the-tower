@@ -1278,7 +1278,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "3ca5c0ba88c8f6ec",
+      "digest": "6ebb6d3e2b2946c4",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -1310,7 +1310,7 @@
     },
     "/lib/board.js": {
       "runtime": "generic",
-      "digest": "2f70181dc4fcde01",
+      "digest": "e1a0e47436c15f11",
       "values": {
         "boardSubject": {
           "since": "1.151",
@@ -1544,7 +1544,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "856733082c51ab4e",
+      "digest": "1984cca148b336b3",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1611,7 +1611,7 @@
     },
     "/lib/capabilities.js": {
       "runtime": "generic",
-      "digest": "3229e2f96a887ffb",
+      "digest": "81531f31b099bd93",
       "values": {
         "CAPABILITIES": {
           "since": "1.151",
@@ -1647,7 +1647,7 @@
     },
     "/lib/cards.js": {
       "runtime": "generic",
-      "digest": "da7ca31e1ad61f35",
+      "digest": "e19ecd18439ac40b",
       "values": {
         "ATTENTION_MEANS": {
           "since": "1.151"
@@ -2050,7 +2050,7 @@
     },
     "/lib/changes.js": {
       "runtime": "browser",
-      "digest": "e87ce09b14128ce5",
+      "digest": "00d906f858534d0b",
       "values": {
         "CHANGES_POLL_MS": {
           "since": "1.151"
@@ -2166,7 +2166,7 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "22060d465fce964c",
+      "digest": "2f6ef2353e766376",
       "values": {},
       "types": {
         "BoardError": {
@@ -2237,7 +2237,7 @@
     },
     "/lib/extension.js": {
       "runtime": "server",
-      "digest": "537721956bab3d4a",
+      "digest": "a51c472fc9db05cf",
       "values": {
         "apiError": {
           "since": "1.151"
@@ -2370,7 +2370,7 @@
     },
     "/lib/keys.js": {
       "runtime": "browser",
-      "digest": "c2f6778794da411d",
+      "digest": "ed65158fd12924dc",
       "values": {
         "COMMANDS": {
           "since": "1.151",
@@ -2425,7 +2425,7 @@
     },
     "/lib/layout.js": {
       "runtime": "browser",
-      "digest": "4b8fe8a23af9bbc4",
+      "digest": "f92c093ae5ffd525",
       "values": {
         "actionId": {
           "since": "1.151"
@@ -2690,7 +2690,7 @@
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "45de21c021203c06",
+      "digest": "ec882a8c3eb40f8e",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2725,7 +2725,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "ab940cc747a56087",
+      "digest": "6cd3dcabfcfce0c2",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2770,7 +2770,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "b805b41a4a3c3a64",
+      "digest": "69601086cad95d77",
       "values": {
         "cutLine": {
           "since": "1.151",
@@ -2816,7 +2816,7 @@
     },
     "/lib/stats.js": {
       "runtime": "generic",
-      "digest": "3c5a2cad8e1a0726",
+      "digest": "3223617884084773",
       "values": {
         "STATS_ALL": {
           "since": "1.151"
@@ -2857,7 +2857,7 @@
     },
     "/lib/terminal.js": {
       "runtime": "browser",
-      "digest": "a279bc9506bf27c9",
+      "digest": "0b10b6df3352702f",
       "values": {
         "SHELL_SCROLLBACK": {
           "since": "1.151",
@@ -2941,7 +2941,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "1d6d67021492cc97",
+      "digest": "9a4744fd3709c68d",
       "values": {
         "GIST_ICON": {
           "since": "1.151"
@@ -3099,7 +3099,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "af4223f71ec24e64",
+      "digest": "d9af1d54fb3b1292",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"
@@ -3133,7 +3133,7 @@
     },
     "/lib/words.js": {
       "runtime": "generic",
-      "digest": "6ee17967ae8530b7",
+      "digest": "e67ec6ce6b9695b8",
       "values": {
         "ago": {
           "since": "1.151"

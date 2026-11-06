@@ -719,7 +719,7 @@
         },
         "typedAt": {
           "type": "number",
-          "description": "Epoch ms someone last typed into the session."
+          "description": "Epoch ms someone last typed into the session, to the last `TYPED_GRAIN_MS`."
         },
         "heardAt": {
           "type": "number",
