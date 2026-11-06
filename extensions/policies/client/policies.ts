@@ -2,7 +2,7 @@
  * Policies: standing work a floor keeps in its `policies` collection, one markdown item each: a `# Title` line, a fenced
  * json header, then the prose a run's worker starts on (decision `policies`). What the CLI, every renderer and the
  * runner say and decide about them, pure over the board: where each policy stands, and what a runner does at a tick.
- * Their slots are `slots.ts`'s. Served as `/policies.js`.
+ * Their slots are `/lib/time.js`'s. Served as `/x/policies/policies.js`.
  */
 import type { Board, Card, Floor } from '/lib/board.js'
 import { listed, nextSlot, onTimeSlot, ruleWords, slotWords } from '/lib/time.js'

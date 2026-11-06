@@ -5,7 +5,7 @@
  * beside these facts (decision `policies`).
  */
 import type { Card } from '/lib/board.js'
-import type { Replies, StreamFact, Verbs } from '/lib/extension.js'
+import type { StreamFact } from '/lib/extension.js'
 import { nextSlot, ruleWords } from '/lib/time.js'
 import { tagOf } from '/lib/words.js'
 
@@ -129,6 +129,21 @@ export type Parsed = { ok: true; title: string; header: PolicyHeader; prompt: st
 /** A policy item as its collection's parse holds it: the hash of its bytes, and its parse. */
 export type PolicyFile = { id: string; hash: string; parsed: Parsed }
 
+/** What `policies/run` takes: `slot` with `auto` and `offer`, none with `hand`. */
+export type RunInput = { project: string; policy: string; start: RunStart; slot?: number; by?: string; check?: CheckResult }
+
+/** What `policies/pass` takes. */
+export type PassInput = { project: string; policy: string; slot: number; outcome: Outcome; check?: CheckResult }
+
+/** What `policies/approve` takes. */
+export type ApproveInput = { project: string; policy: string; hash: string; by?: string }
+
+/** What `policies/run` answers: the worker's session, the run's number among the policy's runs, and the hash it ran on. */
+export type RunReply = { t: 'ran'; id: string; n: number; hash: string }
+
+/** What `policies/approve` answers. */
+export type ApproveReply = { t: 'ok' }
+
 /** The verbs a policy's and an offer's calls name: the extension's own. */
 export const VERB_NAMES = { run: 'policies/run', approve: 'policies/approve' } as const
 
@@ -143,15 +158,15 @@ const calledOffers = <V extends string, C>(actions: Action<V, C>[]) => ({
 
 /** `run` starts a run of a policy now, by hand, while it may (`runnable`); `approve` approves its current hash, until approved. */
 export type PolicyVerb = 'run' | 'approve'
-export type PolicyCalls = { run?: ['policies/run', Partial<Verbs['policy/run']>]; approve?: ['policies/approve', Partial<Verbs['policy/approve']>] }
+export type PolicyCalls = { run?: ['policies/run', Partial<RunInput>]; approve?: ['policies/approve', Partial<ApproveInput>] }
 export type PolicyAction = Action<PolicyVerb, PolicyCalls>
 
 /** What the extension's verbs `policies/run` and `policies/approve` answer. */
-export type PolicyReplies = { 'policies/run': Replies['policy/run']; 'policies/approve': Replies['policy/approve'] }
+export type PolicyReplies = { 'policies/run': RunReply; 'policies/approve': ApproveReply }
 
 /** `accept` starts the run an open offer's slot offers. */
 export type OfferVerb = 'accept'
-export type OfferCalls = { accept: ['policies/run', Partial<Verbs['policy/run']>] }
+export type OfferCalls = { accept: ['policies/run', Partial<RunInput>] }
 export type OfferAction = Action<OfferVerb, OfferCalls>
 
 /**
