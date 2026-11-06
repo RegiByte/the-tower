@@ -56,11 +56,11 @@ import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, pr
 import { jobsNow, recentJobs, type Job, type JobRecord } from './jobs.ts'
 import type { HeldJob } from '../shared/jobs.ts'
 
-/** Excerpts: the board goes to every viewer on every change; the full text is asked for per session. */
 /** A board goes out whenever its text changes, so the keystrokes of someone typing have to read as one moment. */
 const TYPED_GRAIN_MS = 5000
 const typedGrain = (at: number) => at - (at % TYPED_GRAIN_MS)
 
+/** Excerpts: the board goes to every viewer on every change; the full text is asked for per session. */
 const EXCERPT_CHARS = 280
 
 const excerpt = (text: string | undefined) => (text && text.length > EXCERPT_CHARS ? `${text.slice(0, EXCERPT_CHARS)}…` : text)
@@ -552,7 +552,7 @@ const card = (
   const checkout = worktree?.name ?? MAIN_CHECKOUT
   const state = withLiveness(facts.state, header.id, liveIds)
   const held = threads(session, sessions, nameOf)
-  const typedAt = facts.typedAt === undefined ? undefined : typedGrain(header.startedAt + facts.typedAt * 1000)
+  const typedAt = facts.typedAt === undefined ? undefined : header.startedAt + facts.typedAt * 1000
   const heardAt = facts.heardAt === undefined ? undefined : header.startedAt + facts.heardAt * 1000
   const enteredAt = header.startedAt + state.since * 1000
   const life = lifeOf(
@@ -601,7 +601,7 @@ const card = (
     checkout,
     ...life,
     enteredAt,
-    typedAt,
+    typedAt: typedAt === undefined ? undefined : typedGrain(typedAt),
     heardAt,
     broken: facts.broken && { ...facts.broken, at: header.startedAt + facts.broken.at * 1000 },
     startedAt: header.startedAt,

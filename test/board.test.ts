@@ -222,6 +222,18 @@ test('a leave survives a message or a notice arriving as its turn ends, and only
   for (const kind of ['composer', 'bridge']) assert.equal(after(left, prompted(kind)), false, kind)
 })
 
+test('a key typed after an answer arrives, inside the same typing grain, still counts as read', () => {
+  const whole = fixture('tool-turn')
+  const cut = whole.events.find((e) => factsOf({ ...whole, events: whole.events.filter((x) => x[0] <= e[0]) }).state.status === 'done')![0]
+  const log: SessionLog = { ...whole, events: whole.events.filter((e) => e[0] <= cut) }
+  const state = factsOf(log).state
+  const enteredAt = log.header.startedAt + state.since * 1000
+  const startedAt = log.header.startedAt + (5000 - (enteredAt % 5000)) + 1000
+  const typed: SessionLog = { header: { ...log.header, startedAt }, events: [...log.events, [state.since + 2, 'i', 'x']] }
+  const [card] = cardsOf([homed(typed)], hostWith(log.header.id))
+  assert.equal(card.waiting, false)
+})
+
 test('let go: a stranded worker leaves duty for the archive on the tower.letGo the host appends, its conversation still resumable', () => {
   const log = homed(fixture('interrupts'))
   const lost = { ...log, events: log.events.filter((e) => e[0] <= 140 && e[1] !== 'x') }

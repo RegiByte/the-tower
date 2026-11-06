@@ -130,7 +130,7 @@ export type Facts = {
   killedBy?: string
   /**
    * When the worker asked to go home (`tower.leave`), in seconds since the session's start: the tower sends it home once
-   * its main loop's turn completes. A prompt after it keeps the worker on duty.
+   * its main loop's turn completes. The user typing to it after that keeps the worker on duty.
    */
   leaveAt?: number
   /** When Claude showed the user a permission dialog (epoch ms): a check settled without one is not an ask. */
