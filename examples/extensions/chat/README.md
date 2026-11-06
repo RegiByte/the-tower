@@ -67,7 +67,7 @@ palettes. In your copy, restyle it, change its words, or give it more controls. 
 
 Its imports come from [the library](../../../docs/extending.md#the-library) (`/lib/*.js`), so a copy loads at any path. To have your editor read them in a
 copy, run [`tower types .`](../../../docs/extending.md#types-outside-the-checkout) in it and write a `tsconfig.json` of
-`{ "extends": "./.tower/tsconfig.json", "compilerOptions": { "allowJs": true } }`.
+`{ "extends": "./.tower/tsconfig.json", "compilerOptions": { "allowJs": true } }`, and add `@types/node`.
 
 ## Pictures
 
