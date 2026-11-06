@@ -237,7 +237,7 @@ export const CORE_VIEWS: readonly View[] = [
   byType('html', ['text/html'], { label: 'Page', hint: 'the page, running framed at an origin of its own' }),
   byType('image', ['image/*'], { label: 'Image', hint: 'the image' }),
   byType('video', ['video/*'], { label: 'Video', hint: 'the video, playing' }),
-  byType('text', ['text/*', 'application/json', 'application/x-ndjson'], { label: 'Text', hint: 'its text as written' }),
+  { ...byType('text', ['text/*', 'application/json', 'application/x-ndjson'], { label: 'Text', hint: 'its text as written' }), regions: ['passage.acts'] },
   byType('file', [], { label: 'File', hint: 'the file, left to Finder and the editor' }),
   served({ ...core('tower/link', ['shown'], ['pane'], { label: 'Link', hint: 'the address the worker showed, framed, or a page to open it from' }), accepts: [ADDRESS_TYPE] }, []),
 ]

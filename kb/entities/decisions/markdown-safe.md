@@ -68,7 +68,7 @@ would reach for a markdown library's `parse` and draw it inline.
   resolves to `http:`. The href written is the string checked, escaped, so an entity (`&#106;avascript:`) reaches the
   browser as the text it was checked as.
 - No document frame runs scripts. Each frame the tower page writes a document into (a shown or kept markdown or text
-  file, [`framedText`](ref:hub/src/views/item.ts#framedText); the page asking to open a link,
+  file, [`tower/text`](ref:hub/src/views/text.ts#mount); the page asking to open a link,
   [`tower/link`](ref:hub/src/views/link.ts#mount); a shelf file) is
   `allow-same-origin` without `allow-scripts`, so the renderer reaches its document and geometry: beside
   `allow-same-origin`, a script there would run as the tower. A `javascript:` link it carries runs nowhere, in the
