@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-06",
   "refs": ["hub/scripts/setup.ts", "hub/src/init.ts#initialConfig", "hub/src/init.ts#init", "hub/src/doctor.ts#readiness", "hub/src/doctor.ts#claudes", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#running", "hub/src/doctor.ts#doctor", "hub/src/shared/claude.ts#claudeRange", "hub/src/machine.ts#daemons", "hub/src/cli.ts", "hub/package.json", "hub/README.md", "hub/docs/config.md"]
 }
 ---

@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A worker ends itself with its own callsign, once its turn ends",
-  "summary": "tower home naming the worker's own callsign logs tower.leave in its own log; the card is leaving until a later prompt cancels it, its outcome waiting on nobody meanwhile, and once the main loop's turn completes the tower runs the card's send-home, each kill named as the worker's own act.",
+  "summary": "tower home naming the worker's own callsign logs tower.leave in its own log; the card is leaving until the user types to it, its outcome waiting on nobody meanwhile, and once the main loop's turn completes the tower runs the card's send-home, each kill named as the worker's own act.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
