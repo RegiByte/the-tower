@@ -703,11 +703,63 @@ requires `project`, a project-scoped read names it as a `<project>` param or in 
 floor where the capability is off. A handler that throws, or answers off its reply schema, fails that call as
 `internal` and lists a problem on the extension; to refuse, it answers an error, `{t: 'error', code, message}`. A
 verb or read can be `deprecated` (`since`, `use`, `why`): its HTTP answers carry `Deprecation` and a `Link` to `use`.
-`tower x` lists every running extension's doors, verbs and reads, `tower x <capability>` one extension's guidance and its calls, and `tower x <capability> <name> '<json>'` calls one
-(API 1.126): `facts/<fact>` is the door of a writable fact (below), then a verb by its name, then the read whose path
-the name matches (`tower x policies runs/app '{"policy": "nightly"}'`), the JSON its query. While the capability isn't running, the name goes to the tower as a verb, which says why it can't answer. A read is a `GET` too,
+`tower x` lists the running extensions, each with its brief; `tower x <capability>` one extension's guidance, its
+words and its raw calls; and `tower x <capability> <word> [flags]` calls one (below, **Words**). While the capability
+isn't running, the name goes to the tower as a verb, which says why it can't answer. A read is a `GET` too,
 such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's `port`, which `tower
 whoami` names).
+
+**Words** (API 1.153) type an extension's verbs and reads like commands, on the same terms for bundled extensions and
+yours. Every verb is a word by its name, with nothing to declare; a read is a word when its `cli` names one, and any
+read is reached by its path too (`tower x policies runs/app --policy nightly`). `facts/<fact>` is a writable fact's
+door, typed `--value …`. What `tower x <cap> <name>` reaches is, in order: a word, a door or verb by its name, then the
+read whose path matches.
+
+- **Flags come from the input schema**, one per top-level field: `--re 3`, `--re=3`. A read's are its path's params and
+  its query's fields. A string is taken as typed, even one that starts with `--`. A number or boolean is converted, or
+  refused naming the field and the type it wants. A boolean is a bare `--tell` (or `--tell=false`). An array repeats its
+  flag, `--at a --at b`. An object or an array of objects takes JSON as its flag's value: that is where JSON stays. `--`
+  ends the flags.
+- **The caller is filled for every extension.** The command sends the worker's session as the caller, and a
+  project-scoped word's `project` is the caller's floor unless `--project` names one. Run outside a session, it says
+  `--project` is needed.
+- **`cli`** on a verb or read says the rest, each key optional:
+
+  | Key | What it does |
+  | --- | --- |
+  | `stdin` | The string field that receives stdin verbatim, when no flag gave it. What the text means is the verb's: it may well read JSON. Without it the word takes nothing on stdin. |
+  | `positional` | The fields taken without a flag, in order. Only the last may be an array, which takes all that is left. |
+  | `print` | A reply field to print, a string or lines. Without it the reply prints as JSON. |
+  | `usage` | Its line in `tower x <cap>`, starting with its word. Made from its fields when left out. |
+  | `word` | What it is typed as: a read's word, or a better name for a verb, which stays reachable by its own. |
+
+  ```json
+  "verbs": {
+    "note": { "input": { … }, "reply": { … }, "scope": "project",
+              "cli": { "stdin": "body", "print": "said", "usage": "note [--re <n>] [--at <where> …]" } },
+    "hire": { "input": { … }, "reply": { … }, "scope": "system",
+              "cli": { "word": "review", "positional": ["of"] } }
+  },
+  "reads": { "said/<project>": { "reply": { … }, "scope": "project",
+             "cli": { "word": "thread", "positional": ["checkout"], "print": "text" } } }
+  ```
+
+  So a worker types `tower x reviews note --re 3 <<'EOF'` … `EOF`. A word's shape is its verb's: a word that needs a
+  friendlier input than a renderer's is a verb of its own over the same function, never a mode on one verb. No
+  extension code runs in the command, so work on files belongs in the verb.
+- **Checked at load.** A `cli` naming a missing or mistyped field, a read's `cli` with no `word`, a `usage` that doesn't
+  start with its word, or a word that another word or name of the extension answers to refuses the extension with the
+  problem `cli`, at its key. A word's name and shape are names of its `contract.json` (`words.note`, `words.note.--re`,
+  `words.note.stdin.body`, `words.note.positional.0.to`, `words.note.print.said`), so a replacement must offer them.
+- **The words are data:** `GET /extensions` carries each extension's `words` (off the board, since a client reads them
+  only when it types one), so any client can type them.
+- **Errors say what to do next.** A missing input names it with an example (`note needs its body on stdin: tower x
+  reviews note --re 3 <<'EOF' … EOF`), a wrong value the type it wants, an unknown word or flag the nearest there is
+  and where to look. `tower x <cap> <word> --help` lists a word's flags.
+- **A JSON argument is deprecated.** `tower x <cap> <name> '<json>'` works until 2.0, gets the caller's floor the same
+  way, and says on stderr what to type instead.
+
+Teach your words in your `guidance`, which is what workers read: use the flags, not JSON.
 
 **A read that serves a file** (API 1.114) declares `"serves": "file"` and no `reply`: its handler answers `{ file }`, an
 absolute path, and the tower serves that file as it serves a file a worker showed, through the same path: by its media
@@ -752,7 +804,7 @@ off; its errors are `invalid` (the body or the value off its schema, a user nami
 `writable` doesn't name, a worker naming another session, any other caller: an extension logs its own facts with
 `ctx.facts.append`), `not_found` (no capability, no such writable fact, no session) and `unavailable` (the capability
 starting or down). It answers `{ session, value }`. No `around` link wraps a door: `around` names verbs and hooks, and
-a door is neither. A worker writes through it with `tower x <cap> facts/<name> '{"value": "…"}'`. A verb's name holds
+a door is neither. A worker writes through it with `tower x <cap> facts/<name> --value '…'`. A verb's name holds
 no `/`, so no verb takes a door's name; a read whose path matches `facts/<name>` of a writable fact is a `conflict`
 warning, reached by `GET` and never by `tower x`.
 
