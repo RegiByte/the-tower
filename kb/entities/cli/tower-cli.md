@@ -45,9 +45,10 @@ log only for its latest saved conversation.
 Every request the command makes of the tower claims its caller in headers ([`callerHeaders`](ref:hub/src/shared/api.ts#callerHeaders)):
 `tower-client: cli`, and `tower-session` with the session's `TOWER_SESSION_ID` when a worker runs it, which the tower
 reads as the call's caller, not authenticated ([[extensions]]). Every word after `tower` is the core's; an extension's
-doors, verbs and reads are reached under one of them, `tower x <capability> <name> [input]` (a writable fact's door
-`facts/<fact>`, then a verb, then a read whose path matches), `tower x <capability>` prints what it tells the workers
-and its calls, and `tower x` alone lists every running extension's doors, verbs and reads in their words. `tower whoami`
+doors, verbs and reads are reached under one of them, typed as words with flags, stdin and positionals
+([[cli-words]]). `tower x` alone lists the running extensions, each with its brief, and `tower x <capability>` prints
+what it tells the workers, its words, then its doors, verbs and reads. Old core words that moved are `ALIASES`,
+rewritten into their word under `tower x` until 2.0; the table is empty until the first word moves. `tower whoami`
 ends with the brief of each extension on the worker's floor that gives guidance ([[extensions]]).
 
 `submit` asks the tower's `submit`, which refuses a worker that asks something or waits on a screen

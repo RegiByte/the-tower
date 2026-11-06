@@ -21,7 +21,8 @@ import { callerHeaders, type Replies } from './shared/api.ts'
 import type { Flow, OpenStage, Stage } from './shared/flows.ts'
 import { POLICIES, shortHash, type CardRun, type InvalidPolicy, type OfferFields, type PolicyFields, type ValidPolicy } from './shared/policies-legacy.ts'
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
-import { capabilityOf, FACT_DOOR, matchRead, type Deprecated, type ExtensionView } from './shared/extensions.ts'
+import { capabilityOf, FACT_DOOR, type Deprecated, type ExtensionView } from './shared/extensions.ts'
+import { helpLines, jsonArgument, jsonDeprecatedLine, missingLine, parseWord, printedOf, readUrl, unknownWordLines, usageOf, wordNamed, type Word } from './shared/cli-words.ts'
 import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
@@ -273,29 +274,17 @@ const extensionCallLines = (e: ExtensionView): string[] => [
   ...e.reads.map((r) => `  tower x ${e.provides} ${r.path}  ${r.description ?? 'a read'}${r.scope === 'project' ? ' (it names the project)' : ''}${deprecatedWords(r.deprecated)}`),
 ]
 
+/** A capability in `tower x`'s listing: what it says of itself in one line. */
+const capabilityLine = (e: ExtensionView): string => `  ${e.provides}  ·  ${e.guidance?.brief ?? e.title}`
+
+/** An extension's words, one line of usage each. */
+const wordLines = (e: ExtensionView & { words: Word[] }): string[] => {
+  const typed = e.words.filter((w) => w.word !== undefined)
+  return typed.length ? ['Words:', ...typed.map((w) => `  tower x ${e.provides} ${usageOf(w)}`), ''] : []
+}
+
 /** An extension's writable facts: each a door, `facts/<name>`. */
 const doorsOf = (e: ExtensionView) => e.facts.filter((f) => f.writable)
-
-/**
- * What `tower x <capability> <name>` calls: a writable fact's door, `facts/<name>`; else a verb; else the read whose path
- * `name` matches. `undefined` when the capability offers none of them by that name.
- */
-export const xTarget = (e: ExtensionView, name: string): { t: 'call'; verb: string } | { t: 'read'; path: string } | undefined => {
-  if (name.startsWith(FACT_DOOR) && doorsOf(e).some((f) => `${FACT_DOOR}${f.name}` === name)) return { t: 'call', verb: `${e.provides}/${name}` }
-  if (e.verbs.some((v) => v.name === `${e.provides}/${name}`)) return { t: 'call', verb: `${e.provides}/${name}` }
-  if (e.reads.some((r) => matchRead(r.path, name))) return { t: 'read', path: `/${e.provides}/${name}` }
-  return undefined
-}
-
-/** What an extension offers `tower x`, by kind, for a name it doesn't offer. */
-const offeredLine = (e: ExtensionView): string => {
-  const kinds = [
-    ['doors', doorsOf(e).map((f) => `${FACT_DOOR}${f.name}`)],
-    ['verbs', e.verbs.map((v) => v.name.slice(e.provides.length + 1))],
-    ['reads', e.reads.map((r) => r.path)],
-  ].filter(([, names]) => names.length)
-  return kinds.length ? `it offers ${kinds.map(([kind, names]) => `${kind} ${(names as string[]).join(', ')}`).join('; ')}` : 'it offers no door, verb or read'
-}
 
 const isUrl = (target: string) => /^https?:\/\//.test(target)
 
@@ -317,6 +306,46 @@ type Failure = { t: 'error'; code: string; message: string }
 const ask = async <T>(verb: string, body: unknown): Promise<T | Failure> => {
   const res = await fetch(`${towerAt()}/${verb}`, { method: 'POST', headers: { origin: towerAt(), 'content-type': 'application/json', ...callerHeaders(me) }, body: JSON.stringify(body) })
   return (await res.json()) as T | Failure
+}
+
+/** Stdin as a word's `cli.stdin` field, verbatim, unless a flag gave it: a terminal has none to give. */
+const withStdin = async (word: Word, input: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  if (!word.stdin || input[word.stdin] !== undefined || process.stdin.isTTY) return input
+  const text = await readStdin()
+  return text ? { ...input, [word.stdin]: text } : input
+}
+
+/** `input` with the floor of the worker running the command as its `project`, where a project-scoped word takes one and nothing named it. */
+const withCallerFloor = async (word: Word, input: unknown): Promise<unknown> => {
+  const open = word.scope === 'project' && word.fields.some((f) => f.name === 'project') && me !== undefined && typeof input === 'object' && input !== null && !('project' in input)
+  return open ? { ...input, project: ownFloor(await readBoard(), me).id } : input
+}
+
+/** The string or lines a word's `cli.print` names, else its reply as JSON. */
+const printReply = (word: Word, reply: unknown) => {
+  if (!word.print) {
+    console.log(JSON.stringify(reply, null, 2))
+    return
+  }
+  const text = printedOf(reply, word.print)
+  if (text !== undefined) console.log(text.replace(/\n$/, ''))
+}
+
+/** Calls a word with its input as the running worker, the one way a word reaches the tower, and prints what it answers. */
+const runWord = async (cap: string, word: Word, input: unknown): Promise<void> => {
+  if (word.kind !== 'read') {
+    printReply(word, await command(`${cap}/${word.name}`, input))
+    return
+  }
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) throw new CliError(`A read's input is its query, an object: ${JSON.stringify(input)}`, `\`tower x ${cap} ${word.word ?? word.name} --help\` says what it takes`)
+  const res = await towerGet(readUrl(cap, word, input as Record<string, unknown>))
+  if (!res.headers.get('content-type')?.includes('json')) {
+    process.stdout.write(Buffer.from(await res.arrayBuffer()))
+    return
+  }
+  const reply: unknown = await res.json()
+  if (isFailure(reply)) throw new CliError(refusedLine(`${cap}/${word.name}`, reply))
+  printReply(word, reply)
 }
 
 const isFailure = (reply: unknown): reply is Failure => (reply as Failure).t === 'error'
@@ -756,45 +785,45 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const { state } = await command<Replies['extension/restart']>('extension/restart', { id: arg })
     console.log(state === 'started' ? `${arg} restarted.` : `${arg} is ${EXTENSION_STATE_NAME[state]}: \`tower extensions\` says why.`)
   },
-  x: async ([cap, verb, input, ...rest]) => {
-    if (!cap) {
-      const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
-      const calling = read.extensions.filter((e) => e.state === 'started' && (e.verbs.length || e.reads.length || doorsOf(e).length))
-      console.log(calling.length ? calling.flatMap(extensionCallLines).join('\n') : 'No running extension has doors, verbs or reads: `tower extensions` lists every extension and its state.')
-      return
-    }
-    if (!verb) {
-      const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
-      const e = read.extensions.find((x) => x.provides === cap && x.state === 'started')
-      if (!e) throw new CliError(`No running extension provides ${cap}: \`tower x\` lists the ones that do`)
-      console.log([...(e.guidance ? [e.guidance.full ?? e.guidance.brief, ''] : []), ...extensionCallLines(e)].join('\n'))
-      return
-    }
-    if (rest.length) throw new CliError(usageLine('x'))
-    let body: unknown
-    try {
-      body = input === undefined ? {} : JSON.parse(input)
-    } catch {
-      throw new CliError(`The input is no JSON: ${input}`, `${usageLine('x')}, the input one argument: '{"project": "app"}'`)
-    }
+  x: async ([cap, name, ...args]) => {
     const read: Reads['extensions'] = await (await towerGet('/extensions')).json()
-    const e = read.extensions.find((x) => x.provides === cap && x.state === 'started')
-    const target = e && xTarget(e, verb)
-    if (e && !target) throw new CliError(`${cap} offers no "${verb}": ${offeredLine(e)}`)
-    if (!target || target.t === 'call') {
-      console.log(JSON.stringify(await command(target?.verb ?? `${cap}/${verb}`, body), null, 2))
+    const running = read.extensions.filter((e) => e.state === 'started')
+    if (!cap || cap === '--help' || cap === '-h') {
+      const calling = running.filter((e) => e.verbs.length || e.reads.length || doorsOf(e).length)
+      console.log(calling.length ? [...calling.map(capabilityLine), '`tower x <capability>` says what it is for, and lists its words.'].join('\n') : 'No running extension has doors, verbs or reads: `tower extensions` lists every extension and its state.')
       return
     }
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new CliError(`A read's input is its query, an object: ${input}`, `${usageLine('x')}, the input one argument: '{"project": "app"}'`)
-    const query = new URLSearchParams(Object.entries(body).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])).toString()
-    const res = await towerGet(`${target.path}${query ? `?${query}` : ''}`)
-    if (!res.headers.get('content-type')?.includes('json')) {
-      process.stdout.write(Buffer.from(await res.arrayBuffer()))
+    const e = running.find((x) => x.provides === cap)
+    if (!name || name === '--help' || name === '-h') {
+      if (!e) throw new CliError(`No running extension provides ${cap}: \`tower x\` lists the ones that do`)
+      console.log([...(e.guidance ? [e.guidance.full ?? e.guidance.brief, ''] : []), ...wordLines(e), ...extensionCallLines(e)].join('\n'))
       return
     }
-    const reply: unknown = await res.json()
-    if (isFailure(reply)) throw new CliError(refusedLine(`${cap}/${verb}`, reply))
-    console.log(JSON.stringify(reply, null, 2))
+    if (!e) {
+      console.log(JSON.stringify(await command(`${cap}/${name}`, {}), null, 2))
+      return
+    }
+    const word = wordNamed(e.words, name)
+    if (!word) {
+      const { message, fix } = unknownWordLines(cap, e.words, name)
+      throw new CliError(message, fix)
+    }
+    const json = jsonArgument(word, args)
+    if (json) {
+      console.error(jsonDeprecatedLine(cap, word, json.body))
+      await runWord(cap, word, await withCallerFloor(word, json.body))
+      return
+    }
+    const parsed = parseWord(cap, word, args)
+    if (parsed.t === 'bad') throw new CliError(parsed.message, parsed.fix)
+    if (parsed.t === 'help') {
+      console.log(helpLines(cap, word).join('\n'))
+      return
+    }
+    const input = (await withCallerFloor(word, await withStdin(word, parsed.input))) as Record<string, unknown>
+    const missing = missingLine(cap, word, input)
+    if (missing) throw new CliError(missing)
+    await runWord(cap, word, input)
   },
   policies: async ([sub, tagOrId]) => {
     const board = await readBoard()

@@ -1,0 +1,451 @@
+{
+  "id": "typed",
+  "version": "1.0",
+  "title": "Typed",
+  "description": "One verb per way a word takes its input, each answering the input as it received it and who called.",
+  "requires": {
+    "tower": "1.153"
+  },
+  "server": "server.ts",
+  "verbs": {
+    "echo": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "What to say back."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      },
+      "cli": {
+        "print": "said"
+      },
+      "description": "Says the text back."
+    },
+    "count": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "times"
+        ],
+        "properties": {
+          "times": {
+            "type": "integer"
+          },
+          "ratio": {
+            "type": "number"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "flag": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "loud": {
+            "type": "boolean"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tags": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "tag": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "n": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "shape": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {
+          "box": {
+            "type": "object"
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "note": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "project",
+          "body"
+        ],
+        "properties": {
+          "project": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "re": {
+            "type": "integer"
+          },
+          "at": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      },
+      "cli": {
+        "stdin": "body",
+        "print": "said",
+        "usage": "note [--re <n>] [--at <repo>:<path>:<from>[-<to>] …]"
+      }
+    },
+    "send": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "to"
+        ],
+        "properties": {
+          "to": {
+            "type": "string"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      },
+      "cli": {
+        "positional": [
+          "to"
+        ],
+        "print": "said"
+      }
+    },
+    "resolve": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "notes"
+        ],
+        "properties": {
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "body": {
+            "type": "string"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      },
+      "cli": {
+        "positional": [
+          "notes"
+        ],
+        "stdin": "body"
+      }
+    },
+    "hire": {
+      "scope": "system",
+      "input": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "of"
+        ],
+        "properties": {
+          "of": {
+            "type": "string"
+          },
+          "tell": {
+            "type": "boolean"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "input",
+          "caller"
+        ],
+        "properties": {
+          "input": {
+            "type": "object"
+          },
+          "caller": {
+            "type": "object"
+          },
+          "said": {
+            "type": "string"
+          }
+        }
+      },
+      "cli": {
+        "word": "review",
+        "positional": [
+          "of"
+        ]
+      }
+    }
+  },
+  "reads": {
+    "said/<project>": {
+      "scope": "project",
+      "description": "The floor's words, for a checkout.",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkout": {
+            "type": "string"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "cli": {
+        "word": "thread",
+        "positional": [
+          "checkout"
+        ],
+        "print": "text"
+      }
+    },
+    "lines": {
+      "scope": "system",
+      "reply": {
+        "type": "object",
+        "required": [
+          "lines"
+        ],
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "cli": {
+        "word": "lines",
+        "print": "lines"
+      }
+    },
+    "plain/<id>": {
+      "scope": "system",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "type": "string"
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
