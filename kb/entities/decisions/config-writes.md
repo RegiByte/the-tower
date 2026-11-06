@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-04",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-06",
   "refs": ["hub/src/config-edit.ts#edited", "hub/src/config-edit.ts#checkedEdit", "hub/src/config-edit.ts#newProblems", "hub/src/config-edit.ts#editConfig", "hub/src/tower/dispatch.ts#configEdited", "hub/src/shared/api.ts#CONFIG_WRITE", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/tower/http.ts#READS", "hub/src/shared/extensions.ts#RESERVED", "hub/test/config-edit.test.ts", "hub/test/server.test.ts", "hub/docs/config.md"]
 }
 ---
