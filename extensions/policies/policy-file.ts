@@ -4,10 +4,10 @@
  */
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import { SPAWN_FIELDS } from '../../src/shared/api.ts'
+import { spawnProblems } from '/lib/extension.js'
+import { cronProblem, isZone } from '/lib/time.js'
 import type { PolicyHeader, Problem } from './client/policies.ts'
-import { cronProblem, isZone } from '../../src/shared/slots.ts'
-import type { Parsed } from './policies.ts'
+import type { Hire as HireFields, Parsed } from './policies.ts'
 
 const Cron = z.string().superRefine((cron, ctx) => {
   const problem = cronProblem(cron)
@@ -16,9 +16,18 @@ const Cron = z.string().superRefine((cron, ctx) => {
 
 const When = z.strictObject({ cron: z.array(Cron).min(1), tz: z.string().refine(isZone, 'an IANA zone, like Europe/Lisbon').optional() })
 
-const Hire = SPAWN_FIELDS.pick({ cwd: true, cut: true, model: true, effort: true })
-  .strict()
-  .refine((h) => h.cwd === undefined || h.cut === undefined, { message: 'takes `cwd` or `cut`, not both', path: ['cut'] })
+/** The spawn's fields a policy's `hire` takes. `spawnProblems` checks their values, and passes any other field a spawn takes. */
+const Hire = z
+  .strictObject({
+    cwd: z.custom<HireFields['cwd']>().optional(),
+    cut: z.custom<HireFields['cut']>().optional(),
+    model: z.custom<HireFields['model']>().optional(),
+    effort: z.custom<HireFields['effort']>().optional(),
+  })
+  .superRefine((hire, ctx) => {
+    for (const { path, message } of spawnProblems(hire)) ctx.addIssue({ code: 'custom', message, path: [path] })
+    if (hire.cwd !== undefined && hire.cut !== undefined) ctx.addIssue({ code: 'custom', message: 'takes `cwd` or `cut`, not both', path: ['cut'] })
+  })
 
 /** Unknown keys make a policy invalid: a key this tower doesn't know is almost always a constraint it would drop. */
 const PolicyHeaderSchema = z.strictObject({

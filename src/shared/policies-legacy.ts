@@ -2,7 +2,9 @@
  * Policies as the core carried them before they moved into the bundled policies extension (decision `policies`): the
  * shapes of `floor.policies`, `card.run`, `board.offers`, the old routes `policy/*` and `GET /runs/<project>`, which
  * `LEGACY` copies back to their old fields until 2.0, and the words the deprecated Policies panel of `/panels.js` says
- * them with. The extension builds on the same shapes; its own words are its client's, `/x/policies/policies.js`.
+ * them with. The extension owns its copy of the shapes, in its `policies.ts`, and its words, in its client
+ * `/x/policies/policies.js`: the core may not import an extension's folder, so these stay for the core's readers until
+ * 2.0 deletes them.
  */
 import type { Board, Card } from '../bridge/board.ts'
 import type { OfferAction, OfferCalls, PolicyAction, PolicyCalls } from '../bridge/verbs.ts'
@@ -23,7 +25,7 @@ export type Outcome = 'offered' | 'no-work' | 'held' | 'check-failed'
 /** How a run started: on its own at its slot, an offer accepted, or by hand with no slot. */
 export type RunStart = 'auto' | 'offer' | 'hand'
 
-/** Where a run's worker starts and on what model: the spawn verb's own fields (`SPAWN_FIELDS`), which its schema picks. */
+/** Where a run's worker starts and on what model: four of the spawn verb's fields. */
 export type Hire = { cwd?: string; cut?: { name?: string; branch?: string; base?: string; from?: string }; model?: string; effort?: string }
 
 /** A policy's header, its defaults filled in. */

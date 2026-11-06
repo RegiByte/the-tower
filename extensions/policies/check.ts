@@ -1,5 +1,5 @@
 /** A policy's check: its line run with `sh -c` from the floor's hub, as the policies extension runs it at a slot. */
-import type { RunResult, StartCtx } from '../../src/shared/extensions.ts'
+import type { RunResult, StartCtx } from '/lib/extension.js'
 import type { CheckResult } from './policies.ts'
 
 export const CHECK_TIMEOUT_MS = 60_000

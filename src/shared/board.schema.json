@@ -3539,7 +3539,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "Where a run's worker starts and on what model: the spawn verb's own fields (`SPAWN_FIELDS`), which its schema picks."
+      "description": "Where a run's worker starts and on what model: four of the spawn verb's fields."
     },
     "HeldBy": {
       "type": "object",

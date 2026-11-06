@@ -2,10 +2,10 @@
  * What `tower policies` and `tower runs` print, said by the policies extension (its read `said/<project>`), so the
  * core's CLI prints the words of whoever provides `policies`.
  */
-import type { Board, Card } from '../../src/bridge/board.ts'
-import { statusName } from '../../src/shared/cards.ts'
-import { slotWords } from '../../src/shared/slots.ts'
-import { tagOf } from '../../src/shared/tags.ts'
+import type { Board, Card } from '/lib/board.js'
+import { statusName } from '/lib/cards.js'
+import { slotWords } from '/lib/time.js'
+import { tagOf } from '/lib/words.js'
 import { checkFound, heldWords, standingWords } from './client/policies.ts'
 import { shortHash, type PolicyView, type RunRead } from './policies.ts'
 

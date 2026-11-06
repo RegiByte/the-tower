@@ -4,11 +4,10 @@
  * facts. At each slot the core's loop fires, it decides what the slot gets from the board alone (`decide`), runs the
  * check the policy asks for, then runs or passes the slot through its own verbs, as any other runner would.
  */
-import type { Board, Card, Floor } from '../../src/bridge/board.ts'
-import { apiError, isApiError, type ApiError, type Replies, type RouteInput } from '../../src/shared/api.ts'
-import type { Ask, Badge, CallCtx, Part, Reduce, Slot, Start, StreamFact } from '../../src/shared/extensions.ts'
-import { ruleWords, slotsBetween, slotWords } from '../../src/shared/slots.ts'
-import { tagOf } from '../../src/shared/tags.ts'
+import type { Board, Card, Floor } from '/lib/board.js'
+import { apiError, isApiError, type ApiError, type Ask, type Badge, type CallCtx, type Part, type Reduce, type Replies, type RouteInput, type Slot, type Start, type StreamFact } from '/lib/extension.js'
+import { ruleWords, slotsBetween, slotWords } from '/lib/time.js'
+import { tagOf } from '/lib/words.js'
 import { runCheck } from './check.ts'
 import { policiesLines, runsLines } from './cli.ts'
 import { checkFound, checkKey, decide, offeredWords, ON_TIME_MS, onTimeSlot, standingWords, type Action } from './client/policies.ts'
