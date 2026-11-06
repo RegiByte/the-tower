@@ -4,7 +4,7 @@
   "name": "Hook events",
   "summary": "How what Claude does inside a session reaches its log: classic hooks over curl and mod events over fetch, both declared by the tower mod, both into the host's hooks socket; the tower command's facts about its own session through the tower's fact verb.",
   "in": "tower",
-  "reviewed": "2026-11-04",
+  "reviewed": "2026-11-05",
   "involves": ["claude-code", "tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
   "refs": ["hub/src/directory.ts", "hub/src/host/main.ts#appendFact", "hub/src/mod/hooks/hooks.json", "hub/src/mod/hooks/register.js#forward", "hub/src/host/main.ts#hooks", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy"]
 }
