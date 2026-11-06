@@ -338,7 +338,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       const { kind } = hook.origin as { kind: string }
       const byWorker = facts.promptedBy !== undefined && USER_ORIGINS.has(kind)
       const origin = byWorker ? 'peer' : promptOrigin(kind, String(hook.text))
-      const prompted = { ...facts, prompts: [...facts.prompts, [at, origin] as [number, string]], promptedBy: byWorker ? undefined : facts.promptedBy, leaveAt: undefined }
+      const prompted = { ...facts, prompts: [...facts.prompts, [at, origin] as [number, string]], promptedBy: byWorker ? undefined : facts.promptedBy, leaveAt: USER_ORIGINS.has(origin) ? undefined : facts.leaveAt }
       return facts.stoppedAt === undefined || !USER_ORIGINS.has(origin)
         ? prompted
         : { ...prompted, waits: [...facts.waits, [at, t - facts.stoppedAt]], stoppedAt: undefined }

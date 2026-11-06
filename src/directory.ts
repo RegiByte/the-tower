@@ -988,7 +988,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     if (card.id === me) {
       await command('fact', { name: 'leave' })
       const crew = crewOf(board.floors.flatMap((f) => f.cards), card).filter((c) => c.live)
-      console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. A prompt before then keeps you on duty.`)
+      console.log(`You go home when this turn ends${crew.length ? `, with ${crew.map((c) => c.callsign).join(', ')} under you` : ''}; your last answer is kept, and you can be resumed. The user typing to you before then keeps you on duty.`)
       return
     }
     const calls = callOf(card, 'send-home')
