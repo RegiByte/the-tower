@@ -69,7 +69,7 @@ export const CLI_VERBS = {
   probes: {
     of: 'worker',
     usage: 'probes [run quota]',
-    help: "the quota probe, the quota extension's: its state, last read, why it failed and when it reads next; `run quota` reads now, as `tower x quota read-now` does (refused while a read is in flight or within a minute of the last)",
+    help: "the quota probe, the quota extension's, per `argv` command: its state, last read, why it failed and when it reads next; `run quota` reads every command now, less any read within the last minute, as `tower x quota read-now` does, whose `command` reads one (refused while a read is in flight or when nothing is left to read)",
   },
   extensions: {
     of: 'worker',
