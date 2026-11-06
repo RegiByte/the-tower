@@ -75,7 +75,7 @@ export const wordsOf = (manifest: Manifest): Word[] => [
       scope: 'system',
       ...(fact.description !== undefined && { description: fact.description }),
       fields: [
-        { name: 'value', ...takesOf(fact.schema), required: true },
+        { name: 'value', ...takesOf(fact.schema), required: false, description: 'Left out, it clears the fact.' },
         { name: 'session', takes: 'string', many: false, required: false, description: "The session it is about: the caller's own when left out." },
       ],
       positional: [],
@@ -147,8 +147,8 @@ const valueWords = (field: WordField, value: unknown): string[] => (field.many ?
 
 const STDIN_WORDS = "<<'EOF' … EOF"
 
-/** A door's flag for none: a door takes null whatever its fact's schema, which no value of `--value` can say. */
-const NO_VALUE = 'no-value'
+/** A command line has no null, only absence: a door word with no `--value` asks the door for none. */
+const DOOR_CLEARS = '(no --value clears it)'
 
 const isDoorValue = (word: Word, field: WordField) => word.kind === 'door' && field.name === 'value'
 
@@ -170,8 +170,8 @@ export const typedLine = (cap: string, word: Word, input: Record<string, unknown
   const flags = word.fields
     .filter((f) => !word.positional.includes(f.name) && f.name !== word.stdin)
     .flatMap((f) => {
+      if (isDoorValue(word, f) && input[f.name] === null) return []
       if (!given(f)) return f.required && !fillsProject(word, f) ? [holeOf(f)] : []
-      if (isDoorValue(word, f) && input[f.name] === null) return [`--${NO_VALUE}`]
       if (f.takes === 'boolean' && !f.many) return [input[f.name] ? `--${f.name}` : `--${f.name}=false`]
       return valueWords(f, input[f.name]).map((value) => `--${f.name} ${value}`)
     })
@@ -190,9 +190,9 @@ export const usageOf = (word: Word): string => {
   })
   const flags = word.fields
     .filter((f) => !word.positional.includes(f.name) && f.name !== word.stdin)
-    .map((f) => (isDoorValue(word, f) ? `(${holeOf(f)} | --${NO_VALUE})` : optional(`${holeOf(f)}${f.many ? ' …' : ''}`, f.required && !fillsProject(word, f))))
+    .map((f) => optional(`${holeOf(f)}${f.many ? ' …' : ''}`, f.required && !fillsProject(word, f)))
   const stdin = word.fields.find((f) => f.name === word.stdin)
-  return [typedName(word), ...positional, ...flags, ...(stdin ? [optional(STDIN_WORDS, stdin.required)] : [])].join(' ')
+  return [typedName(word), ...positional, ...flags, ...(stdin ? [optional(STDIN_WORDS, stdin.required)] : []), ...(word.kind === 'door' ? [DOOR_CLEARS] : [])].join(' ')
 }
 
 const TAKES_WORDS: Record<Takes, string> = { string: 'a string', integer: 'an integer', number: 'a number', boolean: 'true or false', json: 'JSON' }
@@ -202,7 +202,6 @@ export const helpLines = (cap: string, word: Word): string[] => [
   `tower x ${cap} ${usageOf(word)}`,
   ...(word.description ? [word.description] : []),
   ...word.fields.map((f) => `  --${f.name}  ${TAKES_WORDS[f.takes]}${f.many ? ', repeated' : ''}${f.name === word.stdin ? ', or text on stdin' : ''}${fillsProject(word, f) ? ", your floor's when left out" : f.required ? ', required' : ''}${f.description ? `: ${f.description}` : ''}`),
-  ...(word.kind === 'door' ? [`  --${NO_VALUE}  sends none, in place of --value`] : []),
 ]
 
 /** A word's arguments as read: its input, a call for its help, or what was wrong, with what to do about it. */
@@ -237,7 +236,6 @@ export const parseWord = (cap: string, word: Word, args: string[]): Parsed => {
     return undefined
   }
   const free: string[] = []
-  let noValue = false
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
     if (arg === '--') {
@@ -252,15 +250,10 @@ export const parseWord = (cap: string, word: Word, args: string[]): Parsed => {
     const eq = arg.indexOf('=')
     const name = eq < 0 ? arg.slice(2) : arg.slice(2, eq)
     const inline = eq < 0 ? undefined : arg.slice(eq + 1)
-    if (word.kind === 'door' && name === NO_VALUE) {
-      if (inline !== undefined) return bad(`--${NO_VALUE} takes no value`)
-      noValue = true
-      continue
-    }
     const field = word.fields.find((f) => f.name === name)
     if (!field) {
       if (name === 'help') return { t: 'help' }
-      const near = nearest(name, [...word.fields.map((f) => f.name), ...(word.kind === 'door' ? [NO_VALUE] : [])])
+      const near = nearest(name, word.fields.map((f) => f.name))
       return bad(`${typedName(word)} has no --${name}`, nearestSaid(near && `--${near}`, help))
     }
     if (field.takes === 'boolean' && inline === undefined) {
@@ -272,10 +265,6 @@ export const parseWord = (cap: string, word: Word, args: string[]): Parsed => {
     if (text === undefined) return bad(`--${name} needs a value`)
     const wrong = put(field, text, `--${name}`)
     if (wrong) return wrong
-  }
-  if (noValue) {
-    if (input.value !== undefined) return bad(`--value and --${NO_VALUE} can't go together: one sets it, the other sends none`)
-    input.value = null
   }
   for (const name of word.positional) {
     const field = word.fields.find((f) => f.name === name)!

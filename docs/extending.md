@@ -712,8 +712,7 @@ whoami` names).
 **Words** (API 1.153) type an extension's verbs and reads like commands, on the same terms for bundled extensions and
 yours. Every verb is a word by its name, with nothing to declare; a read is a word when its `cli` names one, and any
 read is reached by its path too (`tower x policies runs/app --policy nightly`). `facts/<fact>` is a writable fact's
-door, typed `--value …`, or a bare `--no-value` to send none, whatever the fact's schema. A door needs one of the two,
-and refuses both. What `tower x <cap> <name>` reaches is, in order: a word, a door or verb by its name, then the
+door, typed `--value …`; left out, the word clears the fact, since a command line has no null, only absence. What `tower x <cap> <name>` reaches is, in order: a word, a door or verb by its name, then the
 read whose path matches.
 
 - **Flags come from the input schema**, one per top-level field: `--re 3`, `--re=3`. A read's are its path's params and
@@ -797,7 +796,7 @@ the fold before that fact, and an item whose `parse` throws is held with `parsed
 said in the tower's log.
 
 **Writable facts** (API 1.126) put a value on a card with no server code. A fact that declares `writable` has a door,
-`POST /<cap>/facts/<name> { session?, value }`, which logs the value as the fact on the session through the host, as
+`POST /<cap>/facts/<name> { session?, value? }` (a `value` left out or `null` is none, API 1.153), which logs the value as the fact on the session through the host, as
 `ctx.facts.append` does. `value` holds to the fact's schema, or is `null`; `writable` names who may write it: `user`,
 a caller with no `tower-session`, which names the `session`; `self`, a worker writing its own, which leaves `session`
 out or names its own. Both are claims, as every caller is. The door refuses a write on a floor where the capability is

@@ -614,10 +614,12 @@ test('server: an error in a word says what to do next and exits non-zero, and a 
   assert.equal(typed('gone', ['note'], 'Body.').stderr, 'tower: The tower has no session "gone"\n  → --project <id> names the floor\n')
 })
 
-test('server: a door is typed by --value, and --no-value clears it through the door', async () => {
+test('server: a door word with no --value clears through the door, which reads a value left out as null; its listing says so', async () => {
   const door = (...args: string[]) => JSON.parse(cli(SESSION, 'x', 'tabline', 'facts/line', ...args))
   assert.deepEqual(door('--value', 'on it'), { session: SESSION, value: 'on it' })
-  assert.deepEqual(door('--no-value'), { session: SESSION, value: null })
+  assert.deepEqual(door(), { session: SESSION, value: null })
+  assert.deepEqual(door('{"value": null}'), { session: SESSION, value: null })
+  assert.ok(cli(SESSION, 'x', 'tabline').split('\n').includes('  tower x tabline facts/line [--value <value>] [--session <session>] (no --value clears it)'))
 })
 
 test('server: tower x lists capabilities, tower x <cap> its words before its raw calls, and a word its flags', async () => {
