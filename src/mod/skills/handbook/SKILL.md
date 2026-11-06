@@ -13,10 +13,28 @@ The tower runs every Claude Code session the user works with. Each project is a 
 `tower` reads the running tower's board, so it is always current. Don't guess from memory: workers come and go, and a project can have several.
 
 - `tower whoami`: your callsign, session id, the name other sessions message you by, your floor and its directories, your worktree and branch, who hired you, the floor's shelf and collections, and where the tower's config is.
-- `tower x <name>`: what an extension `tower whoami` lists under "Extensions you can use" tells the workers, in full (when to use it, when not, how), then its doors, verbs and reads. Read it before you first use that extension in a session.
+- `tower x <name>`: what an extension `tower whoami` lists under "Extensions you can use" tells the workers, in full (when to use it, when not, how), then its words and their usage, then its doors, verbs and reads. Read it before you first use that extension in a session; "Extensions' commands" below says how to type them.
 - `tower agents [--all]`: the workers on duty on your floor (or every floor), as crews: a worker hired by another, or reviewing another's work, is listed under it (`└`). Each line gives the callsign, status, the name to message it by, its directory, and what it is up to (`❯` its prompt, `↳` its latest answer, `⚙` the tool it runs, `⚠` what it asks permission for).
 - `tower agent <CALLSIGN>`: one worker in full: its last prompts from the user, each with its answer, per conversation.
 - `tower probes`: the quota probe, the bundled `quota` extension, which reads each `argv` command's rate limits while no turn of that command does: its state, last read, why it failed, and when it reads next. `GET <address>/quota/reads` gives its latest reads; `tower probes run quota` reads every command now, and `tower x quota read-now '{"command":"work"}'` reads one (each at most once a minute), when the user asks.
+
+## Extensions' commands
+
+Every extension's commands live under `tower x`, on the same terms for the ones the tower ships and the user's own. Discover them; don't guess:
+
+- `tower x`: the running extensions, each with its brief.
+- `tower x <capability>`: what it tells the workers, then its words, one line of usage each, then its raw doors, verbs and reads.
+- `tower x <capability> <word> --help`: what a word does and each flag it takes.
+
+A word is typed like a command:
+
+- **Flags** come from what the word takes: `--name value` or `--name=value`; a yes/no is a bare `--name`; a list repeats its flag (`--tag a --tag b`). A string is taken as typed, a number or yes/no is converted, and a structured field takes JSON as its flag's value: the one place JSON stays.
+- **Text goes on stdin** where a word takes it, verbatim, usually as a heredoc: `tower x <capability> <word> --flag value <<'EOF'` … `EOF`.
+- **Positional arguments** work where the usage line shows them.
+- **Your session and floor are filled in**: every call carries you as its caller, and a word that works on a floor takes yours unless you say `--project <id>`.
+- **A failed word says what to do next**: what is missing with an example, the type a value wants, the nearest word or flag. It exits non-zero, and what the word prints on success is its answer.
+
+An old `tower x <capability> <verb> '<json>'` still works until 2.0, and prints what to type instead. Don't write new ones. Each extension teaches its own words in its guidance: `tower whoami` shows the brief, `tower x <capability>` the rest.
 
 ## Reaching out
 

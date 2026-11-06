@@ -24,6 +24,7 @@ Short: a few paragraphs, then an offer. Name their floors, workers, shelf entrie
 
 - **The model.** A project is a floor; each session is a worker with a callsign; sessions start in the floor's hub, where the project's notes and `CLAUDE.md` live, and its repos are the other directories they work in. Say it with their floor's hub and repos.
 - **What a sentence to a worker can do.** Pick three to five capabilities from `docs/usage.md` that fit what you saw (many workers on one floor: crews, reviews, Tidy; an empty shelf: the shelf; drafts kept: hiring from one), each with a prompt they can type.
+- **Extensions.** Features beyond the core come as extensions, the ones the tower ships and the user's own alike, and a worker reaches any of them the same way: `tower x` lists them, `tower x <name>` says what one is for and the words it offers, and a word is typed like a command, with flags, text on stdin, and its worker's floor filled in. Show one from `tower x` if their setup has one worth using.
 - **Where to look.** The tower page (`tower whoami` names its address), `?` for its keys, and `docs/usage.md`.
 
 When they ask about one thing (the hub, worktrees, reviews), answer that from `docs/usage.md` with their setup as the example, and skip the tour.
