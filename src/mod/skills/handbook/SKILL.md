@@ -16,7 +16,7 @@ The tower runs every Claude Code session the user works with. Each project is a 
 - `tower x <name>`: what an extension `tower whoami` lists under "Extensions you can use" tells the workers, in full (when to use it, when not, how), then its words and their usage, then its doors, verbs and reads. Read it before you first use that extension in a session; "Extensions' commands" below says how to type them.
 - `tower agents [--all]`: the workers on duty on your floor (or every floor), as crews: a worker hired by another, or reviewing another's work, is listed under it (`└`). Each line gives the callsign, status, the name to message it by, its directory, and what it is up to (`❯` its prompt, `↳` its latest answer, `⚙` the tool it runs, `⚠` what it asks permission for).
 - `tower agent <CALLSIGN>`: one worker in full: its last prompts from the user, each with its answer, per conversation.
-- `tower probes`: the quota probe, the bundled `quota` extension, which reads each `argv` command's rate limits while no turn of that command does: its state, last read, why it failed, and when it reads next. `GET <address>/quota/reads` gives its latest reads; `tower probes run quota` reads every command now, and `tower x quota read-now '{"command":"work"}'` reads one (each at most once a minute), when the user asks.
+- `tower probes`: the quota probe, the bundled `quota` extension, which reads each `argv` command's rate limits while no turn of that command does: its state, last read, why it failed, and when it reads next. `GET <address>/quota/reads` gives its latest reads; `tower probes run quota` reads every command now, and `tower x quota read-now --command work` reads one (each at most once a minute), when the user asks.
 
 ## Extensions' commands
 
