@@ -1,5 +1,5 @@
 import type { ClaudeHookInput, ModEvent, SessionLog } from '../shared/model.ts'
-import { continuations, lineage, namer, resumes, threads, type SessionRef, type Thread } from './chains.ts'
+import { chainsOf, continuations, lineage, namer, resumes, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
 import { USER_ORIGINS, type Conversation } from './conversation.ts'
 import { digestOf, type Session } from './facts.ts'
 import { deliveries, delivered, receipts } from './messages.ts'
@@ -234,12 +234,12 @@ const withPeers = (session: Session, turn: Turn, peers: Peers): Turn => ({
  * The last `count` turns of a conversation, oldest first, and whether it holds any before them. A resumed conversation
  * goes on from the session it resumed: that session's log is read only when this one's own turns fall short.
  */
-const turnsOf = (session: Session, conversation: Conversation, sessions: Session[], logOf: (id: string) => SessionLog, count: number, peers: Peers): { turns: Turn[]; earlier: boolean } => {
+const turnsOf = (session: Session, conversation: Conversation, chains: Chains, logOf: (id: string) => SessionLog, count: number, peers: Peers): { turns: Turn[]; earlier: boolean } => {
   const all = turnsByConversation(logOf(session.header.id))[conversation.id] ?? []
   const own = all.slice(-count).map((turn) => withPeers(session, turn, peers))
-  const source = resumes(session, conversation, sessions)
+  const source = resumes(session, conversation, chains)
   if (own.length >= count) return { turns: own, earlier: all.length > count || source !== undefined }
-  const before = source ? turnsOf(source, source.facts.conversations.findLast((c) => c.id === conversation.id)!, sessions, logOf, count - own.length, peers) : { turns: [], earlier: false }
+  const before = source ? turnsOf(source, source.facts.conversations.findLast((c) => c.id === conversation.id)!, chains, logOf, count - own.length, peers) : { turns: [], earlier: false }
   return { turns: [...before.turns, ...own], earlier: before.earlier }
 }
 
@@ -262,13 +262,13 @@ const peersOf = (sessions: Session[], nameOf: (s: Session) => string): Peers => 
 }
 
 /** Every saved conversation of the worker `session` ran as, up to it, with its peers named: see `briefOf`. */
-const threadsOf = (session: Session, sessions: Session[], callsign: (id: string) => string) => {
-  const continued = continuations(sessions)
+const threadsOf = (session: Session, sessions: Session[], chains: Chains, callsign: (id: string) => string) => {
+  const continued = continuations(sessions, chains)
   const nameOf = namer(continued, callsign)
   const peers = peersOf(sessions, nameOf)
   return lineage(session, (s) => continued.get(s)).toReversed().flatMap((s) => {
     const ref: BriefSession = { id: s.header.id, callsign: nameOf(s), startedAt: s.header.startedAt }
-    return threads(s, sessions, nameOf).map((thread) => ({ thread, session: s, ref, peers }))
+    return threads(s, chains, nameOf).map((thread) => ({ thread, session: s, ref, peers }))
   })
 }
 
@@ -276,14 +276,17 @@ const threadsOf = (session: Session, sessions: Session[], callsign: (id: string)
  * Every saved conversation of the worker `session` ran as, up to it: its own first, then each earlier session's, the
  * latest session first; a session's conversations in order. `callsign`: a session id's (`callsignsOf`).
  */
-export const briefOf = (session: Session, sessions: Session[], logOf: (id: string) => SessionLog, count: number, callsign: (id: string) => string): Brief[] =>
-  threadsOf(session, sessions, callsign).map(({ thread, session: s, ref, peers }) => ({ ...thread, session: ref, ...turnsOf(s, thread, sessions, logOf, count, peers) }))
+export const briefOf = (session: Session, sessions: Session[], logOf: (id: string) => SessionLog, count: number, callsign: (id: string) => string): Brief[] => {
+  const chains = chainsOf(sessions)
+  return threadsOf(session, sessions, chains, callsign).map(({ thread, session: s, ref, peers }) => ({ ...thread, session: ref, ...turnsOf(s, thread, chains, logOf, count, peers) }))
+}
 
 /**
  * A saved conversation of `session`, as `briefOf` draws it there, with every one of its turns: those of the sessions it
  * resumed first. `undefined` when the session holds no such conversation. @since 1.133
  */
 export const wholeConversation = (session: Session, sessions: Session[], logOf: (id: string) => SessionLog, conversation: string, callsign: (id: string) => string): Brief | undefined => {
-  const held = threadsOf(session, sessions, callsign).find((t) => t.session === session && t.thread.id === conversation)
-  return held && { ...held.thread, session: held.ref, ...turnsOf(session, held.thread, sessions, logOf, Infinity, held.peers) }
+  const chains = chainsOf(sessions)
+  const held = threadsOf(session, sessions, chains, callsign).find((t) => t.session === session && t.thread.id === conversation)
+  return held && { ...held.thread, session: held.ref, ...turnsOf(session, held.thread, chains, logOf, Infinity, held.peers) }
 }

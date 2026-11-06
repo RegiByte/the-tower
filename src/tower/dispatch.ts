@@ -12,7 +12,7 @@ import path from 'node:path'
 import { archiveLog, archiveStream, monthPath } from '../archive.ts'
 import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
 import type { Occupant } from '../bridge/worktrees.ts'
-import { carriesOn, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
+import { carriesOn, chainsOf, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
 import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
 import type { Status } from '../bridge/status.ts'
@@ -465,7 +465,8 @@ export const dispatch = defineResource({
         const kind = carriesOn(source, conversation) ? 'resume' : 'fork'
         const heir = kind === 'resume' ? newSessionId() : (await workerIds(config))()
         const runtime = source.header.runtime ?? 'claude'
-        const worker = lineage(source, (s) => continues(s, system.sessions()))
+        const chains = chainsOf(system.sessions())
+        const worker = lineage(source, (s) => continues(s, chains))
         const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker), resolveCommand(config, source.header.command))
         if (merged.t === 'error') return merged
         const gated = await gate({ project: projectId, kind, runtime, hire: false, exempt: merged.exempt, fields: {} }, within)

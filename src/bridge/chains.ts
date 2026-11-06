@@ -4,41 +4,54 @@ import type { Session } from './facts.ts'
 
 const byStart = (a: Session, b: Session) => a.header.startedAt - b.header.startedAt
 
-const holds = (session: Session, id: string) => session.facts.conversations.some((c) => c.saved && c.id === id)
+/**
+ * The sessions of each conversation, by its id, oldest first: those that hold it saved and those that resumed it. Built
+ * once over every session, so following a chain looks up a conversation's few sessions rather than reading them all.
+ */
+export type Chains = { saved: Map<string, Session[]>; resumed: Map<string, Session[]> }
+
+export const chainsOf = (sessions: Session[]): Chains => {
+  const by = (holds: (c: Conversation) => boolean | undefined) => {
+    const of = new Map<string, Session[]>()
+    for (const s of sessions)
+      for (const id of new Set(s.facts.conversations.filter(holds).map((c) => c.id))) {
+        const held = of.get(id)
+        if (held) held.push(s)
+        else of.set(id, [s])
+      }
+    for (const list of of.values()) list.sort(byStart)
+    return of
+  }
+  return { saved: by((c) => c.saved), resumed: by((c) => c.resumed) }
+}
 
 /**
  * A conversation can be resumed again and again, by a chain of sessions or twice from the same one: the link
  * is to the nearest session in time on either side.
  */
-export const resumes = (session: Session, conversation: Conversation, sessions: Session[]): Session | undefined =>
-  conversation.resumed
-    ? sessions.filter((s) => s.header.startedAt < session.header.startedAt && holds(s, conversation.id)).sort(byStart).at(-1)
-    : undefined
+export const resumes = (session: Session, conversation: Conversation, chains: Chains): Session | undefined =>
+  conversation.resumed ? chains.saved.get(conversation.id)?.findLast((s) => s.header.startedAt < session.header.startedAt) : undefined
 
-export const resumedBy = (session: Session, conversation: Conversation, sessions: Session[]): Session | undefined =>
-  conversation.saved
-    ? sessions
-        .filter((s) => s.header.startedAt > session.header.startedAt && s.facts.conversations.some((c) => c.resumed && c.id === conversation.id))
-        .sort(byStart)[0]
-    : undefined
+export const resumedBy = (session: Session, conversation: Conversation, chains: Chains): Session | undefined =>
+  conversation.saved ? chains.resumed.get(conversation.id)?.find((s) => s.header.startedAt > session.header.startedAt) : undefined
 
 /**
  * The session this one continues as the same worker: the one whose latest saved conversation it resumed as its
  * first. Resuming any earlier conversation of a session forks a new worker.
  */
-export const continues = (session: Session, sessions: Session[]): Session | undefined => {
+export const continues = (session: Session, chains: Chains): Session | undefined => {
   const first = session.facts.conversations[0]
-  const source = first && resumes(session, first, sessions)
+  const source = first && resumes(session, first, chains)
   return source && carriesOn(source, first.id) ? source : undefined
 }
 
 /** Resuming this conversation of `source` carries its worker on: it is the latest one Claude saved there. */
 export const carriesOn = (source: Session, conversation: string) => latestSaved(source.facts.conversations)?.id === conversation
 
-/** Each session that continues another, to the one it continues. */
-export const continuations = (sessions: Session[]): Map<Session, Session> =>
+/** Each session that continues another, to the one it continues. `chains`: the sessions' (`chainsOf`). */
+export const continuations = (sessions: Session[], chains: Chains): Map<Session, Session> =>
   new Map(sessions.flatMap((s) => {
-    const before = continues(s, sessions)
+    const before = continues(s, chains)
     return before ? [[s, before] as const] : []
   }))
 
@@ -70,8 +83,10 @@ const workerName = (session: Session, before: (s: Session) => Session | undefine
 }
 
 /** The running session of the worker called `name` (a callsign, any case). */
-export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, name: string, callsign: (id: string) => string): Session | undefined =>
-  sessions.find((s) => running.has(s.header.id) && workerName(s, (x) => continues(x, sessions), callsign).toUpperCase() === name.toUpperCase())
+export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, name: string, callsign: (id: string) => string): Session | undefined => {
+  const chains = chainsOf(sessions)
+  return sessions.find((s) => running.has(s.header.id) && workerName(s, (x) => continues(x, chains), callsign).toUpperCase() === name.toUpperCase())
+}
 
 /**
  * The callsigns of the workers of sessions `ids`: a new worker's name is kept apart from theirs (`freshId`,
@@ -79,20 +94,23 @@ export const runningNamed = (sessions: Session[], running: ReadonlySet<string>, 
  */
 export const heldCallsigns = (sessions: Session[], ids: ReadonlySet<string>, callsign: (id: string) => string): string[] => {
   const byId = new Map(sessions.map((s) => [s.header.id, s]))
+  const chains = chainsOf(sessions)
   return [...ids].map((id) => {
     const session = byId.get(id)
-    return session ? workerName(session, (s) => continues(s, sessions), callsign) : callsign(id)
+    return session ? workerName(session, (s) => continues(s, chains), callsign) : callsign(id)
   })
 }
 
 /** The name a resume of `conversation` runs under as session `id`: its worker's, or its own on a fork. */
-export const resumeName = (source: Session, conversation: string, id: string, sessions: Session[], callsign: (id: string) => string) =>
-  carriesOn(source, conversation) ? workerName(source, (s) => continues(s, sessions), callsign) : callsign(id)
+export const resumeName = (source: Session, conversation: string, id: string, sessions: Session[], callsign: (id: string) => string) => {
+  const chains = chainsOf(sessions)
+  return carriesOn(source, conversation) ? workerName(source, (s) => continues(s, chains), callsign) : callsign(id)
+}
 
 /** The conversation's latest prompt and answer: what a resumed session hasn't had yet comes from the session it resumed. */
-const latest = (session: Session, conversation: Conversation, sessions: Session[]): Pick<Conversation, 'prompt' | 'answer'> => {
-  const source = conversation.prompt && conversation.answer ? undefined : resumes(session, conversation, sessions)
-  const earlier = source && latest(source, source.facts.conversations.findLast((c) => c.id === conversation.id)!, sessions)
+const latest = (session: Session, conversation: Conversation, chains: Chains): Pick<Conversation, 'prompt' | 'answer'> => {
+  const source = conversation.prompt && conversation.answer ? undefined : resumes(session, conversation, chains)
+  const earlier = source && latest(source, source.facts.conversations.findLast((c) => c.id === conversation.id)!, chains)
   return { prompt: conversation.prompt ?? earlier?.prompt, answer: conversation.answer ?? earlier?.answer }
 }
 
@@ -109,13 +127,13 @@ export const namer = (continued: Map<Session, Session>, callsign: (id: string) =
 /** A saved conversation as a session holds it, linked to the sessions it came from and went on to. */
 export type Thread = Conversation & { resumes?: SessionLink; resumedBy?: SessionLink }
 
-/** `nameOf`: a session's worker's callsign (`namer`). */
-export const threads = (session: Session, sessions: Session[], nameOf: (s: Session) => string): Thread[] =>
+/** `chains`: every session's (`chainsOf`). `nameOf`: a session's worker's callsign (`namer`). */
+export const threads = (session: Session, chains: Chains, nameOf: (s: Session) => string): Thread[] =>
   session.facts.conversations
     .filter((c) => c.saved)
     .map((c) => {
-      const source = resumes(session, c, sessions)
-      const resumer = resumedBy(session, c, sessions)
+      const source = resumes(session, c, chains)
+      const resumer = resumedBy(session, c, chains)
       const refOf = (s: Session): SessionLink => ({ id: s.header.id, callsign: nameOf(s), startedAt: s.header.startedAt })
-      return { ...c, ...latest(session, c, sessions), resumes: source && refOf(source), resumedBy: resumer && refOf(resumer) }
+      return { ...c, ...latest(session, c, chains), resumes: source && refOf(source), resumedBy: resumer && refOf(resumer) }
     })
