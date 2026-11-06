@@ -167,7 +167,7 @@ export const typedLine = (cap: string, word: Word, input: Record<string, unknown
   const flags = word.fields
     .filter((f) => !word.positional.includes(f.name) && f.name !== word.stdin)
     .flatMap((f) => {
-      if (isDoorValue(word, f) && input[f.name] === null) return ['--value ""']
+      if (isDoorValue(word, f) && input[f.name] === null && f.takes === 'string') return ['--value ""']
       if (!given(f)) return f.required && !fillsProject(word, f) ? [holeOf(f)] : []
       if (f.takes === 'boolean' && !f.many) return [input[f.name] ? `--${f.name}` : `--${f.name}=false`]
       return valueWords(f, input[f.name]).map((value) => `--${f.name} ${value}`)
@@ -301,7 +301,7 @@ const isTypable = (word: Word, body: unknown): body is Record<string, unknown> =
   Object.entries(body).every(([name, value]) => {
     const field = word.fields.find((f) => f.name === name)
     if (!field) return false
-    if (isDoorValue(word, field) && value === null) return field.takes === 'string'
+    if (isDoorValue(word, field) && value === null && field.takes === 'string') return true
     return field.many ? Array.isArray(value) && value.every((v) => typesAs(field.takes, v)) : typesAs(field.takes, value)
   })
 
@@ -309,11 +309,11 @@ const JSON_GOES = 'A JSON argument to tower x is deprecated and goes at 2.0.'
 
 /**
  * What a deprecated JSON argument says on stderr: that it goes, and what to type instead, or where to read how when
- * flags can't say that input. A null on a string door is typed as the blank value that clears it on purpose; on any
- * other door it has no typed form.
+ * flags can't say that input. A null on a string door is typed as the blank value that clears it on purpose, on a door
+ * that takes JSON as `null`, and on any other door it has no typed form.
  */
 export const jsonDeprecatedLine = (cap: string, word: Word, body: unknown): string => {
-  if (word.kind === 'door' && isRecord(body) && body.value === null && word.fields[0].takes !== 'string') return `${JSON_GOES} A null has no typed form on ${typedName(word)}: a door that needs one should offer a verb.`
+  if (word.kind === 'door' && isRecord(body) && body.value === null && !['string', 'json'].includes(word.fields[0].takes)) return `${JSON_GOES} A null has no typed form on ${typedName(word)}: a door that needs one should offer a verb.`
   return `${JSON_GOES} Type instead: ${isTypable(word, body) ? typedLine(cap, word, body) : `tower x ${cap} ${typedName(word)} --help`}`
 }
 

@@ -134,6 +134,9 @@ test('a door needs --value, a blank reaches it as an empty string, and a null is
   assert.equal(jsonDeprecatedLine('tabline', door, { value: 'on it' }), "A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value 'on it'")
   const counter: Word = { ...door, fields: [{ ...door.fields[0], takes: 'integer' }, door.fields[1]] }
   assert.equal(jsonDeprecatedLine('tabline', counter, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. A null has no typed form on facts/line: a door that needs one should offer a verb.')
+  const shaped: Word = { ...door, fields: [{ ...door.fields[0], takes: 'json' }, door.fields[1]] }
+  assert.equal(jsonDeprecatedLine('tabline', shaped, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value null')
+  assert.deepEqual(parseWord('tabline', shaped, ['--value', 'null']), { t: 'input', input: { value: null } })
 })
 
 test('printing names a string or lines, and a field the reply left out prints nothing', () => {
