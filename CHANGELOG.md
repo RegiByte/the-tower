@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.96.3
+
+The board builds faster on a system with many session logs, about 40% at around a thousand, and the cost now grows
+with the number of logs rather than its square. Restart the tower with this release (`tower down tower`, then
+`tower up tower`). No host restart, no config change, no API change.
+
+- **Resume chains.** Every card searched all sessions for each conversation it holds, and the board followed chains
+  three more times per build. One index, built once per pass, now answers those lookups. The board, briefs and
+  callsigns come out the same.
+
 ## v1.96.2
 
 A worker that goes home no longer stays on duty when a notice arrives as it leaves, and typing stops republishing the
