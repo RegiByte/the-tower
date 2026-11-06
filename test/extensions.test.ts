@@ -357,3 +357,40 @@ test("an extension lays out only its own regions: its layout of a renderer's reg
     [['warn', 'regions.card.head.layout', 'stress lays out region card.head, which page declares: an extension lays out only its own regions, so this layout is ignored']],
   )
 })
+
+test("a cli naming a missing or mistyped field, or a word two share, refuses the extension with the cli problem at its key", () => {
+  const verb = (input: object, cli: object) => ({ scope: 'system', input: { type: 'object', properties: input }, reply: { type: 'object', properties: { said: { type: 'string' }, n: { type: 'integer' } } }, cli })
+  const read = (cli: object) => ({ scope: 'system', reply: { type: 'object', properties: {} }, cli })
+  const NOTE = { body: { type: 'string' }, n: { type: 'integer' }, at: { type: 'array', items: { type: 'string' } } }
+  const found = [
+    ext('fine', { requires: { tower: '1.153' }, verbs: { note: verb(NOTE, { stdin: 'body', positional: ['n', 'at'], print: 'said', usage: 'note <n> <at> …' }), hire: verb({}, { word: 'review' }) } }),
+    ext('nostdin', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { stdin: 'text' }) } }),
+    ext('intstdin', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { stdin: 'n' }) } }),
+    ext('nopositional', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { positional: ['to'] }) } }),
+    ext('earlyarray', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { positional: ['at', 'n'] }) } }),
+    ext('noprint', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { print: 'text' }) } }),
+    ext('intprint', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { print: 'n' }) } }),
+    ext('shared', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { word: 'same' }), a2: verb(NOTE, { word: 'same' }) } }),
+    ext('nameclash', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { word: 'a2' }), a2: verb(NOTE, {}) } }),
+    ext('wordless', { requires: { tower: '1.153' }, reads: { a1: read({ usage: 'a1 --n <n>' }) } }),
+    ext('badusage', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { usage: 'other --n <n>' }) } }),
+    ext('early', { requires: { tower: '1.152' }, verbs: { a1: verb(NOTE, { print: 'said' }) } }),
+  ]
+  const r = resolve(found, config({ extensions: added(found) }), '1.153')
+  const refusal = (id: string) => r.refused.get(id)?.problems.map((p) => [p.code, p.path, p.message])
+  assert.equal(r.accepted.get('fine')?.problems.length, 0)
+  assert.deepEqual(refusal('nostdin'), [['cli', 'verbs.a1.stdin', 'stdin names text, which it has no field of']])
+  assert.deepEqual(refusal('intstdin'), [['cli', 'verbs.a1.stdin', 'stdin names n, which is no string: stdin is text']])
+  assert.deepEqual(refusal('nopositional'), [['cli', 'verbs.a1.positional', 'positional names to, which it has no field of']])
+  assert.deepEqual(refusal('earlyarray'), [['cli', 'verbs.a1.positional', 'at is an array and takes all that is left: only the last positional may be one']])
+  assert.deepEqual(refusal('noprint'), [['cli', 'verbs.a1.print', 'print names text, which its reply has no field of']])
+  assert.deepEqual(refusal('intprint'), [['cli', 'verbs.a1.print', 'print names n, which is neither a string nor lines']])
+  assert.deepEqual(refusal('shared'), [
+    ['cli', 'verbs.a1.word', 'same is also verb a2: two words may not share a name'],
+    ['cli', 'verbs.a2.word', 'same is also verb a1: two words may not share a name'],
+  ])
+  assert.deepEqual(refusal('nameclash')?.[0], ['cli', 'verbs.a1.word', 'a2 is also verb a2: two words may not share a name'])
+  assert.deepEqual(refusal('wordless'), [['cli', 'reads.a1', 'a read is a word when its cli names one: add word']])
+  assert.deepEqual(refusal('badusage'), [['cli', 'verbs.a1.usage', 'usage starts with its word, a1']])
+  assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'verbs.a1.cli']])
+})

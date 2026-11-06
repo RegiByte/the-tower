@@ -51,6 +51,9 @@ const REVIEWS_HOOKS = '1.94'
 /** The minor jobs arrived in: `ctx.jobs`. */
 const JOBS = '1.149'
 
+/** The minor extension words arrived in: `cli` on verbs and reads, the `cli` problem. */
+const WORDS = '1.153'
+
 /** The minor reviewers moved to the reviews extension's launch in: the `of` fact, its crew edge and exemption. */
 const REVIEWERS_MOVED = '1.95'
 
@@ -167,7 +170,7 @@ export const BUNDLED = ['reviews', 'policies', 'quota', 'drafts', 'autotidy', 'f
 
 
 /** Every problem an extension can have, by what it is. */
-export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow', 'hook', 'paused', 'contract'] as const
+export const PROBLEM_CODES = ['invalid', 'mismatch', 'too-new', 'too-old', 'unmet', 'cycle', 'conflict', 'skipped', 'failed', 'under-declared', 'not-yet', 'threw', 'shape', 'deprecated', 'slow', 'hook', 'paused', 'contract', 'cli'] as const
 export type ProblemCode = (typeof PROBLEM_CODES)[number]
 
 /**
@@ -797,6 +800,7 @@ const sections = sinceAt(SECTIONS)
 const writable = sinceAt(WRITABLE)
 const guided = sinceAt(GUIDANCE)
 const icons = sinceAt(ICONS)
+const words = sinceAt(WORDS)
 
 const Name = z
   .string()
@@ -857,6 +861,13 @@ const Deprecated = z.strictObject({
   use: sinceCalls(z.string().optional().describe('What to use instead, qualified: chime/ring.')),
   why: sinceCalls(z.string().optional()),
 })
+const Cli = z.strictObject({
+  stdin: words(z.string().min(1).optional().describe('The string field that receives stdin verbatim; without it the word takes nothing on stdin.')),
+  positional: words(z.array(z.string().min(1)).min(1).optional().describe('The fields taken without a flag, in order; only the last may be an array, which takes all that is left.')),
+  print: words(z.string().min(1).optional().describe('The reply field to print, a string or lines; without it the reply prints as JSON.')),
+  usage: words(z.string().min(1).optional().describe('Its one line of usage, starting with its word; made from its fields when left out.')),
+  word: words(Word.optional().describe('What it is typed as under `tower x <capability>`: a verb that types better under another name, or a read, which is a word only when it names one.')),
+})
 const Verb = z.strictObject({
   input: sinceCalls(Schema.describe("The input's JSON Schema: a project-scoped verb's requires `project`, a string.")),
   reply: sinceCalls(Schema),
@@ -864,6 +875,7 @@ const Verb = z.strictObject({
   description: sinceCalls(z.string().optional()),
   words: sinceCalls(Words.optional()),
   deprecated: sinceCalls(Deprecated.optional()),
+  cli: words(Cli.optional().describe('How it is typed under `tower x <capability>`, beyond the flags its input gives it with no declaration.')),
 })
 const Read = z.strictObject({
   query: sinceCalls(Schema.optional().describe("The query's JSON Schema; every value arrives as a string.")),
@@ -877,6 +889,7 @@ const Read = z.strictObject({
   scope: sinceCalls(Scope.describe("`project`: refused on a floor where the capability is off, the floor its `<project>` param, or its query's `project`.")),
   description: sinceCalls(z.string().optional()),
   deprecated: sinceCalls(Deprecated.optional()),
+  cli: words(Cli.optional().describe('Makes it a word under `tower x <capability>`, named by `word`: its flags are its path\'s params and its query\'s fields.')),
 })
 /** A verb or read by its provider's capability, the core as `tower`: `reviews/append`, `tower/collection/<project>/<collection>/<item>`. */
 const Qualified = z

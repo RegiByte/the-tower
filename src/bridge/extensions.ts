@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { SVG_PATH } from '../shared/icons.ts'
 import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
+import { wordsOf, type Word, type WordField } from '../shared/cli-words.ts'
 import { RUNTIMES } from '../shared/model.ts'
 import { USER_LAYOUT_KEYS, type RendererRegions } from '../shared/regions.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
@@ -33,9 +34,22 @@ export type Contract = { provides: string; major: number; names: string[] }
 
 const ContractFile = z.strictObject({ provides: z.string(), major: z.int().nonnegative(), names: z.array(z.string()) })
 
+/** A word's name and shape as contract names: `words.note`, each flag, what takes stdin, each positional, what it prints. */
+const wordContractNames = (word: Word): string[] => {
+  if (word.kind === 'door' || word.word === undefined) return []
+  const at = `words.${word.word}`
+  return [
+    at,
+    ...word.fields.map((f) => `${at}.--${f.name}`),
+    ...(word.stdin ? [`${at}.stdin.${word.stdin}`] : []),
+    ...word.positional.map((name, i) => `${at}.positional.${i}.${name}`),
+    ...(word.print ? [`${at}.print.${word.print}`] : []),
+  ]
+}
+
 /**
  * The names of a manifest's contract, each by its kind: `verbs.<name>`, `reads.<path>`, `facts.<name>`,
- * `streams.<name>.<code>`, `collections.<name>`, and its client modules' exports, `client.<module>#<export>`.
+ * `streams.<name>.<code>`, `collections.<name>`, its client modules' exports, `client.<module>#<export>`, and its words.
  */
 export const contractNames = (manifest: Manifest, client: ClientRead | undefined): string[] => [
   ...Object.keys(manifest.verbs ?? {}).map((name) => `verbs.${name}`),
@@ -44,6 +58,7 @@ export const contractNames = (manifest: Manifest, client: ClientRead | undefined
   ...Object.entries(manifest.streams ?? {}).flatMap(([name, stream]) => Object.keys(stream.facts).map((code) => `streams.${name}.${code}`)),
   ...Object.keys(manifest.collections ?? {}).map((name) => `collections.${name}`),
   ...Object.entries(client?.exports ?? {}).flatMap(([module, names]) => names.map((name) => `client.${module}#${name}`)),
+  ...wordsOf(manifest).flatMap(wordContractNames),
 ]
 
 /** A manifest's contract as `tower extensions freeze` writes it, with the exports of its client folder as `client` read them. */
@@ -503,6 +518,54 @@ const requiresProject = (schema: Record<string, unknown> | undefined): boolean =
   return schema?.type === 'object' && properties?.project?.type === 'string' && Array.isArray(schema.required) && schema.required.includes('project')
 }
 
+type Cli = NonNullable<NonNullable<Manifest['verbs']>[string]['cli']>
+
+/** Whether a reply field's schema is a string, or lines. */
+const printsAsText = (field: Record<string, unknown>) => field.type === 'string' || (field.type === 'array' && (field.items as Record<string, unknown> | undefined)?.type === 'string')
+
+/** Why a `cli`'s `stdin`, `positional` and `print` don't hold against the fields and the reply they name. */
+const cliFieldProblems = (cli: Cli, fields: WordField[], reply: Record<string, unknown> | undefined, at: string): LoadProblem[] => {
+  const field = (name: string) => fields.find((f) => f.name === name)
+  const absent = (key: string, names: string[]) => names.filter((name) => !field(name)).map((name) => error('cli', `${key} names ${name}, which it has no field of`, `${at}.${key}`))
+  const stdin = cli.stdin === undefined ? undefined : field(cli.stdin)
+  const positional = cli.positional ?? []
+  const printed = cli.print === undefined ? undefined : (reply?.properties as Record<string, Record<string, unknown>> | undefined)?.[cli.print]
+  return [
+    ...absent('stdin', cli.stdin === undefined ? [] : [cli.stdin]),
+    ...(stdin && (stdin.takes !== 'string' || stdin.many) ? [error('cli', `stdin names ${stdin.name}, which is no string: stdin is text`, `${at}.stdin`)] : []),
+    ...(stdin && positional.includes(stdin.name) ? [error('cli', `${stdin.name} is both stdin and positional`, `${at}.stdin`)] : []),
+    ...absent('positional', positional),
+    ...positional.slice(0, -1).filter((name) => field(name)?.many).map((name) => error('cli', `${name} is an array and takes all that is left: only the last positional may be one`, `${at}.positional`)),
+    ...(new Set(positional).size === positional.length ? [] : [error('cli', 'names a field twice', `${at}.positional`)]),
+    ...(cli.print !== undefined && !printed ? [error('cli', `print names ${cli.print}, which its reply has no field of`, `${at}.print`)] : []),
+    ...(printed && !printsAsText(printed) ? [error('cli', `print names ${cli.print}, which is neither a string nor lines`, `${at}.print`)] : []),
+  ]
+}
+
+/**
+ * What breaks a manifest's `cli`: a key naming a field that is missing or of the wrong type, a usage that doesn't start
+ * with its word, a read's `cli` naming no word, and a word another word or name of the extension already answers to.
+ */
+const cliProblems = (manifest: Manifest): LoadProblem[] => {
+  const words = wordsOf(manifest)
+  const entries = [
+    ...Object.entries(manifest.verbs ?? {}).map(([name, v]) => ({ at: `verbs.${name}`, name, cli: v.cli, reply: v.reply })),
+    ...Object.entries(manifest.reads ?? {}).map(([name, r]) => ({ at: `reads.${name}`, name, cli: r.cli, reply: r.reply })),
+  ]
+  return entries.flatMap(({ at, name, cli, reply }) => {
+    if (!cli) return []
+    const word = words.find((w) => w.name === name)!
+    const typed = word.word
+    if (typed === undefined) return [...cliFieldProblems(cli, word.fields, reply, at), error('cli', 'a read is a word when its cli names one: add word', at)]
+    const taken = words.find((w) => w.name !== name && (w.word === typed || w.name === typed))
+    return [
+      ...cliFieldProblems(cli, word.fields, reply, at),
+      ...(taken ? [error('cli', `${typed} is also ${taken.kind} ${taken.name}: two words may not share a name`, `${at}.word`)] : []),
+      ...(cli.usage !== undefined && cli.usage !== typed && !cli.usage.startsWith(`${typed} `) ? [error('cli', `usage starts with its word, ${typed}`, `${at}.usage`)] : []),
+    ]
+  })
+}
+
 /**
  * A manifest's verbs, reads and hooks with their schemas as zod, or each reason they can't be: a schema the tower can't
  * read, a project-scoped one that names no floor, a verb named `read` (which `ctx.deps.<cap>.read` holds), and a name
@@ -720,7 +783,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
   const fields = compileFields(manifest, capabilityOf(manifest))
-  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...idSpaceProblems(manifest), ...iconProblems(manifest, found.client)]
+  const broken = [...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...cliProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...idSpaceProblems(manifest), ...iconProblems(manifest, found.client)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),

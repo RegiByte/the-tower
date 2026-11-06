@@ -3,6 +3,7 @@
   "major": 1,
   "names": [
     "collections.drafts",
+    "client.commands.js#newDraft",
     "client.drafts.js#AUTOSAVE_MS",
     "client.drafts.js#DRAFTS",
     "client.drafts.js#DRAFT_STATE",
@@ -27,6 +28,7 @@
     "client.drafts.js#sendable",
     "client.drafts.js#settle",
     "client.drafts.js#titleOf",
-    "client.editor.js#mount"
+    "client.editor.js#mount",
+    "client.tray.js#mount"
   ]
 }

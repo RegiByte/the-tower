@@ -955,7 +955,7 @@ export const httpServer = defineResource({
         answer: () => {
           const read = extensions.read()
           const cards = boardOf().floors.flatMap((f) => f.cards)
-          return json({ ...read, extensions: read.extensions.map((e) => ({ ...e, exempted: exemptionsBy(cards, e.provides) })) } satisfies Reads['extensions'])
+          return json({ ...read, extensions: read.extensions.map((e) => ({ ...e, exempted: exemptionsBy(cards, e.provides), words: extensions.words(e.id) })) } satisfies Reads['extensions'])
         },
       }),
       apiRead('patterns', { path: /^\/patterns$/, answer: () => json(readPatterns() satisfies Reads['patterns']) }),
