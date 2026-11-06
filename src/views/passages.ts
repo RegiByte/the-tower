@@ -14,7 +14,7 @@ import type { Kit, RegionHandle } from '../shared/views.ts'
  * where there is no room below.
  */
 
-/** Where a range is in what a view draws: its words, the sections it touches, its source lines. */
+/** Where a range is in what a view draws: its words and its source lines. */
 export type Where = (doc: Document, range: Range) => Picked
 
 /** What a pick says of itself: all of a passage but whose and where the file is, which the subject drawn says. */
@@ -118,8 +118,8 @@ export function frameSource(frame: HTMLIFrameElement, where: Where): PickSource 
  * The selection of a page that runs its own scripts, as `/frame-picks.js` reports it from inside: heard only from
  * `frame`'s window, and only while the frame holds the document it loaded first. Any later load (a link followed, a
  * script sending the frame elsewhere, a reload) ends it: what the frame holds then may be any site's. The words are
- * the page's word, so the passage says so (`reported`). The page's own selection shows the pick; letting it go sends
- * `unpick`.
+ * the page's word: a script in it could report others than those selected. The page's own selection shows the pick;
+ * letting it go sends `unpick`.
  */
 export function reportedSource(frame: HTMLIFrameElement): PickSource {
   let loads = 0
@@ -147,7 +147,7 @@ export function reportedSource(frame: HTMLIFrameElement): PickSource {
         if (latest && latest.sig === sig) rect = latest.rect!
         return rect
       }
-      return { picked: { quote: quote!, sections: [], reported: true }, rect: now }
+      return { picked: { quote: quote! }, rect: now }
     },
     light() {},
     unlight() {},

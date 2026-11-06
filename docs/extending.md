@@ -1164,9 +1164,8 @@ the frame lit; other views draw no marks yet.
 - `passage` (API 1.154): `passageSubject(passage)` in `/lib/board.js`, keyed `passage:<of key>#<from>-<to>:<hash>`,
   text picked in a markdown document drawn by sections or a text file drawn as written (`tower/text`: plain text,
   source code, JSON), of the showing or item it is in (`value.of`). Its `Passage` carries `quote` (the words as the
-  frame draws them, also its `body`, typed `text/plain`), `sections` (the `n` of each section it touches, none in a
-  text file), `from` and `to` (its source lines: in a markdown document those of the
-  blocks it starts and ends in, in a text file exactly its own, `textLines` of `/picks.js`), and for a showing of a
+  frame draws them, also its `body`, typed `text/plain`), and `from` and `to` (its source lines: in a markdown
+  document those of the blocks it starts and ends in, in a text file exactly its own, `textLines` of `/picks.js`), and for a showing of a
   file `card` and `file`, the worker that showed it and the file's real path.
   `sectionsHtml` writes a comment `<!--src:<from>-<to>-->` (`SOURCE_MARK`) before each top-level block, and
   `linesPicked` reads a pick's lines from the marks before it and in it. When a passage settles, `tower/document`,

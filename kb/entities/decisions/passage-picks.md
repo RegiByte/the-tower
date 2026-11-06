@@ -51,12 +51,12 @@ sentence the user picked.
   like `lines` picked in a worker's Changes: never on the board, a child of the showing or item the document is
   ([`parentOf`](ref:hub/src/shared/subjects.ts#parentOf)). Its [`Passage`](ref:hub/src/shared/subjects.ts#Passage)
   holds the quote as the document draws it (also its `body`, typed `text/plain`, so anything that reads a subject's
-  text reads it), the sections it touches, and its source lines. It carries no heading: the quote and the lines place
-  it, in any file. For a showing of a file it also holds the worker's card and the file's real path.
+  text reads it) and its source lines, nothing more: no heading nor sections, since the quote and the lines place it
+  in any file, and nothing that acts on a passage read them. For a showing of a file it also holds the worker's card and the file's real path.
 - *Two kinds of document, one capture.* [`pickPassages`](ref:hub/src/views/passages.ts#pickPassages) holds
   everything about picking in a frame where nothing runs: the selection read, the machine, the highlight, the box and
   its region. A view hands it its frame and says where a range is in its own terms (`Where`). `tower/document` and
-  `tower/shelf` (by `drawSections`) say sections and block lines; [`tower/text`](ref:hub/src/views/text.ts#mount),
+  `tower/shelf` (by `drawSections`) say block lines; [`tower/text`](ref:hub/src/views/text.ts#mount),
   which draws plain text, source code and JSON as written, says exact lines: its frame's text is the file's, so the
   characters before each end of the range ([`offsetIn`](ref:hub/src/views/passages.ts#offsetIn)) give the lines
   ([`textLines`](ref:hub/src/shared/picks.ts#textLines)), and the quote keeps its indentation.
@@ -104,10 +104,12 @@ sentence the user picked.
   script in it. It hears only its own frame's window. And only while the frame holds the document it loaded first:
   every navigation fires `load` on the frame in the page's document, cross-origin included, so a second `load` (a
   link followed, a script sending the frame elsewhere, a reload) ends it, failing closed, since every document in a
-  sandboxed frame has the same opaque origin and its origin can't tell them apart. The passage says it is the page's
-  (`reported`), with no lines. The `quote` composer draws the same box as for any passage, the words left unshown: a
-  page's script could report other words than those selected, and they would go with the prompt unseen. The user
-  chose one box for every file over showing a page's words.
+  sandboxed frame has the same opaque origin and its origin can't tell them apart. The passage has no lines,
+  and nothing marks it as the page's: the `quote` composer draws the same box as for any passage, the words left
+  unshown, so a page's script could report other words than those selected and they would go with the prompt unseen.
+  The user chose one box for every file over showing a page's words, and a field nothing read was dropped with it.
+  Since the tower hears a page only once its frame has loaded, the page says its selection again on its own `load`:
+  one made while it still loaded is heard then.
 - `tool:webkit` took a `--drag` ([`webkit.ts`](ref:hub/scripts/webkit.ts)), real AppKit mouse events, to check a
   selection in WebKit, where it matters.
 

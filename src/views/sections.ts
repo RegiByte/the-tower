@@ -1,5 +1,5 @@
 import { esc } from '../shared/cards.ts'
-import { linesPicked, SOURCE_MARK, sectionLabels, sectionsHtml, sectionsOf, type Section, type SourceLines } from '../shared/markdown.ts'
+import { linesPicked, SOURCE_MARK, sectionLabels, sectionsHtml, sectionsOf, type SourceLines } from '../shared/markdown.ts'
 import { sectionSubject, type Subject } from '../shared/subjects.ts'
 import type { Tower } from '../shared/shelf-page.ts'
 import type { Kit, RegionHandle } from '../shared/views.ts'
@@ -13,7 +13,7 @@ import { frameSource, PASSAGE_RULES, pickPassages, type Picks, type Where } from
  * the subject whose document it is, and takes the commands offered on it in a gutter beside the frame
  * (`section.acts`), one row per section kept level with it; the gutter is hidden while no row holds any. A section
  * marked on the bus (`Bus.mark`) is drawn marked, its marks' labels on its row and its part of the frame lit. Text
- * picked in the frame is a `passage` of the document (`pickPassages`), its sections and source lines read here.
+ * picked in the frame is a `passage` of the document (`pickPassages`), its source lines read here.
  */
 
 /** The look of a document drawn by sections, inside the view that draws it. */
@@ -101,13 +101,8 @@ function rangeLines(doc: Document, range: Range): SourceLines | undefined {
   return linesPicked(before, within)
 }
 
-/** Where a range is in a document drawn by sections: its words, the sections it touches by their anchors, and its source lines. */
-const sectionsWhere =
-  (anchors: HTMLElement[], sections: Section[]): Where =>
-  (doc, range) => {
-    const touched = sections.filter((_, i) => range.intersectsNode(anchors[i]))
-    return { quote: range.toString().trim(), sections: touched.map((s) => s.n), ...rangeLines(doc, range) }
-  }
+/** Where a range is in a document drawn by sections: its words and the source lines of the blocks it spans. */
+const sectionsWhere: Where = (doc, range) => ({ quote: range.toString().trim(), ...rangeLines(doc, range) })
 
 /**
  * What a document drawn by sections is drawn from: `of`, the subject whose document it is (its sections' parent);
@@ -199,7 +194,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
     drawMarks()
     writeLinks(doc, at.links(doc))
     follow = followSections(frame, anchors, rows.map((r) => r.el))
-    picks = pickPassages(frame, el.querySelector<HTMLElement>('.doc-split')!, kit, of, frameSource(frame, sectionsWhere(anchors, sections)))
+    picks = pickPassages(frame, el.querySelector<HTMLElement>('.doc-split')!, kit, of, frameSource(frame, sectionsWhere))
     if (!seen) (follow.visible(false), picks.visible(false))
     if (wanted) scrollTo(wanted)
     else at.opened?.(doc)
