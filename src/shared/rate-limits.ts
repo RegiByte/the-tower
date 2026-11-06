@@ -1,7 +1,8 @@
 /**
  * The core's fact kind `tower/rate-limits` (decision `probes`): a reading of the account's rate limits, which an
  * extension appends to one of its system streams by declaring the kind on a fact code; the core folds every such
- * reading beside the sessions' turns'. A reading with no `runtime` is Claude's, and its limits Claude's windows.
+ * reading beside the sessions' turns'. A reading with no `runtime` is Claude's, and its limits Claude's windows; one
+ * with no `command` is the default command's, as the config says when it is read.
  * Below it, Claude's answer to `get_usage` read as one.
  */
 import { z } from 'zod'
@@ -25,6 +26,7 @@ export const RateLimitsReading = z.looseObject({
     .optional()
     .describe("Credits spent past the plan's limits this month, in currency units, up to `limit`; `reached` once spent."),
   runtime: z.string().optional().describe("The runtime whose account it read: Claude's when left out."),
+  command: z.string().optional().describe("The `argv` command whose account it read: the config's default command when left out. @since 1.152"),
 })
 export type RateLimitsReading = z.infer<typeof RateLimitsReading>
 

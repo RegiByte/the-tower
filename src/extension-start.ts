@@ -43,6 +43,9 @@ const ctx: StartCtx = {
   runtime: () => {
     throw new Error(NO_TOWER)
   },
+  commands: () => {
+    throw new Error(NO_TOWER)
+  },
   jobs: { start: refuse, cancel: refuse },
   call: async () => apiError('unavailable', NO_TOWER),
   read: async () => apiError('unavailable', NO_TOWER),

@@ -49,8 +49,8 @@ and they are computable from the logs, so they are computed ([[logs-are-facts]])
   summaries, per-session shares, series per bucket and hour-of-day, per project and for all. Concurrency comes from
   [`overlap`](ref:hub/src/bridge/stats.ts#overlap) over main-loop turn spans only: subagents are not workers.
 - *The weekly budget.* [`weeklyBudget`](ref:hub/src/bridge/stats.ts#weeklyBudget) reads the `seven_day` limit from
-  every session's readings and every extension's readings of kind `tower/rate-limits`, the quota probe's ([[probes]]); it is the account's, so `/stats?project=` filters the
-  stats and never the budget. The spend from the week's first reading to its latest, over the percent it climbed, is
+  the default command's sessions' readings and its readings of kind `tower/rate-limits`, the quota probe's ([[probes]]); it is an account's, so `/stats?project=` filters the
+  stats and never the budget, and a second `argv` command's budget is not computed. The spend from the week's first reading to its latest, over the percent it climbed, is
   what 1% buys; [`weeklyRead`](ref:hub/src/bridge/stats.ts#weeklyRead) gives a past window's last reading, and
   [`pace`](ref:hub/src/bridge/stats.ts#pace) whether today's rate lasts to the reset.
 - *Use from outside the tower.* claude.ai, the desktop app or another machine move the same limit, which would make

@@ -302,6 +302,8 @@ export const UNRECORDED: Record<string, string> = {
   shown: 'a sandbox session (bash), not Claude',
   'stop-without-tasks': 'a sandbox session (bash), not Claude',
   'probe-quota': "the quota probe's stream, not a session",
+  'limits-command-home': "one of two sessions under two named commands: a scenario's launch writes `argv` as one array",
+  'limits-command-work': "one of two sessions under two named commands: a scenario's launch writes `argv` as one array",
   'compact-auto-outside-org': 'needs an account outside a Team or Enterprise organization',
   'compact-manual-outside-org': 'needs an account outside a Team or Enterprise organization',
 }

@@ -37,7 +37,7 @@ import {
   type StartCtx,
   type StreamFact,
 } from '../shared/extensions.ts'
-import { ConfigError, resolveCommand, type Config, type Runtime } from '../shared/model.ts'
+import { ConfigError, runtimeCommands, type Config, type Runtime } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
 import type { DispatchResource } from './dispatch.ts'
 import type { HttpResource } from './http.ts'
@@ -46,7 +46,7 @@ import type { ConfigResource, SystemResource, TowerResources, TowerSystem } from
 import { storesOf } from './stores.ts'
 import { BOARD_CALLER, runBoardTrigger } from './triggers.ts'
 import { offOn } from '../bridge/stores.ts'
-import { limitsStep, NO_LIMITS, readingStreams, type LimitFacts } from '../bridge/rate-limits.ts'
+import { readingStreams, streamLimitsStep, type LimitFacts } from '../bridge/rate-limits.ts'
 
 /** The resources as braided orders them, read from their dependencies alone: nothing needs to run. */
 const topologyOf = (resources: SystemConfig): Reads['extensions']['topology'] => {
@@ -127,9 +127,9 @@ export const extensions = defineResource({
         if (readingFolds.has(folder)) continue
         const step = (state: unknown, [at, code, fact]: StreamFact) => {
           const read = reading(code, fact)
-          return read ? limitsStep(state as LimitFacts, at, read) : state
+          return read ? streamLimitsStep(state as LimitFacts[], at, read) : state
         }
-        readingFolds.set(folder, live.foldStream({ stream: folder, scope: 'system', init: NO_LIMITS, step, label: 'tower/rate-limits' }))
+        readingFolds.set(folder, live.foldStream({ stream: folder, scope: 'system', init: [], step, label: 'tower/rate-limits' }))
       }
     }
     /** The capabilities the reconcile under way starts or restarts. */
@@ -198,8 +198,8 @@ export const extensions = defineResource({
             }
           })
       },
-      /** Each stream of rate-limit readings the resolved manifests declare, folded, whether its extension runs or not. */
-      readings: (): LimitFacts[] => [...readingFolds.values()].map((fold) => fold.state() as LimitFacts),
+      /** Each stream of rate-limit readings the resolved manifests declare, folded per command, whether its extension runs or not. */
+      readings: (): LimitFacts[] => [...readingFolds.values()].flatMap((fold) => fold.state() as LimitFacts[]),
       /** Stops folding the readings. */
       stop: () => {
         for (const fold of readingFolds.values()) fold.stop()
@@ -452,9 +452,10 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     signal: controller.signal,
     board: () => publisher.board(),
     run: (argv, { cwd, timeoutMs = RUN_MS, stdin, env }) => runProcess(argv, { cwd, timeoutMs, stdin, env, signal: controller.signal }),
-    runtime: () => {
-      const now = config.read()
-      return { argv: resolveCommand(now, undefined), env: now.env ?? {} }
+    commands: (runtime) => runtimeCommands(config.read(), runtime),
+    runtime: (runtime) => {
+      const [{ argv, env }] = runtimeCommands(config.read(), runtime)
+      return { argv, env }
     },
     ...callsOf({ t: 'extension', id: a.provides, via: 'ctx', within: [] }),
     jobs: jobsOf([]),

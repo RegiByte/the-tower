@@ -125,7 +125,7 @@ test('stats over a window: summaries, buckets, the hours of the day and the week
   assert.deepEqual(stats(sessions, {}, { from: from - 86400_000, to: from, bucket: 'day' }).sessions, {})
   assert.equal(weeklyRead(sessions, [], { from, to: from + 2 * 86400_000 })?.percentUsed, 17)
   assert.equal(weeklyRead(sessions, [], { from: from - 86400_000, to: from }), undefined)
-  const day = today(sessions, [], sessions[2].header.startedAt + 20_000)
+  const day = today(sessions, undefined, sessions[2].header.startedAt + 20_000)
   close(day.spend, sum.spend)
   assert.deepEqual(day.waits, { n: 1, p50: sum.waits.p50 })
 })

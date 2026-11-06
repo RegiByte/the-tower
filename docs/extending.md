@@ -441,7 +441,7 @@ joins as a minor the day something uses it.
 
 | Module | Runs | For | What it holds |
 |---|---|---|---|
-| `/lib/board.js` | generic | authors | the board's types and pure readings of it: subjects, what is offered and its calls, crews, checkouts |
+| `/lib/board.js` | generic | authors | the board's types and pure readings of it: subjects, what is offered and its calls, crews, checkouts, each command's limits |
 | `/lib/extension.js` | server | server | server code's types (Start, ctx, folds, parts, the shape of tower/config), API errors, and checking a spawn's fields |
 | `/lib/words.js` | generic | authors | text: escaping, plurals, spans, times, tags and item titles |
 | `/lib/view.js` | browser | authors | a view's types and chrome, panels drawn and kept, controls pressed, files and items, icons, highlighted code |
@@ -779,13 +779,25 @@ command that asks for the line.
 
 **Fact kinds** (API 1.90). A stream's fact code may declare a `kind` the core folds, its facts then holding to the
 kind's schema as well as their own. The one kind is `tower/rate-limits`, a reading of the account's rate limits
-(`{ limits: [{kind, percentUsed, resetsAt?}], extraUsage?, runtime? }`, Claude's when it names no `runtime`), in a
+(`{ limits: [{kind, percentUsed, resetsAt?}], extraUsage?, runtime?, command? }`, Claude's when it names no `runtime`), in a
 system stream: the core folds every started extension's readings beside the sessions' turns' into the board's
-`rateLimits`, `extraUsage`, the weekly budget and `/stats`. The bundled quota probe (`extensions/quota`) is one: its
+`limits`, `rateLimits`, `extraUsage`, the weekly budget and `/stats`. The bundled quota probe (`extensions/quota`) is one: its
 `u` facts are readings, read by its `tick` slot while `board.turnLimits`, the newest reading a session's turn took,
-is older than its `every`. `ctx.runtime('claude')` says how the config starts a session (`argv`, `env`), and
-`ctx.run(argv, { …, env })` runs a command with `env` set over the scrubbed one, so a reader runs Claude as the
-sessions do.
+is older than its `every`. `ctx.runtime('claude')` says how the config starts a session by its default command
+(`argv`, `env`), `ctx.commands('claude')` lists every command the config names (`name?`, `argv`, `env`, in `argv`'s
+order, API 1.152), both refuse a runtime the tower doesn't know, and `ctx.run(argv, { …, env })` runs a command with
+`env` set over the scrubbed one, so a reader runs Claude as the sessions do.
+
+**Limits per command** (API 1.152). Limits belong to an account, and an account is reached through an `argv` command.
+A reading's `command` names the one whose account it read; one with no `command`, like every reading written before
+1.152, is the default command's, as the config says when it is read. A turn's reading is its session's command's, by
+the session's header. `board.limits` holds one entry per command in `argv`'s order, always, the default command's
+first: `command` (absent in single-command mode), `rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and
+`extraUsage`. The top-level fields of those names are copies of the default command's entry and go at 2.0:
+read `defaultLimits(board)` instead. The weekly budget and `/stats`' `budget`, `weekly` and `outside` are the default command's too.
+`/lib/board.js` finds an entry: `limitsOf(board, command)`, `defaultLimits(board)` and `floorLimits(board, floor)`, and
+the limit words in `/lib/cards.js` take one as they take the board. A reading naming a command `argv` no longer holds
+is no entry's. Set `command` from `ctx.commands`, and a reader of several accounts runs one at a time.
 
 **Moved names** (API 1.90). As a built-in moves into a bundled extension, its old names keep answering until 2.0
 through `LEGACY` (`src/shared/extensions.ts`), each `{kind, old, now, since}`: an old verb or read is answered by the

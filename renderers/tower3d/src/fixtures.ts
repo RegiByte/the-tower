@@ -237,6 +237,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     waiting: waitingOrder(seated),
     offers: [],
     archiveAt: archiveAtOf(seated, seated.filter((c) => !kept(c))),
+    limits: [{ rateLimits: extra.rateLimits ?? [], rateLimitsAt: extra.rateLimitsAt, ...(extra.extraUsage && { extraUsage: extra.extraUsage }) }],
     rateLimits: extra.rateLimits ?? [],
     rateLimitsAt: extra.rateLimitsAt,
     probes: [],

@@ -288,7 +288,7 @@ const shareOf = (s: Session, q: StatsQuery): SessionShare | undefined => {
 const weeklyReadings = (sessions: Session[], streams: LimitFacts[]) =>
   [...sessions.map((s) => s.facts), ...streams].flatMap((f) => f.limitReadings[WEEKLY] ?? [])
 
-/** The latest reading of the weekly limit taken in the window, a session's or a stream's: the account's. */
+/** The latest reading of the weekly limit taken in the window, a session's or a stream's, among one account's. */
 export const weeklyRead = (sessions: Session[], streams: LimitFacts[], q: Pick<StatsQuery, 'from' | 'to'>): WeeklyRead | undefined => {
   const latest = weeklyReadings(sessions, streams).filter(([at]) => within(q)(at)).reduce<LimitReading | undefined>((a, r) => (!a || r[0] > a[0] ? r : a), undefined)
   return latest && { at: latest[0], percentUsed: latest[1], resetsAt: latest[2] }
@@ -322,8 +322,8 @@ export const outsideUse = (sessions: Session[], streams: LimitFacts[], keep: (ri
 export const outsideIn = (sessions: Session[], streams: LimitFacts[], q: Pick<StatsQuery, 'from' | 'to'>): number => outsideUse(sessions, streams, (r) => within(q)(r[1]))
 
 /**
- * The weekly budget from every reading of the weekly limit, a session's or a stream's: the account's, whatever read
- * them. What 1% buys is read from the climb the tower's spend made, less use from outside it. None once the window of
+ * The weekly budget from every reading of the weekly limit, a session's or a stream's, among one account's, whatever
+ * read them. What 1% buys is read from the climb the tower's spend made, less use from outside it. None once the window of
  * the latest reading has reset by `now`.
  */
 export const weeklyBudget = (sessions: Session[], streams: LimitFacts[], now: number): WeeklyBudget | undefined => {
@@ -358,7 +358,7 @@ export const pace = (budget: Pick<WeeklyBudget, 'resetsAt' | 'usdLeft'>, day: { 
 
 /**
  * The sessions' stats over the window, with what landed on each project's repos (`landed`, by project). The weekly
- * budget and outside use are the account's, so they are read apart, from every session and stream of readings.
+ * budget and outside use are an account's, so they are read apart, from the default command's sessions and readings.
  */
 export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>, q: StatsQuery): Omit<Stats, 'budget' | 'weekly' | 'outside'> => {
   const buckets = bucketsOf(q)
@@ -374,12 +374,12 @@ export const stats = (sessions: Session[], landed: Record<string, RepoLanded[]>,
 
 /**
  * Today so far, as the board carries it: spend, agent-hours and the waits answered since `since`, the local day's
- * start (epoch ms), and the weekly budget.
+ * start (epoch ms), and `budget`, the weekly budget.
  */
 export type Today = { since: number; spend: number; agentHours: number; waits: Pick<Spread, 'n' | 'p50'>; budget?: WeeklyBudget }
 
-export const today = (sessions: Session[], streams: LimitFacts[], now: number): Today => {
+export const today = (sessions: Session[], budget: WeeklyBudget | undefined, now: number): Today => {
   const from = bucketStart(now, 'day')
   const { summary } = scopeStats(sessions, [], { from, to: nextBucket(from, 'day'), bucket: 'day' }, [from])
-  return { since: from, spend: summary.spend, agentHours: summary.agentHours, waits: { n: summary.waits.n, p50: summary.waits.p50 }, budget: weeklyBudget(sessions, streams, now) }
+  return { since: from, spend: summary.spend, agentHours: summary.agentHours, waits: { n: summary.waits.n, p50: summary.waits.p50 }, budget }
 }

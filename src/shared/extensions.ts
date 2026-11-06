@@ -622,10 +622,16 @@ export type StartCtx = {
     cancel(id: string): Promise<void>
   }
   /**
-   * How the config starts a session of `runtime`, as it says now: the command before the arguments the tower adds, and
-   * the env set over the scrubbed one. What runs the runtime outside a session (`ctx.run`) runs it the same way. @since 1.90
+   * How the config starts a session of `runtime`, as it says now, by its default command: the one a spawn naming none
+   * gets. The command before the arguments the tower adds, and the env set over the scrubbed one. What runs the runtime
+   * outside a session (`ctx.run`) runs it the same way. A runtime the tower doesn't know throws. @since 1.90
    */
   runtime(runtime: Runtime): { argv: string[]; env: Record<string, string> }
+  /**
+   * Every command the config names for `runtime`, as it says now, in `argv`'s order, the default first, each as `runtime`
+   * says one; `name`, absent when `argv` is the single array. A runtime the tower doesn't know throws. @since 1.152
+   */
+  commands(runtime: Runtime): { name?: string; argv: string[]; env: Record<string, string> }[]
   /** Its own stores as the tower folds them, read-only: what folds get as `own`. @since 1.83 */
   own: {
     /** A stream's `reduce` state: a `project` stream's on that floor; its `init` before any fact. */
@@ -728,6 +734,9 @@ type SinceOf<T> = {
         : string
 }
 
+/** The minor `ctx.commands` arrived in. */
+const COMMANDS = '1.152'
+
 export const CTX_SINCE: {
   start: SinceOf<StartCtx>
   call: SinceOf<Pick<CallCtx, 'caller' | 'cards'>>
@@ -758,6 +767,7 @@ export const CTX_SINCE: {
     run: TRIGGERS,
     jobs: { start: JOBS, cancel: JOBS },
     runtime: KINDS,
+    commands: COMMANDS,
   },
   call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS }, cards: GATE },
   fold: { now: FOLDS, settings: FOLDS, board: FOLDS, callsignOf: CALLSIGN_OF, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },

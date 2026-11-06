@@ -9,6 +9,11 @@ export {
   runVerb,
 } from '../shared/adds.ts'
 export {
+  defaultLimits,
+  floorLimits,
+  limitsOf,
+} from '../shared/command-limits.ts'
+export {
   sendTarget,
   sendTargets,
   workerIn,
@@ -52,6 +57,7 @@ export {
 } from '../shared/subjects.ts'
 export type {
   Board,
+  CommandLimits,
   Card,
   CardShown,
   Floor,
