@@ -4,7 +4,7 @@
   "name": "Jobs daemon",
   "summary": "The detached Node process that runs each job, one command, to its end in a PTY nobody types into, streams its screen to viewers, and is the one writer of the jobs log.",
   "in": "jobs",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-06",
   "refs": ["hub/src/jobs/main.ts#startJob", "hub/src/jobs/main.ts#cancelJob", "hub/src/jobs/main.ts#attach", "hub/src/jobs/main.ts#endLeftovers", "hub/src/jobs/main.ts#keep", "hub/src/jobs/main.ts#programFile", "hub/src/jobs/main.ts#jobEnd", "hub/src/jobs/groups.ts#jobGroup", "hub/src/jobs/groups.ts#endGroup", "hub/src/jobs/groups.ts#bootTime", "hub/src/shared/jobs.ts#ToJobs", "hub/src/shared/jobs.ts#JobFact", "hub/src/shared/jobs.ts#JobStream", "hub/src/shared/viewers.ts#joinViewer", "hub/src/bridge/jobs.ts#jobsOf", "hub/test/jobs-daemon.test.ts"],
   "links": [
     { "to": "system-root", "verb": "writes", "carries": "jobs/YYYY-MM.jsonl in the streams' format: started {id, pid, argv, cwd, owner, label}, cancelled {id, by}, ended {id, exit, signal}" },
