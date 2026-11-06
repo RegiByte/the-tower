@@ -7,6 +7,7 @@
  *   npm run tool:webkit -- <url> [--size 1280x800] step…
  *     --eval '<js>'   evaluate in the page, awaited; prints the result as JSON (fails the run on a throw)
  *     --click <x,y>   press and release the left button at the page's CSS pixels x,y: a real click, with user activation
+ *     --drag <x,y,x2,y2>  press the left button at x,y, move to x2,y2 and release there: a real drag, which selects text
  *     --key <chord>   press a key where focus is: a key with any of Meta+, Ctrl+, Alt+, Shift+ before it (Meta+k, Escape)
  *     --wait <ms>     wait in real time
  *     --shot <file>   save a PNG of the page
