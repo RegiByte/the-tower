@@ -1,7 +1,8 @@
 /**
  * The quota probe's reads as its stream says, and when it reads next: pure, so the tick, the board fold and the reads
- * share them. A read waits `every` after the last; longer after failures in a row (doubling) or while the account has
- * nothing to read; and while a session's turn read every limit the probe reads, it waits `every` after that turn's.
+ * share them. Each `argv` command is an account with a schedule of its own. A read waits `every` after that command's
+ * last; longer after failures in a row (doubling) or while the account has nothing to read; and while a turn of that
+ * command read every limit the probe reads, it waits `every` after that turn's.
  */
 import type { RateLimitsReading, StreamFact } from '/lib/extension.js'
 import { usageReading } from './usage.ts'
@@ -25,19 +26,25 @@ export const NO_READS: Reads = { failsInRow: 0, unavailable: false }
 /** An answered read, `u`: Claude's answer as it came, and the reading made of it. */
 export type Answered = RateLimitsReading & { ms: number; answer: unknown; unavailable: boolean }
 
-/** A read with no answer, `f`. */
-export type Failed = { ms: number; error: string }
+/** A read with no answer, `f`. `command`: the `argv` command it ran; none in a single-command system. */
+export type Failed = { ms: number; error: string; command?: string }
 
 /** A read as the core's probe wrote it before tower 1.90, `p`: kept, never written again. */
 export type Probed = { reads: 'claude.usage'; ms: number } & ({ ok: true; answer: unknown } | { ok: false; error: string })
 
 /** A read in one shape, whichever code holds it: what `quota/reads` answers. */
-export type Read = { at: number; ms: number } & ({ ok: true; answer: unknown } | { ok: false; error: string })
+export type Read = { at: number; ms: number; command?: string } & ({ ok: true; answer: unknown } | { ok: false; error: string })
 
 /** A fact of the stream as a read: `undefined` for a code it doesn't know. */
 export const readOf = ([at, code, fact]: StreamFact): Read | undefined => {
-  if (code === 'u') return { at, ms: (fact as Answered).ms, ok: true, answer: (fact as Answered).answer }
-  if (code === 'f') return { at, ms: (fact as Failed).ms, ok: false, error: (fact as Failed).error }
+  if (code === 'u') {
+    const { ms, answer, command } = fact as Answered
+    return { at, ms, ...(command !== undefined && { command }), ok: true, answer }
+  }
+  if (code === 'f') {
+    const { ms, error, command } = fact as Failed
+    return { at, ms, ...(command !== undefined && { command }), ok: false, error }
+  }
   if (code === 'p') {
     const { reads: _, ...read } = fact as Probed
     return { at, ...read }
@@ -54,7 +61,29 @@ export const step = (reads: Reads, fact: StreamFact): Reads => {
   return { lastAt: read.at, answeredAt: read.at, failsInRow: 0, unavailable, kinds: limits.length ? limits.map((l) => l.kind) : reads.kinds }
 }
 
-/** No read starts sooner than this after the last one started. */
+/** The stream folded by the command each read names: `unnamed` holds the reads that name none. */
+export type ReadsByCommand = { unnamed: Reads; named: Record<string, Reads> }
+
+export const NO_COMMAND_READS: ReadsByCommand = { unnamed: NO_READS, named: {} }
+
+export const stepByCommand = (all: ReadsByCommand, fact: StreamFact): ReadsByCommand => {
+  const command = readOf(fact)?.command
+  return command === undefined ? { ...all, unnamed: step(all.unnamed, fact) } : { ...all, named: { ...all.named, [command]: step(all.named[command] ?? NO_READS, fact) } }
+}
+
+const newerReads = (a: Reads, b: Reads): Reads => ((a.lastAt ?? -Infinity) > (b.lastAt ?? -Infinity) ? a : b)
+
+/**
+ * Each command with what the stream says of it, in `commands`' order, the default first. A read naming no command is
+ * the default command's, so that command's reads are the newer of the two folds.
+ */
+export const withReads = <C extends { name?: string }>(all: ReadsByCommand, commands: C[]): (C & { reads: Reads })[] =>
+  commands.map((command, i) => {
+    const named = (command.name !== undefined && all.named[command.name]) || NO_READS
+    return { ...command, reads: i === 0 ? newerReads(all.unnamed, named) : named }
+  })
+
+/** No read of a command starts sooner than this after that command's last one started. */
 export const FLOOR_MS = 60_000
 const FAILS_BEFORE_BACKOFF = 3
 const BACKOFF_MS = 10 * 60_000
@@ -103,7 +132,7 @@ export const due = (every: number, reads: Reads, turns: Turns, now: number): boo
  */
 export type QuotaState = 'new' | 'ok' | 'failing' | 'backoff' | 'unavailable'
 
-/** The board's `x.quota`: how often it reads, its last read and when it reads next. Times in epoch ms. */
+/** How a command's probe stands: how often it reads, its last read and when it reads next. Times in epoch ms. */
 export type QuotaStatus = {
   /** How often it reads while nothing else holds it, ms. */
   every: number
@@ -119,6 +148,12 @@ export type QuotaStatus = {
   /** `nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after. */
   held: boolean
 }
+
+/** A command's status in `x.quota.commands`. `command`: its name in `argv`; none in a single-command system. */
+export type CommandStatus = QuotaStatus & { command?: string }
+
+/** The board's `x.quota`: the default command's status, and every command's in `argv`'s order. */
+export type QuotaPart = QuotaStatus & { commands: CommandStatus[] }
 
 const stateOf = (reads: Reads): QuotaState =>
   reads.lastAt === undefined ? 'new' : reads.failsInRow >= FAILS_BEFORE_BACKOFF ? 'backoff' : reads.failsInRow ? 'failing' : reads.unavailable ? 'unavailable' : 'ok'

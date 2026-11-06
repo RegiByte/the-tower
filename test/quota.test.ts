@@ -2,14 +2,14 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
-import { due, NO_READS, readOf, statusOf, step, type Reads } from '../extensions/quota/status.ts'
+import { due, NO_COMMAND_READS, NO_READS, readOf, statusOf, step, stepByCommand, withReads, type Reads, type ReadsByCommand } from '../extensions/quota/status.ts'
 import { usageAnswer } from '../extensions/quota/usage.ts'
 import { LEGACY_FIELDS, LEGACY_READS, type ProbeRead } from '../src/bridge/legacy.ts'
 import type { Board } from '../src/bridge/board.ts'
 import type { RateLimit } from '../src/bridge/facts.ts'
 import { accountLimits, NO_LIMITS as NO_STREAM } from '../src/bridge/rate-limits.ts'
 import { oldStreams } from '../src/bridge/retention.ts'
-import { streamFacts } from '../src/bridge/streams.ts'
+import { streamFacts, type StreamFact } from '../src/bridge/streams.ts'
 import { weeklyBudget } from '../src/bridge/stats.ts'
 import { quotaLimits, type ProbeReading } from './quota-reads.ts'
 
@@ -186,4 +186,34 @@ test("Tidy archives a stream's month once it closed more than retention.days ago
   assert.deepEqual(oldStreams(months, 14, oct(8)), [])
   assert.deepEqual(oldStreams(months, undefined, oct(30)), [])
   assert.deepEqual(oldStreams(months, 0, oct(1)), [{ file: 'system/probe.quota/2026-09.jsonl', bytes: 900 }])
+})
+
+const answered = (ms: number, command?: string): StreamFact => [ms, 'u', { ms: 1, answer: {}, limits: [{ kind: 'five_hour', percentUsed: 1 }], unavailable: false, ...(command && { command }) }]
+const failed = (ms: number, command?: string): StreamFact => [ms, 'f', { ms: 1, error: 'no answer within 30s', ...(command && { command }) }]
+const foldCommands = (facts: StreamFact[]): ReadsByCommand => facts.reduce(stepByCommand, NO_COMMAND_READS)
+
+test('each command folds its own reads: one failing leaves the other as it stood, and its backoff is its own', () => {
+  const facts = [answered(NOW, 'work'), failed(NOW + MIN, 'home'), failed(NOW + 2 * MIN, 'home'), failed(NOW + 3 * MIN, 'home')]
+  const [work, home] = withReads(foldCommands(facts), [{ name: 'work' }, { name: 'home' }])
+  assert.deepEqual([work.reads.failsInRow, work.reads.lastAt, statusOf(EVERY, work.reads, undefined).state], [0, NOW, 'ok'])
+  assert.deepEqual([home.reads.failsInRow, statusOf(EVERY, home.reads, undefined).state, home.reads.error], [3, 'backoff', 'no answer within 30s'])
+  assert.equal(due(EVERY, work.reads, undefined, NOW + 3 * MIN), false)
+  assert.equal(due(EVERY, home.reads, undefined, NOW + 4 * MIN), false, 'three failures wait ten minutes')
+  assert.equal(due(EVERY, home.reads, undefined, NOW + 13 * MIN), true)
+})
+
+test('reads naming no command are the default command\'s, and only its, the newer fold standing', () => {
+  const single = withReads(foldCommands([answered(NOW), failed(NOW + MIN)]), [{}])
+  assert.deepEqual([single[0].reads.lastAt, single[0].reads.failsInRow], [NOW + MIN, 1], 'a single-command system reads as it did')
+  const unnamedFirst = foldCommands([answered(NOW)])
+  const [work, home] = withReads(unnamedFirst, [{ name: 'work' }, { name: 'home' }])
+  assert.deepEqual([work.reads.lastAt, home.reads.lastAt], [NOW, undefined], 'a first named read need not repeat the default command\'s')
+  const moved = withReads(foldCommands([answered(NOW), failed(NOW + MIN, 'work')]), [{ name: 'work' }, { name: 'home' }])
+  assert.deepEqual([moved[0].reads.lastAt, moved[0].reads.failsInRow], [NOW + MIN, 1])
+})
+
+test('a read says the command it ran, and none in a single-command system', () => {
+  assert.equal(readOf(answered(NOW, 'work'))?.command, 'work')
+  assert.equal(readOf(failed(NOW, 'work'))?.command, 'work')
+  assert.equal('command' in readOf(answered(NOW))!, false)
 })

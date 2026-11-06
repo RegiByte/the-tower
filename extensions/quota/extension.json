@@ -1,8 +1,8 @@
 {
   "id": "quota",
-  "version": "1.0",
+  "version": "1.1",
   "title": "Quota probe",
-  "description": "Reads the account's rate limits from Claude while no session's turn does.",
+  "description": "Reads each command's account's rate limits from Claude while no turn of that command does.",
   "requires": { "tower": "1.152" },
   "server": "server.ts",
   "client": "client",
@@ -14,7 +14,7 @@
         "type": "string",
         "pattern": "^([1-9]\\d*(m|h)|([6-9]\\d|[1-9]\\d{2,})s)$",
         "default": "10m",
-        "description": "How often it reads while no session's turn does, such as \"10m\" (\"s\", \"m\" or \"h\"): a minute at least."
+        "description": "How often it reads each command while no turn of that command does, such as \"10m\" (\"s\", \"m\" or \"h\"): a minute at least."
       }
     }
   },
@@ -34,13 +34,14 @@
               "answer": { "type": "object" },
               "limits": { "type": "array", "items": { "type": "object", "required": ["kind", "percentUsed"], "properties": { "kind": { "type": "string" }, "percentUsed": { "type": "number" }, "resetsAt": { "type": "string" } } } },
               "extraUsage": { "type": "object" },
-              "unavailable": { "type": "boolean", "description": "The answer says the account has no rate limits to read." }
+              "unavailable": { "type": "boolean", "description": "The answer says the account has no rate limits to read." },
+              "command": { "type": "string", "description": "The `argv` command it read; none in a single-command system." }
             }
           }
         },
         "f": {
           "description": "A read with no answer, and why.",
-          "schema": { "type": "object", "required": ["ms", "error"], "properties": { "ms": { "type": "integer", "minimum": 0 }, "error": { "type": "string" } } }
+          "schema": { "type": "object", "required": ["ms", "error"], "properties": { "ms": { "type": "integer", "minimum": 0 }, "error": { "type": "string" }, "command": { "type": "string", "description": "The `argv` command it read; none in a single-command system." } } }
         },
         "p": {
           "description": "A read as the core's quota probe wrote it before tower 1.90, answered or not: kept, and never written again.",
@@ -55,7 +56,8 @@
     "board": {
       "x": {
         "type": "object",
-        "required": ["every", "state", "failsInRow", "wait", "nextAt", "held"],
+        "description": "The default command's status, and every command's in `commands`.",
+        "required": ["every", "state", "failsInRow", "wait", "nextAt", "held", "commands"],
         "properties": {
           "every": { "type": "integer", "description": "How often it reads while nothing else holds it, ms." },
           "state": { "enum": ["new", "ok", "failing", "backoff", "unavailable"] },
@@ -65,7 +67,27 @@
           "failsInRow": { "type": "integer" },
           "wait": { "type": "integer", "description": "How long it waits after its last read, ms: every, longer while backing off or unavailable." },
           "nextAt": { "type": "number", "description": "When it reads next: a moment past means at the next tick." },
-          "held": { "type": "boolean", "description": "nextAt is set by a session's turn, which read every limit it reads." }
+          "held": { "type": "boolean", "description": "nextAt is set by a session's turn, which read every limit it reads." },
+          "commands": {
+            "type": "array",
+            "description": "Each command's status, in `argv`'s order, the default first.",
+            "items": {
+              "type": "object",
+              "required": ["every", "state", "failsInRow", "wait", "nextAt", "held"],
+              "properties": {
+                "command": { "type": "string", "description": "Its name in `argv`; none in a single-command system." },
+                "every": { "type": "integer", "description": "How often it reads while nothing else holds it, ms." },
+                "state": { "enum": ["new", "ok", "failing", "backoff", "unavailable"] },
+                "lastAt": { "type": "number", "description": "When it last read, answered or not." },
+                "error": { "type": "string", "description": "Why its last read has no answer." },
+                "answeredAt": { "type": "number", "description": "When a read last answered." },
+                "failsInRow": { "type": "integer" },
+                "wait": { "type": "integer", "description": "How long it waits after its last read, ms: every, longer while backing off or unavailable." },
+                "nextAt": { "type": "number", "description": "When it reads next: a moment past means at the next tick." },
+                "held": { "type": "boolean", "description": "nextAt is set by a session's turn, which read every limit it reads." }
+              }
+            }
+          }
         }
       }
     }
@@ -73,14 +95,30 @@
   "verbs": {
     "read-now": {
       "scope": "system",
-      "description": "Read the account's rate limits now, whatever the stream says, appended to it as any read is. Refused while a read is in flight, or within a minute of the last read's start.",
-      "input": { "type": "object", "additionalProperties": false },
+      "description": "Read the rate limits now, whatever the stream says, appended to it as any read is: one command's, or every command's in turn. Refused while a read is in flight, or within a minute of the last read's start of a command it reads.",
+      "input": { "type": "object", "additionalProperties": false, "properties": { "command": { "type": "string", "description": "The `argv` command to read: every command in turn when left out." } } },
       "reply": {
         "type": "object",
-        "required": ["at", "ms", "ok"],
-        "properties": { "at": { "type": "integer", "description": "When the read started, epoch ms." }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "error": { "type": "string", "description": "Why the read has no answer." } }
+        "description": "The first read's fields, and each read in `commands`.",
+        "required": ["at", "ms", "ok", "commands"],
+        "properties": {
+          "command": { "type": "string" },
+          "at": { "type": "integer", "description": "When the read started, epoch ms." },
+          "ms": { "type": "integer" },
+          "ok": { "type": "boolean" },
+          "error": { "type": "string", "description": "Why the read has no answer." },
+          "commands": {
+            "type": "array",
+            "description": "Each read, in `argv`'s order.",
+            "items": {
+              "type": "object",
+              "required": ["at", "ms", "ok"],
+              "properties": { "command": { "type": "string", "description": "Its name in `argv`; none in a single-command system." }, "at": { "type": "integer" }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "error": { "type": "string" } }
+            }
+          }
+        }
       },
-      "words": { "label": "Read now", "hint": "Read the account's rate limits now (at most once a minute)" }
+      "words": { "label": "Read now", "hint": "Read the rate limits now (at most once a minute)" }
     }
   },
   "reads": {
@@ -91,17 +129,17 @@
       "reply": {
         "type": "object",
         "required": ["reads"],
-        "properties": { "reads": { "type": "array", "items": { "type": "object", "required": ["at", "ms", "ok"], "properties": { "at": { "type": "number" }, "ms": { "type": "integer" }, "ok": { "type": "boolean" }, "answer": {}, "error": { "type": "string" } } } } }
+        "properties": { "reads": { "type": "array", "items": { "type": "object", "required": ["at", "ms", "ok"], "properties": { "at": { "type": "number" }, "ms": { "type": "integer" }, "command": { "type": "string" }, "ok": { "type": "boolean" }, "answer": {}, "error": { "type": "string" } } } } }
       }
     },
     "said": {
       "scope": "system",
-      "description": "What `tower probes` prints: the probe's line, its state and why its last read failed, and the latest read in words (`quota probe answered in 1.4s`), when there is one.",
+      "description": "What `tower probes` prints, one line per command: the probe's line, its state and why its last read failed, and the latest read in words (`quota probe answered in 1.4s`), when there is one.",
       "reply": { "type": "object", "required": ["line"], "properties": { "line": { "type": "string" }, "last": { "type": "string" } } }
     },
     "status": {
       "scope": "system",
-      "description": "Whether it reads the rate limits: its line when it does; refused, saying why and what to do, when its last read failed, the account has none to read, or it is overdue.",
+      "description": "Whether it reads the rate limits: its line per command when it does; refused, saying why and what to do, when a command's last read failed, its account has none to read, or it is overdue.",
       "reply": { "type": "object", "required": ["ok", "message"], "properties": { "ok": { "const": true }, "message": { "type": "string" } } }
     }
   },

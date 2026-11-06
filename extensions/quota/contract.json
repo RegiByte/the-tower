@@ -11,9 +11,13 @@
     "streams.reads.p",
     "client.quota.js#PROBE_ATTENTION",
     "client.quota.js#PROBE_STATE_NAME",
+    "client.quota.js#commandProbe",
+    "client.quota.js#commandProbes",
     "client.quota.js#probeLine",
+    "client.quota.js#probeName",
     "client.quota.js#probeTitle",
     "client.quota.js#probedLine",
+    "client.quota.js#probedLines",
     "client.quota.js#quotaOf"
   ]
 }

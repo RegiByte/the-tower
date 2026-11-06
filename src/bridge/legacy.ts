@@ -81,7 +81,10 @@ export const LEGACY_VERBS: Record<string, LegacyVerb> = {
   'review/append': same,
   'probe/run': {
     input: (old) => ((old as { name: string }).name === 'quota' ? {} : QUOTA_ONLY((old as { name: string }).name)),
-    reply: (now) => ({ t: 'probed', ...(now as Omit<Replies['probe/run'], 't'>) }),
+    reply: (now) => {
+      const { command: _, commands: __, ...read } = now as Omit<Replies['probe/run'], 't'> & { command?: string; commands: unknown }
+      return { t: 'probed', ...read }
+    },
   },
 }
 
@@ -103,7 +106,7 @@ export const LEGACY_READS: Record<string, LegacyRead> = {
 }
 
 /** The quota extension's part, as `board.x.quota` holds it. */
-type QuotaPart = Omit<ProbeStatus, 'name' | 'reads'>
+type QuotaPart = Omit<ProbeStatus, 'name' | 'reads'> & { commands?: unknown }
 
 /** A call as the policies extension's part names it: its verb, and its input. */
 type MovedCall = [verb: string, input: unknown]
@@ -173,8 +176,9 @@ export const LEGACY_FIELDS: Record<string, LegacyField> = {
   'card.actions.note': (card) => beforeSendHome((card as Card).actions, cardNote(card as Card).actions, (a) => a.verb),
   'card.reviews': (card) => ((card as Card).x?.reviews as { of?: string } | undefined)?.of ?? (card as Card).reviews,
   'board.probes': (board) => {
-    const quota = (board as Board).x?.quota as QuotaPart | undefined
-    if (!quota) return []
+    const part = (board as Board).x?.quota as QuotaPart | undefined
+    if (!part) return []
+    const { commands: _, ...quota } = part
     const offers: { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] } = probeOffers('quota', false)
     return [{ name: 'quota', reads: 'claude.usage', ...quota, ...offers }]
   },

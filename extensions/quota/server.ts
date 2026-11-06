@@ -1,21 +1,23 @@
 /**
- * The quota probe: reads the account's rate limits from Claude while no session's turn does, each read appended to
- * its stream, `reads`, an answer as a reading of kind `tower/rate-limits` the core folds beside the turns'. A read only
- * reads: it sends no prompt, starts no session and calls no verb.
+ * The quota probe: reads each `argv` command's rate limits from Claude while no turn of that command does, each read
+ * appended to its stream, `reads`, naming the command, an answer as a reading of kind `tower/rate-limits` the core
+ * folds beside the turns'. A read only reads: it sends no prompt, starts no session and calls no verb.
  */
 import os from 'node:os'
-import type { Board } from '/lib/board.js'
+import { defaultLimits, limitsOf, type Board } from '/lib/board.js'
 import { apiError, type Start, type StartCtx, type StreamFact } from '/lib/extension.js'
-import { PROBE_STATE_NAME, probedLine, probeLine } from './client/quota.ts'
-import { due, FLOOR_MS, NO_READS, periodMs, readOf, statusOf, step, type Answered, type Failed, type Read, type Reads } from './status.ts'
+import { commandProbe, PROBE_STATE_NAME, probedLine, probeLine, probeName } from './client/quota.ts'
+import { due, FLOOR_MS, NO_COMMAND_READS, periodMs, readOf, statusOf, stepByCommand, withReads, type Answered, type CommandStatus, type Failed, type QuotaPart, type Read, type ReadsByCommand } from './status.ts'
 import { USAGE_ARGS, usageRan, usageReading, USAGE_REQUEST, USAGE_TIMEOUT_MS } from './usage.ts'
+
+type Command = ReturnType<StartCtx['commands']>[number]
 
 /**
  * Asks Claude for `/usage`'s data: the request is its only input, and it exits as its stdin closes. Run as the config
- * runs a session (the same Claude, through any wrapper), from the temp dir, killed if it has not exited within the timeout.
+ * runs a session of that command (the same Claude, through any wrapper), from the temp dir, killed if it has not
+ * exited within the timeout.
  */
-const readUsage = async (ctx: StartCtx): Promise<{ answer: unknown } | { error: string }> => {
-  const { argv, env } = ctx.runtime('claude')
+const readUsage = async (ctx: StartCtx, { argv, env }: Command): Promise<{ answer: unknown } | { error: string }> => {
   try {
     return usageRan(await ctx.run([...argv, ...USAGE_ARGS], { cwd: os.tmpdir(), timeoutMs: USAGE_TIMEOUT_MS, stdin: `${JSON.stringify(USAGE_REQUEST)}\n`, env }))
   } catch (err) {
@@ -23,58 +25,94 @@ const readUsage = async (ctx: StartCtx): Promise<{ answer: unknown } | { error: 
   }
 }
 
-/** What failed reads say to do, by what failed: the command, Claude waiting on something, or anything else. */
-const fixOf = (error: string): string =>
-  /ENOENT/.test(error)
-    ? "argv in the config names a command that isn't on the tower's PATH: fix argv"
+/** What failed reads of a command say to do, by what failed: the command itself, Claude waiting on something, or anything else. */
+const fixOf = (error: string, name: string | undefined): string => {
+  const claude = name === undefined ? 'claude' : `argv.${name}'s command`
+  return /ENOENT/.test(error)
+    ? name === undefined
+      ? "argv in the config names a command that isn't on the tower's PATH: fix argv"
+      : `argv.${name} names a command that isn't on the tower's PATH: fix argv.${name}`
     : /no answer within/.test(error)
-      ? 'run claude in a terminal: it may wait on an update, a sign-in or a trust prompt'
-      : "run claude in a terminal to see why it fails; the tower's log has the tower's side, and `tower probes` follows the next read"
+      ? `run ${claude} in a terminal: it may wait on an update, a sign-in or a trust prompt`
+      : `run ${claude} in a terminal to see why it fails; the tower's log has the tower's side, and \`tower probes\` follows the next read`
+}
+
+const turnsOf = (board: Board, name: string | undefined) => (name === undefined ? defaultLimits(board) : limitsOf(board, name))?.turnLimits
 
 /** How late a read may start past its `nextAt`: the slot's minute and the floor between reads, with room to spare. */
 const LATE_MS = 3 * 60_000
 
 const start: Start = (ctx) => {
   const every = () => periodMs((ctx.settings as { every: string }).every)
-  const reads = () => ctx.own.streams('reads') as Reads
-  const status = () => statusOf(every(), reads(), ctx.board().turnLimits)
-  /** The one read in flight, and when the last one started: whatever the stream says, reads start at least `FLOOR_MS` apart. */
+  const commands = (all: ReadsByCommand) => withReads(all, ctx.commands('claude'))
+  const statuses = (board: Board, all: ReadsByCommand): CommandStatus[] =>
+    commands(all).map(({ name, reads }) => ({ ...(name !== undefined && { command: name }), ...statusOf(every(), reads, turnsOf(board, name)) }))
+  const nowStatuses = () => statuses(ctx.board(), ctx.own.streams('reads') as ReadsByCommand)
+  /** Whether a read is in flight, and when each command's last one started: whatever the stream says, a command's reads start at least `FLOOR_MS` apart. */
   let reading = false
-  let lastStart = -Infinity
+  const started = new Map<string | undefined, number>()
+  const flooredUntil = ({ name }: Command) => (started.get(name) ?? -Infinity) + FLOOR_MS
 
-  const read = async () => {
-    reading = true
+  const read = async (command: Command) => {
     const at = Date.now()
-    lastStart = at
+    started.set(command.name, at)
+    const named = command.name === undefined ? {} : { command: command.name }
+    const answer = await readUsage(ctx, command)
+    const ms = Date.now() - at
+    if ('error' in answer) {
+      await ctx.streams.append('reads', {}, 'f', { ...named, ms, error: answer.error } satisfies Failed)
+      return { ...named, at, ms, ok: false, error: answer.error }
+    }
+    await ctx.streams.append('reads', {}, 'u', { ...named, ms, answer: answer.answer, ...usageReading(answer.answer) } satisfies Answered)
+    return { ...named, at, ms, ok: true }
+  }
+
+  /** Reads each command in turn, so two accounts never run Claude at once and one failing doesn't stop the next. */
+  const readInTurn = async (each: Command[]) => {
+    reading = true
     try {
-      const answer = await readUsage(ctx)
-      const ms = Date.now() - at
-      if ('error' in answer) {
-        await ctx.streams.append('reads', {}, 'f', { ms, error: answer.error } satisfies Failed)
-        return { at, ms, ok: false, error: answer.error }
-      }
-      await ctx.streams.append('reads', {}, 'u', { ms, answer: answer.answer, ...usageReading(answer.answer) } satisfies Answered)
-      return { at, ms, ok: true }
+      const done = []
+      for (const command of each) done.push(await read(command))
+      return done
     } finally {
       reading = false
     }
   }
 
   return {
-    reduce: { reads: { init: NO_READS, step } },
+    reduce: { reads: { init: NO_COMMAND_READS, step: stepByCommand } },
     slots: {
       tick: async () => {
-        if (reading || Date.now() - lastStart < FLOOR_MS) return
-        if (due(every(), reads(), ctx.board().turnLimits, Date.now())) await read()
+        if (reading) return
+        const now = Date.now()
+        const board = ctx.board()
+        const dueNow = commands(ctx.own.streams('reads') as ReadsByCommand).filter(
+          (command) => now >= flooredUntil(command) && due(every(), command.reads, turnsOf(board, command.name), now),
+        )
+        if (dueNow.length) await readInTurn(dueNow)
       },
     },
-    folds: { board: (board: Board, { own }) => ({ x: statusOf(every(), own.streams.reads as Reads, board.turnLimits) }) },
+    folds: {
+      board: (board: Board, { own }) => {
+        const each = statuses(board, own.streams.reads as ReadsByCommand)
+        const { command: _, ...first } = each[0]
+        return { x: { ...first, commands: each } satisfies QuotaPart }
+      },
+    },
     verbs: {
-      'read-now': async () => {
+      'read-now': async ({ command }: { command?: string }) => {
         if (reading) return apiError('refused', 'A read is in flight: one read at a time')
+        const all = ctx.commands('claude')
+        const asked = command === undefined ? all : all.filter((c) => c.name === command)
+        if (!asked.length) return apiError('not_found', `No command "${command}": argv names ${all.map((c) => c.name ?? 'one unnamed command').join(', ')}`)
         const now = Date.now()
-        if (now - lastStart < FLOOR_MS) return apiError('refused', `Reads start at least ${FLOOR_MS / 1000}s apart: the next can start in ${Math.ceil((lastStart + FLOOR_MS - now) / 1000)}s`)
-        return read()
+        const floored = asked.find((c) => now < flooredUntil(c))
+        if (floored) {
+          const reads = floored.name === undefined ? 'Reads' : `Reads of ${floored.name}`
+          return apiError('refused', `${reads} start at least ${FLOOR_MS / 1000}s apart: the next can start in ${Math.ceil((flooredUntil(floored) - now) / 1000)}s`)
+        }
+        const done = await readInTurn(asked)
+        return { ...done[0], commands: done }
       },
     },
     reads: {
@@ -84,21 +122,36 @@ const start: Start = (ctx) => {
         return { reads: all.flatMap((fact) => readOf(fact) ?? []).slice(-Number(query.last ?? 20)).reverse() }
       },
       said: async () => {
-        const s = { name: 'quota', ...status() }
-        let last: Read | undefined
-        if (s.lastAt !== undefined) for await (const fact of ctx.streams.read('reads', {}, { from: s.lastAt })) last = readOf(fact) ?? last
-        const line = [probeLine(s, Date.now()), ...(s.state === 'new' ? [] : [PROBE_STATE_NAME[s.state]]), ...(s.error === undefined ? [] : [s.error])].join(' · ')
-        return { line, ...(last && { last: probedLine('quota', last) }) }
+        const now = Date.now()
+        const each = nowStatuses()
+        const lastAts = each.flatMap((s) => s.lastAt ?? [])
+        const last = new Map<string | undefined, Read>()
+        if (lastAts.length)
+          for await (const fact of ctx.streams.read('reads', {}, { from: Math.min(...lastAts) })) {
+            const read = readOf(fact)
+            if (read) last.set(read.command ?? each[0].command, read)
+          }
+        const line = each
+          .map((s) => [probeLine(commandProbe(s), now), ...(s.state === 'new' ? [] : [PROBE_STATE_NAME[s.state]]), ...(s.error === undefined ? [] : [s.error])].join(' · '))
+          .join('\n')
+        const lastLines = each.flatMap((s) => {
+          const read = last.get(s.command)
+          return read ? [probedLine(probeName(s.command), read)] : []
+        })
+        return { line, ...(lastLines.length && { last: lastLines.join('\n') }) }
       },
       status: () => {
         const now = Date.now()
-        const s = status()
-        const line = probeLine({ name: 'quota', ...s }, now)
-        if (s.error !== undefined) return apiError('refused', `${line}: ${s.failsInRow} failed in a row: ${s.error}: ${fixOf(s.error)}`)
-        if (s.state === 'unavailable')
-          return apiError('refused', `${line}: the account has no rate limits to read: sign in to Claude Code with a Claude subscription (claude, then /login): an API key or a cloud provider has none`)
-        if (s.lastAt !== undefined && now - s.nextAt > LATE_MS) return apiError('refused', `${line}: overdue by ${Math.round((now - s.nextAt) / 60_000)}m: the tower's log says why`)
-        return { ok: true, message: line }
+        const each = nowStatuses()
+        const problems = each.flatMap((s) => {
+          const line = probeLine(commandProbe(s), now)
+          if (s.error !== undefined) return [`${line}: ${s.failsInRow} failed in a row: ${s.error}: ${fixOf(s.error, s.command)}`]
+          if (s.state === 'unavailable') return [`${line}: the account has no rate limits to read: sign in to Claude Code with a Claude subscription (claude, then /login): an API key or a cloud provider has none`]
+          if (s.lastAt !== undefined && now - s.nextAt > LATE_MS) return [`${line}: overdue by ${Math.round((now - s.nextAt) / 60_000)}m: the tower's log says why`]
+          return []
+        })
+        if (problems.length) return apiError('refused', problems.join('\n'))
+        return { ok: true, message: each.map((s) => probeLine(commandProbe(s), now)).join('\n') }
       },
     },
   }
