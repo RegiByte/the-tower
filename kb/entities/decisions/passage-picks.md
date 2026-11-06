@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Text picked in a shown document is a passage subject, read from the page and acted on over the frame",
-  "summary": "A selection in a document drawn by sections (a showing, a kept item, a shelf file) becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (/picks.js) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled passages extension's composer types a prompt about it into the worker that showed the document.",
+  "summary": "A selection in a markdown document drawn by sections or a text file drawn as written (a showing, a kept item, a shelf file) becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (/picks.js) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled passages extension's composer types a prompt about it into the worker that showed the document.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
@@ -18,7 +18,10 @@
     "hub/src/shared/subjects.ts#passageSubject",
     "hub/src/shared/subjects.ts#parentOf",
     "hub/src/views/sections.ts#drawSections",
-    "hub/src/views/sections.ts#followSections",
+    "hub/src/views/passages.ts#pickPassages",
+    "hub/src/views/passages.ts#offsetIn",
+    "hub/src/views/text.ts#mount",
+    "hub/src/shared/picks.ts#textLines",
     "hub/src/shared/extensions.ts#RESERVED",
     "hub/renderers/page/renderer.json",
     "hub/extensions/passages/extension.json",
@@ -47,6 +50,13 @@ sentence the user picked.
   holds the quote as the document draws it (also its `body`, typed `text/plain`, so anything that reads a subject's
   text reads it), the sections it touches, the first one's heading, and the source lines of the blocks it starts and
   ends in. For a showing of a file it also holds the worker's card and the file's real path.
+- *Two kinds of document, one capture.* [`pickPassages`](ref:hub/src/views/passages.ts#pickPassages) holds
+  everything about picking in a frame where nothing runs: the selection read, the machine, the highlight, the box and
+  its region. A view hands it its frame and says where a range is in its own terms (`Where`). `tower/document` and
+  `tower/shelf` (by `drawSections`) say sections and block lines; [`tower/text`](ref:hub/src/views/text.ts#mount),
+  which draws plain text, source code and JSON as written, says exact lines: its frame's text is the file's, so the
+  characters before each end of the range ([`offsetIn`](ref:hub/src/views/passages.ts#offsetIn)) give the lines
+  ([`textLines`](ref:hub/src/shared/picks.ts#textLines)), and the quote keeps its indentation.
 - *Source lines are data the document carries.* [`sectionsHtml`](ref:hub/src/shared/markdown.ts#sectionsHtml)
   writes a comment `src:<from>-<to>` ([`SOURCE_MARK`](ref:hub/src/shared/markdown.ts#SOURCE_MARK)) before each
   top-level block's html, counted from the tokens' `raw`. The view walks the frame's comments against the picked
@@ -55,8 +65,7 @@ sentence the user picked.
   `<details>`) still draws as before. The lines are block-level: the quote pins down the words.
 - *The selection is read, not heard.* Nothing in a document frame calls a listener in WebKit ([[markdown-safe]]), so
   there is no `mouseup` or `selectionchange`. On each animation frame while the document is seen, the view reads the
-  frame's selection from the page (`allow-same-origin`), alongside reading the gutter's anchors
-  ([`followSections`](ref:hub/src/views/sections.ts#followSections) runs both). It tells the machine a signature of
+  frame's selection from the page (`allow-same-origin`). It tells the machine a signature of
   the selection's ends, or none while it is collapsed or holds only white space.
 - *When a selection is a pick is a shared machine* ([`/picks.js`](ref:hub/src/shared/picks.ts), [[machines]]). A
   selection unchanged for [`SETTLE_MS`](ref:hub/src/shared/picks.ts#SETTLE_MS) is picked. Since there is no
@@ -72,7 +81,8 @@ sentence the user picked.
   composer does under picked lines.
 - *Acting on a passage is an extension's.* The bundled `passages` extension's
   [`composer`](ref:hub/extensions/passages/client/composer.ts#mount) types a prompt into the worker that showed the
-  document, through the core's `submit` (queued while it works), as
+  document, through the core's `submit` (queued while it works), prose quoted as a blockquote and code in a fence
+  named by the file's extension, as
   [`askPrompt`](ref:hub/extensions/passages/client/composer.ts#askPrompt) writes it: the file, its lines and heading,
   the passage quoted, then the user's words. It says why it takes no prompt instead of offering one when the worker
   doesn't take one now, when no worker showed the document, or when the quote is past 4,000 characters. It couldn't
@@ -93,6 +103,8 @@ sentence the user picked.
 - *Collecting notes on passages into a review thread.* That fits reviewing a long document in one go, and the
   reviews extension could add a view `on: ["passage"]` for it. A direct prompt came first.
 
-**Consequences.** Every document drawn by sections reads its frame's selection while seen, at the cost of one
-selection read per animation frame. A long selection's text is read once per change. The box covers part of the
-document while a pick is held. Tower 3D and The Week draw no `passage.acts`, so a passage there acts on nothing.
+**Consequences.** Every markdown document and text file a view draws reads its frame's selection while seen, at the
+cost of one selection read per animation frame. A long selection's text is read once per change. The box covers part
+of the document while a pick is held. A shown html page runs at an origin of its own and can't be read from the page,
+so it has no passages: it would need its own script, `/frame-keys.js`, to send its selection up, and the words it
+sent would be the page's to forge. Tower 3D and The Week draw no `passage.acts`, so a passage there acts on nothing.

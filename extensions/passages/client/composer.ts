@@ -39,12 +39,19 @@ const whereOf = (p: Passage) => {
   return `${p.file ?? 'the document you showed'}${parts.length ? ` (${parts.join(', ')})` : ''}`
 }
 
+/** Files whose passages are prose, quoted as a blockquote: any other is code or data, quoted as written in a fence. */
+const PROSE = /\.(md|markdown|txt)$/i
+
+/** A passage quoted: prose as a blockquote; code in a fence longer than any run of backticks in it, named by its file's extension. */
+const quoted = (p: Passage) => {
+  if (p.file === undefined || PROSE.test(p.file)) return p.quote.split('\n').map((line) => `> ${line}`.trimEnd()).join('\n')
+  const fence = '`'.repeat(Math.max(3, ...(p.quote.match(/`+/g) ?? []).map((run) => run.length + 1)))
+  const lang = /\.([a-z0-9]+)$/i.exec(p.file)?.[1] ?? ''
+  return `${fence}${lang}\n${p.quote}\n${fence}`
+}
+
 /** The prompt a passage and the user's words make: where the passage is, the passage quoted, then the words. */
-export const askPrompt = (p: Passage, words: string) =>
-  `About this passage of ${whereOf(p)}:\n\n${p.quote
-    .split('\n')
-    .map((line) => `> ${line}`.trimEnd())
-    .join('\n')}\n\n${words.trim()}`
+export const askPrompt = (p: Passage, words: string) => `About this passage of ${whereOf(p)}:\n\n${quoted(p)}\n\n${words.trim()}`
 
 /** Enter alone sends, as Claude's own prompt does: a prompt about a passage is mostly a line. Shift+Enter breaks a line; an IME's Enter commits its text. */
 const sendsAlone = (e: KeyboardEvent) => e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && !e.isComposing
