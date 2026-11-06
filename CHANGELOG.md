@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.96.1
+
+A command that ended just as its timeout fired no longer takes the tower down. Restart the tower with this release
+(`tower down tower`, then `tower up tower`). No host restart, no config change, no API change.
+
+- **The EPERM crash on macOS.** When the tower killed a timed-out or aborted command, macOS could answer `EPERM` for a
+  process group whose leader had exited but wasn't reaped yet, and the uncaught error ended the tower. It hit anything
+  run through `ctx.run`, extension checks and doctor checks. All the tower's group kills now share one helper that
+  knows this answer.
+
 ## v1.96.0
 
 An extension's verbs and reads are typed like commands. Restart the tower with this release (`tower down tower`, then
