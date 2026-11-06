@@ -4,7 +4,7 @@
   "name": "Shell session",
   "summary": "A shell opened from the tower in a project directory, watched as a docked tab and kept running across tower restarts.",
   "in": "tower",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-06",
   "involves": ["operator", "tower-server", "terms-daemon"],
   "refs": ["hub/src/terms/main.ts#spawnShell", "hub/src/terms/main.ts#attach", "hub/src/tower/http.ts#streamPty"]
 }
