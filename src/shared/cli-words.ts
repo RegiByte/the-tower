@@ -75,7 +75,7 @@ export const wordsOf = (manifest: Manifest): Word[] => [
       scope: 'system',
       ...(fact.description !== undefined && { description: fact.description }),
       fields: [
-        { name: 'value', ...takesOf(fact.schema), required: false, description: 'Left out, it clears the fact.' },
+        { name: 'value', ...takesOf(fact.schema), required: true },
         { name: 'session', takes: 'string', many: false, required: false, description: "The session it is about: the caller's own when left out." },
       ],
       positional: [],
@@ -147,9 +147,6 @@ const valueWords = (field: WordField, value: unknown): string[] => (field.many ?
 
 const STDIN_WORDS = "<<'EOF' … EOF"
 
-/** A command line has no null, only absence: a door word with no `--value` asks the door for none. */
-const DOOR_CLEARS = '(no --value clears it)'
-
 const isDoorValue = (word: Word, field: WordField) => word.kind === 'door' && field.name === 'value'
 
 /** Whether the caller's floor fills this field when nobody names it. */
@@ -170,7 +167,7 @@ export const typedLine = (cap: string, word: Word, input: Record<string, unknown
   const flags = word.fields
     .filter((f) => !word.positional.includes(f.name) && f.name !== word.stdin)
     .flatMap((f) => {
-      if (isDoorValue(word, f) && input[f.name] === null) return []
+      if (isDoorValue(word, f) && input[f.name] === null) return ['--value ""']
       if (!given(f)) return f.required && !fillsProject(word, f) ? [holeOf(f)] : []
       if (f.takes === 'boolean' && !f.many) return [input[f.name] ? `--${f.name}` : `--${f.name}=false`]
       return valueWords(f, input[f.name]).map((value) => `--${f.name} ${value}`)
@@ -192,7 +189,7 @@ export const usageOf = (word: Word): string => {
     .filter((f) => !word.positional.includes(f.name) && f.name !== word.stdin)
     .map((f) => optional(`${holeOf(f)}${f.many ? ' …' : ''}`, f.required && !fillsProject(word, f)))
   const stdin = word.fields.find((f) => f.name === word.stdin)
-  return [typedName(word), ...positional, ...flags, ...(stdin ? [optional(STDIN_WORDS, stdin.required)] : []), ...(word.kind === 'door' ? [DOOR_CLEARS] : [])].join(' ')
+  return [typedName(word), ...positional, ...flags, ...(stdin ? [optional(STDIN_WORDS, stdin.required)] : [])].join(' ')
 }
 
 const TAKES_WORDS: Record<Takes, string> = { string: 'a string', integer: 'an integer', number: 'a number', boolean: 'true or false', json: 'JSON' }
@@ -304,13 +301,21 @@ const isTypable = (word: Word, body: unknown): body is Record<string, unknown> =
   Object.entries(body).every(([name, value]) => {
     const field = word.fields.find((f) => f.name === name)
     if (!field) return false
-    if (isDoorValue(word, field) && value === null) return true
+    if (isDoorValue(word, field) && value === null) return field.takes === 'string'
     return field.many ? Array.isArray(value) && value.every((v) => typesAs(field.takes, v)) : typesAs(field.takes, value)
   })
 
-/** What a deprecated JSON argument says on stderr: that it goes, and what to type instead, or where to read how when flags can't say that input. */
-export const jsonDeprecatedLine = (cap: string, word: Word, body: unknown): string =>
-  `A JSON argument to tower x is deprecated and goes at 2.0. Type instead: ${isTypable(word, body) ? typedLine(cap, word, body) : `tower x ${cap} ${typedName(word)} --help`}`
+const JSON_GOES = 'A JSON argument to tower x is deprecated and goes at 2.0.'
+
+/**
+ * What a deprecated JSON argument says on stderr: that it goes, and what to type instead, or where to read how when
+ * flags can't say that input. A null on a string door is typed as the blank value that clears it on purpose; on any
+ * other door it has no typed form.
+ */
+export const jsonDeprecatedLine = (cap: string, word: Word, body: unknown): string => {
+  if (word.kind === 'door' && isRecord(body) && body.value === null && word.fields[0].takes !== 'string') return `${JSON_GOES} A null has no typed form on ${typedName(word)}: a door that needs one should offer a verb.`
+  return `${JSON_GOES} Type instead: ${isTypable(word, body) ? typedLine(cap, word, body) : `tower x ${cap} ${typedName(word)} --help`}`
+}
 
 /** The first required field nothing gave, as what to say and an example, which leaves out the floor a worker's word fills; none when the input is whole. */
 export const missingLine = (cap: string, word: Word, input: Record<string, unknown>): string | undefined => {

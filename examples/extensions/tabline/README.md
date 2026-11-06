@@ -48,7 +48,7 @@ A worker writes its own line with
 tower x tabline facts/line --value 'writing the migration'
 ```
 
-and clears it by leaving the value out, `tower x tabline facts/line`. The Week and the CLI's other commands don't show it; it is on each worker's
+and clears it with `--value ""`. The Week and the CLI's other commands don't show it; it is on each worker's
 card for any renderer to draw.
 
 ## Add it

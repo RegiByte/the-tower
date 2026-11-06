@@ -121,16 +121,19 @@ test('a JSON argument is still read, and says what to type instead', () => {
   assert.equal(jsonDeprecatedLine('typed', word('echo'), { text: 3 }), help('echo'))
 })
 
-test('a door word with no --value clears, says so, and the JSON argument types that as the bare word', () => {
+test('a door needs --value, a blank reaches it as an empty string, and a null is typed only on a string door', () => {
   const tabline = Manifest.parse(JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'examples', 'extensions', 'tabline', 'extension.json'), 'utf8')))
   const door = wordNamed(wordsOf(tabline), 'facts/line')!
-  assert.deepEqual(parseWord('tabline', door, []), { t: 'input', input: {} })
+  assert.equal(missingLine('tabline', door, {}), 'facts/line needs --value: tower x tabline facts/line --value <value>')
+  assert.deepEqual(parseWord('tabline', door, ['--value', '']), { t: 'input', input: { value: '' } })
+  assert.deepEqual(parseWord('tabline', door, ['--value=']), { t: 'input', input: { value: '' } })
+  assert.equal(missingLine('tabline', door, { value: '' }), undefined)
   assert.deepEqual(parseWord('tabline', door, ['--value', 'null']), { t: 'input', input: { value: 'null' } })
-  assert.equal(missingLine('tabline', door, {}), undefined)
-  assert.equal(usageOf(door), 'facts/line [--value <value>] [--session <session>] (no --value clears it)')
-  assert.ok(helpLines('tabline', door).includes('  --value  a string: Left out, it clears the fact.'))
-  assert.equal(jsonDeprecatedLine('tabline', door, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line')
+  assert.equal(usageOf(door), 'facts/line --value <value> [--session <session>]')
+  assert.equal(jsonDeprecatedLine('tabline', door, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value ""')
   assert.equal(jsonDeprecatedLine('tabline', door, { value: 'on it' }), "A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value 'on it'")
+  const counter: Word = { ...door, fields: [{ ...door.fields[0], takes: 'integer' }, door.fields[1]] }
+  assert.equal(jsonDeprecatedLine('tabline', counter, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. A null has no typed form on facts/line: a door that needs one should offer a verb.')
 })
 
 test('printing names a string or lines, and a field the reply left out prints nothing', () => {
