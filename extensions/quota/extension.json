@@ -95,7 +95,7 @@
   "verbs": {
     "read-now": {
       "scope": "system",
-      "description": "Read the rate limits now, whatever the stream says, appended to it as any read is: one command's, or every command's in turn. Refused while a read is in flight, or within a minute of the last read's start of a command it reads.",
+      "description": "Read the rate limits now, whatever the stream says, appended to it as any read is: one command's, or every command's in turn, less any read within the last minute. Refused while a read is in flight, or when that leaves nothing to read.",
       "input": { "type": "object", "additionalProperties": false, "properties": { "command": { "type": "string", "description": "The `argv` command to read: every command in turn when left out." } } },
       "reply": {
         "type": "object",
@@ -109,7 +109,7 @@
           "error": { "type": "string", "description": "Why the read has no answer." },
           "commands": {
             "type": "array",
-            "description": "Each read, in `argv`'s order.",
+            "description": "Each read it made, in `argv`'s order.",
             "items": {
               "type": "object",
               "required": ["at", "ms", "ok"],

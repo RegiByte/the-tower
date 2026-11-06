@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Probes: periodic readings of the account's rate limits, kept as facts in a stream, by the bundled quota extension",
-  "summary": "The bundled extension quota reads the account's rate limits from Claude while no session's turn does, decided each minute from its own stream, and appends each answer as a reading of the core's fact kind tower/rate-limits, which the core folds beside the sessions' readings, so the limits, the weekly budget and its pace have no holes while no session runs.",
+  "summary": "The bundled extension quota reads each argv command's rate limits from Claude while no turn of that command does, decided each minute from its own stream, and appends each answer as a reading of the core's fact kind tower/rate-limits, which the core folds beside the sessions' readings, so the limits, the weekly budget and its pace have no holes while no session runs.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
@@ -13,6 +13,8 @@
     "hub/extensions/quota/status.ts#due",
     "hub/extensions/quota/status.ts#waitOf",
     "hub/extensions/quota/status.ts#step",
+    "hub/extensions/quota/status.ts#stepByCommand",
+    "hub/extensions/quota/status.ts#withReads",
     "hub/extensions/quota/status.ts#statusOf",
     "hub/src/shared/rate-limits.ts#RateLimitsReading",
     "hub/extensions/quota/usage.ts#usageAnswer",
@@ -55,7 +57,7 @@ core code it replaced.
   ([`extension.json`](ref:hub/extensions/quota/extension.json)). The old spelling, `probes.quota.*`, is read by one
   pure function at config-read time ([`respelled`](ref:hub/src/bridge/legacy.ts#respelled)) until 2.0; both spellings
   of a field is a config error. The sandbox turns the extension off, so a throwaway system never reads the real account.
-- *The reader.* The sessions' Claude (`ctx.runtime('claude')`, through any wrapper) with `-p --input-format
+- *The reader.* The sessions' Claude, each command of `ctx.commands('claude')` in turn (through any wrapper), with `-p --input-format
   stream-json` and nothing loaded or saved, run through `ctx.run` from the temp dir with the scrubbed env
   ([[env-scrub]]), sent one line, the `get_usage` control request, and killed at a timeout
   ([`server.ts`](ref:hub/extensions/quota/server.ts)). The answer becomes a reading in the sessions' shape
@@ -67,10 +69,15 @@ core code it replaced.
   answer had (a model's own weekly limit, which no session measures, keeps it reading); else once its wait
   ([`waitOf`](ref:hub/extensions/quota/status.ts#waitOf)) has passed: `every`, a doubling backoff after failures in a
   row, a long wait after an answer saying the account has no rate limits. The wait is read from the stream, so a
-  restart doesn't reset it; the extension holds only the read in flight and a floor between starts.
+  restart doesn't reset it; the extension holds only the read in flight and a floor between a command's starts. Each
+  command is due alone, over its own reads and its own turns; a tick reads what is due in turn, one in flight, so two
+  accounts never run Claude at once and one failing leaves the next to read. `quota/read-now` takes a `command`, or
+  reads every command but those read within the floor.
 - *A stream, one writer.* Its stream `reads` lives in `streams/system/probe.quota/`, the folder the core wrote
   (`LEGACY`): `u` an answered read, of the core's kind `tower/rate-limits`; `f` a read with no answer; `p`, a read
-  as the core wrote it, never written again. Skipped reads are not logged; each read stands alone, so a broken line
+  as the core wrote it, never written again. A read names its `command` where `argv` names them; the extension folds
+  by that name ([`stepByCommand`](ref:hub/extensions/quota/status.ts#stepByCommand)), and what names none is the
+  default command's, derived when read ([`withReads`](ref:hub/extensions/quota/status.ts#withReads)). Skipped reads are not logged; each read stands alone, so a broken line
   costs that read only.
 - *Folded beside the sessions.* A stream fact declaring `tower/rate-limits`
   ([`RateLimitsReading`](ref:hub/src/shared/rate-limits.ts#RateLimitsReading)) in a system stream of any resolved
@@ -86,11 +93,11 @@ core code it replaced.
   ([`accountLimits`](ref:hub/src/bridge/rate-limits.ts#accountLimits)), each limit only the other reads carried
   from a recent reading of the other; the top-level `rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and
   `extraUsage` are the default command's copies until 2.0, and the weekly budget, its pace and the use from outside
-  the tower read both of its sources ([[stats]]). The probe reads the default command only, so another command's
-  entry holds what its turns read.
+  the tower read both of its sources ([[stats]]).
 - *How it stands, derived.* The extension folds its stream ([`step`](ref:hub/extensions/quota/status.ts#step),
   [`statusOf`](ref:hub/extensions/quota/status.ts#statusOf)) into `x.quota` on the board: its state, last read, last
-  error and `nextAt`, times rather than "due now". Its client draws it under the limits
+  error and `nextAt`, times rather than "due now": the default command's, and every command's in `commands`. Its
+  client draws it under the limits
   ([`quotaOf`](ref:hub/extensions/quota/client/quota.ts#quotaOf), [`probeLine`](ref:hub/extensions/quota/client/quota.ts#probeLine),
   [`probeTitle`](ref:hub/extensions/quota/client/quota.ts#probeTitle)); `tower probes` and the doctor's check
   `reading` ask the extension's reads, and `quota/read-now` reads at once through the path a tick takes.

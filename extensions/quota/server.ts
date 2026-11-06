@@ -106,12 +106,13 @@ const start: Start = (ctx) => {
         const asked = command === undefined ? all : all.filter((c) => c.name === command)
         if (!asked.length) return apiError('not_found', `No command "${command}": argv names ${all.map((c) => c.name ?? 'one unnamed command').join(', ')}`)
         const now = Date.now()
-        const floored = asked.find((c) => now < flooredUntil(c))
-        if (floored) {
-          const reads = floored.name === undefined ? 'Reads' : `Reads of ${floored.name}`
-          return apiError('refused', `${reads} start at least ${FLOOR_MS / 1000}s apart: the next can start in ${Math.ceil((flooredUntil(floored) - now) / 1000)}s`)
+        const ready = asked.filter((c) => now >= flooredUntil(c))
+        if (!ready.length) {
+          const soonest = asked.reduce((a, c) => (flooredUntil(c) < flooredUntil(a) ? c : a))
+          const reads = soonest.name === undefined ? 'Reads' : `Reads of ${soonest.name}`
+          return apiError('refused', `${reads} start at least ${FLOOR_MS / 1000}s apart: the next can start in ${Math.ceil((flooredUntil(soonest) - now) / 1000)}s`)
         }
-        const done = await readInTurn(asked)
+        const done = await readInTurn(ready)
         return { ...done[0], commands: done }
       },
     },
