@@ -18,6 +18,8 @@
     "client.quota.js#probeTitle",
     "client.quota.js#probedLine",
     "client.quota.js#probedLines",
-    "client.quota.js#quotaOf"
+    "client.quota.js#quotaOf",
+    "words.read-now",
+    "words.read-now.--command"
   ]
 }

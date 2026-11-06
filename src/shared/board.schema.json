@@ -4743,7 +4743,8 @@
         "slow",
         "hook",
         "paused",
-        "contract"
+        "contract",
+        "cli"
       ]
     },
     "ExtensionVerb": {

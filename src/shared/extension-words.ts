@@ -31,6 +31,7 @@ export const PROBLEM_FIX: Record<ProblemCode, string> = {
   hook: "make the answer match the hook's answer schema; a throw's stack is in the tower's log",
   paused: 'make its board trigger ask for fewer calls: a call that changes the board triggers it again',
   contract: 'put back what its contract.json lists, or move its major and say what to use instead in its CHANGELOG.md',
+  cli: 'make its cli name fields its schemas declare, of the type each key takes, and give every word a name of its own',
 }
 
 /** An extension in a short line: `Pulse 1.0 · running`, its errors counted. */

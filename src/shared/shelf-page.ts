@@ -16,6 +16,7 @@ import type { RepoChanges } from './repo-changes.ts'
 import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from './api.ts'
 import type { Scheme } from './design.ts'
 import type { ExtensionView } from './extensions.ts'
+import type { Word } from './cli-words.ts'
 import type { Pattern } from './capabilities.ts'
 import type { Config, Renderer } from './model.ts'
 import type { Prefs } from './prefs.ts'
@@ -80,10 +81,12 @@ export type Reads = {
    * links wrap each verb or hook, outermost first; `answers`: each hook's answerers, in the order they answer;
    * `composites`: each core verb the core's composites call through the dispatch, with those composites.
    * `launchers`: the capabilities whose launch contributors run, in the order they contribute, each on the floors it is on.
-   * `chains`, `answers` and `composites` @since 1.85; `launchers` @since 1.100
+   * Each extension's `words`: what `tower x` can call of it, and how it is typed, off the board since a client reads them
+   * only when it types one.
+   * `chains`, `answers` and `composites` @since 1.85; `launchers` @since 1.100; `words` @since 1.153
    */
   extensions: {
-    extensions: (ExtensionView & { exempted: Exempted[] })[]
+    extensions: (ExtensionView & { exempted: Exempted[]; words: Word[] })[]
     topology: Topology
     chains: Record<string, string[]>
     answers: Record<string, string[]>
