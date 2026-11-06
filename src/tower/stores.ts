@@ -7,7 +7,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import type { z } from 'zod'
 import type { Accepted } from '../bridge/extensions.ts'
-import { continuations, lineage } from '../bridge/chains.ts'
+import { chainsOf, continuations, lineage } from '../bridge/chains.ts'
 import { extensionFactName, sessionFacts } from '../bridge/stores.ts'
 import { streamFacts } from '../bridge/streams.ts'
 import { frozen } from '../bridge/frozen.ts'
@@ -202,7 +202,8 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
       facts: (session) => {
         const found = live.session(session)
         if (!found) throw new Error(`no session ${session}`)
-        const before = continuations(live.sessions())
+        const sessions = live.sessions()
+        const before = continuations(sessions, chainsOf(sessions))
         return sessionFacts(provides, lineage(found, (s) => before.get(s)))
       },
     },
