@@ -16,8 +16,9 @@ const USAGE = `usage: node <skill-dir>/tool/kb.mjs <command>   (run from the pro
               changed only elsewhere in the file after them; a ref read at line ranges alone counts only
               the commits inside them
   verify --since <rev>
-              the same, with only the suspects caused by commits in <rev>..HEAD of the repo holding kb/
-              (a branch's own: verify --since origin/main)
+              the same, with only the suspects caused by commits in <rev>..HEAD of the repo holding kb/,
+              on the first-parent line: what a merge brought in isn't counted, a merged side branch of
+              one's own included (a branch's own: verify --since origin/main)
   render      build kb/dist/<project-id>.html (refuses on errors)
   diagrams    parse every diagram the page draws (entity maps, mermaid fences) with the mermaid it loads,
               in headless Chrome (CHROME=<binary> if not found; needs the network); exit 1 on any refused

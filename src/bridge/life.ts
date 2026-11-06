@@ -19,7 +19,7 @@ export const attentionOf = (status: Status, unread: boolean): Attention => {
 /**
  * What a worker's lifecycle is derived from, as one session's facts say it now, every time in epoch ms. `state`: as the
  * host runs it (`withLiveness`), `since` included; `endedFrom`: the status its log last folded to, its exit's when it exited; `leaveAsked`: it
- * asked to go home with no prompt since; `unresumableHere`: why it couldn't be resumed where it ran; `conversations`:
+ * asked to go home, and the user hasn't typed to it since; `unresumableHere`: why it couldn't be resumed where it ran; `conversations`:
  * the ones it holds, in order, each with the session that resumed it, if one did.
  */
 export type LifeFacts = {
