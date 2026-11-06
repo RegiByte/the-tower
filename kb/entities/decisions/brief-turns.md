@@ -24,6 +24,7 @@
     "hub/src/shared/brief.ts#saidWhat",
     "hub/src/tower/http.ts#conversation",
     "hub/src/tower/http.ts#toolCall",
+    "hub/src/tail.ts#hookEvents",
     "hub/src/bridge/turns.ts#briefOf",
     "hub/src/bridge/turns.ts#Turn",
     "hub/src/bridge/turns.ts#BriefSession",
@@ -82,7 +83,9 @@ renderer can draw the brief alike, inline.
   user prompt or a message another worker sent, with Claude's latest main-loop answer before the next prompt; a turn
   with no answer is still being worked on. [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation)
   reads them from the log, and [`turnsOf`](ref:hub/src/bridge/turns.ts#turnsOf) continues a resumed conversation into
-  its source session's log only while the count falls short.
+  its source session's log only while the count falls short. Every read of a brief, a conversation or a tool call
+  parses only the log's hook lines ([`hookEvents`](ref:hub/src/tail.ts#hookEvents)), all they fold from: the
+  terminal's output, most of a log's bytes, is skipped unparsed, so a read stays cheap on a long session.
   [`wholeConversation`](ref:hub/src/bridge/turns.ts#wholeConversation) gives every turn of one conversation, at
   `GET /conversations/<id>/<conversation>` ([`conversation`](ref:hub/src/tower/http.ts#conversation)).
 - *Steps, since 1.133.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between
