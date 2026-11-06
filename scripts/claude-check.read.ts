@@ -146,7 +146,7 @@ const withoutRepeats = (statuses: Status[]): Status[] => {
 const pathsOf = (value: unknown, prefix = ''): string[] =>
   isObject(value) ? Object.entries(value).flatMap(([k, v]) => [`${prefix}${k}`, ...pathsOf(v, `${prefix}${k}.`)]) : []
 
-/** What the quota probe's fold reads of `get_usage`'s answer (`src/bridge/probes.ts`). */
+/** What the quota probe's fold reads of `get_usage`'s answer (`extensions/quota/usage.ts`). */
 export const USAGE_READ = ['rate_limits_available', 'rate_limits.five_hour.utilization', 'rate_limits.five_hour.resets_at', 'rate_limits.seven_day.utilization', 'rate_limits.seven_day.resets_at']
 
 /** `get_usage`'s answer against the recorded one, both with nulls dropped: what the fold reads, and every key that moved. */

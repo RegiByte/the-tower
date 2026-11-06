@@ -4,12 +4,11 @@
  * reads: it sends no prompt, starts no session and calls no verb.
  */
 import os from 'node:os'
-import type { Board } from '../../src/bridge/board.ts'
-import { apiError } from '../../src/shared/api.ts'
-import type { Start, StartCtx, StreamFact } from '../../src/shared/extensions.ts'
-import { USAGE_ARGS, usageRan, usageReading, USAGE_REQUEST, USAGE_TIMEOUT_MS } from '../../src/shared/rate-limits.ts'
+import type { Board } from '/lib/board.js'
+import { apiError, type Start, type StartCtx, type StreamFact } from '/lib/extension.js'
 import { PROBE_STATE_NAME, probedLine, probeLine } from './client/quota.ts'
 import { due, FLOOR_MS, NO_READS, periodMs, readOf, statusOf, step, type Answered, type Failed, type Read, type Reads } from './status.ts'
+import { USAGE_ARGS, usageRan, usageReading, USAGE_REQUEST, USAGE_TIMEOUT_MS } from './usage.ts'
 
 /**
  * Asks Claude for `/usage`'s data: the request is its only input, and it exits as its stdin closes. Run as the config

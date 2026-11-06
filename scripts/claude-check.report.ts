@@ -1,5 +1,5 @@
 /** The report of a `scripts/claude-check.ts` run, in markdown, and whether the release reads clean: pure over what the run kept. */
-import { usageAnswer } from '../src/shared/rate-limits.ts'
+import { usageAnswer } from '../extensions/quota/usage.ts'
 import type { SessionLog } from '../src/shared/model.ts'
 import {
   changelogOf, comparedForm, FULLSCREEN_MODES, heldBack, modesEnabled, SEC_DEFAULT_KEEPS, shapeChanges, shapesOf, statusesOf, unseatedBecause, usageChanges, versionPosted, withoutKept,

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { due, NO_READS, readOf, statusOf, step, type Reads } from '../extensions/quota/status.ts'
+import { usageAnswer } from '../extensions/quota/usage.ts'
 import { LEGACY_FIELDS, LEGACY_READS, type ProbeRead } from '../src/bridge/legacy.ts'
 import type { Board } from '../src/bridge/board.ts'
 import type { RateLimit } from '../src/bridge/facts.ts'
@@ -10,7 +11,6 @@ import { accountLimits, NO_LIMITS as NO_STREAM } from '../src/bridge/rate-limits
 import { oldStreams } from '../src/bridge/retention.ts'
 import { streamFacts } from '../src/bridge/streams.ts'
 import { weeklyBudget } from '../src/bridge/stats.ts'
-import { usageAnswer } from '../src/shared/rate-limits.ts'
 import { quotaLimits, type ProbeReading } from './quota-reads.ts'
 
 const text = (name: string) => readFileSync(path.join(import.meta.dirname, 'fixtures', name), 'utf8')
