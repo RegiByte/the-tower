@@ -147,6 +147,11 @@ const valueWords = (field: WordField, value: unknown): string[] => (field.many ?
 
 const STDIN_WORDS = "<<'EOF' … EOF"
 
+/** A door's flag for none: a door takes null whatever its fact's schema, which no value of `--value` can say. */
+const NO_VALUE = 'no-value'
+
+const isDoorValue = (word: Word, field: WordField) => word.kind === 'door' && field.name === 'value'
+
 /** Whether the caller's floor fills this field when nobody names it. */
 const fillsProject = (word: Word, field: WordField) => word.scope === 'project' && field.name === 'project'
 
@@ -166,6 +171,7 @@ export const typedLine = (cap: string, word: Word, input: Record<string, unknown
     .filter((f) => !word.positional.includes(f.name) && f.name !== word.stdin)
     .flatMap((f) => {
       if (!given(f)) return f.required && !fillsProject(word, f) ? [holeOf(f)] : []
+      if (isDoorValue(word, f) && input[f.name] === null) return [`--${NO_VALUE}`]
       if (f.takes === 'boolean' && !f.many) return [input[f.name] ? `--${f.name}` : `--${f.name}=false`]
       return valueWords(f, input[f.name]).map((value) => `--${f.name} ${value}`)
     })
@@ -184,7 +190,7 @@ export const usageOf = (word: Word): string => {
   })
   const flags = word.fields
     .filter((f) => !word.positional.includes(f.name) && f.name !== word.stdin)
-    .map((f) => optional(`${holeOf(f)}${f.many ? ' …' : ''}`, f.required && !fillsProject(word, f)))
+    .map((f) => (isDoorValue(word, f) ? `(${holeOf(f)} | --${NO_VALUE})` : optional(`${holeOf(f)}${f.many ? ' …' : ''}`, f.required && !fillsProject(word, f))))
   const stdin = word.fields.find((f) => f.name === word.stdin)
   return [typedName(word), ...positional, ...flags, ...(stdin ? [optional(STDIN_WORDS, stdin.required)] : [])].join(' ')
 }
@@ -196,6 +202,7 @@ export const helpLines = (cap: string, word: Word): string[] => [
   `tower x ${cap} ${usageOf(word)}`,
   ...(word.description ? [word.description] : []),
   ...word.fields.map((f) => `  --${f.name}  ${TAKES_WORDS[f.takes]}${f.many ? ', repeated' : ''}${f.name === word.stdin ? ', or text on stdin' : ''}${fillsProject(word, f) ? ", your floor's when left out" : f.required ? ', required' : ''}${f.description ? `: ${f.description}` : ''}`),
+  ...(word.kind === 'door' ? [`  --${NO_VALUE}  sends none, in place of --value`] : []),
 ]
 
 /** A word's arguments as read: its input, a call for its help, or what was wrong, with what to do about it. */
@@ -230,6 +237,7 @@ export const parseWord = (cap: string, word: Word, args: string[]): Parsed => {
     return undefined
   }
   const free: string[] = []
+  let noValue = false
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
     if (arg === '--') {
@@ -244,10 +252,15 @@ export const parseWord = (cap: string, word: Word, args: string[]): Parsed => {
     const eq = arg.indexOf('=')
     const name = eq < 0 ? arg.slice(2) : arg.slice(2, eq)
     const inline = eq < 0 ? undefined : arg.slice(eq + 1)
+    if (word.kind === 'door' && name === NO_VALUE) {
+      if (inline !== undefined) return bad(`--${NO_VALUE} takes no value`)
+      noValue = true
+      continue
+    }
     const field = word.fields.find((f) => f.name === name)
     if (!field) {
       if (name === 'help') return { t: 'help' }
-      const near = nearest(name, word.fields.map((f) => f.name))
+      const near = nearest(name, [...word.fields.map((f) => f.name), ...(word.kind === 'door' ? [NO_VALUE] : [])])
       return bad(`${typedName(word)} has no --${name}`, nearestSaid(near && `--${near}`, help))
     }
     if (field.takes === 'boolean' && inline === undefined) {
@@ -259,6 +272,10 @@ export const parseWord = (cap: string, word: Word, args: string[]): Parsed => {
     if (text === undefined) return bad(`--${name} needs a value`)
     const wrong = put(field, text, `--${name}`)
     if (wrong) return wrong
+  }
+  if (noValue) {
+    if (input.value !== undefined) return bad(`--value and --${NO_VALUE} can't go together: one sets it, the other sends none`)
+    input.value = null
   }
   for (const name of word.positional) {
     const field = word.fields.find((f) => f.name === name)!
@@ -287,9 +304,24 @@ export const jsonArgument = (word: Word, args: string[]): { body: unknown } | un
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 
-/** What a deprecated JSON argument says on stderr: that it goes, and what to type instead. */
+const typesAs = (takes: Takes, value: unknown): boolean => {
+  if (takes === 'json') return true
+  return takes === 'integer' ? Number.isInteger(value) : typeof value === (takes === 'number' ? 'number' : takes)
+}
+
+/** Whether flags can say `body`: an object of known fields, each of the type its flag takes. A null has no flag. */
+const isTypable = (word: Word, body: unknown): body is Record<string, unknown> =>
+  isRecord(body) &&
+  Object.entries(body).every(([name, value]) => {
+    const field = word.fields.find((f) => f.name === name)
+    if (!field) return false
+    if (isDoorValue(word, field) && value === null) return true
+    return field.many ? Array.isArray(value) && value.every((v) => typesAs(field.takes, v)) : typesAs(field.takes, value)
+  })
+
+/** What a deprecated JSON argument says on stderr: that it goes, and what to type instead, or where to read how when flags can't say that input. */
 export const jsonDeprecatedLine = (cap: string, word: Word, body: unknown): string =>
-  `A JSON argument to tower x is deprecated and goes at 2.0. Type instead: ${isRecord(body) ? typedLine(cap, word, body) : `tower x ${cap} ${typedName(word)} --help`}`
+  `A JSON argument to tower x is deprecated and goes at 2.0. Type instead: ${isTypable(word, body) ? typedLine(cap, word, body) : `tower x ${cap} ${typedName(word)} --help`}`
 
 /** The first required field nothing gave, as what to say and an example, which leaves out the floor a worker's word fills; none when the input is whole. */
 export const missingLine = (cap: string, word: Word, input: Record<string, unknown>): string | undefined => {
