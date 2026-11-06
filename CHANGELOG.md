@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.96.0
+
+An extension's verbs and reads are typed like commands. Restart the tower with this release (`tower down tower`, then
+`tower up tower`): the new `tower x` reads what an older tower doesn't serve. No host restart, no config change, API
+1.153 (additions only). The open page offers the reload.
+
+- **`tower x <cap> <word>`.** Every verb is a word, by its name, and a read is one when it declares it. Flags come from
+  the input schema: `--re 3`, a bare `--tell`, a repeated `--at`. A manifest's new `cli` key names what takes stdin,
+  which fields are positional, what prints, and a word's usage. The CLI fills the caller, and the caller's floor as
+  `project` unless `--project` names one.
+- **Help and errors that say what to do next.** `tower x` lists capabilities and `tower x <cap>` their words. A missing
+  flag shows an example, a wrong type names the field, an unknown word suggests the nearest.
+- **The JSON argument is deprecated** and goes at 2.0. It still works, and says what to type instead. A door's word
+  takes `--value`, and tabline clears with `--value ""`.
+- floors, narrate and tabline teach the new form and need 1.153. reviews, policies and quota keep their words as they
+  are for now.
+
 ## v1.95.0
 
 Each Claude account gets its own limits. No restart beyond the tower's own (`tower down tower`, then `tower up tower`),
