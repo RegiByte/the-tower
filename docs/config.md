@@ -332,7 +332,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `help` (the `?` sheet) | global | `?` |
 | `spawn` (the new-worker form on the floor in focus, or on the draft in focus) | global | none |
 | `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+Shift+1` … `Ctrl+Shift+4` |
-| `shell-here` (a shell in the selected worker's directory; from any shell, hides the dock and goes back) | global | `Ctrl+Backquote` |
+| `shell-here` (a shell in the selected worker's directory; from any shell, hides the dock and goes back) | global | `Meta+J`, `Ctrl+Backquote` |
 | `leave-terminal` | terminal | `Alt+Escape` |
 | `newline`, `delete-word`, `delete-to-start`, `delete-to-end`, `line-start`, `line-end`, `word-left`, `word-right` | terminal | `Shift+Enter`, `Ctrl+Backspace`, `Meta+Backspace`, `Meta+Delete`, `Meta+ArrowLeft`, `Meta+ArrowRight`, `Alt+ArrowLeft`, `Alt+ArrowRight` |
 | `save-draft` | field | `Meta+S`, `Ctrl+S` |

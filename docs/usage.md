@@ -189,7 +189,7 @@ thread, with reviews on) names how to get it back: where nothing would record it
 ## Shells
 
 Plain shells in a floor's directories, docked as tabs under the terminal (the shell button on a directory, or the
-dock's `+`). ⌃` opens one in the selected worker's directory, its worktree, to check its work before it lands, and
+dock's `+`). ⌘J opens one in the selected worker's directory, its worktree, to check its work before it lands, and
 from there goes back to the worker's terminal. They outlive the tower page: close the tab or restart the tower and the
 shell keeps running until you end it or it exits.
 
