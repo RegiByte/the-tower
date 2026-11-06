@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-06",
   "refs": [
     "hub/src/directory.ts",
     "hub/src/bridge/facts.ts#LEAVE",
@@ -34,8 +34,12 @@ answer, and a next run reading its predecessors would find no handoff note.
   `TOWER_SESSION_ID`) calls the tower's `fact` verb, `{name: 'leave'}`, which logs `{hook_event_name: 'tower.leave'}`
   in the session's own log, as `tower show` does ([[agent-show]]): no host change. A bare `tower home` stays a usage error, so ending oneself
   takes reading one's callsign (`tower whoami`). Naming anyone else is that worker's `send-home`, unchanged ([[crews]]).
-- *Folded, not stored.* The fold sets `facts.leaveAt`; any later `prompt.submit` clears it, so someone typing to the
-  worker keeps it on duty. `card.leaving` is a running card with `leaveAt` set, and a leaving card's outcome
+- *Folded, not stored.* The fold sets `facts.leaveAt`; a later `prompt.submit` from a user
+  origin clears it ([`USER_ORIGINS`](ref:hub/src/bridge/conversation.ts#USER_ORIGINS), a worker's `tower send` excepted),
+  so someone typing to the worker keeps it on duty. Any other prompt, a peer's message, a task notification or a
+  cross-session notice, leaves it set: such a prompt is often delivered as the turn ends, and a leave it cleared was
+  never armed again. The worker answers it and goes when that turn ends, or, arriving before the sweep sees its turn
+  start, goes without answering. `card.leaving` is a running card with `leaveAt` set, and a leaving card's outcome
   (`done`, `failed`: [`isOutcome`](ref:hub/src/bridge/status.ts#isOutcome)) waits on nobody, so its `Stop` before going
   raises no wait or ring. A screen or a question still waits on the user: the turn can't end until someone answers.
 - *Effective when the turn ends.* [`leavesNow`](ref:hub/src/bridge/facts.ts#leavesNow): a leave is pending and no
