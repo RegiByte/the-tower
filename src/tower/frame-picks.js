@@ -2,12 +2,14 @@
  * frame-picks.js: a framed page's selection, sent to the tower framing it, so text picked in a shown html page can be
  * a passage (decision `passage-picks`). The tower appends it to every html file it serves sandboxed, after the page.
  * It calls no verb and holds no token. What it sends is the page's word, since any script in the page can send the
- * same: the tower takes it only from a frame it drew a worker's shown file in, only while that frame holds the
- * document it loaded, and says the words are the page's (`Passage.reported`).
+ * same: the tower takes it only from a frame it drew a worker's shown file in, and only while that frame holds the
+ * document it loaded.
  *
  * Each change of the selection, and each scroll or resize while one stands, sends `{t: 'pick'}`: with `sig`, the
  * selection's ends, `quote` its words and `rect` where it is in the frame; without, when it is collapsed or holds only
- * white space. `{t: 'unpick'}` from the framing page clears it.
+ * white space. The page's `load` sends it once more: the tower hears picks only once the frame has loaded, and a
+ * selection made while the page still loads would otherwise go unheard until it changes. `{t: 'unpick'}` from the
+ * framing page clears it.
  */
 ;(() => {
   const SENDING = Symbol.for('tower.frame-picks')
@@ -53,6 +55,7 @@
   }
 
   document.addEventListener('selectionchange', queue)
+  addEventListener('load', queue)
   addEventListener('scroll', () => sent && queue(), true)
   addEventListener('resize', () => sent && queue())
   addEventListener('message', (e) => {
