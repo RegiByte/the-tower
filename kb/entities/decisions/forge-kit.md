@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-20",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-05",
   "refs": [
     "hub/scripts/tower3d-kit.ts#vendorForge",
     "hub/scripts/tower3d-kit.ts#checkBinding",
@@ -43,7 +43,7 @@ a swap is a change to a scene document. The decal sheet is the forge's real GPU 
 placed prop shows a decal.
 
 **How.**
-- Vendored whole: [`vendorForge`](ref:hub/scripts/tower3d-kit.ts#vendorForge) (`tsx scripts/tower3d-kit.ts
+- Vendored whole: [`vendorForge`](ref:hub/scripts/tower3d-kit.ts#vendorForge) (`npm run tower3d:kit --
   vendor-forge <dist>`) replaces `renderers/tower3d/forge/` with a copy of the forge's `dist/`, its CC0
   `License.txt` and a README. It fails first ([`checkBinding`](ref:hub/scripts/tower3d-kit.ts#checkBinding)) when
   the catalog's `materials` name others than the kit binds, or its glass opacity or decal cut differ from

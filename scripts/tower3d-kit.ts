@@ -13,10 +13,10 @@
  * over it; `vendor-forge` replaces the forge snapshot with a newer `dist/`. Only the forge props the office places are
  * measured, and the forge's 4096² decal sheet goes in the file only when one of them shows a decal.
  *
- *   tsx scripts/tower3d-kit.ts                      build out/kaykit/kit.kaykit
- *   tsx scripts/tower3d-kit.ts vendor <bundle>      replace the bundle files in renderers/tower3d/kaykit with the models
- *                                                   the office uses (its Characters/ stay: scripts/tower3d-characters.ts)
- *   tsx scripts/tower3d-kit.ts vendor-forge <dist>  replace renderers/tower3d/forge with the forge's dist/ at <dist>
+ *   npm run tower3d:kit                       build out/kaykit/kit.kaykit
+ *   npm run tower3d:kit -- vendor <bundle>      replace the bundle files in renderers/tower3d/kaykit with the models
+ *                                               the office uses (its Characters/ stay: scripts/tower3d-characters.ts)
+ *   npm run tower3d:kit -- vendor-forge <dist>  replace renderers/tower3d/forge with the forge's dist/ at <dist>
  */
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -75,7 +75,7 @@ The models Tower 3D draws, copied unchanged from the KayKit Bits Bundle 1 (1.1) 
 the bundle's.
 
 \`npm run tower3d\` measures them into the renderer's kit. When the office takes a model this folder lacks, copy
-the models it uses from a full bundle: \`tsx scripts/tower3d-kit.ts vendor <bundle>\`. \`Characters/\` holds what
+the models it uses from a full bundle: \`npm run tower3d:kit -- vendor <bundle>\`. \`Characters/\` holds what
 the workers are made of, from two other KayKit packs (its own README).
 `
 
@@ -106,7 +106,7 @@ repository of its own, to take KayKit's place in Tower 3D over time. They are CC
 \`catalog.json\` lists every prop's sidecar and how each of the three materials binds the textures in \`textures/\`;
 \`props/<category>/<name>.glb\` carry the meshes, with no images. \`npm run tower3d\` measures the props the office
 places into the renderer's kit, as the pack \`forge\` (ids \`forge/<category>/<name>\`). Replace the snapshot with a
-newer \`dist/\`: \`tsx scripts/tower3d-kit.ts vendor-forge <dist>\`.
+newer \`dist/\`: \`npm run tower3d:kit -- vendor-forge <dist>\`.
 `
 
 const FORGE_LICENSE = `The forge's props, their textures and their sidecars are dedicated to the public domain under CC0 1.0 Universal
@@ -149,19 +149,19 @@ if (positionals[0] === 'vendor') {
   vendor(path.resolve(positionals[1]))
   process.exit(0)
 }
-if (positionals.length) throw new Error(`unknown verb ${positionals[0]}: tsx scripts/tower3d-kit.ts [vendor <bundle> | vendor-forge <dist>]`)
+if (positionals.length) throw new Error(`unknown verb ${positionals[0]}: npm run tower3d:kit -- [vendor <bundle> | vendor-forge <dist>]`)
 
 const placing = (id: string) => flats.filter((f) => [...f.items, ...Object.values(f.states).flatMap((s) => s.items)].some((it) => it.model === id)).map((f) => f.name)
 const named = (id: string) => (placing(id).length ? `${id} (in ${placing(id).join(', ')})` : id)
 const missing = kaykitIds.filter((id) => !existsSync(path.join(VENDORED, gltfOf(id))))
 if (missing.length) {
-  console.error(`${path.relative(REPO, VENDORED)} lacks ${missing.map(named).join(', ')}: copy the models the office places from the full KayKit Bits bundle with \`tsx scripts/tower3d-kit.ts vendor <bundle>\``)
+  console.error(`${path.relative(REPO, VENDORED)} lacks ${missing.map(named).join(', ')}: copy the models the office places from the full KayKit Bits bundle with \`npm run tower3d:kit -- vendor <bundle>\``)
   process.exit(1)
 }
 const forged = new Set(readForge(FORGE_VENDORED).props.map((p) => forgeId(p.id)))
 const unforged = forgeIds.filter((id) => !forged.has(id))
 if (unforged.length) {
-  console.error(`${path.relative(REPO, FORGE_VENDORED)} lacks ${unforged.map(named).join(', ')}: vendor a forge dist/ that has them with \`tsx scripts/tower3d-kit.ts vendor-forge <dist>\``)
+  console.error(`${path.relative(REPO, FORGE_VENDORED)} lacks ${unforged.map(named).join(', ')}: vendor a forge dist/ that has them with \`npm run tower3d:kit -- vendor-forge <dist>\``)
   process.exit(1)
 }
 
