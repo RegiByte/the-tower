@@ -1,4 +1,4 @@
-# Passages
+# Quote to worker
 
 Pick text in a markdown, text or code file a worker showed, write a prompt about it, and the worker gets the prompt
 with the passage quoted and its place in the file named.
@@ -43,5 +43,5 @@ Nothing: they draw no `passage.acts` region.
 
 The core draws the file, reads the frame's selection and turns a settled pick into a `passage` subject: `/picks.js`,
 `src/views/passages.ts`, and where a pick is in each view (`sections.ts` with the source-line marks of
-`sectionsHtml`, `text.ts`). This extension is one view on that subject, `passages/composer`, at `row` scale. Another
+`sectionsHtml`, `text.ts`). This extension is one view on that subject, `quote/composer`, at `row` scale. Another
 extension can act on passages too, with a command or a view `on: ["passage"]`.

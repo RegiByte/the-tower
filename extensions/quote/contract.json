@@ -1,5 +1,5 @@
 {
-  "provides": "passages",
+  "provides": "quote",
   "major": 1,
   "names": [
     "client.composer.js#MAX_QUOTE",

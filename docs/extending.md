@@ -1170,7 +1170,7 @@ the frame lit; other views draw no marks yet.
   `linesPicked` reads a pick's lines from the marks before it and in it. When a passage settles, `tower/document`,
   `tower/shelf` and `tower/text` ask the kit for `passage.acts`: commands and one view at `row` scale, drawn in a box over the frame,
   under the passage or over it where there is no room below. A view there that dispatches a bubbling `done` lets the
-  pick go, and so do a click outside the box and a click in the document. The bundled `passages` extension's
+  pick go, and so do a click outside the box and a click in the document. The bundled `quote` extension's
   `composer` asks the worker that showed the file about the passage, a code file's quoted in a fence.
 
 `tower/document` draws each section in its frame and, beside the frame in the page's own document, a gutter of one

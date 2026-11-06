@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Text picked in a shown document is a passage subject, read from the page and acted on over the frame",
-  "summary": "A selection in a markdown document drawn by sections or a text file drawn as written (a showing, a kept item, a shelf file) becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (/picks.js) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled passages extension's composer types a prompt about it into the worker that showed the document.",
+  "summary": "A selection in a markdown document drawn by sections or a text file drawn as written (a showing, a kept item, a shelf file) becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (/picks.js) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled quote extension's composer types a prompt about it into the worker that showed the document.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
@@ -24,9 +24,9 @@
     "hub/src/shared/picks.ts#textLines",
     "hub/src/shared/extensions.ts#RESERVED",
     "hub/renderers/page/renderer.json",
-    "hub/extensions/passages/extension.json",
-    "hub/extensions/passages/client/composer.ts#askPrompt",
-    "hub/extensions/passages/client/composer.ts#mount",
+    "hub/extensions/quote/extension.json",
+    "hub/extensions/quote/client/composer.ts#askPrompt",
+    "hub/extensions/quote/client/composer.ts#mount",
     "hub/scripts/webkit.ts"
   ],
   "links": [
@@ -34,7 +34,7 @@
     { "to": "agent-show", "verb": "extends", "carries": "a showing's passages" },
     { "to": "machines", "verb": "follows", "carries": "/picks.js" },
     { "to": "ui-model", "verb": "extends", "carries": "the passage viewer subject and the passage.acts region" },
-    { "to": "extensions", "verb": "uses", "carries": "the passages extension's composer view" }
+    { "to": "extensions", "verb": "uses", "carries": "the quote extension's composer view" }
   ]
 }
 ---
@@ -79,14 +79,15 @@ sentence the user picked.
   page's own document positioned over the frame: under the passage, or over it where there is no room below, kept
   within the frame as it scrolls. A view there dispatches a bubbling `done` to let the pick go, as the reviews
   composer does under picked lines.
-- *Acting on a passage is an extension's.* The bundled `passages` extension's
-  [`composer`](ref:hub/extensions/passages/client/composer.ts#mount) types a prompt into the worker that showed the
+- *Acting on a passage is an extension's.* The bundled `quote` extension's
+  [`composer`](ref:hub/extensions/quote/client/composer.ts#mount) types a prompt into the worker that showed the
   document, through the core's `submit` (queued while it works), prose quoted as a blockquote and code in a fence
   named by the file's extension, as
-  [`askPrompt`](ref:hub/extensions/passages/client/composer.ts#askPrompt) writes it: the file, its lines and heading,
+  [`askPrompt`](ref:hub/extensions/quote/client/composer.ts#askPrompt) writes it: the file, its lines and heading,
   the passage quoted, then the user's words. It says why it takes no prompt instead of offering one when the worker
-  doesn't take one now, when no worker showed the document, or when the quote is past 4,000 characters. It couldn't
-  be named `ask`, a name the core keeps ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)).
+  doesn't take one now, when no worker showed the document, or when the quote is past 4,000 characters. It is named
+  for what it does, quoting a passage to a worker, and leaves the noun `passage` to the core's subject, which other
+  extensions may act on too; `ask` is a name the core keeps ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)).
 - `tool:webkit` took a `--drag` ([`webkit.ts`](ref:hub/scripts/webkit.ts)), real AppKit mouse events, to check a
   selection in WebKit, where it matters.
 

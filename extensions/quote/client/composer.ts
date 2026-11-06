@@ -5,13 +5,13 @@ import { type Mount, pressing, viewCss } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 
 /**
- * `passages/composer`: a prompt about a passage picked in a markdown document a worker showed, typed into that worker's
+ * `quote/composer`: a prompt about a passage picked in a markdown document a worker showed, typed into that worker's
  * prompt and submitted (the core's `submit`, queued while it works). The prompt quotes the passage and names the file,
  * its lines and its section (`askPrompt`). Once it is sent, or cancelled, the view says it is `done` (a bubbling event
  * on its host), and the document lets the pick go.
  */
 
-const ID = 'passages/composer'
+const ID = 'quote/composer'
 
 /** The most characters a quote may have: past it, the prompt would bury the question. */
 export const MAX_QUOTE = 4000
