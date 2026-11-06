@@ -1,6 +1,4 @@
-import { ICON } from '../../../src/shared/icons.ts'
-import { mountKeptTray } from '../../../src/shared/items.ts'
-import type { Mount } from '../../../src/shared/views.ts'
+import { ICON, type Mount, mountKeptTray } from '/lib/view.js'
 import { draftTitles } from './drafts.ts'
 
 /**

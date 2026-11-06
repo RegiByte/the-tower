@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Drafts",
   "description": "Prompts kept for later: edited in a renderer, then sent to a new session or typed into a worker, and deleted.",
-  "requires": { "tower": "1.130" },
+  "requires": { "tower": "1.151" },
   "server": "server.ts",
   "client": "client",
   "commands": {

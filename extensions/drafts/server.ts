@@ -2,7 +2,7 @@
  * The drafts extension: its launch contributor tells each worker on a floor where drafts is on how to keep an idea or a
  * prompt for later, so the brief names the drafts collection only where the floor has it.
  */
-import type { Start } from '../../src/shared/extensions.ts'
+import type { Start } from '/lib/extension.js'
 
 const KEEPING =
   '- Keeping for later: an idea off the current goal, or a prompt the user wants for a later session, goes in the ' +

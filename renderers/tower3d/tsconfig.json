@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "types": ["node"],
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "paths": { "/lib/*.js": ["../../src/lib/*.ts"] }
   },
   "include": ["src"]
 }

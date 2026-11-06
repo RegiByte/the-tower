@@ -1,6 +1,6 @@
-import type { FloorCollection } from '../../../src/bridge/board.ts'
-import type { Replies, Verbs } from '../../../src/shared/api.ts'
-import { itemTitles } from '../../../src/shared/titles.ts'
+import type { FloorCollection } from '/lib/board.js'
+import type { Replies, Verbs } from '/lib/extension.js'
+import { itemTitles } from '/lib/words.js'
 
 /**
  * Drafts: prompts kept for later in a project's `drafts` collection, edited in a renderer, then sent to a new
