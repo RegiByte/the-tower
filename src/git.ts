@@ -6,6 +6,7 @@
 import { spawn } from 'node:child_process'
 import { endInput } from './child-input.ts'
 import { withoutParentSession } from './shared/env.ts'
+import { signalGroup } from './signal-group.ts'
 
 /**
  * Every config of the user's that changes what a read reports, or what a removal checks, set back to git's default.
@@ -49,14 +50,7 @@ const spawnGit = (dir: string, args: string[], timeout: number, env: NodeJS.Proc
     let timedOut = false
     const timer = setTimeout(() => {
       timedOut = true
-      try {
-        process.kill(-child.pid!, 'SIGTERM')
-      } catch (err) {
-        // The group is gone (ESRCH), or its leader has exited and isn't reaped yet: macOS answers kill(-pid) with EPERM
-        // before Node sees the exit, while `exitCode` and `signalCode` are still null.
-        const code = (err as NodeJS.ErrnoException).code
-        if (code !== 'ESRCH' && code !== 'EPERM') throw err
-      }
+      signalGroup(child.pid!, 'SIGTERM')
     }, timeout)
     child.on('error', (err) => (clearTimeout(timer), reject(err)))
     child.on('close', (code, signal) => {

@@ -13,7 +13,8 @@ import { connectJobs } from '../src/shared/client.ts'
 import { withoutParentSession } from '../src/shared/env.ts'
 import { systemPaths } from '../src/shared/paths.ts'
 import { answers } from '../src/shared/socket.ts'
-import { jobGroup, signalGroup } from '../src/jobs/groups.ts'
+import { jobGroup } from '../src/jobs/groups.ts'
+import { signalGroup } from '../src/signal-group.ts'
 
 const DAEMON = path.join(import.meta.dirname, '..', 'src', 'jobs', 'main.ts')
 const roots: string[] = []
