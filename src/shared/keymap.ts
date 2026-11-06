@@ -44,7 +44,7 @@ export const COMMANDS = [
   { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+2'], does: "the selected worker's brief" },
   { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+3'], does: "the selected worker's changes" },
   { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+4'], does: "the selected worker's review thread" },
-  { id: 'shell-here', label: 'Shell here', scope: 'global', group: 'Panes', chords: ['Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from any shell, hides the dock and goes back to the worker's terminal" },
+  { id: 'shell-here', label: 'Shell here', scope: 'global', group: 'Panes', chords: ['Meta+J', 'Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from any shell, hides the dock and goes back to the worker's terminal" },
   { id: 'leave-terminal', label: 'Leave the terminal', scope: 'terminal', group: 'Terminal', chords: ['Alt+Escape'], does: 'leave the terminal: focus goes back to where it was before it, or to the worker bar' },
   { id: 'newline', label: 'New line', scope: 'terminal', group: 'Terminal', chords: ['Shift+Enter'], does: "a new line in a worker's prompt (Enter in a shell)" },
   { id: 'delete-word', label: 'Delete a word', scope: 'terminal', group: 'Terminal', chords: ['Ctrl+Backspace'], does: 'delete the word before the cursor, as ⌥⌫ does' },

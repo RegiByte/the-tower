@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-06",
   "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#keepTextareaEmpty", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf"]
 }
 ---
@@ -60,8 +60,8 @@ every other key, and reach every renderer the way `user.name` does.
   [`keysHint`](ref:hub/src/shared/keymap.ts#keysHint) is a control's tip (`Esc outside a terminal or a text field`), so
   every button a command runs names its chords as the config binds them, and
   [`keyshortcuts`](ref:hub/src/shared/keymap.ts#keyshortcuts) is `aria-keyshortcuts`.
-- `shell-here` (⌃`) goes between the selected worker's terminal and a shell in its directory, read from the board's
-  shells by cwd; xterm sends no bytes for ⌃`, so neither a shell nor Claude sees it. `palette` (⌘K) lists the global
+- `shell-here` (⌘J, or ⌃` where Meta is taken, as on WSL) goes between the selected worker's terminal and a shell in its directory, read from the board's
+  shells by cwd; xterm sends no bytes for either, so neither a shell nor Claude sees it. `palette` (⌘K) lists the global
   commands by `label` with their chords, so it teaches the keymap ([[command-palette]]).
 - `leave-terminal` (⌥Esc) returns focus to where it was before the terminal
   ([`leaveTerminal`](ref:hub/renderers/page/screen.js#leaveTerminal)), and `pane-*` (⌃⇧1–4) show the selected worker's
