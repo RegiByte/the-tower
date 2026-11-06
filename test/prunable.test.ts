@@ -94,12 +94,13 @@ test('a hire whose work has not landed, or that works in the main checkout, is n
   assert.deepEqual(towerAt(hired(log, 'main'), later, repos(true, 0)).tidy.prune, [])
 })
 
-test('typing into an idle hire moves when it went quiet', () => {
-  const log = until(fixture('interrupts'), 158.6)
-  const typedAt = at(log, 158.592)
+test('typing into an idle hire moves when it went quiet, to the grain of the typing the board carries', () => {
+  const quiet = until(fixture('interrupts'), 158.6)
+  const log: SessionLog = { ...quiet, events: [...quiet.events, [170, 'i', 'x']] }
+  const typedAt = at(log, 170)
   const floor = towerAt(hired(log, 'worktree'), typedAt, repos(true, 0))
   assert.equal(floor.cards.find((c) => c.id === log.header.id)!.status, 'idle')
-  assert.deepEqual(floor.tidy.prune, [{ t: 'kill', id: log.header.id, since: typedAt }])
+  assert.deepEqual(floor.tidy.prune, [{ t: 'kill', id: log.header.id, since: typedAt - (typedAt % 5000) }])
 })
 
 test("a finished hire whose work has landed is offered with its answer unread once its hirer is gone: the hirer's or the user's", () => {
