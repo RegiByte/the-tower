@@ -3,8 +3,8 @@
  * share them. A read waits `every` after the last; longer after failures in a row (doubling) or while the account has
  * nothing to read; and while a session's turn read every limit the probe reads, it waits `every` after that turn's.
  */
-import type { StreamFact } from '../../src/shared/extensions.ts'
-import { usageReading, type RateLimitsReading } from '../../src/shared/rate-limits.ts'
+import type { RateLimitsReading, StreamFact } from '/lib/extension.js'
+import { usageReading } from './usage.ts'
 
 /** What the stream says. `kinds`: the limits the last answer that had any read. */
 export type Reads = {

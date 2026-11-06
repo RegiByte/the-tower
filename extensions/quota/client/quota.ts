@@ -1,7 +1,6 @@
-import type { Board } from '../../../src/bridge/board.ts'
-import type { Attention } from '../../../src/bridge/life.ts'
-import type { ProbeStatus as LegacyProbe } from '../../../src/bridge/legacy.ts'
-import { span } from '../../../src/shared/format.ts'
+import type { Attention, Board } from '/lib/board.js'
+import { span } from '/lib/words.js'
+import type { QuotaStatus } from '../status.ts'
 
 /**
  * The quota probe in words: how it stands, when it reads next, and what a read now came to, read from the quota
@@ -10,7 +9,7 @@ import { span } from '../../../src/shared/format.ts'
  */
 
 /** A probe as these words read it: the quota extension's part with its name (`quotaOf`), or an entry of `board.probes`. */
-export type ProbeStatus = Omit<LegacyProbe, 'reads'>
+export type ProbeStatus = QuotaStatus & { name: string }
 
 /** What `quota/read-now` answers, as these words read it. */
 export type ReadNow = { ms: number; ok: boolean; error?: string }

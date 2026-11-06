@@ -15,8 +15,8 @@
     "hub/extensions/quota/status.ts#step",
     "hub/extensions/quota/status.ts#statusOf",
     "hub/src/shared/rate-limits.ts#RateLimitsReading",
-    "hub/src/shared/rate-limits.ts#usageAnswer",
-    "hub/src/shared/rate-limits.ts#usageReading",
+    "hub/extensions/quota/usage.ts#usageAnswer",
+    "hub/extensions/quota/usage.ts#usageReading",
     "hub/src/bridge/rate-limits.ts#limitsStep",
     "hub/src/bridge/rate-limits.ts#accountLimits",
     "hub/src/bridge/rate-limits.ts#accountsOf",
@@ -59,7 +59,7 @@ core code it replaced.
   stream-json` and nothing loaded or saved, run through `ctx.run` from the temp dir with the scrubbed env
   ([[env-scrub]]), sent one line, the `get_usage` control request, and killed at a timeout
   ([`server.ts`](ref:hub/extensions/quota/server.ts)). The answer becomes a reading in the sessions' shape
-  ([`usageAnswer`](ref:hub/src/shared/rate-limits.ts#usageAnswer), [`usageReading`](ref:hub/src/shared/rate-limits.ts#usageReading)),
+  ([`usageAnswer`](ref:hub/extensions/quota/usage.ts#usageAnswer), [`usageReading`](ref:hub/extensions/quota/usage.ts#usageReading)),
   each reset rounded to the second as the mod reports it, so a window is one whichever read it. A read sends no
   prompt, starts no session and calls no verb.
 - *Due, from facts.* The extension's `tick` slot fires every minute and reads when
