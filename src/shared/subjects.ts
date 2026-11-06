@@ -126,11 +126,12 @@ export const sectionSubject = (of: Subject, section: { n: number; heading?: stri
 })
 
 /**
- * Text picked in a document a renderer draws by sections, as a renderer holds it: `of`, the key of the showing or item
- * the document is; `card`, the worker that showed it, and `file`, the file's real path, for a showing of a file;
- * `quote`, the words picked as the document draws them; `sections`, the `n` of each section it touches, `heading` the
- * first one's; `from` and `to`, the source lines of the blocks it starts and ends in, where the drawn document marks
- * them (`linesPicked`). @since 1.154
+ * Text picked in a file a renderer draws, as a renderer holds it: `of`, the key of the showing or item it is in;
+ * `card`, the worker that showed it, and `file`, the file's real path, for a showing of a file; `quote`, the words
+ * picked as the frame draws them; `sections`, the `n` of each section of a markdown document it touches; `from` and
+ * `to`, its source lines, where the file drawn says them (`linesPicked`, `textLines`); `reported`, set when the words
+ * are the page's own report of them (an html page, whose scripts could say anything), not read by the renderer.
+ * @since 1.154
  */
 export type Passage = {
   of: string
@@ -139,9 +140,9 @@ export type Passage = {
   file?: string
   quote: string
   sections: number[]
-  heading?: string
   from?: number
   to?: number
+  reported?: true
 }
 
 /** A short hash of a passage's words, so two picks in the same lines are two keys. */

@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Text picked in a shown document is a passage subject, read from the page and acted on over the frame",
-  "summary": "A selection in a markdown document drawn by sections or a text file drawn as written (a showing, a kept item, a shelf file) becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (/picks.js) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled quote extension's composer types a prompt about it into the worker that showed the document.",
+  "summary": "A selection in a markdown document drawn by sections, a text file drawn as written (a showing, a kept item, a shelf file), or a shown html page that reports it through /frame-picks.js, becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (/picks.js) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled quote extension's composer types a prompt about it into the worker that showed the document.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
@@ -21,6 +21,9 @@
     "hub/src/views/passages.ts#pickPassages",
     "hub/src/views/passages.ts#offsetIn",
     "hub/src/views/text.ts#mount",
+    "hub/src/views/html.ts#mount",
+    "hub/src/views/passages.ts#reportedSource",
+    "hub/src/tower/frame-picks.js",
     "hub/src/shared/picks.ts#textLines",
     "hub/src/shared/extensions.ts#RESERVED",
     "hub/renderers/page/renderer.json",
@@ -48,8 +51,8 @@ sentence the user picked.
   like `lines` picked in a worker's Changes: never on the board, a child of the showing or item the document is
   ([`parentOf`](ref:hub/src/shared/subjects.ts#parentOf)). Its [`Passage`](ref:hub/src/shared/subjects.ts#Passage)
   holds the quote as the document draws it (also its `body`, typed `text/plain`, so anything that reads a subject's
-  text reads it), the sections it touches, the first one's heading, and the source lines of the blocks it starts and
-  ends in. For a showing of a file it also holds the worker's card and the file's real path.
+  text reads it), the sections it touches, and its source lines. It carries no heading: the quote and the lines place
+  it, in any file. For a showing of a file it also holds the worker's card and the file's real path.
 - *Two kinds of document, one capture.* [`pickPassages`](ref:hub/src/views/passages.ts#pickPassages) holds
   everything about picking in a frame where nothing runs: the selection read, the machine, the highlight, the box and
   its region. A view hands it its frame and says where a range is in its own terms (`Where`). `tower/document` and
@@ -85,11 +88,26 @@ sentence the user picked.
   [`composer`](ref:hub/extensions/quote/client/composer.ts#mount) types a prompt into the worker that showed the
   document, through the core's `submit` (queued while it works), prose quoted as a blockquote and code in a fence
   named by the file's extension, as
-  [`askPrompt`](ref:hub/extensions/quote/client/composer.ts#askPrompt) writes it: the file, its lines and heading,
-  the passage quoted, then the user's words. It says why it takes no prompt instead of offering one when the worker
+  [`askPrompt`](ref:hub/extensions/quote/client/composer.ts#askPrompt) writes it: the file and its lines, the
+  passage quoted, then the user's words. It says why it takes no prompt instead of offering one when the worker
   doesn't take one now, when no worker showed the document, or when the quote is past 4,000 characters. It is named
   for what it does, quoting a passage to a worker, and leaves the noun `passage` to the core's subject, which other
   extensions may act on too; `ask` is a name the core keeps ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)).
+- *A page that runs its own scripts reports its selection* ([`reportedSource`](ref:hub/src/views/passages.ts#reportedSource)).
+  A shown html page runs at an origin of its own (`allow-scripts`, no `allow-same-origin`), so the page can't read
+  its frame. The tower appends [`/frame-picks.js`](ref:hub/src/tower/frame-picks.js) to every html file it serves
+  sandboxed, beside `/frame-keys.js`: it hears the page's own `selectionchange`, scroll and resize, and sends
+  `{t: 'pick', sig, quote, rect}`, or `{t: 'pick'}` for none; the
+  tower sends `{t: 'unpick'}` to let it go. Since any script in the page can send the same, the words are the page's
+  word, and three things bound what it can do. Only [`tower/html`](ref:hub/src/views/html.ts#mount) listens, and only
+  for a showing of a file: an address a worker showed is `tower/link`'s, framed from its own server, with no tower
+  script in it. It hears only its own frame's window. And only while the frame holds the document it loaded first:
+  every navigation fires `load` on the frame in the page's document, cross-origin included, so a second `load` (a
+  link followed, a script sending the frame elsewhere, a reload) ends it, failing closed, since every document in a
+  sandboxed frame has the same opaque origin and its origin can't tell them apart. The passage says it is the page's
+  (`reported`), with no lines. The `quote` composer draws the same box as for any passage, the words left unshown: a
+  page's script could report other words than those selected, and they would go with the prompt unseen. The user
+  chose one box for every file over showing a page's words.
 - `tool:webkit` took a `--drag` ([`webkit.ts`](ref:hub/scripts/webkit.ts)), real AppKit mouse events, to check a
   selection in WebKit, where it matters.
 
@@ -108,6 +126,6 @@ sentence the user picked.
 
 **Consequences.** Every markdown document and text file a view draws reads its frame's selection while seen, at the
 cost of one selection read per animation frame. A long selection's text is read once per change. The box covers part
-of the document while a pick is held. A shown html page runs at an origin of its own and can't be read from the page,
-so it has no passages: it would need its own script, `/frame-keys.js`, to send its selection up, and the words it
-sent would be the page's to forge. Tower 3D and The Week draw no `passage.acts`, so a passage there acts on nothing.
+of the document while a pick is held. A shown html page's passage is the page's word, sent as it said it; a page that draws its text on a canvas or takes the selection for itself offers none, and following any link
+in it ends its passages until the view draws it again. Tower 3D and The Week draw no `passage.acts`, so a passage
+there acts on nothing.

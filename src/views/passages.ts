@@ -1,20 +1,41 @@
 import { loop, timers } from '../shared/loop.ts'
 import { PICK_HANDLERS, PICK_START, type PickEffect, type PickEvent, type PickState } from '../shared/picks.ts'
+import type { FromPage, ToPage } from '../shared/shelf-page.ts'
 import { passageSubject, type Passage, type Subject } from '../shared/subjects.ts'
 import type { Kit, RegionHandle } from '../shared/views.ts'
 
 /**
- * Text picked in a document frame where nothing runs, as a `passage` of the subject the frame draws (decision
- * `passage-picks`), for any view that draws one: `tower/document`'s sections and `tower/text`'s file. Nothing in such a
- * frame is heard (WebKit calls no listener there), so each animation frame while the view is seen this reads the
- * frame's selection from the page and tells `/picks.js` what it read. A pick is lit by a highlight, not by an element
- * written into the document, and what acts on it (`passage.acts`) is drawn in a box over the frame, in the page's own
- * document: under the passage, or over it where there is no room below. The view says where a range is in its own
- * terms (`Where`): its words, and the sections and source lines it spans.
+ * Text picked in a framed file, as a `passage` of the subject the frame draws (decision `passage-picks`), for any view
+ * that frames one: `tower/document`'s sections, `tower/text`'s file and `tower/html`'s page. What is picked comes from
+ * a `PickSource`: the frame's own selection, read from the page in a frame where nothing runs (`frameSource`), or the
+ * page's report of it, sent by `/frame-picks.js` from a page that runs its own scripts (`reportedSource`). Each
+ * animation frame while the view is seen, the source is read and `/picks.js` told what it read; what acts on the pick
+ * held (`passage.acts`) is drawn in a box over the frame, in the page's own document: under the passage, or over it
+ * where there is no room below.
  */
 
-/** Where a range is in what a view draws: its words, the sections it touches and their first heading, its source lines. */
-export type Where = (doc: Document, range: Range) => Omit<Passage, 'of' | 'project' | 'card' | 'file'>
+/** Where a range is in what a view draws: its words, the sections it touches, its source lines. */
+export type Where = (doc: Document, range: Range) => Picked
+
+/** What a pick says of itself: all of a passage but whose and where the file is, which the subject drawn says. */
+type Picked = Omit<Passage, 'of' | 'project' | 'card' | 'file'>
+
+/** Where a pick is in the frame's viewport. */
+type Rect = { top: number; bottom: number; left: number }
+
+/**
+ * Where picks in a frame come from: `sig`, the selection's signature now, none while nothing is picked; `take`, the
+ * selection as it is now as a pick, and where it stands as the frame scrolls; `light` and `unlight`, the pick taken
+ * shown in the frame and not; `clear`, the frame's selection let go; `close`, the source ended.
+ */
+export type PickSource = {
+  sig(): string | undefined
+  take(): { picked: Picked; rect(): Rect } | undefined
+  light(): void
+  unlight(): void
+  clear(): void
+  close(): void
+}
 
 /** The look of the box, inside the view: its host is the frame's positioned parent, the frame at its top left. */
 export const PASSAGE_RULES = `& .passage-box { position: absolute; top: 0; left: 0; z-index: 2; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel);
@@ -59,18 +80,98 @@ export function offsetIn(within: Node, node: Node, offset: number): number {
   return before.toString().length
 }
 
-/** Picks in `frame`, once its document is drawn, with the box in `host`, its positioned parent. */
-export type Picks = { visible(on: boolean): void; update(): void; close(): void }
-
 /**
- * Follows what is picked in `frame`'s document, drawn, as passages of `of`, with what acts on the one held in a box
- * appended to `host`. `visible(false)` stops reading until `visible(true)`; `update` hands the region the board as it
- * stands; `close` lets the pick go and ends it.
+ * The selection of `frame`'s document, drawn, read from the page: a frame where nothing runs and that the page can
+ * reach (`allow-same-origin`). The view says where a range is (`where`); the pick is lit by a highlight registered on
+ * the frame's window, not by an element written into the document.
  */
-export function pickPassages(frame: HTMLIFrameElement, host: HTMLElement, kit: Kit, of: Subject, where: Where): Picks {
+export function frameSource(frame: HTMLIFrameElement, where: Where): PickSource {
   const doc = frame.contentDocument!
   const win = frame.contentWindow as FrameWindow
   doc.head.append(Object.assign(doc.createElement('style'), { textContent: HIGHLIGHT_CSS }))
+  /** The last selection read and whether it holds words, read once for each selection: a long one is long to read. */
+  let read: { sig: string; words: boolean } | undefined
+  let taken: Range | undefined
+  return {
+    sig() {
+      const sig = selectionSig(doc)
+      if (sig !== undefined && sig !== read?.sig) read = { sig, words: doc.getSelection()!.toString().trim() !== '' }
+      return sig !== undefined && read!.words ? sig : undefined
+    },
+    take() {
+      const selection = doc.getSelection()!
+      if (!selection.rangeCount || selection.isCollapsed) return undefined
+      const range = (taken = selection.getRangeAt(0).cloneRange())
+      return { picked: where(doc, range), rect: () => range.getBoundingClientRect() }
+    },
+    light: () => void win.CSS.highlights.set(HIGHLIGHT, new win.Highlight(taken!)),
+    unlight: () => void win.CSS.highlights.delete(HIGHLIGHT),
+    clear() {
+      const selection = doc.getSelection()
+      if (selection && !selection.isCollapsed) selection.removeAllRanges()
+    },
+    close() {},
+  }
+}
+
+/**
+ * The selection of a page that runs its own scripts, as `/frame-picks.js` reports it from inside: heard only from
+ * `frame`'s window, and only while the frame holds the document it loaded first. Any later load (a link followed, a
+ * script sending the frame elsewhere, a reload) ends it: what the frame holds then may be any site's. The words are
+ * the page's word, so the passage says so (`reported`). The page's own selection shows the pick; letting it go sends
+ * `unpick`.
+ */
+export function reportedSource(frame: HTMLIFrameElement): PickSource {
+  let loads = 0
+  let report: Extract<FromPage, { t: 'pick' }> | undefined
+  const loaded = () => {
+    loads++
+    if (loads > 1) report = undefined
+  }
+  const heard = (e: MessageEvent) => {
+    const msg = e.data as FromPage | undefined
+    if (e.source !== frame.contentWindow || loads !== 1 || msg?.t !== 'pick') return
+    report = msg.sig === undefined ? undefined : msg
+  }
+  frame.addEventListener('load', loaded)
+  addEventListener('message', heard)
+  return {
+    sig: () => report?.sig,
+    take() {
+      if (!report) return undefined
+      const { sig, quote } = report
+      /** Where the pick stands: as the page last said, while its selection is still the one taken. */
+      let rect = report.rect!
+      const now = () => {
+        const latest = report
+        if (latest && latest.sig === sig) rect = latest.rect!
+        return rect
+      }
+      return { picked: { quote: quote!, sections: [], reported: true }, rect: now }
+    },
+    light() {},
+    unlight() {},
+    clear() {
+      report = undefined
+      const unpick: ToPage = { t: 'unpick' }
+      frame.contentWindow?.postMessage(unpick, '*')
+    },
+    close() {
+      frame.removeEventListener('load', loaded)
+      removeEventListener('message', heard)
+    },
+  }
+}
+
+/** Picks in a frame, with the box in its positioned parent. */
+export type Picks = { visible(on: boolean): void; update(): void; close(): void }
+
+/**
+ * Follows what `source` says is picked in `frame` as passages of `of`, with what acts on the one held in a box
+ * appended to `host`. `visible(false)` stops reading until `visible(true)`; `update` hands the region the board as it
+ * stands; `close` lets the pick go and ends it, the source with it.
+ */
+export function pickPassages(frame: HTMLIFrameElement, host: HTMLElement, kit: Kit, of: Subject, source: PickSource): Picks {
   const box = document.createElement('div')
   box.className = 'passage-box'
   box.setAttribute('role', 'group')
@@ -80,12 +181,12 @@ export function pickPassages(frame: HTMLIFrameElement, host: HTMLElement, kit: K
   box.append(acts)
   host.append(box)
 
-  /** The passage held, its range in the frame and its subject, and the region on it: none while nothing is picked. */
-  let held: { range: Range; subject: Subject; region: RegionHandle } | undefined
+  /** The passage held, where it is and its subject, and the region on it: none while nothing is picked. */
+  let held: { rect: () => Rect; subject: Subject; region: RegionHandle } | undefined
 
   /** The box over the frame, under the passage held or over it where there is no room below, within the frame. */
   const placeBox = () => {
-    const r = held!.range.getBoundingClientRect()
+    const r = held!.rect()
     const [width, height] = [frame.clientWidth, frame.clientHeight]
     const w = Math.min(520, width - 24)
     box.style.width = `${w}px`
@@ -108,13 +209,12 @@ export function pickPassages(frame: HTMLIFrameElement, host: HTMLElement, kit: K
     execute: {
       ...timers<PickEvent>(),
       pick() {
-        const selection = doc.getSelection()!
-        if (!selection.rangeCount || selection.isCollapsed) return picks.dispatch({ type: 'drop' })
-        const range = selection.getRangeAt(0).cloneRange()
-        const subject = passageSubject({ ...passageFrom(of), ...where(doc, range) })
+        const taken = source.take()
+        if (!taken) return picks.dispatch({ type: 'drop' })
+        const subject = passageSubject({ ...passageFrom(of), ...taken.picked })
         if (held) held.region.update(subject)
-        held = { range, subject, region: held?.region ?? kit.region(acts, 'passage.acts', subject) }
-        win.CSS.highlights.set(HIGHLIGHT, new win.Highlight(range))
+        held = { rect: taken.rect, subject, region: held?.region ?? kit.region(acts, 'passage.acts', subject) }
+        source.light()
         box.classList.remove('moving')
         followPick()
       },
@@ -124,9 +224,8 @@ export function pickPassages(frame: HTMLIFrameElement, host: HTMLElement, kit: K
         held = undefined
         box.hidden = true
         box.classList.remove('moving')
-        win.CSS.highlights.delete(HIGHLIGHT)
-        const selection = doc.getSelection()
-        if (selection && !selection.isCollapsed) selection.removeAllRanges()
+        source.unlight()
+        source.clear()
       },
     },
   })
@@ -135,16 +234,11 @@ export function pickPassages(frame: HTMLIFrameElement, host: HTMLElement, kit: K
   const pressedOutside = (e: PointerEvent) => void (held && !box.contains(e.target as Node) && picks.dispatch({ type: 'drop' }))
   document.addEventListener('pointerdown', pressedOutside, true)
 
-  /** The last selection read and whether it holds words, read once for each selection: a long one is long to read. */
-  let read: { sig: string; words: boolean } | undefined
-
-  /** Each animation frame while seen: the selection as it is now, if it holds words, and the box where its passage is. */
+  /** Each animation frame while seen: the selection as the source says it now, and the box where its passage is. */
   let tick = 0
   const look = () => {
     tick = requestAnimationFrame(look)
-    const sig = selectionSig(doc)
-    if (sig !== undefined && sig !== read?.sig) read = { sig, words: doc.getSelection()!.toString().trim() !== '' }
-    picks.dispatch({ type: 'seen', sig: sig !== undefined && read!.words ? sig : undefined })
+    picks.dispatch({ type: 'seen', sig: source.sig() })
     followPick()
   }
   let seen = true
@@ -162,6 +256,7 @@ export function pickPassages(frame: HTMLIFrameElement, host: HTMLElement, kit: K
       cancelAnimationFrame(tick)
       picks.dispatch({ type: 'drop' })
       document.removeEventListener('pointerdown', pressedOutside, true)
+      source.close()
       box.remove()
     },
   }

@@ -1,7 +1,7 @@
 import { esc } from '../shared/cards.ts'
 import { textLines } from '../shared/picks.ts'
 import { bodyText, frameDoc, typeView, type Body, type Drawn } from './item.ts'
-import { offsetIn, PASSAGE_RULES, pickPassages, type Picks } from './passages.ts'
+import { frameSource, offsetIn, PASSAGE_RULES, pickPassages, type Picks } from './passages.ts'
 
 /**
  * `tower/text`, the view of text drawn as written, in a document frame where nothing runs, from the design's tokens;
@@ -30,10 +30,16 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
     pre.className = 'item-text'
     pre.textContent = text
     doc.querySelector('article')!.append(pre)
-    picks = pickPassages(frame, split, at.kit, at.subject, (_, range) => {
-      const [start, end] = [offsetIn(pre, range.startContainer, range.startOffset), offsetIn(pre, range.endContainer, range.endOffset)]
-      return { quote: range.toString().replace(/^\n+|\s+$/g, ''), sections: [], ...textLines(text, start, end) }
-    })
+    picks = pickPassages(
+      frame,
+      split,
+      at.kit,
+      at.subject,
+      frameSource(frame, (_, range) => {
+        const [start, end] = [offsetIn(pre, range.startContainer, range.startOffset), offsetIn(pre, range.endContainer, range.endOffset)]
+        return { quote: range.toString().replace(/^\n+|\s+$/g, ''), sections: [], ...textLines(text, start, end) }
+      }),
+    )
     if (!seen) picks.visible(false)
   })
   frame.srcdoc = frameDoc(at.tower, at.docCss, '<base target="_blank"><article></article>')

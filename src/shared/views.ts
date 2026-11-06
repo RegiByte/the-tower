@@ -234,7 +234,7 @@ export const CORE_VIEWS: readonly View[] = [
   served(core('tower/tray', ['collection'], ['row'], { label: 'Tray', hint: "a collection's count, unfolding to its newest items" }), ['display']),
   { ...served(core('tower/shelf', ['shelf'], ['pane'], { label: 'Shelf', hint: 'a shelf entry' }), ['region', 'bus', 'display', 'go', 'toast']), shows: ['section'], regions: ['section.acts', 'passage.acts'] },
   { ...byType('document', ['text/markdown'], { label: 'Document', hint: 'the markdown drawn as a document' }), shows: ['section'], regions: ['section.acts', 'passage.acts'], needs: ['region', 'bus', 'display', 'toast', 'confirm'] },
-  byType('html', ['text/html'], { label: 'Page', hint: 'the page, running framed at an origin of its own' }),
+  { ...byType('html', ['text/html'], { label: 'Page', hint: 'the page, running framed at an origin of its own' }), regions: ['passage.acts'] },
   byType('image', ['image/*'], { label: 'Image', hint: 'the image' }),
   byType('video', ['video/*'], { label: 'Video', hint: 'the video, playing' }),
   { ...byType('text', ['text/*', 'application/json', 'application/x-ndjson'], { label: 'Text', hint: 'its text as written' }), regions: ['passage.acts'] },

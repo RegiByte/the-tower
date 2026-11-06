@@ -5,7 +5,7 @@ import type { Tower } from '../shared/shelf-page.ts'
 import type { Kit, RegionHandle } from '../shared/views.ts'
 import { contain, DOCUMENT_SANDBOX, writeLinks, type LinkTo } from './frame.ts'
 import { frameDoc, type Drawn } from './item.ts'
-import { PASSAGE_RULES, pickPassages, type Picks, type Where } from './passages.ts'
+import { frameSource, PASSAGE_RULES, pickPassages, type Picks, type Where } from './passages.ts'
 
 /**
  * A markdown document drawn by sections (`sectionsOf`), as `tower/document` and `tower/shelf` draw one: in a frame
@@ -106,8 +106,7 @@ const sectionsWhere =
   (anchors: HTMLElement[], sections: Section[]): Where =>
   (doc, range) => {
     const touched = sections.filter((_, i) => range.intersectsNode(anchors[i]))
-    const heading = touched[0]?.heading
-    return { quote: range.toString().trim(), sections: touched.map((s) => s.n), ...(heading !== undefined && { heading }), ...rangeLines(doc, range) }
+    return { quote: range.toString().trim(), sections: touched.map((s) => s.n), ...rangeLines(doc, range) }
   }
 
 /**
@@ -200,7 +199,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
     drawMarks()
     writeLinks(doc, at.links(doc))
     follow = followSections(frame, anchors, rows.map((r) => r.el))
-    picks = pickPassages(frame, el.querySelector<HTMLElement>('.doc-split')!, kit, of, sectionsWhere(anchors, sections))
+    picks = pickPassages(frame, el.querySelector<HTMLElement>('.doc-split')!, kit, of, frameSource(frame, sectionsWhere(anchors, sections)))
     if (!seen) (follow.visible(false), picks.visible(false))
     if (wanted) scrollTo(wanted)
     else at.opened?.(doc)
