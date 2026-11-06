@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.96.4
+
+Reading a worker's brief on a long session takes about a third of the time, and repeated reads grow the tower's memory
+by about a third as much. Restart the tower with this release (`tower down tower`, then `tower up tower`); its first
+start folds every log again once, as after any change to the fold's code. No host restart, no config change, no API
+change.
+
+- **Briefs.** A brief, a whole conversation and a tool call now parse only a log's hook lines, all they read from, and
+  skip the terminal output that makes up most of a long log. What they answer is unchanged.
+- **Log readers.** Reading a log walks its lines in place, with no array of every line held at once.
+
 ## v1.96.3
 
 The board builds faster on a system with many session logs, about 40% at around a thousand, and the cost now grows
