@@ -4,19 +4,18 @@
  * runner say and decide about them, pure over the board: where each policy stands, and what a runner does at a tick.
  * Their slots are `slots.ts`'s. Served as `/policies.js`.
  */
-import type { Board, Card, Floor } from '../../../src/bridge/board.ts'
-import type { FloorPolicies } from '../policies.ts'
-import type { CardRun, CheckResult, InvalidPolicy, Outcome, PolicyFields, PolicyHeader, Problem, Step, ValidPolicy } from '../../../src/shared/policies-legacy.ts'
-import { listed, nextSlot, onTimeSlot, ruleWords, slotWords } from '../../../src/shared/slots.ts'
+import type { Board, Card, Floor } from '/lib/board.js'
+import { listed, nextSlot, onTimeSlot, ruleWords, slotWords } from '/lib/time.js'
+import type { CardRun, CheckResult, FloorPolicies, InvalidPolicy, Outcome, PolicyFields, PolicyHeader, Problem, Step, ValidPolicy } from '../policies.ts'
 
-export type { Hire, PolicyHeader, Problem, Step } from '../../../src/shared/policies-legacy.ts'
+export type { Hire, PolicyHeader, Problem, Step } from '../policies.ts'
 
 /** A policy's view, whichever verbs its calls name: what the words and the runner read. */
 type PolicyView = PolicyFields & (ValidPolicy | InvalidPolicy)
 type ValidPolicyView = Extract<PolicyView, { header: PolicyHeader }>
 
 /** The rule and slot words renderers import from `/policies.js`. */
-export { cronFields, cronProblem, nextSlot, ON_TIME_MS, onTimeSlot, ruleWords, slotsBetween, slotWords, zoneCity } from '../../../src/shared/slots.ts'
+export { cronFields, cronProblem, nextSlot, ON_TIME_MS, onTimeSlot, ruleWords, slotsBetween, slotWords, zoneCity } from '/lib/time.js'
 
 /** A slot offered until `until`, in words said in `tz`: `today 15:00 offered, open until Fri 15:00`. */
 export const offeredWords = (slot: number, until: number, tz: string | undefined, now: number) => `${slotWords(slot, tz, now)} offered, open until ${slotWords(until, tz, now)}`

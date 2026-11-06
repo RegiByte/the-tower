@@ -1,16 +1,11 @@
-import type { Floor } from '../../../src/bridge/board.ts'
-import { dismissing, esc } from '../../../src/shared/cards.ts'
-import { fileCall } from '../../../src/shared/file-acts.ts'
-import { drawPanel } from '../../../src/shared/panel-kit.ts'
-import { panelsCss } from '../../../src/shared/panels-css.ts'
-import { itemSubject } from '../../../src/shared/subjects.ts'
-import { readViewer, VIEWER_KEYS } from '../../../src/shared/viewer.ts'
-import type { Mount } from '../../../src/shared/views.ts'
-import { closeHtml, viewCss } from '../../../src/views/parts.ts'
+import { itemSubject, type Floor } from '/lib/board.js'
+import { dismissing } from '/lib/cards.js'
+import { closeHtml, drawPanel, fileCall, panelsCss, pressing, viewCss, type Mount } from '/lib/view.js'
+import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
+import { esc } from '/lib/words.js'
 import type { PolicyReplies } from '../policies.ts'
 import { policiesHtml, policyDoneLine, type PolicyCall } from './panel.ts'
 import { floorPolicies, POLICIES } from './policies.ts'
-import { pressing } from '../../../src/shared/press.ts'
 
 /**
  * `policies/policies`, the policies extension's view of a floor: its policies, the slots they offer and what needs the

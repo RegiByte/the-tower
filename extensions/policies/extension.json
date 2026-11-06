@@ -4,7 +4,7 @@
   "title": "Policies",
   "description": "Standing work the tower starts at its slots: a markdown file with a json header and the prose a run starts on.",
   "requires": {
-    "tower": "1.132"
+    "tower": "1.152"
   },
   "server": "server.ts",
   "client": "client",

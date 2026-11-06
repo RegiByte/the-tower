@@ -95,7 +95,7 @@ const restoredReply = z.object({
   repos: z.array(z.object({ dir: z.string(), from: z.string(), commit: z.string() })),
 }) satisfies z.ZodType<Restored>
 
-/** A spawn's fields, before the rules between them: a policy's `hire` picks from them. */
+/** A spawn's fields, before the rules between them. */
 export const SPAWN_FIELDS = z.strictObject({
   project: id,
   cwd: id.optional().describe("One of the project's directories or one of their worktrees; the hub's main checkout when left out."),

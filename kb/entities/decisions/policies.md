@@ -33,7 +33,7 @@
     "hub/src/shared/extensions.ts#LEGACY",
     "hub/src/bridge/legacy.ts#LEGACY_FIELDS",
     "hub/src/shared/waits.ts#attentionOrder",
-    "hub/src/shared/api.ts#SPAWN_FIELDS",
+    "hub/src/shared/api.ts#spawnProblems",
     "hub/src/directory.ts#said",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/test/policies.test.ts",
@@ -64,8 +64,9 @@ user may replace it by providing `policies`.
   ([`extension.json`](ref:hub/extensions/policies/extension.json)); a config line declaring `collections.policies`
   overrides its label and description ([[collections]]). A `# Title` line, a fenced json header, then the prose, which
   is the run's whole prompt. The header's keys: `when` (`{cron: [...], tz?}`), `check`, `start` (`ask` | `auto`),
-  `live` (1), `hire` (the spawn verb's `cwd`, `cut`, `model`, `effort`, picked from
-  [`SPAWN_FIELDS`](ref:hub/src/shared/api.ts#SPAWN_FIELDS)), `runner`, `x`. An unknown key makes it invalid, failing
+  `live` (1), `hire` (the spawn verb's `cwd`, `cut`, `model`, `effort`, `cwd` or `cut` and not both, their values
+  checked by [`spawnProblems`](ref:hub/src/shared/api.ts#spawnProblems), the extension's own list refusing any other
+  field a spawn takes), `runner`, `x`. An unknown key makes it invalid, failing
   closed on a constraint this tower doesn't know; a runner's own data goes under `x`; no version key. Parsing is total
   ([`parsePolicy`](ref:hub/extensions/policies/policy-file.ts#parsePolicy)): an invalid policy is still on the board,
   its problems at their paths. The hash is the file's bytes ([`hashOf`](ref:hub/extensions/policies/policy-file.ts#hashOf)).
@@ -125,7 +126,8 @@ user may replace it by providing `policies`.
   `policy/approve` and `GET /runs/<project>` to the extension's, deprecated, and copies its part back to
   `floor.policies`, `card.run` and `board.offers` ([`LEGACY_FIELDS`](ref:hub/src/bridge/legacy.ts#LEGACY_FIELDS)),
   their calls renamed to `policy/*`, in the shapes the core held at the move
-  ([`policies-legacy.ts`](ref:hub/src/shared/policies-legacy.ts#PolicyView)); `/policies.js` serves the extension's
+  ([`policies-legacy.ts`](ref:hub/src/shared/policies-legacy.ts#PolicyView)), which only the core's own readers use: the
+  extension owns its copy, in its `policies.ts`, and imports only the library; `/policies.js` serves the extension's
   client, and `/panels.js` keeps a deprecated copy of the old panel over those fields
   ([`policiesHtml`](ref:hub/src/shared/policies-panel.ts#policiesHtml)). Off on a floor, or off everywhere, the
   extension's parts and their copies are gone and its files and folders stay; on again, every run and approval is

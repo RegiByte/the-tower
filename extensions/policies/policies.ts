@@ -4,28 +4,96 @@
  * `policies` items: each policy's view, the open offers, and the run a card is. Nothing about a policy is stored
  * beside these facts (decision `policies`).
  */
-import type { Replies, Verbs } from '../../src/shared/api.ts'
-import { nextSlot, ruleWords } from '../../src/shared/slots.ts'
-import { tagOf } from '../../src/shared/tags.ts'
-import type { Card } from '../../src/bridge/board.ts'
-import type { StreamFact } from '../../src/bridge/streams.ts'
-import { calledOffers } from '../../src/bridge/verbs.ts'
-import type {
-  CardRun,
-  CheckResult,
-  HeldBy,
-  InvalidPolicy,
-  OfferFields,
-  Outcome,
-  PolicyFields,
-  PolicyHeader,
-  Problem,
-  RunRead,
-  ValidPolicy,
-} from '../../src/shared/policies-legacy.ts'
+import type { Card } from '/lib/board.js'
+import type { Replies, StreamFact, Verbs } from '/lib/extension.js'
+import { nextSlot, ruleWords } from '/lib/time.js'
+import { tagOf } from '/lib/words.js'
 
-export type { CardRun, CheckResult, HeldBy, Outcome, PolicyHeader, Problem, RunRead, RunStart } from '../../src/shared/policies-legacy.ts'
-export { shortHash } from '../../src/shared/policies-legacy.ts'
+/**
+ * A check's run at a slot: its exit code (0, there is work; 1, none; absent when it timed out or never started, `error`
+ * saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr
+ * when it failed (at most 500).
+ */
+export type CheckResult = { exit: number; ms: number; out?: string; stderr?: string } | { error: string; ms: number; stderr?: string }
+
+/** Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed. */
+export type Outcome = 'offered' | 'no-work' | 'held' | 'check-failed'
+
+/** How a run started: on its own at its slot, an offer accepted, or by hand with no slot. */
+export type RunStart = 'auto' | 'offer' | 'hand'
+
+/** Where a run's worker starts and on what model: four of the spawn verb's fields, checked by `policy-file.ts`. */
+export type Hire = { cwd?: string; cut?: { name?: string; branch?: string; base?: string; from?: string }; model?: string; effort?: string }
+
+/** A policy's header, its defaults filled in. */
+export type PolicyHeader = {
+  /** Its slots, as crons. */
+  when: { cron: string[]; tz?: string }
+  /** A shell line run at the slot from the floor's hub: exit 0, there is work; 1, none; anything else, it failed. */
+  check?: string
+  /** `ask`: each slot is offered. `auto`: started while the file's current hash has an approval, offered otherwise. */
+  start: 'ask' | 'auto'
+  /** The most runs of this policy whose workers run at once; a slot due while full is held. */
+  live: number
+  hire: Hire
+  /** The runner that acts on it; the tower's acts on the policies that name none. */
+  runner?: string
+  /** Each runner's own attributes, under its name. */
+  x?: Record<string, unknown>
+}
+
+/** What makes a file no policy, at its path as `tower config check` prints one: `when.cron[1]`, `header`, `prose`. */
+export type Problem = { path: string; message: string }
+
+/** What the runner does with a slot of the policy as it stands: hold it (live is full), check first, run it, or offer it. */
+export type Step = 'held' | 'check' | 'run' | 'offer'
+
+/** The hash as people read it: its first 8 hex. */
+export const shortHash = (hash: string) => hash.replace(/^sha256:/, '').slice(0, 8)
+
+/** A run that holds a slot: its number, its worker (as it is now) and when it started (epoch ms). */
+export type HeldBy = { n: number; id: string; callsign?: string; since: number }
+
+export type ValidPolicy = { header: PolicyHeader; rule: string; next?: number; needs?: { kind: 'reapprove'; approved: string } | { kind: 'held'; slot: number; by: HeldBy[] } }
+
+export type InvalidPolicy = { header?: undefined; problems: Problem[]; needs?: { kind: 'invalid' } }
+
+/** What a policy's view says of it, its calls aside. */
+export type PolicyFields = {
+  id: string
+  tag: string
+  title?: string
+  hash: string
+  approved?: { at: number; by?: string }
+  live: string[]
+  last?: { n: number; at: number; slot: number | null; id: string; callsign?: string }
+  passed?: { at: number; slot: number; outcome: Outcome; check?: CheckResult }
+  seen?: number
+  offer?: { slot: number; since: number; until: number; check?: CheckResult }
+}
+
+/** What an offer says of its slot, its calls aside. */
+export type OfferFields = { key: string; project: string; policy: string; tag: string; title?: string; slot: number; since: number; until: number; check?: CheckResult }
+
+/** The run a worker is, through every resume: its policy, number, slot (`null` by hand), how it started and its check. */
+export type CardRun = { policy: string; tag: string; title?: string; n: number; by?: string; check?: CheckResult } & ({ start: 'hand'; slot: null } | { start: 'auto' | 'offer'; slot: number })
+
+/**
+ * One run as `GET /runs/<project>` reads it: its number, slot, when it started, the hash it ran on and whether that is
+ * the file's current one, how and by whom it started, its check, and its worker as it is now (its current card): its
+ * status, whether it runs, when it ended, its cost, what it showed and its latest answer.
+ */
+export type RunRead = {
+  n: number
+  slot: number | null
+  at: number
+  hash: string
+  current: boolean
+  start: RunStart
+  by?: { id: string; callsign?: string }
+  check?: CheckResult
+  worker: { id: string; callsign: string; status: Card['status']; live: boolean; endedAt?: number; cost?: number; shown: string[]; answer?: string }
+}
 
 /**
  * `r` in `runs`: a worker started for a policy. `policy` is its item id; `hash` the file's as it ran; `slot` an ISO
@@ -64,9 +132,14 @@ export type PolicyFile = { id: string; hash: string; parsed: Parsed }
 /** The verbs a policy's and an offer's calls name: the extension's own. */
 export const VERB_NAMES = { run: 'policies/run', approve: 'policies/approve' } as const
 
-
 /** A verb offered now, with its call. */
 type Action<V extends string, C> = { [K in V]: K extends keyof C ? { verb: K; call: Exclude<C[K], undefined> } : { verb: K } }[V]
+
+/** A policy's or an offer's `actions`, and the same as `calls` for the renderers that read those. */
+const calledOffers = <V extends string, C>(actions: Action<V, C>[]) => ({
+  calls: Object.fromEntries(actions.flatMap((a) => ('call' in a ? [[a.verb, a.call]] : []))) as C,
+  actions,
+})
 
 /** `run` starts a run of a policy now, by hand, while it may (`runnable`); `approve` approves its current hash, until approved. */
 export type PolicyVerb = 'run' | 'approve'

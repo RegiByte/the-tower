@@ -1,7 +1,5 @@
-import type { Floor, FloorCollection } from '../../../src/bridge/board.ts'
-import { ICON } from '../../../src/shared/icons.ts'
-import { itemsCss, pressTrayHtml } from '../../../src/shared/items.ts'
-import type { Mount } from '../../../src/shared/views.ts'
+import type { Floor, FloorCollection } from '/lib/board.js'
+import { ICON, itemsCss, pressTrayHtml, type Mount } from '/lib/view.js'
 import { floorPolicies } from './policies.ts'
 
 /**
