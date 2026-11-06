@@ -1,21 +1,24 @@
 import { esc } from '../shared/cards.ts'
-import { sectionLabels, sectionsHtml, sectionsOf } from '../shared/markdown.ts'
+import { linesPicked, SOURCE_MARK, sectionLabels, sectionsHtml, sectionsOf, type SourceLines } from '../shared/markdown.ts'
 import { sectionSubject, type Subject } from '../shared/subjects.ts'
 import type { Tower } from '../shared/shelf-page.ts'
 import type { Kit, RegionHandle } from '../shared/views.ts'
 import { contain, DOCUMENT_SANDBOX, writeLinks, type LinkTo } from './frame.ts'
 import { frameDoc, type Drawn } from './item.ts'
+import { frameSource, PASSAGE_RULES, pickPassages, type Picks, type Where } from './passages.ts'
 
 /**
  * A markdown document drawn by sections (`sectionsOf`), as `tower/document` and `tower/shelf` draw one: in a frame
  * where nothing runs, raw HTML kept and images read beside it. Each section is a viewer subject on the page's bus, of
  * the subject whose document it is, and takes the commands offered on it in a gutter beside the frame
  * (`section.acts`), one row per section kept level with it; the gutter is hidden while no row holds any. A section
- * marked on the bus (`Bus.mark`) is drawn marked, its marks' labels on its row and its part of the frame lit.
+ * marked on the bus (`Bus.mark`) is drawn marked, its marks' labels on its row and its part of the frame lit. Text
+ * picked in the frame is a `passage` of the document (`pickPassages`), its source lines read here.
  */
 
 /** The look of a document drawn by sections, inside the view that draws it. */
-export const SECTIONS_RULES = `& .doc-split { flex: 1; min-width: 0; display: flex; }
+export const SECTIONS_RULES = `& .doc-split { position: relative; flex: 1; min-width: 0; display: flex; }
+  ${PASSAGE_RULES}
   & .doc-split > iframe { flex: 1; min-width: 0; border: 0; background: var(--panel); }
   & .doc-gutter { position: relative; flex: none; width: min(168px, 30%); overflow: hidden; border-left: 1px solid var(--line); background: var(--panel); }
   & .doc-row { position: absolute; top: 0; left: 0; right: 0; display: grid; gap: var(--sp-2xs); padding: var(--sp-xs) var(--sp-m); background: var(--panel); }
@@ -83,6 +86,24 @@ function followSections(frame: HTMLIFrameElement, anchors: HTMLElement[], rows: 
   }
 }
 
+/** The source lines `range` spans, read from the marks `sectionsHtml` wrote before each block (`linesPicked`). */
+function rangeLines(doc: Document, range: Range): SourceLines | undefined {
+  const before: SourceLines[] = []
+  const within: SourceLines[] = []
+  const marks = doc.createTreeWalker(doc.body, NodeFilter.SHOW_COMMENT)
+  for (let mark = marks.nextNode(); mark; mark = marks.nextNode()) {
+    const found = SOURCE_MARK.exec(mark.nodeValue ?? '')
+    if (!found) continue
+    const at = range.comparePoint(mark, 0)
+    if (at > 0) break
+    ;(at < 0 ? before : within).push({ from: Number(found[1]), to: Number(found[2]) })
+  }
+  return linesPicked(before, within)
+}
+
+/** Where a range is in a document drawn by sections: its words and the source lines of the blocks it spans. */
+const sectionsWhere: Where = (doc, range) => ({ quote: range.toString().trim(), ...rangeLines(doc, range) })
+
 /**
  * What a document drawn by sections is drawn from: `of`, the subject whose document it is (its sections' parent);
  * `text`, its markdown; `url`, where it is served, which its images and links are read against; `title`, the
@@ -146,6 +167,8 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
   const unheard = kit.bus.onMark('section', drawMarks)
   drawMarks()
 
+  let picks: Picks | undefined
+
   const scrollTo = (s: Subject) => {
     const i = subjects.findIndex((t) => t.key === s.key)
     if (i < 0) return false
@@ -171,7 +194,8 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
     drawMarks()
     writeLinks(doc, at.links(doc))
     follow = followSections(frame, anchors, rows.map((r) => r.el))
-    if (!seen) follow.visible(false)
+    picks = pickPassages(frame, el.querySelector<HTMLElement>('.doc-split')!, kit, of, frameSource(frame, sectionsWhere))
+    if (!seen) (follow.visible(false), picks.visible(false))
     if (wanted) scrollTo(wanted)
     else at.opened?.(doc)
   })
@@ -180,6 +204,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
   return {
     update() {
       regions.forEach((r, i) => r.update(subjects[i]))
+      picks?.update()
       fit()
       follow?.replace()
     },
@@ -187,11 +212,13 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
     visible(on) {
       seen = on
       follow?.visible(on)
+      picks?.visible(on)
     },
     close() {
       closed = true
       unheard()
       follow?.close()
+      picks?.close()
       regions.forEach((r) => r.close())
       for (const s of subjects) kit.bus.clear(s.key)
     },

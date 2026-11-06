@@ -659,7 +659,7 @@
       const msg = e.data
       if (msg?.token !== token) return
       if (msg.t === 'hello') return ((paired = true), (helloSinceLoad = true), closeWatches(), sendPrefs(), sendBoard())
-      if (!paired || msg.t === 'key') return
+      if (!paired || msg.t === 'key' || msg.t === 'pick') return
       if (msg.t === 'tower') return towerVerbs[msg.verb]?.(msg)
       if (msg.t === 'remember') {
         try { localStorage.setItem(memoryKey, JSON.stringify(msg.value)) } catch {}

@@ -50,6 +50,7 @@ export {
   itemSubject,
   linesSubject,
   /** @provisional */ parentOf,
+  passageSubject,
   /** @provisional */ projectOfKey,
   /** @provisional */ shownSubject,
   /** @provisional */ subjectAt,
@@ -101,5 +102,6 @@ export type {
 } from '../shared/model.ts'
 export type {
   Lines,
+  Passage,
   Subject,
 } from '../shared/subjects.ts'
