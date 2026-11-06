@@ -82,7 +82,7 @@ export const LEGACY_VERBS: Record<string, LegacyVerb> = {
   'probe/run': {
     input: (old) => ((old as { name: string }).name === 'quota' ? {} : QUOTA_ONLY((old as { name: string }).name)),
     reply: (now) => {
-      const { command: _, commands: __, ...read } = now as Omit<Replies['probe/run'], 't'> & { command?: string; commands: unknown }
+      const { command: _, commands: __, said: ___, ...read } = now as Omit<Replies['probe/run'], 't'> & { command?: string; commands: unknown; said: string }
       return { t: 'probed', ...read }
     },
   },
