@@ -55,7 +55,7 @@ it stays while the floors' archives are read ([`subjectLeft`](ref:hub/renderers/
 home that started before today, or whose day ended on screen, leaves the board for its archive with its Resume, and
 goes home only when no archive holds it or the read fails, which a toast says.
 
-**Two bundled clients the page draws from** are loaded by [`clients.js`](ref:hub/renderers/page/clients.js): quota's words
+**Two bundled clients the page draws from** are loaded by [`clients.js`](ref:hub/renderers/page/clients.js), through the library's `clientOf`: quota's words
 and drafts'. A user's extension can replace either and serve no such file, and a `404` there leaves the page without
 what that file drew. Any other failure of those imports fails as an import does.
 

@@ -13,7 +13,7 @@ import { wireSpawn } from '/lib/spawn.js'
 import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
 import { fileButtonsHtml, fileCall, itemsCss, keepingFocus, panelsCss, pressing } from '/lib/view.js'
-import { readViewer, sawAll, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
+import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
 import { probedLines } from './clients.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
@@ -607,23 +607,8 @@ function dismissHtml(key) {
  */
 const seenAmong = (offered) => seenOf(viewer().seen, offered)
 
-/** The writes of `seen` this window has in flight, one after another. */
-let seeing = Promise.resolve()
-
-/**
- * The actions `ids` seen by the viewer, kept when any of them was new to them. `seen` is read from `tower.store` just
- * before it is written, since another window of theirs may have added to it since this one last read it.
- * @param {string[]} ids
- */
-function markSeen(ids) {
-  if (!ids.length) return
-  seeing = seeing.then(async () => {
-    const offered = offeredIds(board())
-    const had = seenOf((await readViewer(tower.store.get)).seen, offered)
-    const next = sawAll(had, ids.filter((id) => isFresh(offered, had, id)))
-    if (next) keepViewer('seen', next)
-  })
-}
+/** The actions `ids` seen by the viewer, kept when any of them was new to them. */
+const markSeen = seenMarker(tower.store.get, () => offeredIds(board()), (seen) => keepViewer('seen', seen))
 
 /** The viewer's pin writes in flight, one after another. */
 let pinWrites = Promise.resolve()

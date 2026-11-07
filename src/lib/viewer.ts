@@ -3,6 +3,9 @@ export {
   /** @provisional */ reducedMotion,
 } from '../shared/prefs.ts'
 export {
+  /** @provisional */ seenMarker,
+} from '../shared/seen-marker.ts'
+export {
   readViewer,
   sawAll,
   seenOf,

@@ -2217,8 +2217,13 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "92665c3e8851ed69",
-      "values": {},
+      "digest": "99a4ba6e0ebea0bc",
+      "values": {
+        "clientOf": {
+          "since": "1.160",
+          "stability": "provisional"
+        }
+      },
       "types": {
         "BoardError": {
           "since": "1.151",
@@ -3234,7 +3239,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "7379031a17d68b59",
+      "digest": "776ea3be7f426ab1",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"
@@ -3255,6 +3260,10 @@
         },
         "sawAll": {
           "since": "1.151"
+        },
+        "seenMarker": {
+          "since": "1.160",
+          "stability": "provisional"
         },
         "seenOf": {
           "since": "1.151"
