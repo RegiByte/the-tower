@@ -3049,7 +3049,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "3bdffb456907fc6c",
+      "digest": "3c597133731b119f",
       "values": {
         "GIST_ICON": {
           "since": "1.151"

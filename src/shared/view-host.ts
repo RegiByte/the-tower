@@ -52,15 +52,25 @@ type Asked = { subject: Subject; options: Record<string, unknown>; seen: boolean
 
 /**
  * A hosted view's lifecycle: its module importing, its mount called and timed (`with`: the options it was handed),
- * mounted (`done`, the view's own handle, held and never called by a step), failed and saying so where it would draw,
- * or closed by the renderer that mounted it.
+ * mounted (`done`, the view's own handle, held and never called by a step), failed and saying so where it would draw
+ * (`drawn`, the line it drew), or closed by the renderer that mounted it.
  */
 export type HostedView =
   | ({ t: 'importing' } & Asked)
   | ({ t: 'mounting'; with: Record<string, unknown> } & Asked)
   | ({ t: 'mounted'; done: Mounted } & Asked)
-  | { t: 'failed' }
+  | { t: 'failed'; drawn: Drawn }
   | { t: 'closed' }
+
+/** The one line a view that failed draws where it would: why it failed, or that it is `stale` and the page needs a reload. */
+export type Drawn = { type: 'failed' | 'stale'; why: string }
+
+/** A call into a mounted view: `show` toasts the subject when the view doesn't take it. */
+export type ViewCall =
+  | { t: 'update'; subject: Subject }
+  | { t: 'options'; options: Record<string, unknown> }
+  | { t: 'visible'; on: boolean }
+  | { t: 'show'; subject: Subject }
 
 /**
  * `open`: the view was mounted, its module yet to import; `imported`: its module arrived; `unlinked`: the module doesn't
@@ -81,23 +91,19 @@ export type HostedEvent =
   | { type: 'close' }
 
 /**
- * `import` the view's module; `mount` it in its element; `update`, `options`, `visible` and `show` call the mounted
- * view, `show` toasting each subject it doesn't take; `close` ends it; `release` closes what its kit opened (terminals,
- * inner regions, what it published on the bus); `failed` and `stale` draw the one line saying why it isn't there.
+ * `import` the view's module; `mount` it in its element; `call` makes `calls` into the mounted view in order, the first
+ * that throws ending the rest; `close` ends it; `release` closes what its kit opened (terminals, inner regions, what it
+ * published on the bus); `failed` and `stale` draw the one line saying why it isn't there.
  */
 export type HostedEffect =
   | StateEffect<HostedView>
   | TimerEffect<HostedEvent>
   | { type: 'import' }
   | { type: 'mount'; mount: Mount; subject: Subject; options: Record<string, unknown> }
-  | { type: 'update'; done: Mounted; subject: Subject }
-  | { type: 'options'; done: Mounted; options: Record<string, unknown> }
-  | { type: 'visible'; done: Mounted; on: boolean }
-  | { type: 'show'; done: Mounted; pending: Subject[] }
+  | { type: 'call'; done: Mounted; calls: ViewCall[] }
   | { type: 'close'; done: Mounted }
   | { type: 'release' }
-  | { type: 'failed'; why: string }
-  | { type: 'stale'; why: string }
+  | Drawn
 
 export const hostedImporting = (subject: Subject, options: Record<string, unknown>): HostedView => ({ t: 'importing', subject, options, seen: undefined, pending: [] })
 
@@ -108,20 +114,21 @@ const asked = ({ subject, options, seen, pending }: Asked): Asked => ({ subject,
 const live = (s: HostedView): s is Extract<HostedView, Asked> => s.t === 'importing' || s.t === 'mounting' || s.t === 'mounted'
 
 /** What mounting afresh calls for once the state is `importing`: what was mounted closed, what its kit opened released, its module imported again. */
-const remount = (s: Asked, done: Mounted): HostedEffect[] => [{ type: 'close', done }, { type: 'release' }, { type: 'import' }]
+const remount = (done: Mounted): HostedEffect[] => [{ type: 'close', done }, { type: 'release' }, { type: 'import' }]
 
 /** Failed: the mount's timer stopped, what was mounted closed and what its kit opened released, then the failure drawn. */
-const fails = (s: HostedView, draw: HostedEffect): HostedEffect[] => [
-  state({ t: 'failed' }),
+const fails = (s: HostedView, drawn: Drawn): HostedEffect[] => [
+  state({ t: 'failed', drawn }),
   ...(s.t === 'mounting' ? [{ type: 'timer/cancel' as const, id: 'mount' }] : []),
   ...(s.t === 'mounted' ? [{ type: 'close' as const, done: s.done }] : []),
   { type: 'release' },
-  draw,
+  drawn,
 ]
 
 /**
- * The steps of a hosted view, `view`'s. A mount that settles once its view failed or closed is closed at once. A view
- * that failed stays failed until closed: it takes no subject, options or `show`.
+ * The steps of a hosted view, `view`'s. A mount that settles once its view failed or closed is closed at once, and a
+ * failed view's line drawn again over what the view drew. A view that failed stays failed until closed: it takes no
+ * subject, options or `show`.
  */
 export const hostedHandlers = (view: View): Handlers<HostedView, HostedEvent, HostedEffect> => ({
   open: (s) => (s.t === 'importing' ? [{ type: 'import' }] : []),
@@ -139,33 +146,32 @@ export const hostedHandlers = (view: View): Handlers<HostedView, HostedEvent, Ho
   broke: (s, { why }) => (live(s) ? fails(s, { type: 'failed', why }) : []),
   late: (s) => (s.t === 'mounting' ? fails(s, { type: 'failed', why: `its mount hadn't settled in ${MOUNT_MS / 1000} s` }) : []),
   settled: (s, { done }) => {
-    if (s.t !== 'mounting') return [{ type: 'close', done }, { type: 'release' }]
+    if (s.t !== 'mounting') return [{ type: 'close', done }, { type: 'release' }, ...(s.t === 'failed' ? [s.drawn] : [])]
     const stopped = { type: 'timer/cancel' as const, id: 'mount' }
-    if (s.options !== s.with && !done.options) return [state({ t: 'importing', ...asked(s) }), stopped, ...remount(s, done)]
-    return [
-      state({ t: 'mounted', done, ...asked(s), pending: [] }),
-      stopped,
-      ...(s.options !== s.with ? [{ type: 'options' as const, done, options: s.options }] : []),
-      ...(s.seen !== undefined ? [{ type: 'visible' as const, done, on: s.seen }] : []),
-      ...(s.pending.length ? [{ type: 'show' as const, done, pending: s.pending }] : []),
+    if (s.options !== s.with && !done.options) return [state({ t: 'importing', ...asked(s) }), stopped, ...remount(done)]
+    const calls: ViewCall[] = [
+      ...(s.options !== s.with ? [{ t: 'options' as const, options: s.options }] : []),
+      ...(s.seen !== undefined ? [{ t: 'visible' as const, on: s.seen }] : []),
+      ...s.pending.map((subject) => ({ t: 'show' as const, subject })),
     ]
+    return [state({ t: 'mounted', done, ...asked(s), pending: [] }), stopped, ...(calls.length ? [{ type: 'call' as const, done, calls }] : [])]
   },
   update: (s, { subject }) => {
     if (!live(s)) return []
     const next = { ...s, subject }
-    return s.t === 'mounted' ? [state(next), { type: 'update', done: s.done, subject }] : [state(next)]
+    return s.t === 'mounted' ? [state(next), { type: 'call', done: s.done, calls: [{ t: 'update', subject }] }] : [state(next)]
   },
   options: (s, { options }) => {
     if (!live(s)) return []
     const next = { ...s, options }
     if (s.t !== 'mounted') return [state(next)]
-    if (s.done.options) return [state(next), { type: 'options', done: s.done, options }]
-    return [state({ t: 'importing', ...asked(next) }), ...remount(next, s.done)]
+    if (s.done.options) return [state(next), { type: 'call', done: s.done, calls: [{ t: 'options', options }] }]
+    return [state({ t: 'importing', ...asked(next) }), ...remount(s.done)]
   },
   visible: (s, { on }) => {
     if (!live(s)) return []
     const next = { ...s, seen: on }
-    return s.t === 'mounted' ? [state(next), { type: 'visible', done: s.done, on }] : [state(next)]
+    return s.t === 'mounted' ? [state(next), { type: 'call', done: s.done, calls: [{ t: 'visible', on }] }] : [state(next)]
   },
   show: (s, { subject }) => (s.t === 'importing' || s.t === 'mounting' ? [state({ ...s, pending: [...s.pending, subject] })] : []),
   close: (s) => [
@@ -281,13 +287,12 @@ export function viewHost(deps: HostDeps) {
       for (const key of published.splice(0)) lentBus.clear(key)
     }
 
-    /** A call into the mounted view: one that throws breaks it. */
-    const into = (call: () => void, dispatch: (e: HostedEvent) => void) => {
-      try {
-        call()
-      } catch (err) {
-        dispatch({ type: 'broke', why: (err as Error).message })
-      }
+    /** A call into the mounted view. */
+    const callInto = (done: Mounted, call: ViewCall) => {
+      if (call.t === 'update') return done.update(board(), call.subject)
+      if (call.t === 'options') return done.options?.(call.options)
+      if (call.t === 'visible') return done.visible?.(call.on)
+      if (!done.show?.(call.subject)) kit.toast(`${call.subject.key} isn't there any more`)
     }
 
     const machine = loop({
@@ -310,13 +315,14 @@ export function viewHost(deps: HostDeps) {
             broke(err as Error)
           }
         },
-        update: ({ done, subject }, dispatch) => into(() => done.update(board(), subject), dispatch),
-        options: ({ done, options }, dispatch) => into(() => done.options?.(options), dispatch),
-        visible: ({ done, on }, dispatch) => into(() => done.visible?.(on), dispatch),
-        show: ({ done, pending }, dispatch) =>
-          into(() => {
-            for (const s of pending) if (!done.show?.(s)) kit.toast(`${s.key} isn't there any more`)
-          }, dispatch),
+        // A view that throws broke: none of the calls after it reach it.
+        call: ({ done, calls }, dispatch) => {
+          try {
+            for (const call of calls) callInto(done, call)
+          } catch (err) {
+            dispatch({ type: 'broke', why: (err as Error).message })
+          }
+        },
         // The page stays standing: a view that throws as it closes is said and reported, and what it opened is still released.
         close: ({ done }) => {
           try {
