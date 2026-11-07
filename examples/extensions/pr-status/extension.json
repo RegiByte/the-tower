@@ -169,7 +169,7 @@
           "url",
           "title"
         ],
-        "description": "The pull request of the card's branch, when it has one.",
+        "description": "The pull request of the card's branch, when it has one; in a worktree across several repos, the first found, its own repo's first.",
         "properties": {
           "number": {
             "type": "integer"
@@ -205,6 +205,56 @@
               "expected"
             ],
             "description": "The checks on its newest commit, rolled up."
+          },
+          "also": {
+            "type": "array",
+            "description": "The pull requests of the worktree's other repos, each shaped as this one is.",
+            "items": {
+              "type": "object",
+              "required": [
+                "number",
+                "state",
+                "url",
+                "title"
+              ],
+              "properties": {
+                "number": {
+                  "type": "integer"
+                },
+                "state": {
+                  "enum": [
+                    "open",
+                    "draft",
+                    "merged",
+                    "closed"
+                  ]
+                },
+                "url": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "review": {
+                  "enum": [
+                    "approved",
+                    "changes requested",
+                    "review required"
+                  ],
+                  "description": "An open pull request's review decision."
+                },
+                "checks": {
+                  "enum": [
+                    "success",
+                    "failure",
+                    "error",
+                    "pending",
+                    "expected"
+                  ],
+                  "description": "The checks on its newest commit, rolled up."
+                }
+              }
+            }
           }
         }
       },
