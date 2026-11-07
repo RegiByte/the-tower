@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-04",
-  "reviewed": "2026-11-06",
+  "reviewed": "2026-11-07",
   "refs": ["hub/src/jobs/main.ts", "hub/src/shared/jobs.ts#JobStart", "hub/src/shared/jobs.ts#JobFact", "hub/src/bridge/jobs.ts#jobState", "hub/src/machine.ts#daemons", "hub/src/update.ts#updateJobs"]
 }
 ---
