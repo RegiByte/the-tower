@@ -1121,6 +1121,27 @@ rows drawn by a view it names first, in its order, the rest in the floor's colle
 `tower/tray`'s shape, for an extension that draws its collection's tray as any collection's with its own icon,
 titles and actions.
 
+**Hosting views** (API 1.160, provisional). `viewHost` in `/lib/view.js` is what mounts views, the page's and a
+sibling's alike:
+
+```js
+const host = viewHost({
+  tower, board: () => latest, views: () => viewsOf(latest), layout: () => layoutNow, declared: () => myRegions,
+  kit: ['region', 'toast'],                  // your renderer.json's kit: a view needing more isn't offered
+  lent: { toast },                           // the kit members you have; one left out throws naming itself if called
+  fills: { contributions: drawMyContributions }, // the regions you draw your way; `tabs` if you declare a tabs region
+})
+const hosted = host.mountView(view, el, subject, { scale: 'pane', options: {} }) // a view you picked
+const region = host.region(el, 'lines.acts', subject, {})                        // the one the layout picks
+```
+
+The host follows nothing. On each board call `update(subject)`. A view starts seen: call `visible(false)` only when you
+hide one and keep it mounted, `visible(true)` when you show it again; a renderer that closes what it hides never calls
+it. Whoever mounts closes: `close()` ends the view, its terminals, its inner regions and what it published on the bus,
+and leaves `el` yours to empty or remove. `.view-failed` and the flex chain a column view expects from its parent
+(`.view-root`) are your stylesheet's too. Modules are imported by their whole address, so a host works in a classic
+script framed at an opaque origin, in Chrome as in WebKit.
+
 **The worker view** (API 1.111). `tower/card` on a card draws its head and declares `card.panes`, its tabs, which it
 asks the kit for as a region. A tabs region's tabs are (view, subject) pairs: the views on the card (`tower/terminal`,
 `tower/brief`, `tower/changes`, the reviews extension's `reviews/thread`, then any of yours on `card`, in the layout's
