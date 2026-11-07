@@ -821,6 +821,8 @@ test('server: policies kept before the policies extension keep their approvals, 
     '`tower x policies runs` lists its earlier runs and what each left; `tower read warm-lily` is the policy. When the policy says nobody watches, end with `tower home <your callsign>`.',
     'Its check found: two to do',
   ])
+  const approved = cli(SESSION, 'x', 'policies', 'approve-now', 'muddy-thistle')
+  assert.equal(approved, `Approved "Triage" (muddy-thistle) at ${sha(triage.text).slice(7, 15)}: ${rule(triage.slot)}. It is \`start: "ask"\`: its slots stay offers until it says \`"auto"\`.\n`)
   const guided = whoami.indexOf('Extensions you can use (`tower x <name>` says when and how):')
   assert.ok(guided > 0, whoami.join('\n'))
   assert.ok(whoami.slice(guided + 1).includes('  tabline  ·  Set a short line under your card saying what you are on, when that changes.'), whoami.join('\n'))

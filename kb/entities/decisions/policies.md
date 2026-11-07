@@ -102,7 +102,7 @@ user may replace it by providing `policies`.
   run fact naming the first session of a worker's lineage, the lines `tower whoami` prints, and a badge saying which
   run of which policy it is. Reads:
   `policies/runs/<project>?policy&limit` ([`runsRead`](ref:hub/extensions/policies/policies.ts#runsRead)), a policy's
-  runs, each worker as it is now, the archive included; `policies/said/<project>`, what `tower x policies list`
+  runs, each worker as it is now, the archive included; `policies/list/<project>`, what `tower x policies list`
   prints, and `policies/run-lines/<project>`, what `tower x policies runs` prints, in the extension's words
   ([`policiesLines`](ref:hub/extensions/policies/cli.ts#policiesLines)). `run-now` and `approve-now` are the words a
   worker types, naming a policy by its tag: `run` and `approve` take the slot or the hash a renderer holds.

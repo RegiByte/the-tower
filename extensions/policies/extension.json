@@ -811,7 +811,7 @@
     },
     "said/<project>": {
       "scope": "project",
-      "description": "What `tower x policies list` prints of the floor's policies, in this extension's words: each policy's lines and where it stands, by id, and with `policy`, its latest `runs` runs.",
+      "description": "What the CLI prints of the floor's policies, in this extension's words: each policy's lines and where it stands, by id, and with `policy`, its latest `runs` runs.",
       "query": {
         "type": "object",
         "additionalProperties": false,
@@ -853,11 +853,28 @@
             }
           }
         }
+      }
+    },
+    "list/<project>": {
+      "scope": "project",
+      "description": "The floor's policies in words: each one's rule, approval, live runs, last run and where it stands now.",
+      "reply": {
+        "type": "object",
+        "required": [
+          "lines"
+        ],
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "cli": {
         "word": "list",
-        "print": "lines",
-        "usage": "list"
+        "print": "lines"
       }
     },
     "run-lines/<project>": {
