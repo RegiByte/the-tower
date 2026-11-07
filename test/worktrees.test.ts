@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { worktreeOffers } from '../src/bridge/verbs.ts'
 import { carriedOf, commonBases, copiesOf, cuttable, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, sharedDefault, towerTreeName, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
 
 const HUB = '/w/lab'
@@ -12,6 +13,17 @@ const repo = (dir: string, trees: TreeRead[], kept: Extract<RepoRead, { git: tru
 
 const states = (reads: RepoRead[], occupants: { id: string; cwd: string }[] = []) =>
   floorWorktrees('lab', reads, occupants, true).map((w) => [w.name, w.state, w.verbs])
+
+test('work at risk on a branch with no commit offers no discard: it has no tip to note', () => {
+  const offered = (head?: string) => worktreeOffers('lab', 'a', 'at-risk', false, [{ dir: '/w/lab', head, dirty: 1 }], true).verbs
+  assert.deepEqual(offered('111'), ['discard'])
+  assert.deepEqual(offered(undefined), [])
+})
+
+test('git worktree list --porcelain: an unborn branch has no head', () => {
+  const out = `worktree /w/lab/.worktrees/a\nHEAD ${'0'.repeat(40)}\nbranch refs/heads/tower/a\n`
+  assert.deepEqual(parseWorktreeList(out), [{ path: '/w/lab/.worktrees/a', head: undefined, branch: 'tower/a', prunable: false, locked: false }])
+})
 
 test('git worktree list --porcelain: bare, detached and prunable entries', () => {
   const out = [

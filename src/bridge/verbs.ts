@@ -88,7 +88,7 @@ const floorVerbs = (hostUp: boolean, termsUp: boolean, canCut: boolean, tidyable
   ...(tidyable ? ['tidy' as const] : []),
 ]
 
-/** A worktree in use offers nothing. Work at risk is discarded only on a floor keeping review threads, where its tips are noted. */
+/** A worktree in use offers nothing. Work at risk is discarded only on a floor keeping review threads, where its tips are noted, and only with a commit in every repo to note: a branch with none yet is committed to or cleared first. */
 /** `occupied`: someone is in it (`FloorWorktree.sessions`), so a lost one is recut for them, never pruned under them. */
 const worktreeVerbs = (state: WorktreeState, occupied: boolean, recordsDiscards: boolean): WorktreeVerb[] =>
   state === 'lost' ? (occupied ? ['recut'] : ['recut', 'prune']) : state === 'removable' || state === 'carried' ? ['remove'] : state === 'at-risk' && recordsDiscards ? ['discard'] : []
@@ -224,7 +224,7 @@ export const withAddedTidy = <F extends { id: string; tidy: TidyPlan } & Offers<
 }
 
 export const worktreeOffers = (project: string, name: string, state: WorktreeState, occupied: boolean, repos: Pick<FloorWorktreeRepo, 'dir' | 'head' | 'dirty'>[], recordsDiscards: boolean): Offers<WorktreeVerb, WorktreeCalls> => {
-  const verbs = worktreeVerbs(state, occupied, recordsDiscards)
+  const verbs = worktreeVerbs(state, occupied, recordsDiscards && repos.every((r) => r.head))
   return actionsOf(verbs, {
     recut: (): Call<'worktree/recut'> => ['worktree/recut', { project, name }],
     prune: (): Call<'worktree/prune'> => ['worktree/prune', { project, name }],
