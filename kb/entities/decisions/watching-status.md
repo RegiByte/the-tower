@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-04",
+  "reviewed": "2026-11-07",
   "refs": [
     "hub/src/bridge/status.ts#nextState",
     "hub/src/bridge/status.ts#waitsOnSomeone",
