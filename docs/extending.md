@@ -1002,8 +1002,9 @@ emoji until the next full redraw (API 1.127). The view turns on xterm.js's `allo
 `io.files`, the file paths written in the terminal are links too, read from its `cwd()` and opened with its `edit`
 (the tower page calls the `edit` verb, which opens the user's editor at the path's `:line`). `io`
 is `TermViewIo` in `src/shared/term-view.ts`, which the tower page's `renderers/page/screen.js` fills. Its `keymap`
-and `run` are a renderer's keymap: a command that is not the renderer passes `keymap: () => board.keys` and `run: ()
-=> false`, which sends every key to the PTY.
+and `run` are a renderer's keymap: `run` gets the id of each command the key runs, an extension's `<cap>/<name>` too
+(API 1.159), and answers whether it did something; when it didn't, the key goes on to the terminal. A command that
+is not the renderer passes `keymap: () => board.keys` and `run: () => false`, which sends every key to the PTY.
 
 ### Views
 
