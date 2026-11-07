@@ -1,5 +1,5 @@
 import { toast } from './kit.js'
-import { DRAFTS, discard, draftItem, draftPath, draftTitles, openDraft as loadDraft } from '/x/drafts/drafts.js'
+import { DRAFTS, discard, draftItem, draftPath, draftTitles, openDraft as loadDraft } from './clients.js'
 
 /**
  * @import { Board } from '/lib/board.js'

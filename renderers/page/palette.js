@@ -3,7 +3,7 @@ import { chordLabel } from '/lib/keys.js'
 import { markdownHtml } from '/lib/markdown.js'
 import { paletteEntries, rankingOf, rankPalette } from '/lib/palette.js'
 import { esc } from '/lib/words.js'
-import { draftsOf } from '/x/drafts/drafts.js'
+import { draftsOf } from './clients.js'
 import { $, told } from './kit.js'
 
 /**

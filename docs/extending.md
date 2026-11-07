@@ -1396,7 +1396,9 @@ running tower's extensions, and starts it in a throwaway process whose ctx reach
 returns what the manifest declares. `tower extensions freeze <dir>` writes its `contract.json`: its verbs, reads, facts,
 stream codes, collections and client modules' exports (`client.<module>#<export>`) at its major. At load, a name listed there and gone from the manifest at the same major
 is a `contract` warning (an error for a bundled extension), and an extension replacing a bundled capability must hold
-every name of the bundled one's `contract.json` at the major it claims, or it is refused.
+every name of the bundled one's `contract.json` at the major it claims, or it is refused. At a new major it may leave a
+client file out, and the tower page goes on without what that file drew: with no `quota.js` the probe line, with no
+`drafts.js` drafts in the palette, a prompt kept from a closed new-worker form, and starting a worker on a draft.
 
 A bundled extension's id is its capability's: no other extension takes it. A new bundled extension that does nothing
 until its settings turn it on arrives at an API minor, and the changelog names it: a user's extension of that id is

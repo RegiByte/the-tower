@@ -5,7 +5,7 @@ import { keyshortcuts } from '/lib/keys.js'
 import { addedActions, badgesOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
 import { ICON, keyedTip, originIcon, SHELF_ICON, withIcons } from '/lib/view.js'
 import { base, esc, noun, plural, span } from '/lib/words.js'
-import { commandProbes, PROBE_ATTENTION, probeLine, probeTitle } from '/x/quota/quota.js'
+import { commandProbes, PROBE_ATTENTION, probeLine, probeTitle } from './clients.js'
 import { onDuty, lineOf, $, fillOf, told } from './kit.js'
 import { actionsHtml, asksHtml, badgeHtml, badgesHtml, drawCount, iconButtonsHtml, moreOf } from './added.js'
 
