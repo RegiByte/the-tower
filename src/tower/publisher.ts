@@ -205,17 +205,17 @@ export const publisher = defineResource({
     /** A board client observes the machine while it holds the board, so its first board already says what runs. */
     async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse, viewer: { viewer: string; renderer?: string } | undefined) {
       let gone = false
-      const observing = system.observe()
+      let release: (() => void) | undefined
       if (viewer !== undefined) streamsOf.set(res, viewer)
       req.on('close', () => {
         gone = true
         boardClients.delete(res)
         behind.delete(res)
         viewerGone(res)
-        void observing.then((release) => release())
+        release?.()
       })
-      await observing
-      if (gone) return
+      release = await system.observe()
+      if (gone) return release()
       const current = currentBoard()
       if (!boardClients.size && !boardListeners.size) published = current
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })

@@ -15,9 +15,10 @@
  */
 import { defineResource, type StartedSystem, type StartedResource } from 'braided'
 import { configNow } from '../bridge/legacy.ts'
+import { towerPort } from '../shared/model.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
 import { extensionSlots, runSlots } from '../slots.ts'
-import { readConfig, watchSystem } from '../system.ts'
+import { readConfig, takenConfig, watchSystem } from '../system.ts'
 import { dispatch } from './dispatch.ts'
 import { extensions, type ExtensionsResource } from './extensions.ts'
 import { httpServer } from './http.ts'
@@ -26,13 +27,14 @@ import { servedNow } from './served.ts'
 
 /**
  * The config is read again on every call: the user edits it at any time, and every read sees the edit. Its old
- * spellings are read where they are now (`configNow`). `served` is the code the tower runs, read once as it starts:
- * the process runs that code until it restarts.
+ * spellings are read where they are now (`configNow`). The port is read plainly: a JSON object short of what the
+ * tower takes still lets it come up and say so on the board. `served` is the code the tower runs, read once as it
+ * starts: the process runs that code until it restarts.
  */
 export const config = defineResource({
   start: () => {
     const paths = systemPaths(configPath())
-    return { paths, read: () => configNow(readConfig(paths.config)), served: servedNow() }
+    return { paths, read: () => configNow(takenConfig(paths.config)), port: () => towerPort(readConfig(paths.config)), served: servedNow() }
   },
   halt: () => {},
 })
