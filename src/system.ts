@@ -202,6 +202,8 @@ export type System = {
    * are current: the first observer after none reads them now.
    */
   observe: () => Promise<() => void>
+  /** Observes as `observe` does from now, not waiting: `release` ends it, and `read` settles with that first read. */
+  watchMachine: () => { release: () => void; read: Promise<unknown> }
   /** Stops watching: every watcher closed, every tail stopped, every poll and timer cleared, the git reader ended. */
   stop: () => Promise<void>
 }
@@ -473,7 +475,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   let observers = 0
   let machinePolls: NodeJS.Timeout[] = []
   let machineRead: Promise<unknown> = Promise.resolve()
-  const observe = async (): Promise<() => void> => {
+  const watchMachine = () => {
     if (observers++ === 0) {
       machineRead = Promise.all([refreshRunning(), repoWatch.start()])
       machinePolls = [setInterval(refreshRunning, MACHINE_POLL_MS)]
@@ -487,8 +489,12 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
         repoWatch.pause()
       }
     }
+    return { release, read: machineRead }
+  }
+  const observe = async (): Promise<() => void> => {
+    const { release, read } = watchMachine()
     try {
-      await machineRead
+      await read
     } catch (err) {
       release()
       throw err
@@ -581,6 +587,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     refreshRepos,
     refreshConfig: configChanged,
     observe,
+    watchMachine,
     stop: async () => {
       stopped = true
       repoWatch.pause()
