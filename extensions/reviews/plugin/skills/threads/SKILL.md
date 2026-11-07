@@ -11,7 +11,7 @@ Every checkout has one thread of notes, worked with `tower x reviews`. Run `towe
 ## Get yourself reviewed
 
 1. Commit your work: the reviewer forks your checkout, uncommitted work included, but a commit is what you will be answering for.
-2. State the goal on your thread, because a reviewer judges against it. `tower x reviews note <<'EOF'` … `EOF`: what was asked, what was agreed, and any decision given through a question dialog, which `tower agent` can't show it.
+2. State the goal on your thread, because a reviewer judges against it. `tower x reviews note <<'EOF'` … `EOF`: what was asked and what was agreed. A decision given through a question dialog is in `tower agent` (its `asked:` lines), so it needn't be restated.
 3. Name your own callsign, from `tower whoami`: `tower x reviews review <YOUR CALLSIGN> --tell`. It is never limited by the floor's hiring limits. `--tell` has the reviewer send you its notes when done.
 4. Carry on or end your turn: the notes reach you as a prompt. Don't wait in a loop.
 

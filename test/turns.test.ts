@@ -153,12 +153,43 @@ const dialogLog = (outcome: 'answered' | 'unanswered') => {
 
 test('a question dialog reads as its questions and what was answered, with notes, and says when it was not answered', () => {
   const lines = (outcome: 'answered' | 'unanswered') => Object.values(turnsByConversation(dialogLog(outcome)))[0][0].steps.map((s) => s.t === 'tool' && [s.tool, s.line, s.outcome])
-  assert.deepEqual(lines('answered'), [['AskUserQuestion', 'Database: SQLite (it is a prototype) · Checks: Lint, Types', 'ok']])
-  assert.deepEqual(lines('unanswered'), [['AskUserQuestion', 'Database: unanswered · Checks: unanswered', 'abandoned']])
+  assert.deepEqual(lines('answered'), [['AskUserQuestion', 'Database: Which database should the service use? → SQLite (it is a prototype) · Checks: Which checks should run? → Lint, Types', 'ok']])
+  assert.deepEqual(lines('unanswered'), [['AskUserQuestion', 'Database: Which database should the service use? → unanswered · Checks: Which checks should run? → unanswered', 'abandoned']])
 })
 
 test('a tool call reads in full with the input Claude logged once the tool ran, the answers of a dialog among it', () => {
   const answered = toolCallOf(dialogLog('answered'), 'toolu_1')!
   assert.deepEqual(answered.input.answers, { 'Which database should the service use?': 'SQLite', 'Which checks should run?': 'Lint, Types' })
   assert.equal(toolCallOf(dialogLog('unanswered'), 'toolu_1')!.input.answers, undefined)
+})
+
+const loggedDialog = (questions: unknown, tool_input?: Record<string, unknown>) => {
+  const dialog = dialogLog('unanswered')
+  dialog.events = dialog.events.slice(0, 2)
+  const hook = (t: number, data: Record<string, unknown>) => dialog.events.push([t, 'h', data as never])
+  hook(3, { questions, tool: 'AskUserQuestion', tool_use_id: 'toolu_1', hook_event_name: 'tool.call' })
+  if (tool_input) hook(4, { hook_event_name: 'PostToolUse', tool_name: 'AskUserQuestion', tool_use_id: 'toolu_1', duration_ms: 1, tool_input })
+  hook(6, { answer: 'done', turnId: 't', hook_event_name: 'turn.complete' })
+  return dialog
+}
+
+const lineOfDialog = (questions: unknown, tool_input?: Record<string, unknown>) => {
+  const [step] = Object.values(turnsByConversation(loggedDialog(questions, tool_input)))[0][0].steps
+  return step.t === 'tool' ? step.line : undefined
+}
+
+test('review: a call Claude refused before it ran does not cost the session its turns', () => {
+  assert.doesNotThrow(() => lineOfDialog('[{"question":"Which?"}]'))
+})
+
+test('review: every decision of a four-question dialog stays in its line', () => {
+  const questions = ['Storage', 'Rollout', 'Failure', 'Ownership'].map((header) => ({ question: `${header}?`, header }))
+  const answers = Object.fromEntries(questions.map((q) => [q.question, `The ${q.header.toLowerCase()} option the user chose, about forty characters`]))
+  const line = lineOfDialog(questions, { questions, answers, annotations: {} })!
+  assert.ok(line.includes('Ownership: '), line)
+})
+
+test('review: a free-text answer of several lines stays one line', () => {
+  const questions = [{ question: 'Why?', header: 'Why' }]
+  assert.ok(!lineOfDialog(questions, { questions, answers: { 'Why?': 'first\nsecond' }, annotations: {} })!.includes('\n'))
 })

@@ -20,7 +20,7 @@ You review the work of tower worker **$ARGUMENTS** (its callsign first; `tell` a
 
 ## Steps
 
-1. **The goal.** `tower agent <CALLSIGN>` shows only the author's last turns, often "please open the PR", and says when it left earlier ones out. Run the exact command it prints and read the whole conversation: the goal and what was agreed are usually at its start. A decision given through a question dialog is in no turn, so the author's notes on the thread count too. Review against that goal, not against what you would have built.
+1. **The goal.** `tower agent <CALLSIGN>` shows only the author's last turns, often "please open the PR", and says when it left earlier ones out. Run the exact command it prints and read the whole conversation: the goal and what was agreed are usually at its start. A decision given through a question dialog is in the turn's `asked:` lines, and the author's notes on the thread count too. Review against that goal, not against what you would have built.
 2. **What's already said.** `tower x reviews thread <author's checkout>` (the checkout your worktree forked, from `tower whoami`). Don't repeat a note already there; answer it with `--re <k>` if you have something to add.
 3. **The diff.** In each repo of your worktree, the base is `git config branch.<your branch>.towerBase`:
    - `git log --oneline <base>..HEAD` lists the author's commits; the last one, `Snapshot of …`, holds their uncommitted work, if they had any.

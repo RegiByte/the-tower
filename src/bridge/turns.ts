@@ -93,26 +93,27 @@ const clipped = (line: string) => (line.length > LINE_CHARS ? `${line.slice(0, L
 type DialogQuestion = { question: string; header?: string }
 
 /**
- * A question dialog in one line: each question by its header (its text without one) and the label chosen, with the
- * user's note when they gave one. Claude logs the answers only in `PostToolUse`'s input, so a dialog not answered
- * says so.
+ * A question dialog in one line: each question, led by its header, and the label chosen, with the user's note
+ * when they gave one. Claude logs the answers only in `PostToolUse`'s input, so a dialog not answered says so. It is
+ * never clipped: a dialog is at most four questions, and `tower agent` has nothing to open a clipped decision with.
  */
 const dialogLine = (input: Record<string, unknown>): string => {
   const questions = input.questions as DialogQuestion[]
   const answers = input.answers as Record<string, string> | undefined
   const annotations = (input.annotations ?? {}) as Record<string, { notes?: string }>
+  const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim()
   return questions
     .map(({ question, header }) => {
       const answer = answers?.[question]
       const note = annotations[question]?.notes
-      return `${header ?? question}: ${answer === undefined ? 'unanswered' : `${answer}${note ? ` (${note})` : ''}`}`
+      return `${header ? `${header}: ` : ''}${oneLine(question)} → ${answer === undefined ? 'unanswered' : `${oneLine(answer)}${note ? ` (${oneLine(note)})` : ''}`}`
     })
     .join(' · ')
 }
 
 /** A tool's input in one line: its telling field's first line, a path under the session's folder relative to it. */
 const lineOf = (tool: string, input: Record<string, unknown>, cwd: string): string => {
-  if (tool === 'AskUserQuestion') return clipped(dialogLine(input))
+  if (tool === 'AskUserQuestion' && Array.isArray(input.questions)) return dialogLine(input)
   const field = (LINE_FIELDS[tool] ?? []).find((f) => typeof input[f] === 'string' && input[f]) ?? Object.keys(input).find((f) => typeof input[f] === 'string' && input[f])
   const value = field ? String(input[field]).split('\n')[0] : ''
   const line = value.startsWith(`${cwd}/`) ? value.slice(cwd.length + 1) : value
