@@ -66,25 +66,10 @@ export const CLI_VERBS = {
   },
   agents: { of: 'worker', usage: 'agents [--all]', help: "the workers on duty on this session's floor, each under the one it reports to; --all, on every floor" },
   agent: { of: 'worker', usage: 'agent <CALLSIGN>', help: 'one worker: its latest prompt and answer in full, per conversation' },
-  probes: {
-    of: 'worker',
-    usage: 'probes [run quota]',
-    help: "the quota probe, the quota extension's, per `argv` command: its state, last read, why it failed and when it reads next; `run quota` reads every command now, less any read within the last minute, as `tower x quota read-now` does, whose `command` reads one (refused while a read is in flight or when nothing is left to read)",
-  },
   extensions: {
     of: 'worker',
     usage: 'extensions [restart <id> | check <dir> | freeze <dir>]',
     help: "every extension the tower found, bundled first: its state, the floors it is off on, its slots and each problem at its path; `restart` reads an extension's folder again and restarts it, with what depends on it; `check` reads a folder as the tower would, resolves it against the running tower and starts it in a throwaway process; `freeze` writes its contract.json",
-  },
-  policies: {
-    of: 'worker',
-    usage: 'policies [approve|run <tag|id>]',
-    help: "the floor's policies: each one's rule, approval, live runs, last run and where it stands now; `approve` approves its words as they are, `run` starts it now (an open offer's slot when it has one)",
-  },
-  runs: {
-    of: 'worker',
-    usage: 'runs [<tag|id>] [--limit n]',
-    help: "a policy's latest runs (5 unless told, 20 at most), each with its worker, what it showed and its latest answer cut short; no policy named, the one this session is a run of",
   },
   show: { of: 'worker', usage: 'show <file|url> [title]', help: 'put a file this session wrote, or a web page, in front of the user beside this session' },
   open: { of: 'worker', usage: 'open <url> [title]', help: "ask the user to open a page in a browser tab (one that can't be shown in place)" },
@@ -159,7 +144,11 @@ export type VerbName = keyof typeof CLI_VERBS
 export type Alias = { now: string; args: (words: string[]) => string[] }
 
 /** The old core words that moved under `tower x`. */
-export const ALIASES: Record<string, Alias> = {}
+export const ALIASES: Record<string, Alias> = {
+  policies: { now: 'policies', args: ([sub, ...rest]) => (sub === undefined ? ['list'] : sub === 'run' ? ['run-now', ...rest] : sub === 'approve' ? ['approve-now', ...rest] : [sub, ...rest]) },
+  runs: { now: 'policies runs', args: (words) => words },
+  probes: { now: 'quota', args: (words) => (words[0] === 'run' ? ['read-now', ...words.slice(2)] : ['probes', ...words]) },
+}
 
 /** The words an alias stands for, after `tower x`, and what it says about itself. */
 export const aliased = (alias: Alias, name: string, words: string[]): { args: string[]; line: string } => ({

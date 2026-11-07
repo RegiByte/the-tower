@@ -123,8 +123,8 @@ worker on it, or, for an `ask` policy, offers the slot to you: offers come after
 (`N`). An `auto` policy runs on its own only while you have approved its words; any edit asks for a new approval.
 
 Each floor's policies are in its sidebar tray, which opens the Policies panel: each rule in words, where it stands,
-its runs, and Run now, Approve and Accept. Workers read the same with `tower policies` (`approve` and `run` act on
-one) and `tower runs` (a policy's latest runs, and what each left for the next).
+its runs, and Run now, Approve and Accept. Workers read the same with `tower x policies list` (`approve-now` and `run-now`
+act on one) and `tower x policies runs` (a policy's latest runs, and what each left for the next).
 
 ## The shelf
 
@@ -203,7 +203,7 @@ many ran at once, the weekly budget's pace, and what landed on each project's de
 
 Workers read the same numbers from the API (`GET /stats`). The rate limits in the sidebar's chip come from
 Claude's turns and from the **quota probe**, a bundled extension that reads your account's usage while no worker's turn
-reports it. `tower probes` says how it stands and when it reads next; `tower probes run quota` reads now.
+reports it. `tower x quota limits` says how much is used, `tower x quota probes` how the probe stands and when it reads next, and `tower x quota read-now` reads now.
 
 ## Tower 3D
 
