@@ -6,6 +6,7 @@
 import { spawn } from 'node:child_process'
 import { endInput } from './child-input.ts'
 import { withoutParentSession } from './shared/env.ts'
+import { WORKTREES_DIR } from './shared/repos.ts'
 import { signalGroup } from './signal-group.ts'
 
 /**
@@ -82,9 +83,22 @@ const limited = (n: number) => {
 
 const inTurn = limited(GIT_CONCURRENCY)
 
+/** How many of those one repo may hold, worktrees included: a repo that hangs leaves the others some. */
+const REPO_CONCURRENCY = 6
+
+const repoTurns = new Map<string, ReturnType<typeof limited>>()
+
+/** A call's turn among its repo's, then among every repo's: one waiting on its repo holds no place of the others'. */
+const turnIn = <T>(dir: string, task: () => Promise<T>): Promise<T> => {
+  const repo = dir.split(`/${WORKTREES_DIR}/`)[0]
+  const inRepo = repoTurns.get(repo) ?? limited(REPO_CONCURRENCY)
+  repoTurns.set(repo, inRepo)
+  return inRepo(() => inTurn(task))
+}
+
 /** A call's timeout counts from its start, not from when it was queued. */
 const exec = async (dir: string, args: string[], timeout: number, env: NodeJS.ProcessEnv): Promise<Run> => {
-  const r = await inTurn(() => spawnGit(dir, args, timeout, env))
+  const r = await turnIn(dir, () => spawnGit(dir, args, timeout, env))
   return { ...r, stdout: r.stdout.toString('utf8') }
 }
 
@@ -98,7 +112,7 @@ const succeeded = <T>(dir: string, args: string[], r: { stdout: T; stderr: strin
 
 /** Git that must succeed, fed `input` on its stdin, its output as bytes: for output that counts its own lengths in bytes (`cat-file --batch`). */
 export const gitBytes = async (dir: string, args: string[], input: string): Promise<Buffer> =>
-  succeeded(dir, args, await inTurn(() => spawnGit(dir, args, GIT_TIMEOUT_MS, {}, input)))
+  succeeded(dir, args, await turnIn(dir, () => spawnGit(dir, args, GIT_TIMEOUT_MS, {}, input)))
 
 /** Git that must succeed, with `env` added to its environment: a failure throws with its stderr. */
 export const gitWith = (env: NodeJS.ProcessEnv) => async (dir: string, args: string[]): Promise<string> => succeeded(dir, args, await exec(dir, args, GIT_TIMEOUT_MS, env))
