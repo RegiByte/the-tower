@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { DEFAULT_KEYS, keymapSheetHtml, paneSheetHtml, panesOf } from '../src/shared/keymap.ts'
+import { addedKeys, chordsOf, DEFAULT_KEYS, keymapOf, keymapSheetHtml, keysProblems, paneSheetHtml, panesOf } from '../src/shared/keymap.ts'
 import { terminalKeymap } from '../src/shared/termkeys.ts'
 
 const press = (code: string, mods: Partial<KeyboardEvent> = {}) =>
@@ -50,4 +50,32 @@ test("a pane's row sits with the keymap's panes on the sheet, and the keymap's s
   assert.ok(sheet.indexOf('⌃⇧3') < sheet.indexOf('⌃⇧5') && sheet.indexOf('⌃⇧5') < sheet.indexOf('⌘J'))
   assert.ok(!keymapSheetHtml(keys).includes('⌃⇧5'))
   assert.equal(paneSheetHtml(DEFAULT_KEYS, []), keymapSheetHtml(DEFAULT_KEYS))
+})
+
+const reviews = { cap: 'reviews', id: 'reviews/thread', path: 'views.thread.keys', chords: ['Ctrl+Shift+4'] }
+const bound = (overrides: Record<string, string | string[] | null>) => addedKeys([reviews], overrides, keymapOf(overrides), [])
+
+test('Reviews holds its chord on its view, and pane-reviews none', () => {
+  assert.deepEqual(DEFAULT_KEYS['pane-reviews'], [])
+  assert.deepEqual(bound({}), { keys: { 'reviews/thread': ['Ctrl+Shift+4'] }, dropped: [] })
+  const keys = { ...DEFAULT_KEYS, 'reviews/thread': ['Ctrl+Shift+4'] }
+  assert.deepEqual(chordsOf(keys, 'pane-reviews'), ['Ctrl+Shift+4'])
+  assert.equal(panesOf({ extensions: [], keys }).find((p) => p.name === 'reviews')?.command, 'reviews/thread')
+  assert.ok(keymapSheetHtml(keys).includes('⌃⇧4'))
+})
+
+test("pane-reviews in the config binds the view, whose own key wins", () => {
+  assert.deepEqual(keymapOf({ 'pane-reviews': 'Ctrl+Shift+R' })['pane-reviews'], [])
+  assert.deepEqual(bound({ 'pane-reviews': 'Ctrl+Shift+R' }).keys['reviews/thread'], ['Ctrl+Shift+R'])
+  assert.deepEqual(bound({ 'pane-reviews': null }).keys['reviews/thread'], [])
+  assert.deepEqual(bound({ 'pane-reviews': 'Ctrl+Shift+R', 'reviews/thread': 'Ctrl+Shift+T' }).keys['reviews/thread'], ['Ctrl+Shift+T'])
+})
+
+test('pane-reviews is checked as written: a warning, a bad chord failing with reviews on or off, a conflict at its own key', () => {
+  const running = ['reviews/thread']
+  assert.deepEqual(keysProblems({ 'pane-reviews': 'Ctrl+Shift+R' }, running), [{ level: 'warn', at: '.pane-reviews', problem: 'is deprecated: write its chords at "reviews/thread"' }])
+  assert.match(keysProblems({ 'pane-reviews': 'Ctrl+Shift+R', 'reviews/thread': null }, running)[0].problem, /ignored/)
+  for (const on of [running, []]) assert.ok(keysProblems({ 'pane-reviews': 'Bogus+4' }, on).some((p) => p.level === 'fail' && p.at === '.pane-reviews'))
+  assert.ok(keysProblems({ 'pane-reviews': 'Ctrl+Shift+1' }, running).some((p) => p.level === 'fail' && p.at === '.pane-reviews'))
+  assert.deepEqual(keysProblems({ 'pane-reviews': 'Ctrl+Shift+1' }, []).map((p) => p.level), ['warn'])
 })
