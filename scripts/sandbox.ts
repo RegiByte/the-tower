@@ -47,10 +47,11 @@
  * `$TOWER_SANDBOX/tower` is a clone of this checkout. The sandbox's git is its own: a cut, Tidy, a discard or a push on
  * either floor reaches nothing outside the root. On `tower`, `main` is this checkout's HEAD as of the last `up`, so that
  * floor shows commits, never uncommitted work, and commit-then-`up` shows a commit. Every other branch and tag is as
- * of the clone. `up` follows HEAD and restores the hub's tracked files, dropping what was done on its `main`, and
- * re-makes the clone, worktrees cut in it included, when any of that fails: macOS deletes files under `/tmp` idle for
- * three days one by one, so a clone left alone breaks a piece at a time. `down` removes the clone, so what should
- * outlive a restart belongs on `lab`. The clone's objects are hardlinks to this repository's: it costs its tree, about
+ * of the clone. `up` follows HEAD and restores the hub's tracked files, dropping what was done on its `main`. It re-makes
+ * a clone git finds damaged and says so, worktrees cut in it going with it: macOS deletes files under `/tmp` idle for
+ * three days one by one, so a clone left alone breaks a piece at a time. On a sound clone a failure to follow stops
+ * `up` with git's message, and nothing is lost. `down` removes the clone, so what should outlive a restart belongs on
+ * `lab`. The clone's objects are hardlinks to this repository's: it costs its tree, about
  * 30 MB, and holds on to packs the repository has since dropped until `down`. It is never `--shared`, which would break
  * when the repository collects its objects.
  *
@@ -142,7 +143,19 @@ function followCheckout() {
   git(FLOOR_HUB, 'fetch', '-q', 'origin')
   git(FLOOR_HUB, 'remote', 'set-head', 'origin', 'main')
   git(FLOOR_HUB, 'checkout', '-q', '--force', '-B', 'main', 'origin/main')
-  for (const dir of [FLOOR_ORIGIN, FLOOR_HUB]) git(dir, 'fsck', '--connectivity-only')
+}
+
+/** What git finds wrong with the floor's clone, in its words; nothing when the clone is sound. */
+function floorDamage() {
+  const checks = [
+    [FLOOR_ORIGIN, 'fsck', '--connectivity-only'],
+    [FLOOR_HUB, 'fsck', '--connectivity-only'],
+    [FLOOR_HUB, 'remote', 'get-url', 'origin'],
+  ]
+  for (const [dir, ...args] of checks) {
+    const check = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'ignore', 'pipe'] })
+    if (check.status !== 0) return check.stderr.trim().split('\n').at(-1)
+  }
 }
 
 /**
@@ -162,11 +175,15 @@ function makeFloorClone() {
 function mendFloorClone() {
   /** A hub whose `.git` went would read as the repository around it, and the tower would act on that one. */
   if (spawnSync('git', ['-C', ROOT, 'rev-parse', '--git-dir'], { stdio: 'ignore' }).status === 0) throw new Error(`${ROOT} is inside a git repository: give the sandbox a root outside any`)
+  const damage = floorDamage()
+  if (damage) {
+    if (existsSync(FLOOR_HUB)) console.log(`the tower floor's clone was broken (${damage}): re-making it, and the worktrees cut in it go with it`)
+    makeFloorClone()
+  }
   try {
     followCheckout()
-  } catch {
-    makeFloorClone()
-    followCheckout()
+  } catch (err) {
+    throw new Error(`the tower floor's clone couldn't follow this checkout, though git finds it sound: fix what git says, or \`down\` and \`up\` re-make it. ${(err as Error).message}`)
   }
 }
 
@@ -207,8 +224,9 @@ function checkFloorClone() {
   if (hub === undefined) return
   const mend = 'npm run sandbox -- up mends it'
   if (hub !== FLOOR_HUB) throw new Error(`${CONFIG} has the tower floor's hub at ${hub}, which is no clone of this sandbox's own: ${mend}`)
-  const fsck = spawnSync('git', ['-C', FLOOR_HUB, 'fsck', '--connectivity-only'], { encoding: 'utf8', stdio: ['ignore', 'ignore', 'pipe'] })
-  if (fsck.status !== 0) throw new Error(`the tower floor's clone at ${FLOOR_HUB} is broken (${fsck.stderr.trim().split('\n').at(-1)}): ${mend}`)
+  if (!existsSync(FLOOR_HUB)) throw new Error(`the tower floor has no clone at ${FLOOR_HUB}, which \`down\` removes: npm run sandbox -- up makes it`)
+  const damage = floorDamage()
+  if (damage) throw new Error(`the tower floor's clone at ${FLOOR_HUB} is broken (${damage}): ${mend}`)
 }
 
 /**
@@ -218,9 +236,10 @@ function checkFloorClone() {
 const sandboxEnv = (): NodeJS.ProcessEnv => {
   /** `bin/tower` runs the checkout's own tsx, which node's lookup up the tree doesn't stand in for. */
   if (!existsSync(path.join(REPO, 'node_modules', '.bin', 'tsx'))) throw new Error(`${REPO} has no node_modules of its own, which its tower runs from: npm ci there first`)
+  const TOWER_URL = sandboxUrl()
   checkFloorClone()
   const { TOWER_SESSION_ID, TOWER_HOOKS_SOCKET, ...env } = process.env
-  return { ...env, TOWER_SANDBOX: ROOT, TOWER_CONFIG: CONFIG, TOWER_URL: sandboxUrl() }
+  return { ...env, TOWER_SANDBOX: ROOT, TOWER_CONFIG: CONFIG, TOWER_URL }
 }
 
 const RUN_LINE = `npm run -s sandbox -- run <command>    one command, or several as a script: run sh <<'SH' … SH`
