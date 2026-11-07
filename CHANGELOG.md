@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.97.1
+
+One malformed first line in a session log no longer stops the tower. Restart the tower with this release (`tower down
+tower`, then `tower up tower`); its first start folds every log again once, as after any change to the fold's code. No
+host restart, no config change, no API change.
+
+- **Broken logs.** A first line that isn't JSON, or isn't a session's header, now costs only that session: it shows as
+  broken with the reason, and the tower, `tower ls` and new workers carry on, at start and while running. Nothing resumes
+  such a session; restoring the line by hand brings it back at the next start. A `null` or `{}` line now breaks a log
+  with a time and a reason, where one ended its fold silently and the other drew an invalid date.
+- **Chips.** A chip with no fill of its own draws in ink rather than inheriting its surroundings, in every renderer that
+  reads `/design.css`. The key sheet's legend chips go from faint to ink.
+- `/conversations` answers `not_found` for a session with no floor, or whose project left the config, where it was a 500.
+
 ## v1.97.0
 
 Extensions' settings now reach their client code on the board, so a client-only extension needs no server to read one.
