@@ -23,8 +23,8 @@ export const CLI_VERBS = {
   },
   down: {
     of: 'user',
-    usage: 'down [host|terms|jobs|tower...]',
-    help: "stop what tower up started (the host's end ends every session, terms' every shell, jobs' every running job); only the ones named, when named: `tower down tower && tower up tower` restarts the tower alone. One it refuses (started by hand) is reported, the rest still stopped, and it exits 1",
+    usage: 'down [host|terms|jobs|tower...|--force]',
+    help: "stop what tower up started (the host's end ends every session, terms' every shell, jobs' every running job); only the ones named, when named: `tower down tower && tower up tower` restarts the tower alone. With no names, while a session is mid-turn, it names who would be cut off and stops nothing unless given --force. One it refuses (started by hand) is reported, the rest still stopped, and it exits 1",
   },
   update: {
     of: 'user',
