@@ -28,8 +28,9 @@ export type Loop<S, E> = {
   dispatch(event: E): void
   state(): S
   /**
-   * Waits for the machine to reach a state: the first state `holds` is true of, now if it holds already, else once the
-   * events dispatched have all been handled. A waiter whose predicate never holds is kept as long as the loop.
+   * Waits for the machine to reach the first state `holds` is true of: now if it holds already and no event is being
+   * handled, else once the events dispatched have all been handled, so a wait asked from an executor sees the
+   * events queued before it. A waiter whose predicate never holds is kept as long as the loop.
    * Provisional, as `Loop` is. @since 1.162
    */
   until(holds: (state: S) => boolean): Promise<S>
@@ -65,7 +66,7 @@ export function loop<S, E extends Tagged, F extends Tagged>(m: { state: S; handl
     for (const w of met) w.resolve(state)
   }
   const until = (holds: (state: S) => boolean) =>
-    holds(state) ? Promise.resolve(state) : new Promise<S>((resolve) => void waiting.push({ holds, resolve }))
+    !handling && holds(state) ? Promise.resolve(state) : new Promise<S>((resolve) => void waiting.push({ holds, resolve }))
   return { dispatch, state: () => state, until }
 }
 

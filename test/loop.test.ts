@@ -28,3 +28,19 @@ test('loop until: resolves once the effects a dispatch queued have run, and ever
   assert.equal(await three, 3)
   assert.deepEqual(order, ['one at 2', 'three at 3'])
 })
+
+test('loop until: asked from an executor, resolves on the state the events it queued left', async () => {
+  let wait: Promise<number> | undefined
+  const c = loop<number, Count, { type: 'state'; state: number } | { type: 'echo'; by: number }>({
+    state: 0,
+    handlers: { add: (n, e) => [{ type: 'state', state: n + e.by }], echo: (_, e) => [{ type: 'echo', by: e.by }] },
+    execute: {
+      echo: (e, dispatch) => {
+        dispatch({ type: 'add', by: e.by })
+        wait = c.until((n) => n <= 1)
+      },
+    },
+  })
+  c.dispatch({ type: 'echo', by: 1 })
+  assert.equal(await wait, c.state(), 'the add queued before the wait has run')
+})
