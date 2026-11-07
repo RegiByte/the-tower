@@ -193,3 +193,16 @@ test('review: a free-text answer of several lines stays one line', () => {
   const questions = [{ question: 'Why?', header: 'Why' }]
   assert.ok(!lineOfDialog(questions, { questions, answers: { 'Why?': 'first\nsecond' }, annotations: {} })!.includes('\n'))
 })
+
+test('recorded dialogs: a note on a preview, an Other answer typed in, and one dismissed with Esc', () => {
+  const log = fixture('question-dialogs')
+  const turns = Object.values(turnsByConversation(log)).flat()
+  assert.deepEqual(turns.flatMap((t) => t.steps.map((s) => s.t === 'tool' && [s.line, s.outcome])), [
+    ['Fruit: Which fruit? → Apple (sweet and green)', 'ok'],
+    ['Color: Which color? → teal, a mix', 'ok'],
+    ['Size: Which size? → unanswered', 'abandoned'],
+  ])
+  const [first] = turns[0].steps
+  const call = toolCallOf(log, first.t === 'tool' ? first.id : '')!
+  assert.equal((call.input.annotations as Record<string, { notes: string }>)['Which fruit?'].notes, 'sweet and green')
+})
