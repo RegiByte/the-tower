@@ -40,8 +40,7 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .side-notes .untested { white-space: normal; }
 .tally { display: flex; gap: var(--sp-s); flex-wrap: wrap; padding: 0 var(--sp-xl) var(--sp-l); }
 .limits-bar { padding: 0 var(--sp-xl) var(--sp-l); border-bottom: 1px solid var(--line); }
-.limits-bar .chip { border: 0; color: var(--ink); cursor: pointer; }
-.limits-bar .chip.some { color: var(--on); }
+.limits-bar .chip { border: 0; cursor: pointer; }
 .limits-bar .chip.stale:not(.some) { color: var(--muted); }
 .limits:popover-open { display: grid; } .settings-pop.limits { gap: var(--sp-m); padding: var(--sp-l) var(--sp-xl) var(--sp-xl); font-size: var(--fs-s); color: var(--muted); }
 .limits .row { display: flex; gap: var(--sp-s); align-items: baseline; margin-bottom: var(--sp-xs); }
@@ -80,7 +79,6 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .floor.folded .sign .fold .icon { rotate: -90deg; }
 .sign .summary { flex: none; display: flex; gap: var(--sp-2xs); }
 .sign .summary .chip { gap: var(--sp-xs); padding: 0 var(--sp-s); font-size: var(--fs-xs); }
-.sign .summary .chip:not(.some) { color: var(--ink); }
 .floor.folded + .floor.folded { margin-top: calc(var(--sp-s) - var(--sp-xl)); }
 .dirs { padding: var(--sp-s) 0 0; }
 .adds { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs); padding: var(--sp-s) 0 0; }
@@ -238,11 +236,11 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
 .rail .lamp { width: 11px; height: 11px; cursor: pointer; }
 .rail .lamp.sel { outline: 2px solid var(--ink); outline-offset: 3px; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-m) var(--sp-xl); align-items: baseline; color: var(--muted); font-size: var(--fs-m); }
-.keys.legend > span:nth-child(odd), .keys > .chords { white-space: nowrap; color: var(--faint); font-size: var(--fs-s); }
+.keys > .chords { white-space: nowrap; color: var(--faint); font-size: var(--fs-s); }
 .keys > h3 { grid-column: 1 / -1; margin: var(--sp-l) 0 0; }
 .keys > h3:first-child { margin-top: 0; }
 dialog h2.legend-head { margin-top: var(--sp-2xl); }
-.keys.legend > .chip { justify-self: start; color: var(--ink); }
+.keys.legend > .chip { justify-self: start; }
 dialog#keys { width: min(620px, 92vw); }
 dialog#landing { width: min(960px, 94vw); }
 dialog.palette { padding: 0; width: min(640px, calc(100vw - 32px)); margin-top: 12vh; overflow: hidden; }

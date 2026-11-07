@@ -323,7 +323,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
 /**
  * The components every renderer draws the same way, by class: an attention class (`needs`, `ready`, `working`,
  * `quiet`, `broken`, and `offered`, a policy's slot waiting to be started, its text tone its own colour) sets `--c`, the text colour on it, `--on`, and its tone as text on paper, `--c-text`; a lamp,
- * pill, chip and meter read them. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
+ * pill, chip and meter read them; an unfilled chip is in ink, whatever it sits on. A floor sign takes its project colour as `--p`. A meter's `s` is a tick on its track.
  * Only `needs` fills or washes in red: a count of waits (`.chip.waits`) is ringed in ink, its lamp in the loudest wait's
  * attention; something new is drawn in `--accent`, a problem that waits on no one in `--broken-text`.
  * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion (`reduced`), every animation runs once.
@@ -355,7 +355,7 @@ const COMPONENTS = `
   white-space: nowrap; background: var(--c); color: var(--on); }
 .pill .lamp { background: var(--on); }
 .chip { display: inline-flex; align-items: center; gap: var(--sp-s); padding: var(--sp-2xs) var(--sp-m); border-radius: var(--radius-pill); font-size: var(--fs-s); font-weight: 700;
-  background: var(--panel-2); white-space: nowrap; }
+  background: var(--panel-2); color: var(--ink); white-space: nowrap; }
 .chip b { font-variant-numeric: tabular-nums; }
 .chip.some { background: var(--c); color: var(--on); }
 .chip.some .lamp { background: var(--on); }
