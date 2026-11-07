@@ -22,8 +22,11 @@ export type Scope = 'global' | 'terminal' | 'field'
 /** What holds focus when a key is pressed: a terminal, a text field (or an open dialog), or the page itself. */
 export type Focus = 'terminal' | 'field' | 'page'
 
-/** `label`: the command's name, a few words, as a palette lists it; `does`: what it does, as the `?` sheet says it. */
-export type Command = { id: string; label: string; scope: Scope; group: string; does: string; chords: readonly string[] }
+/** A worker's tab a command opens: `view`, the view that draws it; `name`, what renderers and a hash's short form call it. */
+export type PaneOfCommand = { view: string; name: string }
+
+/** `label`: the command's name, a few words, as a palette lists it; `does`: what it does, as the `?` sheet says it. `pane`: the tab it opens, for a command that opens one. */
+export type Command = { id: string; label: string; scope: Scope; group: string; does: string; chords: readonly string[]; pane?: PaneOfCommand }
 
 /** Each command id with its chords, as written in a canonical form (`chordOf`). */
 export type Keys = Record<string, string[]>
@@ -40,10 +43,10 @@ export const COMMANDS = [
   { id: 'palette', label: 'Command palette', scope: 'global', group: 'Page', chords: ['Meta+K'], does: 'the command palette: go to a worker, a floor, a shelf entry or a draft, or run a command or what the selected worker offers, by typing' },
   { id: 'help', label: 'Keys and statuses', scope: 'global', group: 'Page', chords: ['?'], does: 'this sheet: the keys and what the statuses mean' },
   { id: 'spawn', label: 'New worker', scope: 'global', group: 'Page', chords: [], does: 'the new-worker form, on the floor in focus, or on the draft in focus to start a worker on it' },
-  { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+1'], does: "the selected worker's terminal, focused" },
-  { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+2'], does: "the selected worker's brief" },
-  { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+3'], does: "the selected worker's changes" },
-  { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+4'], does: "the selected worker's review thread" },
+  { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+1'], does: "the selected worker's terminal, focused", pane: { view: 'tower/terminal', name: 'screen' } },
+  { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+2'], does: "the selected worker's brief", pane: { view: 'tower/brief', name: 'brief' } },
+  { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+3'], does: "the selected worker's changes", pane: { view: 'tower/changes', name: 'changes' } },
+  { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+4'], does: "the selected worker's review thread", pane: { view: 'reviews/thread', name: 'reviews' } },
   { id: 'shell-here', label: 'Shell here', scope: 'global', group: 'Panes', chords: ['Meta+J', 'Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from any shell, hides the dock and goes back to the worker's terminal" },
   { id: 'leave-terminal', label: 'Leave the terminal', scope: 'terminal', group: 'Terminal', chords: ['Alt+Escape'], does: 'leave the terminal: focus goes back to where it was before it, or to the worker bar' },
   { id: 'newline', label: 'New line', scope: 'terminal', group: 'Terminal', chords: ['Shift+Enter'], does: "a new line in a worker's prompt (Enter in a shell)" },
@@ -60,6 +63,9 @@ export const COMMANDS = [
 ] as const satisfies readonly Command[]
 
 export type CommandId = (typeof COMMANDS)[number]['id']
+
+/** The commands that open a worker's tab, each with its view and name: every table of panes derives from these. @since 1.157 */
+export const PANES = (COMMANDS as readonly Command[]).flatMap((c) => (c.pane ? [{ command: c.id, ...c.pane }] : []))
 
 const COMMAND = new Map<string, Command>(COMMANDS.map((c) => [c.id, c]))
 

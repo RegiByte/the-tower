@@ -1,3 +1,4 @@
+import { PANES } from '/lib/keys.js'
 import { hashOf as locationHash, locationOf, shortHashOf } from '/lib/layout.js'
 
 /**
@@ -34,7 +35,7 @@ const keyParts = (key) => {
 const inFloor = (rest) => ({ project: rest.slice(0, rest.indexOf('/')), name: rest.slice(rest.indexOf('/') + 1) })
 
 /** The worker view's tabs as the page's short forms name them, after a worker's id. */
-const PANE_NAMES = /** @type {Record<string, string>} */ ({ 'tower/terminal': 'screen', 'tower/brief': 'brief', 'tower/changes': 'changes', 'reviews/thread': 'reviews' })
+const PANE_NAMES = /** @type {Record<string, string>} */ (Object.fromEntries(PANES.map((p) => [p.view, p.name])))
 
 /** The worker the main pane shows, while it shows one. @param {MainView} v */
 export const cardIdOf = (v) => (v.t === 'view' && v.location.view === 'tower/card' && v.location.subject?.startsWith('card:') ? v.location.subject.slice('card:'.length) : undefined)

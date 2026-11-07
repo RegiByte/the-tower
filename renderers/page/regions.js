@@ -2,6 +2,7 @@ import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { heldActions, shownHref, shownKey, shownTitle } from '/lib/cards.js'
 import { addedActions, commandUrl, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
+import { PANES } from '/lib/keys.js'
 import { mountTermView } from '/lib/terminal.js'
 import { fileSpansHtml, ICON, keyedTip } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
@@ -61,7 +62,7 @@ const CARDS_KEPT = 4
 const SHOWN_KEPT = 8
 
 /** The keymap's command that opens each of the core's tabs. */
-const PANE_COMMANDS = /** @type {Record<string, string>} */ ({ 'tower/terminal': 'pane-terminal', 'tower/brief': 'pane-brief', 'tower/changes': 'pane-changes', 'reviews/thread': 'pane-reviews' })
+const PANE_COMMANDS = /** @type {Record<string, string>} */ (Object.fromEntries(PANES.map((p) => [p.view, p.command])))
 
 const WORKER = 'tower/card'
 

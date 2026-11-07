@@ -539,7 +539,7 @@ file is served once at a URL of its own, and a served module re-exports its file
 | `/x/reviews/panel.js` | the Reviews panel over the extension's part (`x.reviews` on a card and a floor): a card's thread and note call (`cardReviews`, `noteCallOf`), a floor's threads (`floorThreadsOf`), and the panel as a pure view. `/panels.js` keeps its 1.92 copy over the old fields, deprecated, until 2.0 |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
-| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults), `frameCommandOf` a key from a framed page, global commands alone; chord labels, `aria-keyshortcuts` and the `?` sheet |
+| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `PANES` names the commands that open a worker's tab, each with its view and short name; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults), `frameCommandOf` a key from a framed page, global commands alone; chord labels, `aria-keyshortcuts` and the `?` sheet |
 | `/terminal.js` | a browser terminal's face and size from the viewer's appearance, and the size a watched one fits its PTY at |
 | `/prefs.js` | the viewer's appearance record, its defaults, and whether to move less (`reducedMotion`) |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, notifications, the brief rendered or raw, and the viewer's appearance drawn from data and wired by `wirePrefs` |

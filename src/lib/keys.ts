@@ -12,6 +12,7 @@ export {
   keyshortcuts,
   keysLabel,
   MOVE_COMMAND,
+  /** @provisional */ PANES,
 } from '../shared/keymap.ts'
 export type {
   /** @provisional */ KeyPress,

@@ -4,6 +4,7 @@ import type { Renderer } from './model.ts'
 import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
 import type { Notice } from './toasts.ts'
+import { PANES } from './keymap.ts'
 import { accepted, mediaTypeOf } from './media.ts'
 import type { KitMember, Layout, LayoutEntry, Region, Scale } from './regions.ts'
 import { ADDRESS_TYPE, onKind, parentOf, shownSubject, subjectAt, type Subject, type Text } from './subjects.ts'
@@ -545,7 +546,7 @@ export const hashOf = (location: Location): string => {
 }
 
 /** The page's panes before views, and the view each is now. */
-const PANE_VIEWS: Record<string, string> = { screen: 'tower/terminal', brief: 'tower/brief', changes: 'tower/changes', reviews: 'reviews/thread' }
+const PANE_VIEWS: Record<string, string> = Object.fromEntries(PANES.map((p) => [p.name, p.view]))
 
 /** The latest showing of `target` on the card `id`, as the board holds it. */
 const latestShown = (board: Board, id: string, target: string) => {

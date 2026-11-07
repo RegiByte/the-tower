@@ -129,7 +129,7 @@ const UNLISTED: ReadonlySet<VerbId> = new Set(['card/submit', 'card/prompt', 'ca
 /** Commands only a terminal or a text field runs, the palette's own, and `spawn`, which each floor's entry runs, are not listed in it. */
 const listedCommand = (id: string, scope: string) => scope === 'global' && id !== 'palette' && id !== 'spawn'
 
-const PANE_COMMANDS: ReadonlySet<string> = new Set(['pane-terminal', 'pane-brief', 'pane-changes', 'pane-reviews', 'shell-here'])
+const PANE_COMMANDS: ReadonlySet<string> = new Set(COMMANDS.filter((c) => c.group === 'Panes').map((c) => c.id))
 
 const capitalized = (text: string) => text.replace(/^./, (c) => c.toUpperCase())
 
