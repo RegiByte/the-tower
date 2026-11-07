@@ -2669,11 +2669,12 @@ async function resume(c: Call<'resume'>) {
 
 $('desk-head').addEventListener('click', async (e) => {
   const button = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')
-  if (!button || !(await answered(button))) return
+  // The panel as asked about: a desk may move under an open dialog, as a worker just spawned arrives.
+  const panel = panelNow()
+  if (!button || !panel || !(await answered(button))) return
   const what = button.dataset.act
   const board = s.board
-  const panel = panelNow()
-  if (!what || !board || !panel) return
+  if (!what || !board) return
   if (what === 'close') return (unfocus(), lock())
   if (panel.kind === 'shell') return what === 'shell-kill' && pressing(button, () => killShell(board.shells.find((sh) => sh.id === panel.id)!))
   if (panel.kind !== 'desk') return
@@ -2692,6 +2693,7 @@ $('desk-head').addEventListener('click', async (e) => {
 
 $('doc-head').addEventListener('click', async (e) => {
   const button = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')
+  const kept = panelAs('kept')
   if (button && !(await answered(button))) return
   const what = button?.dataset.act
   if (what === 'close') return (closeDoc(), lock())
@@ -2700,7 +2702,6 @@ $('doc-head').addEventListener('click', async (e) => {
     if (openOut(e)) return
     if (what === 'desk') return goShown(picture.id, picture.target)
   }
-  const kept = panelAs('kept')
   if (kept) {
     if (openOut(e)) return
     if (what === 'delete') return pressing(button!, () => deleteKept(kept))

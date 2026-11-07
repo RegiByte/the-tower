@@ -273,7 +273,7 @@ const heldButton = (why: string, cls: string, label: string, inner: string) =>
 
 /**
  * A button that asks before it acts: a press opens the library's dialog (`ask`) with `ask` as its question and `verb`
- * on the button that goes ahead, and the panel acts on yes (`askedFirst` in main.ts).
+ * on the button that goes ahead, and the panel acts on yes (`answered` in main.ts).
  */
 const askingButton = (attrs: string, label: string, tip: string, ask: string, verb: string) =>
   `<button ${attrs} data-tip="${esc(tip)}" data-ask="${esc(ask)}" data-ask-verb="${esc(verb)}">${label}</button>`
