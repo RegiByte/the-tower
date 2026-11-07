@@ -39,6 +39,8 @@ const askDialog = () => {
   dialog.setAttribute('aria-describedby', 'tower-ask-body')
   dialog.innerHTML = `<style>${ASK_CSS}</style><form method="dialog"><h2 id="tower-ask-title"></h2><div class="confirm-body" id="tower-ask-body"></div><div class="actions"><button value="">Cancel</button><button class="primary" id="tower-ask-yes" value="yes"></button></div></form>`
   closeOnBackdrop(dialog)
+  // Framed, a key the page leaves alone goes on to the tower (`/frame-keys.js`), where Escape goes home.
+  dialog.addEventListener('keydown', (e) => e.key === 'Escape' && (e.preventDefault(), dialog.close()))
   document.body.append(dialog)
   return dialog
 }
