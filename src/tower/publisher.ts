@@ -5,6 +5,7 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
+import { logged } from '../logged.ts'
 import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, placedOn, type Board, type Card, type SystemView, type Viewers } from '../bridge/board.ts'
 import { foldBoard, SLOW_MS } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
@@ -173,7 +174,7 @@ export const publisher = defineResource({
       for (const res of boardClients) sendBoard(res)
       if (!next.board) return
       const board = frozen(next.board)
-      for (const listener of boardListeners) listener(board)
+      for (const listener of boardListeners) logged('board listener', listener)(board)
     }
 
     /** Board clients still reading a board sent earlier: each is sent the newest once it has, the ones between skipped. */

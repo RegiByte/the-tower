@@ -51,6 +51,9 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
   the config verbs that repair it, and the port the tower binds at start, so a JSON object short of those keys still
   brings the tower up to say so (a file gone, not JSON or holding no object stops `tower up` itself). A new reader
   takes `takenConfig` unless it is one of those.
+- **A listener costs only itself.** A board goes to its listeners on the publish timer, with no caller to answer, and
+  the config can go bad after the board was built, so each is run under `logged`: a failure is said in the log, and
+  the next board reaches every listener again.
 - **Renderers.** `tower.onBoardError(fn)` is called with an `Error` holding `code`, at once if the tower's latest word
   was a failure; the next board through `subscribe` means it recovered. Renderers show it over the last board they
   drew, headed by [`boardErrorTitle`](ref:hub/src/shared/health.ts#boardErrorTitle) (Tower 3D, before its first board,
