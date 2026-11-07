@@ -316,6 +316,7 @@ const boot = (port: number): Promise<ChildProcess | undefined> =>
     child.stdout!.on('data', (chunk) => String(chunk).includes('tower up:') && (clearTimeout(silent), resolve(child)))
     child.once('exit', (code) => {
       clearTimeout(silent)
+      if (code) console.error(`the tower exited with ${code}, its stderr ending:\n${err.slice(-4000)}`)
       if (err.includes('EADDRINUSE')) resolve(undefined)
       else reject(new Error(code === null ? `the tower said nothing within ${BOOT_MS} ms:\n${err}` : `the tower exited before it was up:\n${err}`))
     })
