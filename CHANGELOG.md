@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.99.0
+
+Reviews is an extension in its words and skills too, and a hung repo no longer stalls every floor. Restart the tower with
+this release (`tower down tower`, then `tower up tower`); `tower update` does that for you. No host restart and no
+config change. API 1.157, by addition.
+
+- **Reviews' words.** `note`, `resolve`, `thread`, `send` and `review` live under `tower x reviews`, and its skills ship
+  in its own Claude plugin as `reviews:review` and `reviews:threads`. `tower note` and the other old words still work
+  and print the new form, and `/tower:review` still works when typed. All of them go at 2.0. A word takes a note's
+  number as `2` or `n2`. A worker's review reads the author's whole conversation.
+- **A hung repo costs only itself.** Each directory reads on its own, one repo holds at most six of git's eight places,
+  and the first board waits three seconds at most for the machine's read. A verb such as Tidy or reap waits only for
+  the read carrying its own ask.
+- **`tower update`** fast-forwards a branch the release descends from instead of detaching it, and names any commits it
+  leaves behind on a diverged branch or a detached HEAD. It refuses while the tower or jobs daemon runs from another
+  checkout, naming that checkout and the command to run there. `tower up` warns in the same case.
+- **Panes as data.** Pane commands carry their view, and `/lib/keys.js` gives one derived `PANES`.
+
 ## v1.98.0
 
 A broken config no longer takes the tower down, and the library reaches the page, reviews, The Week and Tower.app.
