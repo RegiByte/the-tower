@@ -1277,6 +1277,30 @@ const handEdit = (change: (config: Record<string, any>) => void) => {
   writeFileSync(CONFIG, JSON.stringify(config))
 }
 
+test('server: a config gone or short of what every read stands on is a config error on the board, and the tower stays up', async () => {
+  const good = readFileSync(CONFIG, 'utf8')
+  const untaken = async () => {
+    await sleep(3 * PUBLISH_DEBOUNCE_MS)
+    for (const _ of [1, 2]) {
+      assert.equal(((await firstEvent('/board')) as { error?: { code: string } }).error?.code, 'config')
+      await sleep(3 * PUBLISH_DEBOUNCE_MS)
+    }
+  }
+  try {
+    writeFileSync(CONFIG, '{}')
+    await untaken()
+    writeFileSync(CONFIG, JSON.stringify({ argv: { claude: [] }, projects: {} }))
+    await untaken()
+    writeFileSync(CONFIG, JSON.stringify({ argv: ['x'], projects: { lab: { name: 'lab' } } }))
+    await untaken()
+    rmSync(CONFIG)
+    await untaken()
+  } finally {
+    writeFileSync(CONFIG, good)
+  }
+  await boardWhere((b) => b.floors.length > 0)
+})
+
 test('server: a config that is not JSON is said on the board with a lost-header log in the system, and the tower stays up', async () => {
   const good = readFileSync(CONFIG, 'utf8')
   writeFileSync(CONFIG, '{ not json')

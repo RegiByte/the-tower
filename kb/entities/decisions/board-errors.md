@@ -8,6 +8,8 @@
   "date": "2026-10-07",
   "reviewed": "2026-11-07",
   "refs": [
+    "hub/src/system.ts#takenConfig",
+    "hub/src/system.ts#configLack",
     "hub/src/tower/publisher.ts#currentBoard",
     "hub/src/tower/answers.ts#errorOf",
     "hub/src/tower/http.ts#problemPage", "hub/src/tower/http.ts#withConfig",
@@ -41,6 +43,14 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
   the tower can't use, thrown where that key is read. It answers `config`; anything else answers `internal` and goes
   to the log with its stack ([`errorOf`](ref:hub/src/tower/answers.ts#errorOf)). The same mapping answers any request
   whose handler throws.
+- **Two reads of the config.** The running tower reads through
+  [`takenConfig`](ref:hub/src/system.ts#takenConfig): a file gone, or one short of what every read stands on
+  ([`configLack`](ref:hub/src/system.ts#configLack): `argv`, `projects`, each project's `hub` and `repos`), is a
+  `ConfigError`, so the board says it and no later read meets the hole. What must reach a config the tower can't take
+  uses the plain [`readConfig`](ref:hub/src/system.ts#readConfig): `tower down`, `tower config check`, `tower doctor`,
+  the config verbs that repair it, and the port the tower binds at start, so a JSON object short of those keys still
+  brings the tower up to say so (a file gone, not JSON or holding no object stops `tower up` itself). A new reader
+  takes `takenConfig` unless it is one of those.
 - **Renderers.** `tower.onBoardError(fn)` is called with an `Error` holding `code`, at once if the tower's latest word
   was a failure; the next board through `subscribe` means it recovered. Renderers show it over the last board they
   drew, headed by [`boardErrorTitle`](ref:hub/src/shared/health.ts#boardErrorTitle) (Tower 3D, before its first board,

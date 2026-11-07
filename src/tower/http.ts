@@ -129,7 +129,7 @@ import { designCss, fonts } from '../shared/design.ts'
 import { legacyOf, MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated, type LegacyEntry } from '../shared/extensions.ts'
 import { bundledClient, clientSource } from '../extensions.ts'
 import { placedOn } from '../bridge/board.ts'
-import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerHosts, towerPort, type Config, type Project, type Renderer, type SessionLog, type ShelfEntry } from '../shared/model.ts'
+import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerHosts, type Config, type Project, type Renderer, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
 import { MEDIA_TYPES, mediaTypeOf, UNKNOWN_TYPE } from '../shared/media.ts'
@@ -184,8 +184,8 @@ type Deps = {
 /** The server on the config's port as it is at start: it serves there until it is halted. */
 export const httpServer = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:extensions'],
-  start: async ({ 'core:config': { paths, read: readConfig, served: servedNow }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, archivedCards, streamBoard }, 'core:dispatch': dispatch, 'core:extensions': extensions }: Deps) => {
-    const PORT = towerPort(readConfig())
+  start: async ({ 'core:config': { paths, read: readConfig, port: configPort, served: servedNow }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, archivedCards, streamBoard }, 'core:dispatch': dispatch, 'core:extensions': extensions }: Deps) => {
+    const PORT = configPort()
 
     const STATIC: Record<string, [file: string, type: string]> = {
       '/xterm.js': [path.join(packageDir('@xterm/xterm'), 'lib', 'xterm.js'), 'text/javascript'],

@@ -47,6 +47,39 @@ export const readConfig = (file: string): Config => {
   }
 }
 
+export const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const isCommand = (value: unknown): value is string[] => Array.isArray(value) && value.length > 0 && value.every((arg) => typeof arg === 'string')
+
+/** Either the legacy array shape, or a non-empty object of named, non-empty commands. */
+export const validArgv = (value: unknown): boolean => isCommand(value) || (isObject(value) && Object.keys(value).length > 0 && Object.values(value).every(isCommand))
+
+/** What `config` lacks of the keys every read of it stands on, `undefined` when it has them. */
+const configLack = (config: Config): string | undefined => {
+  if (!isObject(config)) return 'it holds no JSON object'
+  if (!validArgv(config.argv)) return 'argv must name the command sessions start with, such as ["claude"]'
+  if (!isObject(config.projects)) return 'projects must be an object of floors, each with name, hub and repos'
+  for (const [id, project] of Object.entries(config.projects)) {
+    if (!isObject(project)) return `projects.${id} must be an object with name, hub and repos`
+    if (typeof project.hub !== 'string') return `projects.${id}.hub must be the path of a directory`
+    if (!Array.isArray(project.repos)) return `projects.${id}.repos must be a list of directories, [] for none`
+  }
+  return undefined
+}
+
+/**
+ * The config as the running tower takes it: a file gone, or one short of what every read stands on, is a config error
+ * the board says. `readConfig` stays the plain read, so `tower down`, `tower config check` and the config verbs reach a
+ * config the tower can't take.
+ */
+export const takenConfig = (file: string): Config => {
+  if (!existsSync(file)) throw new ConfigError(`${file} is gone: put it back, or \`tower init\` writes a first one`)
+  const config = readConfig(file)
+  const lacking = configLack(config)
+  if (lacking) throw new ConfigError(`${file}: ${lacking}. \`tower config check\` names every problem`)
+  return config
+}
+
 const MONTH_FILE = /^\d{4}-\d{2}\.jsonl(\.gz)?$/
 
 /** A stream file's facts, as of its size. */
@@ -419,7 +452,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   const configDirs = (): string[] | undefined => {
     if (stopped) return undefined
     try {
-      return [...new Set(Object.values(readConfig(paths.config).projects).flatMap(projectDirs))]
+      return [...new Set(Object.values(takenConfig(paths.config).projects).flatMap(projectDirs))]
     } catch (err) {
       if (err instanceof ConfigError) return undefined
       throw err
@@ -438,9 +471,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       machineRead = Promise.all([refreshRunning(), repoWatch.start()])
       machinePolls = [setInterval(refreshRunning, MACHINE_POLL_MS)]
     }
-    await machineRead
     let released = false
-    return () => {
+    const release = () => {
       if (released) return
       released = true
       if (--observers === 0) {
@@ -448,6 +480,13 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
         repoWatch.pause()
       }
     }
+    try {
+      await machineRead
+    } catch (err) {
+      release()
+      throw err
+    }
+    return release
   }
 
   trackNew()

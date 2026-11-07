@@ -42,7 +42,7 @@ import {
   type Renderer,
 } from './shared/model.ts'
 import { keysProblems } from './shared/keymap.ts'
-import { readConfig } from './system.ts'
+import { isObject, readConfig, validArgv } from './system.ts'
 
 export type ConfigProblem = { level: 'fail' | 'warn'; key: string; problem: string }
 
@@ -52,12 +52,6 @@ export const CONFIG_DOCS = path.join(import.meta.dirname, '..', 'docs', 'config.
 
 const EDITOR_VALUES: Record<EditorAction, Record<string, string>> = { window: { dir: '.' }, open: { path: '.' }, goto: { path: '.', line: '1' } }
 
-const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const isCommand = (value: unknown): value is string[] => Array.isArray(value) && value.length > 0 && value.every((arg) => typeof arg === 'string')
-
-/** Either the legacy array shape, or a non-empty object of named, non-empty commands. */
-const validArgv = (value: unknown): boolean => isCommand(value) || (isObject(value) && Object.keys(value).length > 0 && Object.values(value).every(isCommand))
 const isDirectory = (dir: string): boolean => existsSync(dir) && statSync(dir).isDirectory()
 
 const fail = (key: string, problem: string): ConfigProblem => ({ level: 'fail', key, problem })
