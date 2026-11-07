@@ -347,7 +347,7 @@ export const configProblems = (read: Config): ConfigProblem[] => {
   ]
 }
 
-/** The config file's problems; JSON it can't parse is the one problem. A missing file is a `ENOENT` error. */
+/** The config file's problems; a file it can't read, or JSON it can't parse, is the one problem. */
 export const checkConfigFile = (file: string): ConfigProblem[] => {
   try {
     return configProblems(readConfig(file))

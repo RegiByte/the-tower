@@ -39,9 +39,19 @@ const RESCAN_DEBOUNCE_MS = 100
 const asJson = (value: unknown): string | undefined =>
   JSON.stringify(value, (_, v) => (v instanceof Set ? [...v].sort() : v instanceof Map ? [...v] : v))
 
-/** The config as the file holds it now; JSON it can't parse is a config error naming the file. */
+/** The file's text: a file gone, or one that can't be read, is a config error naming it. */
+const configText = (file: string): string => {
+  try {
+    return readFileSync(file, 'utf8')
+  } catch (err) {
+    const { code, message } = err as NodeJS.ErrnoException
+    throw new ConfigError(code === 'ENOENT' ? `${file} is gone: put it back, or \`tower init\` writes a first one` : `${file} can't be read: ${message}`)
+  }
+}
+
+/** The config as the file holds it now; a file it can't read, or JSON it can't parse, is a config error naming the file. */
 export const readConfig = (file: string): Config => {
-  const text = readFileSync(file, 'utf8')
+  const text = configText(file)
   try {
     return JSON.parse(text)
   } catch (err) {
@@ -70,12 +80,11 @@ const configLack = (config: Config): string | undefined => {
 }
 
 /**
- * The config as the running tower takes it: a file gone, or one short of what every read stands on, is a config error
- * the board says. `readConfig` stays the plain read, so `tower down`, `tower config check` and the config verbs reach a
- * config the tower can't take.
+ * The config as the running tower takes it: one short of what every read stands on is a config error the board says.
+ * `readConfig` stays the plain read, so `tower down`, `tower config check` and the config verbs reach a config the
+ * tower can't take.
  */
 export const takenConfig = (file: string): Config => {
-  if (!existsSync(file)) throw new ConfigError(`${file} is gone: put it back, or \`tower init\` writes a first one`)
   const config = readConfig(file)
   const lacking = configLack(config)
   if (lacking) throw new ConfigError(`${file}: ${lacking}. \`tower config check\` names every problem`)

@@ -272,7 +272,6 @@ const readable = (paths: SystemPaths): Config | Error => {
     return readConfig(paths.config)
   } catch (err) {
     if (err instanceof ConfigError) return err
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return err as Error
     throw err
   }
 }

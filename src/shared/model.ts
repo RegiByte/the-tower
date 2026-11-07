@@ -230,9 +230,9 @@ export const configuredCallsigns = (config: Config): readonly string[] => {
   return names
 }
 
-/** The loopback port the tower serves on: the config's `port`, 4317 when it names none. A port that isn't one is a config error. */
+/** The loopback port the tower serves on: the config's `port`, 4317 when it names none, as JSON holding no object doesn't. A port that isn't one is a config error. */
 export const towerPort = (config: Config): number => {
-  const port = config.port ?? 4317
+  const port = config?.port ?? 4317
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new ConfigError(`port in the config must be a whole number from 1 to 65535, not ${JSON.stringify(port)}`)
   return port
 }
