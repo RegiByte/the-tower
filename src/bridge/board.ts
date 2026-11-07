@@ -1,5 +1,5 @@
 import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
-import { MAIN_CHECKOUT, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchOf } from '../shared/launch.ts'
 import type { FloorThread } from '../shared/reviews-legacy.ts'
 import { tagOf } from '../shared/tags.ts'
@@ -799,6 +799,13 @@ const floorGit = (config: Config, projectId: string, project: Project, repos: Ma
     ...(main && { main }),
   }
 }
+
+/**
+ * The session on its floor. A log that lost its header no longer says its floor (`project: ''`): the directory it ran
+ * in says, against `config`, and it stays `''` when it says none.
+ */
+export const placedOn = (config: Pick<Config, 'projects'>) => (session: Session): Session =>
+  session.header.project ? session : { ...session, header: { ...session.header, project: floorOf(config, session.header.cwd) ?? '' } }
 
 /** The callsign of the worker a session ran as, over every session of `view`; `undefined` for an id no log holds. */
 export const callsignLookup = ({ config, sessions }: Pick<SystemView, 'config' | 'sessions'>): ((id: string) => string | undefined) => {

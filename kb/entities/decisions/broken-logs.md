@@ -28,6 +28,7 @@
     "hub/src/tail.ts#Head",
     "hub/src/shared/launch.ts#startOfSessionId",
     "hub/src/shared/model.ts#floorOf",
+    "hub/src/bridge/board.ts#placedOn",
     "hub/test/server.test.ts"
   ]
 }
@@ -97,14 +98,18 @@ the log's whole lines ([`appendFact`](ref:hub/src/host/main.ts#appendFact), [[le
 *A first line that holds no header.* Every reader of a log starts at its header, so the fold, the screen and the
 brief all need one. It is read in one step ([`readHeader`](ref:hub/src/tail.ts#readHeader), and `readLog` through it). A first line that isn't JSON or
 isn't a header's shape gives a [`Head`](ref:hub/src/tail.ts#Head) with a header made of what is left, and `unreadable`,
-which [`foldLog`](ref:hub/src/checkpoints.ts#foldLog) starts the facts broken on: at 0, code `?`, so the facts are the
-initial ones and only `afterBreak` reads on. A log with no whole line is still a log the host hasn't finished writing a
+which [`foldLog`](ref:hub/src/checkpoints.ts#foldLog) starts the facts broken on: at 0, code `header`, so the facts are the
+initial ones and only `afterBreak` reads on. That code is the one a card tells it by: its line reads `× log unreadable
+from its start: <error>` with no time, and its hover says nothing resumes it. A log with no whole line is still a log the host hasn't finished writing a
 header to, not a broken one.
 
 What is left is derived from the log, so a checkpoint for it holds: the id from the file name, the start from that id
 ([`startOfSessionId`](ref:hub/src/shared/launch.ts#startOfSessionId)), the directory from its first hook that names
 one, no argv, an 80×24 terminal for its screen. `project` is `''`: a directory says its floor only against the config,
-so the live view fills it in with [`floorOf`](ref:hub/src/shared/model.ts#floorOf) when a session is read, not the fold.
+so the fold can't say it and the live system, which reads no config, leaves it. Whoever holds a config places the
+session: [`placedOn`](ref:hub/src/bridge/board.ts#placedOn) over [`floorOf`](ref:hub/src/shared/model.ts#floorOf), in
+the view every board is cut from and in the reads that name a session's floor. A config the tower can't read stays the
+board's error ([[board-errors]]), not a throw from reading sessions.
 The session holds no conversations, so it is neither resumable nor on duty once the host no longer runs it, and it
 offers no let-go, which the host could not append anyway (`appendFact` reads the header for the event's time). It is an
 ended session in its floor's archive, reading broken. While the host runs it, it is on duty and can be driven and

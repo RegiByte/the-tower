@@ -87,14 +87,17 @@ export const loudest = (cards: Card[]) => LOUDNESS.find((a) => cards.some((c) =>
 export type Gist = { kind: 'broken' | 'blocked' | 'asks' | 'compacts' | 'runs' | 'answer' | 'prompt'; text: string }
 
 /** Why a broken worker's facts stopped: the event its log can't be read past, and the error it raised. */
-export const brokenText = (c: Card) => `log unreadable past a${c.broken!.code === 'h' ? ' hook' : 'n event'} (${new Date(c.broken!.at).toLocaleTimeString()}): ${c.broken!.message}`
+export const brokenText = (c: Card) =>
+  c.broken!.code === 'header' ? `log unreadable from its start: ${c.broken!.message}` : `log unreadable past a${c.broken!.code === 'h' ? ' hook' : 'n event'} (${new Date(c.broken!.at).toLocaleTimeString()}): ${c.broken!.message}`
 
 /** What the user does about a broken worker. */
+const HEADER_BROKEN_DOES = "Nothing of it is read, so it has no status, cost or conversation, and nothing resumes it. It still runs if the host runs it: drive it or kill it. Restoring the log's first line by hand brings it back at the next start."
+
 export const BROKEN_DOES =
   "Nothing after that event is read, so its status, cost and answers stand as they were. It still runs if the host runs it: drive it, or kill it and resume its conversation, which starts a new log."
 
 /** What a worker's status says on hover. */
-export const statusTitle = (c: Card) => (c.broken ? `${brokenText(c)}. ${BROKEN_DOES}` : c.stuck ? STUCK_TITLE : statusName(c))
+export const statusTitle = (c: Card) => (c.broken ? `${brokenText(c)}. ${c.broken.code === 'header' ? HEADER_BROKEN_DOES : BROKEN_DOES}` : c.stuck ? STUCK_TITLE : statusName(c))
 
 /** What a screen that blocks a worker asks of you. */
 export const BLOCKED_TEXT: Record<BlockedKind, string> = {
