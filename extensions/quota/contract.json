@@ -5,6 +5,7 @@
     "verbs.read-now",
     "reads.reads",
     "reads.said",
+    "reads.limits",
     "reads.status",
     "streams.reads.u",
     "streams.reads.f",
@@ -20,6 +21,11 @@
     "client.quota.js#probedLines",
     "client.quota.js#quotaOf",
     "words.read-now",
-    "words.read-now.--command"
+    "words.read-now.--command",
+    "words.read-now.print.said",
+    "words.probes",
+    "words.probes.print.line",
+    "words.limits",
+    "words.limits.print.lines"
   ]
 }

@@ -26,15 +26,17 @@ a click that reads every command now.
 
 ### The CLI
 
-`tower probes` prints its line, one per command, and `tower probes run quota` reads now:
+`tower x quota limits` prints how much of each account is used, `tower x quota probes` the probe's line, one per
+command, and `tower x quota read-now` reads now:
 
 ```
+5h 34% used, resets in 1h 12m · week 12% used, resets Sun 22:00 · read 3m ago
 quota probe · answered <1m ago · next in 9m · answering
 ```
 
 `tower doctor` runs its check, which fails with what to do when the last read failed or the probe is overdue.
 
-The Week draws nothing of its own, and it gives the workers no guidance.
+The Week draws nothing of its own.
 
 ## Add it
 

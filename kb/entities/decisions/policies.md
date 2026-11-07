@@ -102,9 +102,10 @@ user may replace it by providing `policies`.
   run fact naming the first session of a worker's lineage, the lines `tower whoami` prints, and a badge saying which
   run of which policy it is. Reads:
   `policies/runs/<project>?policy&limit` ([`runsRead`](ref:hub/extensions/policies/policies.ts#runsRead)), a policy's
-  runs, each worker as it is now, the archive included; `policies/said/<project>`, what `tower policies` and
-  `tower runs` print, in the extension's words ([`policiesLines`](ref:hub/extensions/policies/cli.ts#policiesLines)),
-  which the core's CLI prints ([`said`](ref:hub/src/directory.ts#said)).
+  runs, each worker as it is now, the archive included; `policies/said/<project>`, what `tower x policies list`
+  prints, and `policies/run-lines/<project>`, what `tower x policies runs` prints, in the extension's words
+  ([`policiesLines`](ref:hub/extensions/policies/cli.ts#policiesLines)). `run-now` and `approve-now` are the words a
+  worker types, naming a policy by its tag: `run` and `approve` take the slot or the hash a renderer holds.
 - *The runner.* [`standing`](ref:hub/extensions/policies/client/policies.ts#standing) says where a policy stands, and
   [`decide`](ref:hub/extensions/policies/client/policies.ts#decide) what a runner does with a due slot, from the board
   alone: held while live is full; the check first; run when `auto` and approved; else offered. The core's slot loop
@@ -120,7 +121,7 @@ user may replace it by providing `policies`.
   [`policiesHtml`](ref:hub/extensions/policies/client/panel.ts#policiesHtml), `/x/policies/panel.js`) is what the tower
   page draws with, the panel as the extension's view `policies/policies` on a floor since 1.108
   ([`mount`](ref:hub/extensions/policies/client/view.ts#mount)), an offer dismissed there kept in the viewer's
-  `tower.store` as a wait's is. `tower policies`, `tower policies approve|run <tag>`, `tower runs` and `tower whoami`'s run lines;
+  `tower.store` as a wait's is. `tower x policies list`, `run-now`, `approve-now`, `runs` and `tower whoami`'s run lines;
   the handbook's "Policies and runs".
 - *What stays for renderers kept outside the checkout, until 2.0.* `LEGACY` maps `policy/run`, `policy/pass`,
   `policy/approve` and `GET /runs/<project>` to the extension's, deprecated, and copies its part back to

@@ -1,5 +1,5 @@
 /**
- * What `tower policies` and `tower runs` print, said by the policies extension (its read `said/<project>`), so the
+ * What `tower x policies list` and `tower x policies runs` print, said by the policies extension (its read `said/<project>`), so the
  * core's CLI prints the words of whoever provides `policies`.
  */
 import type { Board, Card } from '/lib/board.js'
@@ -20,7 +20,7 @@ const approvalWords = (p: PolicyView, cards: Card[]) =>
       ? `NOT approved (edited since ${shortHash(p.needs.approved)})`
       : 'not approved: its slots are offered'
 
-/** A policy's lines in `tower policies`. `cards`: every card of the floor, archived ones too. */
+/** A policy's lines in `tower x policies list`. `cards`: every card of the floor, archived ones too. */
 const policyLines = (board: Board, p: PolicyView, cards: Card[], width: number[], now: number): string[] => {
   const head = `${p.tag.padEnd(width[0])}  ${(p.title ?? '(untitled)').padEnd(width[1])}  `
   const indent = ' '.repeat(width[0] + 2)
@@ -35,7 +35,7 @@ const policyLines = (board: Board, p: PolicyView, cards: Card[], width: number[]
   return [`${head}${p.rule}`, `${indent}${facts.join(' · ')}`, `${indent}now: ${standingWords(p, board, now)}`, ...(p.needs?.kind === 'held' ? [`${indent}needs you: ${heldWords(p, p.needs, now)}`] : [])]
 }
 
-/** A floor's policies as `tower policies` lists them, each in its lines; none for a floor with no policies. */
+/** A floor's policies as `tower x policies list` lists them, each in its lines; none for a floor with no policies. */
 export const policiesLines = (board: Board, policies: PolicyView[], cards: Card[], now: number): string[] => {
   const width = [Math.max(...policies.map((p) => p.tag.length)), Math.max(...policies.map((p) => (p.title ?? '(untitled)').length))]
   return policies.flatMap((p) => policyLines(board, p, cards, width, now))
@@ -44,7 +44,7 @@ export const policiesLines = (board: Board, policies: PolicyView[], cards: Card[
 /** A run's start in words. */
 const startWords = (start: RunRead['start'], by: string | undefined) => (start === 'auto' ? 'auto' : start === 'hand' ? `by hand${by ? `, ${by}` : ''}` : `offer, ${by ?? 'the user'}`)
 
-/** How many of an answer's lines and characters `tower runs` shows. */
+/** How many of an answer's lines and characters `tower x policies runs` shows. */
 const ANSWER_LINES = 15
 const ANSWER_CHARS = 1500
 
@@ -71,7 +71,7 @@ const runReadLines = (run: RunRead, tz: string | undefined, now: number): string
 ]
 
 /**
- * A policy's runs as `tower runs` prints them: its name and rule, then each run, newest first. `policy`: its view, none
+ * A policy's runs as `tower x policies runs` prints them: its name and rule, then each run, newest first. `policy`: its view, none
  * once its file is gone.
  */
 export const runsLines = (id: string, policy: PolicyView | undefined, runs: RunRead[], now: number): string[] => {

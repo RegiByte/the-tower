@@ -3,7 +3,7 @@
   "version": "1.1",
   "title": "Quota probe",
   "description": "Reads each command's account's rate limits from Claude while no turn of that command does.",
-  "requires": { "tower": "1.152" },
+  "requires": { "tower": "1.153" },
   "server": "server.ts",
   "client": "client",
   "settings": {
@@ -119,7 +119,8 @@
           }
         }
       },
-      "words": { "label": "Read now", "hint": "Read the rate limits now (at most once a minute)" }
+      "words": { "label": "Read now", "hint": "Read the rate limits now (at most once a minute)" },
+      "cli": { "print": "said" }
     }
   },
   "reads": {
@@ -135,14 +136,25 @@
     },
     "said": {
       "scope": "system",
-      "description": "What `tower probes` prints, one line per command: the probe's line, its state and why its last read failed, and the latest read in words (`quota probe answered in 1.4s`), when there is one.",
-      "reply": { "type": "object", "required": ["line"], "properties": { "line": { "type": "string" }, "last": { "type": "string" } } }
+      "description": "What `tower x quota probes` prints, one line per command: the probe's line, its state and why its last read failed, and the latest read in words (`quota probe answered in 1.4s`), when there is one.",
+      "reply": { "type": "object", "required": ["line"], "properties": { "line": { "type": "string" }, "last": { "type": "string" } } },
+      "cli": { "word": "probes", "print": "line" }
+    },
+    "limits": {
+      "scope": "system",
+      "description": "How much of each account's rate limits is used, one line per command: each window's percent and when it resets, and how old the reading is.",
+      "reply": { "type": "object", "required": ["lines"], "properties": { "lines": { "type": "array", "items": { "type": "string" } } } },
+      "cli": { "word": "limits", "print": "lines" }
     },
     "status": {
       "scope": "system",
       "description": "Whether it reads the rate limits: its line per command when it does; refused, saying why and what to do, when a command's last read failed, its account has none to read, or it is overdue.",
       "reply": { "type": "object", "required": ["ok", "message"], "properties": { "ok": { "const": true }, "message": { "type": "string" } } }
     }
+  },
+  "guidance": {
+    "brief": "Rate limits: `tower x quota limits` says how much of each account is used, `tower x quota probes` whether the tower still reads them.",
+    "full": "The tower reads each account's rate limits, from workers' turns and, while no turn does, with this probe.\n\nUse it when the user asks about quota, usage, limits or how much is left.\n\n- `tower x quota limits`: each window's percent used and when it resets, one line per `argv` command, and how old the reading is. This is the answer to \"what's my quota\".\n- `tower x quota probes`: whether the probe answers: when it last read, when it reads next, and why its last read failed.\n- `tower x quota read-now`: reads every command now, `--command <name>` one, at most once a minute. Only when the user asks, or when `limits` is too old for the question."
   },
   "checks": {
     "reading": { "words": { "label": "The quota probe reads the rate limits" }, "read": "status" }

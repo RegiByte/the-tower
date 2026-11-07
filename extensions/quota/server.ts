@@ -7,7 +7,7 @@ import os from 'node:os'
 import { defaultLimits, limitsOf, type Board } from '/lib/board.js'
 import { apiError, type Start, type StartCtx, type StreamFact } from '/lib/extension.js'
 import { commandProbe, PROBE_STATE_NAME, probedLine, probedLines, probeLine, probeName } from './client/quota.ts'
-import { due, FLOOR_MS, NO_COMMAND_READS, periodMs, readOf, statusOf, stepByCommand, withReads, type Answered, type CommandStatus, type Failed, type QuotaPart, type Read, type ReadsByCommand } from './status.ts'
+import { commandLimitsLine, due, FLOOR_MS, NO_COMMAND_READS, periodMs, readOf, statusOf, stepByCommand, withReads, type Answered, type CommandStatus, type Failed, type QuotaPart, type Read, type ReadsByCommand } from './status.ts'
 import { USAGE_ARGS, usageRan, usageReading, USAGE_REQUEST, USAGE_TIMEOUT_MS } from './usage.ts'
 
 type Command = ReturnType<StartCtx['commands']>[number]
@@ -34,7 +34,7 @@ const fixOf = (error: string, name: string | undefined): string => {
       : `argv.${name} names a command that isn't on the tower's PATH: fix argv.${name}`
     : /no answer within/.test(error)
       ? `run ${claude} in a terminal: it may wait on an update, a sign-in or a trust prompt`
-      : `run ${claude} in a terminal to see why it fails; the tower's log has the tower's side, and \`tower probes\` follows the next read`
+      : `run ${claude} in a terminal to see why it fails; the tower's log has the tower's side, and \`tower x quota probes\` follows the next read`
 }
 
 const turnsOf = (board: Board, name: string | undefined) => (name === undefined ? defaultLimits(board) : limitsOf(board, name))?.turnLimits
@@ -148,6 +148,10 @@ const start: Start = (ctx) => {
           return read ? [probedLine(probeName(s.command), read)] : []
         })
         return { line, ...(lastLines.length && { last: lastLines.join('\n') }) }
+      },
+      limits: () => {
+        const now = Date.now()
+        return { lines: ctx.board().limits.map((limits) => commandLimitsLine(limits, now)) }
       },
       status: () => {
         const now = Date.now()

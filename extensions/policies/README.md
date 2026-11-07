@@ -26,7 +26,7 @@ header's **offered** chip and takes its turn among the things waiting on you.
 
 ### The CLI
 
-`tower policies` lists the floor's policies and where each stands now, the same reason the tower acts on:
+`tower x policies list` lists the floor's policies and where each stands now, the same reason the tower acts on:
 
 ```
 sour-thrush   Morning triage       daily at 00:00 (UTC)
@@ -40,13 +40,13 @@ lone-pelican  Release notes draft  Fridays at 16:00 (UTC)
               now: Fri 16:00 UTC will be offered
 ```
 
-`tower policies approve <tag>` approves a policy's words as they are now, `tower policies run <tag>` starts it now or
-takes its open offer, and `tower runs [<tag>]` lists a policy's latest runs.
+`tower x policies approve-now <tag>` approves a policy's words as they are now, `tower x policies run-now <tag>` starts
+it now or takes its open offer, and `tower x policies runs [<tag>]` lists a policy's latest runs.
 
 ### The workers
 
 Every worker's `tower whoami` lists policies among the extensions it can use, and `tower x policies` prints how to write one.
-A worker started for a policy reads in `tower whoami` which run of which policy it is, and `tower runs` for what
+A worker started for a policy reads in `tower whoami` which run of which policy it is, and `tower x policies runs` for what
 earlier runs left. Tower 3D and The Week draw none of it.
 
 ## Add it
@@ -93,7 +93,7 @@ The header's keys:
 | `runner` | Leaves the policy to another runner by that name: this extension never acts on it. | this extension runs it |
 | `x` | A runner's own data. | none |
 
-Any other key makes the policy invalid, said in the panel and in `tower policies`, and it never runs. A slot is on time for 5 minutes; one the tower wasn't up for is missed, and nothing records it.
+Any other key makes the policy invalid, said in the panel and in `tower x policies list`, and it never runs. A slot is on time for 5 minutes; one the tower wasn't up for is missed, and nothing records it.
 
 ## How it works
 
@@ -105,7 +105,7 @@ restarts too; approvals are facts in its `approvals` stream.
 ## Make it yours
 
 - **Only on days there is work**: a `check` that exits 1 when there's nothing to do, so the slot passes quietly.
-- **Started without asking**: `"start": "auto"`, then approve its words in the panel or with `tower policies approve`.
+- **Started without asking**: `"start": "auto"`, then approve its words in the panel or with `tower x policies approve-now`.
 - **Your own runner**: name it in a policy's `runner`, put its data under `x`, and have it run or pass slots through
   the same verbs (`tower x policies run`, `tower x policies pass`).
 

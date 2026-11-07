@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-07",
   "refs": [
     "hub/extensions/quota/extension.json",
     "hub/extensions/quota/server.ts",
@@ -99,8 +99,9 @@ core code it replaced.
   error and `nextAt`, times rather than "due now": the default command's, and every command's in `commands`. Its
   client draws it under the limits
   ([`quotaOf`](ref:hub/extensions/quota/client/quota.ts#quotaOf), [`probeLine`](ref:hub/extensions/quota/client/quota.ts#probeLine),
-  [`probeTitle`](ref:hub/extensions/quota/client/quota.ts#probeTitle)); `tower probes` and the doctor's check
-  `reading` ask the extension's reads, and `quota/read-now` reads at once through the path a tick takes.
+  [`probeTitle`](ref:hub/extensions/quota/client/quota.ts#probeTitle)); the words `tower x quota limits` and
+  `tower x quota probes` and the doctor's check `reading` ask the extension's reads
+  ([`commandLimitsLine`](ref:hub/extensions/quota/status.ts#commandLimitsLine)), and `quota/read-now` reads at once through the path a tick takes.
 - *Old names, until 2.0.* `POST /probe/run`, `GET /probe/quota`, `board.probes` and the copies in `/cards.js`
   ([`src/shared/limits.ts`](ref:hub/src/shared/limits.ts#probeLine)) answer through the extension, deprecated
   ([[extensions]], `LEGACY`).

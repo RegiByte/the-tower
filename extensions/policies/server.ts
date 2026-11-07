@@ -31,6 +31,7 @@ import {
   type PassInput,
   type PolicyFacts,
   type PolicyFile,
+  type PolicyView,
   type RunFact,
   type RunInput,
   type RunReply,
@@ -43,6 +44,10 @@ export const APPROVALS = 'approvals'
 
 /** How long a verb waits for the tower to hold a fact it appended, or a worker it started. */
 const TRACK_MS = 5000
+
+/** How many runs `tower x policies runs` shows unless told, and at most. */
+const RUNS_SHOWN = 5
+const RUNS_MOST = 20
 
 /** How often a slot whose run or pass was refused is decided again while it is on time: the tower's loop's tick. */
 const RETRY_MS = 30_000
@@ -75,7 +80,7 @@ const runLines = (run: CardRun, tz: string | undefined, now: number): string[] =
   const found = checkFound(run.check)
   return [
     `You are run ${run.n} of policy "${run.title ?? run.tag}" (${run.tag}), ${slot}, started ${run.start === 'auto' ? 'on its own' : run.start === 'hand' ? 'by hand' : 'from an offer'}.`,
-    `\`tower runs\` lists its earlier runs and what each left; \`tower read ${run.tag}\` is the policy. When the policy says nobody watches, end with \`tower home <your callsign>\`.`,
+    `\`tower x policies runs\` lists its earlier runs and what each left; \`tower read ${run.tag}\` is the policy. When the policy says nobody watches, end with \`tower home <your callsign>\`.`,
     ...(found ? [`Its check found: ${found}`] : []),
   ]
 }
@@ -109,6 +114,11 @@ const pause = (ms: number, signal: AbortSignal) =>
   })
 
 const floorOf = (board: Board, project: string): Floor | undefined => board.floors.find((f) => f.id === project)
+
+const floorName = (floor: Floor | undefined, project: string) => `${floor?.name ?? project} (floor "${project}")`
+
+/** What a verb that names a policy by its tag or its id takes. */
+type NamedInput = { project: string; policy: string }
 
 /** The policies extension's part of a floor, as the board holds it. */
 export const policiesOf = (floor: Floor | undefined): FloorPolicies | undefined => floor?.x?.policies as FloorPolicies | undefined
@@ -219,6 +229,49 @@ const start: Start = (ctx) => {
       }),
     )
 
+  /** A policy of a floor by its tag or its id. */
+  const policyNamed = (project: string, name: string): PolicyView | ApiError => {
+    const floor = floorOf(ctx.board(), project)
+    const policies = policiesOf(floor)?.policies ?? []
+    const policy = policies.find((p) => p.id === name || p.tag === name)
+    if (policy) return policy
+    return apiError('not_found', `${policies.length ? `No policy "${name}" on ${floorName(floor, project)}: \`tower x policies list\` lists them` : `${floorName(floor, project)} has no policies`}. A policy is a markdown item of the floor's \`policies\` collection: \`tower keep policies\``)
+  }
+
+  /** A worker's calls name it on their facts; the user's name no one. */
+  const byCaller = ({ t, id }: CallCtx['caller']) => (t === 'worker' && id !== undefined ? { by: id } : {})
+
+  /** A policy started now by its name: its open offer's slot when it has one, else by hand. */
+  const runNow = async ({ project, policy: name }: NamedInput, { call, caller }: CallCtx) => {
+    const policy = policyNamed(project, name)
+    if (isApiError(policy)) return policy
+    const board = ctx.board()
+    const called = `"${policy.title ?? policy.tag}" (${policy.tag})`
+    const standing = standingWords(policy, board, Date.now())
+    if (!policy.header) return apiError('refused', `${called} is invalid: ${standing}`)
+    const offer = policiesOf(floorOf(board, project))?.offers.find((o) => o.policy === policy.id)
+    const target = offer?.calls.accept ?? policy.calls.run
+    if (!target) return apiError('refused', `${called} can't be run now: ${standing}${policy.live.length >= policy.header.live ? ` (live ${policy.live.length}/${policy.header.live})` : ''}`)
+    const ran = (await call(target[0], { ...target[1], ...byCaller(caller) })) as RunReply | ApiError
+    if (isApiError(ran)) return ran
+    const callsign = floorOf(ctx.board(), project)?.cards.find((c) => c.id === ran.id)?.callsign ?? ran.id
+    return { ...ran, said: `Started run ${ran.n} of ${called}${offer ? `, for its offered slot ${slotWords(offer.slot, policy.header.when.tz, Date.now())}` : ', by hand'}: ${callsign}, session ${ran.id}. \`tower agent ${callsign}\` follows it.` }
+  }
+
+  /** A policy's words approved as they are now, by its name. */
+  const approveNow = async ({ project, policy: name }: NamedInput, { call, caller }: CallCtx) => {
+    const policy = policyNamed(project, name)
+    if (isApiError(policy)) return policy
+    const called = `"${policy.title ?? policy.tag}" (${policy.tag})`
+    if (!policy.header) return apiError('refused', `${called} is invalid: ${standingWords(policy, ctx.board(), Date.now())}`)
+    const target = policy.calls.approve
+    if (!target) return apiError('refused', `${called} is approved as it is now (${shortHash(policy.hash)})`)
+    const reply = await call(target[0], { ...target[1], ...byCaller(caller) })
+    if (isApiError(reply)) return reply
+    const words = policy.header.start === 'auto' ? 'It starts on its own at its slots while its file stays as it is now: any edit needs a new approval.' : 'It is `start: "ask"`: its slots stay offers until it says `"auto"`.'
+    return { t: 'ok', said: `Approved ${called} at ${shortHash(policy.hash)}: ${policy.rule}. ${words}` }
+  }
+
   /** A policy's runs, newest first, each worker as it is now, the floor's archive included, with its latest answer in full. */
   const runs = async (project: string, policy: string, limit: number) => {
     const held = facts(project)
@@ -239,9 +292,15 @@ const start: Start = (ctx) => {
     return runsRead(policy, hash, held, cards, answers, limit)
   }
 
+  /** A policy's latest runs in the words the CLI prints them. */
+  const runWords = async (project: string, policy: string, limit: number) => {
+    const read = await runs(project, policy, limit)
+    return isApiError(read) ? read : runsLines(policy, policiesOf(floorOf(ctx.board(), project))?.policies.find((p) => p.id === policy), read, Date.now())
+  }
+
   /**
-   * What the CLI prints of a floor's policies: `tower policies`' lines and where each policy stands, by id, and with
-   * `policy`, `tower runs`' lines for its latest `runs`.
+   * What the CLI prints of a floor's policies: `tower x policies list`'s lines and where each policy stands, by id, and
+   * with `policy`, its latest `runs` in words.
    */
   const said = async (project: string, policy: string | undefined, limit: number) => {
     const board = ctx.board()
@@ -249,10 +308,23 @@ const start: Start = (ctx) => {
     const { policies } = policiesOf(floor) ?? { policies: [] }
     const archived = floor?.archived ? ((await ctx.read('tower/archive/<project>', { project })) as Card[]) : []
     const now = Date.now()
-    const told = { lines: policiesLines(board, policies, [...(floor?.cards ?? []), ...archived], now), standing: Object.fromEntries(policies.map((p) => [p.id, standingWords(p, board, now)])) }
+    const lines = policies.length ? policiesLines(board, policies, [...(floor?.cards ?? []), ...archived], now) : [`${floorName(floor, project)} has no policies.`]
+    const told = { lines, standing: Object.fromEntries(policies.map((p) => [p.id, standingWords(p, board, now)])) }
     if (policy === undefined) return told
-    const read = await runs(project, policy, limit)
-    return isApiError(read) ? read : { ...told, runs: runsLines(policy, policies.find((p) => p.id === policy), read, now) }
+    const runLines = await runWords(project, policy, limit)
+    return isApiError(runLines) ? runLines : { ...told, runs: runLines }
+  }
+
+  /** A policy's latest runs in words: the one named, else the one the caller is a run of. */
+  const runsSaid = async (project: string, name: string | undefined, limit: number, caller: CallCtx['caller']) => {
+    if (limit > RUNS_MOST) return apiError('invalid', `runs shows at most ${RUNS_MOST} runs: \`tower agent <CALLSIGN>\` reads any run's worker in full`)
+    const named = name === undefined ? undefined : policyNamed(project, name)
+    if (named && isApiError(named)) return named
+    const own = floorOf(ctx.board(), project)?.cards.find((c) => c.id === caller.id)
+    const policy = named?.id ?? (own?.x?.[POLICIES] as { run?: CardRun } | undefined)?.run?.policy
+    if (policy === undefined) return apiError('invalid', 'You are no run of a policy: name one, `tower x policies runs <policy>`')
+    const lines = await runWords(project, policy, limit)
+    return isApiError(lines) ? lines : { lines }
   }
 
   /** The checks run for each slot, by `policy@slot`, until their slots are past. */
@@ -340,10 +412,13 @@ const start: Start = (ctx) => {
       run: (input: RunInput, { call }: CallCtx) => run(input, call),
       pass: (input: PassInput) => pass(input),
       approve: (input: ApproveInput) => approve(input),
+      'run-now': runNow,
+      'approve-now': approveNow,
     },
     reads: {
       'runs/<project>': ({ params, query }: { params: Record<string, string>; query: { policy: string; limit?: string } }) => runs(params.project, query.policy, query.limit === undefined ? 20 : Number(query.limit)),
-      'said/<project>': ({ params, query }: { params: Record<string, string>; query: { policy?: string; runs?: string } }) => said(params.project, query.policy, query.runs === undefined ? 5 : Number(query.runs)),
+      'said/<project>': ({ params, query }: { params: Record<string, string>; query: { policy?: string; runs?: string } }) => said(params.project, query.policy, query.runs === undefined ? RUNS_SHOWN : Number(query.runs)),
+      'run-lines/<project>': ({ params, query }: { params: Record<string, string>; query: { policy?: string; limit?: string } }, { caller }: CallCtx) => runsSaid(params.project, query.policy, query.limit === undefined ? RUNS_SHOWN : Number(query.limit), caller),
     },
     slots: { '*': slot },
   }

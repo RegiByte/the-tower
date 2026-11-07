@@ -4,7 +4,10 @@
  * last; longer after failures in a row (doubling) or while the account has nothing to read; and while a turn of that
  * command read every limit the probe reads, it waits `every` after that turn's.
  */
+import type { CommandLimits } from '/lib/board.js'
+import { resetLine } from '/lib/cards.js'
 import type { RateLimitsReading, StreamFact } from '/lib/extension.js'
+import { span } from '/lib/words.js'
 import { usageReading } from './usage.ts'
 
 /** What the stream says. `kinds`: the limits the last answer that had any read. */
@@ -20,6 +23,16 @@ export type Reads = {
   unavailable: boolean
   kinds?: string[]
 }
+
+const windowName = (kind: string) => kind.replace('five_hour', '5h').replace('seven_day', 'week').replaceAll('_', ' ')
+
+/** One account's limits in a line: `work · 5h 34% used, resets in 1h 12m · week 12% used, resets Sun 22:00 · read 3m ago`. */
+export const commandLimitsLine = ({ command, rateLimits, rateLimitsAt }: CommandLimits, now: number): string =>
+  [
+    ...(command === undefined ? [] : [command]),
+    ...(rateLimits.length ? rateLimits.map((r) => `${windowName(r.kind)} ${Math.round(r.percentUsed)}% used${r.resetsAt ? `, ${resetLine(r.resetsAt, now)}` : ''}`) : ['no reading yet']),
+    ...(rateLimitsAt === undefined ? [] : [`read ${span(now - rateLimitsAt)} ago`]),
+  ].join(' · ')
 
 export const NO_READS: Reads = { failsInRow: 0, unavailable: false }
 

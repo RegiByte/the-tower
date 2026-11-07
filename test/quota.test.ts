@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
-import { due, NO_COMMAND_READS, NO_READS, readOf, statusOf, step, stepByCommand, withReads, type Reads, type ReadsByCommand } from '../extensions/quota/status.ts'
+import { commandLimitsLine, due, NO_COMMAND_READS, NO_READS, readOf, statusOf, step, stepByCommand, withReads, type Reads, type ReadsByCommand } from '../extensions/quota/status.ts'
 import { usageAnswer } from '../extensions/quota/usage.ts'
 import { LEGACY_FIELDS, LEGACY_READS, type ProbeRead } from '../src/bridge/legacy.ts'
 import type { Board } from '../src/bridge/board.ts'
@@ -216,4 +216,14 @@ test('a read says the command it ran, and none in a single-command system', () =
   assert.equal(readOf(answered(NOW, 'work'))?.command, 'work')
   assert.equal(readOf(failed(NOW, 'work'))?.command, 'work')
   assert.equal('command' in readOf(answered(NOW))!, false)
+})
+
+test('an account\'s limits in a line: each window, when it resets and how old the reading is', () => {
+  const now = Date.parse('2026-11-02T12:00:00Z')
+  const inTwoHours = new Date(now + 2 * 3_600_000).toISOString()
+  assert.equal(
+    commandLimitsLine({ command: 'work', rateLimits: [{ kind: 'five_hour', percentUsed: 33.6, resetsAt: inTwoHours }, { kind: 'seven_day_opus', percentUsed: 12 }], rateLimitsAt: now - 180_000 }, now),
+    'work · 5h 34% used, resets in 2h 0m · week opus 12% used · read 3m ago',
+  )
+  assert.equal(commandLimitsLine({ rateLimits: [] }, now), 'no reading yet')
 })

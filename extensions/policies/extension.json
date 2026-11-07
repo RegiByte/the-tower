@@ -4,7 +4,7 @@
   "title": "Policies",
   "description": "Standing work the tower starts at its slots: a markdown file with a json header and the prose a run starts on.",
   "requires": {
-    "tower": "1.152"
+    "tower": "1.153"
   },
   "server": "server.ts",
   "client": "client",
@@ -48,7 +48,7 @@
   "collections": {
     "policies": {
       "label": "Policies",
-      "description": "Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a ```json header, then the prompt. `tower policies` lists them."
+      "description": "Standing work the tower starts on a schedule: one markdown file each, a `# Title`, a ```json header, then the prompt. `tower x policies list` lists them."
     }
   },
   "streams": {
@@ -495,6 +495,68 @@
         "hint": "start a run of the policy now"
       }
     },
+    "run-now": {
+      "scope": "project",
+      "description": "Start a policy now, named by its tag or id: its open offer's slot when it has one, else by hand. `run` is the same for a caller that holds the policy's call, as a renderer does.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The policy: its tag or its id."
+          }
+        },
+        "required": [
+          "project",
+          "policy"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "ran"
+          },
+          "id": {
+            "type": "string",
+            "description": "The worker's session."
+          },
+          "n": {
+            "type": "integer",
+            "description": "The run's number among the policy's runs."
+          },
+          "hash": {
+            "type": "string"
+          },
+          "said": {
+            "type": "string",
+            "description": "What it came to, in words."
+          }
+        },
+        "required": [
+          "t",
+          "id",
+          "n",
+          "hash",
+          "said"
+        ],
+        "additionalProperties": false
+      },
+      "cli": {
+        "positional": [
+          "policy"
+        ],
+        "print": "said",
+        "usage": "run-now <policy>"
+      }
+    },
     "pass": {
       "scope": "project",
       "input": {
@@ -658,6 +720,54 @@
         "label": "Approve",
         "hint": "approve the policy's words as they are now, for it to start on its own"
       }
+    },
+    "approve-now": {
+      "scope": "project",
+      "description": "Approve a policy's words as they are now, named by its tag or id. `approve` is the same for a caller that holds the hash it read, as a renderer does.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "policy": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The policy: its tag or its id."
+          }
+        },
+        "required": [
+          "project",
+          "policy"
+        ],
+        "additionalProperties": false
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "ok"
+          },
+          "said": {
+            "type": "string",
+            "description": "What it came to, in words."
+          }
+        },
+        "required": [
+          "t",
+          "said"
+        ],
+        "additionalProperties": false
+      },
+      "cli": {
+        "positional": [
+          "policy"
+        ],
+        "print": "said",
+        "usage": "approve-now <policy>"
+      }
     }
   },
   "reads": {
@@ -701,7 +811,7 @@
     },
     "said/<project>": {
       "scope": "project",
-      "description": "What `tower policies` and `tower runs` print of the floor's policies, in this extension's words: each policy's lines and where it stands, by id, and with `policy`, its latest `runs` runs.",
+      "description": "What `tower x policies list` prints of the floor's policies, in this extension's words: each policy's lines and where it stands, by id, and with `policy`, its latest `runs` runs.",
       "query": {
         "type": "object",
         "additionalProperties": false,
@@ -743,11 +853,57 @@
             }
           }
         }
+      },
+      "cli": {
+        "word": "list",
+        "print": "lines",
+        "usage": "list"
+      }
+    },
+    "run-lines/<project>": {
+      "scope": "project",
+      "description": "A policy's latest runs in words, newest first: each with its worker, what it showed and its latest answer cut short. No policy named, the one the caller is a run of.",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "policy": {
+            "type": "string",
+            "description": "The policy: its tag or its id. Left out, the one the caller is a run of."
+          },
+          "limit": {
+            "type": "string",
+            "pattern": "^([1-9][0-9]{0,2}|1000)$",
+            "description": "How many of its latest runs: 5 when left out, 20 at most."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "lines"
+        ],
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "cli": {
+        "word": "runs",
+        "positional": [
+          "policy"
+        ],
+        "print": "lines",
+        "usage": "runs [<policy>] [--limit <n>]"
       }
     }
   },
   "guidance": {
-    "brief": "Standing work the tower starts on a schedule: write one with `tower keep policies`, see where each stands with `tower policies`.",
-    "full": "A policy is standing work the floor keeps in its `policies` collection: one markdown file, a `# Title`, a fenced json header (when it fires, whether each slot is offered to the user or started on its own, how many runs may run at once, where its worker starts), then the prose that is the worker's whole prompt.\n\nWrite one with `tower keep policies` (markdown on stdin) and edit it in place; an edit to the words of an auto policy needs the user's approval again, and approving is the user's, so read it with `tower read <tag>` and don't approve unless asked. `tower policies` says each policy's rule in words, its approval, its live runs and where it stands now; `tower policies run <tag>` starts it now or takes its open offer.\n\nWhen you are a run, `tower whoami` says which policy and slot you are, and `tower runs` lists what earlier runs did and left: read it before you start, and end with what the next run needs to know. The handbook's Policies section has the header's keys."
+    "brief": "Standing work the tower starts on a schedule: write one with `tower keep policies`, see where each stands with `tower x policies list`.",
+    "full": "A policy is standing work the floor keeps in its `policies` collection: one markdown file, a `# Title`, a fenced json header (when it fires, whether each slot is offered to the user or started on its own, how many runs may run at once, where its worker starts), then the prose that is the worker's whole prompt.\n\nUse it when the user asks about work that recurs: what is scheduled, when something next runs, why it did or didn't start, or to set something up to run on its own. Not for one-off work: hire a worker for that.\n\n- `tower x policies list`: each policy's rule in words, its approval, its live runs, its last run and where it stands now, the same reason the tower acts on. `needs you` means a run on duty holds a slot: end that run for the next slot to start.\n- `tower x policies run-now <tag>`: starts it now, or takes its open offer.\n- `tower x policies approve-now <tag>`: approves its words as they are now. Approving is the user's: read it first with `tower read <tag>`, and don't approve unless asked.\n- `tower x policies runs [<tag>] [--limit <n>]`: a policy's latest runs, each with its worker, what it showed and its latest answer cut short (5 unless told, 20 at most). `tower agent <CALLSIGN>` reads one in full.\n\nThe tag is the first column of `list`. `run`, `pass` and `approve` are the renderers' calls, which take a slot or a hash: use the words above.\n\nWrite a policy with `tower keep policies` (markdown on stdin) and edit it in place; an edit to the words of an auto policy needs the user's approval again.\n\nWhen you are a run, `tower whoami` says which policy and slot you are, and `tower x policies runs` lists what earlier runs did and left: read it before you start, and end with what the next run needs to know. The handbook's Policies section has the header's keys."
   }
 }
