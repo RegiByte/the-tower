@@ -4,7 +4,7 @@ import { ICON } from '../shared/icons.ts'
 import { collectionTrayHtml, itemPath, itemsCss, keptOf, keptTitles } from '../shared/items.ts'
 import { itemSubject } from '../shared/subjects.ts'
 import { viewsOf, type Mount } from '../shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from './parts.ts'
+import { closeHtml, paintOnce, viewCss } from '../shared/view-parts.ts'
 
 /**
  * `tower/collection`, a collection's view: every item it keeps, newest first, each titled from its text where its type

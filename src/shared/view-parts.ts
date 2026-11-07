@@ -1,10 +1,10 @@
-import { esc } from '../shared/cards.ts'
-import { ICON } from '../shared/icons.ts'
-import { keysHint, keyshortcuts, type Keys } from '../shared/keymap.ts'
+import { esc } from './cards.ts'
+import { ICON } from './icons.ts'
+import { keysHint, keyshortcuts, type Keys } from './keymap.ts'
 
 /**
  * What the core's views in a main pane draw alike: a head naming what is open with its actions and the way back to the
- * skyline, a body under it, and their look, from the design's tokens. Bundled into each view's module.
+ * skyline, a body under it, and their look, from the design's tokens.
  */
 
 /**

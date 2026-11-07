@@ -49,7 +49,7 @@ export {
   closeHtml,
   paintOnce,
   viewCss,
-} from '../views/parts.ts'
+} from '../shared/view-parts.ts'
 export type {
   /** @provisional */ Bus,
   CommandKit,

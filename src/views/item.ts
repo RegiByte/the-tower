@@ -8,7 +8,7 @@ import { failedHtml } from '../shared/panel-html.ts'
 import type { Tower } from '../shared/shelf-page.ts'
 import { itemSubject, type CheckoutFile, type Subject } from '../shared/subjects.ts'
 import { viewsOf, type Kit, type Mount } from '../shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from './parts.ts'
+import { closeHtml, paintOnce, viewCss } from '../shared/view-parts.ts'
 
 /**
  * A view by type: one body per media type, drawn in a frame by the kind of its subject. A kept item's frame is a head
