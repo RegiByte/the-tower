@@ -1422,7 +1422,34 @@ give, refuses the launch, naming both. A contributor that throws, doesn't settle
 carries its fields, and otherwise is left out with a `launch` problem. `exempt` takes the worker out of its floor's hiring limits and
 `reportsTo` puts it in that worker's crew: each is logged as a core fact (`tower.exempt`, `tower.reports-to`) before it
 starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `plugins.claude` names a Claude plugin
-folder in the extension, loaded into every session on floors where it is on.
+folder in the extension, loaded into every session on floors where it is on: [An extension's Claude plugin](#an-extensions-claude-plugin).
+
+### An extension's Claude plugin
+
+An extension teaches a Claude session with a plugin of its own: skills whose descriptions tell the worker when to reach
+for them, with no word for it to remember. `guidance` is the neutral text every runtime's worker reads; a plugin is
+Claude's, so `plugins` is keyed by runtime. [`examples/extensions/handoff`](../examples/extensions/handoff/) is the
+smallest: an extension that is only a skill.
+
+```
+handoff/
+  extension.json                     "plugins": { "claude": "plugin" }
+  plugin/
+    .claude-plugin/plugin.json       { "name": "handoff", "version": "1.0.0" }
+    skills/note/SKILL.md             name, description, then what it teaches
+```
+
+- **The folder** is relative to the extension's and holds `.claude-plugin/plugin.json`. One folder per runtime: a plugin
+  holds any number of skills.
+- **Names:** a skill is `<plugin>:<skill>`, here `handoff:note`, the plugin's name from its `plugin.json`.
+- **What triggers it** is the skill's `description`: write the words a user says. Worth a line in the extension's
+  `guidance` too, so `tower whoami` names it.
+- **When it arrives:** Claude reads its plugins as a session starts, so a change reaches the next session started,
+  never a running one. It loads on floors where the extension is on, passed to Claude as `--plugin-dir` beside the
+  tower's own.
+- **Checked at load.** Claude skips a plugin folder it can't read and says nothing, so a folder that is missing or has
+  no `.claude-plugin/plugin.json` is a warning on the extension, in `tower extensions` and `tower extensions check`. The
+  rest of the extension runs.
 
 ### An extension's README
 
@@ -1473,7 +1500,7 @@ when the look differs, and show them side by side:
 `plugins`, at the top level or under a project, lists absolute plugin directories every session the tower starts
 loads, each passed to Claude as `--plugin-dir`. Your commands and skills live in one plugin outside your repos and
 reach every worker as `/<plugin>:<command>`. A changed plugin reaches the next session started. An extension
-brings its own with `plugins.claude`.
+brings its own with [`plugins.claude`](#an-extensions-claude-plugin).
 
 ```json
 { "plugins": ["/Users/you/code/my-workflow"] }

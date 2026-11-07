@@ -9,6 +9,8 @@ each one as `tower extensions check` does, so every example here works with the 
   you choose, with samples for macOS `say` and ElevenLabs. Its README is the one other extensions' follow.
 - [`tabline`](tabline/): a line under a worker's card, written by the user or the worker itself: a manifest with a
   writable fact and a projected fold, no code but the command that asks for the line.
+- [`handoff`](handoff/): a skill that teaches workers to leave a handoff note, an extension that is only a Claude
+  plugin, the one to copy for an extension that teaches workers.
 - [`grid`](grid/): a view in the main pane, workers' terminals side by side, kept per floor across reloads.
 - [`chat`](chat/): a plain text box at the foot of a worker's Brief that sends it a prompt while it waits at its
   prompt, the view to copy for `card.composer`: no server code, a refusal said under the box with the text kept.

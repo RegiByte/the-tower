@@ -17,6 +17,9 @@ export const MANIFEST_FILE = 'extension.json'
 
 export const CONTRACT_FILE = 'contract.json'
 
+/** What makes a folder a Claude plugin. */
+const CLAUDE_PLUGIN_FILE = path.join('.claude-plugin', 'plugin.json')
+
 const fileIn = (dir: string, name: string): string | undefined => {
   const file = path.join(dir, name)
   return existsSync(file) ? readFileSync(file, 'utf8') : undefined
@@ -60,28 +63,38 @@ const clientRead = (dir: string): ClientRead => {
   return read
 }
 
-/**
- * The client folder a manifest names, inside `dir`, when it names one there. The manifest is only peeked at here:
- * one that isn't JSON, or names no folder, has none, and the read of the manifest says why it is refused.
- */
-const clientDir = (dir: string, text: string | undefined): string | undefined => {
-  let client: unknown
+/** A manifest's keys, only peeked at here: one that isn't JSON has none, and the read of the manifest says why it is refused. */
+const peeked = (text: string | undefined): { client?: unknown; plugins?: { claude?: unknown } } => {
   try {
-    client = text === undefined ? undefined : (JSON.parse(text) as { client?: unknown }).client
+    return text === undefined ? {} : (JSON.parse(text) ?? {})
   } catch {
-    return undefined
+    return {}
   }
+}
+
+/** The client folder a manifest names, inside `dir`, when it names one there. */
+const clientDir = (dir: string, text: string | undefined): string | undefined => {
+  const { client } = peeked(text)
   if (typeof client !== 'string') return undefined
   const full = path.resolve(dir, client)
   return full.startsWith(path.resolve(dir) + path.sep) && statSync(full, { throwIfNoEntry: false })?.isDirectory() ? full : undefined
 }
 
-/** A folder as found: its manifest, its contract and its client modules' exports, as they are now. */
+/** What the Claude plugin a manifest names lacks, when it lacks anything: the folder, or the file that makes it a plugin. */
+const claudePluginLack = (dir: string, text: string | undefined): Found['claudePluginLack'] => {
+  const plugin = peeked(text).plugins?.claude
+  if (typeof plugin !== 'string') return undefined
+  if (!statSync(path.join(dir, plugin), { throwIfNoEntry: false })?.isDirectory()) return 'folder'
+  return existsSync(path.join(dir, plugin, CLAUDE_PLUGIN_FILE)) ? undefined : 'plugin.json'
+}
+
+/** A folder as found: its manifest, its contract, its client modules' exports and its Claude plugin, as they are now. */
 export const foundIn = (id: string, bundled: boolean, dir: string): Found => {
   const contract = fileIn(dir, CONTRACT_FILE)
   const text = fileIn(dir, MANIFEST_FILE)
   const client = clientDir(dir, text)
-  return { id, bundled, dir, text, ...(contract !== undefined && { contract }), ...(client && { client: clientRead(client) }) }
+  const lack = claudePluginLack(dir, text)
+  return { id, bundled, dir, text, ...(contract !== undefined && { contract }), ...(client && { client: clientRead(client) }), ...(lack && { claudePluginLack: lack }) }
 }
 
 /** The client folder of the bundled extension that provides `cap`, when one does and has a client folder. */
