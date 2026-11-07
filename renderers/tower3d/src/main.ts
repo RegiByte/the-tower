@@ -60,7 +60,7 @@ import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
-import { addedCommandOf, commandOf, keymapSheetHtml, panesOf, type Keys } from '../../../src/shared/keymap.ts'
+import { addedCommandOf, commandOf, COMMANDS, keymapSheetHtml, panesOf, type Keys } from '../../../src/shared/keymap.ts'
 import { MOVE_KEYS, move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
@@ -347,7 +347,7 @@ function onBoardError(err: Error & { code: string }) {
 }
 
 function onBoard(next: Board, at: ShelfSelf | undefined) {
-  const sheet = keymapSheetHtml(sheetKeys(next.keys))
+  const sheet = keymapSheetHtml(sheetKeys(next))
   if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
   const { began } = transitions(s.board, next)
   s.boards++
@@ -1373,22 +1373,33 @@ tower.prefs.on(() => drawSettings())
 
 const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'next', 'next-waiting': 'waiting' }
 
-/** The keymap's commands only the tower page has (its skyline, sidebar and ? sheet): left out of the building's sheet. */
-const PAGE_ONLY = new Set(['home', 'sidebar', 'help'])
-const sheetKeys = (keys: Keys): Keys => Object.fromEntries(Object.entries(keys).filter(([id]) => !PAGE_ONLY.has(id)))
+/** The panes Tower 3D draws, by the keymap's names: a desk's tabs, the logbook reader's Screen and Logbook among them. */
+const DRAWN_PANES = new Set(['screen', 'brief', 'changes', 'reviews'])
+
+const GLOBAL_COMMANDS = new Set<string>(COMMANDS.filter((c) => c.scope === 'global').map((c) => c.id))
+
+/**
+ * Whether Tower 3D runs a keymap command: every terminal and field command, each by the terminal or field it works in,
+ * and the global ones `runCommand` runs. The others are the tower page's alone.
+ */
+const runsHere = (board: Board, id: string) =>
+  !GLOBAL_COMMANDS.has(id) || id in MOVE_OF || panesOf(board).some((p) => p.command === id && p.name !== undefined && DRAWN_PANES.has(p.name))
+
+/** The keys of the commands Tower 3D runs, which its pause card's sheet lists. */
+const sheetKeys = (board: Board): Keys => Object.fromEntries(Object.entries(board.keys).filter(([id]) => runsHere(board, id)))
 
 /**
  * A pane of the open panel, by the keymap's names for the tower page's panes: a desk's tabs, the logbook reader's Screen
  * and Logbook. Answers whether the panel has that pane: a pane Tower 3D doesn't draw does nothing.
  */
 function toPane(pane: string) {
+  if (!DRAWN_PANES.has(pane)) return false
   const panel = panelNow()
   if (panel?.kind === 'logbook') return pane === 'screen' || pane === 'brief' ? (logbookTab(pane), true) : false
   if (panel?.kind !== 'desk') return false
   const c = findCard(s.board!, panel.id)!
   if (pane === 'reviews' && !keepsThreads(s.board!, c.project)) return false
   if (pane === 'screen') return (openScreen(), $('desk-screen').querySelector('textarea')?.focus(), true)
-  if (pane !== 'brief' && pane !== 'changes' && pane !== 'reviews') return false
   const typingInto = document.activeElement as HTMLElement | null
   typingInto?.blur()
   if (pane === 'brief') openBrief(c.id)

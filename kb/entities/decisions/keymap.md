@@ -97,8 +97,9 @@ every other key, and reach every renderer the way `user.name` does.
   dispatches the Escape that ends a pointer lock, which framed would also go home). It lets go of the mouse when its window loses focus: Chrome keeps a
   frame's pointer lock while the palette a forwarded ⌘K opened takes focus, and Escape would go to the lock.
 - Tower 3D runs the moves, the panes and `leave-terminal` from `board.keys` in the world, at a desk and in its
-  terminal ([`runCommand`](ref:hub/renderers/tower3d/src/main.ts#runCommand)), and lists them on its pause card with
-  `keymapSheetHtml`.
+  terminal ([`runCommand`](ref:hub/renderers/tower3d/src/main.ts#runCommand)), and every terminal and field command in
+  its terminal and fields. Its pause card's `keymapSheetHtml` lists only those
+  ([`runsHere`](ref:hub/renderers/tower3d/src/main.ts#runsHere)): a command that does nothing there is not offered there.
 
 **Alternatives considered.**
 - Overrides in `tower.store`, per viewer: the user chose the config, the hand-edited intent every renderer and worker
