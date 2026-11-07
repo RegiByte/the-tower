@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Files",
   "description": "A worker's checkout as a tree in its tabs, what git sees changed marked, and a file opened beside it, drawn by the view its type picks: code highlighted as VS Code draws it, the rest by the tower's views by type.",
-  "requires": { "tower": "1.151" },
+  "requires": { "tower": "1.159" },
   "server": "server.ts",
   "client": "client",
   "reads": {
@@ -110,7 +110,8 @@
       "scales": ["pane", "cell"],
       "needs": ["region", "toast"],
       "regions": ["file.open"],
-      "words": { "label": "Files", "hint": "the worker's checkout as a tree, and a file opened beside it" }
+      "words": { "label": "Files", "hint": "the worker's checkout as a tree, and a file opened beside it" },
+      "keys": ["Ctrl+Shift+5"]
     },
     "code": {
       "module": "code.js",
