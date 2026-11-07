@@ -5,7 +5,7 @@ import { chordLabel } from '../shared/keymap.ts'
 import { floorSubject } from '../shared/subjects.ts'
 import { readViewer, VIEWER_KEYS } from '../shared/viewer.ts'
 import type { Mount } from '../shared/views.ts'
-import { paintOf, paintOnce } from './parts.ts'
+import { paintOf, paintOnce } from '../shared/view-parts.ts'
 
 /**
  * `tower/skyline`, the board's view: a building per floor with a window per recent worker, under a sky that follows

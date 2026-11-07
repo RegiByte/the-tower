@@ -8,7 +8,7 @@ import type { RelayedUi } from '../shared/shelf-page.ts'
 import type { Mount } from '../shared/views.ts'
 import { decoded, NO_HREF, type LinkTo } from './frame.ts'
 import type { Drawn } from './item.ts'
-import { closeHtml, viewCss } from './parts.ts'
+import { closeHtml, viewCss } from '../shared/view-parts.ts'
 import { drawSections, SECTIONS_RULES } from './sections.ts'
 
 /**

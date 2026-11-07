@@ -9,7 +9,7 @@ import type { Subject } from '../shared/subjects.ts'
 import { verbHint, verbLabel } from '../shared/verb-words.ts'
 import type { Mount } from '../shared/views.ts'
 import { reviewerOf } from '../shared/checkouts.ts'
-import { keyedTip, paintOnce } from './parts.ts'
+import { keyedTip, paintOnce } from '../shared/view-parts.ts'
 
 /**
  * A worker: its head (who and where, a glance at its context, cost and leftovers, its details, what extensions add to

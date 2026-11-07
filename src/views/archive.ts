@@ -5,7 +5,7 @@ import { GIST_ICON, ICON } from '../shared/icons.ts'
 import { failedHtml } from '../shared/panel-html.ts'
 import { pressing } from '../shared/press.ts'
 import type { Mount } from '../shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from './parts.ts'
+import { closeHtml, paintOnce, viewCss } from '../shared/view-parts.ts'
 
 /**
  * `tower/archive`, a floor's view: its past workers by crew, read from the floor's archive and filtered by words, each
