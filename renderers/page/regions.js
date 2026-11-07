@@ -1,10 +1,10 @@
 import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { heldActions, shownHref, shownKey, shownTitle } from '/lib/cards.js'
-import { addedActions, commandUrl, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
+import { addedActions, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
 import { panesOf } from '/lib/keys.js'
 import { mountTermView } from '/lib/terminal.js'
-import { fileSpansHtml, ICON, keyedTip } from '/lib/view.js'
+import { fileSpansHtml, ICON, keyedTip, viewHost } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
 import { repaint } from './kit.js'
 import { actionsHtml, badgesHtml, iconActionsHtml } from './added.js'
@@ -15,9 +15,9 @@ import { menu } from './menu.js'
  * @import { TerminalMsg, Tower } from '/lib/client.js'
  * @import { Scheme } from '/lib/design.js'
  * @import { Action, Added } from '/lib/extension.js'
- * @import { KitMember, Layout, Overflow, Region, Scale } from '/lib/layout.js'
+ * @import { KitMember, Layout, Overflow, Region } from '/lib/layout.js'
  * @import { JobStream, ShellStream, TermFont, TermViewHandle } from '/lib/terminal.js'
- * @import { Bus, CommandKit, Kit, Location, Mount, Mounted, Pane, RegionHandle, RegionOptions, Tab, TabWords, View } from '/lib/view.js'
+ * @import { Bus, CommandKit, Hosted, Location, Pane, RegionHandle, Tab, TabWords, View } from '/lib/view.js'
  * @import { MenuItem } from './menu.js'
  */
 
@@ -52,9 +52,6 @@ import { menu } from './menu.js'
 /** The lines a shell's terminal keeps, as the dock's does. */
 const SHELL_SCROLLBACK = 2000
 
-/** How long a view's mount may take before its region says it failed. */
-const MOUNT_MS = 10_000
-
 /** How many workers the main pane keeps drawn once left, the least recently left closed first. */
 const CARDS_KEPT = 4
 
@@ -86,366 +83,90 @@ export function regions(deps) {
   /** Every terminal a view's kit opened, which the viewer's face and scheme reach. @type {Set<TermViewHandle>} */
   const terminals = new Set()
 
-  /** Each view module, by its URL, once imported. @type {Map<string, Record<string, unknown>>} */
-  const modules = new Map()
-  /** @type {Map<string, Promise<Record<string, unknown>>>} */
-  const importing = new Map()
   /** Every tabs region drawn, to draw again when a module it waits for arrives. @type {Set<{ draw: () => void }>} */
   const tabbed = new Set()
 
-  /** @param {View} view */
-  const urlOf = (view) => commandUrl(view.cap, /** @type {string} */ (view.module))
-
-  /** A view's module, imported once; regions waiting on it drawn again when it arrives. @param {View} view */
-  const moduleOf = (view) => {
-    const url = urlOf(view)
-    if (!importing.has(url))
-      importing.set(url, import(url).then((m) => (modules.set(url, m), tabbed.forEach((r) => r.draw()), m)))
-    return /** @type {Promise<Record<string, unknown>>} */ (importing.get(url))
-  }
-
-  /** @param {HTMLElement} el @param {string} id @param {string} why */
-  const failed = (el, id, why) => {
-    el.innerHTML = `<p class="view-failed">${esc(id)} couldn't draw: ${esc(why)}</p>`
-  }
+  /** What a mounted tabs region reads from the page, by the element of the view it is in. @type {WeakMap<HTMLElement, PaneScope>} */
+  const scopes = new WeakMap()
 
   /**
-   * A view whose module no longer links against the modules this page loaded: the page holds one version of each
-   * shared module, so a client the tower changed since the page loaded needs the page reloaded.
-   * @param {HTMLElement} el @param {string} id @param {string} why
+   * A job's screen, read only: its snapshot marked as viewed elsewhere, so the view follows the job's size and never
+   * resizes it, and keys go nowhere, since nothing types into a job.
+   * @param {HTMLElement} host @param {string} id @returns {TermViewHandle}
    */
-  const stale = (el, id, why) => {
-    el.innerHTML = `<p class="view-failed">${esc(id)} couldn't draw: the tower's code changed since this page loaded (${esc(why)}) <button data-reload-page>Reload</button></p>`
-    el.querySelector('[data-reload-page]')?.addEventListener('click', () => location.reload())
+  const jobTerminal = (host, id) => {
+    const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
+      watch: (on) =>
+        tower.watch(`job/${id}/screen`, (msg) => {
+          const job = /** @type {JobStream} */ (msg)
+          if (job.t === 'snapshot') return on({ ...job, terminals: 1 })
+          if (job.t === 'x') return on({ t: 'x', exitCode: job.exit ?? 1 })
+          on(job)
+        }),
+      resize: () => Promise.resolve(),
+      send: () => {},
+      claude: false,
+      scrollback: SHELL_SCROLLBACK,
+      font: termFont,
+      scheme,
+      keymap: () => board().keys,
+      run,
+      mode: () => {},
+      end: () => {},
+      error: (err) => commandKit.toast(err.message),
+    })
+    terminals.add(handle)
+    return { ...handle, close: () => (terminals.delete(handle), handle.close()) }
   }
 
-  /** `tower.store` under `view.<id>.<key>`: the view's own. @param {string} id */
-  const stateOf = (id) => ({
-    /** @param {string} key */
-    get: (key) => tower.store.get(`view.${id}.${key}`),
-    /** @param {string} key @param {unknown} value */
-    set: (key, value) => tower.store.set(`view.${id}.${key}`, value),
+  /** @param {HTMLElement} host @param {`terminal/${string}` | `shell/${string}` | `job/${string}`} path @returns {TermViewHandle} */
+  const terminal = (host, path) => {
+    if (path.startsWith('job/')) return jobTerminal(host, path.slice('job/'.length))
+    const [stream, id] = /** @type {['terminal' | 'shell', string]} */ (path.split('/'))
+    const shell = stream === 'shell'
+    host.classList.toggle('claude-term', !shell)
+    const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
+      watch: (on) => tower.watch(path, (msg) => on(/** @type {TerminalMsg | ShellStream} */ (msg))),
+      resize: (size) => (shell ? tower.call('shell/resize', { id, ...size }) : tower.call('resize', { id, ...size })),
+      send: (data) => (shell ? tower.shellKeys(id, data) : tower.keys(id, data)),
+      claude: !shell,
+      scrollback: shell ? SHELL_SCROLLBACK : 0,
+      font: termFont,
+      scheme,
+      keymap: () => board().keys,
+      run,
+      mode: () => {},
+      end: () => {},
+      error: (err) => commandKit.toast(err.message),
+      upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
+      files: {
+        cwd: () => /** @type {string} */ (shell ? board().shells.find((sh) => sh.id === id)?.cwd : findCard(board(), id)?.cwd),
+        edit: (path, line) => tower.call('edit', { path, line }),
+      },
+    })
+    terminals.add(handle)
+    return { ...handle, close: () => (terminals.delete(handle), host.classList.remove('claude-term'), handle.close()) }
+  }
+
+  const hosting = viewHost({
+    tower,
+    board,
+    views,
+    layout,
+    declared,
+    kit: deps.kit,
+    lent: { ...commandKit, terminal, bus: deps.bus },
+    fills: {
+      contributions: (el, id, subject, options) => contributions(el, id, subject, /** @type {{ omit?: string[] }} */ (options)),
+      tabs: (el, id, subject, options) => {
+        const view = /** @type {HTMLElement | null} */ (el.closest('[data-view]'))
+        const made = tabs(el, /** @type {Region} */ (declared().find((r) => r.id === id)), subject, /** @type {Record<string, Record<string, unknown>>} */ (options), view ? scopes.get(view) : undefined)
+        if (view) regionsByHost.set(view, made)
+        return made
+      },
+    },
   })
-
-  /**
-   * A view mounted into `el` on `subject`: its kit lends the page's terminals and regions, each closed with it, and
-   * `showing`, told what it shows below its subject; `show` handed before the mount settles waits for it; new options
-   * are handed to its `options`, else it is mounted afresh.
-   * @param {View} view @param {HTMLElement} el @param {Subject} subject @param {Scale | undefined} scale @param {Record<string, unknown>} options @param {PaneScope | undefined} scope @param {(s: Subject) => void} showing @param {string[] | undefined} [args]
-   */
-  function mountView(view, el, subject, scale, options, scope, showing, args) {
-    el.dataset.view = view.id
-    /** @type {Set<TermViewHandle>} */
-    const own = new Set()
-    /** @type {Set<RegionHandle>} */
-    const inner = new Set()
-    /** The keys it published on the bus, once per publish: cleared with it. @type {string[]} */
-    const published = []
-    let closed = false
-    /** @type {Mounted | undefined} */
-    let mounted
-    /** @type {Subject[]} */
-    const pending = []
-    /** @type {boolean | undefined} */
-    let seen
-
-    /**
-     * A job's screen, read only: its snapshot marked as viewed elsewhere, so the view follows the job's size and never
-     * resizes it, and keys go nowhere, since nothing types into a job.
-     * @param {HTMLElement} host @param {string} id @returns {TermViewHandle}
-     */
-    const jobTerminal = (host, id) => {
-      const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
-        watch: (on) =>
-          tower.watch(`job/${id}/screen`, (msg) => {
-            const job = /** @type {JobStream} */ (msg)
-            if (job.t === 'snapshot') return on({ ...job, terminals: 1 })
-            if (job.t === 'x') return on({ t: 'x', exitCode: job.exit ?? 1 })
-            on(job)
-          }),
-        resize: () => Promise.resolve(),
-        send: () => {},
-        claude: false,
-        scrollback: SHELL_SCROLLBACK,
-        font: termFont,
-        scheme,
-        keymap: () => board().keys,
-        run,
-        mode: () => {},
-        end: () => {},
-        error: (err) => commandKit.toast(err.message),
-      })
-      terminals.add(handle)
-      own.add(handle)
-      return { ...handle, close: () => (terminals.delete(handle), own.delete(handle), handle.close()) }
-    }
-
-    /** @param {HTMLElement} host @param {`terminal/${string}` | `shell/${string}` | `job/${string}`} path @returns {TermViewHandle} */
-    const terminal = (host, path) => {
-      if (path.startsWith('job/')) return jobTerminal(host, path.slice('job/'.length))
-      const [stream, id] = /** @type {['terminal' | 'shell', string]} */ (path.split('/'))
-      const shell = stream === 'shell'
-      host.classList.toggle('claude-term', !shell)
-      const handle = mountTermView(host, { Terminal, FitAddon: FitAddon.FitAddon, WebLinksAddon: WebLinksAddon.WebLinksAddon, UnicodeGraphemesAddon: UnicodeGraphemesAddon.UnicodeGraphemesAddon }, {
-        watch: (on) => tower.watch(path, (msg) => on(/** @type {TerminalMsg | ShellStream} */ (msg))),
-        resize: (size) => (shell ? tower.call('shell/resize', { id, ...size }) : tower.call('resize', { id, ...size })),
-        send: (data) => (shell ? tower.shellKeys(id, data) : tower.keys(id, data)),
-        claude: !shell,
-        scrollback: shell ? SHELL_SCROLLBACK : 0,
-        font: termFont,
-        scheme,
-        keymap: () => board().keys,
-        run,
-        mode: () => {},
-        end: () => {},
-        error: (err) => commandKit.toast(err.message),
-        upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
-        files: {
-          cwd: () => /** @type {string} */ (shell ? board().shells.find((sh) => sh.id === id)?.cwd : findCard(board(), id)?.cwd),
-          edit: (path, line) => tower.call('edit', { path, line }),
-        },
-      })
-      terminals.add(handle)
-      own.add(handle)
-      return { ...handle, close: () => (terminals.delete(handle), own.delete(handle), host.classList.remove('claude-term'), handle.close()) }
-    }
-
-    /** @type {Kit} */
-    const kit = {
-      ...commandKit,
-      spawn: (on) => commandKit.spawn(on, () => !closed),
-      showing,
-      terminal,
-      region: (host, id, at, opts) => {
-        const handle = regionIn(host, id, at, opts ?? {}, scope)
-        inner.add(handle)
-        return { ...handle, close: () => (inner.delete(handle), handle.close()) }
-      },
-      bus: {
-        ...deps.bus,
-        publish: (s, of) => (published.push(s.key), deps.bus.publish(s, of)),
-        clear(key) {
-          const at = published.indexOf(key)
-          if (at < 0) return
-          published.splice(at, 1)
-          deps.bus.clear(key)
-        },
-      },
-    }
-
-    const settle = async () => {
-      try {
-        /** @type {Record<string, unknown>} */
-        let module
-        try {
-          module = await moduleOf(view)
-        } catch (err) {
-          // A module that doesn't link (a SyntaxError from its import) is newer than the modules the page holds.
-          if (!(err instanceof SyntaxError)) throw err
-          if (!closed) dropped(() => stale(el, view.id, err.message))
-          return
-        }
-        const mount = /** @type {Mount | undefined} */ (module[/** @type {string} */ (view.export)])
-        if (typeof mount !== 'function') throw new Error(`${urlOf(view)} exports no function ${view.export}`)
-        const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, scale, ...(args && { args }) }
-        const done = /** @type {Mounted} */ (await Promise.race([
-          Promise.resolve(mount(el, ctx)),
-          new Promise((_, reject) => setTimeout(() => reject(new Error(`its mount hadn't settled in ${MOUNT_MS / 1000} s`)), MOUNT_MS)),
-        ]))
-        if (closed) return done.close()
-        mounted = done
-        if (options !== ctx.options) {
-          if (!mounted.options) return remount()
-          mounted.options(options)
-        }
-        if (seen !== undefined) mounted.visible?.(seen)
-        for (const s of pending.splice(0)) if (!mounted.show?.(s)) commandKit.toast(`${s.key} isn't there any more`)
-      } catch (err) {
-        if (!closed) fail(/** @type {Error} */ (err).message)
-      }
-    }
-
-    /** What was mounted closed, and `draw` in its place. @param {() => void} draw */
-    const dropped = (draw) => {
-      const was = mounted
-      mounted = undefined
-      try {
-        was?.close()
-      } finally {
-        letGo()
-        draw()
-      }
-    }
-
-    /** @param {string} why */
-    const fail = (why) => dropped(() => failed(el, view.id, why))
-
-    const letGo = () => {
-      for (const t of own) t.close()
-      for (const r of inner) r.close()
-      inner.clear()
-      for (const key of published.splice(0)) deps.bus.clear(key)
-    }
-
-    const remount = () => {
-      const was = mounted
-      mounted = undefined
-      try {
-        was?.close()
-      } finally {
-        letGo()
-        void settle()
-      }
-    }
-
-    void settle()
-
-    return {
-      view,
-      el,
-      /** @param {Subject} at */
-      update(at) {
-        subject = at
-        try {
-          mounted?.update(board(), at)
-        } catch (err) {
-          fail(/** @type {Error} */ (err).message)
-        }
-      },
-      /** A subject below the one it is on; true when it took it, or will once mounted. @param {Subject} s */
-      show(s) {
-        if (closed) return false
-        if (!mounted) return (pending.push(s), true)
-        return mounted.show?.(s) ?? false
-      },
-      /** @param {boolean} on */
-      visible(on) {
-        seen = on
-        mounted?.visible?.(on)
-      },
-      /** @param {Record<string, unknown>} next */
-      options(next) {
-        options = next
-        if (!mounted) return
-        if (!mounted.options) return remount()
-        try {
-          mounted.options(next)
-        } catch (err) {
-          fail(/** @type {Error} */ (err).message)
-        }
-      },
-      tab: () => mounted?.tab?.(),
-      /** The first terminal its kit opened, as a press of its tab's chord focuses it. */
-      terminal: () => [...own][0]?.term(),
-      close() {
-        closed = true
-        try {
-          mounted?.close()
-        } finally {
-          letGo()
-        }
-      },
-    }
-  }
-
-  /** @typedef {ReturnType<typeof mountView>} Hosted */
-
-  /**
-   * A region a view asks for: one holding views mounts them by the layout (a tabs region its tabs); any other draws what
-   * extensions add to it, each hold in the element marked with it (`data-holds`) or in `host`, less the commands its
-   * options `omit`.
-   * @param {HTMLElement} host @param {string} id @param {Subject} subject @param {RegionOptions} options @param {PaneScope | undefined} scope
-   * @returns {RegionHandle}
-   */
-  function regionIn(host, id, subject, options, scope) {
-    const region = declared().find((r) => r.id === id)
-    if (!region?.holds.includes('views')) return contributions(host, id, subject, /** @type {{ omit?: string[] }} */ (options))
-    const byView = /** @type {Record<string, Record<string, unknown>>} */ (options)
-    if (region.holds.some((h) => h !== 'views')) return beside(host, region, subject, byView)
-    if (region.arity !== 'tabs') return one(host, region, subject, byView)
-    const made = tabs(host, region, subject, byView, scope)
-    const view = /** @type {HTMLElement | null} */ (host.closest('[data-view]'))
-    if (view) regionsByHost.set(view, made)
-    return made
-  }
-
-  /**
-   * A region holding one view on its subject, the one the layout picks among those it offers, picked again on every
-   * update and mounted again when the pick changes. A row with none to draw is hidden, as a row beside contributions
-   * is: a pane with none says so.
-   * @param {HTMLElement} host @param {Region} region @param {Subject} subject @param {Record<string, Record<string, unknown>>} options
-   * @returns {RegionHandle}
-   */
-  function one(host, region, subject, options) {
-    host.dataset.region = region.id
-    let at = subject
-    let asked = options
-    let seen = true
-    /** The view mounted, by id, and its host; `undefined` while none is. @type {{ id: string | undefined, hosted: Hosted | undefined }} */
-    let held = { id: undefined, hosted: undefined }
-    /** @param {Record<string, Record<string, unknown>>} next @param {string} id */
-    const optionsOf = (next, id) => ({ ...layout()[region.id]?.options?.[id], ...next[id] })
-    const pick = () => pickView(board(), offeredIn(views(), region, layout(), deps.kit, at), layout()[region.id]?.order, at)
-
-    function mount() {
-      const view = pick()
-      held.hosted?.close()
-      const el = document.createElement('div')
-      el.className = 'view-root'
-      host.replaceChildren(el)
-      host.hidden = !view?.module && region.scale === 'row'
-      if (!view?.module) {
-        if (!host.hidden) failed(el, region.id, `nothing here draws ${at.key}`)
-        held = { id: view?.id, hosted: undefined }
-        return
-      }
-      const hosted = mountView(view, el, at, region.scale, optionsOf(asked, view.id), undefined, () => {})
-      if (!seen) hosted.visible(false)
-      held = { id: view.id, hosted }
-    }
-
-    host.dataset.subject = at.key
-    mount()
-    return {
-      update: (next) => {
-        at = next
-        host.dataset.subject = next.key
-        if (pick()?.id !== held.id) mount()
-        else held.hosted?.update(next)
-      },
-      options: (next) => {
-        asked = /** @type {Record<string, Record<string, unknown>>} */ (next)
-        if (held.id) held.hosted?.options(optionsOf(asked, held.id))
-      },
-      show: (s) => held.hosted?.show(s) ?? false,
-      visible: (on) => ((seen = on), held.hosted?.visible(on)),
-      close: () => (held.hosted?.close(), host.replaceChildren(), (host.hidden = false), delete host.dataset.region, delete host.dataset.subject),
-    }
-  }
-
-  /**
-   * A region holding one view beside contributions (`lines.acts`: what acts on picked lines): the view the layout picks
-   * among those it offers, then what extensions add, the host hidden while it holds neither.
-   * @param {HTMLElement} host @param {Region} region @param {Subject} subject @param {Record<string, Record<string, unknown>>} options
-   * @returns {RegionHandle}
-   */
-  function beside(host, region, subject, options) {
-    const viewEl = document.createElement('div')
-    const acts = document.createElement('div')
-    acts.className = 'region-acts'
-    host.replaceChildren(viewEl, acts)
-    const held = offeredIn(views(), region, layout(), deps.kit, subject).length ? one(viewEl, region, subject, options) : undefined
-    const added = contributions(acts, region.id, subject, {})
-    const fit = () => void (host.hidden = !held && !acts.childElementCount)
-    fit()
-    return {
-      update: (at) => (held?.update(at), added.update(at), fit()),
-      options: (next) => held?.options?.(next),
-      show: (s) => held?.show?.(s) ?? false,
-      visible: (on) => held?.visible?.(on),
-      close: () => (held?.close(), added.close(), host.replaceChildren(), (host.hidden = false)),
-    }
-  }
+  hosting.onArrival(() => tabbed.forEach((r) => r.draw()))
 
   /** The showings mounted in every tabs region, the least recently shown first. @type {{ key: string, drop: () => void }[]} */
   const shownKept = []
@@ -488,13 +209,13 @@ export function regions(deps) {
     /** The tab a view's `tab` export gives on `at`, once its module is here; `undefined` for none. @param {View} v @param {Subject} at @returns {TabWords | undefined | 'waiting'} */
     const exported = (v, at) => {
       if (!v.tab) return {}
-      const module = modules.get(urlOf(v))
-      if (!module) return (void moduleOf(v), 'waiting')
+      const module = hosting.loaded(v)
+      if (!module) return (void hosting.moduleOf(v), 'waiting')
       return /** @type {Tab} */ (module[v.tab])(board(), at)
     }
 
     /** Whether a view offered here still waits for its module to say whether it has a tab: no tab opens before, so the default can't pick one it would pass over. */
-    const waiting = () => offeredIn(views(), region, layout(), deps.kit, subject).some((v) => v.id !== hostView && v.module && v.tab && !modules.has(urlOf(v)))
+    const waiting = () => offeredIn(views(), region, layout(), deps.kit, subject).some((v) => v.id !== hostView && v.module && v.tab && !hosting.loaded(v))
 
     /** @returns {TabOf[]} */
     function tabsOf() {
@@ -614,7 +335,8 @@ export function regions(deps) {
       root.className = 'view-root'
       panel.append(root)
       panels.append(panel)
-      const hosted = mountView(t.view, root, t.subject, region.scale, optionsOf(t.view), scope, (s) => told(t.key, s))
+      if (scope) scopes.set(root, scope)
+      const hosted = hosting.mountView(t.view, root, t.subject, { scale: region.scale, options: optionsOf(t.view), showing: (s) => told(t.key, s) })
       mounted.set(t.key, { hosted, panel })
       return mounted.get(t.key)
     }
@@ -1034,12 +756,13 @@ export function regions(deps) {
     if (!view?.module || !view.export) {
       el.dataset.view = location.view
       open = { key, view: location.view, el, hosted: /** @type {Hosted} */ (/** @type {unknown} */ ({ update: () => {}, visible: () => {}, show: () => false, close: () => {}, tab: () => undefined, terminal: () => undefined })) }
-      return failed(el, location.view, 'nothing running declares it with a module')
+      return hosting.failed(el, location.view, 'nothing running declares it with a module')
     }
     if (!subject) return (el.remove(), gone())
     /** @type {PaneScope | undefined} */
     const scope = view.id === WORKER ? { pane: () => ({ on: open?.key === key, pane: mainPane() }), pick: (pane) => pickMain(key, pane) } : undefined
-    const hosted = mountView(view, el, subject, 'pane', layout()['board.main']?.options?.[view.id] ?? {}, scope, () => {}, location.args)
+    if (scope) scopes.set(el, scope)
+    const hosted = hosting.mountView(view, el, subject, { scale: 'pane', options: layout()['board.main']?.options?.[view.id] ?? {}, ...(location.args && { args: location.args }) })
     open = { key, view: view.id, el, hosted }
   }
 
@@ -1100,11 +823,11 @@ export function regions(deps) {
       el.dataset.region = id
       el.dataset.subject = subject.key
       if (!view?.module) {
-        failed(el, id, `nothing here draws ${subject.key}`)
+        hosting.failed(el, id, `nothing here draws ${subject.key}`)
         held.set(subject.key, { view: view?.id, el, hosted: undefined })
         return el
       }
-      const hosted = mountView(view, el, subject, region().scale, layout()[id]?.options?.[view.id] ?? {}, undefined, () => {})
+      const hosted = hosting.mountView(view, el, subject, { scale: region().scale, options: layout()[id]?.options?.[view.id] ?? {} })
       held.set(subject.key, { view: view.id, el, hosted })
       return el
     }

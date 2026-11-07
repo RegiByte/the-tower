@@ -1,8 +1,10 @@
 import type { Board } from '../bridge/board.ts'
 import { commandOf, towerOf } from './added-commands.ts'
-import { commandUrl, importServed, isCommand, runVerb } from './adds.ts'
+import { commandUrl, isCommand, runVerb } from './adds.ts'
 import type { Action, Added, CommandAction } from './extensions.ts'
+import { importServed } from './import-served.ts'
 import type { Subject } from './subjects.ts'
+import { unlent } from './unlent.ts'
 import type { CommandKit } from './views.ts'
 
 /**
@@ -17,10 +19,6 @@ export const runCommandWith = async (board: Board, action: Added<CommandAction>,
   const run = module[command.export]
   if (typeof run !== 'function') throw new Error(`${commandUrl(action.cap, command.module)} exports no function ${command.export}`)
   return run({ tower: towerOf(), board, subject: subject.value, target: subject, args: action.args, kit })
-}
-
-const unlent = (member: string) => () => {
-  throw new Error(`this renderer lends no ${member}: a command that uses kit.${member} runs where a renderer's kit holds it`)
 }
 
 /** The kit of a renderer that lends a command nothing: every member fails, naming itself. */

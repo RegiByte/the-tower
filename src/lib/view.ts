@@ -1,4 +1,4 @@
-/** The library's `/lib/view.js`: a view's types and chrome, panels drawn and kept, controls pressed, files and items, icons, highlighted code. */
+/** The library's `/lib/view.js`: a view's types and chrome, the host that mounts views, panels drawn and kept, controls pressed, files and items, icons, highlighted code. */
 export {
   fileButtonsHtml,
   fileCall,
@@ -52,6 +52,18 @@ export {
   paintOnce,
   viewCss,
 } from '../shared/view-parts.ts'
+export {
+  /** @provisional */ viewHost,
+} from '../shared/view-host.ts'
+export type {
+  /** @provisional */ Fill,
+  /** @provisional */ Fills,
+  /** @provisional */ Hosted,
+  /** @provisional */ HostDeps,
+  /** @provisional */ Lent,
+  /** @provisional */ Placed,
+  /** @provisional */ ViewHost,
+} from '../shared/view-host.ts'
 export type {
   /** @provisional */ Bus,
   CommandKit,

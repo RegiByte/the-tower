@@ -47,7 +47,7 @@ skyline. [`hashOf`](ref:hub/renderers/page/view.js#hashOf) names it in the URL h
 machine holds that view beside the board, the viewer's record and the attention state ([[machines]]), and every
 handler that sets the view tells attention through [`viewed`](ref:hub/renderers/page/page.js#viewed), so the worker
 whose waits ring for nobody is the one on screen while the window has the viewer's eye. Views are mounted in
-`#view-host` by [`regions`](ref:hub/renderers/page/regions.js#regions) with the page's kit, updated on each board
+`#view-host` by [`regions`](ref:hub/renderers/page/regions.js#regions), over the library's view host ([[ui-model]]), with the page's kit, updated on each board
 and closed as the location leaves, but for the last four workers left, kept drawn and hidden;
 [`display`](ref:hub/renderers/page/page.js#display) places a subject through `/lib/layout.js` onto a view or one of the
 page's routes. What the open view shows leaving what the page holds takes the page home, but for a worker, the view on
