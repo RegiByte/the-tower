@@ -795,7 +795,7 @@ test('server: policies kept before the policies extension keep their approvals, 
   ])
 
   const day = (at: number) => slotWords(at, 'UTC', now)
-  const listed = cli(SESSION, 'policies').split('\n')
+  const listed = cli(SESSION, 'x', 'policies', 'list').split('\n')
   const nightly = listed.findIndex((l) => l.startsWith('ashen-otter'))
   assert.deepEqual([...listed.slice(0, nightly), ...listed.slice(nightly + 3)], [
     "fleet-jaguar   Broken   invalid · guards: unknown key (this tower doesn't know it: update the tower, or put a runner's own data under x) (it used to run on its own)",
@@ -810,14 +810,14 @@ test('server: policies kept before the policies extension keep their approvals, 
     `               now: ${day(triage.slot)} is offered, until ${day(triage.slot + DAY)}`,
     '',
   ])
-  const ran = cli(SESSION, 'runs').split('\n')
+  const ran = cli(SESSION, 'x', 'policies', 'runs').split('\n')
   assert.deepEqual(ran.slice(0, 2), [`Digest (warm-lily) · ${rule(digest.slot)} · runs 1 to 1 of 1`, [`run 1`.padEnd(7), day(digest.slot).padEnd(13), 'auto'.padEnd(16), worker.callsign, 'exited'].join('  ')])
   assert.ok(ran.includes('        its check found: two to do'), ran.join('\n'))
   const whoami = cli(SESSION, 'whoami').split('\n')
   const at = whoami.findIndex((l) => l.startsWith('You are run'))
   assert.deepEqual(whoami.slice(at, at + 3), [
     `You are run 1 of policy "Digest" (warm-lily), for its slot ${day(digest.slot)}, started on its own.`,
-    '`tower runs` lists its earlier runs and what each left; `tower read warm-lily` is the policy. When the policy says nobody watches, end with `tower home <your callsign>`.',
+    '`tower x policies runs` lists its earlier runs and what each left; `tower read warm-lily` is the policy. When the policy says nobody watches, end with `tower home <your callsign>`.',
     'Its check found: two to do',
   ])
   const guided = whoami.indexOf('Extensions you can use (`tower x <name>` says when and how):')
