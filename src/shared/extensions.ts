@@ -247,6 +247,10 @@ export type ExtensionView = {
   bundled: boolean
   state: ExtensionState
   off?: string[]
+  /** Its settings as they stand on the system, its schema's defaults filled in, when it declares a schema: what every view and renderer reads with `settingsOf`. @since 1.154 */
+  settings?: unknown
+  /** The settings of each floor that sets its own, by floor, over the system's: `floorSettingsOf` reads them. @since 1.154 */
+  floorSettings?: Record<string, unknown>
   problems: ExtensionProblem[]
   /** Its manifest's verbs, by qualified name. @since 1.82 */
   verbs: ExtensionVerb[]
@@ -270,6 +274,18 @@ export type ExtensionView = {
   spawn?: { fields: SpawnFieldView[] }
   /** What it tells the workers, the config's over its manifest's, when either says anything. @since 1.129 */
   guidance?: Guided
+}
+
+/** The entry holding the settings of `cap`: a provider turned off and replaced by another holds none, whatever its place on the board. */
+const settingsHolder = (board: { extensions: readonly ExtensionView[] }, cap: string) => board.extensions.find((e) => e.provides === cap && e.settings !== undefined)
+
+/** The settings of the extension providing `cap`, as they stand on the system. @since 1.154 */
+export const settingsOf = (board: { extensions: readonly ExtensionView[] }, cap: string): unknown => settingsHolder(board, cap)?.settings
+
+/** The settings of the extension providing `cap` on one floor: its own where it sets any, else the system's. @since 1.154 */
+export const floorSettingsOf = (board: { extensions: readonly ExtensionView[] }, cap: string, floor: string): unknown => {
+  const holder = settingsHolder(board, cap)
+  return holder?.floorSettings?.[floor] ?? holder?.settings
 }
 
 /**

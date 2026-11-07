@@ -9,6 +9,10 @@ export {
   runVerb,
 } from '../shared/adds.ts'
 export {
+  floorSettingsOf,
+  settingsOf,
+} from '../shared/extensions.ts'
+export {
   defaultLimits,
   floorLimits,
   limitsOf,

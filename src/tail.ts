@@ -51,6 +51,9 @@ export const afterBreak: EventFilter = (line) => (codeOf(line) === 'h' && line.i
 /** What draws a session's screen, and the exit that ends it. */
 export const screenEvents: EventFilter = (line) => ('orx'.includes(codeOf(line)) ? parseWhole(line) : undefined)
 
+/** What a worker's brief and its tool calls are read from (`turns.ts`): Claude's hooks and the mod's events, its output and input unread. */
+export const hookEvents: EventFilter = (line) => (codeOf(line) === 'h' ? parseWhole(line) : undefined)
+
 const HOOK_NAME = '"hook_event_name":"'
 const POST_TOOL_USE = `${HOOK_NAME}PostToolUse"`
 const AGENT_ID = /"agent_id":"([^"]*)"/
@@ -102,22 +105,15 @@ export const factEvents = (from: SessionState): EventFilter<FoldEvent> => {
   }
 }
 
-/** Splits at the last newline: the complete lines, and the start of a line still being written. */
-const completeLines = (buf: Buffer): { lines: Buffer[]; rest: Buffer } => {
-  const lines: Buffer[] = []
-  let start = 0
-  for (let end = buf.indexOf(0x0a); end !== -1; end = buf.indexOf(0x0a, start)) {
-    lines.push(buf.subarray(start, end))
-    start = end + 1
+/** The events `filter` keeps of `buf`'s complete lines from byte `start` (a line's start) on, each line let go once read. */
+const eventsFrom = <E>(buf: Buffer, start: number, filter: EventFilter<E>): E[] => {
+  const events: E[] = []
+  for (let end = buf.indexOf(0x0a, start); end !== -1; start = end + 1, end = buf.indexOf(0x0a, start)) {
+    const event = filter(buf.subarray(start, end))
+    if (event) events.push(event)
   }
-  return { lines, rest: buf.subarray(start) }
+  return events
 }
-
-const eventsIn = <E>(lines: Buffer[], filter: EventFilter<E>): E[] =>
-  lines.flatMap((line) => {
-    const event = filter(line)
-    return event ? [event] : []
-  })
 
 /**
  * A log archived by Tidy is gzipped in place, `<id>.jsonl.gz`, whole and never appended to again: every reader reads it
@@ -214,14 +210,14 @@ const archivedHeader = (logPath: string): { header: SessionHeader; offset: numbe
 export const readEvents = <E>(logPath: string, offset: number, filter: EventFilter<E>): { events: E[]; offset: number } => {
   if (offset === logSize(logPath)) return { events: [], offset }
   const buf = readFrom(logPath, offset)
-  return { events: eventsIn(completeLines(buf).lines, filter), offset: offset + buf.lastIndexOf(0x0a) + 1 }
+  return { events: eventsFrom(buf, 0, filter), offset: offset + buf.lastIndexOf(0x0a) + 1 }
 }
 
 /** The log's header and the events `filter` keeps of its complete lines, and the byte offset where the next line starts. */
 export const readLog = <E>(logPath: string, filter: EventFilter<E>): { log: { header: SessionHeader; events: E[] }; offset: number } => {
   const buf = logBytes(logPath)
-  const [header, ...events] = completeLines(buf).lines
-  return { log: { header: header && JSON.parse(header.toString('utf8')), events: eventsIn(events, filter) }, offset: buf.lastIndexOf(0x0a) + 1 }
+  const headerEnd = buf.indexOf(0x0a)
+  return { log: { header: headerEnd === -1 ? undefined : JSON.parse(buf.toString('utf8', 0, headerEnd)), events: eventsFrom(buf, headerEnd + 1, filter) }, offset: buf.lastIndexOf(0x0a) + 1 }
 }
 
 /**
@@ -242,9 +238,9 @@ export const tailLog = <E>(logPath: string, offset: number, filter: EventFilter<
       chunks.push(Buffer.from(buf.subarray(0, n)))
       position += n
     }
-    const { lines, rest } = completeLines(Buffer.concat(chunks))
-    partial = rest
-    for (const event of eventsIn(lines, filter)) if (!closed) onEvent(event)
+    const read = Buffer.concat(chunks)
+    partial = read.subarray(read.lastIndexOf(0x0a) + 1)
+    for (const event of eventsFrom(read, 0, filter)) if (!closed) onEvent(event)
   })
 
   const watcher = watchedLoudly(watch(logPath, drain), logPath)

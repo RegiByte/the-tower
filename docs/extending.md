@@ -441,7 +441,7 @@ joins as a minor the day something uses it.
 
 | Module | Runs | For | What it holds |
 |---|---|---|---|
-| `/lib/board.js` | generic | authors | the board's types and pure readings of it: subjects, what is offered and its calls, crews, checkouts, each command's limits |
+| `/lib/board.js` | generic | authors | the board's types and pure readings of it: subjects, what is offered and its calls, crews, checkouts, each command's limits, each extension's settings |
 | `/lib/extension.js` | server | server | server code's types (Start, ctx, folds, parts, the shape of tower/config), API errors, and checking a spawn's fields |
 | `/lib/words.js` | generic | authors | text: escaping, plurals, spans, times, tags and item titles |
 | `/lib/view.js` | browser | authors | a view's types and chrome, panels drawn and kept, controls pressed, files and items, icons, highlighted code |
@@ -1031,6 +1031,13 @@ as `<cap>/<name>`:
   regions: the board carries no extension's layout of a region a renderer declares (`card.head`, `card.panes`; API
   1.138), and `tower extensions check` and the board warn about it.
 - `keys`: default chords that display the subject in focus with it.
+
+**An extension's settings reach its client on the board** (API 1.154), with no server code: `settingsOf(board, 'grid')`
+from `/lib/board.js` reads them as they stand, its schema's defaults filled in, and `floorSettingsOf(board, 'grid', floor)`
+reads them on one floor. A view hears a change in its `update`. They are `settings` and `floorSettings` on each entry of
+`board.extensions`, for any renderer or worker to read. Change one through the config verbs: `config/add` at
+`extensions.<id>.settings.<key>` when the config doesn't hold it yet, `config/set` when it does. Settings never hold a
+credential ([the config](config.md)): an integration that needs one keeps it in the script or command its settings name.
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
 visible?(on), tab?(), options?(options), close() }` (`Mount` in `/views.js`); `options` takes its options as they
