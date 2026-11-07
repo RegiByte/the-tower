@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-07",
   "reviewed": "2026-11-07",
-  "refs": ["hub/scripts/sandbox.ts#makeFloorClone", "hub/scripts/sandbox.ts#followCheckout", "hub/scripts/sandbox.ts#mendFloorClone", "hub/scripts/sandbox.ts#checkFloorClone", "hub/extensions/autotidy/server.ts#start", "hub/src/worktrees.ts#tidyable"]
+  "refs": ["hub/scripts/sandbox.ts#makeFloorClone", "hub/scripts/sandbox.ts#followCheckout", "hub/scripts/sandbox.ts#mendFloorClone", "hub/scripts/sandbox.ts#checkFloorClone", "hub/scripts/sandbox.ts#floorDamage", "hub/extensions/autotidy/server.ts#start", "hub/src/worktrees.ts#tidyable"]
 }
 ---
 **Problem.** The sandbox's `tower` floor had the checkout itself as hub, and a worktree shares its refs with the real
@@ -28,14 +28,17 @@ removes the whole class at once, every verb and every future one, with nothing i
   checkout's HEAD, on a branch or detached. So the floor looks like a real one, a main checkout on `main` level with
   its upstream, and a cut starts from the code under test. The floor shows commits only. Every other branch and tag
   is as of the clone. `branch.<br>.towerBase` isn't cloned, so the floor starts with nothing for Tidy to list.
-- [`mendFloorClone`](ref:hub/scripts/sandbox.ts#mendFloorClone) runs on every `up`: follow, which restores tracked
-  files and `origin/HEAD` and ends in `git fsck --connectivity-only`, and on any failure re-make. macOS's `tmp_cleaner`
-  deletes files under `/tmp` idle for three days and then empty folders, so a clone left alone breaks a piece at a
-  time, in no predictable way: trying and re-making covers cases a list of checks wouldn't.
+- [`mendFloorClone`](ref:hub/scripts/sandbox.ts#mendFloorClone) runs on every `up`. macOS's `tmp_cleaner` deletes
+  files under `/tmp` idle for three days and then empty folders, so a clone left alone breaks a piece at a time, in no
+  predictable way. [`floorDamage`](ref:hub/scripts/sandbox.ts#floorDamage) asks git: `fsck --connectivity-only` on the
+  origin and the hub, and that the hub has its origin. A damaged clone is re-made, and `up` says so, since the
+  worktrees cut in it go with it. Then `up` follows, which restores tracked files and `origin/HEAD`. On a sound clone
+  a failure to follow, such as a stale lock or `main` checked out in a cut, stops `up` with git's message: it costs
+  a running sandbox nothing, and `down` and `up` are the way out when git's message isn't enough.
 - `up` refuses a root inside a git repository: a hub whose `.git` went would read as the repository around it.
 - `up` always writes the hub into an existing config, whose other keys it leaves alone, so an older root moves off the
   checkout at its next `up`. Until then it is as dangerous as it was: [`checkFloorClone`](ref:hub/scripts/sandbox.ts#checkFloorClone)
-  has `sandbox run` and `env` refuse it, and refuse a broken clone, naming `up` as the fix.
+  has `sandbox run` and `env` refuse it, and refuse a damaged or missing clone, naming `up` as the fix.
 - `down` removes the clone and its origin once all four daemons stopped: it is derived, and `up` makes it again.
   Leftover roots then weigh what they did. A hub's objects are hardlinks (`--local`), so a clone costs its tree, about
   30 MB, and keeps packs alive that the repository drops while the clone exists. `--shared` would be lighter still and
@@ -49,6 +52,8 @@ removes the whole class at once, every verb and every future one, with nothing i
 - *A plain clone, its origin left alone.* `origin` is the real repository, which takes a push.
 - *Re-making the clone on every `up`.* One path, but it takes the hub from under a running sandbox's sessions and drops
   its cuts when nothing was wrong.
+- *Re-making the clone on any failure to follow.* One stale lock would take a healthy clone, its cuts and the hub under
+  a running worker, silently.
 - *Keeping the clone through `down`.* Cuts on the floor would survive a restart, as `lab`'s do, at a tree per leftover
   root and packs held for as long as the root sits there.
 
