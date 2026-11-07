@@ -2,8 +2,8 @@ import { toast } from './kit.js'
 import { DRAFTS, discard, draftItem, draftPath, draftTitles, openDraft as loadDraft } from '/x/drafts/drafts.js'
 
 /**
- * @import { Board } from '../../src/bridge/board.ts'
- * @import { Location } from '../../src/shared/views.ts'
+ * @import { Board } from '/lib/board.js'
+ * @import { Location } from '/lib/view.js'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
  */
 

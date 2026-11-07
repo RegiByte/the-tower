@@ -1,13 +1,13 @@
-import { SOUNDS } from '/cards.js'
-import { ICON } from '/icons.js'
+import { SOUNDS } from '/lib/cards.js'
+import { placeOnOpen } from '/lib/chrome.js'
+import { alertsSection, changesSection, faceInstalled, markdownSection, prefSections, settingsHtml, soundSection, tipsSection, wirePrefs } from '/lib/settings.js'
+import { ICON } from '/lib/view.js'
 import { $ } from './kit.js'
-import { alertsSection, changesSection, tipsSection, faceInstalled, markdownSection, prefSections, settingsHtml, soundSection, wirePrefs } from '/settings.js'
-import { placeOnOpen } from '/tips.js'
 
 /**
- * @import { Ring, Sound } from '../../src/shared/cards.ts'
- * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { Loop } from '../../src/shared/loop.ts'
+ * @import { Ring, Sound } from '/lib/cards.js'
+ * @import { Loop } from '/lib/machine.js'
+ * @import { Viewer } from '/lib/viewer.js'
  * @import { PageState, PageEvent } from './page.js'
  */
 
@@ -20,7 +20,7 @@ import { placeOnOpen } from '/tips.js'
  */
 
 /**
- * The settings popover (`/settings.js`): alerts, how often a wait rings and its sounds, the viewer's appearance and
+ * The settings popover (`/lib/settings.js`): alerts, how often a wait rings and its sounds, the viewer's appearance and
  * how the brief draws markdown, drawn again while open whenever what it shows may have changed.
  * @param {SettingsPaneDeps} deps
  */

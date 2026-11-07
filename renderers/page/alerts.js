@@ -1,12 +1,12 @@
-import { SOUNDS, gistLine, shownTitle, statusName } from '/cards.js'
+import { gistLine, shownTitle, SOUNDS, statusName } from '/lib/cards.js'
 import { offerWords } from '/x/policies/panel.js'
 import { shownKey } from './kit.js'
 
 /**
- * @import { Board, Card, CardShown, Floor, Wait } from '../../src/bridge/board.ts'
+ * @import { Board, Card, CardShown, Floor, Wait } from '/lib/board.js'
+ * @import { Sound } from '/lib/cards.js'
+ * @import { BoardAsk } from '/lib/extension.js'
  * @import { Offer } from '../../extensions/policies/policies.ts'
- * @import { BoardAsk } from '../../src/shared/extensions.ts'
- * @import { Sound } from '../../src/shared/cards.ts'
  */
 
 /**
@@ -29,7 +29,7 @@ import { shownKey } from './kit.js'
 export function alerting(deps) {
   const { callsign, select, openShown, floorOf, board, openPolicies, goToSubject } = deps
   /**
-   * One notification per wait or offer that begins (`/attend.js`), closed once it is over or dismissed.
+   * One notification per wait or offer that begins (`/lib/attend.js`), closed once it is over or dismissed.
    * @type {Map<string, Notification>}
    */
   const alerts = new Map()

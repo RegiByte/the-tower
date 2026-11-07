@@ -1,8 +1,8 @@
-import { archiveKey } from '/cards.js'
+import { archiveKey } from '/lib/cards.js'
 import { toast } from './kit.js'
 
 /**
- * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
+ * @import { Board, Card, Floor } from '/lib/board.js'
  */
 
 /**

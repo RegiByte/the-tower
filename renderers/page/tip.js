@@ -1,13 +1,13 @@
-import { CAPABILITIES, tipAt, tipKey, tipsOf } from '/capabilities.js'
-import { esc } from '/cards.js'
-import { ICON } from '/icons.js'
-import { COMMANDS, chordLabel, keysLabel } from '/keymap.js'
+import { CAPABILITIES, tipAt, tipKey, tipsOf } from '/lib/capabilities.js'
+import { chordLabel, COMMANDS, keysLabel } from '/lib/keys.js'
+import { ICON } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 import { $, repaint } from './kit.js'
 
 /**
- * @import { Keys } from '../../src/shared/keymap.ts'
- * @import { Pattern, Tip } from '../../src/shared/capabilities.ts'
- * @import { Viewer } from '../../src/shared/viewer.ts'
+ * @import { Pattern, Tip } from '/lib/capabilities.js'
+ * @import { Keys } from '/lib/keys.js'
+ * @import { Viewer } from '/lib/viewer.js'
  */
 
 /**
@@ -19,7 +19,7 @@ import { $, repaint } from './kit.js'
  */
 
 /**
- * One tip at a time in the free end of the shells strip: a capability or a pattern (`/capabilities.js`), the one
+ * One tip at a time in the free end of the shells strip: a capability or a pattern (`/lib/capabilities.js`), the one
  * `tipAt` picks for the clock and this load's seed, so it moves on as the page draws. A tip naming a command shows its
  * chords and runs it on a click. Hidden while the viewer turned tips off, and while it would not fit beside the tabs.
  * @param {TipDeps} deps

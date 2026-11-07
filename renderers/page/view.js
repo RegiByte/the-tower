@@ -1,15 +1,15 @@
-import { hashOf as locationHash, locationOf, shortHashOf } from '/views.js'
+import { hashOf as locationHash, locationOf, shortHashOf } from '/lib/layout.js'
 
 /**
  * What the tower page's main pane shows, as one value, and the URL hash that names it. Pure: the page goes from one
  * view to the next through its loop, which leaves the view before and enters the next.
- * @import { Board } from '../../src/bridge/board.ts'
- * @import { Location } from '../../src/shared/views.ts'
+ * @import { Board } from '/lib/board.js'
+ * @import { Location } from '/lib/view.js'
  */
 
 /**
  * A worker the page started, until the board carries it (`arriving`, drawn as the skyline); a view mounted in the main
- * pane at a location (`/views.js`): the skyline, a worker (`tower/card`) and kept items among them.
+ * pane at a location (`/lib/layout.js`): the skyline, a worker (`tower/card`) and kept items among them.
  * @typedef {{ t: 'arriving', id: string } | { t: 'view', location: Location }} MainView
  */
 

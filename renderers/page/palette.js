@@ -1,16 +1,16 @@
-import { CAPABILITIES } from '/capabilities.js'
-import { esc } from '/cards.js'
-import { chordLabel } from '/keymap.js'
-import { markdownHtml } from '/markdown.js'
-import { paletteEntries, rankPalette, rankingOf } from '/palette.js'
+import { CAPABILITIES } from '/lib/capabilities.js'
+import { chordLabel } from '/lib/keys.js'
+import { markdownHtml } from '/lib/markdown.js'
+import { paletteEntries, rankingOf, rankPalette } from '/lib/palette.js'
+import { esc } from '/lib/words.js'
 import { draftsOf } from '/x/drafts/drafts.js'
 import { $, told } from './kit.js'
 
 /**
- * @import { Board, FloorItem } from '../../src/bridge/board.ts'
- * @import { Entry, Openable, Pick, PaletteGroup } from '../../src/shared/palette.ts'
- * @import { Pattern } from '../../src/shared/capabilities.ts'
- * @import { Heed } from '../../src/shared/cards.ts'
+ * @import { Board, FloorItem } from '/lib/board.js'
+ * @import { Pattern } from '/lib/capabilities.js'
+ * @import { Heed } from '/lib/cards.js'
+ * @import { Entry, Openable, PaletteGroup, Pick } from '/lib/palette.js'
  */
 
 /**
@@ -29,7 +29,7 @@ const RECENT_KEY = 'palette.recent'
 const RECENT_MAX = 20
 
 /**
- * The command palette (`/palette.js`): one input over the entries for where the viewer stands, grouped, each with its
+ * The command palette (`/lib/palette.js`): one input over the entries for where the viewer stands, grouped, each with its
  * hint and the chords that do the same; ↑↓ move, Enter or a click picks, Esc closes. A pick closes it and goes through
  * `pick`, the page's own handlers. The patterns sheet lists `GET /patterns`.
  * @param {PaletteDeps} deps

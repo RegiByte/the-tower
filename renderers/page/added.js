@@ -1,13 +1,14 @@
-import { DISMISS_ASK_TITLE, actionWords, badgesOf, esc, glyphOf, plural, span } from '/cards.js'
-import { ICON } from '/icons.js'
+import { DISMISS_ASK_TITLE } from '/lib/cards.js'
+import { actionWords, badgesOf, glyphOf } from '/lib/layout.js'
+import { ICON } from '/lib/view.js'
+import { esc, plural, span } from '/lib/words.js'
 
 /**
  * What extensions add to a subject, as the page draws it beside the core's own: badges, and actions as buttons whose
- * press the page runs through `runAdded` (`/cards.js`); and the asks, as rows beside the offers.
- * @import { Board } from '../../src/bridge/board.ts'
- * @import { Action, Added, Badge, BoardAsk } from '../../src/shared/extensions.ts'
- * @import { Glyph } from '../../src/shared/adds.ts'
- * @import { Subject } from '../../src/shared/subjects.ts'
+ * press the page runs through `runAdded`; and the asks, as rows beside the offers.
+ * @import { Board, Subject } from '/lib/board.js'
+ * @import { Action, Added, Badge, BoardAsk } from '/lib/extension.js'
+ * @import { Glyph } from '/lib/layout.js'
  */
 
 /** One badge: a link when it has `href`. @param {Added<Badge>} b */

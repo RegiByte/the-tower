@@ -49,7 +49,7 @@ handler that sets the view tells attention through [`viewed`](ref:hub/renderers/
 whose waits ring for nobody is the one on screen while the window has the viewer's eye. Views are mounted in
 `#view-host` by [`regions`](ref:hub/renderers/page/regions.js#regions) with the page's kit, updated on each board
 and closed as the location leaves, but for the last four workers left, kept drawn and hidden;
-[`display`](ref:hub/renderers/page/page.js#display) places a subject through `/views.js` onto a view or one of the
+[`display`](ref:hub/renderers/page/page.js#display) places a subject through `/lib/layout.js` onto a view or one of the
 page's routes. What the open view shows leaving what the page holds takes the page home, but for a worker, the view on
 it stays while the floors' archives are read ([`subjectLeft`](ref:hub/renderers/page/page.js#subjectLeft)): one sent
 home that started before today, or whose day ended on screen, leaves the board for its archive with its Resume, and

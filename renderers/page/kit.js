@@ -1,14 +1,14 @@
-import { esc, gistOf, shownHref, shownKey, when } from '/cards.js'
-import { GIST_ICON, ICON } from '/icons.js'
-import { keepingFocus } from '/panels.js'
-import { closableNoticer, noticer, toaster } from '/toasts.js'
-import { keysHint, keyshortcuts } from '/keymap.js'
+import { gistOf, shownHref, shownKey } from '/lib/cards.js'
+import { closableNoticer, noticer, toaster } from '/lib/chrome.js'
+import { keysHint } from '/lib/keys.js'
+import { GIST_ICON, ICON, keepingFocus, keyedTip } from '/lib/view.js'
+import { esc, when } from '/lib/words.js'
 
 /**
  * What the tower page's panes draw with alike: a card's gist, times, the close of a view, a toast, painting only
  * what changed and keeping a scrolled list's row in place, and a showing's key, pane and address.
- * @import { Card } from '../../src/bridge/board.ts'
- * @import { Keys } from '../../src/shared/keymap.ts'
+ * @import { Card } from '/lib/board.js'
+ * @import { Keys } from '/lib/keys.js'
  */
 
 /**
@@ -56,10 +56,6 @@ const fillOf = (pct, hot) => (pct > hot ? 'var(--broken)' : 'var(--ink)')
 
 /** What a control does with the chords of the command it shares, when it has any: `hide the sidebar (⌘B)`. @param {Keys} keys @param {string} what @param {string} id */
 const keyedText = (keys, what, id) => (keysHint(keys, id) ? `${what} (${keysHint(keys, id)})` : what)
-
-/** A control's tip (`keyedText`), and the chords as its `aria-keyshortcuts`. @param {Keys} keys @param {string} what @param {string} id */
-const keyedTip = (keys, what, id) =>
-  keyshortcuts(keys, id) ? `data-tip="${esc(keyedText(keys, what, id))}" aria-keyshortcuts="${keyshortcuts(keys, id)}"` : `data-tip="${esc(what)}"`
 
 /** The close of a view in the main pane: back to the skyline. @param {Keys} keys */
 const closeHomeHtml = (keys) => `<button class="icon-btn" data-act="home" aria-label="back to the skyline" ${keyedTip(keys, 'back to the skyline', 'home')}>${ICON.close}</button>`
@@ -133,13 +129,13 @@ const repaint = (el, html) => keepingFocus(el, () => paintOnce(el, html))
 /** Says `msg` to a screen reader, through the polite live region: a new node each time, so the same words are said again. @param {string} msg */
 const announce = (msg) => $('announce').replaceChildren(Object.assign(document.createElement('p'), { textContent: msg }))
 
-/** Tells what just happened, with an action that follows it up when given (`/toasts.js`, a live region of its own). */
+/** Tells what just happened, with an action that follows it up when given (`/lib/chrome.js`, a live region of its own). */
 const toast = toaster($('toasts'))
 
-/** Tells what goes on until it is closed, in the toasts' stack (`/toasts.js`' `noticer`). */
+/** Tells what goes on until it is closed, in the toasts' stack (`/lib/chrome.js`' `noticer`). */
 const notice = noticer($('toasts'))
 
-/** A notice its reader closes with its ×, in the toasts' stack (`/toasts.js`' `closableNoticer`). */
+/** A notice its reader closes with its ×, in the toasts' stack (`/lib/chrome.js`' `closableNoticer`). */
 const closableNotice = closableNoticer($('toasts'))
 
 /**
@@ -150,4 +146,4 @@ const closableNotice = closableNoticer($('toasts'))
  */
 const told = (request) => request.catch((err) => (toast(err.message), undefined))
 
-export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, keyedTip, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told }
+export { onDuty, lineOf, toolHtml, when, $, byStart, signHtml, fillOf, keyedText, closeHomeHtml, shownKey, shownHref, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told }

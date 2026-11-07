@@ -1,16 +1,16 @@
-import { whyNot, offeredCall, esc, shellPlaces, shellWhere } from '/cards.js'
-import { ICON } from '/icons.js'
+import { offeredCall } from '/lib/board.js'
+import { shellWhere, whyNot } from '/lib/cards.js'
+import { placeOnOpen } from '/lib/chrome.js'
+import { shellPlaces } from '/lib/spawn.js'
+import { mountTermView } from '/lib/terminal.js'
+import { ICON, pressing } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 import { $, byStart, toast, told } from './kit.js'
-import { mountTermView } from '/term-view.js'
-import { placeOnOpen } from '/tips.js'
-import { pressing } from '/press.js'
 
 /**
- * @import { Board, Floor } from '../../src/bridge/board.ts'
- * @import { ShellStream } from '../../src/shared/terms.ts'
- * @import { TermMode, TermViewHandle } from '../../src/shared/term-view.ts'
- * @import { TermFont } from '../../src/shared/terminal.ts'
- * @import { Scheme } from '../../src/shared/design.ts'
+ * @import { Board, Floor } from '/lib/board.js'
+ * @import { Scheme } from '/lib/design.js'
+ * @import { ShellStream, TermFont, TermMode, TermViewHandle } from '/lib/terminal.js'
  */
 
 /**
@@ -28,7 +28,7 @@ import { pressing } from '/press.js'
 
 /**
  * The shells docked under the main pane: a tab for each the terms daemon runs, the one open in its own terminal
- * (`/term-view.js`), new ones started in a floor's directory, and the grip that sets their height.
+ * (`/lib/terminal.js`), new ones started in a floor's directory, and the grip that sets their height.
  * @param {ShellsDeps} deps
  */
 export function shells(deps) {

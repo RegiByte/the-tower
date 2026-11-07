@@ -1,23 +1,21 @@
-import { drawPanel, STATS_ALL, statsHtml, statsQuery } from '/panels.js'
-import { loop, timers } from '/loop.js'
-import { failRead, failureOf, landRead, noReads, reading, refreshRead, stepped, valueOf } from '/reads.js'
+import { failRead, failureOf, landRead, loop, noReads, reading, refreshRead, stepped, timers, valueOf } from '/lib/machine.js'
+import { STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
+import { drawPanel } from '/lib/view.js'
 import { floorOfView } from './view.js'
 import { $, toast } from './kit.js'
 
 /**
- * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
- * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { StatsRange } from '../../src/shared/viewer.ts'
- * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
+ * @import { Board, Card, Floor } from '/lib/board.js'
+ * @import { Executors, Handlers, Loop, ReadEffect, ReadEvent, Reads, StateEffect, TimerEffect } from '/lib/machine.js'
+ * @import { Stats, StatsRange } from '/lib/stats.js'
+ * @import { Viewer } from '/lib/viewer.js'
  * @import { MainView } from './view.js'
- * @import { ReadEffect, ReadEvent, Reads } from '../../src/shared/reads.ts'
- * @import { Stats } from '../../src/bridge/stats.ts'
  */
 
 /**
  * The sidebar shows the floors or the stats, kept in `tower.store`. The stats open on the floor in view (the selected
  * worker's, the open shelf's, archive's or draft's, else the top floor), with every floor's beside it; read again
- * every minute while shown, over the viewer's range, held until the next read lands (`/reads.js`). A range changed
+ * every minute while shown, over the viewer's range, held until the next read lands (`/lib/machine.js`). A range changed
  * drops what was read over the one before, and any read of it in flight.
  * @typedef {'floors' | 'stats'} SideView
  * @typedef {{ stats: Stats, at: number }} StatsRead
@@ -39,7 +37,7 @@ import { $, toast } from './kit.js'
  */
 
 /**
- * The sidebar's floors or stats as a machine, the Stats panel (`/panels.js`) over the viewer's range on the floor in
+ * The sidebar's floors or stats as a machine, the Stats panel (`/lib/stats.js`) over the viewer's range on the floor in
  * view.
  * @param {StatsDeps} deps
  */

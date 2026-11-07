@@ -1,5 +1,5 @@
-import { esc } from '/cards.js'
-import { keepingFocus } from '/panels.js'
+import { keepingFocus } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 
 /**
  * The page's menu for what a region couldn't draw in place (decision `region-overflow`): a button the caller draws
@@ -16,7 +16,7 @@ import { keepingFocus } from '/panels.js'
  * close it, focus back on the button.
  *
  * @typedef {{ t: 'item', key: string, label: string, hint?: string, danger?: boolean, fresh?: boolean, busy?: boolean, held?: boolean, stays?: boolean }} MenuItem
- *   `key` is unique in the page, as a control asking a thing is named by it while it is busy (`/press.js`), and stable
+ *   `key` is unique in the page, as a control asking a thing is named by it while it is busy (`/lib/view.js`), and stable
  *   across boards; `held`, shown but not pressable (its `hint` says why); `stays`, the menu stays open once it runs (it
  *   changes what the menu lists).
  * @typedef {{ t: 'check', key: string, label: string, hint?: string, checked: boolean }} MenuCheck

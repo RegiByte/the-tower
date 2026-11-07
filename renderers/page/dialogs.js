@@ -1,11 +1,10 @@
-import { statusLegendHtml, landingHtml } from '/cards.js'
-import { ICON } from '/icons.js'
+import { landingHtml, statusLegendHtml } from '/lib/cards.js'
+import { keymapSheetHtml } from '/lib/keys.js'
+import { ICON } from '/lib/view.js'
 import { $ } from './kit.js'
-import { keymapSheetHtml } from '/keymap.js'
 
 /**
- * @import { Board } from '../../src/bridge/board.ts'
- * @import { LandingRead } from '../../src/bridge/worktrees.ts'
+ * @import { Board, LandingRead } from '/lib/board.js'
  */
 
 /**

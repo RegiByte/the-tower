@@ -1,10 +1,9 @@
-import { keysLabel } from '/keymap.js'
-import { terminalFont } from '/terminal.js'
-import { modeText } from '/term-view.js'
+import { keysLabel } from '/lib/keys.js'
+import { modeText, terminalFont } from '/lib/terminal.js'
 
 /**
- * @import { Board } from '../../src/bridge/board.ts'
- * @import { TermMode } from '../../src/shared/term-view.ts'
+ * @import { Board } from '/lib/board.js'
+ * @import { TermMode } from '/lib/terminal.js'
  */
 
 /**

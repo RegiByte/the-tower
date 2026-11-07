@@ -1,9 +1,11 @@
-import { HOST_MEANS, heededWaits, whyNot, can, esc, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS } from '/cards.js'
+import { can } from '/lib/board.js'
+import { heededWaits, HOST_MEANS, LET_GO_MEANS, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, whyNot } from '/lib/cards.js'
+import { esc } from '/lib/words.js'
 import { keyedText } from './kit.js'
 
 /**
- * @import { Board, Card, Unresumable } from '../../src/bridge/board.ts'
- * @import { DaemonVerb, Heed } from '../../src/shared/cards.ts'
+ * @import { Board, Card, Unresumable } from '/lib/board.js'
+ * @import { DaemonVerb, Heed } from '/lib/cards.js'
  */
 
 /**
