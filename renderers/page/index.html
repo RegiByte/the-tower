@@ -86,6 +86,7 @@ kbd { font: 700 var(--fs-xs)/1 var(--mono); padding: var(--sp-2xs) var(--sp-xs);
 .dir:hover { background: var(--panel-2); }
 .dir .dname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dir .dname .icon { margin-right: var(--sp-2xs); }
+.dir .st { flex: none; font-size: var(--fs-xs); letter-spacing: .04em; color: var(--broken-text); }
 .shelf { display: flex; flex-wrap: wrap; gap: var(--sp-xs); padding: var(--sp-s) 0 0; }
 .shelf button, .shelf a { max-width: 100%; padding: var(--sp-2xs) var(--sp-m); font-size: var(--fs-xs); font-weight: 700; border-radius: var(--radius-pill); background: var(--pw); color: var(--pt); border: 1px solid transparent;
   text-decoration: none; line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -113,7 +114,7 @@ button.draft { width: 100%; border: none; background: none; font-weight: 400; te
 .wt .who { font-weight: 700; color: var(--ink); text-decoration: none; }
 .wt .who:hover { text-decoration: underline; }
 .wt .st { flex: none; font-size: var(--fs-xs); letter-spacing: .04em; color: var(--faint); }
-.wt.at-risk .st, .wt.lost .st { color: var(--broken-text); }
+.wt.at-risk .st, .wt.lost .st, .wt.unread .st { color: var(--broken-text); }
 .wt button { flex: none; min-height: var(--control); }
 .wt button:not(.icon-btn) { padding: 0 var(--sp-m); font-size: var(--fs-xs); }
 .sess .branch { color: var(--faint); font: var(--fs-xs)/1.4 var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

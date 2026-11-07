@@ -2443,6 +2443,64 @@
       "additionalProperties": false
     },
     "FloorWorktreeRepo": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ReadRepo"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dir": {
+              "type": "string"
+            },
+            "atRisk": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "branch": {
+              "type": "string"
+            },
+            "head": {
+              "type": "string"
+            },
+            "base": {
+              "type": "string"
+            },
+            "from": {
+              "type": "string"
+            },
+            "against": {
+              "type": "string"
+            },
+            "present": {
+              "type": "boolean"
+            },
+            "unread": {
+              "type": "string"
+            },
+            "risk": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "atRisk",
+            "dir",
+            "path",
+            "present",
+            "risk",
+            "unread"
+          ]
+        }
+      ],
+      "description": "`atRisk`: work only this repo's worktree holds, or nothing says it holds none (`UnreadTree`); its `risk` names which."
+    },
+    "ReadRepo": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -2451,30 +2509,6 @@
         },
         "atRisk": {
           "type": "boolean"
-        },
-        "dirty": {
-          "type": "number"
-        },
-        "unpushed": {
-          "type": "number"
-        },
-        "absorbed": {
-          "type": "boolean"
-        },
-        "carried": {
-          "$ref": "#/definitions/Carried"
-        },
-        "against": {
-          "type": "string"
-        },
-        "risk": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "own": {
-          "type": "number"
         },
         "path": {
           "type": "string"
@@ -2491,8 +2525,32 @@
         "from": {
           "type": "string"
         },
+        "against": {
+          "type": "string"
+        },
         "present": {
           "type": "boolean"
+        },
+        "dirty": {
+          "type": "number"
+        },
+        "unpushed": {
+          "type": "number"
+        },
+        "absorbed": {
+          "type": "boolean"
+        },
+        "carried": {
+          "$ref": "#/definitions/Carried"
+        },
+        "risk": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "own": {
+          "type": "number"
         },
         "changed": {
           "type": "number",
@@ -2509,7 +2567,7 @@
         "risk",
         "unpushed"
       ],
-      "description": "`atRisk`: work only this repo's worktree holds; its `risk` names it."
+      "description": "A repo of a worktree, as git read it."
     },
     "Carried": {
       "type": "object",
@@ -2533,11 +2591,12 @@
       "enum": [
         "live",
         "lost",
+        "unread",
         "at-risk",
         "carried",
         "removable"
       ],
-      "description": "`carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by Tidy."
+      "description": "`carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by Tidy. `unread`: git couldn't read it in some repo (`UnreadTree`), so nothing says what it holds and it offers no verb until it can be read (@since 1.158)."
     },
     "WorktreeVerb": {
       "type": "string",
@@ -3066,6 +3125,26 @@
     "MainCheckouts": {
       "type": "object",
       "properties": {
+        "unread": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "dir": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dir",
+              "why"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Each main checkout git couldn't read, with what it said: `dirty` and `changed` sum only the others."
+        },
         "dirty": {
           "type": "number"
         },

@@ -166,6 +166,7 @@
       ".st",
       ".summary",
       ".task",
+      ".unread",
       ".waits",
       ".watching",
       ".where",
@@ -728,6 +729,7 @@
       "linkedFile",
       "liveHires",
       "loudest",
+      "mainUnreadHtml",
       "marksOf",
       "matchesWords",
       "modelName",
@@ -1279,7 +1281,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "ebd245858fc5500a",
+      "digest": "e440c8cfe4838568",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -1311,7 +1313,7 @@
     },
     "/lib/board.js": {
       "runtime": "generic",
-      "digest": "a4042669f0c67cca",
+      "digest": "f427b555b0e988ef",
       "values": {
         "boardSubject": {
           "since": "1.151",
@@ -1571,7 +1573,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "fe6ce48b2a50d8ff",
+      "digest": "6c5c29f5f3e42cc5",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1638,7 +1640,7 @@
     },
     "/lib/capabilities.js": {
       "runtime": "generic",
-      "digest": "11da226a19cfb7c1",
+      "digest": "8f0b25ad2f64b646",
       "values": {
         "CAPABILITIES": {
           "since": "1.151",
@@ -1674,7 +1676,7 @@
     },
     "/lib/cards.js": {
       "runtime": "generic",
-      "digest": "c792f7783a7b4ae7",
+      "digest": "6411b83e42665148",
       "values": {
         "ATTENTION_MEANS": {
           "since": "1.151"
@@ -1877,6 +1879,9 @@
         "loudest": {
           "since": "1.151"
         },
+        "mainUnreadHtml": {
+          "since": "1.158"
+        },
         "nameIn": {
           "since": "1.151",
           "stability": "provisional"
@@ -2077,7 +2082,7 @@
     },
     "/lib/changes.js": {
       "runtime": "browser",
-      "digest": "3b1fc874661a1e74",
+      "digest": "0c86a279356b5f29",
       "values": {
         "CHANGES_POLL_MS": {
           "since": "1.151"
@@ -2197,7 +2202,7 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "ccf877404261152f",
+      "digest": "8ae7334820712147",
       "values": {},
       "types": {
         "BoardError": {
@@ -2268,7 +2273,7 @@
     },
     "/lib/extension.js": {
       "runtime": "server",
-      "digest": "b8380aedd573cb62",
+      "digest": "08c2188e889808e1",
       "values": {
         "apiError": {
           "since": "1.151"
@@ -2464,7 +2469,7 @@
     },
     "/lib/layout.js": {
       "runtime": "browser",
-      "digest": "6b86319603ffb754",
+      "digest": "1869788d6da621c0",
       "values": {
         "actionId": {
           "since": "1.151"
@@ -2745,7 +2750,7 @@
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "2b47d3b6bec2b860",
+      "digest": "9b642f9ee4c74dcd",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2780,7 +2785,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "2eeed3706ab7e817",
+      "digest": "047b18c20e3119bd",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2825,7 +2830,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "f5d8dd75dffa344d",
+      "digest": "c994b0cbe5d30efc",
       "values": {
         "cutLine": {
           "since": "1.151",
@@ -2871,7 +2876,7 @@
     },
     "/lib/stats.js": {
       "runtime": "generic",
-      "digest": "faca61ea60474bc4",
+      "digest": "8df62c36aa2012e0",
       "values": {
         "STATS_ALL": {
           "since": "1.151"
@@ -2912,7 +2917,7 @@
     },
     "/lib/terminal.js": {
       "runtime": "browser",
-      "digest": "6349bce3eef8f8f9",
+      "digest": "23792b32d7bd4f3e",
       "values": {
         "SHELL_SCROLLBACK": {
           "since": "1.151",
@@ -3000,7 +3005,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "72057c1ab7e99edd",
+      "digest": "5ebc04faca55f59e",
       "values": {
         "GIST_ICON": {
           "since": "1.151"
@@ -3166,7 +3171,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "d13304e74a4117dc",
+      "digest": "6b158b3b607c2240",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"
@@ -3200,7 +3205,7 @@
     },
     "/lib/words.js": {
       "runtime": "generic",
-      "digest": "ef8effdb3319e1aa",
+      "digest": "615320edb01b502a",
       "values": {
         "ago": {
           "since": "1.151"

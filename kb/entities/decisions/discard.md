@@ -30,7 +30,7 @@ reach ([[agents-have-every-capability]]), and it leaves a fact where the work's 
 thread ([[review-threads]]).
 
 **How.**
-- The board offers `discard` on `at-risk` worktrees only, never `live`, `lost` or `carried`, and only on a floor
+- The board offers `discard` on `at-risk` worktrees only, never `live`, `lost`, `unread` or `carried`, and only on a floor
   where a running extension answers `tower/discard.record` (reviews, unless it is off there), so the record always
   has a place ([`worktreeOffers`](ref:hub/src/bridge/verbs.ts#worktreeOffers), the board reading each running
   extension's `answers` beside its stores, [`answeredOn`](ref:hub/src/bridge/stores.ts#answeredOn)). Its call carries `held`, each repo's HEAD and count

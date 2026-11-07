@@ -4,7 +4,7 @@
  * name, or `main` for the main checkouts.
  */
 import { MAIN_CHECKOUT } from '../shared/model.ts'
-import type { FloorBranch, FloorWorktree, RepoRead } from './worktrees.ts'
+import { isUnread, wasRead, type FloorBranch, type FloorWorktree, type RepoRead } from './worktrees.ts'
 
 /**
  * Where a checkout's work stands. `live`: work can go on there. `landed`: its work is in its base, `on` naming that base
@@ -39,6 +39,8 @@ export type LandedState = Extract<CheckoutState, { is: 'landed' }>
  * `ahead` of their upstreams, summed, and whether a worker on duty runs there.
  */
 export type MainCheckouts = {
+  /** Each main checkout git couldn't read, with what it said: `dirty` and `changed` sum only the others. @since 1.158 */
+  unread?: { dir: string; why: string }[]
   dirty: number
   ahead: number
   /** Their files changed, summed: each main checkout's `changed` (`MainRead`), what a worker's Changes there count. @since 1.119 */
@@ -53,28 +55,33 @@ export type CheckoutsRead = { worktrees: FloorWorktree[]; branches: FloorBranch[
 export const mainCheckouts = (reads: RepoRead[] | undefined, inUse: boolean): MainCheckouts | undefined =>
   reads &&
   reads.reduce(
-    (sum, r) => (r.git ? { ...sum, dirty: sum.dirty + r.main.dirty, ahead: sum.ahead + r.main.ahead, changed: sum.changed + (r.main.changed ?? 0) } : sum),
+    (sum: MainCheckouts, r) => {
+      if (!r.git) return sum
+      const { main } = r
+      if (isUnread(main)) return { ...sum, ahead: sum.ahead + main.ahead, unread: [...(sum.unread ?? []), { dir: r.dir, why: main.unread }] }
+      return { ...sum, dirty: sum.dirty + main.dirty, ahead: sum.ahead + main.ahead, changed: sum.changed + (main.changed ?? 0) }
+    },
     { dirty: 0, ahead: 0, changed: 0, inUse },
   )
 
 /** No worktree of the name is in use or holds work, and every branch cut under it is absorbed into its base. */
 const worktreeLanded = (tree: FloorWorktree | undefined, cutUnder: FloorBranch['repos']) =>
-  (!tree || (tree.state === 'removable' && tree.repos.every((r) => r.absorbed))) && cutUnder.every((r) => r.absorbed)
+  (!tree || (tree.state === 'removable' && tree.repos.every((r) => !isUnread(r) && r.absorbed))) && cutUnder.every((r) => r.absorbed)
 
 /** As `worktreeLanded`, or landed as copies, some edited: absorbed or carried everywhere. */
 const worktreeCarried = (tree: FloorWorktree | undefined, cutUnder: FloorBranch['repos']) =>
-  (!tree || ((tree.state === 'removable' || tree.state === 'carried') && tree.repos.every((r) => r.absorbed || r.carried))) && cutUnder.every((r) => r.absorbed || r.carried)
+  (!tree || ((tree.state === 'removable' || tree.state === 'carried') && tree.repos.every((r) => !isUnread(r) && (r.absorbed || r.carried)))) && cutUnder.every((r) => r.absorbed || r.carried)
 
 const cutUnderOf = (checkout: string, branches: FloorBranch[]) => branches.flatMap((b) => b.repos.filter((r) => r.tree === checkout))
 
 /**
  * Whether a checkout's work has landed, so nothing more comes of it there: a worktree's when no worktree of that name
  * is in use or holds work, and every branch cut under the name is absorbed into its base; `main`'s when no worker runs
- * there and every main checkout is clean and level with its upstream. None until every dir is read.
+ * there and every main checkout was read, clean and level with its upstream. None until every dir is read.
  */
 export const checkoutLanded = (checkout: string, { worktrees, branches, main }: CheckoutsRead): boolean => {
   if (!main) return false
-  if (checkout === MAIN_CHECKOUT) return !main.inUse && main.dirty === 0 && main.ahead === 0
+  if (checkout === MAIN_CHECKOUT) return !main.inUse && !main.unread && main.dirty === 0 && main.ahead === 0
   return worktreeLanded(worktrees.find((w) => w.name === checkout), cutUnderOf(checkout, branches))
 }
 
@@ -82,7 +89,7 @@ export const checkoutLanded = (checkout: string, { worktrees, branches, main }: 
 const landedAs = (checkout: string, { worktrees, branches }: CheckoutsRead): LandedState => {
   const tree = worktrees.find((w) => w.name === checkout)
   const cutUnder = cutUnderOf(checkout, branches)
-  const cut = [...(tree?.repos ?? []), ...cutUnder]
+  const cut = [...(tree?.repos ?? []).filter(wasRead), ...cutUnder]
   const base = cut[0]
   const on = base && (base.against ?? base.base)
   const empty = cut.length > 0 && cut.every((r) => r.own === 0)

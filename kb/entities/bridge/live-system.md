@@ -120,7 +120,7 @@ One read runs at a time, a read asked during one running once more after it, wit
 
 **Failures.** No poll or watch callback can end the tower ([`logged.ts`](ref:hub/src/logged.ts)): a read that fails
 keeps its last read (an unparseable config keeps every repo's) and says why in the tower's log, a repo's read once
-until its reason changes or a read succeeds. A log's tail whose
+until its reason changes or a read succeeds. One checkout's failure is not the repo's: it costs that checkout alone, on the board ([[worktrees]]). A log's tail whose
 watcher fails says so and that session's facts stop there; a failed watch of the sessions directory, the collections,
 the streams or the config's directory, or its root removed, ends the tower
 ([`watchedOrExit`](ref:hub/src/logged.ts#watchedOrExit), [`exitUnwatched`](ref:hub/src/logged.ts#exitUnwatched)), since

@@ -30,7 +30,8 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   ([`readRepo`](ref:hub/src/system.ts#readRepo)), the board's as its git changes, asking git again only for the parts a
   change touched ([[live-system]]), every verb's afresh after a fetch; the pure fold
   ([`floorWorktrees`](ref:hub/src/bridge/worktrees.ts#floorWorktrees)) makes one entry per name across repos with a
-  state: `lost` (a folder gone, whoever is in it), then `live` (a worker on duty in it, running or stranded until
+  state: `lost` (a folder gone, whoever is in it), then `unread` (git couldn't read it in some repo, whoever is in it:
+  [[worktrees]]), then `live` (a worker on duty in it, running or stranded until
   resumed or let go, a resume in flight, or a shell; [[tidy]]), `at-risk` (uncommitted files, or commits on no remote that aren't **absorbed** or [[carried]]),
   `carried` (clean, its work landed only as copies, some edited: removed by its own `remove`), else `removable`. Every
   git call runs with the user's config that would change a read set back to git's default

@@ -48,6 +48,6 @@ export const sendTarget = (f: Floor, checkout: string, picked: string | undefine
  */
 export const changedIn = (f: Floor, checkout: string): number | undefined => {
   if (checkout === MAIN_CHECKOUT) return f.main?.changed
-  const counts = (f.worktrees.find((w) => w.name === checkout)?.repos ?? []).flatMap((r) => (r.changed === undefined ? [] : [r.changed]))
+  const counts = (f.worktrees.find((w) => w.name === checkout)?.repos ?? []).flatMap((r) => ('unread' in r || r.changed === undefined ? [] : [r.changed]))
   return counts.length ? counts.reduce((n, c) => n + c, 0) : undefined
 }
