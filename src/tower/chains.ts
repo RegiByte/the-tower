@@ -8,6 +8,7 @@
  */
 import { z } from 'zod'
 import { offOn } from '../bridge/stores.ts'
+import { thrownWords } from '../logged.ts'
 import { apiError, HOOK_DEADLINE, HOOKS, isApiError, type ApiError, type HookName } from '../shared/api.ts'
 import { qualifiedOf, tooDeep, type Answered, type Caller } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'
@@ -92,7 +93,7 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config,
         reply = await live.instance.link(target, value, next, caller)
       } catch (err) {
         console.error(`${live.a.id}: around ${target}:`, err)
-        return failed('threw', `threw: ${(err as Error).message ?? String(err)}`)
+        return failed('threw', `threw: ${thrownWords(err)}`)
       }
       if (isApiError(reply)) {
         if (reply !== passedOn) refusedBy = cap
@@ -136,7 +137,7 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config,
         }
       } catch (err) {
         console.error(`${live.a.id}: answering ${hook}:`, err)
-        answers.push(failed(`threw: ${(err as Error).message ?? String(err)}`))
+        answers.push(failed(`threw: ${thrownWords(err)}`))
         continue
       } finally {
         clearTimeout(timer)

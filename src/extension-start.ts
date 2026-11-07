@@ -10,6 +10,7 @@ import './lent-modules.ts'
 import { mismatchOf } from './bridge/extensions.ts'
 import type { StartVerdict } from './extension-check.ts'
 import { MANIFEST_FILE } from './extensions.ts'
+import { thrownWords } from './logged.ts'
 import { API_VERSION, apiError } from './shared/api.ts'
 import { capabilityOf, Manifest, type StartCtx } from './shared/extensions.ts'
 
@@ -70,7 +71,7 @@ const verdict = async (): Promise<StartVerdict> => {
   try {
     module = await import(pathToFileURL(path.join(dir, manifest.server)).href)
   } catch (err) {
-    return { unloadable: (err as Error).message ?? String(err) }
+    return { unloadable: thrownWords(err) }
   }
   if (typeof module.default !== 'function') return { mismatch: `${manifest.server} has no default export: its start` }
   let timer: NodeJS.Timeout | undefined
@@ -79,7 +80,7 @@ const verdict = async (): Promise<StartVerdict> => {
   try {
     started = await Promise.race([Promise.resolve().then(() => (module.default as (ctx: unknown) => unknown)(ctx)), late])
   } catch (err) {
-    return { threw: (err as Error).message ?? String(err) }
+    return { threw: thrownWords(err) }
   } finally {
     clearTimeout(timer)
   }

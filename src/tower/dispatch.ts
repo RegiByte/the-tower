@@ -22,7 +22,7 @@ import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { editConfig, keyName, type ConfigEdit } from '../config-edit.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
-import { logged } from '../logged.ts'
+import { logged, thrownWords } from '../logged.ts'
 import { hostRequest, jobsRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
 import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
@@ -581,7 +581,7 @@ export const dispatch = defineResource({
           }
           failed = { code: 'shape', message: `returned a part ${runtime} can't place: ${placed.why}` }
         } catch (err) {
-          failed = { code: 'threw', message: err instanceof UnsettledError ? `didn't settle within ${err.ms / 1000} s` : `threw: ${(err as Error).message}` }
+          failed = { code: 'threw', message: err instanceof UnsettledError ? `didn't settle within ${err.ms / 1000} s` : `threw: ${thrownWords(err)}` }
         }
         if (fields.has(cap)) return apiError('internal', `${cap}'s launch contributor ${failed.message}`)
         holder.problem(id, { lane: 'launch', level: 'error', ...failed, message: `on a ${kind} on ${at.project}, ${failed.message}: its parts were dropped`, at: Date.now() })
