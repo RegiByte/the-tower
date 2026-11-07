@@ -68,7 +68,7 @@ import { installDoor } from './door.ts'
 import { reducedMotion } from '../../../src/shared/prefs.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations } from './fixtures.ts'
 import * as loading from './loading.ts'
-import { archiveOf, archiveRead, drawersAt, readArchives, readFloorArchive } from './archive.ts'
+import { archivedOf, archiveFailure, archiveOf, drawersAt, onArchives, readArchives, rereadArchive } from './archive.ts'
 import { poseFiling } from './filing.ts'
 import { ARCADE_SIGNS, CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
@@ -240,7 +240,7 @@ function dressReplays() {
   screensAt = { ...screensAt, plan: undefined }
 }
 
-const archiveFailed = (err: Error) => toast(`The archive can't be read: ${err.message}`)
+const archiveFailed = (message: string) => toast(`The archive can't be read: ${message}`)
 
 /** An archive read landed or failed: the cabinets file it, and a panel listing it shows it. */
 function archiveArrived() {
@@ -370,7 +370,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   reconcile(PIGEONHOLES, s.pigeonholes, s.plan, discard)
   reconcile(ARCADE_SIGNS, s.arcadeSigns, s.plan, discard)
   reconcile(FILINGS, s.filings, s.plan, discard)
-  readArchives(next, archiveArrived, archiveFailed)
+  readArchives(next)
   dressAllPapers()
   reconcile(DANCE, s.dance, s.plan, discard)
   reconcile(GUESTS, s.guests, s.plan, discard)
@@ -486,7 +486,7 @@ function renderPanel() {
     const f = board.floors.find((f) => f.id === panel.id)
     if (!f) return closeSide()
     if (!$('side').querySelector(`[data-archive-of="${CSS.escape(f.id)}"]`)) $('side').innerHTML = archiveSideHtml(f)
-    const { count, html } = archiveListHtml(board, f, archiveRead(f.id), panel.words, held)
+    const { count, html } = archiveListHtml(board, f, archiveOf(f.id), archiveFailure(f.id), panel.words, held)
     $('archive-count').textContent = count
     if ($('archive-list').innerHTML !== html) $('archive-list').innerHTML = html
   }
@@ -958,7 +958,7 @@ function replay(id: string, session: string | undefined) {
 
 /** A past worker, on the board or in the archive read of the floor whose panel listed it. */
 const pastCard = (id: string) =>
-  findCard(s.board!, id) ?? s.board!.floors.flatMap((f) => archiveOf(f.id) ?? []).find((c) => c.id === id)!
+  findCard(s.board!, id) ?? archivedOf(id)!
 
 function focusShell(id: string) {
   if (!kioskOf(s.plan, id)) return
@@ -2612,6 +2612,7 @@ setInterval(() => {
 }, 1000)
 
 onReviews(renderPanel, toast)
+onArchives(archiveArrived, archiveFailed)
 
 /**
  * The logbook of a worker with no desk in the reader, opened on its conversations, read at once, the latest at the
@@ -2784,7 +2785,7 @@ $('side').addEventListener('click', async (e) => {
   if (d.kept && floor) return openKept(keptOf(d.kept))
   if (d.archive !== undefined && floor) return (openSide({ kind: 'archive', id: floor.id, words: [] }), $('archive-filter').focus())
   if (d.floor !== undefined && archive) return openSide({ kind: 'floor', id: archive.id, tray: undefined })
-  if (d.archiveRead !== undefined && archive) return (readFloorArchive(s.board, archive.id, archiveArrived, archiveFailed), renderPanel())
+  if (d.archiveRead !== undefined && archive) return (rereadArchive(s.board, archive.id), renderPanel())
 })
 $('side').addEventListener('input', (e) => {
   const el = e.target as HTMLInputElement

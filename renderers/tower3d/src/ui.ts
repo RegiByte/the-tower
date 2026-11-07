@@ -7,7 +7,7 @@ import { cardReviews, floorThreadsOf, keepsThreads, threadCheckout } from '../..
 import { failedHtml, fileButtonsHtml, fileSpansHtml, usd } from '../../../src/shared/panels.ts'
 import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
-import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
+import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import { defaultLimits } from '/lib/board.js'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
@@ -674,9 +674,9 @@ const pastCrewsHtml = (board: Board, crews: PastCrew[], held: HeldWhy): string =
   crews.map(({ card, crew }) => pastHtml(board, card, held) + (crew.length ? `<div class="crew">${pastCrewsHtml(board, crew, held)}</div>` : '')).join('')
 
 /** A floor's past workers that match `words`, by crew, and how many of how many; `archive` once read. */
-export function archiveListHtml(board: Board, f: Floor, read: ArchiveRead | undefined, words: string[], held: HeldWhy) {
-  if (!read?.cards) return { count: `${pastCount(f)} workers`, html: read?.failed ? failedHtml('the archive', read.failed, 'data-archive-read') : '<div class="past"><i>reading the archive…</i></div>' }
-  const past = pastCrews(f, read.cards)
+export function archiveListHtml(board: Board, f: Floor, cards: Card[] | undefined, failure: string | undefined, words: string[], held: HeldWhy) {
+  if (!cards) return { count: `${pastCount(f)} workers`, html: failure ? failedHtml('the archive', failure, 'data-archive-read') : '<div class="past"><i>reading the archive…</i></div>' }
+  const past = pastCrews(f, cards)
   const shown = pastMatching(past, words)
   const [all, matching] = [pastSize(past), pastSize(shown)]
   return {

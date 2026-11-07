@@ -66,8 +66,9 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
 - **The filing cabinet** ([`buildFiling`](ref:hub/renderers/tower3d/src/filing.ts#buildFiling)) stands on every floor
   by the Running board, in the nook under the loft's deck against the archive's outer wall
   ([`filingSpot`](ref:hub/renderers/tower3d/src/layout.ts#filingSpot), [[floor-plan]]). Every floor's archive is
-  read when its `archiveKey` moves ([`readArchives`](ref:hub/renderers/tower3d/src/archive.ts#readArchives); the
-  archive panel lists the same read) and filed by [`drawersOf`](ref:hub/renderers/tower3d/src/archive.ts#drawersOf):
+  read when its `archiveKey` moves, as held reads on a loop of Tower 3D's own
+  ([`readArchives`](ref:hub/renderers/tower3d/src/archive.ts#readArchives), [[board-archive]]; the archive panel lists
+  the same read, and its Read again reads one floor's again) and filed by [`drawersOf`](ref:hub/renderers/tower3d/src/archive.ts#drawersOf):
   a worker is its latest session nobody continued, filed by the day it started, the latest day in the top drawer, the
   last drawer holding every older day too. A drawer pulled out
   ([`poseFiling`](ref:hub/renderers/tower3d/src/filing.ts#poseFiling)) lists its folders beside the world
