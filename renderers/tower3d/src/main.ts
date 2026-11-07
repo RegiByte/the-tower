@@ -22,6 +22,7 @@ import type { Layout } from '../../../src/shared/regions.ts'
 import { addedKey, deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
+import { defaultLimits } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
 import { actionWords, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { probedLines, type ReadAnswer } from '../../../extensions/quota/client/quota.ts'
@@ -170,9 +171,9 @@ const draftIo: DraftIo = { call: tower.call, read: noteText, failed: (err) => to
 const structureKey = (pl: Plan, b: Board) => JSON.stringify([
   pl.width, pl.depth, b.hostUp, new Date(wallNow()).getMonth(),
   pl.levels.map((l) => [l.kind, l.name, l.kind === 'floor' ? [l.floor.color, l.floor.shelf, l.kiosks.map((k) => k.shell.id), Boolean(l.cork), Boolean(l.arcade?.cabinets.length)] : 0]),
-  b.rateLimits.map((r) => r.kind),
+  defaultLimits(b).rateLimits.map((r) => r.kind),
 ])
-const limitsKey = (b: Board) => JSON.stringify([b.rateLimits, b.today])
+const limitsKey = (b: Board) => JSON.stringify([defaultLimits(b).rateLimits, b.today])
 
 function rebuildWorld() {
   if (s.world) discard(s.world.group)
@@ -358,7 +359,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   rereadViewer()
   const key = structureKey(s.plan, next)
   if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
-  if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, s.plan, next.rateLimits, next.today))
+  if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, s.plan, defaultLimits(next).rateLimits, next.today))
   setShellTitles(s.world!, next.shells)
   reconcile(DESKS, s.desks, s.plan, discard)
   reconcile(STATIONS, s.stations, s.plan, discard)
@@ -2082,7 +2083,7 @@ $('hud').addEventListener('click', (e) => {
   if (el.closest('[data-stop-share]')) endShare()
   if (el.closest('[data-shown]')) lookAtNew()
   const probeRun = el.closest<HTMLElement>('[data-probe-run]')
-  if (probeRun) void pressing(probeRun, () => tried(() => runVerb({ verb: 'quota/read-now', call: {} }) as Promise<ReadAnswer>)).then((r) => r && toast(probedLines(r)))
+  if (probeRun) void pressing(probeRun, () => tried(() => runVerb({ verb: 'quota/read-now', call: probeRun.dataset.probeCommand === undefined ? {} : { command: probeRun.dataset.probeCommand } }) as Promise<ReadAnswer>)).then((r) => r && toast(probedLines(r)))
 })
 $('watch').addEventListener('click', (e) => {
   const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act

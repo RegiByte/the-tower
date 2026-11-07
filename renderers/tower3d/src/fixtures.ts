@@ -13,6 +13,7 @@ import type { RepoChanges } from '../../../src/shared/repo-changes.ts'
 import { cardOffers, conversationOffers, floorOffers, resourceOffers, worktreeOffers } from '../../../src/bridge/verbs.ts'
 import { withSeats } from '../../../src/bridge/seats.ts'
 import { shellActivity } from '../../../src/shared/terms.ts'
+import { type CommandLimits } from '/lib/board.js'
 import { tower, type Board, type Brief, type Card, type Floor, type Status } from './api.ts'
 import { GAMES } from './games.ts'
 import { bytesOf, FILM_FILE } from './files.ts'
@@ -203,7 +204,7 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
 /** A floor's Tidy: what the bridge would prune from its cards and worktrees; fixture floors keep no branches and no old logs. */
 const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees, cards), logs: [], streams: [] })
 
-function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, 'rateLimits' | 'rateLimitsAt' | 'extraUsage' | 'shells' | 'today'> & { quota: Omit<ProbeStatus, 'name'> }> = {}): Board {
+function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandLimits, 'rateLimits' | 'rateLimitsAt' | 'extraUsage'> & Pick<Board, 'shells' | 'today'> & { quota: Omit<ProbeStatus, 'name'> }> = {}): Board {
   const threaded = floors.map((f) => withThreads(f, f.workers.map((w, n) => card(f.id, n, w, now, f.workers))))
   const reporting = withReports(threaded.flatMap((t) => t.cards))
   const built = floors.map((f, i) => {
@@ -240,13 +241,13 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
     limits: [{ rateLimits: extra.rateLimits ?? [], rateLimitsAt: extra.rateLimitsAt, ...(extra.extraUsage && { extraUsage: extra.extraUsage }) }],
     rateLimits: extra.rateLimits ?? [],
     rateLimitsAt: extra.rateLimitsAt,
+    ...(extra.extraUsage && { extraUsage: extra.extraUsage }),
     probes: [],
     ...(extra.quota && { x: { quota: extra.quota } }),
     extensions: [],
     viewers: {},
     adds: {},
     asks: [],
-    ...(extra.extraUsage && { extraUsage: extra.extraUsage }),
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
     hostUp: true,
     hostOutdated: false,
