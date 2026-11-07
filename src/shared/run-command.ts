@@ -1,6 +1,6 @@
 import type { Board } from '../bridge/board.ts'
 import { commandOf, towerOf } from './added-commands.ts'
-import { commandUrl, isCommand, runVerb } from './adds.ts'
+import { commandUrl, importServed, isCommand, runVerb } from './adds.ts'
 import type { Action, Added, CommandAction } from './extensions.ts'
 import type { Subject } from './subjects.ts'
 import type { CommandKit } from './views.ts'
@@ -13,9 +13,10 @@ import type { CommandKit } from './views.ts'
 export const runCommandWith = async (board: Board, action: Added<CommandAction>, subject: Subject, kit: CommandKit): Promise<unknown> => {
   const command = commandOf(board, action)
   if (!command) throw new Error(`${action.cap} offers no command ${action.command} now`)
-  const module = await import(commandUrl(action.cap, command.module))
-  if (typeof module[command.export] !== 'function') throw new Error(`${commandUrl(action.cap, command.module)} exports no function ${command.export}`)
-  return module[command.export]({ tower: towerOf(), board, subject: subject.value, target: subject, args: action.args, kit })
+  const module = await importServed(commandUrl(action.cap, command.module))
+  const run = module[command.export]
+  if (typeof run !== 'function') throw new Error(`${commandUrl(action.cap, command.module)} exports no function ${command.export}`)
+  return run({ tower: towerOf(), board, subject: subject.value, target: subject, args: action.args, kit })
 }
 
 const unlent = (member: string) => () => {
