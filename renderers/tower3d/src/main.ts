@@ -1372,19 +1372,20 @@ const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'n
 const PAGE_ONLY = new Set(['home', 'sidebar', 'help'])
 const sheetKeys = (keys: Keys): Keys => Object.fromEntries(Object.entries(keys).filter(([id]) => !PAGE_ONLY.has(id)))
 
-const PANE_OF = Object.fromEntries(PANES.map((p) => [p.command, p.name])) as Record<string, 'screen' | 'brief' | 'changes' | 'reviews'>
+const PANE_OF: Record<string, string> = Object.fromEntries(PANES.map((p) => [p.command, p.name]))
 
 /**
  * A pane of the open panel, by the keymap's names for the tower page's panes: a desk's tabs, the logbook reader's Screen
- * and Logbook. Answers whether the panel has that pane.
+ * and Logbook. Answers whether the panel has that pane: a pane Tower 3D doesn't draw does nothing.
  */
-function toPane(pane: (typeof PANE_OF)[string]) {
+function toPane(pane: string) {
   const panel = panelNow()
   if (panel?.kind === 'logbook') return pane === 'screen' || pane === 'brief' ? (logbookTab(pane), true) : false
   if (panel?.kind !== 'desk') return false
   const c = findCard(s.board!, panel.id)!
   if (pane === 'reviews' && !keepsThreads(s.board!, c.project)) return false
   if (pane === 'screen') return (openScreen(), $('desk-screen').querySelector('textarea')?.focus(), true)
+  if (pane !== 'brief' && pane !== 'changes' && pane !== 'reviews') return false
   const typingInto = document.activeElement as HTMLElement | null
   typingInto?.blur()
   if (pane === 'brief') openBrief(c.id)
