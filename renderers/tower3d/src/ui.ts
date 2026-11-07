@@ -13,7 +13,7 @@ import { defaultLimits } from '/lib/board.js'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { addedKey, deskVerbs, placed, type DeskRegion } from './desk-verbs.ts'
 import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighboursIn, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
-import { PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle, quotaOf } from '../../../extensions/quota/client/quota.ts'
+import { commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } from '../../../extensions/quota/client/quota.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
@@ -80,8 +80,8 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   /** Extra usage only once it is spent from: the HUD stays short while the plan's limits hold. */
   const e = account.extraUsage
   const extra = e?.enabled && (e.used > 0 || e.reached) ? [`<small data-tip="${esc(extraUsageLine(e))}">extra ${esc(extraUsageAmounts(e))}</small>`] : []
-  /** The quota probe while it runs, as a lamp and its name, and its state while that asks for you: the whole line on hover. */
-  const probes = [quotaOf(board) ?? []].flat().map((p) => {
+  /** The shown account's quota probe while it runs, as a lamp and its name, and its state while that asks for you: the whole line on hover. */
+  const probes = commandProbes(board).filter((p) => p.command === account.command).map((p) => {
     const said = PROBE_ATTENTION[p.state] === 'quiet' ? p.name : `${p.name} ${PROBE_STATE_NAME[p.state]}`
     const inner = `<span class="lamp"></span><small>${esc(said)}</small>`
     const named = account.command === undefined ? '' : ` data-probe-command="${esc(account.command)}"`
