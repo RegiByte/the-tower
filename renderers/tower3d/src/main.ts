@@ -23,9 +23,10 @@ import type { Layout } from '../../../src/shared/regions.ts'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
+import { hiringHandlers, noHires } from './hiring.ts'
 import { defaultLimits, projectOfKey } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { probedLines, type ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
@@ -337,6 +338,7 @@ function onBoardError(err: Error & { code: string }) {
   if (loading.shown()) loading.fail(`${boardErrorTitle(err.code)}: ${err.message}`)
   s.lost = err.code === 'disconnected'
   seeing.dispatch({ type: 'lost', lost: s.lost })
+  if (s.lost) hiring.dispatch({ type: 'lost' })
   renderPanel()
 }
 
@@ -358,6 +360,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, s.plan, defaultLimits(next).rateLimits, next.today))
   setShellTitles(s.world!, next.shells)
   reconcile(DESKS, s.desks, s.plan, discard)
+  hiring.dispatch({ type: 'board', board: next })
   reconcile(STATIONS, s.stations, s.plan, discard)
   dressLevels(next)
   seatChairs()
@@ -2890,27 +2893,20 @@ $('shell-pick').addEventListener('keydown', (e) => {
   places[(at + (e.key === 'ArrowDown' ? 1 : places.length - 1)) % places.length]?.focus()
 })
 
-/** A new worker from the form's values. Answers its session id once it started. */
-const hireWorker = async (project: string, form: SpawnForm) => spawnedId(await offered(...spawnCall(floorOf(project), form)))
-
-/** A spawn's reply: the worktree it cut told, and the new session's id. */
-function spawnedId(reply: Replies['spawn'] | undefined) {
-  if (reply?.cut) toast(cutLine(reply.cut))
-  return reply?.t === 'spawned' ? reply.id : undefined
-}
-
-/** A new worker from the form's values, and you sit down at its terminal once the board shows it. Answers whether it started. */
-async function startWorker(project: string, form: SpawnForm) {
-  const id = await hireWorker(project, form)
-  if (id) s.pendingDesk = id
-  return id !== undefined
-}
-
 const floorOf = (project: string) => s.board!.floors.find((f) => f.id === project)!
 
-/** A worker with the floor's defaults, in its hub: it takes the open workstation. */
-/** A worker where the floor starts one unless told: its own worktree, or the hub. */
-const hire = (project: string) => startWorker(project, spawnDefaults(floorOf(project)))
+/** The floor the dialog's Start waits on, if it does. */
+const dialogStarting = () => {
+  const d = spawning.state()
+  return d.t === 'starting' ? d.project : undefined
+}
+
+/** A worker with `form` on a floor, on the carried note `on` if given (`hiring`). */
+const hireWith = (project: string, form: SpawnForm, on: Held | undefined) =>
+  hiring.dispatch({ type: 'hire', project, name: floorOf(project).name, form, on, starting: dialogStarting() })
+
+/** A worker where the floor starts one unless told, its own worktree or the hub: you sit down at it once its desk shows. */
+const hire = (project: string) => hireWith(project, spawnDefaults(floorOf(project)), undefined)
 
 /** The note in your hand, titled as its text shows it now. */
 function carried(): Carried | undefined {
@@ -2964,7 +2960,7 @@ let handing = false
 
 /** Sends the carried note with `send`, then deletes its draft: a failed send keeps it in your hand. */
 async function sendCarried(send: (text: string) => Promise<boolean>) {
-  if (handing) return
+  if (handing || hiredOn(s.carrying!)) return
   handing = true
   try {
     const note = s.carrying!
@@ -2976,14 +2972,26 @@ async function sendCarried(send: (text: string) => Promise<boolean>) {
 }
 
 const handOver = (c: Call<'submit'>) => sendCarried(async (text) => (await offered(c, { text }))?.t === 'ok')
-/** A worker hired on the carried note goes to work on it alone: you stay where you are. */
-const hireOnNote = (project: string) => sendCarried(async (prompt) => (await hireWorker(project, spawnDefaults(floorOf(project), prompt))) !== undefined)
+/** A worker hired on the carried note goes to work on it alone: you stay where you are, and the note leaves your hand once it started. */
+async function hireOnNote(project: string) {
+  const note = s.carrying!
+  if (handing || hiredOn(note)) return
+  const prompt = await carriedText()
+  if (prompt !== undefined) hireWith(project, spawnDefaults(floorOf(project), prompt), note)
+}
+
+/** Whether a hire waiting on the tower was made on `note`: it can't be sent anywhere else meanwhile. */
+const hiredOn = (note: Held) => Object.values(hiring.state()).some((h) => h.t === 'spawning' && h.on?.project === note.project && h.on.id === note.id)
 
 const spawn = $('spawn') as HTMLDialogElement
 /** The new-worker dialog (`wireSpawn`), opened on a floor or on a draft: a prompt it closes on is kept in that draft, read again from disk, which is deleted once a worker starts on it. */
 const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
   board: () => s.board!,
-  run: (call, body) => tower.run(call, body),
+  run: async (call, body) => {
+    const reply = await tower.run(call, body)
+    hiring.dispatch({ type: 'arriving', project: body.project!, name: floorOf(body.project!).name, id: reply.id })
+    return reply
+  },
   sign: (f) => floorSignHtml(s.plan, f.id),
   drafts: { draftsOf, keepUnsent, titleOf },
   draftIo,
@@ -3002,8 +3010,26 @@ const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
 spawn.addEventListener('close', showPaused)
 
 function openSpawn(project: string, draft?: { note: Held; text: string }) {
-  spawning.dispatch({ type: 'open', project, on: draft?.note, text: draft?.text ?? '' })
+  hiring.dispatch({ type: 'open', project, name: floorOf(project).name, on: draft?.note, text: draft?.text ?? '' })
 }
+
+/** The hires in flight, one per floor (`hiring.ts`): the open workstation of a floor hiring reads so until the new worker's desk shows. */
+const hiring = loop({
+  state: noHires<Held>(),
+  handlers: hiringHandlers<Held>(),
+  execute: {
+    run: ({ project, form }, dispatch) =>
+      void tower.run(...spawnCall(floorOf(project), form)).then(
+        (reply) => dispatch({ type: 'replied', project, reply }),
+        (err: Error) => dispatch({ type: 'failed', project, message: err.message }),
+      ),
+    started: ({ id, on }) => void (on ? sent(on) : (s.pendingDesk = id)),
+    open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
+    toast: ({ text }) => toast(text),
+    draw: () => s.board && reconcile(STATIONS, s.stations, s.plan, discard),
+  },
+})
+s.hiring = hiring.state
 
 async function openSpawnOnNote(project: string, note: Held) {
   const text = await carriedText()

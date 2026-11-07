@@ -6,7 +6,7 @@ import { WORLD, shownKey, branchLine, bubbleOf, pairLineOf, glanceOf, onStatusCo
 import { reviewerOf } from '../../../extensions/reviews/client/reviews.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
 import { DESK, SEAT_OFFSET } from './layout.ts'
-import { ASLEEP, OFFLINE, OPEN_DESK, awayScreen, screenTexture } from './screens.ts'
+import { ASLEEP, HIRING, OFFLINE, OPEN_DESK, awayScreen, screenTexture } from './screens.ts'
 import { avatar, seatedAt, type Avatar, type Look } from './avatar.ts'
 import { WARDROBE } from './closet.ts'
 import { CHAIR } from './chair.ts'
@@ -223,17 +223,34 @@ export function makeStation(models: Models): Station {
   return { ...furniture(models), shows: undefined }
 }
 
-/** A workstation as it stands: `open` lit, or its worker `away` in a meeting room, else dark. */
-export function syncStation(station: Station, open: boolean, away: { callsign: string; room: string } | undefined) {
-  const shows = away ? `${away.callsign} · in ${away.room}` : open ? 'open' : 'dark'
+/**
+ * How a workstation stands: `open`, lit where its floor's next worker sits; `hiring`, the open one while the worker
+ * hired there is on its way; its worker `away` in a meeting room; else dark.
+ */
+export type StationLook = { t: 'open' } | { t: 'hiring' } | { t: 'away'; callsign: string; room: string } | { t: 'dark' }
+
+const stationShows = (look: StationLook) => (look.t === 'away' ? `${look.callsign} · in ${look.room}` : look.t)
+
+const stationSign = (look: StationLook) => {
+  if (look.t === 'away') return sprite(stationShows(look), 0.13, { color: WORLD.ink, bg: WORLD.panel, px: 44 })
+  if (look.t === 'open') return sprite('OPEN DESK', 0.15, { color: '#fff', bg: WORLD.accent, px: 44 })
+  if (look.t === 'hiring') return sprite('HIRING', 0.15, { color: WORLD.ink, bg: WORLD.panel, px: 44 })
+  return undefined
+}
+
+const stationScreen = (look: StationLook) =>
+  look.t === 'away' ? awayScreen(look.room) : look.t === 'open' ? OPEN_DESK : look.t === 'hiring' ? HIRING : ASLEEP
+
+export function syncStation(station: Station, look: StationLook) {
+  const shows = stationShows(look)
   if (station.shows === shows) return
   station.shows = shows
-  station.strip.color.set(open ? WORLD.accent : '#2a2f3a')
+  station.strip.color.set(look.t === 'open' || look.t === 'hiring' ? WORLD.accent : '#2a2f3a')
   if (station.sign) (station.group.remove(station.sign), dispose(station.sign))
-  station.sign = away ? sprite(shows, 0.13, { color: WORLD.ink, bg: WORLD.panel, px: 44 }) : open ? sprite('OPEN DESK', 0.15, { color: '#fff', bg: WORLD.accent, px: 44 }) : undefined
+  station.sign = stationSign(look)
   station.sign?.position.set(0, TAG_Y, SCREEN.z + 0.05)
   if (station.sign) station.group.add(station.sign)
-  station.screen.material.map = away ? awayScreen(away.room) : open ? OPEN_DESK : ASLEEP
+  station.screen.material.map = stationScreen(look)
   station.screen.material.needsUpdate = true
 }
 
