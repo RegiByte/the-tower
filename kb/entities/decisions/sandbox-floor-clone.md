@@ -30,8 +30,9 @@ removes the whole class at once, every verb and every future one, with nothing i
   is as of the clone. `branch.<br>.towerBase` isn't cloned, so the floor starts with nothing for Tidy to list.
 - [`mendFloorClone`](ref:hub/scripts/sandbox.ts#mendFloorClone) runs on every `up`. macOS's `tmp_cleaner` deletes
   files under `/tmp` idle for three days and then empty folders, so a clone left alone breaks a piece at a time, in no
-  predictable way. [`floorDamage`](ref:hub/scripts/sandbox.ts#floorDamage) asks git: `fsck --connectivity-only` on the
-  origin and the hub, and that the hub has its origin. A damaged clone is re-made, and `up` says so, since the
+  predictable way. [`floorDamage`](ref:hub/scripts/sandbox.ts#floorDamage) asks git: `fsck --connectivity-only --no-reflogs`
+  on the origin and the hub, since a walk of a reflog fails on a sound repository when a branch is deleted as it runs,
+  and that the hub has its origin. A damaged clone is re-made, and `up` says so, since the
   worktrees cut in it go with it. Then `up` follows, which restores tracked files and `origin/HEAD`. On a sound clone
   a failure to follow, such as a stale lock or `main` checked out in a cut, stops `up` with git's message: it costs
   a running sandbox nothing, and `down` and `up` are the way out when git's message isn't enough.

@@ -145,11 +145,14 @@ function followCheckout() {
   git(FLOOR_HUB, 'checkout', '-q', '--force', '-B', 'main', 'origin/main')
 }
 
+/** Reflogs stay out: fsck walking one fails on a sound repository when a branch is deleted as it runs. */
+const FSCK = ['fsck', '--connectivity-only', '--no-reflogs']
+
 /** What git finds wrong with the floor's clone, in its words; nothing when the clone is sound. */
 function floorDamage() {
   const checks = [
-    [FLOOR_ORIGIN, 'fsck', '--connectivity-only'],
-    [FLOOR_HUB, 'fsck', '--connectivity-only'],
+    [FLOOR_ORIGIN, ...FSCK],
+    [FLOOR_HUB, ...FSCK],
     [FLOOR_HUB, 'remote', 'get-url', 'origin'],
   ]
   for (const [dir, ...args] of checks) {
