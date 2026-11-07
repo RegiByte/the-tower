@@ -1,10 +1,11 @@
-import { esc } from '../shared/cards.ts'
-import { sectionLabels, sectionsHtml, sectionsOf } from '../shared/markdown.ts'
-import { sectionSubject, type Subject } from '../shared/subjects.ts'
-import type { Tower } from '../shared/shelf-page.ts'
-import type { Kit, RegionHandle } from '../shared/views.ts'
-import { contain, DOCUMENT_SANDBOX, writeLinks, type LinkTo } from './frame.ts'
-import { frameDoc, type Drawn } from './item.ts'
+import { sectionSubject, type Subject } from '/lib/board.js'
+import type { Tower } from '/lib/client.js'
+import { sectionsOf } from '/lib/markdown.js'
+import type { Kit, RegionHandle } from '/lib/view.js'
+import { esc } from '/lib/words.js'
+import { sectionLabels, sectionsHtml } from '../shared/markdown.ts'
+import { contain, DOCUMENT_SANDBOX, type LinkTo, writeLinks } from './frame.ts'
+import { type Drawn, frameDoc } from './item.ts'
 
 /**
  * A markdown document drawn by sections (`sectionsOf`), as `tower/document` and `tower/shelf` draw one: in a frame

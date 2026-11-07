@@ -1,13 +1,11 @@
-import type { Card } from '../bridge/board.ts'
-import type { Brief } from '../bridge/turns.ts'
-import { addedActions } from '../shared/adds.ts'
-import { BRIEF_MARKDOWN_KEY, briefCss, briefHtml, expandedSaid, openFolds, openTools, saidOf, saidText, saidWhat, toolCallHtml, toolCallSettled, wholeHolds, withWhole } from '../shared/brief.ts'
-import type { BriefMarkdown } from '../shared/viewer.ts'
-import { can, conversationSubject, esc } from '../shared/cards.ts'
-import { fenceText, markdownCss, markdownHtml } from '../shared/markdown.ts'
-import { drawPanel } from '../shared/panel-kit.ts'
-import { saidSubject, type Subject } from '../shared/subjects.ts'
-import type { Mount, Tab } from '../shared/views.ts'
+import { can, type Card, conversationSubject, saidSubject, type Subject } from '/lib/board.js'
+import { type Brief, briefCss, briefHtml, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole } from '/lib/brief.js'
+import { addedActions } from '/lib/layout.js'
+import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
+import { drawPanel, type Mount, type Tab } from '/lib/view.js'
+import { esc } from '/lib/words.js'
+import { VIEWER_KEYS } from '/lib/viewer.js'
+import { saidOf, wholeHolds } from '../shared/brief.ts'
 
 /**
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt, Claude's steps
@@ -123,7 +121,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
 
   /** The viewer's markdown, as `tower.store` keeps it for every renderer of theirs; the brief drawn again when it changed. */
   async function chooseMarkdown() {
-    const chosen = ((await tower.store.get(BRIEF_MARKDOWN_KEY)) as BriefMarkdown | undefined) ?? 'rendered'
+    const chosen = ((await tower.store.get(VIEWER_KEYS.briefMarkdown)) as BriefMarkdown | undefined) ?? 'rendered'
     if (chosen === markdown) return
     markdown = chosen
     draw(true)
@@ -141,7 +139,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     const code = target.closest<HTMLElement>('[data-copy-code]')
     if (code) return copy(fenceText(code), 'the code')
     const choice = target.closest<HTMLElement>('[data-brief-markdown]')?.dataset.briefMarkdown as BriefMarkdown | undefined
-    if (choice) return void (tower.store.set(BRIEF_MARKDOWN_KEY, choice), (markdown = choice), draw(true))
+    if (choice) return void (tower.store.set(VIEWER_KEYS.briefMarkdown, choice), (markdown = choice), draw(true))
   })
 
   /** A conversation's turns read whole, drawn in place of its last ones. */

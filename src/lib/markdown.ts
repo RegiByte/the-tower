@@ -5,4 +5,7 @@ export {
   /** @provisional */ imagePath,
   markdownCss,
   markdownHtml,
+  /** @provisional */ relativeHref,
+  /** @provisional */ safeHref,
+  /** @provisional */ sectionsOf,
 } from '../shared/markdown.ts'

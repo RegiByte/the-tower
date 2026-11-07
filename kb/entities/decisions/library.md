@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-05",
   "reviewed": "2026-11-07",
-  "refs": ["hub/src/lib/words.ts", "hub/src/lib/extension.ts", "hub/src/tower/served.ts#LIBRARY", "hub/src/tower/served.ts#SERVER_ONLY", "hub/src/tower/served.ts#serverOnlyModule", "hub/src/lent-modules.ts", "hub/src/types.ts#writeTypes", "hub/test/types.test.ts", "hub/tsconfig.types.json", "hub/test/library.ts#shapeOf", "hub/test/library.ts#declarationDigests", "hub/test/library.ts#reachNow", "hub/test/library.ts#libraryInCore", "hub/test/library.test.ts", "hub/test/runtimes/generic.json", "hub/test/library-reach.json"]
+  "refs": ["hub/src/lib/words.ts", "hub/src/shared/view-parts.ts", "hub/src/lib/extension.ts", "hub/src/tower/served.ts#LIBRARY", "hub/src/tower/served.ts#SERVER_ONLY", "hub/src/tower/served.ts#serverOnlyModule", "hub/src/lent-modules.ts", "hub/src/types.ts#writeTypes", "hub/test/types.test.ts", "hub/tsconfig.types.json", "hub/test/library.ts#shapeOf", "hub/test/library.ts#declarationDigests", "hub/test/library.ts#reachNow", "hub/test/library.ts#libraryInCore", "hub/test/library.test.ts", "hub/test/runtimes/generic.json", "hub/test/library-reach.json"]
 }
 ---
 **Problem.** The contract for code outside the core was whatever `src/shared` happened to export through a barrel:
@@ -30,6 +30,10 @@ contract if authors can find everything they need on it.
 - **Membership is use.** A name is in the library when some extension, example, renderer, core view or Tower.app uses
   it. A name that has met one consumer is marked `@provisional`: it may change in a minor until a second consumer
   promotes it.
+- **A core view is a client.** `src/views/` imports the library by URL, and reaches `src/shared` by path for what only
+  the views use, until a second consumer asks. A sibling renderer can mount a core view, so a view's drawing is no
+  contract: what enters the library is what a renderer needs to draw for itself, the subjects and the href checks
+  among it. What the views draw alike ([`view-parts.ts`](ref:hub/src/shared/view-parts.ts)) sits below `src/shared`, so `/lib/view.js` reaches no view.
 - **Each module says where it runs.** Generic, browser or server, by the tsconfig under `test/runtimes/` that checks it.
   To make that true the data the board and the panels are made of left the I/O modules that declared them:
   `repo-changes.ts` holds a repo's commits, files and hunks, `model.ts` holds `SystemPaths`, `viewer.ts` the kinds a

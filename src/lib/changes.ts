@@ -33,6 +33,7 @@ export type {
   ChangesScope,
 } from '../shared/changes-reads.ts'
 export type {
+  /** @provisional */ DiffFile,
   RepoChanges,
 } from '../shared/repo-changes.ts'
 export type {

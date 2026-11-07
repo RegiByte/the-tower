@@ -1,10 +1,7 @@
-import type { Board, Floor, FloorCollection } from '../bridge/board.ts'
-import { esc, plural } from '../shared/cards.ts'
-import { ICON } from '../shared/icons.ts'
-import { collectionTrayHtml, itemPath, itemsCss, keptOf, keptTitles } from '../shared/items.ts'
-import { itemSubject } from '../shared/subjects.ts'
-import { viewsOf, type Mount } from '../shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from '../shared/view-parts.ts'
+import { type Board, type Floor, type FloorCollection, itemSubject } from '/lib/board.js'
+import { viewsOf } from '/lib/layout.js'
+import { closeHtml, collectionTrayHtml, ICON, itemPath, itemsCss, keptOf, keptTitles, type Mount, paintOnce, viewCss } from '/lib/view.js'
+import { esc, plural } from '/lib/words.js'
 
 /**
  * `tower/collection`, a collection's view: every item it keeps, newest first, each titled from its text where its type

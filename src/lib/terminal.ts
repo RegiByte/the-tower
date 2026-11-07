@@ -15,6 +15,7 @@ export type {
 } from '../shared/jobs.ts'
 export type {
   /** @provisional */ TermMode,
+  /** @provisional */ TermView,
   TermViewHandle,
 } from '../shared/term-view.ts'
 export type {

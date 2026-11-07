@@ -11,6 +11,7 @@ export {
   /** @provisional */ isCommand,
   isFresh,
   /** @provisional */ lineId,
+  /** @provisional */ marksOf,
   offeredIds,
   rankedActions,
   /** @provisional */ rankedBadges,

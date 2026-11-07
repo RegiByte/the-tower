@@ -1,8 +1,8 @@
-import { relativeHref } from '../shared/markdown.ts'
-import { fileSubject, linkedFile, type CheckoutFile } from '../shared/subjects.ts'
-import type { Kit } from '../shared/views.ts'
-import { decoded, linkTo, NO_HREF, scrollToFragment, type LinkTo } from './frame.ts'
-import { bodyText, typeView, type Body, type Drawn } from './item.ts'
+import { type CheckoutFile, fileSubject, linkedFile } from '/lib/board.js'
+import { relativeHref } from '/lib/markdown.js'
+import type { Kit } from '/lib/view.js'
+import { decoded, linkTo, type LinkTo, NO_HREF, scrollToFragment } from './frame.ts'
+import { type Body, bodyText, type Drawn, typeView } from './item.ts'
 import { drawSections, SECTIONS_RULES } from './sections.ts'
 
 /**

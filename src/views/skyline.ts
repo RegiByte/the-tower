@@ -1,11 +1,11 @@
-import type { Board, Card, Floor } from '../bridge/board.ts'
-import { skyAt } from '../shared/design.ts'
-import { can, esc, gistLine, heededWaits, HOST_MEANS, loudest, statusName, whyNot } from '../shared/cards.ts'
-import { chordLabel } from '../shared/keymap.ts'
-import { floorSubject } from '../shared/subjects.ts'
-import { readViewer, VIEWER_KEYS } from '../shared/viewer.ts'
-import type { Mount } from '../shared/views.ts'
-import { paintOf, paintOnce } from '../shared/view-parts.ts'
+import { type Board, can, type Card, type Floor, floorSubject } from '/lib/board.js'
+import { gistLine, heededWaits, HOST_MEANS, loudest, statusName, whyNot } from '/lib/cards.js'
+import { skyAt } from '/lib/design.js'
+import { chordLabel } from '/lib/keys.js'
+import { type Mount, paintOnce } from '/lib/view.js'
+import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
+import { esc } from '/lib/words.js'
+import { paintOf } from '../shared/view-parts.ts'
 
 /**
  * `tower/skyline`, the board's view: a building per floor with a window per recent worker, under a sky that follows

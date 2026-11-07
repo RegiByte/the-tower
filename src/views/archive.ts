@@ -1,11 +1,7 @@
-import type { Board, Card, CardConversation, Floor } from '../bridge/board.ts'
-import { archiveKey, callOf, can, esc, GIST_MARK, HOST_MEANS, pastCount, pastCrews, pastMatching, pastSize, plain, plural, statusName, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, when, whyNot, wordsOf } from '../shared/cards.ts'
-import type { PastCrew } from '../shared/cards.ts'
-import { GIST_ICON, ICON } from '../shared/icons.ts'
-import { failedHtml } from '../shared/panel-html.ts'
-import { pressing } from '../shared/press.ts'
-import type { Mount } from '../shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from '../shared/view-parts.ts'
+import { type Board, callOf, can, type Card, type Floor } from '/lib/board.js'
+import { archiveKey, GIST_MARK, HOST_MEANS, pastCount, type PastCrew, pastCrews, pastMatching, pastSize, statusName, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, whyNot, wordsOf } from '/lib/cards.js'
+import { closeHtml, failedHtml, GIST_ICON, ICON, type Mount, paintOnce, pressing, viewCss } from '/lib/view.js'
+import { esc, plain, plural, when } from '/lib/words.js'
 
 /**
  * `tower/archive`, a floor's view: its past workers by crew, read from the floor's archive and filtered by words, each
@@ -58,7 +54,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
 
   const heldWhy = () => (lost ? HOST_MEANS.unknown : whyNot(board, 'resume'))
 
-  const resumeHtml = (conv: CardConversation) => {
+  const resumeHtml = (conv: Card['conversations'][number]) => {
     if (can(conv, 'resume')) {
       const held = heldWhy()
       return held
@@ -68,7 +64,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     return can(conv, 'goto') ? `<span class="when">→ ${esc(conv.resumedBy!.callsign)}</span>` : ''
   }
 
-  const conversationHtml = (conv: CardConversation) =>
+  const conversationHtml = (conv: Card['conversations'][number]) =>
     `<div class="conv" data-tip="${esc(conv.prompt ? GIST_MARK.prompt + ' ' + conv.prompt : '')}${conv.answer ? '\n\n' + GIST_MARK.answer + ' ' + esc(conv.answer) : ''}">
     <span class="what">${conv.answer ? `<span class="said">${GIST_ICON.answer}</span> ` + esc(plain(conv.answer)) : conv.prompt ? `<span class="said">${GIST_ICON.prompt}</span> ` + esc(plain(conv.prompt)) : '<i>no prompt</i>'}</span>
     ${resumeHtml(conv)}</div>`

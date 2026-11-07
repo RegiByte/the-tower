@@ -1,14 +1,10 @@
-import type { Board, CardShown, Floor, FloorCollection, FloorItem } from '../bridge/board.ts'
-import { esc, shownHref, shownTitle, span } from '../shared/cards.ts'
-import { fileButtonsHtml, fileCall } from '../shared/file-acts.ts'
-import { ICON } from '../shared/icons.ts'
-import { documentCss } from '../shared/design.ts'
-import { deleteAsk, itemFile, itemPath, itemsCss, keptTitles } from '../shared/items.ts'
-import { failedHtml } from '../shared/panel-html.ts'
-import type { Tower } from '../shared/shelf-page.ts'
-import { itemSubject, type CheckoutFile, type Subject } from '../shared/subjects.ts'
-import { viewsOf, type Kit, type Mount } from '../shared/views.ts'
-import { closeHtml, paintOnce, viewCss } from '../shared/view-parts.ts'
+import { type Board, type CardShown, type CheckoutFile, type Floor, type FloorCollection, type FloorItem, itemSubject, type Subject } from '/lib/board.js'
+import { shownHref, shownTitle } from '/lib/cards.js'
+import type { Tower } from '/lib/client.js'
+import { documentCss } from '/lib/design.js'
+import { viewsOf } from '/lib/layout.js'
+import { closeHtml, deleteAsk, failedHtml, fileButtonsHtml, fileCall, ICON, itemFile, itemPath, itemsCss, keptTitles, type Kit, type Mount, paintOnce, viewCss } from '/lib/view.js'
+import { esc, span } from '/lib/words.js'
 
 /**
  * A view by type: one body per media type, drawn in a frame by the kind of its subject. A kept item's frame is a head

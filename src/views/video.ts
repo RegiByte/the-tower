@@ -1,4 +1,4 @@
-import { esc } from '../shared/cards.ts'
+import { esc } from '/lib/words.js'
 import { typeView, versioned } from './item.ts'
 
 /** `tower/video`, the video view: the video, whole, centred, with the browser's controls. */
