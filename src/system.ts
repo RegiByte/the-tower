@@ -3,7 +3,6 @@
  * to it, every stream an extension folds kept current, the items of every collection, the host's live set, the terms daemon's shells,
  * the jobs log and the jobs the jobs daemon holds, what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
-import { once } from 'node:events'
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher } from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
@@ -31,6 +30,9 @@ import { subscribe, type Subscription } from './subscribe.ts'
 
 const LIVE_POLL_MS = 1000
 const MACHINE_POLL_MS = 5000
+
+/** The git reader's thread, and each read it has yet to answer by the id it was asked with. */
+type Reader = { worker: Worker; unanswered: Map<number, (reading: PromiseSettledResult<RepoReading>) => void> }
 const RESCAN_DEBOUNCE_MS = 100
 
 /** A value as JSON, Sets and Maps as arrays, so two reads compare by what they hold. */
@@ -421,29 +423,34 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
    * on macOS, and one read of every project dir starts hundreds, which on this thread held back every keystroke and
    * screen the tower relays. A reader that fails is started again on the next read.
    */
-  let reader: Worker | undefined
+  let reader: Reader | undefined
   /** Once stopped, no read starts a reader again. */
   let stopped = false
-  const readRepos = async (asks: RepoAsk[]): Promise<PromiseSettledResult<RepoReading>[]> => {
-    if (!reader) {
-      reader = new Worker(new URL('./repo-reader.ts', import.meta.url))
-      reader.unref()
+  let lastAsk = 0
+  const startReader = (): Reader => {
+    const worker = new Worker(new URL('./repo-reader.ts', import.meta.url))
+    worker.unref()
+    const started: Reader = { worker, unanswered: new Map() }
+    const failed = (err: Error) => {
+      if (reader === started) reader = undefined
+      for (const answer of started.unanswered.values()) answer({ status: 'rejected', reason: err })
+      started.unanswered.clear()
     }
-    const ended = new AbortController()
-    const exited = once(reader, 'exit', { signal: ended.signal }).then(([code]) => {
-      throw new Error(`the git reader exited (${code}) before it answered`)
+    worker.on('message', ({ id, reading }: { id: number; reading: PromiseSettledResult<RepoReading> }) => {
+      started.unanswered.get(id)!(reading)
+      started.unanswered.delete(id)
     })
-    const reply = Promise.race([once(reader, 'message', { signal: ended.signal }), exited])
-    reader.postMessage(asks)
-    try {
-      return (await reply)[0]
-    } catch (err) {
-      reader = undefined
-      throw err
-    } finally {
-      ended.abort()
-    }
+    worker.on('error', failed)
+    worker.on('exit', (code) => failed(new Error(`the git reader exited (${code}) before it answered`)))
+    return started
   }
+  const readRepo = (ask: RepoAsk) =>
+    new Promise<PromiseSettledResult<RepoReading>>((answer) => {
+      reader ??= startReader()
+      const id = ++lastAsk
+      reader.unanswered.set(id, answer)
+      reader.worker.postMessage({ id, ask })
+    })
 
   /**
    * A dir git fails to read keeps its last read, and the failure goes to the tower's log. A config the tower can't
@@ -459,7 +466,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     }
   }
   const startedWithin = (from: number, to: number) => [...sessions.values()].some(({ header }) => header.startedAt > from && header.startedAt <= to)
-  const repoWatch = watchRepos(configDirs, readRepos, startedWithin, onChange)
+  const repoWatch = watchRepos(configDirs, readRepo, startedWithin, onChange)
   const refreshRepos = repoWatch.refresh
 
   /** The processes are scanned, and the repos' git watched and read, only while someone observes the machine. */
@@ -587,7 +594,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       for (const done of [...waiters.values()]) done()
       const ending = reader
       reader = undefined
-      await ending?.terminate()
+      await ending?.worker.terminate()
     },
   }
 }

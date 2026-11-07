@@ -4,13 +4,13 @@
  * (`staleOf`), settled (`settleHandlers`), and only those parts are read again. File events can be dropped or merged
  * (inotify drops on overflow without a word), so safety rounds read every repo's own facts every
  * `SAFETY_REPO_MS` and every worktree's status every `SAFETY_TREES_MS`, a few at each tick. A dir whose watch fails
- * is read by the rounds alone, its watch tried again at each tick. Reads run one at a time, on the reader the caller
- * gives.
+ * is read by the rounds alone, its watch tried again at each tick. Each dir has one read at a time, on the reader the
+ * caller gives, so a repo that hangs delays only its own.
  */
 import { realpathSync } from 'node:fs'
 import { ignoredIn, isNothing, mergeStale, settleHandlers, staleOf, type SettleEffect, type SettleEvent, type Settling, type Stale } from './bridge/repo-changes.ts'
 import type { RepoRead } from './bridge/worktrees.ts'
-import { logged, loggedRead, serially } from './logged.ts'
+import { logged, loggedRead } from './logged.ts'
 import { subscribe, type Subscription } from './subscribe.ts'
 import { loop, timers, type Executors } from './shared/loop.ts'
 import type { RepoParts, RepoReading } from './worktrees.ts'
@@ -27,9 +27,9 @@ export type RepoAsk = { dir: string; last: RepoParts | undefined; stale: Stale }
 
 export type RepoWatch = {
   repos: () => Map<string, RepoRead>
-  /** Reads every dir afresh; resolves once read. */
+  /** Reads every dir afresh; resolves once each read asked here landed, however often its dir is asked again. */
   refresh: () => Promise<void>
-  /** Starts the watches and the safety rounds, and once watching reads every dir afresh; resolves once read. */
+  /** Starts the watches and the safety rounds, and once watching reads every dir afresh, resolving as `refresh` does. */
   start: () => Promise<void>
   /** Closes every watch, and stops the rounds and every settling change. */
   pause: () => void
@@ -77,13 +77,13 @@ const moves = (last: RepoRead | undefined, read: RepoRead, startedWithin: (from:
  */
 export const watchRepos = (
   dirs: () => string[] | undefined,
-  read: (asks: RepoAsk[]) => Promise<PromiseSettledResult<RepoReading>[]>,
+  read: (ask: RepoAsk) => Promise<PromiseSettledResult<RepoReading>>,
   startedWithin: (from: number, to: number) => boolean,
   changed: () => void,
 ): RepoWatch => {
   const repos = new Map<string, RepoRead>()
   const parts = new Map<string, RepoParts>()
-  let queued = new Map<string, Stale>()
+  const queued = new Map<string, Stale>()
   /** Each watched dir's watches, by the real path each watches. */
   const watched = new Map<string, Map<string, Watch>>()
   /** Why each root isn't watched, said once until the reason changes. */
@@ -97,40 +97,69 @@ export const watchRepos = (
   let repoCursor = 0
   let treeCursor = 0
 
+  /**
+   * The read that will carry each dir's queued ask, resolved once it lands. What a caller waits on: however often a
+   * repo keeps being asked, a call waits for its own read, at most the one in flight and then that.
+   */
+  const carriers = new Map<string, PromiseWithResolvers<void>>()
+
   const ask = (dir: string, stale: Stale) => {
-    if (!isNothing(stale)) queued.set(dir, mergeStale(queued.get(dir), stale))
+    if (isNothing(stale)) return
+    queued.set(dir, mergeStale(queued.get(dir), stale))
+    if (!carriers.has(dir)) carriers.set(dir, Promise.withResolvers())
   }
 
-  const drain = serially(
-    loggedRead('git', async () => {
-      const now = dirs()
-      if (!now) return
-      const asks = [...queued].filter(([dir]) => now.includes(dir)).map(([dir, stale]) => ({ dir, last: parts.get(dir), stale }))
-      queued = new Map()
-      let moved = false
-      for (const dir of [...repos.keys()].filter((d) => !now.includes(d))) {
-        repos.delete(dir)
-        parts.delete(dir)
-        moved = true
-      }
-      for (const [i, result] of (asks.length ? await read(asks) : []).entries()) {
-        const { dir } = asks[i]
-        if (result.status === 'rejected') {
-          const why = String(result.reason)
-          if (failing.get(dir) !== why) console.error(`git in ${dir}:`, result.reason)
-          failing.set(dir, why)
-          continue
-        }
-        failing.delete(dir)
-        if (result.value.parts) parts.set(dir, result.value.parts)
-        else parts.delete(dir)
-        if (moves(repos.get(dir), result.value.read, startedWithin)) moved = true
-        repos.set(dir, result.value.read)
-        if (watching && watched.has(dir)) watchRoots(dir)
-      }
-      if (moved) changed()
-    }),
-  )
+  /** The dirs no read will carry: a config gone bad, or a dir it no longer names. Their callers stop waiting. */
+  const dropCarriers = (dropped: (dir: string) => boolean) => {
+    for (const [dir, carrier] of carriers) {
+      if (!dropped(dir)) continue
+      carrier.resolve()
+      carriers.delete(dir)
+    }
+  }
+
+  /** What a dir's read says: a dir that fails keeps its last read, said once until the reason changes. */
+  const land = (dir: string, result: PromiseSettledResult<RepoReading>) => {
+    if (result.status === 'rejected') {
+      const why = String(result.reason)
+      if (failing.get(dir) !== why) console.error(`git in ${dir}:`, result.reason)
+      failing.set(dir, why)
+      return
+    }
+    failing.delete(dir)
+    if (result.value.parts) parts.set(dir, result.value.parts)
+    else parts.delete(dir)
+    const moved = moves(repos.get(dir), result.value.read, startedWithin)
+    repos.set(dir, result.value.read)
+    if (watching && watched.has(dir)) watchRoots(dir)
+    if (moved) changed()
+  }
+
+  const reading = new Set<string>()
+
+  const drain = logged('git', () => {
+    const now = dirs()
+    if (!now) return dropCarriers(() => true)
+    for (const dir of [...queued.keys()].filter((d) => !now.includes(d))) queued.delete(dir)
+    dropCarriers((dir) => !now.includes(dir))
+    const gone = [...repos.keys()].filter((d) => !now.includes(d))
+    for (const dir of gone) {
+      repos.delete(dir)
+      parts.delete(dir)
+    }
+    if (gone.length) changed()
+    for (const [dir, stale] of [...queued].filter(([d]) => !reading.has(d))) {
+      queued.delete(dir)
+      reading.add(dir)
+      const carrier = carriers.get(dir)
+      carriers.delete(dir)
+      void loggedRead('git', async () => land(dir, await read({ dir, last: parts.get(dir), stale })))().finally(() => {
+        reading.delete(dir)
+        carrier?.resolve()
+        drain()
+      })
+    }
+  })
 
   const settle = loop<Settling, SettleEvent, SettleEffect>({
     state: {},
@@ -139,7 +168,7 @@ export const watchRepos = (
       ...timers<SettleEvent>(),
       read: ({ dir, stale }) => {
         ask(dir, stale)
-        void drain()
+        drain()
       },
     } satisfies Executors<SettleEffect, SettleEvent>,
   })
@@ -234,7 +263,7 @@ export const watchRepos = (
     const now = watching && dirs()
     if (!now) return
     for (const dir of reconcileNow(now)) ask(dir, 'all')
-    void drain()
+    drain()
   }
 
   const safetyTick = () => {
@@ -247,13 +276,16 @@ export const watchRepos = (
     const treeStep = roundSlice(trees, treeCursor, SAFETY_TICK_MS / SAFETY_TREES_MS)
     treeCursor = treeStep.at
     for (const [dir, name] of treeStep.slice) ask(dir, { repo: false, main: false, trees: [name], branches: [] })
-    void drain()
+    drain()
     reconcileNow(now)
   }
 
-  const refresh = () => {
-    for (const dir of dirs() ?? []) ask(dir, 'all')
-    return drain()
+  const refresh = async () => {
+    const now = dirs() ?? []
+    for (const dir of now) ask(dir, 'all')
+    const carried = now.map((dir) => carriers.get(dir)?.promise)
+    drain()
+    await Promise.all(carried)
   }
 
   return {

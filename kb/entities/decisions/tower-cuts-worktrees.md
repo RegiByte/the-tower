@@ -27,7 +27,7 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   prompt ([[resume]]).
 - **Read, never stored.** [`readRepo`](ref:hub/src/worktrees.ts#readRepo) reads each project dir's git (worktree
   list, status, unpushed commits, files changed since the base, `branch.<br>.towerBase`, origin's branches) without fetching, on a thread of its own
-  ([`readRepos`](ref:hub/src/system.ts#readRepos)), the board's as its git changes, asking git again only for the parts a
+  ([`readRepo`](ref:hub/src/system.ts#readRepo)), the board's as its git changes, asking git again only for the parts a
   change touched ([[live-system]]), every verb's afresh after a fetch; the pure fold
   ([`floorWorktrees`](ref:hub/src/bridge/worktrees.ts#floorWorktrees)) makes one entry per name across repos with a
   state: `lost` (a folder gone, whoever is in it), then `live` (a worker on duty in it, running or stranded until
