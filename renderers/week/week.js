@@ -3,13 +3,13 @@
  * (`budget.resetsAt`), or ending now while the tower has read no quota; `#<YYYY-MM-DD>` names a week by the local day
  * it ends on. Everything drawn is read from the board, `/stats` over the week by hour, and each floor's archive.
  */
-import { usd, hours, duration } from '/panels.js'
-import { esc } from '/cards.js'
-import { markdownHtml, markdownCss } from '/markdown.js'
+import { usd, hours, duration } from '/lib/stats.js'
+import { esc } from '/lib/words.js'
+import { markdownHtml, markdownCss } from '/lib/markdown.js'
 
 /**
- * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
- * @import { Lasted, SessionShare, Stats } from '../../src/bridge/stats.ts'
+ * @import { Board, Card, Floor } from '/lib/board.js'
+ * @import { Lasted, SessionShare, Stats } from '/lib/stats.js'
  */
 /** A week of the book: `from` to `end`, `to` what has happened of it, `back` weeks before the latest. @typedef {{ from: number, end: number, to: number, back: number }} Week */
 /** One worker's week, summed over its sessions. @typedef {{ project: string, callsign: string, sessions: number, turns: number, agentHours: number, spend: number, latest: Card }} Worker */
