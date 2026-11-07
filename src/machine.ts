@@ -1,12 +1,13 @@
 /** The machine outside the logs: the host's live sessions, the terms daemon's shells, the jobs daemon's jobs, processes, git remotes, and the editor. */
 import { execFile, execFileSync, spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { CliError } from './cli-error.ts'
+import type { DaemonCheckout } from './checkouts.ts'
 import { run as runGit } from './git.ts'
 import { parseListening, parseProcesses, peers, resources, type ClaudeRegistration, type Peer, type Process, type Resource } from './bridge/resources.ts'
 import { connectHost, connectJobs, connectTerms } from './shared/client.ts'
@@ -235,6 +236,9 @@ export const runEditor = async ([command, ...args]: string[]): Promise<void> => 
 /** The checkout this code runs from: the daemons start from it, and `tower update` moves it. */
 export const REPO = path.join(import.meta.dirname, '..')
 
+/** This checkout as a process's working directory reads: with its symlinks resolved. */
+export const checkoutHere = (): string => realpathSync(REPO)
+
 const UP_TIMEOUT_MS = 15000
 const UP_POLL_MS = 200
 
@@ -363,6 +367,20 @@ export const startedPid = async ({ script, config, pid }: Daemon): Promise<numbe
   const id = Number(readFileSync(pid, 'utf8'))
   return commandOf(id)?.includes(script) && (await servesConfig(id, config)) ? id : undefined
 }
+
+/** The daemon's checkout while it runs: `startDetached` starts it there. One that answers without a pid of ours can't be told. */
+const checkoutOf = async (daemon: Daemon): Promise<DaemonCheckout[]> => {
+  const { name, where } = daemon
+  const pid = await startedPid(daemon)
+  if (pid === undefined) return (await daemon.holder()).t === 'ours' ? [{ t: 'unreadable', name, why: `it answers at ${where} but was not started by tower up from this system` }] : []
+  return platform().cwdOf(pid).then(
+    (checkout) => [{ t: 'read', name, checkout }],
+    (err: Error) => [{ t: 'unreadable', name, why: err.message.trim() }],
+  )
+}
+
+/** The checkout of each of `picked` that runs. */
+export const runningCheckouts = async (picked: Daemon[]): Promise<DaemonCheckout[]> => (await Promise.all(picked.map(checkoutOf))).flat()
 
 /** Stops the daemon `tower up` started, found by the pid it wrote (`startedPid`). */
 export const bringDown = async (daemon: Daemon): Promise<'stopped' | 'not running'> => {

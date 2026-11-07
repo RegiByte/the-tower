@@ -19,7 +19,7 @@ export const CLI_VERBS = {
   up: {
     of: 'user',
     usage: 'up [host|terms|jobs|tower...]',
-    help: 'start the host, the terms daemon, the jobs daemon and the tower in the background, each unless already running; only the ones named, when named',
+    help: 'start the host, the terms daemon, the jobs daemon and the tower in the background, each unless already running; only the ones named, when named. Says when any runs from another checkout',
   },
   down: {
     of: 'user',
@@ -29,7 +29,7 @@ export const CLI_VERBS = {
   update: {
     of: 'user',
     usage: 'update',
-    help: 'move this checkout to the newest release (a tag vX.Y.Z): show its CHANGELOG entries, check it out, install, rebuild Tower 3D if built, restart the tower if running; say when the host needs a restart, never restart it',
+    help: 'move this checkout to the newest release (a tag vX.Y.Z), refused while the tower or the jobs daemon runs from another checkout: show its CHANGELOG entries, check it out, install, rebuild Tower 3D if built, restart the tower if running; say when the host needs a restart, never restart it',
   },
   spawn: {
     of: 'user',

@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "macOS and WSL 2",
-  "summary": "The tower runs on macOS and on Linux under WSL 2. What differs between them is one record per platform in platform.ts: the ps flag that prints a process's environment, what installs a missing tool, and how a URL or a file is shown on the desktop. Leftovers are orphaned when their parent is outside the host's process tree, whatever adopted them. Any other platform fails tower doctor.",
+  "summary": "The tower runs on macOS and on Linux under WSL 2. What differs between them is one record per platform in platform.ts: the ps flag that prints a process's environment, how a process's working directory is read, what installs a missing tool, and how a URL or a file is shown on the desktop. Leftovers are orphaned when their parent is outside the host's process tree, whatever adopted them. Any other platform fails tower doctor.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-31",
   "reviewed": "2026-11-07",
-  "refs": ["hub/src/platform.ts#Platform", "hub/src/platform.ts#detected", "hub/src/platform.ts#platform", "hub/src/platform.ts#startWindows", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#readiness", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#servesConfig", "hub/src/machine.ts#reveal", "hub/src/bridge/resources.ts#underHosts", "hub/src/bridge/resources.ts#resources", "hub/scripts/setup.ts"]
+  "refs": ["hub/src/platform.ts#Platform", "hub/src/platform.ts#detected", "hub/src/platform.ts#platform", "hub/src/platform.ts#startWindows", "hub/src/platform.ts#lsofCwd", "hub/src/doctor.ts#supported", "hub/src/doctor.ts#readiness", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#servesConfig", "hub/src/machine.ts#reveal", "hub/src/bridge/resources.ts#underHosts", "hub/src/bridge/resources.ts#resources", "hub/scripts/setup.ts"]
 }
 ---
 **Problem.** The tower was written on a Mac and read the machine the Mac's way: `ps -E` for a process's environment,
@@ -22,7 +22,9 @@ difference fits in a few fields.
 
 - **One record per platform** ([`Platform`](ref:hub/src/platform.ts#Platform)), chosen once
   ([`detected`](ref:hub/src/platform.ts#detected)): macOS by `process.platform`, WSL by its kernel's release, which
-  names Microsoft. Its fields are the `ps` environment flag (`-E` on macOS, `e` on procps), the doctor's install fix
+  names Microsoft. Its fields are the `ps` environment flag (`-E` on macOS, `e` on procps), a process's working
+  directory (`lsof` on macOS, [`lsofCwd`](ref:hub/src/platform.ts#lsofCwd), the `/proc/<pid>/cwd` link under WSL, which
+  needs no tool), the doctor's install fix
   for a missing tool (`xcode-select --install`, `sudo apt install <tool>`) and for an old git, and two desktop
   actions: opening a URL and revealing a file, `open` and `open -R` on macOS, Windows' `explorer.exe` under WSL with the
   path through `wslpath -w`. Explorer exits 1 even when it did what it was asked, so under WSL only a failure to start

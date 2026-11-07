@@ -3,6 +3,7 @@
  * under WSL 2. The rest of the tower is the same on both: `ps`, `lsof`, PTYs, sockets and file watches.
  */
 import { execFile, spawn } from 'node:child_process'
+import { readlink } from 'node:fs/promises'
 import os from 'node:os'
 import { promisify } from 'node:util'
 
@@ -18,6 +19,8 @@ export type Platform = {
   openUrl: (url: string) => Promise<void>
   /** Shows `target` selected in the desktop's file manager. */
   reveal: (target: string) => Promise<void>
+  /** A running process's working directory; rejects when it can't be read. */
+  cwdOf: (pid: number) => Promise<string>
 }
 
 const run = promisify(execFile)
@@ -33,6 +36,14 @@ const startWindows = (file: string, args: string[]): Promise<void> =>
     child.once('spawn', () => (child.unref(), resolve()))
   })
 
+/** `lsof -Fn` prints a `p<pid>` line, an `f<fd>` line, then an `n<path>` line. */
+const lsofCwd = async (pid: number): Promise<string> => {
+  const { stdout } = await run('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'])
+  const line = stdout.split('\n').find((l) => l.startsWith('n'))
+  if (line === undefined) throw new Error(`lsof names no working directory for pid ${pid}`)
+  return line.slice(1)
+}
+
 const MACOS: Platform = {
   name: 'macOS',
   psEnvironment: '-E',
@@ -40,6 +51,7 @@ const MACOS: Platform = {
   newerGit: 'brew install git, or update the Command Line Tools: xcode-select --install',
   openUrl: async (url) => void (await run('open', [url])),
   reveal: async (target) => void (await run('open', ['-R', target])),
+  cwdOf: lsofCwd,
 }
 
 const WSL: Platform = {
@@ -49,6 +61,7 @@ const WSL: Platform = {
   newerGit: 'sudo add-apt-repository ppa:git-core/ppa && sudo apt install git',
   openUrl: (url) => startWindows('explorer.exe', [url]),
   reveal: async (target) => startWindows('explorer.exe', [`/select,${(await run('wslpath', ['-w', target])).stdout.trim()}`]),
+  cwdOf: (pid) => readlink(`/proc/${pid}/cwd`),
 }
 
 /** WSL's kernels name themselves `…-microsoft-standard-WSL2`. */
