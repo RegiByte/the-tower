@@ -1,14 +1,24 @@
-import { actionWords, addedActions, boardSubject, heldActions, heededAsks, isAsk, isCommand, parentOf, projectOfKey, runCommandWith, runVerb, subjectAt, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, WAITING_MEANS, WAITING_NAME, hostState, loudest, SOUNDS, attentionOrder, heededWaits, isOffer, nextAttended, claudeUntestedHtml, boardErrorTitle, tidiedLine, discardAsk, discardedLine, ago, callOf, can, noLongerOffered, offeredCall, esc, neighboursIn, strandedOf, letGoAsk, letGoneLine, resumeAllAsk, resumeStranded, reapAsk, killShellAsk, addedTidyOf, tidyAllAsk, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME, keptLine, sentHome, sendHomeAsk, cardSubject, shownSubject, shownKey, DISMISS_TITLE, actionId, exemptionsOf, headRanked, isFresh, lineId, offeredIds, overflowOf, plural, rankedActions, rankedBadges, rankedLines } from '/cards.js'
+import { attending, attendNext, watchedIn } from '/lib/attend.js'
+import { boardSubject, callOf, can, cardSubject, noLongerOffered, offeredCall, parentOf, projectOfKey, runVerb, sentHome, shownSubject, subjectAt } from '/lib/board.js'
+import { briefCss } from '/lib/brief.js'
+import { CAPABILITIES } from '/lib/capabilities.js'
+import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, claudeUntestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, isOffer, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
+import { toastsCss, watchTips } from '/lib/chrome.js'
+import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND } from '/lib/keys.js'
+import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
+import { loop, timers } from '/lib/machine.js'
+import { markdownCss } from '/lib/markdown.js'
+import { settingsCss } from '/lib/settings.js'
+import { wireSpawn } from '/lib/spawn.js'
+import { STATS_ALL } from '/lib/stats.js'
+import { loadTerminalFont } from '/lib/terminal.js'
+import { fileButtonsHtml, fileCall, itemsCss, keepingFocus, panelsCss, pressing } from '/lib/view.js'
+import { readViewer, sawAll, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
+import { ago, esc, plural } from '/lib/words.js'
 import { probedLines } from '/x/quota/quota.js'
-import { itemsCss } from '/items.js'
-import { panelsCss, STATS_ALL, fileButtonsHtml, fileCall, keepingFocus } from '/panels.js'
 import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
-import { loop, timers } from '/loop.js'
-import { wireSpawn } from '/spawn.js'
-import { attendNext, attending, watchedIn } from '/attend.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
-import { busOf, declaredLayout, displayed, fill, layoutKey, layoutOf, openable, usableConfigLayout, viewOn, viewsOf } from '/views.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
 import { shells } from './shells.js'
@@ -21,18 +31,7 @@ import { draft } from './draft.js'
 import { archive } from './archive.js'
 import { boardKit } from './board.js'
 import { onDuty, $, signHtml, copyText, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told } from './kit.js'
-import { briefCss } from '/brief.js'
-import { markdownCss } from '/markdown.js'
-import { COMMANDS, DEFAULT_KEYS, MOVE_COMMAND, addedCommandOf, commandOf, frameCommandOf, isAddedId } from '/keymap.js'
-import { VIEWER_KEYS, readViewer, sawAll, seenOf } from '/viewer.js'
-import { settingsCss } from '/settings.js'
-import { loadTerminalFont } from '/terminal.js'
-import { watchTips } from '/tips.js'
-import { pressing } from '/press.js'
-import { toastsCss } from '/toasts.js'
 import { DRAFTS, draftsOf, keepUnsent, titleOf } from '/x/drafts/drafts.js'
-import { verbLabel } from '/verb-words.js'
-import { CAPABILITIES } from '/capabilities.js'
 import { palette } from './palette.js'
 import { actionsHtml, asksHtml, badgeHtml, drawCount } from './added.js'
 import { menu } from './menu.js'
@@ -40,32 +39,26 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 
 /**
  * @import { SideView } from './stats.js'
- * @import { Board, Card, Floor } from '../../src/bridge/board.ts'
- * @import { Attention } from '../../src/bridge/life.ts'
- * @import { Attended, Heed, Move } from '../../src/shared/cards.ts'
- * @import { BoardError, FromPage } from '../../src/shared/shelf-page.ts'
- * @import { KeyPress } from '../../src/shared/keymap.ts'
- * @import { Action, Added, AddedLine, Badge } from '../../src/shared/extensions.ts'
- * @import { HeadItem, Ranked } from '../../src/shared/adds.ts'
+ * @import { AttendEffect, AttendEvent, Attending } from '/lib/attend.js'
+ * @import { Attention, Board, Card, Floor, Subject } from '/lib/board.js'
+ * @import { BriefMarkdown } from '/lib/brief.js'
+ * @import { Capability } from '/lib/capabilities.js'
+ * @import { Attended, Heed, Move } from '/lib/cards.js'
+ * @import { BoardError, FromPage } from '/lib/client.js'
+ * @import { Action, Added, AddedLine, Badge, BoardAsk, Call } from '/lib/extension.js'
+ * @import { KeyPress } from '/lib/keys.js'
+ * @import { HeadItem, KitMember, Layout, Overflow, Ranked, Region } from '/lib/layout.js'
+ * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '/lib/machine.js'
+ * @import { Openable, Pick } from '/lib/palette.js'
+ * @import { SpawnEvent, Spawning } from '/lib/spawn.js'
+ * @import { StatsRange } from '/lib/stats.js'
+ * @import { CommandKit, Placing } from '/lib/view.js'
+ * @import { Viewer } from '/lib/viewer.js'
  * @import { MenuCheck, MenuEntry, MenuItem } from './menu.js'
- * @import { Subject } from '../../src/shared/subjects.ts'
- * @import { BriefMarkdown } from '../../src/shared/viewer.ts'
- * @import { Call } from '../../src/shared/api.ts'
  * @import { ReadAnswer } from '../../extensions/quota/client/quota.ts'
- * @import { Viewer } from '../../src/shared/viewer.ts'
- * @import { StatsRange } from '../../src/shared/viewer.ts'
- * @import { Executors, Handlers, Loop, StateEffect, TimerEffect } from '../../src/shared/loop.ts'
- * @import { AttendEffect, AttendEvent, Attending } from '../../src/shared/attend.ts'
  * @import { MainView } from './view.js'
- * @import { SpawnEvent, Spawning } from '../../src/shared/spawn.ts'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
- * @import { Pick } from '../../src/shared/palette.ts'
- * @import { Capability } from '../../src/shared/capabilities.ts'
  * @import { Offer } from '../../extensions/policies/policies.ts'
- * @import { BoardAsk } from '../../src/shared/extensions.ts'
- * @import { CommandKit, Placing } from '../../src/shared/views.ts'
- * @import { Layout, Overflow, Region, KitMember } from '../../src/shared/regions.ts'
- * @import { Openable } from '../../src/shared/palette.ts'
  */
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
@@ -149,7 +142,7 @@ function tick() {
 
 /**
  * The page's machine: the board drawn, why there is none live and since when the tower is lost, the viewer's record,
- * what the main pane shows, what the viewer is told about waits and offers (`/attend.js`, which also holds whether the
+ * what the main pane shows, what the viewer is told about waits and offers (`/lib/attend.js`, which also holds whether the
  * window has their eye and the worker the view is on, told by the `focus`, `visible` and `watch` events) and the waits
  * and offers N visited this round (`Heed` in cards.ts), and the workers it started that the board doesn't carry yet
  * (`started`), which it waits for as they arrive, and the viewer's own layout of this renderer's regions as `tower.store`
@@ -158,7 +151,7 @@ function tick() {
  * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, layout: Layout | undefined, view: MainView, attending: Attending, visited: ReadonlySet<string>, started: ReadonlySet<string> }} PageState
  * @typedef {{ [K in keyof Viewer]: { type: 'keep', field: K, value: Viewer[K] } }[keyof Viewer]} ViewerKept
  * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | { type: 'laid-out', layout: Layout | undefined } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
- *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'started', id: string } | { type: 'followed', location: import('../../src/shared/views.ts').Location }} PageEvent
+ *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'started', id: string } | { type: 'followed', location: import('/lib/view.js').Location }} PageEvent
  * @typedef {Exclude<AttendEffect, StateEffect<Attending>> | ViewerKept | StateEffect<PageState> | TimerEffect<PageEvent>
  *   | { type: 'leave', view: MainView } | { type: 'enter', view: MainView } | { type: 'hash', hash: string } | { type: 'draw' }
  *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string }} PageEffect
@@ -383,7 +376,7 @@ function goToFloor(project) {
 }
 
 /**
- * Runs what a palette entry does (`/palette.js`) through the handlers its buttons and keys run; `row` is the entry's
+ * Runs what a palette entry does (`/lib/palette.js`) through the handlers its buttons and keys run; `row` is the entry's
  * row, busy while a request it makes is in flight.
  * @param {Pick} does @param {HTMLElement} row
  */
@@ -453,7 +446,7 @@ const renderers = await tower.get('renderers')
 /** This renderer's name: from the path it is served at, `/r/<name>/`, else the config's default, which `/` serves. */
 const RENDERER = /^\/r\/([^/]+)\//.exec(location.pathname)?.[1] ?? renderers.default
 /** What this renderer declares in its `renderer.json` and the config's layout for it, as `GET /renderers` serves them. */
-const declared = /** @type {import('../../src/shared/model.ts').Renderer} */ (renderers.renderers.find((r) => r.name === RENDERER))
+const declared = /** @type {import('/lib/board.js').Renderer} */ (renderers.renderers.find((r) => r.name === RENDERER))
 /** Where `tower.store` keeps the viewer's own layout of this renderer's regions. */
 const LAYOUT_KEY = layoutKey(RENDERER)
 /** What is wrong with the config's layout for this renderer, against the regions it and the extensions that would start declare. */
@@ -521,7 +514,7 @@ function focusedSubject() {
 }
 
 /**
- * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/views.js`): a view given stays when
+ * Shows `target`, a subject or its key, where the layout puts it (`displayed`, `/lib/layout.js`): a view given stays when
  * it is the one mounted and takes it, on that subject when it is on its kind; a subject below the one the view at its
  * location is on is handed to that view (a worker's showing, conversation or lines open its tab). A worker handed whole
  * is held as a read; one the page doesn't hold is looked up in the floors' archives, or awaited when the page started it.
@@ -535,7 +528,7 @@ function display(target, opts = {}) {
   const { view: given } = opts
   const mounted = viewing('view')?.location
   if (given && mounted?.view === given && mainRegion.show(subject)) {
-    const view = /** @type {import('../../src/shared/views.ts').View} */ (viewsOf(board()).find((v) => v.id === given))
+    const view = /** @type {import('/lib/view.js').View} */ (viewsOf(board()).find((v) => v.id === given))
     if (subject.key !== (mounted.subject ?? 'board') && viewOn(view.on, subject)) page.dispatch({ type: 'followed', location: { view: given, subject: subject.key } })
     return
   }
@@ -746,7 +739,7 @@ const writer = () => {
  * a focused window it is seen, and the region keeps its dot until its view is hidden or it closes. It is drawn in the
  * form its layout picks among those the region offers: `wrap` (`drawWrap`), else `menu` (`drawMenu`).
  * @param {HTMLElement} el @param {string} id @param {Subject} subject @param {{ omit?: string[] }} options
- * @returns {import('../../src/shared/views.ts').RegionHandle}
+ * @returns {import('/lib/view.js').RegionHandle}
  */
 function kitRegion(el, id, subject, options) {
   let at = subject
@@ -885,7 +878,7 @@ function kitRegion(el, id, subject, options) {
     }
     /**
      * A control busy or done: ⋯ says so at once, and the menu lists its proxy as the original is next frame. A control
-     * marked busy again while it already is (`/press.js` marks them anew on every redraw in the page) changes nothing.
+     * marked busy again while it already is (`/lib/view.js` marks them anew on every redraw in the page) changes nothing.
      */
     const busy = new MutationObserver((records) => {
       if (records.every((r) => r.target === more || r.oldValue === /** @type {Element} */ (r.target).getAttribute('aria-busy'))) return
@@ -1774,7 +1767,7 @@ if (tower.served.version) {
 /**
  * While the tower serves other code than this page loaded with (`tower.stale()`), a notice offers to reload the page,
  * never reloading it alone: a draft in progress would be lost. Its × hides it until the tower serves other code again.
- * @type {{ shown?: import('/toasts.js').Notice, hiddenFor?: string }}
+ * @type {{ shown?: import('/lib/chrome.js').Notice, hiddenFor?: string }}
  */
 const staleNotice = {}
 tower.onStale((served) => {
@@ -1805,7 +1798,7 @@ tower.subscribe(async (next) => {
   render()
 })
 
-/** Opens a location (`/views.js`), as a link to its hash would: a worker of an archive read first. @param {import('../../src/shared/views.ts').Location} location */
+/** Opens a location (`/lib/layout.js`), as a link to its hash would: a worker of an archive read first. @param {import('/lib/view.js').Location} location */
 const goTo = (location) => opening(mainViewOf(location, has))
 
 /**
