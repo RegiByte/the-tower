@@ -41,7 +41,7 @@ everyday recipes, and the `tower:handbook` skill is the handbook beside it ([[br
 to show the user a page ([[agent-show]]) or open a file on their desktop ([[open-files]]), keep an item ([[workers-edit-kept-items]]), answer review notes and report to its hirer after ([[review-threads]]), hire
 a reviewer ([[reviewer]]) or a worker, within the floor's limits ([[hiring-limits]]), and send a crew home ([[crews]]); and, in a worktree the tower cut,
 how to keep to it ([[tower-cuts-worktrees]]). Its `review` skill is what a reviewer starts on
-(`/tower:review <CALLSIGN> [tell]`). Its `guide` skill is for the user, not for work: when they ask how to use the
+(`/tower:review <CALLSIGN> [tell]`), which now points at the reviews extension's `reviews:review` and stays until 2.0. Its `guide` skill is for the user, not for work: when they ask how to use the
 tower or for a tour, the session reads [[docs-usage]] from the checkout, the capabilities and patterns the tips show
 (`src/shared/capabilities.ts`, `docs/patterns/`), and the live system (`whoami`, `agents --all`, `kept`), tours their
 own floors, and offers one live demo.

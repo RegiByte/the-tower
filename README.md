@@ -41,7 +41,7 @@ the tower, so most things start as a sentence:
 
 - **Hiring and crews.** A worker hires others (`tower hire`), each in its own git worktree, within limits you set per
   floor. Hires are listed under whoever hired them, report back to it, and go home with it.
-- **Reviewers.** `tower review` hires a reviewer in a fork of a worker's checkout, uncommitted work included. It
+- **Reviewers.** `tower x reviews review` hires a reviewer in a fork of a worker's checkout, uncommitted work included. It
   reviews once against the worker's goal and leaves notes on the thread; the worker answers each one.
 - **Collections.** Folders of files a floor keeps for later: drafts (prompts waiting for a worker), review threads,
   and any kind you declare. Every item gets a two-word tag (`ivory-otter`) to refer to it by.

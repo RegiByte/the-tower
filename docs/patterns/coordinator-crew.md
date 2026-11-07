@@ -7,6 +7,6 @@ told it to coordinate: split the work, hire a worker for each repo with `tower h
 when its review notes were answered.
 
 The coordinator wrote each hire a brief that named the repo, the contract between the pieces and what done meant.
-The hires worked in worktrees of their own, got themselves reviewed with `tower review`, and messaged the
+The hires worked in worktrees of their own, got themselves reviewed with `tower x reviews review`, and messaged the
 coordinator when they were ready. Maya talked to one worker all afternoon; the crew showed up under it in the
 sidebar, and she only stepped in when one of them waited on her.

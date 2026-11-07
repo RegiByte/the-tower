@@ -286,5 +286,5 @@ export const anchorStates = (thread: ReviewThread, repos: RepoChanges[]): Anchor
  * them, and, to a hired worker, that it reports to its `hirer` once it has (the card's `hiredBy`). One line, so it lands in the composer as typed.
  */
 export const sendText = (sender: string, checkout: string, notes: number[], hirer: string | undefined): string =>
-  `Review notes from ${sender}${notes.length ? ` (${notes.map((n) => `n${n}`).join(', ')})` : ''} on checkout ${checkout}: read the thread with \`tower thread ${checkout}\`, act on them, and answer each with \`tower note on ${checkout} re n<k>\` (the reply on stdin).` +
+  `Review notes from ${sender}${notes.length ? ` (${notes.map((n) => `n${n}`).join(', ')})` : ''} on checkout ${checkout}: read the thread with \`tower x reviews thread ${checkout}\`, act on them, and answer each with \`tower x reviews note --on ${checkout} --re <k>\` (the reply on stdin).` +
   (hirer ? ` Once you have answered them, report to ${hirer}, who hired you: what changed and whether the work is ready.` : '')

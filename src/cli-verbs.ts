@@ -91,22 +91,6 @@ export const CLI_VERBS = {
     usage: 'job start [--cwd <dir>] [--label <words>] [--env NAME=VALUE...] -- <command...> | job cancel <id> | job list [--all]',
     help: "a command run to its end by the jobs daemon, outside the tower and owned by this session: it outlives a tower restart and takes no input, so pass what stops a prompt with --env (GIT_TERMINAL_PROMPT=0); env is never logged. Its command is kept in the jobs log, which everyone reads: never put a secret in it. Watch it at /job/<id>/screen. list: the jobs running or over within the last day, newest first; --all, every job the log holds",
   },
-  thread: {
-    of: 'worker',
-    usage: 'thread [checkout]',
-    help: "the review thread about this session's work (a reviewer's is its author's), or another, and what is new to you",
-  },
-  note: {
-    of: 'worker',
-    usage: 'note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …] | note [on <checkout>] resolve n<k> …',
-    help: "a message on the thread, the body on stdin, each anchor's lines quoted from the checkout's files as they are now (from your own, when it is a fork of that checkout: the version you read); with resolve, a note marking those notes resolved, anything on stdin said under the mark",
-  },
-  send: { of: 'worker', usage: 'send <CALLSIGN>', help: "submit into a worker a pointer to the notes on its checkout's thread new to it" },
-  review: {
-    of: 'worker',
-    usage: 'review <CALLSIGN> [tell]',
-    help: "hire a reviewer of a worker's work, in a fork of its checkout (its card's `review`); with `tell`, the reviewer sends its notes to that worker when done",
-  },
   hire: {
     of: 'worker',
     usage: 'hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]',
@@ -143,11 +127,27 @@ export type VerbName = keyof typeof CLI_VERBS
  */
 export type Alias = { now: string; args: (words: string[]) => string[] }
 
+const noteNumber = (word: string) => word.replace(/^n/, '')
+
+/** `tower note`'s old grammar as reviews' words: `on <checkout>`, `re n<k>`, `resolve n<k> …`, and anchors as they are. */
+const noteWords = (words: string[]): string[] => {
+  const on = words[0] === 'on' ? words[1] : undefined
+  const rest = on === undefined ? words : words.slice(2)
+  if (rest[0] === 'resolve') return ['resolve', ...rest.slice(1).map(noteNumber), ...(on === undefined ? [] : ['--checkout', on])]
+  const re = rest[0] === 're' ? rest[1] : undefined
+  const anchors = re === undefined ? rest : rest.slice(2)
+  return ['note', ...(on === undefined ? [] : ['--on', on]), ...(re === undefined ? [] : ['--re', noteNumber(re)]), ...anchors.flatMap((a) => ['--at', a])]
+}
+
 /** The old core words that moved under `tower x`. */
 export const ALIASES: Record<string, Alias> = {
   policies: { now: 'policies', args: ([sub, ...rest]) => (sub === undefined ? ['list'] : sub === 'run' ? ['run-now', ...rest] : sub === 'approve' ? ['approve-now', ...rest] : [sub, ...rest]) },
   runs: { now: 'policies runs', args: (words) => words },
   probes: { now: 'quota', args: (words) => (words[0] === 'run' ? ['read-now', ...words.slice(2)] : ['probes', ...words]) },
+  note: { now: 'reviews', args: noteWords },
+  thread: { now: 'reviews thread', args: (words) => words },
+  send: { now: 'reviews send', args: (words) => words },
+  review: { now: 'reviews review', args: (words) => words.map((w) => (w === 'tell' ? '--tell' : w)) },
 }
 
 /** The words an alias stands for, after `tower x`, and what it says about itself: the command as typed and as it runs, so the line can be typed. */

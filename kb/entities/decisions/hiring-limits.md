@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Who hired whom is a fact, and hiring through the tower command has limits",
-  "summary": "A spawn with hire is its by's hire: the tower refuses it past the floor's hiring limits (how deep a hire stands, how many of a worker's hires run at once), takes a hirer's hires one at a time, and logs tower.hire in the hirer's own log; the board derives card.hiredBy across resumes. tower hire and tower review spawn that way; reviews, and hires a launch contributor exempts, are never refused. It guards against a chain of hires running away by accident, not against a worker that spawns without hire.",
+  "summary": "A spawn with hire is its by's hire: the tower refuses it past the floor's hiring limits (how deep a hire stands, how many of a worker's hires run at once), takes a hirer's hires one at a time, and logs tower.hire in the hirer's own log; the board derives card.hiredBy across resumes. tower hire and tower x reviews review spawn that way; reviews, and hires a launch contributor exempts, are never refused. It guards against a chain of hires running away by accident, not against a worker that spawns without hire.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
@@ -24,7 +24,7 @@ the easy path stops them, as long as it is named for what it is.
 - *The fact.* A `spawn` with `hire: true` and `by` is `by`'s hire. The tower has the host append `tower.hire {id}` to
   the hirer's own log through its `fact` request, right after the spawn (the spawned worker's own `tower.prompt` goes
   with its spawn's facts, [[worker-prompts]]); the facts fold it into `hired`. A hire that can't be logged is killed, so none runs uncounted.
-  `tower hire` and `tower review` spawn this way.
+  `tower hire` and `tower x reviews review` spawn this way.
 - *The board.* [`hirersOf`](ref:hub/src/bridge/board.ts#hirersOf) maps each hired session to its hirer (session and
   callsign and floor); a card's `hiredBy` is the hirer of the first session of its worker's lineage, so it survives
   resumes.

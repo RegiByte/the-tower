@@ -26,7 +26,7 @@ touching any repo.
 - *The flags.* [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest) and
   [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest) take the list and pass each directory as
   `--plugin-dir` ([`pluginArgs`](ref:hub/src/shared/launch.ts#pluginArgs)), so spawn, resume, a cut, a fork, `tower
-  hire` and `tower review` all load them. The host composes none of it ([[host-owns-ptys]]): it adds the mod's
+  hire` and `tower x reviews review` all load them. The host composes none of it ([[host-owns-ptys]]): it adds the mod's
   `--plugin-dir` before the client's args, and Claude takes the flag repeated. Each Claude reads its plugins as it
   starts: a changed plugin reaches the next session started, a changed list the next spawn or resume.
 - *An extension's.* A manifest's `plugins.claude` names a folder inside the extension; each running extension's joins

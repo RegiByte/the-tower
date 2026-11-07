@@ -32,8 +32,8 @@
   ]
 }
 ---
-**Problem.** Workers hold every verb. A hire's brief (`tower hire`, `tower review`) and a review-note pointer
-(`tower send`) reach a worker through its composer, as the user's typing would, and Claude reports them with the
+**Problem.** Workers hold every verb. A hire's brief (`tower hire`, `tower x reviews review`) and a review-note pointer
+(`tower x reviews send`) reach a worker through its composer, as the user's typing would, and Claude reports them with the
 composer's origin, so the stats counted them as the user's prompts and as waits the user answered. A worker that
 ended another (`tower home`, `tower kill`) or typed into one (`keys`) left nothing behind: the target's log read as if
 the user had done it.

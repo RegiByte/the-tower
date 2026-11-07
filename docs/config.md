@@ -28,7 +28,7 @@ it is often a misspelled one. `tower doctor` runs the same check among its other
   "env": {},
   "user": { "name": "Your Name" },
   "collections": {
-    "reviews": { "label": "Reviews", "description": "One review thread per checkout, written through tower note." },
+    "reviews": { "label": "Reviews", "description": "One review thread per checkout, written through tower x reviews note." },
     "policies": { "label": "Policies", "description": "Standing work the tower starts on a schedule: one markdown file each, a # Title, a json header, then the prompt." }
   },
   "projects": {
@@ -266,7 +266,7 @@ away. The shelf is not a collection, though an `item` entry shows one of a colle
 A collection is a kind of file a floor keeps in the system root, `collections/<project>/<collection>/<item>`, declared
 by id with a `label` (the name it is shown by) and an optional `description` (what it is for, in a sentence or two,
 shown to the user and the workers wherever it is listed). Workers add items with `tower keep <collection>` and see their counts and latest items with `tower kept`, and every item of one with `tower kept <collection>`. The bundled
-extensions declare three. `reviews`, one review thread per checkout, written only through `tower note`, is
+extensions declare three. `reviews`, one review thread per checkout, written only through `tower x reviews note`, is
 declared by the bundled reviews extension, owned, on every floor where its capability is on: a `reviews` entry here
 overrides its `label` and `description`, and a floor with `capabilities.reviews.off` keeps the collection only where a config entry declares it, as a plain one. `tower init` writes no entry, so a first config has the collection only where the capability is on.
 `policies`, standing work started at its slots (`tower x policies list` lists them, the handbook's "Policies and runs" says
@@ -289,7 +289,7 @@ Tower 3D.
 ## Hiring
 
 A guard against a chain of hires running away by accident: the tower refuses a hire past them (`tower hire`, or any
-`spawn` with `hire`), and never a review (`tower review`).
+`spawn` with `hire`), and never a review (`tower x reviews review`).
 
 | Key | Takes | Unset |
 |---|---|---|

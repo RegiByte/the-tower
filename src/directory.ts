@@ -25,10 +25,9 @@ import { helpLines, jsonArgument, jsonDeprecatedLine, missingLine, parseWord, pr
 import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-// `reviewerOf` and `threadCheckoutOf` are the core's deprecated copies of the reviews client's: the CLI says them until extensions say their own CLI words.
-import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, threadCheckoutOf, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
-import { callsignsOf, checkoutDirs, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
-import { langOf, repoName, REVIEWS, threadId, type Anchor } from './shared/reviews.ts'
+// `reviewerOf` is the core's deprecated copy of the reviews client's: `tower agent` and `tower agents` say it.
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
 import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
@@ -95,8 +94,6 @@ const cardLines = (card: Card, me: string | undefined, now: number, depth = 0): 
 }
 
 /** Where work that landed is read once no worktree holds it. */
-const landedFix = ({ checkoutState: s }: Card) => (s.is === 'landed' && !s.empty && s.on ? `its commits are on ${s.on}: \`git log ${s.on}\` in the floor's main checkout` : undefined)
-
 const reportLine = (card: Card) =>
   reviewerOf(card) ? `reviews ${reviewerOf(card)}` : card.crew ? `in ${card.crew.callsign}'s crew, by ${card.crew.by}` : `hired by ${hirerName(card.hiredBy!, card.project)}`
 
@@ -467,66 +464,6 @@ const keepContent = async (file: string | undefined): Promise<{ ext: string; con
   return { ext: 'md', content, name: titleIn('stdin.md', content) }
 }
 
-/**
- * What the reviews extension says of a checkout's thread read as `reader` (its read `said/<project>`): the file's text,
- * `undefined` while nobody wrote on it, the notes new to the reader, the lines `tower thread` prints after it (or in its
- * place), and with `sender`, the prompt Send types.
- */
-type ThreadSaid = { text?: string; unseen: number[]; lines: string[]; send?: string }
-
-const threadSaid = async (floor: Floor, query: { checkout: string; reader: string; sender?: string; hirer?: string }): Promise<ThreadSaid> => {
-  collectionOf(floor, REVIEWS)
-  const params = new URLSearchParams(Object.entries(query).filter((e): e is [string, string] => e[1] !== undefined))
-  const res = await towerGet(`/reviews/said/${floor.id}?${params}`)
-  if (!res.ok) throw new CliError(`The tower answered ${res.status} for the thread of ${query.checkout}: ${await res.text()}`)
-  return (await res.json()) as ThreadSaid
-}
-
-const NOTE_USAGE = `${usageLine('note')}, the body on stdin`
-const ANCHOR_ARG = /^([^:\s]+):(.+):(\d+)(?:-(\d+))?$/
-
-type NoteArgs = { on?: string; re?: number; anchors: Omit<Anchor, 'quote'>[]; resolves?: number[] }
-
-const NOTE_NUMBER = /^n?\d+$/
-
-const noteArgs = (args: string[]): NoteArgs => {
-  const note: NoteArgs = { anchors: [] }
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === 'on' && args[i + 1]) note.on = args[++i]
-    else if (args[i] === 're' && NOTE_NUMBER.test(args[i + 1] ?? '')) note.re = Number(args[++i].replace(/^n/, ''))
-    else if (args[i] === 'resolve') {
-      note.resolves = []
-      while (NOTE_NUMBER.test(args[i + 1] ?? '')) note.resolves.push(Number(args[++i].replace(/^n/, '')))
-      if (!note.resolves.length) throw new CliError(`resolve names the notes it resolves (resolve n3 n4). ${NOTE_USAGE}`)
-    }
-    else {
-      const anchor = ANCHOR_ARG.exec(args[i])
-      if (!anchor) throw new CliError(`"${args[i]}" is no anchor. ${NOTE_USAGE}`)
-      const [, repo, path, from, to] = anchor
-      note.anchors.push({ repo, path, from: Number(from), to: Number(to ?? from) })
-    }
-  }
-  if (note.resolves && (note.re !== undefined || note.anchors.length)) throw new CliError(`A resolution answers no note and quotes no lines. ${NOTE_USAGE}`)
-  return note
-}
-
-/** The repos a note's anchors on `checkout` name, as `tower note` takes them. */
-const anchorLine = (floor: Floor, checkout: string): string =>
-  `A note's anchors name one of the checkout's repos: ${checkoutDirs(floor, checkout).map((d) => `${repoName(d)}:<path>:<from>-<to>`).join(', ')}.`
-
-/** An anchor with its lines, read from the checkout's copy of the repo. */
-const quoted = (floor: Floor, checkout: string, anchor: Omit<Anchor, 'quote'>): Anchor => {
-  const dirs = checkoutDirs(floor, checkout)
-  const dir = dirs.find((d) => repoName(d) === anchor.repo)
-  if (!dir) throw new CliError(`Checkout ${checkout} has no repo "${anchor.repo}": it has ${dirs.map(repoName).join(', ')}`)
-  const file = path.join(dir, anchor.path)
-  if (!existsSync(file)) throw new CliError(`No file at ${file}`)
-  const text = readFileSync(file, 'utf8')
-  const lines = (text.endsWith('\n') ? text.slice(0, -1) : text).split('\n')
-  if (anchor.from > anchor.to || anchor.to > lines.length) throw new CliError(`${anchor.repo}:${anchor.path} has ${lines.length} lines: ${anchor.from}-${anchor.to} isn't a range of them`)
-  return { ...anchor, quote: { lang: langOf(anchor.path), lines: lines.slice(anchor.from - 1, anchor.to) } }
-}
-
 const HIRE_USAGE = `${usageLine('hire')}, the prompt on stdin when no item names it`
 const HIRE_FIELDS = ['model', 'effort', 'callsign', 'name', 'base'] as const
 
@@ -553,8 +490,6 @@ const hireFloor = (board: Board, own: Floor, id: string | undefined): Floor => {
 }
 
 /** A session's callsign as the tower names it: from the names in the config the board was read from. */
-const callsignOn = (board: Board, id: string) => callsignsOf(readConfig(board.config))(id)
-
 /** `board`: read once the hire is counted, so it holds the hire's card and the callsign it runs under. */
 const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: SpawnForm): string[] => {
   const who = board.floors.flatMap((f) => f.cards).find((c) => c.id === reply.id)!.callsign
@@ -857,42 +792,6 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const { collection, item } = itemNamed(floor, tagOrId)
     process.stdout.write(await readItem(floor, collection.id, item.id))
   },
-  thread: async ([named]) => {
-    const board = await readBoard()
-    const card = ownCard(board, me)
-    const floor = ownFloor(board, me)
-    const checkout = named ?? threadCheckoutOf(card)
-    const { text, lines } = await threadSaid(floor, { checkout, reader: card.callsign })
-    if (text !== undefined) process.stdout.write(text.endsWith('\n') ? `${text}\n` : `${text}\n\n`)
-    console.log(lines.join('\n'))
-    console.log(anchorLine(floor, checkout))
-  },
-  note: async (args) => {
-    const note = noteArgs(args)
-    if (process.stdin.isTTY && !note.resolves) throw new CliError(NOTE_USAGE)
-    const body = process.stdin.isTTY ? '' : await readStdin()
-    const board = await readBoard()
-    const card = ownCard(board, me)
-    const floor = ownFloor(board, me)
-    const checkout = note.on ?? threadCheckoutOf(card)
-    if (note.resolves) {
-      const { n } = await command<{ n: number }>('reviews/resolve', { project: floor.id, checkout, author: card.callsign, notes: note.resolves, body })
-      return console.log(`Resolved ${note.resolves.map((k) => `n${k}`).join(', ')} with n${n} on the thread of checkout ${checkout}: ${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}`)
-    }
-    const anchors = note.anchors.map((a) => quoted(floor, card.worktree?.from === checkout ? card.checkout : checkout, a))
-    const { n } = await command<{ n: number }>('reviews/append', { project: floor.id, checkout, author: card.callsign, re: note.re, anchors, body })
-    console.log(`Noted as n${n} on the thread of checkout ${checkout}${note.re ? `, answering n${note.re}` : ''}: ${collectionOf(floor, REVIEWS).dir}/${threadId(checkout)}`)
-  },
-  review: async ([callsign, word]) => {
-    if (!callsign) throw new CliError(usageLine('review'))
-    if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
-    const board = await readBoard()
-    const author = await cardNamed(board, callsign)
-    const tell = word === 'tell'
-    const hired = await ask<{ id: string; cut: { name: string } }>('reviews/hire', { project: author.project, of: author.callsign, by: me, tell })
-    if (isFailure(hired)) throw new CliError(hired.message, landedFix(author))
-    console.log(`${callsignOn(board, hired.id)} reviews ${author.callsign}'s work in worktree ${hired.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}`)
-  },
   hire: async (args) => {
     const hire = hireArgs(args)
     if (!hire.item && process.stdin.isTTY) throw new CliError(HIRE_USAGE)
@@ -934,17 +833,5 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     if (!call) throw new CliError(`${card.callsign} is ${statusName(card)}: only a stranded worker (stopped, killed or lost), on duty until it is resumed, is let go`)
     await command(...call)
     console.log(`Let ${card.callsign} go: it is off duty, and its conversation can still be resumed from the floor's archive.`)
-  },
-  send: async ([callsign]) => {
-    if (!callsign) throw new CliError(usageLine('send'))
-    const board = await readBoard()
-    const sender = ownCard(board, me)
-    const target = await cardNamed(board, callsign)
-    if (!can(target, 'submit')) throw new CliError(`${target.callsign} isn't at its composer (${statusName(target)}): send once it is`)
-    const floor = board.floors.find((f) => f.id === target.project)!
-    const { text, unseen: notes, send } = await threadSaid(floor, { checkout: target.checkout, reader: target.callsign, sender: sender.callsign, hirer: target.hiredBy?.callsign })
-    if (text === undefined) throw new CliError(`Checkout ${target.checkout} has no notes to send`)
-    await command('submit', { id: target.id, text: send!, by: me })
-    console.log(`Sent ${target.callsign} a pointer to ${notes.length ? notes.map((n) => `n${n}`).join(', ') : 'the thread'} on checkout ${target.checkout}.`)
   },
 }

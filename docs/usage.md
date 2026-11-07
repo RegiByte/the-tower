@@ -87,12 +87,12 @@ and its reviewers discuss the work before it lands.
 - **Review** on a worker hires a reviewer: a worker in a fork of that checkout (uncommitted work included) that
   reviews once against the worker's goal and leaves notes on the thread.
 - A worker can ask for one itself: "when you're done, get yourself reviewed" makes it run
-  `tower review <its callsign> tell`, then answer each note.
+  `tower x reviews review <its callsign> --tell`, then answer each note.
 - A hired worker reports to whoever hired it once it has answered the notes, and its reviewer tells that hirer
   the verdict, so a coordinator hears the review loop close without you relaying it.
-- `tower note` writes a note, `tower thread` reads one, and `tower send <CALLSIGN>` points a worker at its new notes.
+- `tower x reviews note` writes a note, `tower x reviews thread` reads one, and `tower x reviews send <CALLSIGN>` points a worker at its new notes.
 - A note that is dealt with can be **resolved**: **resolve** on a note in the Reviews tab, or
-  `tower note resolve n3 n4`, appends a note marking those resolved. Resolved notes are dimmed and no longer count as
+  `tower x reviews resolve 3 4`, appends a note marking those resolved. Resolved notes are dimmed and no longer count as
   new to anyone; the thread stays append-only, so it still reads as the conversation it was.
 
 ## Keeping things for later

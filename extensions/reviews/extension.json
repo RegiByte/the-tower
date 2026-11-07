@@ -4,14 +4,21 @@
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {
-    "tower": "1.151"
+    "tower": "1.153"
   },
   "server": "server.ts",
   "client": "client",
+  "guidance": {
+    "brief": "Review threads: get your work reviewed, read and answer notes. `tower x reviews thread` reads yours, `tower x reviews review <CALLSIGN> --tell` hires a reviewer.",
+    "full": "Every checkout has one review thread: your worktree, or `main` for the main checkouts. The user, the checkout's workers and reviewers append notes about work that hasn't landed, often quoting lines.\n\nUse it when your task asks for a review or the user says \"get yourself reviewed\", when told of new notes, or when you want a note on your own work for the next reader of the diff: a non-obvious choice, a risk, something left undone. Not a place for write-ups, and not for work that has landed.\n\n- `tower x reviews review <CALLSIGN> --tell`: hires a reviewer in a fork of that worker's checkout, uncommitted work included. It reviews once and leaves notes; `--tell` also sends them to the worker. To get yourself reviewed, first leave a note stating the goal and what was agreed, then name your own callsign. A review is never limited by the floor's hiring limits.\n- `tower x reviews thread [checkout]`: the thread of your checkout (a reviewer's: its author's), then the notes new to you and the repo names its anchors take.\n- `tower x reviews note [--on <checkout>] [--re <k>] [--at <repo>:<path>:<from>-<to> …] <<'EOF'` … `EOF`: appends a note under your callsign, the body on stdin. `--re 3` answers n3. Each `--at` anchors it to lines, quoted from your checkout as they are now.\n- `tower x reviews resolve <k> … [--checkout <checkout>]`: marks those notes resolved with a note of its own; anything on stdin is said under the mark. Resolve a note once it is dealt with: the fix landed, or its author agreed it stays.\n- `tower x reviews send <CALLSIGN>`: submits into that worker a pointer to the notes new to it.\n\nWhen told of new notes: read the thread, act on each (change the code, or decide it stays), and answer each with `--re`: what you changed, with the commit, or why it stays. Then, when a worker hired you, report to it: what changed and whether the work is ready. The thread alone is no report: your hirer isn't watching it. Only these words write the thread: never edit its file."
+  },
+  "plugins": {
+    "claude": "plugin"
+  },
   "collections": {
     "reviews": {
       "label": "Reviews",
-      "description": "One review thread per checkout, written only with `tower note`: not a place for write-ups.",
+      "description": "One review thread per checkout, written only with `tower x reviews note`: not a place for write-ups.",
       "owned": true,
       "doors": {
         "list": "reviews/history/<project>",
@@ -262,7 +269,7 @@
           },
           "author": {
             "type": "string",
-            "pattern": "^[^\\s\u00b7]([^\\n\u00b7]*[^\\s\u00b7])?$",
+            "pattern": "^[^\\s·]([^\\n·]*[^\\s·])?$",
             "description": "Who writes: the user's name (`board.user.name`), or a worker's callsign."
           },
           "re": {
@@ -387,12 +394,12 @@
           "checkout": {
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9._-]*$",
-            "description": "A worktree's name, or `main` for the main checkouts."
+            "description": "A worktree's name, or `main` for the main checkouts. Left out, the caller's: a reviewer's is its author's."
           },
           "author": {
             "type": "string",
-            "pattern": "^[^\\s\u00b7]([^\\n\u00b7]*[^\\s\u00b7])?$",
-            "description": "Who writes: the user's name (`board.user.name`), or a worker's callsign."
+            "pattern": "^[^\\s·]([^\\n·]*[^\\s·])?$",
+            "description": "Who writes: the user's name (`board.user.name`), or a worker's callsign. Left out, the calling worker's."
           },
           "notes": {
             "type": "array",
@@ -412,8 +419,6 @@
         },
         "required": [
           "project",
-          "checkout",
-          "author",
           "notes"
         ],
         "additionalProperties": false
@@ -437,13 +442,17 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "said": {
+            "type": "string"
           }
         },
         "required": [
           "t",
           "id",
           "n",
-          "modifiedAt"
+          "modifiedAt",
+          "said"
         ],
         "additionalProperties": false
       },
@@ -451,6 +460,14 @@
       "words": {
         "label": "Resolve",
         "hint": "mark the note resolved on its thread"
+      },
+      "cli": {
+        "positional": [
+          "notes"
+        ],
+        "stdin": "body",
+        "print": "said",
+        "usage": "resolve <k> … [--checkout <checkout>]"
       }
     },
     "hire": {
@@ -465,7 +482,7 @@
           "of": {
             "type": "string",
             "pattern": "^[A-Za-z][A-Za-z0-9]*-\\d+$",
-            "description": "The callsign of the worker whose work is reviewed, on `project`."
+            "description": "The callsign of the worker whose work is reviewed, looked for on `project`, then on every floor: the reviewer starts on that worker's."
           },
           "by": {
             "type": "string",
@@ -516,6 +533,189 @@
         "label": "Review",
         "hint": "hire a reviewer in a fork of this worker's checkout"
       }
+    },
+    "note": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": [
+          "project"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "on": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "description": "The checkout whose thread it goes on. Left out, the caller's: a reviewer's is its author's."
+          },
+          "re": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "description": "The note it answers, by number."
+          },
+          "at": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Lines it is about, each `repo:path:from-to`, quoted from the checkout's files as they are now."
+          },
+          "body": {
+            "type": "string",
+            "description": "What it says."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "appended"
+          },
+          "id": {
+            "type": "string"
+          },
+          "n": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "modifiedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "said": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "t",
+          "id",
+          "n",
+          "modifiedAt",
+          "said"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Append a note signed by the calling worker, the text form of `append`: it quotes each anchor's lines from the checkout's files itself.",
+      "cli": {
+        "stdin": "body",
+        "print": "said",
+        "usage": "note [--on <checkout>] [--re <k>] [--at <repo>:<path>:<from>-<to> …] <<'EOF' … EOF"
+      }
+    },
+    "send": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": [
+          "project",
+          "to"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The worker's callsign, on any floor."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "said"
+        ],
+        "properties": {
+          "said": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Submit into a worker a pointer to the notes on its checkout's thread new to it, sent by the calling worker.",
+      "cli": {
+        "positional": [
+          "to"
+        ],
+        "print": "said"
+      }
+    },
+    "review": {
+      "scope": "project",
+      "input": {
+        "type": "object",
+        "required": [
+          "project",
+          "of"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1
+          },
+          "of": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9]*-\\d+$",
+            "description": "The callsign of the worker whose work is reviewed, looked for on `project`, then on every floor: the reviewer starts on that worker's."
+          },
+          "tell": {
+            "type": "boolean",
+            "description": "The reviewer sends a pointer to its notes to the author when done."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "string",
+            "const": "spawned"
+          },
+          "id": {
+            "type": "string"
+          },
+          "cut": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "said": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "t",
+          "id",
+          "cut",
+          "said"
+        ]
+      },
+      "description": "Hire a reviewer as the calling worker, the typed form of `hire`: never limited, and the reply says where it starts.",
+      "cli": {
+        "positional": [
+          "of"
+        ],
+        "print": "said",
+        "usage": "review <CALLSIGN> [--tell]"
+      }
     }
   },
   "reads": {
@@ -527,14 +727,26 @@
         "additionalProperties": false,
         "required": ["card"],
         "properties": {
-          "card": { "type": "string", "description": "The worker's id: its thread's anchors, among its changes." }
+          "card": {
+            "type": "string",
+            "description": "The worker's id: its thread's anchors, among its changes."
+          }
         }
       },
       "reply": {
         "type": "object",
         "required": ["states"],
         "properties": {
-          "states": { "type": "object", "additionalProperties": { "enum": ["same", "changed", "gone"] } }
+          "states": {
+            "type": "object",
+            "additionalProperties": {
+              "enum": [
+                "same",
+                "changed",
+                "gone"
+              ]
+            }
+          }
         }
       }
     },
@@ -559,7 +771,7 @@
     },
     "said/<project>": {
       "scope": "project",
-      "description": "What `tower thread`, `tower note` and `tower send` say of a checkout's thread, read as `reader`: its file's text, the notes new to the reader, the lines printed after the text (or in its place while it has none), and with `sender`, the prompt Send types into the reader.",
+      "description": "What a checkout's thread says, read as `reader`: its file's text, the notes new to the reader, the lines printed after the text (or in its place while it has none), and with `sender`, the prompt Send types into the reader.",
       "query": {
         "type": "object",
         "additionalProperties": false,
@@ -612,6 +824,38 @@
             "type": "string"
           }
         }
+      }
+    },
+    "thread/<project>": {
+      "scope": "project",
+      "description": "A checkout's thread as the caller reads it: its file, the notes new to the caller, and how its anchors are named. No checkout named, the caller's: a reviewer's is its author's.",
+      "query": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "checkout": {
+            "type": "string",
+            "description": "A worktree's name, or `main`."
+          }
+        }
+      },
+      "reply": {
+        "type": "object",
+        "required": [
+          "said"
+        ],
+        "properties": {
+          "said": {
+            "type": "string"
+          }
+        }
+      },
+      "cli": {
+        "word": "thread",
+        "positional": [
+          "checkout"
+        ],
+        "print": "said"
       }
     }
   },

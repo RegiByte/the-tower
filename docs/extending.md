@@ -1512,7 +1512,7 @@ when the look differs, and show them side by side:
 `plugins`, at the top level or under a project, lists absolute plugin directories every session the tower starts
 loads, each passed to Claude as `--plugin-dir`. Your commands and skills live in one plugin outside your repos and
 reach every worker as `/<plugin>:<command>`. A changed plugin reaches the next session started. An extension
-brings its own with [`plugins.claude`](#an-extensions-claude-plugin).
+brings its own with [`plugins.claude`](#an-extensions-claude-plugin). The bundled `extensions/reviews` is the full example: guidance, a `cli` word per verb, and skills whose descriptions carry the triggers.
 
 ```json
 { "plugins": ["/Users/you/code/my-workflow"] }

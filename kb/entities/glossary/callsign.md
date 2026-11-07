@@ -22,7 +22,7 @@ The names come from the config's top-level `callsigns`, the same on every floor,
 [`configuredCallsigns`](ref:hub/src/shared/model.ts#configuredCallsigns): left out, the tower uses
 [`CALLSIGNS`](ref:hub/src/shared/callsign.ts#CALLSIGNS). Each name is an upper case letter, then upper case letters
 and digits ([`CALLSIGN_NAME`](ref:hub/src/shared/callsign.ts#CALLSIGN_NAME)): a callsign is matched in upper case,
-lowercased it names the worktree a worker is cut into, and a reviewer's first prompt (`/tower:review HOLMES-42`) and
+lowercased it names the worktree a worker is cut into, and a reviewer's first prompt (`/reviews:review HOLMES-42`) and
 review note headings are read back by that shape. An empty list, a name of another shape or a name given twice is a
 `ConfigError` ([[board-errors]]). [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes the naming function
 for a list, and [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) the config's; the bridge, the CLI, the

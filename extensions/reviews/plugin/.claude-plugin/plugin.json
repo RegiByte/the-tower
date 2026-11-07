@@ -1,0 +1,5 @@
+{
+  "name": "reviews",
+  "version": "1.0.0",
+  "description": "Teaches a worker to get its work reviewed, answer review notes and review another worker"
+}

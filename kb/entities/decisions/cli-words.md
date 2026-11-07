@@ -59,3 +59,7 @@ breaking change outside a major.
 **Impact.** Any extension's verbs and reads are typed like commands, the user's as much as the bundled ones. The manifest
 gains `cli` on verbs and reads, `/extensions` gains `words`, and `tower x` alone lists capabilities, not every call.
 The cost is the longer word, `tower x reviews note` over `tower note`.
+Reviews' words depart from the first sketch twice. `thread` is a read of its own, `thread/<project>`, because `cli` on
+`said/<project>` would have frozen that read's `reader`, `sender` and `hirer` as flags, as policies' `list/<project>`
+found. `review` is a verb of its own over `hire`'s function, because `contract.json` had frozen `hire` as a word and
+naming it `review` would have been a removal. A typed word that needs a shape of its own gets a verb of its own.

@@ -33,5 +33,5 @@
       "crop": ["section.floor .sessions", "section.floor .trays"], "pad": 4
     }
   ],
-  "text": [{ "name": "thread", "run": "tower thread" }]
+  "text": [{ "name": "thread", "run": "tower x reviews thread" }]
 }
