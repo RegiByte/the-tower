@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.101.1
+
+Tower 3D hires one worker at a time per floor. Restart the tower with this release (`tower down tower`, then `tower up
+tower`); `tower update` does that for you. No host restart. API unchanged.
+
+- **One hire in flight per floor.** Pressing E at a floor's open workstation while a hire there is on its way used to
+  start another worker each time: a floor that cuts a worktree takes seconds to answer, and nothing showed meanwhile.
+  Now the first press says it is hiring, the workstation reads HIRING until the new worker's desk shows, and another
+  press, a hire on the carried note or the spawn dialog on that floor says it is already hiring. A hire that fails or a
+  lost tower lets the floor hire again.
+
 ## v1.101.0
 
 The page's view host is in the library, so another renderer can mount the page's views. Tower 3D confirms in the
