@@ -36,6 +36,11 @@ quota probe · answered <1m ago · next in 9m · answering
 
 `tower doctor` runs its check, which fails with what to do when the last read failed or the probe is overdue.
 
+### The workers
+
+`tower whoami` lists its guidance in a line, so a worker asked about quota knows where to look, and `tower x quota` says
+when to use each word.
+
 The Week draws nothing of its own.
 
 ## Add it
