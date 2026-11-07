@@ -53,7 +53,7 @@ and closed as the location leaves, but for the last four workers left, kept draw
 page's routes. What the open view shows leaving what the page holds takes the page home, but for a worker, the view on
 it stays while the floors' archives are read ([`subjectLeft`](ref:hub/renderers/page/page.js#subjectLeft)): one sent
 home that started before today, or whose day ended on screen, leaves the board for its archive with its Resume, and
-goes home only when no archive holds it.
+goes home only when no archive holds it or the read fails, which a toast says.
 
 **A worker's head** ([`tower/card`](ref:hub/src/views/card.ts#mount)) never crops what identifies the worker: its
 density follows its own width through a container query, so a grid cell and a narrow window look alike. Under the
