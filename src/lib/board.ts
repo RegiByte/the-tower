@@ -52,9 +52,13 @@ export {
   floorSubject,
   itemKey,
   itemSubject,
+  /** @provisional */ linesAt,
   linesSubject,
+  /** @provisional */ linkedFile,
   /** @provisional */ parentOf,
   /** @provisional */ projectOfKey,
+  /** @provisional */ saidSubject,
+  /** @provisional */ sectionSubject,
   /** @provisional */ shownSubject,
   /** @provisional */ subjectAt,
   textOf,
@@ -104,6 +108,7 @@ export type {
   ShelfEntry,
 } from '../shared/model.ts'
 export type {
+  /** @provisional */ CheckoutFile,
   Lines,
   Subject,
 } from '../shared/subjects.ts'

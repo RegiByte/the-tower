@@ -1278,7 +1278,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "91ad090f6fe74aaf",
+      "digest": "e98a5390887f29c9",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -1310,7 +1310,7 @@
     },
     "/lib/board.js": {
       "runtime": "generic",
-      "digest": "df8b8654d0ac4ee7",
+      "digest": "920eebccebf2af3f",
       "values": {
         "boardSubject": {
           "since": "1.151",
@@ -1399,8 +1399,16 @@
         "limitsOf": {
           "since": "1.152"
         },
+        "linesAt": {
+          "since": "1.155",
+          "stability": "provisional"
+        },
         "linesSubject": {
           "since": "1.151"
+        },
+        "linkedFile": {
+          "since": "1.155",
+          "stability": "provisional"
         },
         "noLongerOffered": {
           "since": "1.151"
@@ -1422,6 +1430,14 @@
         },
         "runVerb": {
           "since": "1.151"
+        },
+        "saidSubject": {
+          "since": "1.155",
+          "stability": "provisional"
+        },
+        "sectionSubject": {
+          "since": "1.155",
+          "stability": "provisional"
         },
         "sendTarget": {
           "since": "1.151"
@@ -1473,6 +1489,10 @@
         },
         "CardShown": {
           "since": "1.151"
+        },
+        "CheckoutFile": {
+          "since": "1.155",
+          "stability": "provisional"
         },
         "CheckoutState": {
           "since": "1.151"
@@ -1550,7 +1570,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "eb39ab53e883354b",
+      "digest": "2e8ccc08ab9f86a8",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1617,7 +1637,7 @@
     },
     "/lib/capabilities.js": {
       "runtime": "generic",
-      "digest": "65ef23492e494877",
+      "digest": "8a919f0afc3932b0",
       "values": {
         "CAPABILITIES": {
           "since": "1.151",
@@ -1653,7 +1673,7 @@
     },
     "/lib/cards.js": {
       "runtime": "generic",
-      "digest": "3ca6ad13bba0b8a1",
+      "digest": "f97425062203bfea",
       "values": {
         "ATTENTION_MEANS": {
           "since": "1.151"
@@ -2056,7 +2076,7 @@
     },
     "/lib/changes.js": {
       "runtime": "browser",
-      "digest": "d90d34a5de9c2e74",
+      "digest": "81cc2f13d3817b1e",
       "values": {
         "CHANGES_POLL_MS": {
           "since": "1.151"
@@ -2127,6 +2147,10 @@
         "ChangesScope": {
           "since": "1.151"
         },
+        "DiffFile": {
+          "since": "1.155",
+          "stability": "provisional"
+        },
         "DiffLayout": {
           "since": "1.151"
         },
@@ -2172,7 +2196,7 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "f148676c0597b586",
+      "digest": "315a3c1877f4a9b8",
       "values": {},
       "types": {
         "BoardError": {
@@ -2243,7 +2267,7 @@
     },
     "/lib/extension.js": {
       "runtime": "server",
-      "digest": "ba8ab3edd9503d48",
+      "digest": "3a68c4775806113e",
       "values": {
         "apiError": {
           "since": "1.151"
@@ -2431,7 +2455,7 @@
     },
     "/lib/layout.js": {
       "runtime": "browser",
-      "digest": "435488198ab453ff",
+      "digest": "4fb57e3aa216339b",
       "values": {
         "actionId": {
           "since": "1.151"
@@ -2498,6 +2522,10 @@
         },
         "locationOf": {
           "since": "1.151",
+          "stability": "provisional"
+        },
+        "marksOf": {
+          "since": "1.155",
           "stability": "provisional"
         },
         "offeredIds": {
@@ -2672,7 +2700,7 @@
     },
     "/lib/markdown.js": {
       "runtime": "generic",
-      "digest": "4860716000929be1",
+      "digest": "caf6bdf0f6a4e214",
       "values": {
         "documentHtml": {
           "since": "1.151",
@@ -2690,13 +2718,25 @@
         },
         "markdownHtml": {
           "since": "1.151"
+        },
+        "relativeHref": {
+          "since": "1.155",
+          "stability": "provisional"
+        },
+        "safeHref": {
+          "since": "1.155",
+          "stability": "provisional"
+        },
+        "sectionsOf": {
+          "since": "1.155",
+          "stability": "provisional"
         }
       },
       "types": {}
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "750e8a2c505905b1",
+      "digest": "0ab46b734e7d0f15",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2731,7 +2771,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "ef27303e6af41d2f",
+      "digest": "c770ae2c7140e637",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2776,7 +2816,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "c0133aac29bf1774",
+      "digest": "50227704f2519b77",
       "values": {
         "cutLine": {
           "since": "1.151",
@@ -2822,7 +2862,7 @@
     },
     "/lib/stats.js": {
       "runtime": "generic",
-      "digest": "a48c04cfd5d548dc",
+      "digest": "da0ae584789d6a93",
       "values": {
         "STATS_ALL": {
           "since": "1.151"
@@ -2863,7 +2903,7 @@
     },
     "/lib/terminal.js": {
       "runtime": "browser",
-      "digest": "3f700fede1f65527",
+      "digest": "d990ec58583fb3e7",
       "values": {
         "SHELL_SCROLLBACK": {
           "since": "1.151",
@@ -2898,6 +2938,10 @@
         },
         "TermMode": {
           "since": "1.151",
+          "stability": "provisional"
+        },
+        "TermView": {
+          "since": "1.155",
           "stability": "provisional"
         },
         "TermViewHandle": {
@@ -2947,7 +2991,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "25e2a5ea17e157e2",
+      "digest": "493a9a7a306c46b5",
       "values": {
         "GIST_ICON": {
           "since": "1.151"
@@ -3017,6 +3061,14 @@
         },
         "keptTitles": {
           "since": "1.151"
+        },
+        "keptTrayTitles": {
+          "since": "1.155",
+          "stability": "provisional"
+        },
+        "keyedTip": {
+          "since": "1.155",
+          "stability": "provisional"
         },
         "mountKeptTray": {
           "since": "1.151"
@@ -3105,7 +3157,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "de6f6acb2dec9f8b",
+      "digest": "7f855d2cbcb8d096",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"
@@ -3139,7 +3191,7 @@
     },
     "/lib/words.js": {
       "runtime": "generic",
-      "digest": "c917cff8d38a76d6",
+      "digest": "483e28273e0b0b4c",
       "values": {
         "ago": {
           "since": "1.151"

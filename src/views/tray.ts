@@ -1,6 +1,4 @@
-import { ICON } from '../shared/icons.ts'
-import { keptTrayTitles, mountKeptTray } from '../shared/items.ts'
-import type { Mount } from '../shared/views.ts'
+import { ICON, keptTrayTitles, type Mount, mountKeptTray } from '/lib/view.js'
 
 /**
  * `tower/tray`, a collection in a floor's row of trays: its count, unfolding to its newest items, each opened where the

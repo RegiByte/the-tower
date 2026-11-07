@@ -1,21 +1,14 @@
-import type { Board, Card } from '../bridge/board.ts'
-import type { DiffFile, RepoChanges } from '../shared/repo-changes.ts'
-import { addedActions, marksOf } from '../shared/adds.ts'
-import { loop, timers } from '../shared/loop.ts'
-import {
-  CHANGES_TREE_KEY, DIFF_LAYOUT_KEY, changedFiles, changesFailure, changesHandlers, changesOf, changesPath, drawPanel, fileCall, fileKey, isFolded, keepingFileTop, keepingViewedFileTop,
-  linesSpot, livePick, markedChangesHtml, marksToggled, noChanges, picked, pickedLines, readChanges, scopeOf, spanned, spotSelector, viewedCount, watchPickDrag,
-  type ChangesEvent, type ChangesScope, type LinePick, type NamedLines,
-} from '../shared/panels.ts'
-import { panelsCss } from '../shared/panels-css.ts'
-import { reading } from '../shared/reads.ts'
+import { type Board, type Card, type Lines, linesAt, linesSubject } from '/lib/board.js'
+import { changedFiles, type ChangesEvent, changesFailure, changesHandlers, changesOf, changesPath, type ChangesScope, type DiffFile, type DiffLayout, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, type LinePick, livePick, marksToggled, noChanges, picked, readChanges, type RepoChanges, scopeOf, spanned, spotSelector, watchPickDrag } from '/lib/changes.js'
+import { addedActions, marksOf, viewsOf } from '/lib/layout.js'
+import { loop, reading, timers } from '/lib/machine.js'
+import { drawPanel, fileCall, type Mount, panelsCss, type RegionHandle, type Tab } from '/lib/view.js'
+import { VIEWER_KEYS } from '/lib/viewer.js'
 import { changedIn } from '../shared/checkouts.ts'
-import { linesAt, linesSubject, type Lines } from '../shared/subjects.ts'
-import type { DiffLayout } from '../shared/viewer.ts'
-import { viewsOf, type Mount, type RegionHandle, type Tab } from '../shared/views.ts'
+import { linesSpot, markedChangesHtml, type NamedLines, pickedLines, viewedCount } from '../shared/panels.ts'
 
 /**
- * What a worker changed in its repos, as git reads it (`/panels.js`): read while the view is seen, files viewed (marks
+ * What a worker changed in its repos, as git reads it (`/lib/changes.js`): read while the view is seen, files viewed (marks
  * every renderer in this browser shares through `tower.store`) and folded, lines marked by what extensions add to its
  * card (`marks`), and lines picked with the mouse, a `lines` subject, under which the renderer draws what acts on them
  * (`lines.acts`). Handed lines (`show`), it unfolds their file and scrolls to them.
@@ -210,8 +203,8 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     const fold = target.closest<HTMLElement>('[data-fold]')?.dataset.fold
     if (fold) return toggleFold(fold)
     const chosen = target.closest<HTMLElement>('[data-changes-layout]')?.dataset.changesLayout as DiffLayout | undefined
-    if (chosen) return (tower.store.set(DIFF_LAYOUT_KEY, chosen), (layout = chosen), draw())
-    if (target.closest('[data-changes-tree]')) return (tower.store.set(CHANGES_TREE_KEY, !tree), (tree = !tree), draw())
+    if (chosen) return (tower.store.set(VIEWER_KEYS.diffLayout, chosen), (layout = chosen), draw())
+    if (target.closest('[data-changes-tree]')) return (tower.store.set(VIEWER_KEYS.changesTree, !tree), (tree = !tree), draw())
     const treeFold = target.closest<HTMLElement>('[data-tree-fold]')?.dataset.treeFold
     if (treeFold) return (treeFolds.delete(treeFold) || treeFolds.add(treeFold), draw())
     const goto = target.closest<HTMLElement>('[data-goto-file]')?.dataset.gotoFile
@@ -231,7 +224,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
 
   /** The viewer's diff layout and file tree, as `tower.store` keeps them for every renderer of theirs. */
   async function readPrefs() {
-    const [l, t] = await Promise.all([tower.store.get(DIFF_LAYOUT_KEY), tower.store.get(CHANGES_TREE_KEY)])
+    const [l, t] = await Promise.all([tower.store.get(VIEWER_KEYS.diffLayout), tower.store.get(VIEWER_KEYS.changesTree)])
     const next = { layout: (l as DiffLayout | undefined) ?? 'unified', tree: (t as boolean | undefined) ?? false }
     if (next.layout === layout && next.tree === tree) return
     ;({ layout, tree } = next)

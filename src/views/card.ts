@@ -1,15 +1,8 @@
-import type { Board, Card, CardResource, Floor } from '../bridge/board.ts'
-import {
-  BLOCKED_TEXT, LET_GO_MEANS, callOf, can, detailsOf, esc, gistLine, lampOf, letGoAsk, letGoneLine, modelName, noLongerOffered, offeredCall, reapAsk, resumesRow,
-  sendHomeAsk, sentHome, statusName, statusTitle, when, whereLineOf, whyNot, type DaemonVerb,
-} from '../shared/cards.ts'
-import { ICON, withIcons } from '../shared/icons.ts'
-import { pressing } from '../shared/press.ts'
-import type { Subject } from '../shared/subjects.ts'
-import { verbHint, verbLabel } from '../shared/verb-words.ts'
-import type { Mount } from '../shared/views.ts'
+import { type Board, callOf, can, type Card, type Floor, noLongerOffered, offeredCall, sentHome, type Subject } from '/lib/board.js'
+import { BLOCKED_TEXT, type DaemonVerb, detailsOf, gistLine, lampOf, LET_GO_MEANS, letGoAsk, letGoneLine, reapAsk, resumesRow, sendHomeAsk, statusName, statusTitle, verbHint, verbLabel, whereLineOf, whyNot } from '/lib/cards.js'
+import { ICON, keyedTip, type Mount, paintOnce, pressing, withIcons } from '/lib/view.js'
+import { esc, modelName, when } from '/lib/words.js'
 import { reviewerOf } from '../shared/checkouts.ts'
-import { keyedTip, paintOnce } from '../shared/view-parts.ts'
 
 /**
  * A worker: its head (who and where, a glance at its context, cost and leftovers, its details, what extensions add to
@@ -219,7 +212,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
   /** What the worker left running, each process ended on its own or all at once. */
   function leftHtml(c: Card) {
     if (!c.resources.length) return `<h3>${c.callsign} left nothing running</h3>`
-    const row = (r: CardResource) => `<div class="proc"><code>${r.pid}</code><span class="on ${r.orphan ? 'orphan' : ''}">${[...r.ports.map((p) => `:${p}`), r.orphan ? 'orphan' : ''].filter(Boolean).join(' ')}</span>
+    const row = (r: Card['resources'][number]) => `<div class="proc"><code>${r.pid}</code><span class="on ${r.orphan ? 'orphan' : ''}">${[...r.ports.map((p) => `:${p}`), r.orphan ? 'orphan' : ''].filter(Boolean).join(' ')}</span>
     <span class="cmd" data-tip="${esc(r.command)}">${esc(r.command)}</span><button data-reap-process="${esc(JSON.stringify(callOf(r, 'reap')))}" data-tip="end process ${r.pid}">${verbLabel('resource', 'reap')}</button></div>`
     return `<h3>Left running by ${c.callsign}</h3>${c.resources.map(row).join('')}
     <div class="all"><button class="danger" data-reap>${verbLabel('card', 'reap')} ${c.resources.length}</button></div>`

@@ -1,7 +1,7 @@
-import type { Board, Card } from '../bridge/board.ts'
-import { keysLabel } from '../shared/keymap.ts'
-import { modeText, type TermView } from '../shared/term-view.ts'
-import type { Mount } from '../shared/views.ts'
+import type { Board, Card } from '/lib/board.js'
+import { keysLabel } from '/lib/keys.js'
+import { modeText, type TermView } from '/lib/terminal.js'
+import type { Mount } from '/lib/view.js'
 
 /**
  * A worker's session in its terminal, streamed while the view is mounted: the PTY's one size held by whoever types, and

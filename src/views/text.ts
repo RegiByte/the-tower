@@ -1,4 +1,4 @@
-import { esc } from '../shared/cards.ts'
+import { esc } from '/lib/words.js'
 import { framedText, typeView } from './item.ts'
 
 /** `tower/text`, the text view, or any text's source: its text as written, in a frame where nothing runs. */

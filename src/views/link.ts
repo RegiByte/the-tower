@@ -1,8 +1,9 @@
-import type { Board, CardShown } from '../bridge/board.ts'
-import { esc, shownTitle } from '../shared/cards.ts'
-import { documentCss } from '../shared/design.ts'
-import type { Tower } from '../shared/shelf-page.ts'
-import type { Mount } from '../shared/views.ts'
+import type { Board, CardShown } from '/lib/board.js'
+import { shownTitle } from '/lib/cards.js'
+import type { Tower } from '/lib/client.js'
+import { documentCss } from '/lib/design.js'
+import type { Mount } from '/lib/view.js'
+import { esc } from '/lib/words.js'
 
 /**
  * `tower/link`, the view of an address a worker showed (`text/uri-list`): a url framed as it is, a link as a page whose

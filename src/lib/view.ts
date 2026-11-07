@@ -25,6 +25,7 @@ export {
   /** @provisional */ itemTextHtml,
   keptOf,
   keptTitles,
+  /** @provisional */ keptTrayTitles,
   mountKeptTray,
   openItemOf,
   pressTrayHtml,
@@ -47,6 +48,7 @@ export {
 } from '../shared/press.ts'
 export {
   closeHtml,
+  /** @provisional */ keyedTip,
   paintOnce,
   viewCss,
 } from '../shared/view-parts.ts'
