@@ -9,7 +9,7 @@ import { triggerBoards, boardWithout } from '../bridge/triggers.ts'
 import { isApiError } from '../shared/api.ts'
 import type { BoardTrigger, Caller, ExtensionProblem, TriggerCall } from '../shared/extensions.ts'
 import { frozen } from '../bridge/frozen.ts'
-import { thrownWords } from '../logged.ts'
+import { thrownWords } from '../shared/thrown.ts'
 
 /** Who a board trigger's calls are made for: the tower, at a board change. */
 export const BOARD_CALLER: Caller = { t: 'tower', id: 'board', via: 'loop', within: [] }

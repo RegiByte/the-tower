@@ -10,9 +10,9 @@ import './lent-modules.ts'
 import { mismatchOf } from './bridge/extensions.ts'
 import type { StartVerdict } from './extension-check.ts'
 import { MANIFEST_FILE } from './extensions.ts'
-import { thrownWords } from './logged.ts'
 import { API_VERSION, apiError } from './shared/api.ts'
 import { capabilityOf, Manifest, type StartCtx } from './shared/extensions.ts'
+import { thrownWords } from './shared/thrown.ts'
 
 const START_MS = 10_000
 const NO_TOWER = 'tower extensions check starts it with no tower: its ctx reaches nothing'

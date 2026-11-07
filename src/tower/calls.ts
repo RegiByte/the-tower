@@ -7,7 +7,7 @@
 import { z } from 'zod'
 import type { Accepted, CompiledRead, CompiledVerb } from '../bridge/extensions.ts'
 import { offOn } from '../bridge/stores.ts'
-import { thrownWords } from '../logged.ts'
+import { thrownWords } from '../shared/thrown.ts'
 import { apiError, isApiError, type ApiError } from '../shared/api.ts'
 import { matchRead, paramsOf, type Caller, type Deprecated, type ProblemLane, type Writer } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'

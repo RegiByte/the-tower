@@ -1,4 +1,4 @@
-import { thrownWords } from '../logged.ts'
+import { thrownWords } from '../shared/thrown.ts'
 import { apiError, type ApiError } from '../shared/api.ts'
 import { ConfigError } from '../shared/model.ts'
 

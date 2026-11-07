@@ -8,7 +8,7 @@
  */
 import { z } from 'zod'
 import { offOn } from '../bridge/stores.ts'
-import { thrownWords } from '../logged.ts'
+import { thrownWords } from '../shared/thrown.ts'
 import { apiError, HOOK_DEADLINE, HOOKS, isApiError, type ApiError, type HookName } from '../shared/api.ts'
 import { qualifiedOf, tooDeep, type Answered, type Caller } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'

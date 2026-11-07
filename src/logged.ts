@@ -6,9 +6,6 @@ import type { FSWatcher } from 'node:fs'
 
 const say = (what: string) => (err: unknown) => console.error(`${what}:`, err)
 
-/** What a throw says. Code the tower doesn't own can throw anything, `undefined` included: `Promise.reject()` does. */
-export const thrownWords = (err: unknown): string => (err as Error)?.message ?? String(err)
-
 export const logged =
   <A extends unknown[]>(what: string, run: (...args: A) => void) =>
   (...args: A): void => {
