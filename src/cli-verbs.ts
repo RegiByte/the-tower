@@ -150,11 +150,11 @@ export const ALIASES: Record<string, Alias> = {
   probes: { now: 'quota', args: (words) => (words[0] === 'run' ? ['read-now', ...words.slice(2)] : ['probes', ...words]) },
 }
 
-/** The words an alias stands for, after `tower x`, and what it says about itself. */
-export const aliased = (alias: Alias, name: string, words: string[]): { args: string[]; line: string } => ({
-  args: [...alias.now.split(' '), ...alias.args(words)],
-  line: `tower ${name} is tower x ${alias.now}; the old word goes at 2.0`,
-})
+/** The words an alias stands for, after `tower x`, and what it says about itself: the command as typed and as it runs, so the line can be typed. */
+export const aliased = (alias: Alias, name: string, words: string[]): { args: string[]; line: string } => {
+  const args = [...alias.now.split(' '), ...alias.args(words)]
+  return { args, line: `${['tower', name, ...words].join(' ')} is ${['tower x', ...args].join(' ')}; the old word goes at 2.0` }
+}
 
 /** The verbs that are `of`'s: each dispatcher's handlers are keyed by them. */
 export type VerbOf<Of extends CliVerb['of']> = { [K in VerbName]: (typeof CLI_VERBS)[K]['of'] extends Of ? K : never }[VerbName]
