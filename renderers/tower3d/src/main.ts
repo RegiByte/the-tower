@@ -59,7 +59,7 @@ import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
-import { commandOf, keymapSheetHtml, type Keys } from '../../../src/shared/keymap.ts'
+import { commandOf, keymapSheetHtml, PANES, type Keys } from '../../../src/shared/keymap.ts'
 import { MOVE_KEYS, move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
@@ -1372,7 +1372,7 @@ const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'n
 const PAGE_ONLY = new Set(['home', 'sidebar', 'help'])
 const sheetKeys = (keys: Keys): Keys => Object.fromEntries(Object.entries(keys).filter(([id]) => !PAGE_ONLY.has(id)))
 
-const PANE_OF: Record<string, 'screen' | 'brief' | 'changes' | 'reviews'> = { 'pane-terminal': 'screen', 'pane-brief': 'brief', 'pane-changes': 'changes', 'pane-reviews': 'reviews' }
+const PANE_OF = Object.fromEntries(PANES.map((p) => [p.command, p.name])) as Record<string, 'screen' | 'brief' | 'changes' | 'reviews'>
 
 /**
  * A pane of the open panel, by the keymap's names for the tower page's panes: a desk's tabs, the logbook reader's Screen

@@ -4,7 +4,7 @@ import { briefCss } from '/lib/brief.js'
 import { CAPABILITIES } from '/lib/capabilities.js'
 import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, claudeUntestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
 import { toastsCss, watchTips } from '/lib/chrome.js'
-import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND } from '/lib/keys.js'
+import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES } from '/lib/keys.js'
 import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
 import { loop, timers } from '/lib/machine.js'
 import { markdownCss } from '/lib/markdown.js'
@@ -1613,7 +1613,7 @@ tower.store.on(() => void rereadViewer().then(render))
 const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open || Boolean(document.querySelector('[data-view] dialog[open]'))
 
 /** The keymap's command for each of the core's tabs of a worker, and the view each opens. */
-const PANE_COMMAND = /** @type {Partial<Record<string, string>>} */ ({ 'pane-terminal': 'tower/terminal', 'pane-brief': 'tower/brief', 'pane-changes': 'tower/changes', 'pane-reviews': 'reviews/thread' })
+const PANE_COMMAND = /** @type {Partial<Record<string, string>>} */ (Object.fromEntries(PANES.map((p) => [p.command, p.view])))
 
 /** Opens a tab of the worker focus is in, else the main pane's, with focus in its terminal or on its tab, from where Tab enters it. @param {string} view */
 const toPane = (view) => mainRegion.tabsAt(document.activeElement)?.toPane(view) ?? false
