@@ -137,6 +137,12 @@ export const actionWords = (board: Board, action: Added<Action>): Words => {
 /** Where a client command's module is served. */
 export const commandUrl = (cap: string, module: string) => `/x/${cap}/${module}`
 
+/**
+ * The module the tower serves at `path`, imported by its whole address: a classic script framed at an opaque origin has
+ * `about:blank` as `import()`'s base in Chrome, while `location.href` keeps the real one (`location.origin` is `null`).
+ */
+export const importServed = (path: string): Promise<Record<string, unknown>> => import(new URL(path, location.href).href)
+
 /** A command's glyph: one of the core's icons by name (`/icons.js`), or an SVG its extension serves at `href`. @since 1.130 */
 export type Glyph = { t: 'core'; name: keyof typeof ICON } | { t: 'svg'; href: string }
 
