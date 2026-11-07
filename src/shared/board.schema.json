@@ -4540,6 +4540,14 @@
             "type": "string"
           }
         },
+        "settings": {
+          "description": "Its settings as they stand on the system, its schema's defaults filled in, when it declares a schema: what every view and renderer reads with `settingsOf`."
+        },
+        "floorSettings": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "The settings of each floor that sets its own, by floor, over the system's: `floorSettingsOf` reads them."
+        },
         "problems": {
           "type": "array",
           "items": {

@@ -1236,6 +1236,8 @@ export const registry = (
       bundled: a.bundled,
       state,
       ...(a.off.length && { off: a.off }),
+      ...(a.schema && { settings: a.settings }),
+      ...(Object.keys(a.floorSettings).length && { floorSettings: a.floorSettings }),
       problems: [...(calls.get(id) ?? []), ...startProblems, ...stamp(a.problems, now)].slice(0, PROBLEMS_SHOWN),
       verbs: verbsOf(a.manifest),
       reads: readsOf(a.manifest),

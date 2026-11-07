@@ -839,6 +839,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
     subjects: [],
     views: [],
     regions: [],
+    settings: { every: 3_600_000 },
   })
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   const exempted = (id: string) => (id === 'reviews' ? [{ session: DESK_SESSIONS.reviewer, callsign: REVIEWER, from: 'hiring' }] : [])

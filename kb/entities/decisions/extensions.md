@@ -63,7 +63,8 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   `skipped` for whatever requires something refused, until nothing changes. Only an acyclic, fully met graph reaches
   braided, whose sort would otherwise throw for the whole system. Each floor's own settings are merged over the
   system's and parsed there too: a floor its schema refuses gets an `invalid` problem and reads the system's, so one
-  bad value costs that floor's override and never the board.
+  bad value costs that floor's override and never the board. The board carries the result in `settings` and
+  `floorSettings` on each extension, so a client reads its settings with no server code (since 1.154).
 - **Resources beside the core.** Each accepted extension is a braided resource `x:<cap>` after `core:config`,
   `core:system`, `core:publisher`, `core:dispatch`, `core:http` and `core:extensions` and its requires' providers, its
   wants' optional ([[spine]]). Its start imports the server module afresh for its hash, builds ctx
