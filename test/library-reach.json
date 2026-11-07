@@ -300,10 +300,5 @@
   "renderers/tower3d/src/world.ts -> ../../../src/bridge/stats.ts",
   "renderers/tower3d/src/world.ts -> ../../../src/shared/design.ts",
   "renderers/tower3d/src/world.ts -> ../../../src/shared/panels.ts",
-  "renderers/tower3d/src/zones.ts -> ../../../src/shared/design.ts",
-  "renderers/week/week.js -> ../../src/bridge/board.ts",
-  "renderers/week/week.js -> ../../src/bridge/stats.ts",
-  "renderers/week/week.js -> /cards.js",
-  "renderers/week/week.js -> /markdown.js",
-  "renderers/week/week.js -> /panels.js"
+  "renderers/tower3d/src/zones.ts -> ../../../src/shared/design.ts"
 ]
