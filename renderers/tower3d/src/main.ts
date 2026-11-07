@@ -59,7 +59,7 @@ import { SHELL_SCROLLBACK } from '../../../src/shared/terms.ts'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
-import { commandOf, keymapSheetHtml, PANES, type Keys } from '../../../src/shared/keymap.ts'
+import { addedCommandOf, commandOf, keymapSheetHtml, panesOf, type Keys } from '../../../src/shared/keymap.ts'
 import { MOVE_KEYS, move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
@@ -1372,8 +1372,6 @@ const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'n
 const PAGE_ONLY = new Set(['home', 'sidebar', 'help'])
 const sheetKeys = (keys: Keys): Keys => Object.fromEntries(Object.entries(keys).filter(([id]) => !PAGE_ONLY.has(id)))
 
-const PANE_OF: Record<string, string> = Object.fromEntries(PANES.map((p) => [p.command, p.name]))
-
 /**
  * A pane of the open panel, by the keymap's names for the tower page's panes: a desk's tabs, the logbook reader's Screen
  * and Logbook. Answers whether the panel has that pane: a pane Tower 3D doesn't draw does nothing.
@@ -1397,7 +1395,8 @@ function toPane(pane: string) {
 /** The keymap's commands the building shares with every renderer, from anywhere: walking, at a desk, in its terminal. */
 function runCommand(id: string, e: KeyboardEvent) {
   if (MOVE_OF[id]) return (e.repeat || goMove(MOVE_OF[id]), true)
-  if (PANE_OF[id]) return toPane(PANE_OF[id])
+  const pane = panesOf(s.board!).find((p) => p.command === id)
+  if (pane) return pane.name ? toPane(pane.name) : false
   if (id === 'leave-terminal') return ((document.activeElement as HTMLElement | null)?.blur(), true)
   return false
 }
@@ -1406,7 +1405,8 @@ const terminalKeys = { keys: () => s.board!.keys, run: runCommand }
 
 /** A keydown outside a terminal that runs a shared command. Returns whether it ran one. */
 function commandKey(e: KeyboardEvent) {
-  const id = s.board && commandOf(s.board.keys, e, typing() ? 'field' : 'page')
+  const focus = typing() ? 'field' : 'page'
+  const id = s.board && (commandOf(s.board.keys, e, focus) ?? addedCommandOf(s.board.keys, e, focus))
   if (!id || !runCommand(id, e)) return false
   e.preventDefault()
   return true

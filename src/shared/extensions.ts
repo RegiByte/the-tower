@@ -1082,7 +1082,7 @@ const View = z.strictObject({
   regions: views(z.array(z.string()).optional().describe("The regions it declares inside it, each one of the manifest's regions.")),
   options: views(Schema.optional().describe("Its options' JSON Schema, as a region's layout sets them.")),
   words: views(Words.describe('Its name, as a palette offers "Open <label>".')),
-  keys: views(Chords.optional().describe("Default chords that display the subject in focus with it: the config's keys replace them.")),
+  keys: views(Chords.optional().describe("Default chords that display the subject in focus with it, or open its tab where it is a worker's tab: the config's keys replace them.")),
   tab: tabs(
     z
       .string()

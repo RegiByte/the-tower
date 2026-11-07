@@ -228,7 +228,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<Board, '
   const board: Board = {
     user: { name: 'user' },
     config: '/system/config.json',
-    keys: DEFAULT_KEYS,
+    keys: { ...DEFAULT_KEYS, 'reviews/thread': ['Ctrl+Shift+4'] },
     floors: built.map((f) => {
       const cards = seated.filter((c) => c.project === f.id)
       const present = cards.filter(kept)
