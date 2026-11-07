@@ -22,9 +22,9 @@
     "hub/src/shared/spawn-form.ts#spawnFormHtml",
     "hub/src/views/card.ts#mount",
     "hub/src/shared/spawn.ts#spawnHandlers",
-    "hub/renderers/tower3d/src/main.ts#confirmed",
+    "hub/renderers/tower3d/src/main.ts#answered",
     "hub/renderers/tower3d/src/ui.ts#askingButton",
-    "hub/renderers/tower3d/src/desk-verbs.ts#addedKey",
+    "hub/src/shared/ask.ts#ask",
     "hub/src/shared/duty.ts#sendHomeAsk"
   ]
 }
@@ -68,11 +68,12 @@ them.
   The id is claimed with an exclusive create: a restore never overwrites, and an id taken again is refused.
 - The tower page asks in a dialog of its own, drawn from the design's tokens, never the browser's `confirm()`
   ([`dialogs`](ref:hub/renderers/page/dialogs.js#dialogs)), its go-ahead button named for the verb.
-- A framed page may not open `confirm()`, so Tower 3D's destructive buttons arm on a first press ("sure?", the
-  shared ask as its tip) and run on a second soon after ([`confirmed`](ref:hub/renderers/tower3d/src/main.ts#confirmed),
-  [`askingButton`](ref:hub/renderers/tower3d/src/ui.ts#askingButton)). An extension's verb is armed under the action
-  itself and its place among the card's verbs of its id ([`addedKey`](ref:hub/renderers/tower3d/src/desk-verbs.ts#addedKey)),
-  so a pin or a board that reorders the desk between the presses never confirms the verb that took its place.
+- Tower 3D's panels ask in the library's dialog ([`ask`](ref:hub/src/shared/ask.ts#ask), `/lib/chrome.js`), the same
+  one the page opens, found by its mark. A button that asks carries its question and go-ahead verb as it was drawn
+  ([`askingButton`](ref:hub/renderers/tower3d/src/ui.ts#askingButton)), and each panel's press asks it before
+  anything else runs ([`answered`](ref:hub/renderers/tower3d/src/main.ts#answered)), so no verb can skip it. While
+  the dialog is open the building takes no key, and its Escape stays in the page: framed, the tower would hear it and
+  go home. Verbs in the world still run on a hold ([[verb-prompts]]): a dialog would take the pointer out of the world.
 
 **Alternatives considered.**
 - *Undo as `collection/create` with the same text*: a new id, so a new tag and place; the draft comes back a copy.

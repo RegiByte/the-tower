@@ -11,6 +11,7 @@ import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
 import { placeOnOpen, watchTips } from '../../../src/shared/tips.ts'
 import { toaster, toastsCss } from '../../../src/shared/toasts.ts'
+import { ask, asking } from '/lib/chrome.js'
 import { ICON } from '../../../src/shared/icons.ts'
 import { type ChangesRead, anchorOf, anchorSpot, changedFiles, keepShownTabs, changesHtml, fileKey, isFolded, keepingFileTop, keepingViewedFileTop, marksToggled, drawPanel, keepingFocus, panelsCss, livePick, pickAnchor, picked, spanned, watchPickDrag, spotSelector, STATS_ALL, statsHtml, statsQuery, failedHtml, fileCall } from '../../../src/shared/panels.ts'
 import { cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, noteCallOf, resolveAction, reviewsHtml, threadCheckout, threadViewOf, type ThreadPlace, type ThreadView } from '../../../extensions/reviews/client/panel.ts'
@@ -19,12 +20,12 @@ import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer } from '../../../s
 import { actionId, isFresh as isNewAction, offeredIds } from '../../../src/shared/adds.ts'
 import { declaredLayout, layoutKey, layoutOf, usableConfigLayout } from '../../../src/shared/views.ts'
 import type { Layout } from '../../../src/shared/regions.ts'
-import { addedKey, deskVerbs, type DeskRegion } from './desk-verbs.ts'
+import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { defaultLimits } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf } from './api.ts'
-import { actionWords, can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { probedLines, type ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
@@ -148,21 +149,14 @@ const call = <K extends Parameters<typeof tower.call>[0]>(verb: K, body: Paramet
 const tried = <R>(request: () => R | Promise<R>) => Promise.resolve().then(request).catch((err: Error) => (toast(err.message), undefined))
 const offered = <V extends ApiVerb>(c: Call<V>, fields?: Partial<Verbs[V]>) => tried(() => tower.run(c, fields))
 
-/**
- * Destructive buttons ask on their own label, the question in their tip, and act on a second click within `ARM_MS`:
- * a shelf page may not open `confirm()`.
- */
-const ARM_MS = 3000
 /** Why a daemon verb is held back now, for the panels' buttons. */
 const held = (verb: DaemonVerb) => heldWhy(s.board!, s.lost, verb)
-const isArmed = (key: string) => s.armed?.key === key && Date.now() < s.armed.until
-function confirmed(key: string) {
-  if (isArmed(key)) return (s.armed = undefined, renderPanel(), true)
-  s.armed = { key, until: Date.now() + ARM_MS }
-  setTimeout(renderPanel, ARM_MS)
-  renderPanel()
-  return false
-}
+
+/**
+ * Whether a panel button that asks first (`data-ask`, as `askingButton` draws it) was answered yes in the library's
+ * dialog. A button that asks nothing is answered at once, in the press that made it, so a lock still has its gesture.
+ */
+const answered = (el: HTMLElement) => el.dataset.ask === undefined || ask(el.dataset.ask, el.dataset.askVerb!)
 
 /** The drafts collection over the renderer API. */
 const draftIo: DraftIo = { call: tower.call, read: noteText, failed: (err) => toast(err.message) }
@@ -455,7 +449,7 @@ function renderPanel() {
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
     if (!c) return unfocus()
-    $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), isArmed, dottedNow(board), held, tower.framed)
+    $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), dottedNow(board), held, tower.framed)
     sawDesk(board, c)
     $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh))
     keepShownTabs($('desk-tabs').parentElement!, c.id)
@@ -474,13 +468,13 @@ function renderPanel() {
     if (!sh) return unfocus()
     show('desk-ask', false)
     for (const el of ['desk-tabs', 'desk-activity', 'desk-moves', 'desk-details']) $(el).innerHTML = ''
-    $('desk-head').innerHTML = shellHeadHtml(sh, board.floors.find((f) => f.id === sh.project), isArmed(`shell ${id}`))
+    $('desk-head').innerHTML = shellHeadHtml(sh, board.floors.find((f) => f.id === sh.project))
   }
   if (panel.kind === 'floor') {
     const id = panel.id
     const f = board.floors.find((f) => f.id === id)
     if (!f) return closeSide()
-    $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, isArmed, held, panel.tray)
+    $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, held, panel.tray)
   }
   if (panel.kind === 'archive') {
     const f = board.floors.find((f) => f.id === panel.id)
@@ -554,7 +548,7 @@ function renderPanel() {
     const c = f?.collections.find((c) => c.id === panel.collection)
     const item = c?.items.find((i) => i.id === panel.id)
     if (!f || !c || !item) return (closeDoc(), toast('The item was deleted'))
-    $('doc-head').innerHTML = keptHeadHtml(f, c, item, keptTitle(f.id, c.id, item), isArmed(`kept ${panel.id}`))
+    $('doc-head').innerHTML = keptHeadHtml(f, c, item, keptTitle(f.id, c.id, item))
     if (panel.drawn !== item.modifiedAt) drawKept(panel, c, item)
   }
 }
@@ -2046,7 +2040,7 @@ $('paused').addEventListener('click', (e) => {
 
 const typing = () => {
   const el = document.activeElement
-  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || ($('spawn') as HTMLDialogElement).open || ($('landing') as HTMLDialogElement).open
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || asking() || ($('spawn') as HTMLDialogElement).open || ($('landing') as HTMLDialogElement).open
 }
 /** The aimed thing's verb on a key, by `KeyboardEvent.code`. */
 const offerOnKey = (code: string) => (s.aimed && (captured() || s.view === 'overview') ? offerForKey(s.offers, code) : undefined)
@@ -2081,7 +2075,7 @@ function onKey(code: string, repeat: boolean): boolean {
 
 /** A key the building answered is taken (`preventDefault`): framed in the tower, the tower runs its own command only for a key left alone. */
 document.addEventListener('keydown', (e) => {
-  if (e.defaultPrevented || commandKey(e)) return
+  if (e.defaultPrevented || asking() || commandKey(e)) return
   // A replayed screen takes no input, so Esc ends the replay even while that screen has focus.
   if (e.code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return (e.preventDefault(), replay(s.replay.id, undefined))
   if (!s.board || typing() || e.metaKey || e.ctrlKey || e.altKey) return
@@ -2673,31 +2667,32 @@ async function resume(c: Call<'resume'>) {
   if (reply?.t === 'spawned') s.pendingDesk = reply.id
 }
 
-$('desk-head').addEventListener('click', (e) => {
+$('desk-head').addEventListener('click', async (e) => {
   const button = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')
-  const what = button?.dataset.act
+  if (!button || !(await answered(button))) return
+  const what = button.dataset.act
   const board = s.board
   const panel = panelNow()
   if (!what || !board || !panel) return
   if (what === 'close') return (unfocus(), lock())
-  if (panel.kind === 'shell') return what === 'shell-kill' && confirmed(`shell ${panel.id}`) && pressing(button!, () => killShell(board.shells.find((sh) => sh.id === panel.id)!))
+  if (panel.kind === 'shell') return what === 'shell-kill' && pressing(button, () => killShell(board.shells.find((sh) => sh.id === panel.id)!))
   if (panel.kind !== 'desk') return
   const c = findCard(board, panel.id)!
   if (what === 'tower') return tower.ui('select', { id: c.id })
   if (what === 'resume') return tried(() => resume(offeredCall(c, 'resume', c.callsign)))
-  if (what === 'kill') return confirmed(`kill ${c.id}`) && pressing(button!, () => sendHome(c))
-  if (what === 'let-go') return confirmed(`let-go ${c.id}`) && pressing(button!, () => letWorkerGo(c))
-  if (what === 'reap') return confirmed(`reap ${c.id}`) && pressing(button!, () => tried(() => tower.run(offeredCall(c, 'reap', c.callsign))))
+  if (what === 'kill') return pressing(button, () => sendHome(c))
+  if (what === 'let-go') return pressing(button, () => letWorkerGo(c))
+  if (what === 'reap') return pressing(button, () => tried(() => tower.run(offeredCall(c, 'reap', c.callsign))))
   if (what === 'added') {
-    const { k, action } = JSON.parse(button!.dataset.added!) as { k: number; action: VerbAction & { cap: string } }
+    const { action } = JSON.parse(button.dataset.added!) as { action: VerbAction & { cap: string } }
     sawActions(board, [actionId(action)])
-    if (actionWords(board, action).destructive && !confirmed(addedKey(c, action, k))) return
-    return pressing(button!, () => tried(() => runVerb(action)))
+    return pressing(button, () => tried(() => runVerb(action)))
   }
 })
 
-$('doc-head').addEventListener('click', (e) => {
+$('doc-head').addEventListener('click', async (e) => {
   const button = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')
+  if (button && !(await answered(button))) return
   const what = button?.dataset.act
   if (what === 'close') return (closeDoc(), lock())
   const picture = panelAs('picture')
@@ -2708,7 +2703,7 @@ $('doc-head').addEventListener('click', (e) => {
   const kept = panelAs('kept')
   if (kept) {
     if (openOut(e)) return
-    if (what === 'delete') return confirmed(`kept ${kept.id}`) && pressing(button!, () => deleteKept(kept))
+    if (what === 'delete') return pressing(button!, () => deleteKept(kept))
   }
   const doc = panelAs('doc')
   if (doc && what === 'tower') return tower.ui('shelf', { project: doc.project, n: doc.n })
@@ -2746,7 +2741,7 @@ function onStatsClick(el: HTMLElement) {
 
 $('side').addEventListener('click', async (e) => {
   const el = (e.target as HTMLElement).closest<HTMLElement>('button, [data-desk], [data-shell], [data-go], [data-logbook]')
-  if (!el || !s.board) return
+  if (!el || !(await answered(el)) || !s.board) return
   const d = el.dataset
   if (d.act === 'close') return (closeSide(), lock())
   if (d.logbook) return openLogbook(pastCard(d.logbook))
@@ -2762,24 +2757,23 @@ $('side').addEventListener('click', async (e) => {
   }
   if (d.shelf && floor) return tower.ui('shelf', { project: floor.id, n: Number(d.shelf) })
   if (d.resume) return resume(JSON.parse(d.resume))
-  if (d.resumeAll) return confirmed(`resume-all ${d.resumeAll}`) && pressing(el, () => resumeAll(floorOf(d.resumeAll!)))
+  if (d.resumeAll) return pressing(el, () => resumeAll(floorOf(d.resumeAll!)))
   if (d.reapPid) return pressing(el, () => reapProcess(d.reapPid!))
   if (d.shellDir) return pressing(el, () => tried(() => spawnShell(offeredCall(floorOf(d.shellProject!), 'shell', floorOf(d.shellProject!).name), d.shellDir!)))
   if (d.wtCall) {
     const verb = d.wtVerb as keyof typeof WORKTREE_DONE
-    if (WORKTREE_ASK[verb] && !confirmed(`wt ${d.wtCall}`)) return
     return pressing(el, () => worktreeVerb(JSON.parse(d.wtCall!), `${WORKTREE_DONE[verb]} ${d.wtName}`))
   }
   if (d.discard) {
     const call = s.board.floors.flatMap((f) => f.worktrees).map((w) => callOf(w, 'discard')).find((call) => JSON.stringify(call) === d.discard)
     if (!call) return toast(noLongerOffered('this worktree', 'discard'))
-    return confirmed(`wt ${d.discard}`) && pressing(el, () => discardWorktree(call))
+    return pressing(el, () => discardWorktree(call))
   }
   if (d.landing) return pressing(el, () => showLanding(JSON.parse(d.landing!)))
-  if (d.tidyCall) return confirmed(`tidy ${d.tidyCall}`) && pressing(el, () => tidy(JSON.parse(d.tidyCall!)))
+  if (d.tidyCall) return pressing(el, () => tidy(JSON.parse(d.tidyCall!)))
   if (d.tidy !== undefined && floor) {
     const f = floorOf(floor.id)
-    return confirmed(`tidy ${f.id}`) && pressing(el, () => tried(() => tidy(offeredCall(f, 'tidy', f.name))))
+    return pressing(el, () => tried(() => tidy(offeredCall(f, 'tidy', f.name))))
   }
   if (d.tray && floor) return (setPanel({ ...floor, tray: floor.tray === d.tray ? undefined : d.tray }), renderPanel())
   if (d.kept && floor) return openKept(keptOf(d.kept))

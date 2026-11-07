@@ -194,8 +194,6 @@ export type State = {
   marked: number
   offersOfAimed: string
   hold: Hold | undefined
-  /** A destructive button asked once and acts on a second click until `until`. */
-  armed: { key: string; until: number } | undefined
   /** A pointer press, kept to act on the release only if it still points at what it pressed. */
   down: { x: number; y: number; act: string } | undefined
 
@@ -245,7 +243,7 @@ export const s: State = {
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(), folds: new Set(), treeFolds: new Set(), pick: undefined, picking: false, pickText: '', pickFresh: false, jump: undefined,
-  aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, armed: undefined, down: undefined,
+  aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, down: undefined,
   doorMode: false, doorHeld: false, still: false,
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
   meter: { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 },

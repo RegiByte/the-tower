@@ -6,7 +6,7 @@
   "in": "tower-core",
   "reviewed": "2026-11-07",
   "involves": ["operator", "tower3d", "tower-server", "host-daemon", "claude-code", "system-root"],
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#keyWrites", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/desk-verbs.ts#addedKey", "hub/test/desk-verbs.test.ts", "hub/renderers/tower3d/src/main.ts#layoutNow", "hub/renderers/tower3d/src/main.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#keyWrites", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/main.ts#drawChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#listen", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/main.ts#layoutNow", "hub/renderers/tower3d/src/main.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
 }
 ---
 ```mermaid
@@ -89,9 +89,7 @@ sequenceDiagram
   (`wrap`, the one form [its `renderer.json`](ref:hub/renderers/tower3d/renderer.json) declares). A verb new to the
   viewer carries a dot and counts as seen once drawn in a focused window, the dot staying until the panel closes
   ([`sawDesk`](ref:hub/renderers/tower3d/src/main.ts#sawDesk)), in the seen set every renderer of theirs writes. A
-  destructive verb arms on a first press under the action itself and its place among those of its id
-  ([`addedKey`](ref:hub/renderers/tower3d/src/desk-verbs.ts#addedKey)), so a reorder between two presses never confirms
-  another ([[press-feedback]]), as a [unit test](ref:hub/test/desk-verbs.test.ts) holds it. A config layout change reaches the desk on reload; the viewer's, on the next board.
+  destructive verb asks first in the library's dialog with its words ([[press-feedback]]). A config layout change reaches the desk on reload; the viewer's, on the next board.
 - **The panel's tabs.** Logbook ([[logbook]]: a past session picked there replaces the terminal with its last
   screen, [`replay`](ref:hub/renderers/tower3d/src/main.ts#replay) and
   [`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen), until live is chosen again or Esc),
