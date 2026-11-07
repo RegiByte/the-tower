@@ -22,6 +22,7 @@ import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
 import { editConfig, keyName, type ConfigEdit } from '../config-edit.ts'
 import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem } from '../collections.ts'
+import { logged } from '../logged.ts'
 import { hostRequest, jobsRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
 import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
@@ -1078,10 +1079,13 @@ export const dispatch = defineResource({
 
     let leaveTimer: NodeJS.Timeout | undefined
     const scheduleLeaves = () => {
-      leaveTimer ??= setTimeout(() => {
-        leaveTimer = undefined
-        sendLeaversHome()
-      }, PUBLISH_DEBOUNCE_MS)
+      leaveTimer ??= setTimeout(
+        logged('workers going home', () => {
+          leaveTimer = undefined
+          sendLeaversHome()
+        }),
+        PUBLISH_DEBOUNCE_MS,
+      )
     }
 
     const unsubscribe = system.onChange(scheduleLeaves)
