@@ -19,6 +19,7 @@ import { GAMES } from './games.ts'
 import { bytesOf, FILM_FILE } from './files.ts'
 import { wallNow } from './clock.ts'
 import type { ProbeStatus } from '../../../extensions/quota/client/quota.ts'
+import type { QuotaPart } from '../../../extensions/quota/status.ts'
 
 /**
  * Fabricated boards for `?board=<name>`: the states a renderer draws, with no host behind them and none of the real
@@ -243,7 +244,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     rateLimitsAt: extra.rateLimitsAt,
     ...(extra.extraUsage && { extraUsage: extra.extraUsage }),
     probes: [],
-    ...(extra.quota && { x: { quota: extra.quota } }),
+    ...(extra.quota && { x: { quota: { ...extra.quota, commands: [extra.quota] } satisfies QuotaPart } }),
     extensions: [],
     viewers: {},
     adds: {},
