@@ -1,6 +1,7 @@
 import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
 import { floorThreadsOf, keepsThreads } from '../../../extensions/reviews/client/panel.ts'
 import type { FloorThread } from '../../../extensions/reviews/threads.ts'
+import { defaultLimits, type CommandLimits } from '/lib/board.js'
 import type { Board, Card, Floor, GalleryShowing, Shell } from './api.ts'
 import { onDuty, shelfKind } from './cards.ts'
 import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchors, type Layer, type Loft, type Room, type RoomId } from './floorplan.ts'
@@ -10,7 +11,7 @@ import { breaksOf, nextBreak, type BreakPlace } from './breaks.ts'
 import { meetingsOf, stateFor, type MeetingKit, type Place } from './meetings.ts'
 import type { PrefabBox, ZoneSlot } from './zones.ts'
 
-type RateLimit = Board['rateLimits'][number]
+type RateLimit = CommandLimits['rateLimits'][number]
 type ShelfEntry = NonNullable<Floor['shelf']>[number]
 
 /**
@@ -578,7 +579,7 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
   })
   const roof = board.floors.length + 1
   const partyGoers = guestCards(board, today)
-  const dancing = danceFloors({ width, depth }, board.floors.filter((f) => partyGoers.some((c) => c.project === f.id)), board.rateLimits.length)
+  const dancing = danceFloors({ width, depth }, board.floors.filter((f) => partyGoers.some((c) => c.project === f.id)), defaultLimits(board).rateLimits.length)
   return {
     width,
     depth,
@@ -589,7 +590,7 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
     levels: [
       { kind: 'lobby', index: 0, y: 0, name: 'Lobby', zones: [] },
       ...floors,
-      { kind: 'roof', index: roof, y: levelY(roof), name: 'Roof', zones: [], limits: board.rateLimits, floors: dancing, guests: partyGoers.map((card) => ({ card, project: card.project })) },
+      { kind: 'roof', index: roof, y: levelY(roof), name: 'Roof', zones: [], limits: defaultLimits(board).rateLimits, floors: dancing, guests: partyGoers.map((card) => ({ card, project: card.project })) },
     ],
   }
 }

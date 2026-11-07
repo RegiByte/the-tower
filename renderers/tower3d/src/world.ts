@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { type } from '../../../src/shared/design.ts'
 import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
+import { defaultLimits, type CommandLimits } from '/lib/board.js'
 import type { Board, Shell, Today } from './api.ts'
 import { duration, hours, usd } from '../../../src/shared/panels.ts'
 import { WEEKLY } from '../../../src/bridge/stats.ts'
@@ -26,7 +27,7 @@ import { screenMaterial } from './tv.ts'
 import { LOBBY_BAND, paintSign, signOf, signPlate } from './sign.ts'
 
 export type Doors = { left: THREE.Object3D; right: THREE.Object3D }
-type RateLimit = Board['rateLimits'][number]
+type RateLimit = CommandLimits['rateLimits'][number]
 
 /** The building around the desks: rebuilt when its shape changes, the desks living on through it. */
 export type World = {
@@ -586,7 +587,7 @@ export function buildWorld(p: Plan, board: Board, directory: World['directory'],
   const shellTags = new Map<string, THREE.Sprite>()
   group.traverse((o) => o.userData.shellTag && shellTags.set(o.userData.shellTag.id, o as THREE.Sprite))
   const world = { group, levels, doors, car: carGroup, waitLamps, beacon, directory, statsBoard, bookcases, party, pickables, limits, shellTags }
-  setLimits(world, p, board.rateLimits, board.today)
+  setLimits(world, p, defaultLimits(board).rateLimits, board.today)
   return world
 }
 

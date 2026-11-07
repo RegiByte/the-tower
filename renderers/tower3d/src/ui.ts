@@ -9,6 +9,7 @@ import { documentHtml, markdownHtml } from '../../../src/shared/markdown.ts'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '../../../src/shared/brief.ts'
 import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
+import { defaultLimits } from '/lib/board.js'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { addedKey, deskVerbs, placed, type DeskRegion } from './desk-verbs.ts'
 import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighboursIn, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
@@ -63,9 +64,10 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   const shells = board.shells.length ? [`<span data-tip="${board.shells.length} shells running"><b>${board.shells.length}</b> shells</span>`] : []
   const crew = [...tally, ...shells]
   const now = wallNow()
-  const age = now - (board.rateLimitsAt ?? now)
+  const account = defaultLimits(board)
+  const age = now - (account.rateLimitsAt ?? now)
   const stale = age > LIMITS_STALE_MS
-  const limits = board.rateLimits.map((r) => {
+  const limits = account.rateLimits.map((r) => {
     const elapsed = weekElapsed(r, now)
     const title = [`${r.kind.replaceAll('_', ' ')}: ${r.percentUsed}% used`, r.resetsAt && resetLine(r.resetsAt, now),
       elapsed !== undefined && paceLine(r.percentUsed, elapsed), `as of ${span(age)} ago`].filter(Boolean).join(' · ')
@@ -74,15 +76,16 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
     return `<span data-tip="${esc(title)}">${esc(limitName(r.kind))}
       <span class="meter" style="--fill:${fillOf(r.percentUsed, 85)}"><i style="width:${r.percentUsed}%"></i>${pace}</span><b>${r.percentUsed}%</b>${reset}</span>`
   })
-  const asOf = stale ? [`<small data-tip="${esc(limitsFromTitle(board))}">as of ${span(age)} ago</small>`] : []
+  const asOf = stale ? [`<small data-tip="${esc(limitsFromTitle(account))}">as of ${span(age)} ago</small>`] : []
   /** Extra usage only once it is spent from: the HUD stays short while the plan's limits hold. */
-  const e = board.extraUsage
+  const e = account.extraUsage
   const extra = e?.enabled && (e.used > 0 || e.reached) ? [`<small data-tip="${esc(extraUsageLine(e))}">extra ${esc(extraUsageAmounts(e))}</small>`] : []
   /** The quota probe while it runs, as a lamp and its name, and its state while that asks for you: the whole line on hover. */
   const probes = [quotaOf(board) ?? []].flat().map((p) => {
     const said = PROBE_ATTENTION[p.state] === 'quiet' ? p.name : `${p.name} ${PROBE_STATE_NAME[p.state]}`
     const inner = `<span class="lamp"></span><small>${esc(said)}</small>`
-    return `<button class="hud-probe ${PROBE_ATTENTION[p.state]}" data-probe-run="${esc(p.name)}" data-tip="${esc(`${probeTitle(p, now)}\n\nclick to read it now: at most once a minute`)}">${inner}</button>`
+    const named = account.command === undefined ? '' : ` data-probe-command="${esc(account.command)}"`
+    return `<button class="hud-probe ${PROBE_ATTENTION[p.state]}" data-probe-run="${esc(p.name)}"${named} data-tip="${esc(`${probeTitle(p, now)}\n\nclick to read it now: at most once a minute`)}">${inner}</button>`
   })
   return `<span class="chip hud-group">${host}${tune}${gear}</span>${sign(levelKey(here), here.name, tint(here))}
     ${waits.length ? `<button class="chip waits ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next data-tip="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
