@@ -2,7 +2,7 @@ import type * as THREE from 'three'
 import type { ChairKit, Chairs } from './chairs.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
-import type { Board, Card, ShelfSelf, Stats, tower } from './api.ts'
+import type { Board, Brief, Card, ShelfSelf, Stats, tower } from './api.ts'
 import type { Layout } from '../../../src/shared/regions.ts'
 import type { Renderer } from '../../../src/shared/model.ts'
 import type { Note } from './cork.ts'
@@ -60,9 +60,10 @@ export type Panel =
   | { kind: 'tv'; n: number }
   /**
    * A worker's logbook in the reader, for a worker with no desk (a guest, an archived folder): its card as read, its
-   * conversations once read, the tab it shows, and the session whose last screen the Screen tab shows.
+   * conversations once read and those read whole in them, the tab it shows, and the session whose last screen the
+   * Screen tab shows.
    */
-  | { kind: 'logbook'; card: Card; threads: Threads | undefined; tab: LogbookTab; on: string }
+  | { kind: 'logbook'; card: Card; threads: Threads | undefined; wholes: Brief[]; tab: LogbookTab; on: string }
   /** A pulled drawer of a floor's filing cabinet, its folders listed beside the world. */
   | { kind: 'drawer'; project: string; n: number }
   /** The draft editor, on `State.draft`. */
