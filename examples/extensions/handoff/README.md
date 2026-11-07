@@ -28,5 +28,6 @@ Nothing.
 
 Edit `plugin/skills/note/SKILL.md`: its `description` says when a worker reaches for it, its body what it does. A
 plugin holds any number of skills, each a folder under `plugin/skills/`. Off on a floor
-(`"extensions": { "handoff": { "off": ["<floor>"] } }`), its sessions don't load it. How this works:
+(`"projects": { "<floor>": { "capabilities": { "handoff": { "off": true } } } }`), its sessions don't load it. How this
+works:
 [Claude plugins](../../../docs/extending.md#an-extensions-claude-plugin).
