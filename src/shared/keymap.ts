@@ -34,7 +34,7 @@ export const MOVE_COMMAND = { prev: 'prev-worker', next: 'next-worker', waiting:
 export const COMMANDS = [
   { id: 'prev-worker', label: 'Previous worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowUp'], does: "previous worker on duty, in the sidebar's order: the top floor first, each floor's crews in order" },
   { id: 'next-worker', label: 'Next worker', scope: 'global', group: 'Move', chords: ['Alt+ArrowDown'], does: "next worker on duty, in the sidebar's order" },
-  { id: 'next-waiting', label: 'Next waiting on you', scope: 'global', group: 'Move', chords: ['Alt+J', 'N'], does: 'next worker waiting on you: a question first, then whoever has waited longest; then the slots policies offer' },
+  { id: 'next-waiting', label: 'Next waiting on you', scope: 'global', group: 'Move', chords: ['Alt+J', 'N'], does: 'next worker waiting on you: a question first, then whoever has waited longest; then what extensions ask of you' },
   { id: 'home', label: 'Skyline', scope: 'global', group: 'Move', chords: ['Escape'], does: 'back to the skyline' },
   { id: 'sidebar', label: 'Sidebar', scope: 'global', group: 'Page', chords: ['Meta+B'], does: 'hide or show the sidebar' },
   { id: 'palette', label: 'Command palette', scope: 'global', group: 'Page', chords: ['Meta+K'], does: 'the command palette: go to a worker, a floor, a shelf entry or a draft, or run a command or what the selected worker offers, by typing' },

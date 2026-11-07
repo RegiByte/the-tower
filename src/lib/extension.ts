@@ -21,6 +21,7 @@ export type {
   /** @provisional */ AddedLine,
   AddedTidy,
   Ask,
+  /** @provisional */ AskOpens,
   Badge,
   /** @provisional */ BoardAsk,
   CallCtx,

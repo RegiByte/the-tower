@@ -768,7 +768,7 @@ test('server: policies kept before the policies extension keep their approvals, 
   assert.match(asks[0]?.hint ?? '', /^.+ offered, open until .+$/, 'the open offer says its slot and until when on hover')
   assert.deepEqual(
     asks.map(({ hint, ...a }) => a),
-    [{ key: `policies:${triage.id}@${triage.slot}`, subject: `item.policies:lab/${triage.id}`, title: 'Triage', since: OFFERED_AT, until: triage.slot + DAY, sound: 'offer', cap: 'policies', actions: [{ verb: 'policies/run', call: accept[1], words: { label: 'Accept', hint: 'start the run this slot offers' }, cap: 'policies' }] }],
+    [{ key: `policies:${triage.id}@${triage.slot}`, subject: `item.policies:lab/${triage.id}`, title: 'Triage', since: OFFERED_AT, until: triage.slot + DAY, sound: 'offer', opens: { view: 'policies/policies', subject: 'floor:lab' }, cap: 'policies', actions: [{ verb: 'policies/run', call: accept[1], words: { label: 'Accept', hint: 'start the run this slot offers' }, cap: 'policies' }] }],
     'the open offer is an ask that rings as an offer, until the next slot',
   )
   const standings = Object.fromEntries(floor.policies.map((p) => [p.id, standing(p, now)]))

@@ -204,7 +204,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   hide in the order). A part is checked against the manifest ([`checkPart`](ref:hub/src/bridge/folds.ts#checkPart):
   only what it declares, its `x` by its schema, a verb action naming a verb of a capability it declares, a command of
   its own); its `x` lands at `subject.x[cap]`, its contributions at `board.adds[key]`, tagged with `cap`, its asks in
-  `board.asks` keyed `<cap>:<key>`, gone past `until`, each about a core subject. A throw or a bad shape drops its part on that subject, and its
+  `board.asks` keyed `<cap>:<key>`, gone past `until`, each about a core subject, and naming the view it opens (`opens`, since 1.156) when it is answered in one. A throw or a bad shape drops its part on that subject, and its
   required dependents' there, as a `threw` or `shape` problem (lane `fold`, with the subject); over 50 ms of one board
   is a `slow` warning (over 50 ms of one archive read, a line in the tower's log naming that read,
   [`archivedCards`](ref:hub/src/tower/publisher.ts#archivedCards)); a reduce step that throws is a `threw` problem at `streams.<name>`. Those problems are the

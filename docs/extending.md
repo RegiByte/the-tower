@@ -896,8 +896,8 @@ and the Changes draw it on those lines, saying its `hint` (the reviews extension
 worker's thread is about, `n3`, "noted in n3"); `display`, a subject key a click on the mark would show, is drawn by no
 renderer yet; an action may carry `words` of its own (`{label, hint?, destructive?}`, API 1.98), over its verb's or
 command's, so one command offered on several things says which; its asks (`{key, subject, title, hint?, since, until?,
-sound: 'wait' | 'offer', actions}`, `hint` more about it in words drawn on hover (API 1.132), `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
-a shelf entry, an item or the board) in `board.asks`,
+sound: 'wait' | 'offer', actions, opens?}`, `hint` more about it in words drawn on hover (API 1.132), `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
+a shelf entry, an item or the board; `opens`, where going to it leads, see below) in `board.asks`,
 keyed `<cap>:<key>`, which every renderer orders and rings beside the waits. A fold that throws or returns what its
 manifest doesn't declare costs its part on that subject, and its dependents' there, as a `threw` or `shape` problem;
 an extension whose folds take over 50 ms of one board is `slow`. Calling `ctx.board()` inside a fold throws: the fold
@@ -974,6 +974,14 @@ commands that have no `on`.
 An ask (`board.asks`) is listed with the waits by the tower page, under its floor or, for the board's, at the top,
 and said, notified and rung there and in Tower 3D. The Week draws no contributions. A renderer of your own draws
 whatever it reads.
+
+**Where an ask leads** (API 1.156). Going to an ask opens its subject: a worker, else its floor. An ask answered in a
+view of its own says so with `opens: {view, subject?}`, a view by its id and the core subject's key to open it on,
+the board with none, any extension's view or the core's. Next-waiting and a click on its notification go there, and a
+viewer already on that view and subject is at the ask, so next-waiting moves past it. The page's ask row still opens
+the ask's subject. The policies extension's offers name
+`{view: 'policies/policies', subject: 'floor:<id>'}`. An extension using it raises `requires.tower` to 1.156: an older
+tower refuses the key as a `shape` problem. A renderer of your own follows it or doesn't.
 
 A command is an action: a place of its own on screen is a view ([Views](#views)). Its module is imported once
 per page and stays loaded between presses until the page reloads (`tower extensions restart` doesn't reach a page

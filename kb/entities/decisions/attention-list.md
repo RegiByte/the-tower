@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-11-07",
-  "refs": [
+  "refs": ["hub/src/shared/waits.ts#nextAttended", 
     "hub/src/bridge/blocked.ts#blockedBy",
     "hub/src/bridge/status.ts#nextState",
     "hub/src/tail.ts#factEvents",
@@ -56,7 +56,7 @@ only by typing, one chime covered a question and an answer alike, and every wait
 - A policy's offered slot asks for you before any worker exists, so it is not a wait: the policies extension puts it
   among the asks ([[policies]]), and [`attentionOrder`](ref:hub/src/shared/waits.ts#attentionOrder) is the heeded
   waits, then extensions' heeded asks (`board.asks`, oldest first, [[extensions]]); `board.offers`, LEGACY's copy until
-  2.0, is no longer in it. N on an offer opens its floor's policies, on another ask what it is about (its worker, else its floor). An ask is about a worker when its subject is that worker's card
+  2.0, is no longer in it. N on an ask opens where it leads, the view and subject its `opens` names, else what it is about (its worker, else its floor); a viewer already there is at the ask, and N moves past it, as [`nextAttended`](ref:hub/src/shared/waits.ts#nextAttended) reads it. The policies extension's offers open their floor's policies this way. An ask is about a worker when its subject is that worker's card
   ([`isAbout`](ref:hub/src/shared/waits.ts#isAbout)): the watched worker's asks ring for nobody, as its waits. An ask
   rings as its `sound` says, as a question or as an offer. An auto policy that lost its approval is a change of
   state, not a request: it never rings and isn't in the list.
