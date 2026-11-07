@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.97.2
+
+Sending home the worker on screen keeps it there, on its Brief with Resume. Reload the page to get it. No restart, no
+config change, no API change.
+
+- **A worker in view.** A worker that started before today no longer drops you on the skyline when it leaves the board,
+  however it left: the head, the palette, its crew, or a kill from outside. The view looks it up in the floor's archive
+  and draws that card, going home only if no archive holds it. This had been broken since v1.70.0, and it hit only
+  workers that had outlived midnight.
+- **A terminal that ends.** A Terminal tab you opened yourself moves to the worker's default tab when its terminal ends,
+  rather than staying on a dead one. Pressing Terminal afterwards still shows the last screen.
+
 ## v1.97.1
 
 One malformed first line in a session log no longer stops the tower. Restart the tower with this release (`tower down
