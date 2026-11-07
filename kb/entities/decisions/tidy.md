@@ -53,7 +53,7 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
     ([`killable`](ref:hub/src/bridge/prunable.ts#killable)): live and quiet between turns: `done` (its turn finished,
     its answer read or not) or `idle` with no wait; never one asking a question, held on a screen or failed; nobody
     running reports to it ([[crews]]); and its worktree's work has [`landed`](ref:hub/src/bridge/prunable.ts#landed):
-    in every repo nothing uncommitted and the branch [[absorbed]] or [[carried]], a reviewer's fork with no commits of
+    in every repo git read it ([[worktrees]]), nothing uncommitted and the branch [[absorbed]] or [[carried]], a reviewer's fork with no commits of
     its own included. Landed is the signal, so there is no quiet period; `since`, when it went quiet or someone last
     typed into it, only orders and labels the rows. A hire in a main checkout has no work of its own to land and is
     never offered. A killed hire resumes, but its next turn reads the whole conversation again, uncached: the rows

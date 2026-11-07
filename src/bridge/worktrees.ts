@@ -116,24 +116,28 @@ export const carriedOf = (marks: Mark[], commits: number): Carried | undefined =
 /** The commits its branch gained since it was cut (its reflog's first entry); `undefined` once git no longer says. */
 export type Cut = { own?: number }
 
-export const atRisk = ({ dirty, unpushed, absorbed, carried }: Exposure) => dirty > 0 || (unpushed > 0 && !absorbed && !carried)
+/** What git said when it couldn't read a checkout, in place of what the checkout holds. */
+type Unread = { unread: string }
+
+export const isUnread = <T extends object>(tree: T): tree is Extract<T, Unread> => 'unread' in tree
+
+/** Work only this worktree holds, or a worktree git couldn't read, which nothing says holds none. */
+export const atRisk = (tree: Exposure | Unread) => isUnread(tree) || tree.dirty > 0 || (tree.unpushed > 0 && !tree.absorbed && !tree.carried)
 
 /** Its unpushed work is in its base only as copies, some of them edited: nothing uncommitted, and not absorbed. */
-export const isCarried = ({ dirty, unpushed, absorbed, carried }: Exposure) => dirty === 0 && unpushed > 0 && !absorbed && carried !== undefined
+export const isCarried = (tree: Exposure | Unread) => !isUnread(tree) && tree.dirty === 0 && tree.unpushed > 0 && !tree.absorbed && tree.carried !== undefined
 
 /**
- * One of the tower's worktrees in one repo. `present`: its folder exists; a missing one is git's `prunable`. `from`: the
- * checkout it was forked from, for a fork.
+ * What git's worktree list and the tower's records say of one of its worktrees in one repo, which hold whether or not
+ * the worktree itself can be read. `present`: its folder exists; a missing one is git's `prunable`. `from`: the checkout
+ * it was forked from, for a fork. `against`: as in `Exposure`.
  */
-export type TreeRead = Exposure &
+type ListedTree = { name: string; path: string; branch?: string; head?: string; base?: string; from?: string; against?: string; present: boolean }
+
+/** A worktree as git read it. */
+export type ReadTree = ListedTree &
+  Exposure &
   Cut & {
-    name: string
-    path: string
-    branch?: string
-    head?: string
-    base?: string
-    from?: string
-    present: boolean
     /**
      * Files changed against the merge-base with its counted-from ref (its base, origin's default once that's gone, its
      * upstream, or `HEAD`), committed plus uncommitted, untracked included up to 300: what its Changes count under scope
@@ -141,6 +145,14 @@ export type TreeRead = Exposure &
      */
     changed?: number
   }
+
+/**
+ * A worktree whose own read failed: `unread` is what git said, and `risk` says the same for people. It has no `dirty`,
+ * `unpushed` or `absorbed`: its files and commits are unknown, and a count of none would read as clean. @since 1.158
+ */
+export type UnreadTree = ListedTree & Unread & { risk: string[] }
+
+export type TreeRead = ReadTree | UnreadTree
 
 /**
  * A branch the tower cut that no worktree has checked out. `head`: its commit as read; `tree`: the worktree name it was
@@ -159,23 +171,37 @@ export type RepoRead =
   | { dir: string; at: number; git: false }
   | { dir: string; at: number; git: true; bases: string[]; originHead: string | undefined; main: MainRead; trees: TreeRead[]; kept: BranchRead[] }
 
-/** The main checkout's unlanded work: `dirty` files (tracked or not), and commits `ahead` of its upstream (none without one). */
-export type MainRead = {
-  dirty: number
-  ahead: number
-  /**
-   * Files changed against the merge-base with its counted-from ref (its base, origin's default once that's gone, its
-   * upstream, or `HEAD`), committed plus uncommitted, untracked included up to 300: what its Changes count under scope
-   * `all`. Absent when it has no commit, or shares no history with that ref. @since 1.119
-   */
-  changed?: number
-}
+/**
+ * The main checkout's unlanded work: `dirty` files (tracked or not), and commits `ahead` of its upstream (none without
+ * one). `unread` in place of its files when git couldn't read them, saying what git said.
+ */
+export type MainRead =
+  | {
+      dirty: number
+      ahead: number
+      /**
+       * Files changed against the merge-base with its counted-from ref (its base, origin's default once that's gone, its
+       * upstream, or `HEAD`), committed plus uncommitted, untracked included up to 300: what its Changes count under scope
+       * `all`. Absent when it has no commit, or shares no history with that ref. @since 1.119
+       */
+      changed?: number
+    }
+  | (Unread & { ahead: number })
 
-/** `carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by Tidy. */
-export type WorktreeState = 'live' | 'lost' | 'at-risk' | 'carried' | 'removable'
+/**
+ * `carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by
+ * Tidy. `unread`: git couldn't read it in some repo (`UnreadTree`), so nothing says what it holds and it offers no verb
+ * until it can be read (@since 1.158).
+ */
+export type WorktreeState = 'live' | 'lost' | 'unread' | 'at-risk' | 'carried' | 'removable'
 
-/** `atRisk`: work only this repo's worktree holds; its `risk` names it. */
-export type FloorWorktreeRepo = Omit<TreeRead, 'name'> & { dir: string; atRisk: boolean }
+/** `atRisk`: work only this repo's worktree holds, or nothing says it holds none (`UnreadTree`); its `risk` names which. */
+export type FloorWorktreeRepo = ReadRepo | (Omit<UnreadTree, 'name'> & { dir: string; atRisk: boolean })
+
+/** A repo of a worktree, as git read it. */
+export type ReadRepo = Omit<ReadTree, 'name'> & { dir: string; atRisk: boolean }
+
+export const wasRead = (repo: FloorWorktreeRepo): repo is ReadRepo => !isUnread(repo)
 
 export type FloorWorktree = {
   name: string
@@ -207,11 +233,12 @@ const inside = (cwd: string, path: string) => cwd === path || cwd.startsWith(`${
 
 /**
  * Lost first: a worktree with a folder missing is `lost` whoever is in it, a stranded worker or a resume about to
- * recut it (`sessions`), which only keeps it from being pruned. Then live: a worktree in use is never offered for
- * removal, whatever else is true of it.
+ * recut it (`sessions`), which only keeps it from being pruned. Then unread, also whoever is in it: a worker there is
+ * what most needs telling. Then live: a worktree in use is never offered for removal, whatever else is true of it.
  */
 const stateOf = (repos: FloorWorktreeRepo[], sessions: string[]): WorktreeState => {
   if (repos.some((r) => !r.present)) return 'lost'
+  if (repos.some(isUnread)) return 'unread'
   if (sessions.length) return 'live'
   if (repos.some((r) => r.atRisk)) return 'at-risk'
   if (repos.some(isCarried)) return 'carried'

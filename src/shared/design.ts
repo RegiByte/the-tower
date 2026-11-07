@@ -424,7 +424,7 @@ ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after",
 .spawn-form .pick:has(:checked) { background: color-mix(in oklab, var(--pp) 12%, var(--panel-2)); }
 .spawn-form .pick span { color: var(--muted); font-size: var(--fs-s); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spawn-form .pick .st { margin-left: auto; }
-.spawn-form .pick .st.at-risk { color: var(--broken-text); }
+.spawn-form .pick .st.at-risk, .spawn-form .pick .st.unread { color: var(--broken-text); }
 .spawn-form .pick .st.live { color: var(--working-text); }
 .spawn-form .if-new, .spawn-form .if-worktree, .spawn-form .if-main { display: none; margin-top: calc(-1 * var(--sp-s)); padding-left: var(--sp-xl); border-left: 2px solid color-mix(in oklab, var(--pp) 45%, transparent); }
 .spawn-form:has([name=where][value=new]:checked) .if-new, .spawn-form:has([name=where][value=worktree]:checked) .if-worktree,

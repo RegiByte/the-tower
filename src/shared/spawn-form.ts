@@ -215,7 +215,7 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
         <label class="wide">${labelHtml('From')}<select name="base"><option value="">${f.defaultBase ? `${esc(f.defaultBase)} · origin's default` : "each repo's origin default"}</option>${f.bases.filter((b) => b !== f.defaultBase).map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join('')}</select></label>
       </div>
       <fieldset class="if-worktree picks">${worktrees.map((w, i) => `<label class="pick"><input type="radio" name="worktree" value="${esc(w.repos[0].path)}"${i ? '' : ' checked'}>
-        <b>${esc(w.name)}</b><span>⎇ ${esc(worktreeBranch(w))}</span><span class="st ${w.state}">${w.sessions.length ? `${w.sessions.length} on duty` : WORKTREE_STATE_NAME[w.state]}</span></label>`).join('')}</fieldset>
+        <b>${esc(w.name)}</b><span>⎇ ${esc(worktreeBranch(w))}</span><span class="st ${w.state}">${w.sessions.length && w.state !== 'unread' ? `${w.sessions.length} on duty` : WORKTREE_STATE_NAME[w.state]}</span></label>`).join('')}</fieldset>
       <fieldset class="if-main picks">${repos.map((dir, i) => `<label class="pick"><input type="radio" name="checkout" value="${esc(dir)}"${i ? '' : ' checked'}>
         <b>${esc(base(dir))}</b><span>${i ? "its own CLAUDE.md, not the hub's" : 'the hub: its CLAUDE.md and skills'}</span></label>`).join('')}</fieldset>
       <div class="fields">

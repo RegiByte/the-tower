@@ -143,6 +143,7 @@ export {
   WORKTREE_ASK,
   WORKTREE_DONE,
   WORKTREE_STATE_NAME,
+  mainUnreadHtml,
   WORKTREE_VERB_NAME,
   worktreeBranch,
   worktreeRisk,

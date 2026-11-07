@@ -9,10 +9,10 @@ import { VERB_WORDS } from './verb-words.ts'
  * Worktrees and kept branches in words: their states, the verbs on them and what each asks, and work landed as copies.
  */
 
-/** How many worktrees a floor holds that would lose work if removed, or whose folder is gone. */
-export const risky = (f: Floor) => f.worktrees.filter((w) => w.state === 'at-risk' || w.state === 'lost').length
+/** How many worktrees a floor holds that would lose work if removed, git can't read, or whose folder is gone. */
+export const risky = (f: Floor) => f.worktrees.filter((w) => w.state === 'at-risk' || w.state === 'unread' || w.state === 'lost').length
 
-export const WORKTREE_STATE_NAME: Record<WorktreeState, string> = { live: 'in use', lost: 'folder gone', 'at-risk': 'unsaved work', carried: 'landed, edited', removable: 'removable' }
+export const WORKTREE_STATE_NAME: Record<WorktreeState, string> = { live: 'in use', lost: 'folder gone', unread: "couldn't read", 'at-risk': 'unsaved work', carried: 'landed, edited', removable: 'removable' }
 
 /** The verbs on worktrees and kept branches, as the sidebar's small buttons say them: their labels (`/verb-words.js`), lowercased. */
 export const WORKTREE_VERB_NAME = {
@@ -36,16 +36,26 @@ export const WORKTREE_DONE = { recut: 'recut', prune: 'forgot', remove: 'removed
 /** The branch of a worktree, as its hub repo (or its first) has it checked out. */
 export const worktreeBranch = (w: FloorWorktree) => w.repos[0].branch ?? 'detached'
 
-/** What only a worktree holds, per repo at risk: its uncommitted files and unpushed commits, a few of each named. */
+/** What only a worktree holds, per repo at risk: its uncommitted files and unpushed commits, a few of each named, or what git said when it couldn't read it. */
 export const worktreeRisk = (w: FloorWorktree): string[] =>
-  w.repos.filter((r) => r.atRisk).map((r) => `${base(r.dir)}: ${r.dirty} uncommitted, ${r.unpushed} unpushed${r.risk.length ? ` (${r.risk.join('; ')})` : ''}`)
+  w.repos.filter((r) => r.atRisk).map((r) => ('unread' in r ? `${base(r.dir)}: couldn't be read, so what it holds is unknown: ${r.unread}` : `${base(r.dir)}: ${r.dirty} uncommitted, ${r.unpushed} unpushed${r.risk.length ? ` (${r.risk.join('; ')})` : ''}`))
+
+/** The main checkout at `dir` said as unread, with what git said, when git couldn't read it. */
+export const mainUnreadHtml = (f: Floor, dir: string): string => {
+  const why = f.main?.unread?.find((u) => u.dir === dir)?.why
+  return why === undefined ? '' : `<span class="st" data-tip="${esc(`${dir} couldn't be read, so what it holds is unknown: ${why}`)}">${WORKTREE_STATE_NAME.unread}</span>`
+}
+
+/** The repos whose work landed as copies. */
+const landedCopies = <R extends Pick<Exposure, 'absorbed' | 'carried'>>(repos: (R | { unread: string })[]): R[] =>
+  repos.filter((r): r is R => !('unread' in r) && !r.absorbed && r.carried !== undefined)
 
 /**
  * How work landed as copies, summed over the repos that carry it: `3 on origin/main, 1 edited when it landed`. Each
  * edited copy is a different patch from the branch's commit (`tower.landing` shows how).
  */
-export const carriedLine = (repos: Pick<Exposure, 'absorbed' | 'carried' | 'against'>[]) => {
-  const carried = repos.filter((r) => !r.absorbed && r.carried)
+export const carriedLine = (repos: (Pick<Exposure, 'absorbed' | 'carried' | 'against'> | { unread: string })[]) => {
+  const carried = landedCopies(repos)
   const commits = carried.reduce((n, r) => n + r.carried!.commits, 0)
   const edited = carried.reduce((n, r) => n + r.carried!.edited, 0)
   const on = [...new Set(carried.map((r) => r.against))].join(', ')
@@ -59,8 +69,8 @@ export const carriedLine = (repos: Pick<Exposure, 'absorbed' | 'carried' | 'agai
 export type EditedRow = { what: string; does: string; title: string; landing: { project: string; branch: string }; call: Call<'worktree/remove'> | Call<'branch/delete'> }
 
 /** An edited landing in a few words: `remove · 1 of 2 edited`. */
-const editedDoes = (repos: Pick<Exposure, 'absorbed' | 'carried'>[]) => {
-  const carried = repos.filter((r) => !r.absorbed && r.carried).map((r) => r.carried!)
+const editedDoes = (repos: (Pick<Exposure, 'absorbed' | 'carried'> | { unread: string })[]) => {
+  const carried = landedCopies(repos).map((r) => r.carried!)
   return `remove · ${carried.reduce((n, c) => n + c.edited, 0)} of ${carried.reduce((n, c) => n + c.commits, 0)} edited`
 }
 

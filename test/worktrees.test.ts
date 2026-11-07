@@ -75,6 +75,16 @@ test('state in priority order: lost, then live, then at risk, then removable; a 
   assert.deepEqual(states([repo(API, [tree(API, 'a', { dirty: 3 })])], [{ id: 's1', cwd: `${API}/.worktrees/a` }]), [['a', 'live', []]])
 })
 
+test('a worktree git could not read offers nothing, whoever is in it and whatever its other repos hold; only a missing folder says more', () => {
+  const unread = tree(HUB, 'a', { unread: 'fatal: bad index', risk: ['fatal: bad index'] })
+  assert.deepEqual(states([repo(HUB, [unread])]), [['a', 'unread', []]])
+  assert.deepEqual(states([repo(HUB, [unread])], [{ id: 's', cwd: unread.path }]), [['a', 'unread', []]])
+  assert.deepEqual(states([repo(HUB, [unread]), repo(API, [tree(API, 'a', { dirty: 2 })])]), [['a', 'unread', []]])
+  assert.deepEqual(states([repo(HUB, [unread]), repo(API, [tree(API, 'a', { absorbed: true })])]), [['a', 'unread', []]])
+  assert.deepEqual(states([repo(HUB, [unread]), repo(API, [tree(API, 'a', { present: false })])]), [['a', 'lost', ['recut', 'prune']]])
+  assert.equal(floorWorktrees('lab', [repo(HUB, [unread])], [], true)[0].repos[0].atRisk, true)
+})
+
 test('one repo at risk puts the whole name at risk', () => {
   assert.deepEqual(states([repo(HUB, [tree(HUB, 'a')]), repo(API, [tree(API, 'a', { unpushed: 1 })])]), [['a', 'at-risk', ['discard']]])
 })

@@ -129,6 +129,7 @@ button.hud-probe:hover small { color: var(--ink); }
 .go:hover .sign { box-shadow: inset 5px 0 0 var(--pp), var(--shadow); }
 .dir { display: flex; align-items: center; gap: var(--sp-xs); color: var(--muted); font-size: var(--fs-s); }
 .dir span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dir .st { flex: none; font-size: var(--fs-xs); letter-spacing: .04em; color: var(--broken-text); }
 .cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-s); }
 .sess { padding: var(--sp-m) var(--sp-l); border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--c, var(--line)); cursor: pointer;
   transition: box-shadow .15s ease-out; }
@@ -153,7 +154,7 @@ button.hud-probe:hover small { color: var(--ink); }
 .wt .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wt .n b { color: var(--ink); }
 .wt .st { font-size: var(--fs-xs); letter-spacing: .04em; color: var(--faint); white-space: nowrap; }
-.wt.at-risk .st, .wt.lost .st { color: var(--broken-text); }
+.wt.at-risk .st, .wt.lost .st, .wt.unread .st { color: var(--broken-text); }
 .wt button:not(.icon-btn) { padding: 0 var(--sp-m); font-size: var(--fs-xs); }
 .shelf { display: flex; flex-wrap: wrap; gap: var(--sp-xs); --pt: color-mix(in oklab, var(--p) var(--p-text-mix), var(--ink)); --pw: color-mix(in oklab, var(--p) var(--p-wash-mix), var(--panel)); }
 .shelf button, .shelf a { padding: var(--sp-2xs) var(--sp-l); font-size: var(--fs-xs); font-weight: 700; border-radius: var(--radius-pill); background: var(--pw); color: var(--pt); border: 1px solid transparent; text-decoration: none; line-height: 1.45; }

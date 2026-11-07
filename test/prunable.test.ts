@@ -92,6 +92,8 @@ test('a hire whose work has not landed, or that works in the main checkout, is n
   assert.deepEqual(towerAt(hired(log, 'worktree'), later, repos(false, 0)).tidy.prune, [])
   assert.deepEqual(towerAt(hired(log, 'worktree'), later, repos(true, 1)).tidy.prune, [])
   assert.deepEqual(towerAt(hired(log, 'main'), later, repos(true, 0)).tidy.prune, [])
+  const unread: RepoRead = { dir: HUB, at: Date.now(), git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: `tower/${TREE}`, present: true, unread: 'fatal: bad index', risk: ['fatal: bad index'] }], kept: [] }
+  assert.deepEqual(towerAt(hired(log, 'worktree'), later, new Map([[HUB, unread]])).tidy.prune, [])
 })
 
 test('typing into an idle hire moves when it went quiet, to the grain of the typing the board carries', () => {
