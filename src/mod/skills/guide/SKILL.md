@@ -1,7 +1,7 @@
 ---
 name: guide
 allowed-tools: Bash(tower *), Bash(realpath *), Read
-description: Teach the user the tower, their HQ for Claude Code sessions, on their own floors. Use when the user asks how to use the tower, what it can do, for a tour or a walkthrough of it, how to set up a project or floor, what a hub is, or says they are new to it.
+description: Teach the user the tower, their HQ for Claude Code sessions, on their own floors. Use when the user asks how to use the tower, what it can do, for a tour or a walkthrough of it, how to set up a project or floor, how to change a keyboard shortcut (these sessions run inside the tower, whose page has its own keys, apart from Claude Code's), what a hub is, or says they are new to it.
 ---
 
 # Showing the user the tower
@@ -27,7 +27,7 @@ Short: a few paragraphs, then an offer. Name their floors, workers, shelf entrie
 - **Extensions.** Features beyond the core come as extensions, the ones the tower ships and the user's own alike, and a worker reaches any of them the same way: `tower x` lists them, `tower x <name>` says what one is for and the words it offers, and a word is typed like a command, with flags, text on stdin, and its worker's floor filled in. Show one from `tower x` if their setup has one worth using.
 - **Where to look.** The tower page (`tower whoami` names its address), `?` for its keys, and `docs/usage.md`.
 
-When they ask about one thing (the hub, worktrees, reviews), answer that from `docs/usage.md` with their setup as the example, and skip the tour.
+When they ask about one thing (the hub, worktrees, reviews), answer that from `docs/usage.md` with their setup as the example, and skip the tour. Keyboard shortcuts are the tower page's unless they mean Claude Code's own: `?` lists them and the `keys` section of `docs/config.md` rebinds them.
 
 ## A live demo
 
