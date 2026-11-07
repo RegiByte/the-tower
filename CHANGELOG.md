@@ -12,6 +12,31 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.100.0
+
+A chord on a worker's tab makes it a pane, a worktree git can't read says so, and a sandbox's `tower` floor reaches
+nothing real. Restart the tower with this release (`tower down tower`, then `tower up tower`); `tower update` does that
+for you. The jobs daemon's fix arrives when it next starts. No host restart. API 1.159, by addition.
+
+- **Pane chords from data.** An extension's chord on a view of a worker's card makes that tab a pane, naming no extension
+  in the core. Reviews now takes `Ctrl+Shift+4` on its own view, and the Files example takes `Ctrl+Shift+5`.
+- **config:** `keys["reviews/thread"]` is the key for Reviews' chord. `keys["pane-reviews"]` keeps working as a deprecated
+  alias until 2.0, and a key already in the file is unaffected. A first `config/set` on the old key is refused: write the
+  new one. `pane-reviews` stays as a command with no chord, so a renderer that runs it from `commandOf` reads its chord
+  through `panesOf` in `/lib/keys.js`.
+- **Extension chords in a terminal** run before xterm sees them, so a chord that runs no longer also reaches the worker.
+- **A worktree git can't read** is `unread` on the board, with its reason. It costs only itself, it never reads as clean,
+  and Tidy and every verb that decides from cleanliness refuse it.
+- **A sandbox's `tower` floor** is a clone under its root with a bare origin, so a cut, Tidy or discard reaches nothing
+  real. It shows commits, never uncommitted work. An older sandbox moves onto it at its next `up`.
+- **A config the tower can't read** is a config error wherever it is read, including one that goes unreadable during a
+  worktree verb, which used to end the tower.
+- **Failures with no boundary:** a slot, an extension's `start` or `halt` that rejects with no reason costs only itself,
+  and a job's end stands when the log can't take it.
+- **Reading a worker:** a question dialog and its answer read in a turn and in `tower agent`, as `asked:` lines.
+- **pr-status** asks about every repo of a worker's worktree, and with more than one pull request each badge names its
+  repo. The page copy recipe in `docs/extending.md` works again.
+
 ## v1.99.0
 
 Reviews is an extension in its words and skills too, and a hung repo no longer stalls every floor. Restart the tower with
