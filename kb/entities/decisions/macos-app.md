@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-07",
   "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
 }
 ---
@@ -40,7 +40,7 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   `GET /renderers` says are built ([[renderers-in-config]]).
 - **Who waits on you, outside the window** ([`Attention`](ref:hub/apps/macos/Sources/Attention.swift#Attention)): a
   page of the app's own that never shows, loaded at the tower's origin, reads the board through `/tower.js` and words
-  it with `/cards.js` as the tower page does ([[attention-list]]): the waits less those dismissed in any renderer
+  it with the library's `/lib/cards.js`, `/lib/board.js` and `/lib/viewer.js` as the tower page does ([[attention-list]]): the waits less those dismissed in any renderer
   ([`heededWaits`](ref:hub/src/shared/waits.ts#heededWaits) over `tower.store`, re-read when another page dismisses
   one), each as `<callsign> · <status>` over `<project>: <gist>`, and the waits that began and ended since the last
   board ([`transitions`](ref:hub/src/shared/waits.ts#transitions)). The native side only draws them: the count on the

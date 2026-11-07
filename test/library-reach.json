@@ -1,5 +1,4 @@
 [
-  "apps/macos/Sources/Attention.swift -> /cards.js",
   "extensions/reviews/client/anchors.ts -> ../../../src/shared/extensions.ts",
   "extensions/reviews/client/anchors.ts -> ../../../src/shared/subjects.ts",
   "extensions/reviews/client/composer.ts -> ../../../src/bridge/board.ts",
