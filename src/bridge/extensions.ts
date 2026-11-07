@@ -19,9 +19,10 @@ import { offOn, type ExtensionStores } from './stores.ts'
 
 /**
  * An extension folder the tower found: a bundled one, or one the config names. `text`: its `extension.json`, when there
- * is one; `contract`: its `contract.json`, when there is one.
+ * is one; `contract`: its `contract.json`, when there is one; `claudePluginLack`: what the Claude plugin its manifest
+ * names lacks, when it lacks anything.
  */
-export type Found = { id: string; bundled: boolean; dir?: string; text?: string; contract?: string; client?: ClientRead }
+export type Found = { id: string; bundled: boolean; dir?: string; text?: string; contract?: string; client?: ClientRead; claudePluginLack?: 'folder' | 'plugin.json' }
 
 /**
  * A client folder's modules as discovery read them: each by the path it is served at below `/x/<cap>/` (a `.ts` as
@@ -447,6 +448,17 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
   return { folds, problems }
 }
 
+/**
+ * Why `plugins.claude` teaches nothing: Claude skips a `--plugin-dir` it can't read and says nothing, so the tower says
+ * it. A warning, since the extension's other doors work without it.
+ */
+const claudePluginProblems = (found: Found, manifest: Manifest): LoadProblem[] => {
+  const folder = manifest.plugins?.claude
+  if (found.claudePluginLack === 'folder') return [warn('invalid', `${folder} is no folder of this extension, so its sessions load no plugin: add the folder, or fix plugins.claude`, 'plugins.claude')]
+  if (found.claudePluginLack === 'plugin.json') return [warn('invalid', `${folder} holds no .claude-plugin/plugin.json, so it is no Claude plugin: add one naming the plugin`, 'plugins.claude')]
+  return []
+}
+
 /** The commands whose icon names an SVG its client folder doesn't hold. */
 const iconProblems = (manifest: Manifest, client: ClientRead | undefined): LoadProblem[] =>
   Object.entries(manifest.commands ?? {}).flatMap(([name, c]) => {
@@ -821,6 +833,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
     ...ownContractProblems(found, manifest),
     ...Object.entries(found.client?.unreadable ?? {}).map(([module, why]) => warn('invalid', `client module ${module} doesn't parse: ${why}`, 'client')),
     ...shadowedReads(manifest),
+    ...claudePluginProblems(found, manifest),
     ...underDeclared(raw, manifest.requires.tower),
     ...addsUnderDeclared(manifest, 'slots', SLOTS_ADD_SINCE),
     ...addsUnderDeclared(manifest, 'marks', MARKS_ADD_SINCE),

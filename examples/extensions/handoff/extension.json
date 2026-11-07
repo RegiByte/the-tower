@@ -1,0 +1,11 @@
+{
+  "id": "handoff",
+  "version": "1.0",
+  "title": "Handoff",
+  "description": "A skill that teaches workers to leave a handoff note when they stop partway: an extension that is only a Claude plugin.",
+  "requires": { "tower": "1.153" },
+  "plugins": { "claude": "plugin" },
+  "guidance": {
+    "brief": "When you stop partway through a task, leave a handoff note: the `handoff:note` skill says how."
+  }
+}

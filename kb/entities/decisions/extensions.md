@@ -348,7 +348,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   limits read ([[crews]], [[hiring-limits]]), drawn on the card as a badge, said by `tower whoami`, and listed per
   extension at `GET /extensions` (`exempted`). A resume logs nothing again; a fork carries copies of its lineage's
   `tower.x.*` facts and neither core fact ([`forkFacts`](ref:hub/src/bridge/launch.ts#forkFacts)). Each running
-  extension's `plugins.claude` joins the config's plugins on its floors ([[plugins]]). The spawn form draws the fields
+  extension's `plugins.claude` joins the config's plugins on its floors ([[plugins]]); a folder that is missing or isn't a
+  Claude plugin is a warning, since Claude skips it silently and the extension's other doors work without it
+  ([`claudePluginProblems`](ref:hub/src/bridge/extensions.ts#claudePluginProblems)). The spawn form draws the fields
   ([`formFields`](ref:hub/src/shared/spawn-form.ts#formFields)); the roles fixture is the proof.
 - **Fact kinds (1.90).** A stream's fact code may declare a `kind` the core folds, its facts checked against the
   kind's schema too; an unknown kind, or `tower/rate-limits` in a project stream, is `invalid`. The one kind is

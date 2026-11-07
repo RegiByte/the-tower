@@ -61,6 +61,7 @@ const ROLES = path.join(EXTENSIONS, 'roles')
 const TYPED = path.join(EXTENSIONS, 'typed')
 /** The shipped example of a writable fact and a projected fold, run in place. */
 const TABLINE = path.join(REPO, 'examples', 'extensions', 'tabline')
+const HANDOFF = path.join(REPO, 'examples', 'extensions', 'handoff')
 const BUILDER = '# Builder\n\nBuilds what it is asked, and tests it.\n'
 
 const BOOT_MS = 15_000
@@ -250,10 +251,10 @@ function writeConfig(port: number) {
     probes: { quota: { every: '1h' } },
     retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
-    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES }, tabline: { path: TABLINE }, typed: { path: TYPED } },
+    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES }, tabline: { path: TABLINE }, typed: { path: TYPED }, handoff: { path: HANDOFF } },
     projects: {
       lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }], hiring: { live: 0 } },
-      desk: { name: 'desk', hub: DESK, repos: [] },
+      desk: { name: 'desk', hub: DESK, repos: [], capabilities: { handoff: { off: true } } },
       bare: { name: 'bare', hub: BARE, repos: [], capabilities: { reviews: { off: true }, pulse: { off: true }, chime: { off: true }, tally: { off: true }, roles: { off: true } } },
     },
     collections: {
@@ -1634,8 +1635,12 @@ test("server: tower/spawn.gate is answered by the core's hiring limits first, th
     assert.equal(resumed.code, 'refused')
     assert.match(resumed.message, /^tally counts [1-9]\d* cards and lets none resume \(tally's gate\)$/)
 
-    assert.equal((await command('spawn', { project: 'lab' })).t, 'spawned', "an ApiError is a failed answer, never a refusal")
-    assert.equal((await command('spawn', { project: 'desk' })).t, 'spawned', 'a throw is a failed answer')
+    const onLab = await command('spawn', { project: 'lab' })
+    assert.equal(onLab.t, 'spawned', "an ApiError is a failed answer, never a refusal")
+    const onDesk = await command('spawn', { project: 'desk' })
+    assert.equal(onDesk.t, 'spawned', 'a throw is a failed answer')
+    const loads = (id: string) => (JSON.parse(readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8').split('\n')[0]) as { argv: string[] }).argv.includes(path.join(HANDOFF, 'plugin'))
+    assert.deepEqual([loads(onLab.id), loads(onDesk.id)], [true, false], "an extension's plugin reaches sessions on floors where it is on")
     const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
     assert.deepEqual(read.answers['tower/spawn.gate'], ['tally'])
     const problems = read.extensions.find((e) => e.id === 'tally')!.problems.filter((p) => p.path === 'answers.tower/spawn.gate')
