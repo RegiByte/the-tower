@@ -26,7 +26,9 @@
     "hub/renderers/page/stats.js#stats",
     "hub/renderers/tower3d/src/main.ts#seeingHandlers",
     "hub/test/reads.test.ts",
-    "hub/src/shared/term-view.ts#termHandlers"
+    "hub/src/shared/term-view.ts#termHandlers",
+    "hub/src/shared/view-host.ts#hostedHandlers",
+    "hub/test/view-host.test.ts"
   ],
   "links": [
     { "to": "renderer-is-disposable", "verb": "follows", "carries": "a machine a next renderer would need lives in shared" },
@@ -75,7 +77,8 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   handler sees the state the one before it left. It holds no subscriptions, interceptors or registries.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
   minor): held reads ([`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers)), attention (`/attend.js`), the
-  new-worker dialog ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)) and a terminal's hold on its PTY's
+  new-worker dialog ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), a hosted view's lifecycle
+  ([`hostedHandlers`](ref:hub/src/shared/view-host.ts#hostedHandlers), [[ui-model]]) and a terminal's hold on its PTY's
   one size ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers)). A machine only one renderer
   has (the tower page's main view and the [`stats`](ref:hub/renderers/page/stats.js#stats) its sidebar shows, Tower 3D's movement) lives beside that renderer, in the same shape.
 - *Tests.* Steps are pure functions, so a machine's bug is pinned by a unit test of its steps

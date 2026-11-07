@@ -2,6 +2,7 @@ import type { Board } from '../bridge/board.ts'
 import { commandUrl } from './adds.ts'
 import { esc } from './cards.ts'
 import { importServed } from './import-served.ts'
+import { loop, timers, type Handlers, type StateEffect, type TimerEffect } from './loop.ts'
 import type { KitMember, Layout, Region, Scale } from './regions.ts'
 import { NO_KIT } from './run-command.ts'
 import type { Tower } from './shelf-page.ts'
@@ -45,6 +46,135 @@ export type HostDeps = {
 
 /** Where a view is mounted: its scale, its options, and `showing`, told what it shows below its subject, where a renderer names that. */
 export type Placed = { scale: Scale | undefined; options: Record<string, unknown>; showing?: (subject: Subject) => void; args?: string[] }
+
+/** What a hosted view was asked while it isn't mounted, handed to it once it is: `seen` only once told, `pending` the subjects `show` was handed. */
+type Asked = { subject: Subject; options: Record<string, unknown>; seen: boolean | undefined; pending: Subject[] }
+
+/**
+ * A hosted view's lifecycle: its module importing, its mount called and timed (`with`: the options it was handed),
+ * mounted (`done`, the view's own handle, held and never called by a step), failed and saying so where it would draw,
+ * or closed by the renderer that mounted it.
+ */
+export type HostedView =
+  | ({ t: 'importing' } & Asked)
+  | ({ t: 'mounting'; with: Record<string, unknown> } & Asked)
+  | ({ t: 'mounted'; done: Mounted } & Asked)
+  | { t: 'failed' }
+  | { t: 'closed' }
+
+/**
+ * `open`: the view was mounted, its module yet to import; `imported`: its module arrived; `unlinked`: the module doesn't
+ * link against the modules this page holds; `broke`: its import, mount or a call into it threw; `settled`: its mount
+ * resolved; `late`: its mount hadn't settled in `MOUNT_MS`. The rest are what the renderer asks of it.
+ */
+export type HostedEvent =
+  | { type: 'open' }
+  | { type: 'imported'; module: Record<string, unknown> }
+  | { type: 'unlinked'; why: string }
+  | { type: 'broke'; why: string }
+  | { type: 'settled'; done: Mounted }
+  | { type: 'late' }
+  | { type: 'update'; subject: Subject }
+  | { type: 'options'; options: Record<string, unknown> }
+  | { type: 'visible'; on: boolean }
+  | { type: 'show'; subject: Subject }
+  | { type: 'close' }
+
+/**
+ * `import` the view's module; `mount` it in its element; `update`, `options`, `visible` and `show` call the mounted
+ * view, `show` toasting each subject it doesn't take; `close` ends it; `release` closes what its kit opened (terminals,
+ * inner regions, what it published on the bus); `failed` and `stale` draw the one line saying why it isn't there.
+ */
+export type HostedEffect =
+  | StateEffect<HostedView>
+  | TimerEffect<HostedEvent>
+  | { type: 'import' }
+  | { type: 'mount'; mount: Mount; subject: Subject; options: Record<string, unknown> }
+  | { type: 'update'; done: Mounted; subject: Subject }
+  | { type: 'options'; done: Mounted; options: Record<string, unknown> }
+  | { type: 'visible'; done: Mounted; on: boolean }
+  | { type: 'show'; done: Mounted; pending: Subject[] }
+  | { type: 'close'; done: Mounted }
+  | { type: 'release' }
+  | { type: 'failed'; why: string }
+  | { type: 'stale'; why: string }
+
+export const hostedImporting = (subject: Subject, options: Record<string, unknown>): HostedView => ({ t: 'importing', subject, options, seen: undefined, pending: [] })
+
+const state = (s: HostedView): StateEffect<HostedView> => ({ type: 'state', state: s })
+
+const asked = ({ subject, options, seen, pending }: Asked): Asked => ({ subject, options, seen, pending })
+
+const live = (s: HostedView): s is Extract<HostedView, Asked> => s.t === 'importing' || s.t === 'mounting' || s.t === 'mounted'
+
+/** What mounting afresh calls for once the state is `importing`: what was mounted closed, what its kit opened released, its module imported again. */
+const remount = (s: Asked, done: Mounted): HostedEffect[] => [{ type: 'close', done }, { type: 'release' }, { type: 'import' }]
+
+/** Failed: the mount's timer stopped, what was mounted closed and what its kit opened released, then the failure drawn. */
+const fails = (s: HostedView, draw: HostedEffect): HostedEffect[] => [
+  state({ t: 'failed' }),
+  ...(s.t === 'mounting' ? [{ type: 'timer/cancel' as const, id: 'mount' }] : []),
+  ...(s.t === 'mounted' ? [{ type: 'close' as const, done: s.done }] : []),
+  { type: 'release' },
+  draw,
+]
+
+/**
+ * The steps of a hosted view, `view`'s. A mount that settles once its view failed or closed is closed at once. A view
+ * that failed stays failed until closed: it takes no subject, options or `show`.
+ */
+export const hostedHandlers = (view: View): Handlers<HostedView, HostedEvent, HostedEffect> => ({
+  open: (s) => (s.t === 'importing' ? [{ type: 'import' }] : []),
+  imported: (s, { module }) => {
+    if (s.t !== 'importing') return []
+    const mount = module[view.export as string]
+    if (typeof mount !== 'function') return fails(s, { type: 'failed', why: `${commandUrl(view.cap, view.module as string)} exports no function ${view.export}` })
+    return [
+      state({ t: 'mounting', with: s.options, ...asked(s) }),
+      { type: 'timer/start', id: 'mount', ms: MOUNT_MS, fire: { type: 'late' } },
+      { type: 'mount', mount: mount as Mount, subject: s.subject, options: s.options },
+    ]
+  },
+  unlinked: (s, { why }) => (live(s) ? fails(s, { type: 'stale', why }) : []),
+  broke: (s, { why }) => (live(s) ? fails(s, { type: 'failed', why }) : []),
+  late: (s) => (s.t === 'mounting' ? fails(s, { type: 'failed', why: `its mount hadn't settled in ${MOUNT_MS / 1000} s` }) : []),
+  settled: (s, { done }) => {
+    if (s.t !== 'mounting') return [{ type: 'close', done }, { type: 'release' }]
+    const stopped = { type: 'timer/cancel' as const, id: 'mount' }
+    if (s.options !== s.with && !done.options) return [state({ t: 'importing', ...asked(s) }), stopped, ...remount(s, done)]
+    return [
+      state({ t: 'mounted', done, ...asked(s), pending: [] }),
+      stopped,
+      ...(s.options !== s.with ? [{ type: 'options' as const, done, options: s.options }] : []),
+      ...(s.seen !== undefined ? [{ type: 'visible' as const, done, on: s.seen }] : []),
+      ...(s.pending.length ? [{ type: 'show' as const, done, pending: s.pending }] : []),
+    ]
+  },
+  update: (s, { subject }) => {
+    if (!live(s)) return []
+    const next = { ...s, subject }
+    return s.t === 'mounted' ? [state(next), { type: 'update', done: s.done, subject }] : [state(next)]
+  },
+  options: (s, { options }) => {
+    if (!live(s)) return []
+    const next = { ...s, options }
+    if (s.t !== 'mounted') return [state(next)]
+    if (s.done.options) return [state(next), { type: 'options', done: s.done, options }]
+    return [state({ t: 'importing', ...asked(next) }), ...remount(next, s.done)]
+  },
+  visible: (s, { on }) => {
+    if (!live(s)) return []
+    const next = { ...s, seen: on }
+    return s.t === 'mounted' ? [state(next), { type: 'visible', done: s.done, on }] : [state(next)]
+  },
+  show: (s, { subject }) => (s.t === 'importing' || s.t === 'mounting' ? [state({ ...s, pending: [...s.pending, subject] })] : []),
+  close: (s) => [
+    state({ t: 'closed' }),
+    ...(s.t === 'mounting' ? [{ type: 'timer/cancel' as const, id: 'mount' }] : []),
+    ...(s.t === 'mounted' ? [{ type: 'close' as const, done: s.done }] : []),
+    ...(live(s) ? [{ type: 'release' as const }] : []),
+  ],
+})
 
 export type Hosted = ReturnType<ViewHost['mountView']>
 
@@ -109,11 +239,6 @@ export function viewHost(deps: HostDeps) {
     const inner = new Set<RegionHandle>()
     /** The keys it published on the bus, once per publish: cleared with it. */
     const published: string[] = []
-    let closed = false
-    let mounted: Mounted | undefined
-    const pending: Subject[] = []
-    let seen: boolean | undefined
-
     const opened = lent.terminal
     const askedSpawn = lent.spawn
 
@@ -121,7 +246,7 @@ export function viewHost(deps: HostDeps) {
       ...NO_KIT,
       go: unlent('go'),
       ...lent,
-      spawn: askedSpawn && ((on) => askedSpawn(on, () => !closed)),
+      spawn: askedSpawn && ((on) => askedSpawn(on, () => machine.state().t !== 'closed')),
       showing,
       terminal: opened
         ? (host, path) => {
@@ -147,52 +272,8 @@ export function viewHost(deps: HostDeps) {
       },
     }
 
-    const settle = async () => {
-      try {
-        let module: Record<string, unknown>
-        try {
-          module = await moduleOf(view)
-        } catch (err) {
-          // A module that doesn't link (a SyntaxError from its import) is newer than the modules the page holds.
-          if (!(err instanceof SyntaxError)) throw err
-          if (!closed) dropped(() => stale(el, view.id, err.message))
-          return
-        }
-        const mount = module[view.export as string] as Mount | undefined
-        if (typeof mount !== 'function') throw new Error(`${urlOf(view)} exports no function ${view.export}`)
-        const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, scale, ...(args && { args }) }
-        const done = (await Promise.race([
-          Promise.resolve(mount(el, ctx)),
-          new Promise((_, reject) => setTimeout(() => reject(new Error(`its mount hadn't settled in ${MOUNT_MS / 1000} s`)), MOUNT_MS)),
-        ])) as Mounted
-        if (closed) return done.close()
-        mounted = done
-        if (options !== ctx.options) {
-          if (!mounted.options) return remount()
-          mounted.options(options)
-        }
-        if (seen !== undefined) mounted.visible?.(seen)
-        for (const s of pending.splice(0)) if (!mounted.show?.(s)) kit.toast(`${s.key} isn't there any more`)
-      } catch (err) {
-        if (!closed) fail((err as Error).message)
-      }
-    }
-
-    /** What was mounted closed, and `draw` in its place. */
-    const dropped = (draw: () => void) => {
-      const was = mounted
-      mounted = undefined
-      try {
-        was?.close()
-      } finally {
-        letGo()
-        draw()
-      }
-    }
-
-    const fail = (why: string) => dropped(() => failed(el, view.id, why))
-
-    const letGo = () => {
+    /** What its kit opened, closed: its terminals, its inner regions, what it published on the bus. */
+    const release = () => {
       for (const t of own) t.close()
       own.clear()
       for (const r of inner) r.close()
@@ -200,61 +281,80 @@ export function viewHost(deps: HostDeps) {
       for (const key of published.splice(0)) lentBus.clear(key)
     }
 
-    const remount = () => {
-      const was = mounted
-      mounted = undefined
+    /** A call into the mounted view: one that throws breaks it. */
+    const into = (call: () => void, dispatch: (e: HostedEvent) => void) => {
       try {
-        was?.close()
-      } finally {
-        letGo()
-        void settle()
+        call()
+      } catch (err) {
+        dispatch({ type: 'broke', why: (err as Error).message })
       }
     }
 
-    void settle()
+    const machine = loop({
+      state: hostedImporting(subject, options),
+      handlers: hostedHandlers(view),
+      execute: {
+        ...timers<HostedEvent>(),
+        import: (_, dispatch) =>
+          void moduleOf(view).then(
+            (module) => dispatch({ type: 'imported', module }),
+            // A module that doesn't link (a SyntaxError from its import) is newer than the modules the page holds.
+            (err: Error) => dispatch(err instanceof SyntaxError ? { type: 'unlinked', why: err.message } : { type: 'broke', why: err.message }),
+          ),
+        mount: ({ mount, subject, options }, dispatch) => {
+          const broke = (err: Error) => dispatch({ type: 'broke', why: err.message })
+          try {
+            const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, scale, ...(args && { args }) }
+            Promise.resolve(mount(el, ctx)).then((done) => dispatch({ type: 'settled', done }), broke)
+          } catch (err) {
+            broke(err as Error)
+          }
+        },
+        update: ({ done, subject }, dispatch) => into(() => done.update(board(), subject), dispatch),
+        options: ({ done, options }, dispatch) => into(() => done.options?.(options), dispatch),
+        visible: ({ done, on }, dispatch) => into(() => done.visible?.(on), dispatch),
+        show: ({ done, pending }, dispatch) =>
+          into(() => {
+            for (const s of pending) if (!done.show?.(s)) kit.toast(`${s.key} isn't there any more`)
+          }, dispatch),
+        // The page stays standing: a view that throws as it closes is said and reported, and what it opened is still released.
+        close: ({ done }) => {
+          try {
+            done.close()
+          } catch (err) {
+            kit.toast(`${view.id} didn't close cleanly: ${(err as Error).message}`)
+            reportError(err)
+          }
+        },
+        release,
+        failed: ({ why }) => failed(el, view.id, why),
+        stale: ({ why }) => stale(el, view.id, why),
+      },
+    })
+
+    machine.dispatch({ type: 'open' })
 
     return {
       view,
       el,
-      update(at: Subject) {
-        subject = at
-        try {
-          mounted?.update(board(), at)
-        } catch (err) {
-          fail((err as Error).message)
-        }
-      },
+      update: (at: Subject) => machine.dispatch({ type: 'update', subject: at }),
       /** A subject below the one it is on; true when it took it, or will once mounted. */
       show(s: Subject): boolean {
-        if (closed) return false
-        if (!mounted) return (pending.push(s), true)
-        return mounted.show?.(s) ?? false
+        const now = machine.state()
+        if (now.t === 'mounted') return now.done.show?.(s) ?? false
+        if (now.t === 'failed' || now.t === 'closed') return false
+        machine.dispatch({ type: 'show', subject: s })
+        return true
       },
-      visible(on: boolean) {
-        seen = on
-        mounted?.visible?.(on)
+      visible: (on: boolean) => machine.dispatch({ type: 'visible', on }),
+      options: (next: Record<string, unknown>) => machine.dispatch({ type: 'options', options: next }),
+      tab: () => {
+        const now = machine.state()
+        return now.t === 'mounted' ? now.done.tab?.() : undefined
       },
-      options(next: Record<string, unknown>) {
-        options = next
-        if (!mounted) return
-        if (!mounted.options) return remount()
-        try {
-          mounted.options(next)
-        } catch (err) {
-          fail((err as Error).message)
-        }
-      },
-      tab: () => mounted?.tab?.(),
       /** The first terminal its kit opened, as a press of its tab's chord focuses it. */
       terminal: () => [...own][0]?.term(),
-      close() {
-        closed = true
-        try {
-          mounted?.close()
-        } finally {
-          letGo()
-        }
-      },
+      close: () => machine.dispatch({ type: 'close' }),
     }
   }
 
