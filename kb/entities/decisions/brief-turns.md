@@ -89,7 +89,9 @@ renderer can draw the brief alike, inline.
   [`wholeConversation`](ref:hub/src/bridge/turns.ts#wholeConversation) gives every turn of one conversation, at
   `GET /conversations/<id>/<conversation>` ([`conversation`](ref:hub/src/tower/http.ts#conversation)). `tower agent`
   prints the brief, and where a conversation's `earlier` is set, the exact `tower agent <CALLSIGN> <conversation>` that
-  prints every turn: a reviewer takes a worker's goal from it, and the goal is often before the last turns.
+  prints every turn, oldest first: a reviewer takes a worker's goal from it, and the goal is often before the last
+  turns. An earlier session's conversations each get that command, since it shows none of their turns. The prompt
+  opening a hired worker's first conversation is named as its hirer's: `promptBy` covers only a latest prompt.
 - *Steps, since 1.133.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between
   its prompt and its answer, read from the log by [`stepsOf`](ref:hub/src/bridge/turns.ts#stepsOf): its words between
   tool calls (`turn.step`'s `answer`), each main-loop tool call in one line

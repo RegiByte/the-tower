@@ -65,7 +65,7 @@ export const CLI_VERBS = {
     help: "this session: callsign, peer name, floor and its dirs, its worktree and branch if it has one, the floor's shelf and collections, and the config's path",
   },
   agents: { of: 'worker', usage: 'agents [--all]', help: "the workers on duty on this session's floor, each under the one it reports to; --all, on every floor" },
-  agent: { of: 'worker', usage: 'agent <CALLSIGN> [conversation]', help: 'one worker: its last prompts and answers in full, per conversation, saying when earlier turns are left out; with [conversation], every turn of that one' },
+  agent: { of: 'worker', usage: 'agent <CALLSIGN> [conversation]', help: 'one worker: its last prompts and answers in full, per conversation, saying when earlier turns are left out; with [conversation], every turn of that one, oldest first' },
   extensions: {
     of: 'worker',
     usage: 'extensions [restart <id> | check <dir> | freeze <dir>]',
