@@ -1075,7 +1075,7 @@ export const PROBLEMS_SHOWN = 20
 
 /** A halt that threw: the tower cleared what ctx opened all the same. */
 const haltProblems = (outcome: Outcome | undefined): ExtensionProblem[] =>
-  outcome?.halt ? [{ lane: 'halt', level: 'error', code: 'failed', message: outcome.halt, at: outcome.at, count: 1 }] : []
+  outcome?.halt !== undefined ? [{ lane: 'halt', level: 'error', code: 'failed', message: outcome.halt, at: outcome.at, count: 1 }] : []
 
 /** A manifest's slots as the board shows them. */
 const slotsOf = (manifest: Manifest | undefined): ExtensionView['slots'] =>
