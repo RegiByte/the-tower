@@ -12,6 +12,35 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.101.0
+
+The page's view host is in the library, so another renderer can mount the page's views. Tower 3D confirms in the
+library's dialog, counts asks and goes to them, and catches up with the page on a set of small behaviours. Restart the
+tower with this release (`tower down tower`, then `tower up tower`); `tower update` does that for you. No host restart.
+API 1.162, by addition.
+
+- **A view host for every renderer.** `viewHost` in `/lib/view.js` mounts a view, its regions and its nested views. The
+  page is its first user and behaves as before. Each mounted view's lifecycle is a machine: a view that throws is
+  called no more and shows its failure, and a mount that settles after its timeout is closed. `docs/extending.md` says
+  how a renderer calls it. Provisional.
+- **`ask` in the library.** `/lib/chrome.js`'s `ask` carries its own dialog and look, framed or not, so a renderer
+  confirms without declaring anything. Also in the library: `clientOf`, `seenMarker`, the Brief's `briefKey` and
+  `keptWholes`, and the archive's held reads. All provisional.
+- **A machine's state, awaited.** A loop's `until(pred)` resolves once its machine reaches a state, including when it is
+  asked in the middle of a dispatch.
+- **One archive read.** The page, its archive view and Tower 3D read a floor's archive through the same held read. A
+  worker opened by link or hash still waits for the archive.
+- **Tower 3D confirms in a dialog.** Send home, Let go, reap, Tidy, the worktree verbs, a shell's Kill and a kept item's
+  Delete ask in the library's dialog instead of a second press. Each acts on the subject the question named, and says
+  so when that subject left while the question was open. Verbs held in the world still take a held key.
+- **Tower 3D and asks.** The HUD counts the asks you heed, the tab title counts waits and asks, a new ask shows a toast,
+  and N goes to asks as well as waits.
+- **Tower 3D catches up with the page:** limits read the default command's, and read-now reads that command. The
+  quota probe line reads the shown account. The elevator and the directory count only the waits you heed. The key sheet
+  lists only what runs. A desk's logbook reads again as its worker moves, a reopened Brief shows what it read before,
+  and a terminal that ends gives way to the logbook.
+- **Commands import their module by its whole address,** so a framed classic script's command reaches it in Chrome.
+
 ## v1.100.0
 
 A chord on a worker's tab makes it a pane, a worktree git can't read says so, and a sandbox's `tower` floor reaches
