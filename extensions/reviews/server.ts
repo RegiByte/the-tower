@@ -26,9 +26,9 @@ type Appended = { t: 'appended'; id: string; n: number; modifiedAt: number }
 
 type Caller = CallCtx['caller']
 
-type ResolveInput = { project: string; checkout?: string; author?: string; notes: number[]; body?: string }
+type ResolveInput = { project: string; checkout?: string; on?: string; author?: string; notes?: number[]; resolves?: string[]; body?: string }
 
-type NoteInput = { project: string; on?: string; re?: number; at?: string[]; body?: string }
+type NoteInput = { project: string; on?: string; re?: string; at?: string[]; body?: string }
 
 type SendInput = { project: string; to: string }
 
@@ -67,6 +67,9 @@ const launch = ({ kind, fields }: LaunchRequest): LaunchParts =>
 type Hire = { project: string; of: string; by?: string; tell?: boolean }
 
 type Spawned = { t: 'spawned'; id: string; cut: { name: string } }
+
+/** A note's number as a worker types it, `3` or `n3`. */
+const noteNumber = (typed: string) => Number(typed.replace(/^n/, ''))
 
 /** A reviewer's first prompt: this extension's skill, on the callsign of the worker it reviews. With `tell`, it sends its notes to that worker when done. */
 const reviewerPrompt = (callsign: string, tell: boolean) => `/reviews:review ${callsign}${tell ? ' tell' : ''}`
@@ -214,7 +217,8 @@ const start: Start = (ctx) => {
         queue = appending.catch(() => undefined)
         return appending
       },
-      note: async ({ project, on, re, at = [], body = '' }: NoteInput, { call, caller }: CallCtx) => {
+      note: async ({ project, on, re: typed, at = [], body = '' }: NoteInput, { call, caller }: CallCtx) => {
+        const re = typed === undefined ? undefined : noteNumber(typed)
         const card = callerCard(caller)
         if (!card) return apiError('refused', 'A note is signed by the worker that writes it: this call comes from no worker. `reviews/append` takes its author')
         const checkout = on ?? threadCheckoutOf(card)
@@ -244,9 +248,11 @@ const start: Start = (ctx) => {
         if (isApiError(submitted)) return submitted
         return { said: `Sent ${target.callsign} a pointer to ${unseen.length ? unseen.map((n) => `n${n}`).join(', ') : 'the thread'} on checkout ${target.checkout}.` }
       },
-      resolve: async ({ project, checkout: named, author: signed, notes, body }: ResolveInput, { call, caller }: CallCtx) => {
+      resolve: async ({ project, checkout: named, on, author: signed, notes: given, resolves, body }: ResolveInput, { call, caller }: CallCtx) => {
+        const notes = given ?? resolves?.map(noteNumber)
+        if (!notes) return apiError('invalid', 'resolve names the notes it resolves: tower x reviews resolve 3 4')
         const card = callerCard(caller)
-        const checkout = named ?? (card && threadCheckoutOf(card))
+        const checkout = named ?? on ?? (card && threadCheckoutOf(card))
         const author = signed ?? card?.callsign
         if (checkout === undefined || author === undefined) return apiError('invalid', 'This call comes from no worker: name the checkout and the author')
         const text = await textOf(project, threadId(checkout))

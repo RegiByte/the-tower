@@ -127,16 +127,14 @@ export type VerbName = keyof typeof CLI_VERBS
  */
 export type Alias = { now: string; args: (words: string[]) => string[] }
 
-const noteNumber = (word: string) => word.replace(/^n/, '')
-
 /** `tower note`'s old grammar as reviews' words: `on <checkout>`, `re n<k>`, `resolve n<k> …`, and anchors as they are. */
 const noteWords = (words: string[]): string[] => {
   const on = words[0] === 'on' ? words[1] : undefined
   const rest = on === undefined ? words : words.slice(2)
-  if (rest[0] === 'resolve') return ['resolve', ...rest.slice(1).map(noteNumber), ...(on === undefined ? [] : ['--checkout', on])]
+  if (rest[0] === 'resolve') return ['resolve', ...rest.slice(1), ...(on === undefined ? [] : ['--on', on])]
   const re = rest[0] === 're' ? rest[1] : undefined
   const anchors = re === undefined ? rest : rest.slice(2)
-  return ['note', ...(on === undefined ? [] : ['--on', on]), ...(re === undefined ? [] : ['--re', noteNumber(re)]), ...anchors.flatMap((a) => ['--at', a])]
+  return ['note', ...(on === undefined ? [] : ['--on', on]), ...(re === undefined ? [] : ['--re', re]), ...anchors.flatMap((a) => ['--at', a])]
 }
 
 /** The old core words that moved under `tower x`. */
