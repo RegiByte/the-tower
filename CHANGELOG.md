@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.97.0
+
+Extensions' settings now reach their client code on the board, so a client-only extension needs no server to read one.
+Grid is the first to use it: its cells can flash while a worker waits on you, thanks to Yuri Galindo (#445). Restart the
+tower with this release (`tower down tower`, then `tower up tower`). API 1.154, an addition. No host restart.
+
+- **Settings on the board.** Each entry of `board.extensions` has `settings`, with its schema's defaults, and
+  `floorSettings` for floors that set their own. `settingsOf` and `floorSettingsOf` of `/lib/board.js` read them, and a
+  view hears a change in its `update`.
+- **Grid's flash.** A cell can ring in its worker's colour while it waits on you. It is off until you turn it on: Flash
+  on the grid's bar steps through off, steady and blink, and keeps the choice in the config, so it follows you to every
+  browser. A floor's own value wins (`extensions.grid.settings.flash`).
+- **A bad floor setting no longer takes the board down.** One value an extension's schema refuses on a floor replaced
+  the whole board with an error. It is now a problem on that extension, and the floor reads the system's settings.
+- **Reduced motion reaches pseudo-elements.** An animation on a `::before` or `::after` ignored it, the skyline's alarm
+  beacon among them, which now runs once and rests lit.
+- **The config holds no credentials.** Now a stated principle: an integration keeps its key in the script or command
+  its settings name, as narrate's voice commands do.
+
 ## v1.96.4
 
 Reading a worker's brief on a long session takes about a third of the time, and repeated reads grow the tower's memory
