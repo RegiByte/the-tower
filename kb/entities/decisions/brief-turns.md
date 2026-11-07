@@ -103,7 +103,12 @@ renderer can draw the brief alike, inline.
   step. A subagent's events stay out, its steps counted on the `Agent` call that started it (`agent.spawn`). A call
   reads in full on demand at `GET /conversations/<id>/tool/<call>` ([`toolCallOf`](ref:hub/src/bridge/turns.ts#toolCallOf),
   [`toolCall`](ref:hub/src/tower/http.ts#toolCall)): its input as logged, its permission check, how it ended, its
-  error. The tool's output is not in the log (the host leaves it out), so it is not served.
+  error. The tool's output is not in the log (the host leaves it out), so it is not served. A question dialog
+  (`AskUserQuestion`) is the exception that carries its answer in the input: Claude logs `answers` (question to label
+  chosen) and `annotations` only in `PostToolUse`'s `tool_input`, so its line reads each question by its header with the
+  answer and the user's note, `unanswered` while none is logged, and the full read prefers `PostToolUse`'s input once it
+  arrived. `tower agent` prints a turn's dialog lines between its prompt and its answer, so a reviewer sees decisions
+  made in a dialog.
 - *Workers' messages are turns.* A prompt of peer origin whose text is a delivery from another Claude session
   ([`delivered`](ref:hub/src/bridge/messages.ts#delivered)) opens a turn carrying `from`
   ([`PeerFrom`](ref:hub/src/bridge/turns.ts#PeerFrom)): the sender's callsign, and its session when

@@ -15,7 +15,7 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import type { Board, Card, Floor, FloorCollection, FloorItem } from './bridge/board.ts'
-import type { Brief } from './bridge/turns.ts'
+import type { Brief, Turn } from './bridge/turns.ts'
 import type { Shown } from './bridge/facts.ts'
 import { callerHeaders, type Replies } from './shared/api.ts'
 import type { Flow, OpenStage, Stage } from './shared/flows.ts'
@@ -204,12 +204,17 @@ const readThreads = async (id: string): Promise<Brief[]> => {
 const conversationLine = (thread: Brief): string =>
   `Conversation ${thread.id}${thread.resumedBy ? ` (continued by ${thread.resumedBy.callsign}, session ${thread.resumedBy.id})` : ''}`
 
+/** The question dialogs a turn's worker put to the user, each with what was chosen: the turn's prompt and answer leave them out. */
+const dialogLines = (turn: Turn): string[] =>
+  turn.steps.flatMap((s) => (s.t === 'tool' && s.tool === 'AskUserQuestion' ? [`  asked: ${s.line}`] : []))
+
 const threadLines = (thread: Brief, promptBy: string | undefined): string[] => [
   conversationLine(thread),
   ...(thread.turns.length
     ? thread.turns.toReversed().flatMap((turn, i, turns) => [
         `${GIST_MARK.prompt} ${i === 0 ? 'Latest prompt' : 'Earlier prompt'} from ${turn.from ? `${turn.from.callsign}, another worker` : promptBy && turn === turns.find((t) => !t.from) ? `${promptBy}, which hired it` : 'the user'}:`,
         turn.prompt,
+        ...dialogLines(turn),
         `${GIST_MARK.answer} ${i === 0 ? 'Latest answer' : 'Answer'}:`,
         turn.answer ?? '(working on it)',
       ])
@@ -222,6 +227,7 @@ const wholeLines = (thread: Brief, hirer: string | undefined): string[] => [
   ...thread.turns.flatMap((turn, i) => [
     `${GIST_MARK.prompt} ${i === 0 ? 'First prompt' : 'Prompt'} from ${turn.from ? `${turn.from.callsign}, another worker` : i === 0 && hirer ? `${hirer}, which hired it` : 'the user'}:`,
     turn.prompt,
+    ...dialogLines(turn),
     `${GIST_MARK.answer} Answer:`,
     turn.answer ?? '(working on it)',
   ]),
