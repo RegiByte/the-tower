@@ -30,7 +30,7 @@
     "hub/extensions/reviews/server.ts",
     "hub/extensions/reviews/server.ts#append",
     "hub/extensions/reviews/filing.ts#tidyEntries",
-    "hub/src/shared/reviews.ts#landedThreadId",
+    "hub/extensions/reviews/client/reviews.ts#landedThreadId",
     "hub/extensions/reviews/client/reviews.ts#verdictOf",
     "hub/extensions/reviews/threads.ts#reviewHistory",
     "hub/extensions/reviews/client/reviews.ts#resolvesOf",
@@ -97,9 +97,9 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   Lines picked there are noted through [`reviews/composer`](ref:hub/extensions/reviews/client/composer.ts#mount), a
   view on `lines` in the `lines.acts` region under them ([[ui-model]]). The format is a pure parser
   and printer ([`reviews.ts`](ref:hub/extensions/reviews/client/reviews.ts), the extension's client, served as
-  `/x/reviews/reviews.js` and as `/reviews.js` through `LEGACY` until 2.0), total over hand edits. The names the
-  core still uses (the collection's name, a thread's file and a filed thread's, the reviewer's prompt, a repo's name)
-  stay in `src/shared/reviews.ts`, which the client re-exports.
+  `/x/reviews/reviews.js` and as `/reviews.js` through `LEGACY` until 2.0), total over hand edits. It holds the live copy
+  of the names the core's legacy layer still uses (the collection's name, a thread's file and a filed thread's, the
+  reviewer's prompt), and the core keeps its own in `src/shared/reviews.ts` until 2.0.
 - *Writing: append only, through one verb.* [`reviews/append`](ref:hub/extensions/reviews/server.ts#append) numbers the
   note from the thread and writes it whole (`ctx.collections.put`), each append after the one before it, so appends
   from the page, `tower note` and every worker never interleave (`review/append` answers through `LEGACY`, deprecated); a generic append would leave numbering to clients racing each other. It refuses an
@@ -141,7 +141,7 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   ([`tidyEntries`](ref:hub/extensions/reviews/filing.ts#tidyEntries)) and its answer to `tower/tidy.apply` files each
   ([`start`](ref:hub/extensions/reviews/server.ts#start), [[tidy]]); a [[discard]]ed worktree's gets the note naming its
   tips in its answer to `tower/discard.record`, and is filed in its answer to `tower/discard.done`, once the worktree
-  is gone. The core's Tidy and discard know no thread. A filed thread takes the name [`landedThreadId`](ref:hub/src/shared/reviews.ts#landedThreadId)
+  is gone. The core's Tidy and discard know no thread. A filed thread takes the name [`landedThreadId`](ref:hub/extensions/reviews/client/reviews.ts#landedThreadId)
   gives it (`<checkout>@<time>.md`) and frees the checkout's name, so a reused name never inherits old notes.
   Filed threads are the review history: [`reviewHistory`](ref:hub/extensions/reviews/threads.ts#reviewHistory), at
   `GET /reviews/history/<project>` (`GET /reviews/<project>` through `LEGACY`), gives every thread, each message with its verdict

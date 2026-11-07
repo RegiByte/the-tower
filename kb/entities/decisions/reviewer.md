@@ -113,8 +113,9 @@ and how its findings reach the author.
   from hiring by reviews, and is put in its author's crew as the board names the author by callsign now
   ([`legacyCrew`](ref:hub/src/bridge/legacy.ts#legacyCrew), in [`withReports`](ref:hub/src/bridge/board.ts#withReports)),
   exactly as the prompt was read before; a hire whose prompt starts so is not weighed against the limits either.
-  It is the only place in the core that reads the prompt, and goes at 2.0. With its author off the board such a reviewer
-  has no edge, so reviews reads it as a plain worker: accepted, since 2.0 does the same to every one of them.
+  It is the only place in the core that reads the prompt, and goes at 2.0. With its author off the board such a reviewer, any launch logging no facts whose prompt reads so,
+  has no edge, so reviews reads it as a plain worker, while the old `card.reviews` still names its author: accepted, since
+  2.0 does the same to every one of them.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
   terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots
   place them ([[desk-dressing]]): its chair at `reviewer`, turned as that slot is, its notebook at `reviewer_notebook`, its subagents standing
