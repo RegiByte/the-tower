@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { chainOrder, mismatchOf, registry, resolve, withRendererLayouts, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
+import { chainOrder, mismatchOf, registry, resolve, settingsOn, withRendererLayouts, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
 import { matchRead, MAX_DEPTH, nestedIn, qualifiedOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
 import { extensionFactOf, type Session } from '../src/bridge/facts.ts'
 import { floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
@@ -393,4 +393,29 @@ test("a cli naming a missing or mistyped field, or a word two share, refuses the
   assert.deepEqual(refusal('wordless'), [['cli', 'reads.a1', 'a read is a word when its cli names one: add word']])
   assert.deepEqual(refusal('badusage'), [['cli', 'verbs.a1.usage', 'usage starts with its word, a1']])
   assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'verbs.a1.cli']])
+})
+
+const FLASHING = ext('flashing', { settings: { type: 'object', additionalProperties: false, properties: { flash: { type: 'string', enum: ['off', 'blink'], default: 'off' }, every: { type: 'integer', default: 5 } } } })
+const onFloors = (site: Record<string, unknown>, app?: Record<string, unknown>) =>
+  config({
+    extensions: { flashing: { path: FLASHING.dir, settings: { every: 9 } } },
+    projects: { app: { name: 'App', hub: '/app', repos: [], ...(app && { extensions: { flashing: { settings: app } } }) }, site: { name: 'Site', hub: '/site', repos: [], extensions: { flashing: { settings: site } } } },
+  })
+
+test('a floor sets its own settings over the system\'s, and a floor without any reads the system\'s', () => {
+  const c = onFloors({ flash: 'blink' })
+  const a = resolve([FLASHING], c, TOWER).accepted.get('flashing')!
+  assert.deepEqual(a.settings, { flash: 'off', every: 9 })
+  assert.deepEqual(a.floorSettings, { site: { flash: 'blink', every: 9 } })
+  assert.deepEqual(settingsOn(c, a, 'site'), { flash: 'blink', every: 9 })
+  assert.deepEqual(settingsOn(c, a, 'app'), { flash: 'off', every: 9 })
+})
+
+test('a floor its schema refuses costs only its override: one problem, the system\'s settings there, every other floor as set', () => {
+  const c = onFloors({ flash: 'strobe' }, { flash: 'blink' })
+  const a = resolve([FLASHING], c, TOWER).accepted.get('flashing')!
+  assert.deepEqual(a.problems.map((p) => [p.code, p.message.split(':')[0]]), [['invalid', 'projects.site.extensions.flashing.settings.flash']])
+  assert.deepEqual(a.floorSettings, { app: { flash: 'blink', every: 9 } })
+  assert.deepEqual(settingsOn(c, a, 'site'), a.settings)
+  assert.deepEqual(settingsOn(c, a, 'app'), { flash: 'blink', every: 9 })
 })

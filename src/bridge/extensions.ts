@@ -137,6 +137,8 @@ export type Accepted = {
   provides: string
   /** The system's settings parsed by `schema`, with its defaults. */
   settings: unknown
+  /** The settings of each floor that sets its own, over the system's and parsed the same way. */
+  floorSettings: Record<string, unknown>
   schema?: z.ZodType
   /** Its stores' schemas as zod. */
   schemas: StoreSchemas
@@ -203,6 +205,30 @@ export const zodOf = (schema: Record<string, unknown>): z.ZodType | string => {
   } catch (err) {
     return (err as Error).message
   }
+}
+
+/** A floor's own settings for an extension merged over the system's per key and parsed by its schema, when it sets any. */
+const parsedOnFloor = (config: Config, id: string, schema: z.ZodType, project: string) => {
+  const own = config.projects[project]?.extensions?.[id]?.settings
+  return own === undefined ? undefined : parseSettings(schema, { ...config.extensions?.[id]?.settings, ...own }, `projects.${project}.extensions.${id}.settings`)
+}
+
+/** The settings of each floor that sets its own for an extension, and a problem for each that its schema refuses: that floor is left out. */
+const floorSettingsIn = (config: Config, id: string, schema: z.ZodType): { settings: Record<string, unknown>; problems: LoadProblem[] } => {
+  const parsed = Object.keys(config.projects).flatMap((project) => {
+    const r = parsedOnFloor(config, id, schema, project)
+    return r ? [[project, r] as const] : []
+  })
+  return {
+    settings: Object.fromEntries(parsed.flatMap(([project, r]) => (r.ok ? [[project, r.value]] : []))),
+    problems: parsed.flatMap(([, r]) => (r.ok ? [] : r.problems.map((p) => error('invalid', `${p.path}: ${p.message}`)))),
+  }
+}
+
+/** An extension's settings on one floor as the config stands: its own, or the system's where it sets none or its schema refuses them. */
+export const settingsOn = (config: Config, a: Pick<Accepted, 'id' | 'settings' | 'schema'>, project: string): unknown => {
+  const parsed = a.schema && parsedOnFloor(config, a.id, a.schema, project)
+  return parsed?.ok ? parsed.value : a.settings
 }
 
 /** Settings parsed by an extension's schema: the value, or each problem at its key path below `at`. */
@@ -977,6 +1003,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           const why = !provider ? 'which no extension provides' : !meets(provider.manifest!.version, version) ? `and ${provider.found.id} provides ${provider.manifest!.version}` : `and ${provider.found.id} doesn't run`
           return { lane: 'load', level: 'info', code: 'unmet', message: `wants ${cap} ${version}, ${why}: it runs without it, ctx.deps.${cap} undefined`, path: `wants.${cap}` }
         })
+      const floors = r.schema ? floorSettingsIn(config, r.found.id, r.schema) : { settings: {}, problems: [] }
       return [
         r.found.id,
         {
@@ -987,6 +1014,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           manifest,
           provides,
           settings: r.settings,
+          floorSettings: floors.settings,
           ...(r.schema && { schema: r.schema }),
           schemas: r.schemas!,
           requires: requiredOf(manifest),
@@ -998,7 +1026,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           fields: r.fields!,
           chain,
           off: Object.keys(config.projects).filter((project) => offOn(config, project, chain)),
-          problems: [...r.problems, ...without],
+          problems: [...r.problems, ...floors.problems, ...without],
           ...(r.guidance && { guidance: r.guidance }),
         },
       ]
