@@ -4,7 +4,7 @@
   "name": "Terms daemon",
   "summary": "The detached Node process that owns login shells started in project directories and streams their screens to viewers.",
   "in": "terms",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-07",
   "refs": ["hub/src/terms/main.ts#spawnShell", "hub/src/terms/main.ts#attach", "hub/src/shared/viewers.ts#joinViewer", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/terms.ts#ShellStream", "hub/src/shared/terms.ts#SHELL_SCROLLBACK", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "config.json on every spawn: the project's dirs" }
@@ -26,4 +26,4 @@ exit, never the daemon ([`endOnReadError`](ref:hub/src/shared/pty.ts#endOnReadEr
 
 `attach` turns the connection into the shell's stream: a snapshot, then `o`, `r` and `x` as they happen. Output that
 arrives while the snapshot is taken is held and sent after it, so nothing is lost or repeated
-([`attach`](ref:hub/src/terms/main.ts#attach), [`joinViewer`](ref:hub/src/shared/viewers.ts#joinViewer), shared with the [[jobs-daemon]]). A shell ends only when killed or when it exits.
+([`attach`](ref:hub/src/terms/main.ts#attach), [`joinViewer`](ref:hub/src/shared/viewers.ts#joinViewer), shared with the [[jobs-daemon]]). A shell ends only when killed or when it exits: a kill is a hangup, and a shell still there two seconds on, one that traps or ignores it, gets SIGKILL, so a kill and the daemon's own stop always land.

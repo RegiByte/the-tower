@@ -31,6 +31,16 @@ type LiveShell = Screened<ShellStream> & {
 const paths = systemPaths(configPath())
 const shells = new Map<string, LiveShell>()
 
+/** A shell's time to end on its hangup, which it may trap or ignore, before it is killed. */
+const HANGUP_GRACE_MS = 2000
+
+const endShell = (s: LiveShell) => {
+  s.proc.kill()
+  setTimeout(() => {
+    if (shells.get(s.shell.id) === s) s.proc.kill('SIGKILL')
+  }, HANGUP_GRACE_MS)
+}
+
 const liveShell = (id: string): LiveShell => {
   const s = shells.get(id)
   if (!s) throw Object.assign(new Error(`No shell "${id}"`), { code: 'not_found' as const })
@@ -88,7 +98,7 @@ function handle(msg: Exclude<ToTerms, { t: 'attach' }>): FromTerms {
       resizeShell(msg)
       return { t: 'ok' }
     case 'kill':
-      liveShell(msg.id).proc.kill()
+      endShell(liveShell(msg.id))
       return { t: 'ok' }
     case 'list':
       return { t: 'shells', shells: [...shells.values()].map(listed) }
@@ -134,7 +144,7 @@ function stop() {
   stopping = true
   control.close()
   if (!shells.size) process.exit(0)
-  for (const s of shells.values()) s.proc.kill()
+  for (const s of shells.values()) endShell(s)
 }
 
 mkdirSync(path.dirname(paths.terms), { recursive: true })
