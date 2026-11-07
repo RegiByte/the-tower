@@ -129,7 +129,7 @@ import { designCss, fonts } from '../shared/design.ts'
 import { legacyOf, MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated, type LegacyEntry } from '../shared/extensions.ts'
 import { bundledClient, clientSource } from '../extensions.ts'
 import { placedOn } from '../bridge/board.ts'
-import { briefConfig, callsignsOf, ConfigError, projectDirs, sessionDirs, shelfItem, towerHosts, type Config, type Project, type Renderer, type SessionLog, type ShelfEntry } from '../shared/model.ts'
+import { briefConfig, callsignsOf, ConfigError, outsideProject, projectDirs, sessionDirs, shelfItem, towerHosts, type Config, type Project, type Renderer, type SessionLog, type ShelfEntry } from '../shared/model.ts'
 import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
 import { MEDIA_TYPES, mediaTypeOf, UNKNOWN_TYPE } from '../shared/media.ts'
@@ -351,6 +351,8 @@ export const httpServer = defineResource({
       const config = readConfig()
       const { project, cwd } = placedOn(config)(session).header
       if (!Object.hasOwn(config.projects, project)) return failed('not_found', `No project "${project}" in the config`)
+      const outside = outsideProject(config.projects[project], cwd)
+      if (outside) return failed('not_found', outside)
       return json(await changesIn(sessionDirs(config.projects[project], cwd), scope === 'all' || scope === 'uncommitted' ? scope : { commit: scope }))
     }
 
