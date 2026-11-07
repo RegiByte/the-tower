@@ -30,7 +30,7 @@ type ResolveInput = { project: string; checkout?: string; on?: string; author?: 
 
 type NoteInput = { project: string; on?: string; re?: string; at?: string[]; body?: string }
 
-type SendInput = { project: string; to: string }
+type SendInput = { to: string }
 
 /** The capability, which names its spawn field's fact and the crew edges and exemptions it gives. */
 const CAP = 'reviews'
@@ -130,14 +130,14 @@ const start: Start = (ctx) => {
   /** The worker a call is made as, on the board; `undefined` for a call no worker made. */
   const callerCard = ({ t, id }: Caller): Card | undefined => (t === 'worker' ? ctx.board().floors.flatMap((f) => f.cards).find((c) => c.id === id) : undefined)
 
-  /** A worker by callsign: the floor named first, then every floor and the cards the board leaves out. */
-  const workerOf = (project: string, name: string, cards: Card[]): Card | undefined => {
-    const onFloor = workerNamed(floorOf(ctx.board(), project)?.cards.filter((c) => !c.continuedBy) ?? [], name)
+  /** A worker by callsign: on `project` first, when one is given, then on every floor and among the cards the board leaves out. */
+  const workerOf = (project: string | undefined, name: string, cards: Card[]): Card | undefined => {
+    const onFloor = workerNamed((project === undefined ? undefined : floorOf(ctx.board(), project))?.cards.filter((c) => !c.continuedBy) ?? [], name)
     return onFloor?.onDuty ? onFloor : (workerNamed(cards.filter((c) => !c.continuedBy), name) ?? onFloor)
   }
 
   /** Starts a reviewer of the worker called `of` in a fork of its checkout, on that worker's floor. */
-  const hireReviewer = async ({ project, of, by, tell }: Hire, call: CallCtx['call'], cards: Card[]): Promise<{ reply: Spawned; author: Card } | ApiError> => {
+  const hireReviewer = async ({ project, of, by, tell }: Omit<Hire, 'project'> & { project: string | undefined }, call: CallCtx['call'], cards: Card[]): Promise<{ reply: Spawned; author: Card } | ApiError> => {
     const author = workerOf(project, of, cards)
     if (!author) return apiError('not_found', `No worker is called ${of.toUpperCase()}: \`tower agents --all\` lists who is on duty`)
     const floor = floorOf(ctx.board(), author.project)!
@@ -206,11 +206,12 @@ const start: Start = (ctx) => {
         const hired = await hireReviewer(input, call, cards())
         return isApiError(hired) ? hired : hired.reply
       },
-      review: async ({ project, of, tell }: Pick<Hire, 'project' | 'of' | 'tell'>, { call, caller, cards }: CallCtx) => {
-        const hired = await hireReviewer({ project, of, tell, by: caller.t === 'worker' ? caller.id : undefined }, call, cards())
+      review: async ({ of, tell }: Pick<Hire, 'of' | 'tell'>, { call, caller, cards }: CallCtx) => {
+        const hired = await hireReviewer({ project: callerCard(caller)?.project, of, tell, by: caller.t === 'worker' ? caller.id : undefined }, call, cards())
         if (isApiError(hired)) return hired
         const { reply, author } = hired
-        return { ...reply, said: `A reviewer of ${author.callsign}'s work starts in worktree ${reply.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}` }
+        const reviewer = cards().find((c) => c.id === reply.id)!
+        return { ...reply, said: `${reviewer.callsign} reviews ${author.callsign}'s work in worktree ${reply.cut.name}, a fork of checkout ${author.checkout}. ${tell ? `It sends its notes to ${author.callsign} when done.` : 'Its notes wait on the thread for the user.'}` }
       },
       append: (input: AppendInput) => {
         const appending = queue.then(() => append(input))
@@ -236,11 +237,12 @@ const start: Start = (ctx) => {
         if (isApiError(noted)) return noted
         return { ...noted, said: `Noted as n${noted.n} on the thread of checkout ${checkout}${re ? `, answering n${re}` : ''}: ${fileLine(project, noted.id)}` }
       },
-      send: async ({ project, to }: SendInput, { call, caller, cards }: CallCtx) => {
+      send: async ({ to }: SendInput, { call, caller, cards }: CallCtx) => {
         const sender = callerCard(caller)
         if (!sender) return apiError('refused', 'A send names the worker that sends it: this call comes from no worker')
-        const target = workerOf(project, to, cards())
+        const target = workerOf(sender.project, to, cards())
         if (!target) return apiError('not_found', `No worker is called ${to.toUpperCase()}: \`tower agents --all\` lists who is on duty`)
+        if (!floorOf(ctx.board(), target.project)?.x?.[CAP]) return apiError('refused', `reviews is off on ${target.project}`)
         if (!can(target, 'submit')) return apiError('refused', `${target.callsign} isn't at its composer (${statusName(target)}): send once it is`)
         const { text, unseen, send } = await said(target.project, { checkout: target.checkout, reader: target.callsign, sender: sender.callsign, hirer: target.hiredBy?.callsign })
         if (text === undefined) return apiError('not_found', `Checkout ${target.checkout} has no notes to send`)

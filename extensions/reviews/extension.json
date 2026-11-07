@@ -624,23 +624,18 @@
       }
     },
     "send": {
-      "scope": "project",
+      "scope": "system",
       "input": {
         "type": "object",
         "required": [
-          "project",
           "to"
         ],
         "additionalProperties": false,
         "properties": {
-          "project": {
-            "type": "string",
-            "minLength": 1
-          },
           "to": {
             "type": "string",
             "minLength": 1,
-            "description": "The worker's callsign, on any floor."
+            "description": "The worker's callsign, looked for on the caller's floor, then on every floor."
           }
         }
       },
@@ -664,23 +659,18 @@
       }
     },
     "review": {
-      "scope": "project",
+      "scope": "system",
       "input": {
         "type": "object",
         "required": [
-          "project",
           "of"
         ],
         "additionalProperties": false,
         "properties": {
-          "project": {
-            "type": "string",
-            "minLength": 1
-          },
           "of": {
             "type": "string",
             "pattern": "^[A-Za-z][A-Za-z0-9]*-\\d+$",
-            "description": "The callsign of the worker whose work is reviewed, looked for on `project`, then on every floor: the reviewer starts on that worker's."
+            "description": "The callsign of the worker whose work is reviewed, looked for on the caller's floor, then on every floor: the reviewer starts on that worker's."
           },
           "tell": {
             "type": "boolean",

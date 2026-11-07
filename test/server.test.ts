@@ -1645,8 +1645,8 @@ test("server: reviews' words sign with their calling worker, default to its thre
   assert.equal(errorCode(await post('reviews/note', { project: 'lab', on: 'worded', body: 'No worker.' })), 'refused')
   assert.equal(errorCode(await post('reviews/note', { project: 'lab', on: 'worded', at: ['nonsense'], body: 'x' }, asWorker)), 'invalid')
   assert.match((await post('reviews/note', { project: 'lab', on: 'worded' }, asWorker)).body, /needs its body on stdin/)
-  assert.equal(errorCode(await post('reviews/send', { project: 'lab', to: 'NOBODY-1' }, asWorker)), 'not_found')
-  assert.equal(errorCode(await post('reviews/review', { project: 'lab', of: 'NOBODY-1' }, asWorker)), 'not_found')
+  assert.equal(errorCode(await post('reviews/send', { to: 'NOBODY-1' }, asWorker)), 'not_found')
+  assert.equal(errorCode(await post('reviews/review', { of: 'NOBODY-1' }, asWorker)), 'not_found')
 })
 
 test("server: tower/spawn.gate is answered by the core's hiring limits first, then by its answerers on spawn and resume, the first refusal naming its gate; a failed answer is a problem and the worker starts; a hook nobody answers on a floor is the core's badge there", async () => {

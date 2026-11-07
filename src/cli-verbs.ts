@@ -127,14 +127,23 @@ export type VerbName = keyof typeof CLI_VERBS
  */
 export type Alias = { now: string; args: (words: string[]) => string[] }
 
-/** `tower note`'s old grammar as reviews' words: `on <checkout>`, `re n<k>`, `resolve n<k> …`, and anchors as they are. */
+const NOTE_NUMBER = /^n?\d+$/
+
+/** `tower note`'s old grammar as reviews' words: `on <checkout>`, `re n<k>`, `resolve n<k> …` and anchors, in any order. */
 const noteWords = (words: string[]): string[] => {
-  const on = words[0] === 'on' ? words[1] : undefined
-  const rest = on === undefined ? words : words.slice(2)
-  if (rest[0] === 'resolve') return ['resolve', ...rest.slice(1), ...(on === undefined ? [] : ['--on', on])]
-  const re = rest[0] === 're' ? rest[1] : undefined
-  const anchors = re === undefined ? rest : rest.slice(2)
-  return ['note', ...(on === undefined ? [] : ['--on', on]), ...(re === undefined ? [] : ['--re', re]), ...anchors.flatMap((a) => ['--at', a])]
+  const flags: string[] = []
+  const resolves: string[] = []
+  let resolving = false
+  for (let i = 0; i < words.length; i++) {
+    if (words[i] === '--help' || words[i] === '-h') return ['note', '--help']
+    if (words[i] === 'on' && words[i + 1]) flags.push('--on', words[++i])
+    else if (words[i] === 're' && NOTE_NUMBER.test(words[i + 1] ?? '')) flags.push('--re', words[++i])
+    else if (words[i] === 'resolve') {
+      resolving = true
+      while (NOTE_NUMBER.test(words[i + 1] ?? '')) resolves.push(words[++i])
+    } else flags.push('--at', words[i])
+  }
+  return resolving ? ['resolve', ...resolves, ...flags] : ['note', ...flags]
 }
 
 /** The old core words that moved under `tower x`. */
