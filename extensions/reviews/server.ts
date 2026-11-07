@@ -10,12 +10,9 @@
  * puts it in its author's crew and out of the floor's hiring limits, as the core's facts `tower.reports-to` and
  * `tower.exempt`.
  */
-import type { Board, Card, Floor } from '../../src/bridge/board.ts'
-import type { CheckoutTip } from '../../src/bridge/worktrees.ts'
-import { apiError, isApiError, type ApiError, type RouteInput } from '../../src/shared/api.ts'
-import { workerNamed } from '../../src/shared/crews.ts'
-import type { CallCtx, FoldCtx, LaunchParts, LaunchRequest, Part, Start } from '../../src/shared/extensions.ts'
-import type { RepoChanges } from '../../src/shared/repo-changes.ts'
+import { type Board, type Card, type CheckoutTip, type Floor, workerNamed } from '/lib/board.js'
+import type { RepoChanges } from '/lib/changes.js'
+import { type ApiError, type CallCtx, type FoldCtx, type LaunchParts, type LaunchRequest, type Part, type RouteInput, type Start, apiError, isApiError } from '/lib/extension.js'
 import { threadMarks } from './client/anchors.ts'
 import { anchorStates, appended, bodyProblem, landedThreadId, nextNumber, parseThread, resolutionBody, resolveProblem, REVIEWS, reviewPrompt, sendText, stamp, threadId, unseenBy, type ReviewThread } from './client/reviews.ts'
 import { discardNote, tidyEntries } from './filing.ts'
@@ -31,12 +28,10 @@ type ResolveInput = { project: string; checkout: string; author: string; notes: 
 const CAP = 'reviews'
 
 /**
- * The callsign whose work a card's worker reviews: what the core read of a reviewer spawned before its fact was
- * logged (`card.reviews`, before the board is projected), else its `of` fact while its crew edge is this extension's
- * (a fork carries the fact and no edge, and is a reviewer of nobody).
+ * The callsign whose work a card's worker reviews: whom this extension's crew edge names. A fork carries the `of` fact
+ * and no edge, and is a reviewer of nobody; the core gives a reviewer spawned before its fact was logged the same edge.
  */
-const ofCard = (card: Card, own: FoldCtx['own']): string | undefined =>
-  card.reviews ?? (card.crew?.by === CAP ? (own.facts?.findLast((f) => f.name === 'of')?.value as string | undefined) : undefined)
+const ofCard = (card: Card): string | undefined => (card.crew?.by === CAP ? card.crew.callsign : undefined)
 
 /** Why a worker's work can't be reviewed now, as a sentence; `undefined` when it can. */
 const unreviewable = (card: Card, floor: Floor, of: string | undefined): string | undefined =>
@@ -128,7 +123,7 @@ const start: Start = (ctx) => {
     parse: { [REVIEWS]: (text: string): ReviewThread => parseThread(text) },
     folds: {
       card: (card: Card, { board, own }: FoldCtx): Part => {
-        const of = ofCard(card, own)
+        const of = ofCard(card)
         const floor = floorOf(board, card.project)!
         const files = filesOf(own.collections[REVIEWS] ?? [])
         const x = cardPart(card, floor, files, of)

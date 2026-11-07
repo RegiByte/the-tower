@@ -1,9 +1,6 @@
-import type { Floor, FloorCollection } from '../../../src/bridge/board.ts'
-import { esc, noun, plural, workerIn } from '../../../src/shared/cards.ts'
-import { ICON } from '../../../src/shared/icons.ts'
-import { foldTrayHtml, itemsCss, openItemOf } from '../../../src/shared/items.ts'
-import { itemKey } from '../../../src/shared/subjects.ts'
-import type { Mount } from '../../../src/shared/views.ts'
+import { type Floor, type FloorCollection, itemKey, workerIn } from '/lib/board.js'
+import { ICON, type Mount, foldTrayHtml, itemsCss, openItemOf } from '/lib/view.js'
+import { esc, noun, plural } from '/lib/words.js'
 import { floorThreadsOf } from './panel.ts'
 import { landedThreads, REVIEWS, threadId } from './reviews.ts'
 
