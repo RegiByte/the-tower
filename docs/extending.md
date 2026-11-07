@@ -539,7 +539,7 @@ file is served once at a URL of its own, and a served module re-exports its file
 | `/x/reviews/panel.js` | the Reviews panel over the extension's part (`x.reviews` on a card and a floor): a card's thread and note call (`cardReviews`, `noteCallOf`), a floor's threads (`floorThreadsOf`), and the panel as a pure view. `/panels.js` keeps its 1.92 copy over the old fields, deprecated, until 2.0 |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
-| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `PANES` names the commands that open a worker's tab, each with its view and short name, and `panesOf(board)` (API 1.158) those with the views a chord makes panes, what `paneSheetHtml` lists; `pane-reviews` is deprecated: Reviews' chord lives on `reviews/thread` since API 1.158, so `board.keys['pane-reviews']` is empty and a renderer that runs it from `commandOf` loses the chord until it reads `panesOf` and `addedCommandOf`, or `chordsOf` for its label; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults), `frameCommandOf` a key from a framed page, global commands alone; chord labels, `aria-keyshortcuts` and the `?` sheet |
+| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `PANES` names the commands that open a worker's tab, each with its view and short name, and `panesOf(board)` (API 1.159) those with the views a chord makes panes, what `paneSheetHtml` lists; `pane-reviews` is deprecated: Reviews' chord lives on `reviews/thread` since API 1.159, so `board.keys['pane-reviews']` is empty and a renderer that runs it from `commandOf` loses the chord until it reads `panesOf` and `addedCommandOf`, or `chordsOf` for its label; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults), `frameCommandOf` a key from a framed page, global commands alone; chord labels, `aria-keyshortcuts` and the `?` sheet |
 | `/terminal.js` | a browser terminal's face and size from the viewer's appearance, and the size a watched one fits its PTY at |
 | `/prefs.js` | the viewer's appearance record, its defaults, and whether to move less (`reducedMotion`) |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, notifications, the brief rendered or raw, and the viewer's appearance drawn from data and wired by `wirePrefs` |
@@ -1003,7 +1003,7 @@ emoji until the next full redraw (API 1.127). The view turns on xterm.js's `allo
 (the tower page calls the `edit` verb, which opens the user's editor at the path's `:line`). `io`
 is `TermViewIo` in `src/shared/term-view.ts`, which the tower page's `renderers/page/screen.js` fills. Its `keymap`
 and `run` are a renderer's keymap: `run` gets the id of each command the key runs, an extension's `<cap>/<name>` too
-(API 1.158), and answers whether it did something; when it didn't, the key goes on to the terminal. A command that
+(API 1.159), and answers whether it did something; when it didn't, the key goes on to the terminal. A command that
 is not the renderer passes `keymap: () => board.keys` and `run: () => false`, which sends every key to the PTY.
 
 ### Views
@@ -1043,7 +1043,7 @@ as `<cap>/<name>`:
   1.138), and `tower extensions check` and the board warn about it.
 - `keys`: default chords that display the subject in focus with it. On a view that is a worker's tab (`on` holds
   `card`, `scales` holds `pane`), a chord that stays bound makes the tab a pane, with nothing else to declare (API
-  1.158): `panesOf(board)` in `/lib/keys.js` lists it, and the tower page keeps the tab fixed in the row, names its
+  1.159): `panesOf(board)` in `/lib/keys.js` lists it, and the tower page keeps the tab fixed in the row, names its
   chord in the tab's tip, lists it on the `?` sheet and in the palette, and opens it the way ⌃⇧1 opens the terminal,
   from a terminal too: on the worker in focus, else the main pane's, focus landing on the tab. With no worker on screen
   the chord does nothing, unless focus is on another subject the view is on. A view on a card that already had a chord

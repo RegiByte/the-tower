@@ -344,7 +344,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `submit` | field | `Meta+Enter`, `Ctrl+Enter` |
 | `cancel-pick` (drop the lines picked for a note) | field | `Escape` |
 
-`pane-reviews` is deprecated (API 1.158) and goes at the next major: a value there still binds `reviews/thread`, with a
+`pane-reviews` is deprecated (API 1.159) and goes at the next major: a value there still binds `reviews/thread`, with a
 warning, and `reviews/thread` wins when both are set. A file that already holds it keeps working; a new `config/set
 keys.pane-reviews` is refused for its warning, so write `reviews/thread`.
 

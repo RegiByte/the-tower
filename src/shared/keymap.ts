@@ -49,7 +49,7 @@ export const COMMANDS = [
   { id: 'pane-terminal', label: 'Terminal', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+1'], does: "the selected worker's terminal, focused", pane: { view: 'tower/terminal', name: 'screen' } },
   { id: 'pane-brief', label: 'Brief', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+2'], does: "the selected worker's brief", pane: { view: 'tower/brief', name: 'brief' } },
   { id: 'pane-changes', label: 'Changes', scope: 'global', group: 'Panes', chords: ['Ctrl+Shift+3'], does: "the selected worker's changes", pane: { view: 'tower/changes', name: 'changes' } },
-  { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: [], does: "the selected worker's review thread", pane: { view: 'reviews/thread', name: 'reviews' }, deprecated: { since: '1.158', use: 'reviews/thread' } },
+  { id: 'pane-reviews', label: 'Reviews', scope: 'global', group: 'Panes', chords: [], does: "the selected worker's review thread", pane: { view: 'reviews/thread', name: 'reviews' }, deprecated: { since: '1.159', use: 'reviews/thread' } },
   { id: 'shell-here', label: 'Shell here', scope: 'global', group: 'Panes', chords: ['Meta+J', 'Ctrl+Backquote'], does: "a shell in the selected worker's directory, focused: the one open there, or a new one; from any shell, hides the dock and goes back to the worker's terminal" },
   { id: 'leave-terminal', label: 'Leave the terminal', scope: 'terminal', group: 'Terminal', chords: ['Alt+Escape'], does: 'leave the terminal: focus goes back to where it was before it, or to the worker bar' },
   { id: 'newline', label: 'New line', scope: 'terminal', group: 'Terminal', chords: ['Shift+Enter'], does: "a new line in a worker's prompt (Enter in a shell)" },
@@ -75,17 +75,17 @@ const COMMAND = new Map<string, Command>(COMMANDS.map((c) => [c.id, c]))
 /** The id that holds a deprecated command's chords, the id itself for any other. */
 const holderOf = (id: string): string => COMMAND.get(id)?.deprecated?.use ?? id
 
-/** A command's chords in `keys`, a deprecated one's where they live now: a table of chords by its command reads this. @since 1.158 */
+/** A command's chords in `keys`, a deprecated one's where they live now: a table of chords by its command reads this. @since 1.159 */
 export const chordsOf = (keys: Keys, id: string): string[] => keys[holderOf(id)] ?? []
 
-/** A worker's tab with a place among the panes: `command`, what opens it; `name`, for the panes a hash's short form calls by one. @since 1.158 */
+/** A worker's tab with a place among the panes: `command`, what opens it; `name`, for the panes a hash's short form calls by one. @since 1.159 */
 export type BoardPane = { command: string; view: string; name?: string; label: string; does: string }
 
 /**
  * Every pane on the board: those of the keymap, whether or not they are bound or their view runs, then each view of a
  * started extension that is a worker's tab (`on` holds `card`, `scales` holds `pane`) with a chord bound in `keys`. A
  * chord on such a view is all it declares. Whether a worker has that tab is the renderer's to find when it opens it.
- * @since 1.158
+ * @since 1.159
  */
 export const panesOf = ({ extensions, keys }: Pick<Board, 'extensions' | 'keys'>): BoardPane[] => {
   const own = PANES.map((p): BoardPane => ({ ...p, command: holderOf(p.command), label: COMMAND.get(p.command)!.label, does: COMMAND.get(p.command)!.does }))
@@ -380,7 +380,7 @@ const sheetHtml = (rows: SheetRow[]): string =>
 /** The keymap's keys as a sheet, grouped, each row a command's chords and what it does with where it works; unbound commands are left out. */
 export const keymapSheetHtml = (keys: Keys): string => sheetHtml(commandRows(keys))
 
-/** The keymap's sheet with a row for each of `panes` the keymap has none for, after its own panes: `panes` from `panesOf`. @since 1.158 */
+/** The keymap's sheet with a row for each of `panes` the keymap has none for, after its own panes: `panes` from `panesOf`. @since 1.159 */
 export const paneSheetHtml = (keys: Keys, panes: readonly BoardPane[]): string => {
   const rows = commandRows(keys)
   const added = panes.filter((p) => !p.name && keys[p.command]?.length).map((p): SheetRow => ({ group: 'Panes', pane: true, html: rowHtml({ scope: 'global', does: p.does }, keys[p.command]) }))
