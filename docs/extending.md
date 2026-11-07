@@ -759,7 +759,9 @@ read whose path matches.
 - **A JSON argument is deprecated.** `tower x <cap> <name> '<json>'` works until 2.0, gets the caller's floor the same
   way, and says on stderr what to type instead.
 
-Teach your words in your `guidance`, which is what workers read: use the flags, not JSON.
+Teach your words in your `guidance`, which is what workers read: use the flags, not JSON. An extension that declares a
+`cli` and has no guidance gets the warning `cli`, at `guidance`: nobody learns a word that nothing names. For Claude
+sessions, a skill in [a plugin of its own](#an-extensions-claude-plugin) can carry the triggers.
 
 **A read that serves a file** (API 1.114) declares `"serves": "file"` and no `reply`: its handler answers `{ file }`, an
 absolute path, and the tower serves that file as it serves a file a worker showed, through the same path: by its media

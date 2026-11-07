@@ -459,6 +459,12 @@ const claudePluginProblems = (found: Found, manifest: Manifest): LoadProblem[] =
   return []
 }
 
+/** A `cli` declares words for workers to type, and a worker learns a word from the guidance `tower whoami` lists. */
+const unguidedWords = (manifest: Manifest, guided: Guided | undefined): LoadProblem[] => {
+  const typed = [...Object.values(manifest.verbs ?? {}), ...Object.values(manifest.reads ?? {})].some((call) => call.cli)
+  return typed && !guided ? [warn('cli', 'it declares words and no guidance, so no worker learns they exist: add guidance, its brief saying when to use them', 'guidance')] : []
+}
+
 /** The commands whose icon names an SVG its client folder doesn't hold. */
 const iconProblems = (manifest: Manifest, client: ClientRead | undefined): LoadProblem[] =>
   Object.entries(manifest.commands ?? {}).flatMap(([name, c]) => {
@@ -834,6 +840,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
     ...Object.entries(found.client?.unreadable ?? {}).map(([module, why]) => warn('invalid', `client module ${module} doesn't parse: ${why}`, 'client')),
     ...shadowedReads(manifest),
     ...claudePluginProblems(found, manifest),
+    ...unguidedWords(manifest, guided),
     ...underDeclared(raw, manifest.requires.tower),
     ...addsUnderDeclared(manifest, 'slots', SLOTS_ADD_SINCE),
     ...addsUnderDeclared(manifest, 'marks', MARKS_ADD_SINCE),
