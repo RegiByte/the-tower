@@ -16,6 +16,8 @@
     "hub/renderers/tower3d/src/desk.ts#makeStation",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
     "hub/renderers/tower3d/src/main.ts#hire",
+    "hub/renderers/tower3d/src/hiring.ts#hiringHandlers",
+    "hub/renderers/tower3d/src/desk.ts#syncStation",
     "hub/renderers/tower3d/src/layout.ts#DESK_TURN",
     "hub/renderers/tower3d/src/layout.ts#fromDesk",
     "hub/renderers/tower3d/src/layout.ts#turned",
@@ -53,6 +55,15 @@ defaults, and the new-worker form as the optional path.
   [`hire`](ref:hub/renderers/tower3d/src/main.ts#hire)): a worktree of its own when the floor cuts by default, else
   the main checkout, and you sit at the new worker's terminal as it walks in. A carried draft hires a worker on it
   ([[corkboard]]); the form is the way to pick an existing worktree ([[tower-cuts-worktrees]]).
+- A floor hires one worker at a time ([`hiringHandlers`](ref:hub/renderers/tower3d/src/hiring.ts#hiringHandlers)).
+  A hire that cuts a worktree takes seconds, and the world shows nothing until the new desk does, so a press in that
+  gap would start a second worker. From the press until the board shows the worker it started, the open workstation
+  reads HIRING ([`syncStation`](ref:hub/renderers/tower3d/src/desk.ts#syncStation)), and E, the carried draft's hire
+  and the new-worker form start nothing on that floor, saying so in a toast. The form's own Start waits in the shared
+  spawn machine ([[renderer-shared-modules]]), and its worker holds the floor the same way until it sits down. A
+  failed hire, a worker that ended before its desk showed, or a lost tower ends the hold, each said in a toast. The
+  hold is a Tower 3D machine because only the world hires without the form; the shared machine runs one dialog,
+  not one per floor, and ends its wait on the reply, before the desk shows.
 - A free desk is a `station` in the [`STATIONS`](ref:hub/renderers/tower3d/src/layers.ts#STATIONS) layer,
   keyed by floor and number. An occupied one stays a worker's `Desk`, keyed by session, with its own copy of
   the same furniture ([`makeStation`](ref:hub/renderers/tower3d/src/desk.ts#makeStation) shares it). When a
@@ -67,5 +78,8 @@ defaults, and the new-worker form as the optional path.
 - *Furniture keyed by slot for every desk, occupants as separate objects.* The occupant would reach into the
   station for the monitor, and every pickable and `locate` center would move. The swap gives the same picture
   without touching occupied desks.
+- *The quick hire through the shared spawn machine's `starting` state.* That machine is the one dialog's: a quick
+  hire waiting on one floor would hold the form on every floor and reopen it on a failure, with no form to show,
+  and its wait ends on the reply, while the second press this guards against comes after it.
 - *A desk count per floor, or a free desk always kept.* Each floor shares one plate, and growing a row
   whenever the last desk fills would make the building move under you.
