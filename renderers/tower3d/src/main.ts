@@ -839,7 +839,8 @@ function redrawKept() {
 /** Deleting is the user's, asked on a second press: the reader closes before the file goes. */
 async function deleteKept(panel: Extract<Panel, { kind: 'kept' }>) {
   const c = floorOf(panel.project).collections.find((c) => c.id === panel.collection)!
-  const item = c.items.find((i) => i.id === panel.id)!
+  const item = c.items.find((i) => i.id === panel.id)
+  if (!item) return toast(noLongerOffered('this item', 'Delete'))
   closeDoc()
   lock()
   if (await call('collection/delete', { project: panel.project, collection: panel.collection, id: panel.id })) toast(`Deleted ${item.tag} from ${c.label}`)
@@ -2671,14 +2672,20 @@ $('desk-head').addEventListener('click', async (e) => {
   const button = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')
   // The panel as asked about: a desk may move under an open dialog, as a worker just spawned arrives.
   const panel = panelNow()
+  const callsign = panel?.kind === 'desk' && s.board ? findCard(s.board, panel.id)?.callsign : undefined
   if (!button || !panel || !(await answered(button))) return
   const what = button.dataset.act
   const board = s.board
   if (!what || !board) return
   if (what === 'close') return (unfocus(), lock())
-  if (panel.kind === 'shell') return what === 'shell-kill' && pressing(button, () => killShell(board.shells.find((sh) => sh.id === panel.id)!))
+  if (panel.kind === 'shell') {
+    if (what !== 'shell-kill') return
+    const sh = board.shells.find((sh) => sh.id === panel.id)
+    return sh ? pressing(button, () => killShell(sh)) : toast(noLongerOffered('this shell', 'Kill'))
+  }
   if (panel.kind !== 'desk') return
-  const c = findCard(board, panel.id)!
+  const c = findCard(board, panel.id)
+  if (!c) return toast(noLongerOffered(callsign ?? 'this worker', button.dataset.askVerb ?? what))
   if (what === 'tower') return tower.ui('select', { id: c.id })
   if (what === 'resume') return tried(() => resume(offeredCall(c, 'resume', c.callsign)))
   if (what === 'kill') return pressing(button, () => sendHome(c))
