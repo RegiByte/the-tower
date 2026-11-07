@@ -428,3 +428,14 @@ test('the board carries each extension\'s settings, its floors\' among them, for
   assert.deepEqual(floorSettingsOf(board, 'flashing', 'app'), { flash: 'off', every: 9 })
   assert.equal(settingsOf(board, 'plain'), undefined)
 })
+
+test('settingsOf reads the running provider of a capability when a user extension replaces a bundled one', () => {
+  const schema = { type: 'object', additionalProperties: false, properties: { flash: { type: 'string', default: 'off' } } }
+  const bundled = ext('grid', { settings: schema }, true)
+  const mine = ext('my-grid', { provides: 'grid', settings: schema })
+  const c = config({ extensions: { grid: { off: true }, 'my-grid': { path: mine.dir, settings: { flash: 'blink' } } } })
+  const r = resolve([bundled, mine], c, TOWER)
+  const board = registry(r, new Map([['my-grid', { at: NOW }]]), NOW)
+  assert.deepEqual(board.extensions.map((e) => [e.id, e.provides, e.state]), [['grid', 'grid', 'off'], ['my-grid', 'grid', 'started']])
+  assert.deepEqual(settingsOf(board, 'grid'), { flash: 'blink' })
+})
