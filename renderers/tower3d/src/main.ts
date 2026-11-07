@@ -1049,7 +1049,6 @@ async function throwAway(project: string, id: string) {
   if (text !== undefined && (await discardItem(draftIo, project, id))) deleted({ project, id, text })
 }
 
-/** Out of the elevator on a level, facing its floor. */
 /** To a level, in front of the elevator, `then` once there. */
 function arriveAt(index: number, then: () => void) {
   if (s.view === 'overview') leaveOverview()
@@ -1057,6 +1056,7 @@ function arriveAt(index: number, then: () => void) {
   travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, then)
 }
 
+/** Out of the elevator on a level, facing its floor. */
 const goLevel = (index: number) => arriveAt(index, lock)
 
 /** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
@@ -1215,18 +1215,21 @@ function goMove(m: Move) {
 }
 
 /**
- * Goes to what an ask is about: a worker's desk, else the floor its subject is on, its console open. The views an ask
- * opens on the page have no place in the building yet, so its subject stands for them; an ask about nothing on a
- * floor is said in a toast.
+ * Goes to what an ask is about: a worker's desk, else the floor its subject is on, its console open and the ask said
+ * in a toast, since the console doesn't show it. The views an ask opens on the page have no place in the building
+ * yet, so its subject stands for them; an ask about nothing on a floor is said in a toast alone.
  */
 function goToAsk(a: Board['asks'][number]) {
   const id = a.subject.startsWith('card:') ? a.subject.slice('card:'.length) : undefined
   if (id && deskOf(s.plan, id)) return goDesk(id)
   const project = projectOfKey(s.board!, a.subject)
   const level = project && s.plan.levels.find((l) => l.kind === 'floor' && l.floor.id === project)
-  if (level) return arriveAt(level.index, () => openSide({ kind: 'floor', id: project, tray: undefined }))
-  toast(a.hint ? `${a.title}\n\n${a.hint}` : a.title)
+  if (level) return arriveAt(level.index, () => (openSide({ kind: 'floor', id: project, tray: undefined }), toast(askSaid(a))))
+  toast(askSaid(a))
 }
+
+/** An ask in words: its title, and its hint after a blank line when it has one. */
+const askSaid = (a: Board['asks'][number]) => (a.hint ? `${a.title}\n\n${a.hint}` : a.title)
 
 /** What you did about the waits (`Heed`): dismissed, the attention machine's, and visited by N this round. */
 const heed = (): Heed => ({ dismissed: seeing.state().attending.dismissed, visited: s.visited })
