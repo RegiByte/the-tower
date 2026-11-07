@@ -44,7 +44,8 @@ sequenceDiagram
   action's call has no `tell`: the reviewer's notes then wait on the thread for the user, who sends them from the
   Reviews panel. `tower x reviews review ... --tell` swaps the prompt for one that makes the reviewer send them itself. The
   verb finds the author on the floor it names, else on any floor or among the cards the board leaves out
-  ([`workerOf`](ref:hub/extensions/reviews/server.ts#workerOf), [[board-archive]]).
+  ([`workerOf`](ref:hub/extensions/reviews/server.ts#workerOf), [[board-archive]]). An author off the board is refused,
+  naming its resume: a reviewer's crew edge needs its author's card on the board.
 - **The fork, the pair and the thread** are [[reviewer]]'s and [[review-threads]]': the reviewer works in a fork of
   the author's checkout ([`fork`](ref:hub/src/worktrees.ts#fork); a failed spawn rolls the cut back,
   [`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)), the pair is logged at its spawn ([`launch`](ref:hub/extensions/reviews/server.ts#launch)), and notes are

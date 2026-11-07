@@ -140,10 +140,11 @@ const start: Start = (ctx) => {
   const hireReviewer = async ({ project, of, by, tell }: Omit<Hire, 'project'> & { project: string | undefined }, call: CallCtx['call'], cards: Card[]): Promise<{ reply: Spawned; author: Card } | ApiError> => {
     const author = workerOf(project, of, cards)
     if (!author) return apiError('not_found', `No worker is called ${of.toUpperCase()}: \`tower agents --all\` lists who is on duty`)
-    const floor = floorOf(ctx.board(), author.project)!
-    if (!floor.x?.[CAP]) return apiError('refused', `reviews is off on ${author.project}`)
+    const floor = floorOf(ctx.board(), author.project)
+    if (!floor?.x?.[CAP]) return apiError('refused', `reviews is off on ${author.project}`)
     const why = unreviewable(author, floor, ofCard(author))
     if (why) return apiError('refused', `${author.callsign}'s work can't be reviewed: ${why}${landedFix(author)}`)
+    if (!floor.cards.some((c) => c.id === author.id)) return apiError('refused', `${author.callsign} is off the board, so a reviewer can't join its crew: resume it first (\`tower resume ${author.id}\`)`)
     const reply = (await call('tower/spawn', {
       project: author.project,
       cut: { from: author.checkout },
