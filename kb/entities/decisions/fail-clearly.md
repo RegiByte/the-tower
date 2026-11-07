@@ -16,7 +16,8 @@
     "hub/src/cli-error.ts#CliError",
     "hub/src/logged.ts#logged",
     "hub/src/child-input.ts#endInput",
-    "hub/src/dated-log.ts"
+    "hub/src/dated-log.ts",
+    "hub/src/shared/view-host.ts#hostedHandlers"
   ],
   "links": [
     { "to": "broken-logs", "verb": "applied-in", "carries": "one unreadable log breaks its own session" },
@@ -49,6 +50,13 @@ hand-edited config: when one is wrong, the user or a worker can fix it once they
   callback) is a boundary of its own ([`logged`](ref:hub/src/logged.ts#logged)), a promise no one awaits has a
   rejection handler, and a child's stdin is written through [`endInput`](ref:hub/src/child-input.ts#endInput), since
   a broken pipe's unheard `error` ends the process too.
+- *A renderer stays standing; the tower stays strict.* A renderer is what the user is looking at, so a view's failure
+  is shown and reported there, never let take the page down: the view host draws a view that fails to import, mount
+  or answer as one line where it would draw, and a view whose `close` throws is toasted and handed to `reportError`
+  while what its kit opened is still released ([`hostedHandlers`](ref:hub/src/shared/view-host.ts#hostedHandlers),
+  [[machines]]). The tower process is the other way round: an error there that something forgave would hide a bug
+  every renderer and worker stands on, so it fails where it is met. A check: a renderer that catches a view's error
+  says it on the page and reports it; a server path that catches one names the case it handles.
 - *Higher-level facilities first.* Where a boundary already has a handler (the API's one dispatch, the board stream,
   the CLI's top level), errors are thrown to it, not caught and reworded on the way.
 
