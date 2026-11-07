@@ -47,7 +47,7 @@ answer, and a next run reading its predecessors would find no handoff note.
   live system the tower server ([`sendLeaversHome`](ref:hub/src/tower/dispatch.ts#sendLeaversHome)) takes each leaving
   card that `leavesNow` (computing the cards only when a live session does, or a departure is in flight) and runs its `send-home` through the public `kill` handler, each body parsed by the verb's schema as
   a `POST` would be: everyone under it that runs, deepest first, then itself.
-  Each kill is `by` the leaving worker ([[worker-prompts]]). A worker is sent once while it is leaving. The leave lives in
+  Each kill is `by` the leaving worker ([[worker-prompts]]). A worker is sent once while it is leaving; a host that goes away ends the card's leaving until it is back, which sends the worker again, and a config the tower can't take holds the leave until it is fixed. The leave lives in
   the log, so a turn that completed while the tower was down is acted on when it starts.
 - *Drawn as a word.* `statusName` adds `going home` (`working, going home`), which every renderer and `tower agents`
   read. The `tower:handbook` skill says to end oneself with one's own callsign, after this turn.
