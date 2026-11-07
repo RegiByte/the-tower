@@ -224,15 +224,16 @@ with that tip in place of one that vanishes. It answers `resume`, `carry-on`, `r
 To change the tower page or Tower 3D, copy it out of the checkout and layer your changes on top of the copy. The
 copy is disposable: you will throw it away and copy again for each release you take. What is yours lives beside it.
 
-The tower page is two files, `renderers/page/index.html` and the module it loads beside it, `page.js`, and imports
-everything else from the tower by absolute URL.
+The tower page is a folder, `renderers/page/`: `index.html`, the modules it loads beside it by relative path, and
+`renderer.json`, which declares its regions for extensions' views. Everything else it imports from the tower by
+absolute URL, so the folder runs from anywhere.
 
 1. Make a directory of your own, outside the tower's checkout (`realpath $(which tower)` is
    `<checkout>/src/mod/bin/tower`), and keep it in git:
 
    ```sh
    mkdir ~/code/my-tower && cd ~/code/my-tower && git init
-   cp <the tower's checkout>/renderers/page/index.html <the tower's checkout>/renderers/page/page.js .
+   cp -R <the tower's checkout>/renderers/page/. .
    ```
 
 2. Write your layer beside it, `mine.css` and `mine.js`:
@@ -258,10 +259,10 @@ everything else from the tower by absolute URL.
 4. Declare it and make it the default, as in the config above, then `tower config check`. `/` now opens
    `/r/mine/`. No restart: the tower reads the config again.
 
-Taking an update is then: copy both files again, add the two lines again. Keep that as a script in your repo:
+Taking an update is then: copy the folder again, add the two lines again. Keep that as a script in your repo:
 
 ```sh
-cp <the tower's checkout>/renderers/page/index.html <the tower's checkout>/renderers/page/page.js . &&
+cp -R <the tower's checkout>/renderers/page/. . &&
 perl -0pi -e 's#</head>#<link rel="stylesheet" href="mine.css">\n</head>#; s#</body>#<script type="module" src="mine.js"></script>\n</body>#' index.html
 ```
 
