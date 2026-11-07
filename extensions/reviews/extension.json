@@ -64,6 +64,7 @@
       "scales": ["pane"],
       "needs": ["display", "toast"],
       "tab": "tab",
+      "keys": ["Ctrl+Shift+4"],
       "words": {
         "label": "Reviews",
         "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
