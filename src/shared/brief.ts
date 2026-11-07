@@ -21,9 +21,10 @@
  *                                                   of its last turns (`withWhole`) while its latest turn
  *                                                   holds (`wholeHolds`)
  *
- * and each fence's `data-copy-code` of `/markdown.js`.
+ * and each fence's `data-copy-code` of `/markdown.js`. A brief shown is read again as its card moves (`briefKey`), each
+ * read with the conversations read whole put back while they hold (`keptWholes`).
  */
-import type { CardShown, LineageSession } from '../bridge/board.ts'
+import type { Board, Card, CardShown, LineageSession } from '../bridge/board.ts'
 import type { SessionRef } from '../bridge/chains.ts'
 import type { Brief, BriefSession, Step, ToolCall, ToolOutcome, Turn } from '../bridge/turns.ts'
 import { ago, clockAt, esc, plural } from './cards.ts'
@@ -163,6 +164,22 @@ export const wholeHolds = (briefs: Brief[], whole: Brief): boolean => {
   const now = briefs.find((b) => conversationKey(b) === conversationKey(whole))
   return now !== undefined && turnMark(now.turns.at(-1)) === turnMark(whole.turns.at(-1))
 }
+
+/**
+ * A brief as read again, with the conversations read whole before in place of their last turns, those that still hold
+ * (`wholeHolds`): the brief to draw, and the wholes to keep for the next read. @since 1.161
+ */
+export const keptWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[]; wholes: Brief[] } => {
+  const kept = wholes.filter((whole) => wholeHolds(read, whole))
+  return { briefs: kept.reduce(withWhole, read), wholes: kept }
+}
+
+/**
+ * What a worker's brief is read at: its status, its tool, its conversations and what extensions add to them. A brief
+ * shown is read again when this moves. @since 1.161
+ */
+export const briefKey = (board: Pick<Board, 'adds'>, c: Card) =>
+  `${c.status} ${c.tool} ${JSON.stringify(c.conversations)} ${JSON.stringify(c.conversations.map((v) => board.adds[`conversation:${v.id}`]))}`
 
 /** Whether a tool call read is how it ended, to keep for every draw after: one still running is read again when opened. @since 1.133 */
 export const toolCallSettled = (call: ToolCall) => call.outcome !== 'running'

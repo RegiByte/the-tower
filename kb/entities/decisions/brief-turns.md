@@ -135,7 +135,9 @@ renderer can draw the brief alike, inline.
   open); a run of five or more calls folds to its count, naming
   those that failed, were denied or stopped. "earlier turns" on a conversation reads it whole, drawn in place
   ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)) until a read moves its latest turn
-  ([`wholeHolds`](ref:hub/src/shared/brief.ts#wholeHolds)). A message to a subagent is its `SendMessage` call, its
+  ([`wholeHolds`](ref:hub/src/shared/brief.ts#wholeHolds), [`keptWholes`](ref:hub/src/shared/brief.ts#keptWholes)). A
+  brief shown is read again whenever its card's status, tool, conversations or their additions move
+  ([`briefKey`](ref:hub/src/shared/brief.ts#briefKey)). A message to a subagent is its `SendMessage` call, its
   address no worker's. Each bubble copies
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText),
   [`saidWhat`](ref:hub/src/shared/brief.ts#saidWhat) naming it),

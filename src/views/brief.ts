@@ -1,11 +1,11 @@
 import { can, type Card, conversationSubject, saidSubject, type Subject } from '/lib/board.js'
-import { type Brief, briefCss, briefHtml, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole } from '/lib/brief.js'
+import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, keptWholes, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
 import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
 import { drawPanel, type Mount, type Tab } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
-import { saidOf, wholeHolds } from '../shared/brief.ts'
+import { saidOf } from '../shared/brief.ts'
 
 /**
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt, Claude's steps
@@ -65,7 +65,6 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
 
   const actsOn = (b: typeof board) => addedActions(b, saidSubject({ session: '', conversation: '', startedAt: 0, side: 'prompt', card: card.id, project: card.project, body: '' })).length > 0
 
-  const keyOf = (c: Card) => `${c.status} ${c.tool} ${JSON.stringify(c.conversations)} ${JSON.stringify(c.conversations.map((v) => board.adds[`conversation:${v.id}`]))}`
   /** The tool calls read that had ended, by key, as drawn. */
   const tools = new Map<string, string>()
   /** The conversations read whole: drawn in place of their last turns until a read moves their latest turn, then let go. */
@@ -104,15 +103,16 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
 
   /** Reads the conversations again when the card's moved since the last read, while the brief is seen. */
   function read() {
-    const key = keyOf(card)
+    const key = briefKey(board, card)
     if (!seen || key === readAt) return
     const first = readAt === undefined
     readAt = key
     void tower.conversations(card.id).then(
       (read) => {
         if (readAt !== key) return
-        wholes = wholes.filter((whole) => wholeHolds(read, whole))
-        threads = wholes.reduce(withWhole, read)
+        const kept = keptWholes(read, wholes)
+        threads = kept.briefs
+        wholes = kept.wholes
         draw(!first)
       },
       (err: Error) => kit.toast(err.message),

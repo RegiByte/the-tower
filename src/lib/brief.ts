@@ -2,7 +2,9 @@
 export {
   briefCss,
   briefHtml,
+  briefKey,
   expandedSaid,
+  keptWholes,
   openFolds,
   openTools,
   /** @provisional */ RESUMED_IDLE,
