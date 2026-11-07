@@ -6,8 +6,11 @@
 import { WORKTREE_NAME, WORKTREES_DIR } from '../shared/model.ts'
 import { branchOffers, worktreeOffers, type BranchAction, type BranchCalls, type BranchVerb, type WorktreeAction, type WorktreeCalls, type WorktreeVerb } from './verbs.ts'
 
-/** One entry of `git worktree list --porcelain`. `head` and `branch` are missing on a bare entry, `branch` on a detached HEAD. */
+/** One entry of `git worktree list --porcelain`. `head` and `branch` are missing on a bare entry, `branch` on a detached HEAD, `head` on an unborn branch. */
 export type GitWorktree = { path: string; head?: string; branch?: string; prunable: boolean; locked: boolean }
+
+/** What git lists as the HEAD of a branch with no commit yet. */
+const NO_COMMIT = /^0+$/
 
 export const parseWorktreeList = (porcelain: string): GitWorktree[] =>
   porcelain
@@ -17,9 +20,10 @@ export const parseWorktreeList = (porcelain: string): GitWorktree[] =>
       const lines = block.split('\n')
       const value = (key: string) => lines.find((l) => l.startsWith(`${key} `))?.slice(key.length + 1)
       const has = (key: string) => lines.some((l) => l === key || l.startsWith(`${key} `))
+      const head = value('HEAD')
       return {
         path: value('worktree')!,
-        head: value('HEAD'),
+        head: head && !NO_COMMIT.test(head) ? head : undefined,
         branch: value('branch')?.replace(/^refs\/heads\//, ''),
         prunable: has('prunable'),
         locked: has('locked'),
