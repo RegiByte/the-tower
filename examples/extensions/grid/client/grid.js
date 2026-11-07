@@ -1,4 +1,4 @@
-import { can, cardSubject, floorSubject } from '/lib/board.js'
+import { can, cardSubject, floorSettingsOf, floorSubject, settingsOf } from '/lib/board.js'
 import { heededWaits, lampOf, statusName } from '/lib/cards.js'
 import { ICON } from '/lib/view.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
@@ -19,13 +19,23 @@ import { esc } from '/lib/words.js'
  * cells are two over one. A card displayed with this view joins its floor's grid. A cell whose worker waits on you
  * (`heededWaits`: the board's waits the viewer hasn't dismissed, the tower page's "waiting on you") flashes in its
  * attention's colour (`FLASH`): red while it needs you, green while its answer is unread, the failed colour after a
- * failed turn. It stops when the wait is over, as typing to the worker ends it, or when the viewer dismisses it.
+ * failed turn. It stops when the wait is over, as typing to the worker ends it, or when the viewer dismisses it. The
+ * setting `flash` says whether cells flash at all, read from the board, and the bar's Flash button changes it in the
+ * config, so it follows the user to every browser. The floor's own value wins, so the button writes there when it has
+ * one. The ring is its own layer, opacity alone animated, so a flash repaints nothing and the cell's border stays
+ * the focus ring.
  */
 
 const MAX = 4
 
+/** This extension's capability: the name its settings go by on the board and in the config. */
+const CAP = 'grid'
+
 /** The attentions a cell flashes in, each in its palette colour, and how long one flash takes. */
 const FLASH = { needs: '1.1s', ready: '2.2s', broken: '2.2s' }
+
+/** The values of the setting `flash`, in the order the bar's button steps through them. */
+const FLASH_MODES = ['off', 'steady', 'blink']
 
 const STYLE = `
 :where([data-view="grid/grid"]) { display: flex; flex-direction: column; gap: var(--sp-s); }
@@ -46,9 +56,11 @@ const STYLE = `
 :where([data-view="grid/grid"]) .grid-cells.three > .grid-cell:nth-child(3) { grid-column: 1 / -1; }
 :where([data-view="grid/grid"]) .grid-cell { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 :where([data-view="grid/grid"]) .grid-cell:focus-within { border-color: var(--ink); }
-${Object.entries(FLASH).map(([a, d]) => `:where([data-view="grid/grid"]) .grid-cell[data-flash="${a}"] { --flash: var(--${a}); animation-duration: ${d}; }`).join('\n')}
-:where([data-view="grid/grid"]) .grid-cell[data-flash] { border-color: var(--flash); box-shadow: 0 0 0 2px var(--flash), 0 0 12px var(--flash); animation-name: grid-flash; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
-@keyframes grid-flash { 50% { border-color: var(--line); box-shadow: 0 0 0 0 transparent; } }
+${Object.entries(FLASH).map(([a, d]) => `:where([data-view="grid/grid"]) .grid-cell[data-flash="${a}"] { --flash: var(--${a}); --flash-time: ${d}; }`).join('\n')}
+:where([data-view="grid/grid"]) .grid-cell[data-flash] { position: relative; }
+:where([data-view="grid/grid"]) .grid-cell[data-flash]::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--flash), inset 0 0 12px var(--flash); }
+:where([data-view="grid/grid"]) .grid-cells[data-flash-mode="blink"] .grid-cell[data-flash]::after { animation: grid-flash var(--flash-time) ease-in-out infinite; }
+@keyframes grid-flash { 50% { opacity: 0; } }
 :where([data-view="grid/grid"]) .grid-note { margin: auto; color: var(--muted); font-size: var(--fs-s); }
 `
 
@@ -92,11 +104,24 @@ export async function mount(host, { tower, board, subject, kit, state }) {
   const unhear = tower.store.on((k) => k === VIEWER_KEYS.dismissed && void dismissedNow().then((d) => ((dismissed = d), draw())))
 
   const cardOf = (id) => now.floors.flatMap((f) => f.cards).find((c) => c.id === id)
+  /** A board carries no settings for an extension the tower refuses while its view is open: the cells stay, unflashing. */
+  const flashNow = () => /** @type {{ flash: string } | undefined} */ (key === 'board' ? settingsOf(now, CAP) : floorSettingsOf(now, CAP, subject.project))?.flash ?? 'off'
+  /** The next mode, kept where the mode in force comes from: the floor's own value, or else the system's. */
+  const stepFlash = async () => {
+    const config = await tower.get('config')
+    const system = ['extensions', CAP, 'settings', 'flash']
+    const floor = key !== 'board' && ['projects', subject.project, ...system]
+    const valueAt = (at) => at.reduce((held, k) => held?.[k], config)
+    const at = floor && valueAt(floor) !== undefined ? floor : system
+    const was = valueAt(at)
+    const value = FLASH_MODES[(FLASH_MODES.indexOf(flashNow()) + 1) % FLASH_MODES.length]
+    await (was === undefined ? tower.call('config/add', { key: at, value }) : tower.call('config/set', { key: at, value, was })).catch((err) => kit.toast(err.message))
+  }
   const keep = () => state.set(`cells.${key}`, ids)
   const label = () => (key === 'board' ? 'every floor' : floorsOf(now, key)[0]?.name ?? key)
 
   const pop = `grid-add-${uuid()}`
-  host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div>`
+  host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-flash data-tip="How a cell shows that its worker waits on you, in every browser: off, a steady ring, or a blinking one"></button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div>`
   const bar = host.querySelector('.grid-bar')
   const adder = bar.querySelector('[data-grid-open-add]')
   const menu = bar.querySelector('.grid-add')
@@ -157,7 +182,10 @@ export async function mount(host, { tower, board, subject, kit, state }) {
     grid.classList.toggle('three', ids.length === 3)
     for (const [id, cell] of cells) if (!ids.includes(id)) (letGo(cell), cell.el.remove(), cells.delete(id))
     for (const id of starting) if (!ids.includes(id)) starting.delete(id)
-    const waits = new Set(heededWaits(now, { dismissed }).map((w) => w.id))
+    const mode = flashNow()
+    bar.querySelector('[data-grid-flash]').textContent = `Flash: ${mode}`
+    grid.dataset.flashMode = mode
+    const waits = new Set(mode === 'off' ? [] : heededWaits(now, { dismissed }).map((w) => w.id))
     if (!ids.length) grid.innerHTML = `<p class="grid-note">No worker here yet. Add one with Add worker, or Add to grid on its bar.</p>`
     else grid.querySelector('.grid-note')?.remove()
     ids.forEach((id, n) => {
@@ -224,6 +252,7 @@ export async function mount(host, { tower, board, subject, kit, state }) {
     if (added) return (menu.hidePopover(), join(added.dataset.gridAdd))
     const fresh = e.target.closest('[data-grid-new]')
     if (fresh) return void startOn(fresh.dataset.gridNew)
+    if (e.target.closest('[data-grid-flash]')) return void stepFlash()
     if (!e.target.closest('[data-grid-heads]')) return
     head = !head
     state.set('head', head)
