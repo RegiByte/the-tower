@@ -50,7 +50,8 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   oldest first, the running one live, over the lineage brief ([`logbookHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookHtml)),
   which reads as the tower page's does ([[brief-turns]]): each turn's steps, a tool call opened read once and kept
   for the next draw ([`readWhole`](ref:hub/renderers/tower3d/src/main.ts#readWhole) for a conversation's earlier
-  turns). A resume given no prompt of its own shows the same last
+  turns), read again as the worker's card moves while it is open, at its end while you read there
+  ([`freshLogbooks`](ref:hub/renderers/tower3d/src/main.ts#freshLogbooks)). A resume given no prompt of its own shows the same last
   screen as the session it resumed (Claude reprints the conversation), so its chip says "resumed, no new turns"
   ([`sessionsHtml`](ref:hub/renderers/tower3d/src/ui.ts#sessionsHtml), from the shared `resumedIdle`).
 - **Replay** ([`replay`](ref:hub/renderers/tower3d/src/main.ts#replay)): a past session's chip puts that session's

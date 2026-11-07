@@ -5,7 +5,7 @@ import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../extensions/reviews/client/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
-import { briefCss, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole } from '../../../src/shared/brief.ts'
+import { briefCss, briefKey, expandedSaid, keptWholes, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole } from '../../../src/shared/brief.ts'
 import type { BriefMarkdown, DiffLayout, StatsRange } from '../../../src/shared/viewer.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
@@ -23,7 +23,7 @@ import { addedKey, deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
 import { defaultLimits } from '/lib/board.js'
-import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Card, type Floor, type ShelfSelf } from './api.ts'
+import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf } from './api.ts'
 import { actionWords, can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_ASK, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { probedLines, type ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
@@ -409,6 +409,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   if (s.me.level >= s.plan.levels.length) s.me = { ...s.me, level: 0 }
   renderHud()
   renderPanel()
+  freshLogbooks(next)
   renderElevator()
   if (s.pendingDesk && deskOf(s.plan, s.pendingDesk)) goDesk(s.pendingDesk)
   if (s.pendingShell && kioskOf(s.plan, s.pendingShell)) goShell(s.pendingShell)
@@ -2131,25 +2132,65 @@ $('elevator').addEventListener('click', (e) => {
   lock()
 })
 
-const threadsOf = (id: string) => readConversations(s.board!, id).catch((err: Error) => (toast(err.message), [] as Threads))
+/**
+ * The read each open logbook last started, by where it is open, as `<card> <briefKey>`: a read that lands after a later
+ * one started is dropped, and a logbook is read again once its card moved since.
+ */
+const logbookReads = { desk: '', reader: '' }
+const readKey = (c: Card) => `${c.id} ${briefKey(s.board!, c)}`
+
+/** How near its end, in pixels, you read a logbook for a new read to keep you there, as the page's Brief does. */
+const AT_END = 48
+const readsAtEnd = (el: HTMLElement) => el.scrollHeight - el.scrollTop - el.clientHeight < AT_END
+
+/**
+ * Reads a logbook's conversations, handing them to `land` unless a later read of that logbook started since. A failed
+ * read is said, and lands as none only where nothing was read before (`held`).
+ */
+function readLogbook(where: keyof typeof logbookReads, c: Card, held: boolean, land: (threads: Threads) => void) {
+  const key = readKey(c)
+  logbookReads[where] = key
+  readConversations(s.board!, c.id).then(
+    (threads) => logbookReads[where] === key && land(threads),
+    (err: Error) => (toast(err.message), logbookReads[where] === key && !held && land([])),
+  )
+}
+
+/** Each open logbook read again where its worker's card moved since it was read, as the page's Brief is. */
+function freshLogbooks(board: Board) {
+  const desk = atDesk()
+  const worker = desk && s.deskTab === 'brief' ? findCard(board, desk) : undefined
+  if (worker && logbookReads.desk !== readKey(worker)) readDeskBrief(worker)
+  const open = panelAs('logbook')
+  const read = open && findCard(board, open.card.id)
+  if (read && logbookReads.reader !== readKey(read)) readReader(read)
+}
 
 /** The brief lies over the terminal, which keeps its size: a hidden terminal would refit the PTY to nothing. */
-async function openBrief(id: string) {
+function openBrief(id: string) {
   s.deskTab = 'brief'
   closeShown()
   hideReviewing()
   renderPanel()
-  const threads = await threadsOf(id)
-  if (!findCard(s.board!, id) || atDesk() !== id || s.deskTab !== 'brief') return
-  const same = deskBrief?.id === id
-  deskBrief = { id, threads }
-  drawDeskBrief(same)
-  show('desk-brief', true)
-  if (!same) $('desk-brief').scrollTop = $('desk-brief').scrollHeight
+  readDeskBrief(findCard(s.board!, id)!)
 }
 
-/** The desk's brief as last read: what it is drawn again from, and what a copy reads its text from. */
-let deskBrief: { id: string; threads: Threads } | undefined
+/** The desk's logbook read now, drawn as it lands while the desk still shows it, and kept at its end while you read there. */
+function readDeskBrief(c: Card) {
+  readLogbook('desk', c, deskBrief?.id === c.id, (read) => {
+    if (!findCard(s.board!, c.id) || atDesk() !== c.id || s.deskTab !== 'brief') return
+    const same = deskBrief?.id === c.id
+    const { briefs, wholes } = keptWholes(read, same ? deskBrief!.wholes : [])
+    const atEnd = !same || readsAtEnd($('desk-brief'))
+    deskBrief = { id: c.id, threads: briefs, wholes }
+    drawDeskBrief(same)
+    show('desk-brief', true)
+    if (atEnd) $('desk-brief').scrollTop = $('desk-brief').scrollHeight
+  })
+}
+
+/** The desk's brief as last read, with the conversations read whole in it: what it is drawn again from, and what a copy reads its text from. */
+let deskBrief: { id: string; threads: Threads; wholes: Brief[] } | undefined
 
 /** The tool calls read in a logbook that had ended, by key, as drawn: one still running is read again when drawn open. */
 const toolsRead = new Map<string, string>()
@@ -2196,9 +2237,9 @@ document.addEventListener('click', (e) => {
 function readWhole(key: string, atDeskBrief: boolean) {
   const [session, conversation] = key.split(':')
   tower.conversation(session, conversation).then((whole) => {
-    if (atDeskBrief && deskBrief) return (deskBrief = { ...deskBrief, threads: withWhole(deskBrief.threads, whole) }), drawDeskBrief(true)
+    if (atDeskBrief && deskBrief) return (deskBrief = { ...deskBrief, threads: withWhole(deskBrief.threads, whole), wholes: [...deskBrief.wholes, whole] }), drawDeskBrief(true)
     const open = panelAs('logbook')
-    if (open?.threads) setPanel({ ...open, threads: withWhole(open.threads, whole) }), renderPanel()
+    if (open?.threads) setPanel({ ...open, threads: withWhole(open.threads, whole), wholes: [...open.wholes, whole] }), renderPanel()
   }, (err: Error) => toast(err.message))
 }
 
@@ -2577,7 +2618,7 @@ function openLogbook(c: Card) {
   unfocus()
   closeDraftPanel()
   closeDoc()
-  setPanel({ kind: 'logbook', card: c, threads: undefined, tab: 'brief', on: c.id })
+  setPanel({ kind: 'logbook', card: c, threads: undefined, wholes: [], tab: 'brief', on: c.id })
   $('doc-body').dataset.logbook = ''
   $('doc-body').innerHTML = `<div class="desk-bar tab-row"><span class="desk-tabs tab-set" id="logbook-tabs"></span></div>
     <div class="logbook-shot" id="logbook-shot"><div id="logbook-sessions"></div><div class="logbook-frame"><div class="logbook-screen" id="logbook-screen"></div><div class="stamp" id="logbook-stamp"></div></div></div>
@@ -2586,12 +2627,19 @@ function openLogbook(c: Card) {
   unlock()
   show('paused', false)
   renderPanel()
-  threadsOf(c.id).then((threads) => {
+  readReader(c)
+}
+
+/** The reader's logbook read now, drawn as it lands while it is open on that worker, and kept at its end while you read there. */
+function readReader(c: Card) {
+  readLogbook('reader', c, panelAs('logbook')?.threads !== undefined, (read) => {
     const open = panelAs('logbook')
     if (open?.card.id !== c.id) return
-    setPanel({ ...open, threads })
+    const { briefs, wholes } = keptWholes(read, open.wholes)
+    const atEnd = open.threads === undefined || readsAtEnd($('logbook-text'))
+    setPanel({ ...open, threads: briefs, wholes })
     renderPanel()
-    $('logbook-text').scrollTop = $('logbook-text').scrollHeight
+    if (atEnd) $('logbook-text').scrollTop = $('logbook-text').scrollHeight
   })
 }
 

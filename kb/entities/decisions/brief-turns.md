@@ -137,7 +137,7 @@ renderer can draw the brief alike, inline.
   ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)) until a read moves its latest turn
   ([`wholeHolds`](ref:hub/src/shared/brief.ts#wholeHolds), [`keptWholes`](ref:hub/src/shared/brief.ts#keptWholes)). A
   brief shown is read again whenever its card's status, tool, conversations or their additions move
-  ([`briefKey`](ref:hub/src/shared/brief.ts#briefKey)). A message to a subagent is its `SendMessage` call, its
+  ([`briefKey`](ref:hub/src/shared/brief.ts#briefKey)), in the page's Brief and Tower 3D's logbook alike. A message to a subagent is its `SendMessage` call, its
   address no worker's. Each bubble copies
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText),
   [`saidWhat`](ref:hub/src/shared/brief.ts#saidWhat) naming it),
