@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "One keymap: commands as data, defaults in the module, overrides in the config",
-  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does and its default chords. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃⇧1–4 show a worker's panes, from inside the terminal too.",
+  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does, its default chords and, for a command that opens a worker's tab, that tab's view and name, listed as PANES, from which every table of panes derives. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃⇧1–4 show a worker's panes, from inside the terminal too.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -20,7 +20,7 @@ customizable. Overrides are the user's intent, so they live in the config, the o
 every other key, and reach every renderer the way `user.name` does.
 
 **How.**
-- [`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS): `{ id, label, scope, group, does, chords }`, `label` its name in a few words as a palette lists it, `does` what it does as the `?` sheet says it. Scopes: `global`
+- [`COMMANDS`](ref:hub/src/shared/keymap.ts#COMMANDS): `{ id, label, scope, group, does, chords, pane? }`, `label` its name in a few words as a palette lists it, `does` what it does as the `?` sheet says it. Scopes: `global`
   (anywhere, but a chord without Alt, Ctrl or Meta only while nothing types), `terminal`, `field` (a text field or an
   open dialog). A letter or digit in a chord is the physical key, so ⌥'s composed characters on a Mac don't matter;
   another character is matched by what it types, and Alt with a character is refused.
