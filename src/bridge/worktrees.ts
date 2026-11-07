@@ -129,7 +129,7 @@ export const isCarried = (tree: Exposure | Unread) => !isUnread(tree) && tree.di
 
 /**
  * What git's worktree list and the tower's records say of one of its worktrees in one repo, which hold whether or not
- * the worktree itself can be read. `present`: its folder exists; a missing one is git's `prunable`. `from`: the checkout
+ * the worktree itself can be read. `present`: its folder exists; git's `prunable` alone doesn't say so, it also lists a folder that lost its `.git` file. `from`: the checkout
  * it was forked from, for a fork. `against`: as in `Exposure`.
  */
 type ListedTree = { name: string; path: string; branch?: string; head?: string; base?: string; from?: string; against?: string; present: boolean }

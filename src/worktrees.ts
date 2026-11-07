@@ -209,7 +209,7 @@ const listedTree = (round: Round, name: string, entry: GitWorktree, record: Towe
   base: record.base,
   from: record.from,
   against: againstIn(round.commits, record.base, round.originHead),
-  present: !entry.prunable,
+  present: !entry.prunable || existsSync(entry.path),
 })
 
 const treeRead = async (
@@ -436,6 +436,7 @@ export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale
   const readTree = async ({ name, entry }: { name: string; entry: GitWorktree }): Promise<TreeReading> => {
     const { path: tree, branch, head, prunable } = entry
     try {
+      if (prunable && existsSync(tree)) throw new Error(`git lists ${tree} as prunable though its folder is here: its .git file is gone or names nothing`)
       const kept = keptStatus(name)
       const status = prunable ? undefined : kept || (await statusOf(tree))
       const admin = prunable ? undefined : adminOf(tree)

@@ -36,8 +36,9 @@ as old as the last fetch.
   that names nothing, a hook past the timeout) reads as [`UnreadTree`](ref:hub/src/bridge/worktrees.ts#UnreadTree) with
   what git said, its neighbours read as usual, and the next read of the repo asks it again, so a repair shows by
   itself. It carries no `dirty`, `unpushed` or `absorbed`: an empty status would read as clean, and a clean worktree
-  is one Tidy offers to remove. So the type makes every reader of those fields say what an unread one means, and a
-  reader that doesn't know the shape compares `undefined` and finds it not clean. Its state is `unread`: it offers no
+  is one Tidy offers to remove. So the type makes every typed reader of those fields say what an unread one means,
+  and a stale one gets no confident 0: what a reader must go by is the state and `atRisk`. A worktree git lists as
+  `prunable` whose folder is still there, its `.git` file gone, is one too: only a missing folder is `lost`. Its state is `unread`: it offers no
   verb, Tidy doesn't list it, it has not landed, and every verb refuses it through
   [`worktreeIn`](ref:hub/src/worktrees.ts#worktreeIn), which `lost` alone outranks: `prune` and `recut` touch only the
   folders that are gone, and keep a branch nothing says landed. The main checkout's read fails the same way

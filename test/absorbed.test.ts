@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from '
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { discardable, readRepo, removeWorktree, tidyable } from '../src/worktrees.ts'
+import { discardable, pruneWorktree, readRepo, removeWorktree, tidyable } from '../src/worktrees.ts'
 
 const IDENTITY = { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t', GIT_CONFIG_GLOBAL: '/dev/null' }
 
@@ -180,6 +180,17 @@ test("a worktree whose index is corrupt reads unread, its neighbour still reads,
     await assert.rejects(tidyable(project, 'lab', [], { worktrees: ['bad'], branches: [] }), { code: 'refused', message: /worktree bad/ })
 
     writeFileSync(index, intact)
+    assert.equal((await treeOf('bad')).risk[0], '?? precious')
+
+    const link = path.join(dir, '.worktrees/bad/.git')
+    const gitdir = readFileSync(link)
+    rmSync(link)
+    const unlinked = await treeOf('bad')
+    assert.match((unlinked as { unread: string }).unread, /prunable though its folder is here/)
+    assert.equal(unlinked.present, true)
+    await assert.rejects(removeWorktree(project, 'lab', 'bad', []), refused)
+    await assert.rejects(pruneWorktree(project, 'lab', 'bad', []), refused)
+    writeFileSync(link, gitdir)
     assert.equal((await treeOf('bad')).risk[0], '?? precious')
   } finally {
     rmSync(dir, { recursive: true, force: true })
