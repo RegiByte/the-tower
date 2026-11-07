@@ -628,6 +628,9 @@
       "addsLinesOn",
       "ago",
       "archiveKey",
+      "archiveWant",
+      "archivedCard",
+      "archivesMoved",
       "askTransitions",
       "asksBeganLine",
       "attentionOrder",
@@ -1286,7 +1289,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "e296208a888e998e",
+      "digest": "0f722f55ab19a6b8",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -1687,7 +1690,7 @@
     },
     "/lib/cards.js": {
       "runtime": "generic",
-      "digest": "2bb36cc5cb76ab7b",
+      "digest": "f6dd615b8161c2ec",
       "values": {
         "ATTENTION_MEANS": {
           "since": "1.151"
@@ -1775,6 +1778,18 @@
         },
         "archiveKey": {
           "since": "1.151"
+        },
+        "archiveWant": {
+          "since": "1.162",
+          "stability": "provisional"
+        },
+        "archivedCard": {
+          "since": "1.162",
+          "stability": "provisional"
+        },
+        "archivesMoved": {
+          "since": "1.162",
+          "stability": "provisional"
         },
         "attentionOrder": {
           "since": "1.151",
@@ -2061,6 +2076,10 @@
         }
       },
       "types": {
+        "ArchiveReads": {
+          "since": "1.162",
+          "stability": "provisional"
+        },
         "Attended": {
           "since": "1.151",
           "stability": "provisional"
@@ -2794,7 +2813,7 @@
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "ffc7fb2e18ce90af",
+      "digest": "679fafb95f93e67e",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2829,7 +2848,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "4c81d4371ebb7032",
+      "digest": "82396be5c591b06b",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2874,7 +2893,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "d5bdf09d59273421",
+      "digest": "248348f1a026083f",
       "values": {
         "cutLine": {
           "since": "1.151",
