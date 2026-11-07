@@ -124,7 +124,7 @@ test("a reviewer spawned before reviews logged its facts reads as one spawned wi
   assert.deepEqual([read(fork), read(plain)], [{ crew: undefined, exempt: undefined, of: undefined }, { crew: undefined, exempt: undefined, of: undefined }])
 })
 
-test("reviews offers Review on a worker whose work goes on, in a floor of git repos, copied back as the card verb `review` and its old call; never on a reviewer, nor once the work landed or its checkout is gone", () => {
+test("reviews offers Review on a worker whose work goes on, in a floor of git repos, copied back as the card verb `review` and its old call; never on a reviewer whose author is on the board, nor once the work landed or its checkout is gone", () => {
   const tree: TreeRead = { name: 'odin-42', path: '/hub/.worktrees/odin-42', branch: 'tower/odin-42', present: true, dirty: 0, unpushed: 1, absorbed: false, against: 'origin/main', risk: [] }
   const reads = (trees: TreeRead[]) => new Map<string, RepoRead>([['/hub', { dir: '/hub', at: Date.now(), git: true, bases: ['origin/main'], originHead: 'origin/main', main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
   const at = (cwd: string): SessionLog => {
@@ -147,8 +147,9 @@ test("reviews offers Review on a worker whose work goes on, in a floor of git re
   assert.deepEqual(offered(inTree, reads([{ ...tree, absorbed: true }])), { action: undefined, review: undefined })
   assert.deepEqual(offered(inTree, reads([{ ...tree, present: false }])), { action: undefined, review: undefined })
   assert.deepEqual(offered(inTree, reads([])), { action: undefined, review: undefined })
-  const reviewer = { ...at('/hub'), header: { ...at('/hub').header, argv: ['claude', '--', `/tower:review ${AUTHOR_CALLSIGN}`] } }
-  assert.deepEqual(offered(reviewer, reads([])), { action: undefined, review: undefined })
+  const onBoard = boardOf([author, legacy], reads([]), [])
+  const reviewer = onBoard.floors[0].cards.find((c) => c.id === legacy.header.id)!
+  assert.deepEqual({ action: onBoard.adds[`card:${reviewer.id}`]?.actions, review: reviewer.calls.review }, { action: undefined, review: undefined })
 })
 
 test("a reviewer's note writes on its author's thread, whether its prompt or its facts say it is one (FREYR-47)", () => {

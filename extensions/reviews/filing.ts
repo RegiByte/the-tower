@@ -3,8 +3,8 @@
  * (`landedThreadId`), and a discard's recovery note, each repo's branch and tip, left on the thread before it is filed.
  */
 import type { FloorThread } from './threads.ts'
-import type { CheckoutTip } from '../../src/bridge/worktrees.ts'
-import type { TidyEntry } from '../../src/shared/extensions.ts'
+import type { CheckoutTip } from '/lib/board.js'
+import type { TidyEntry } from '/lib/extension.js'
 
 /** A floor's Tidy entry per thread whose work has landed, keyed by its checkout and belonging to it. */
 export const tidyEntries = (threads: FloorThread[]): TidyEntry[] =>

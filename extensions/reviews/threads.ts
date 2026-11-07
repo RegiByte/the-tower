@@ -2,9 +2,8 @@
  * Review threads on the board, worked out from the parsed files and where each checkout's work stands (the core's
  * `checkoutState`): nothing about a thread is stored but its file.
  */
-import type { Card, Floor } from '../../src/bridge/board.ts'
-import { checkoutLanded, checkoutState, landedByRecord, type CheckoutsRead, type CheckoutState, type LandedState } from '../../src/bridge/checkouts.ts'
-import { tagOf } from '../../src/shared/tags.ts'
+import { type Card, type CheckoutState, type CheckoutsRead, type Floor, type LandedState, checkoutLanded, checkoutState, landedByRecord } from '/lib/board.js'
+import { tagOf } from '/lib/words.js'
 import { checkoutOfId, landedOfId, resolvedIn, stamp, threadCheckoutOf, threadId, unseenBy, verdictOf, type Message, type ReviewThread, type Verdict } from './client/reviews.ts'
 
 /** A thread file of the floor's collection, parsed. */

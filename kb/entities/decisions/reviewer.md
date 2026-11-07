@@ -97,8 +97,9 @@ and how its findings reach the author.
   returns `exempt: ['hiring']` and `reportsTo: <CALLSIGN>` on a spawn whose `of` is set (never on a resume or a fork),
   logged as `tower.exempt` and `tower.reports-to` before the worker starts ([[extensions]], [[crews]]).
 - *One round.* The reviewer stops after delivering. A re-review is a new request: a new fork from a new snapshot.
-- *The pair is logged.* The reviewer's `of` fact (`tower.x.reviews.of`), read while its crew edge is reviews' (a fork
-  carries the fact and no edge), is the card's `x.reviews.of` ([`ofCard`](ref:hub/extensions/reviews/server.ts#ofCard),
+- *The pair is logged.* The reviewer's `of` fact (`tower.x.reviews.of`) names its author at its spawn, and the crew edge
+  by reviews names the same callsign (a fork carries the fact and no edge). That edge is the card's `x.reviews.of`
+  ([`ofCard`](ref:hub/extensions/reviews/server.ts#ofCard),
   read by [`reviewerOf`](ref:hub/extensions/reviews/client/reviews.ts#reviewerOf), the reviews client's), copied back to `card.reviews` until 2.0; the
   crew edge gives `card.crew` and `card.reportsTo`, and the fork's git record gives `card.worktree.from`. The card
   fold adds the badge "reviews MARCO-87", which the tower page and Tower 3D's desk panel draw among the card's badges; Tower 3D draws
@@ -112,7 +113,8 @@ and how its findings reach the author.
   from hiring by reviews, and is put in its author's crew as the board names the author by callsign now
   ([`legacyCrew`](ref:hub/src/bridge/legacy.ts#legacyCrew), in [`withReports`](ref:hub/src/bridge/board.ts#withReports)),
   exactly as the prompt was read before; a hire whose prompt starts so is not weighed against the limits either.
-  It is the only place in the core that reads the prompt, and goes at 2.0.
+  It is the only place in the core that reads the prompt, and goes at 2.0. With its author off the board such a reviewer
+  has no edge, so reviews reads it as a plain worker: accepted, since 2.0 does the same to every one of them.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
   terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots
   place them ([[desk-dressing]]): its chair at `reviewer`, turned as that slot is, its notebook at `reviewer_notebook`, its subagents standing

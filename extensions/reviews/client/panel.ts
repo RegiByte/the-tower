@@ -3,18 +3,14 @@
  * notes' quotes marked as the Changes find them; and where a card's and a floor's threads are on the board (the
  * extension's part, `x.reviews`). The reviews extension's client, served at `/x/reviews/panel.js`.
  */
-import type { RepoChanges } from '../../../src/shared/repo-changes.ts'
-import type { CheckoutState } from '../../../src/bridge/checkouts.ts'
-import type { Board, Card, Floor } from '../../../src/bridge/board.ts'
-import { esc, noun, sendTarget, sendTargets, workerIn } from '../../../src/shared/cards.ts'
-import { ICON } from '../../../src/shared/icons.ts'
-import { checkoutDirs } from '../../../src/shared/model.ts'
-import { highlightLines } from '../../../src/shared/highlight.ts'
-import { markdownHtml } from '../../../src/shared/markdown.ts'
-import { failureOf, valueOf, type ReadEvent, type Reads } from '../../../src/shared/reads.ts'
+import { type Board, type Card, type CheckoutState, type Floor, sendTarget, sendTargets, workerIn } from '/lib/board.js'
+import type { RepoChanges } from '/lib/changes.js'
+import { checkoutDirs } from '/lib/files.js'
+import { type ReadEvent, type Reads, failureOf, valueOf } from '/lib/machine.js'
+import { markdownHtml } from '/lib/markdown.js'
+import { ICON, failedHtml, fileButtonsHtml, highlightLines, settledHtml } from '/lib/view.js'
+import { esc, noun } from '/lib/words.js'
 import { anchorWhere } from './anchors.ts'
-import { fileButtonsHtml } from '../../../src/shared/file-acts.ts'
-import { failedHtml, settledHtml } from '../../../src/shared/panel-html.ts'
 import type { CardPart, FloorPart, FloorThread, NoteCall } from '../threads.ts'
 import { anchorStates, langOf, parseThread, repoName, resolvedIn, resolvesOf, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type AnchorStates, type Message, type Quote, type ReviewThread } from './reviews.ts'
 

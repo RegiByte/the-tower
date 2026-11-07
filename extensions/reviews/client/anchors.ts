@@ -3,8 +3,8 @@
  * changed lines, and the anchor of lines picked in its Changes. The reviews extension's client, served at
  * `/x/reviews/anchors.js` (and, as they stood at 1.113, in `/panels.js` until 2.0).
  */
-import type { Mark } from '../../../src/shared/extensions.ts'
-import type { Lines } from '../../../src/shared/subjects.ts'
+import type { Lines } from '/lib/board.js'
+import type { Mark } from '/lib/extension.js'
 import type { Anchor, ReviewThread } from './reviews.ts'
 
 /** Where an anchor is, as a note heading writes it: `repo:path:from-to`. */

@@ -18,16 +18,65 @@
  * Each message is a heading (author, local time, number, the message it answers), then its anchors, each a
  * `repo:path:lines` followed by the lines as they were, then its body. Nothing else is stored: what a worker hasn't
  * seen is worked out from who wrote what. The reviews extension's client, served at `/x/reviews/reviews.js` (and at
- * `/reviews.js` through `LEGACY` until 2.0); the names the core shares with it come from `src/shared/reviews.ts`.
+ * `/reviews.js` through `LEGACY` until 2.0), holding the live copy of what the core's legacy layer keeps of it in
+ * `src/shared/reviews.ts` until 2.0.
  */
-import type { Card } from '../../../src/bridge/board.ts'
-import type { RepoChanges } from '../../../src/shared/repo-changes.ts'
-import { repoName, type Anchor, type Message, type Quote, type ReviewThread } from '../../../src/shared/reviews.ts'
+import type { Card } from '/lib/board.js'
+import type { RepoChanges } from '/lib/changes.js'
+import { repoName } from '/lib/files.js'
 
-export {
-  REVIEWS, REVIEW_SKILL, reviewPrompt, reviewedIn, threadId, checkoutOfId, landedThreadId, stamp, repoName, langOf,
-  type Quote, type Anchor, type Message, type ReviewThread,
-} from '../../../src/shared/reviews.ts'
+export { langOf, repoName } from '/lib/files.js'
+
+/** The collection the threads are kept in: the reviews extension's, owned. */
+export const REVIEWS = 'reviews'
+
+/** The lines quoted under an anchor. A quote holding removed lines is a `diff`, each line keeping git's mark. */
+export type Quote = { lang: string; lines: string[] }
+
+/** `repo` is named as the Changes pane names it: the main checkout's folder. `from`–`to` count the file's lines from 1. */
+export type Anchor = { repo: string; path: string; from: number; to: number; quote?: Quote }
+
+/** `at`: local time as written, `YYYY-MM-DD HH:MM`. `re`: the number of the message it answers. */
+export type Message = { author: string; at: string; n: number; re?: number; anchors: Anchor[]; body: string }
+
+export type ReviewThread = { checkout: string; messages: Message[] }
+
+/**
+ * The mod's skill a reviewer starts with, on the callsign of the worker whose work it reviews.
+ * @deprecated since 1.95: a reviewer is hired with `reviews/hire`, and is known by its card's `x.reviews.of`. Goes at 2.0.
+ */
+export const REVIEW_SKILL = '/tower:review'
+
+/**
+ * A reviewer's first prompt. With `tell`, the reviewer submits a pointer to its notes into the author when done.
+ * @deprecated since 1.95: hire a reviewer with `reviews/hire`. Goes at 2.0.
+ */
+export const reviewPrompt = (callsign: string, tell: boolean) => `${REVIEW_SKILL} ${callsign}${tell ? ' tell' : ''}`
+
+/**
+ * The callsign a reviewer's first prompt names; `undefined` for any other prompt.
+ * @deprecated since 1.95: read the card's `x.reviews.of` (`reviewerOf`). Goes at 2.0.
+ */
+export const reviewedIn = (prompt: string | undefined): string | undefined =>
+  prompt?.startsWith(`${REVIEW_SKILL} `) ? /^[A-Z][A-Z0-9]*-\d+\b/.exec(prompt.slice(REVIEW_SKILL.length).trim())?.[0] : undefined
+
+/** A thread's file name in the collection. */
+export const threadId = (checkout: string) => `${checkout}.md`
+
+/** The checkout a live thread's file is about; a landed thread's file is none. */
+export const checkoutOfId = (id: string): string | undefined => /^([^@]+)\.md$/.exec(id)?.[1]
+
+/**
+ * A landed thread's file: Tidy files a thread under its checkout and the local time it found the work landed
+ * (`odin-42@2026-10-07-1530.md`), and the checkout's name is free for a thread about new work.
+ */
+export const landedThreadId = (checkout: string, date: Date): string => `${checkout}@${stamp(date).replace(' ', '-').replace(':', '')}.md`
+
+/** The local time a message heading carries. */
+export const stamp = (date: Date): string => {
+  const two = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())} ${two(date.getHours())}:${two(date.getMinutes())}`
+}
 
 /** The callsign whose work a worker reviews, as the reviews extension's part of its card says (`x.reviews.of`). @since 1.97 */
 export const reviewerOf = (c: Pick<Card, 'x'>): string | undefined => (c.x?.reviews as { of?: string } | undefined)?.of
