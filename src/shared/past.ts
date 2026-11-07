@@ -1,4 +1,5 @@
 import type { Board, Card, Floor } from '../bridge/board.ts'
+import { type ReadEvent, type Reads, valueOf } from './reads.ts'
 
 /** A floor's past workers: the archive by crew, and the filter over it. */
 
@@ -53,6 +54,26 @@ export const pastCount = (f: Floor) => f.cards.filter((c) => !c.onDuty).length +
 
 /** What a renderer holding a floor's archive watches: the archive moved when this did. */
 export const archiveKey = (board: Board, f: Floor) => `${board.archiveAt}/${f.archived}`
+
+/**
+ * The floors' archives a viewer reads, as held reads (`/reads.js`): a slot per floor, named by its project, read at the
+ * floor's `archiveKey`. A renderer runs them on a loop of its own with `heldHandlers`, reading each with
+ * `tower.archive`.
+ */
+export type ArchiveReads = Reads<Card[]>
+
+/** The read of a floor's archive as `board` stands. @since 1.162 */
+export const archiveWant = (board: Board, f: Floor): Extract<ReadEvent<Card[]>, { type: 'want' }> => ({ type: 'want', slot: f.id, key: archiveKey(board, f) })
+
+/** The archives held whose floor's archive moved since they were read, wanted again as `board` stands. @since 1.162 */
+export const archivesMoved = (reads: ArchiveReads, board: Board) =>
+  board.floors.filter((f) => reads.held[f.id] && reads.held[f.id].key !== archiveKey(board, f)).map((f) => archiveWant(board, f))
+
+/** A worker by id in the archives held, those being read again among them. @since 1.162 */
+export const archivedCard = (reads: ArchiveReads, id: string) =>
+  Object.values(reads.held)
+    .flatMap((h) => valueOf(h) ?? [])
+    .find((c) => c.id === id)
 
 /** A filter's words, lower-cased. */
 export const wordsOf = (query: string) => query.toLowerCase().split(/\s+/).filter(Boolean)

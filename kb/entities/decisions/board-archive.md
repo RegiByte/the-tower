@@ -43,7 +43,11 @@ every card.
   ([`archivedCards`](ref:hub/src/tower/publisher.ts#archivedCards): each running extension's card folds, then
   `LEGACY`'s copies), so an archived card carries `x` and the old fields too ([[extensions]]).
 - A past list is the board's off-duty cards with the archive read
-  ([`pastOf`](ref:hub/src/shared/past.ts#pastOf)), listed by crew ([[crews]]); its tray counts `pastCount` before the read. The tower page keeps
+  ([`pastOf`](ref:hub/src/shared/past.ts#pastOf)), listed by crew ([[crews]]); its tray counts `pastCount` before the read.
+  A renderer holds the archives it reads as held reads ([[machines]]): a slot per floor read at its `archiveKey`
+  ([`archiveWant`](ref:hub/src/shared/past.ts#archiveWant), [`archivesMoved`](ref:hub/src/shared/past.ts#archivesMoved),
+  [`archivedCard`](ref:hub/src/shared/past.ts#archivedCard), named in `/lib/cards.js`), each renderer on a loop of
+  its own, so the `tower/archive` view reads its floor's archive apart from the page that mounts it. The tower page keeps
   the archives it read, its `findCard` looks there on a miss, and an id in the URL hash that the board lacks, or a
   worker on screen leaving the board, reads every floor's archive not read at its `archiveKey`. Tower 3D reads every floor's archive for its filing cabinets and its archive panel ([[logbook]]; a fixture board serves its own), and
   a gallery picture is looked up in `floor.gallery`, its card optional (`archived` on hover when the board lacks it).

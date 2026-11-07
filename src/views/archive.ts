@@ -1,5 +1,6 @@
 import { type Board, callOf, can, type Card, type Floor } from '/lib/board.js'
-import { archiveKey, GIST_MARK, HOST_MEANS, pastCount, type PastCrew, pastCrews, pastMatching, pastSize, statusName, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, whyNot, wordsOf } from '/lib/cards.js'
+import { type ArchiveReads, archiveWant, GIST_MARK, HOST_MEANS, pastCount, type PastCrew, pastCrews, pastMatching, pastSize, statusName, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, whyNot, wordsOf } from '/lib/cards.js'
+import { failureOf, heldHandlers, loop, noReads, reading, valueOf } from '/lib/machine.js'
 import { closeHtml, failedHtml, GIST_ICON, ICON, type Mount, paintOnce, pressing, viewCss } from '/lib/view.js'
 import { esc, plain, plural, when } from '/lib/words.js'
 
@@ -33,15 +34,11 @@ const STYLE = viewCss(
   & .empty { color: var(--faint); font-style: italic; font-size: var(--fs-s); padding: var(--sp-2xs) var(--sp-m); }`,
 )
 
-/** A floor's archive as read: the `archiveKey` it was read at, its cards once read, and why they couldn't be while none are. */
-type Read = { key: string; cards?: Card[]; failed?: string }
-
 export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   let board = first
   let lost = false
   const project = (subject.value as Floor).id
   const floor = () => board.floors.find((f) => f.id === project)!
-  let read: Read = { key: '' }
   let words: string[] = []
 
   host.innerHTML = `<style>${STYLE}</style><div class="shelf-head"></div><div class="archive"></div>`
@@ -81,24 +78,28 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
 
   const crewsHtml = (crews: PastCrew[]): string => crews.map(({ card, crew }) => pastHtml(card) + (crew.length ? `<div class="crew">${crewsHtml(crew)}</div>` : '')).join('')
 
-  /** Reads the floor's archive, keeping the cards read before until it lands; a read a later one overtook is dropped. */
-  const readArchive = () => {
-    const reading: Read = { key: archiveKey(board, floor()), cards: read.cards }
-    read = reading
-    tower.archive(project).then(
-      (cards) => read === reading && ((reading.cards = cards), draw()),
-      (err: Error) => read === reading && (reading.cards ? kit.toast(`The archive of ${project} can't be read: ${err.message}`) : ((reading.failed = err.message), draw())),
-    )
-  }
+  /** The floor's archive, read again as its `archiveKey` moves: the cards read before are drawn until the next read lands. */
+  const archive = loop({
+    state: noReads<Card[]>() as ArchiveReads,
+    handlers: heldHandlers<Card[]>(),
+    execute: {
+      read: reading((slot) => tower.archive(slot)),
+      draw: () => draw(),
+      toast: ({ message }) => kit.toast(`The archive of ${project} can't be read: ${message}`),
+    },
+  })
 
   /** By crew, each worker with every conversation it held and the way to resume or reach it. */
   const draw = () => {
     const f = floor()
-    if (!read.cards) {
+    const read = archive.state().held[project]
+    const cards = valueOf(read)
+    if (!cards) {
       count.textContent = plural(pastCount(f), 'worker')
-      return paintOnce(list, read.failed ? failedHtml('the archive', read.failed, 'data-archive-read') : '<div class="empty">reading the archive…</div>')
+      const failed = failureOf(read)
+      return paintOnce(list, failed ? failedHtml('the archive', failed, 'data-archive-read') : '<div class="empty">reading the archive…</div>')
     }
-    const past = pastCrews(f, read.cards)
+    const past = pastCrews(f, cards)
     const shown = pastMatching(past, words)
     const [all, matching] = [pastSize(past), pastSize(shown)]
     count.textContent = matching === all ? plural(all, 'worker') : `${matching} of ${all}`
@@ -116,7 +117,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   host.addEventListener('click', async (e) => {
     const target = e.target as Element
     if (target.closest('[data-home]')) return kit.display('board')
-    if (target.closest('[data-archive-read]')) return (readArchive(), draw())
+    if (target.closest('[data-archive-read]')) return (archive.dispatch({ ...archiveWant(board, floor()), type: 'refresh' }), draw())
     const resume = target.closest<HTMLElement>('[data-resume]')
     if (resume) {
       const reply = await pressing(resume, () => tower.run(JSON.parse(resume.dataset.resume!))).catch((err: Error) => (kit.toast(err.message), undefined))
@@ -131,7 +132,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     draw()
   })
 
-  readArchive()
+  archive.dispatch(archiveWant(board, floor()))
   draw()
   filter.focus()
 
@@ -139,7 +140,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     update(next: Board) {
       board = next
       lost = false
-      if (archiveKey(board, floor()) !== read.key) readArchive()
+      archive.dispatch(archiveWant(board, floor()))
       draw()
     },
     close: offError,
