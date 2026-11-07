@@ -1,3 +1,5 @@
+import { asking } from '/lib/chrome.js'
+
 /**
  * What the player means to do this frame, apart from where it came from: the keys held and the mouse's travel under
  * pointer lock produce it, and the door (`window.tower3d`) produces the same.
@@ -12,7 +14,7 @@ let turnY = 0
 
 const typing = () => {
   const el = document.activeElement
-  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || asking()
 }
 
 export function listen(canvas: HTMLCanvasElement) {

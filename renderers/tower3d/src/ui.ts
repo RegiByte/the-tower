@@ -11,7 +11,8 @@ import { drawerLabel, drawersAt, type ArchiveRead, type Drawer } from './archive
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import { defaultLimits } from '/lib/board.js'
 import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
-import { addedKey, deskVerbs, placed, type DeskRegion } from './desk-verbs.ts'
+import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
+import { verbLabel } from '/lib/cards.js'
 import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, metaOf, modelName, neighboursIn, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow } from './cards.ts'
 import { commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } from '../../../extensions/quota/client/quota.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
@@ -271,11 +272,14 @@ const heldButton = (why: string, cls: string, label: string, inner: string) =>
   `<button class="held ${cls}" aria-disabled="true" aria-label="${esc(label)}" data-tip="${esc(why)}">${inner}</button>`
 
 /**
- * A button that asks before it acts: its first press arms it, showing "sure?" with the question as its tip, and a
- * second press within a few seconds acts. A shelf page may not open `confirm()`.
+ * A button that asks before it acts: a press opens the library's dialog (`ask`) with `ask` as its question and `verb`
+ * on the button that goes ahead, and the panel acts on yes (`askedFirst` in main.ts).
  */
-const askingButton = (armed: boolean, attrs: string, label: string, tip: string, ask: string) =>
-  `<button ${attrs} data-tip="${esc(armed ? ask : tip)}">${armed ? 'sure?' : label}</button>`
+const askingButton = (attrs: string, label: string, tip: string, ask: string, verb: string) =>
+  `<button ${attrs} data-tip="${esc(tip)}" data-ask="${esc(ask)}" data-ask-verb="${esc(verb)}">${label}</button>`
+
+/** A worktree verb's name as the go-ahead button says it. */
+const goAhead = (name: string) => name.replace(/^./, (l) => l.toUpperCase())
 
 /** A panel's close: back to walking, or the panel beside the world shut. */
 const closeButton = `<button class="icon-btn x" data-act="close" aria-label="close" data-tip="close">${ICON.close}</button>`
@@ -298,15 +302,15 @@ const FRESH_DOT = '<span class="fresh"></span>'
  * The verbs extensions offer on a card, each a button, one whose words say it destroys asking first, one new to the
  * viewer (`fresh`) dotted.
  */
-const cardAddedHtml = (board: Board, c: Card, desk: DeskRegion, armed: (key: string) => boolean, fresh: (id: string) => boolean) =>
-  placed(deskVerbs(board, c, desk))
-    .map(({ action, id, k }) => {
+const cardAddedHtml = (board: Board, c: Card, desk: DeskRegion, fresh: (id: string) => boolean) =>
+  deskVerbs(board, c, desk)
+    .map(({ action, id }) => {
       const words = actionWords(board, action)
       const dot = fresh(id)
-      const attrs = `data-act="added" data-added="${esc(JSON.stringify({ k, action }))}"${words.destructive ? ' class="danger"' : ''}${dot ? ' aria-description="new"' : ''}`
+      const attrs = `data-act="added" data-added="${esc(JSON.stringify({ action }))}"${words.destructive ? ' class="danger"' : ''}${dot ? ' aria-description="new"' : ''}`
       const label = `${dot ? FRESH_DOT : ''}${esc(words.label)}`
       return words.destructive
-        ? askingButton(armed(addedKey(c, action, k)), attrs, label, words.hint ?? words.label, `${words.label}?`)
+        ? askingButton(attrs, label, words.hint ?? words.label, `${words.label}?`, words.label)
         : `<button ${attrs}${words.hint ? ` data-tip="${esc(words.hint)}"` : ''}>${label}</button>`
     })
     .join('')
@@ -315,7 +319,7 @@ const cardAddedHtml = (board: Board, c: Card, desk: DeskRegion, armed: (key: str
  * A worker's desk head: who and where, a glance at its context and cost, what extensions show of it as its region
  * `desk` holds and ranks it, and what can be done with it.
  */
-export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor | undefined, desk: DeskRegion, armed: (key: string) => boolean, fresh: (id: string) => boolean, held: HeldWhy, framed: boolean) {
+export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor | undefined, desk: DeskRegion, fresh: (id: string) => boolean, held: HeldWhy, framed: boolean) {
   const ctx = c.context
   const stats = [
     ctx !== undefined && `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
@@ -325,11 +329,11 @@ export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor 
   const acts = [
     `<button class="icon-btn" popovertarget="desk-details" aria-label="details" data-tip="everything else about ${esc(c.callsign)}">${ICON.info}</button>`,
     can(c, 'resume') && (held('resume') ? heldButton(held('resume')!, 'primary', 'Resume', `${ICON.resume} Resume`) : `<button class="primary" data-act="resume">${ICON.resume} Resume</button>`),
-    can(c, 'let-go') && (held('let-go') ? heldButton(held('let-go')!, '', 'Let go', 'Let go') : askingButton(armed(`let-go ${c.id}`), `data-act="let-go" data-of="${esc(c.id)}"`, 'Let go', `let ${c.callsign} go: ${LET_GO_MEANS}`, letGoAsk(c))),
-    can(c, 'reap') && askingButton(armed(`reap ${c.id}`), `data-act="reap" data-of="${esc(c.id)}"`, `reap ${c.resources.length}`, c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'), reapAsk(c)),
-    cardAddedHtml(board, c, desk, armed, fresh),
+    can(c, 'let-go') && (held('let-go') ? heldButton(held('let-go')!, '', 'Let go', 'Let go') : askingButton(`data-act="let-go" data-of="${esc(c.id)}"`, 'Let go', `let ${c.callsign} go: ${LET_GO_MEANS}`, letGoAsk(c), verbLabel('card', 'let-go'))),
+    can(c, 'reap') && askingButton(`data-act="reap" data-of="${esc(c.id)}"`, `reap ${c.resources.length}`, c.resources.map((r) => `${r.pid} ${r.command}`).join('\n'), reapAsk(c), 'End them'),
+    cardAddedHtml(board, c, desk, fresh),
     framed && `<button data-act="tower" data-tip="open in the tower's own view">${ICON.remote} tower</button>`,
-    can(c, 'send-home') && askingButton(armed(`kill ${c.id}`), `data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(cards, c))),
+    can(c, 'send-home') && askingButton(`data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(cards, c)), verbLabel('card', 'send-home')),
     `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
   return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}${cardLinesHtml(board, c, desk.entry)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, undefined))}</span>
@@ -435,10 +439,10 @@ export const askHtml = (c: Card) =>
   c.blocked ? `<span class="call">${esc(c.callsign)}</span> ${esc(BLOCKED_TEXT[c.blocked])}`
     : c.status === 'needs_input' ? `<span class="call">${esc(c.callsign)}</span> ${c.tool ? `asks to ${toolHtml(c.tool)}` : 'needs you'}` : ''
 
-export function shellHeadHtml(sh: Shell, floor: Floor | undefined, armed: boolean) {
+export function shellHeadHtml(sh: Shell, floor: Floor | undefined) {
   return `${swatch(floor?.color ?? NO_BAND)}<span class="call">Shell</span>
     <span class="meta" data-tip="${esc(sh.activity)}">${esc(floor?.name ?? sh.project)}/${esc(base(sh.cwd))} · ${esc(sh.activity)}</span>
-    <span class="acts">${askingButton(armed, `data-act="shell-kill" data-of="${esc(sh.id)}" class="danger"`, 'Kill', 'kill this shell', killShellAsk(floor, sh))}${closeButton}</span>`
+    <span class="acts">${askingButton(`data-act="shell-kill" data-of="${esc(sh.id)}" class="danger"`, 'Kill', 'kill this shell', killShellAsk(floor, sh), 'Kill')}${closeButton}</span>`
 }
 
 /** What a viewer opened in a drawn logbook (`openFolds`, `expandedSaid`, `openTools`), the tool calls read, and how they read its words. */
@@ -515,12 +519,10 @@ const tidyRowHtml = (r: Pick<TidyRow, 'what' | 'does' | 'title'>, button: string
 const tidyListHtml = (board: Board, f: Floor) => tidyRows(f, wallNow(), addedTidyOf(board, f)).map((r) => tidyRowHtml(r, '')).join('')
 
 /** Tidy's rows on the floor's panel, each with a button that does only that row, asked first. */
-const tidyPanelHtml = (board: Board, f: Floor, armed: (key: string) => boolean) =>
-  tidyRows(f, wallNow(), addedTidyOf(board, f)).map((r) => {
-    const call = JSON.stringify(r.call)
-    const sure = armed(`tidy ${call}`)
-    return tidyRowHtml(r, askingButton(sure, `${sure ? '' : 'class="icon-btn" '}data-tidy-call="${esc(call)}" aria-label="${esc(`${r.does}: ${r.what}`)}"`, ICON.tidy, `only this: ${r.does}`, tidyRowAsk(r)))
-  }).join('')
+const tidyPanelHtml = (board: Board, f: Floor) =>
+  tidyRows(f, wallNow(), addedTidyOf(board, f))
+    .map((r) => tidyRowHtml(r, askingButton(`class="icon-btn" data-tidy-call="${esc(JSON.stringify(r.call))}" aria-label="${esc(`${r.does}: ${r.what}`)}"`, ICON.tidy, `only this: ${r.does}`, tidyRowAsk(r), 'Tidy')))
+    .join('')
 
 /** A shell started in `place`, a floor panel's icon; held back with why while the terms daemon can't start one. */
 const shellButton = (place: ShellPlace | undefined, label: string, held: HeldWhy) =>
@@ -551,44 +553,41 @@ export function shellPickHtml(p: Plan, board: Board, first: string, held: HeldWh
 type TreeAction = Floor['worktrees'][number]['actions'][number] | Floor['branches'][number]['actions'][number]
 
 /** A verb on a worktree or kept branch, its call on the button. */
-const wtVerb = (name: string, { verb, call: c }: Exclude<TreeAction, { verb: 'discard' }>, armed: (key: string) => boolean) => {
+const wtVerb = (name: string, { verb, call: c }: Exclude<TreeAction, { verb: 'discard' }>) => {
   const call = JSON.stringify(c)
   const attrs = `data-wt-call="${esc(call)}" data-wt-verb="${verb}" data-wt-name="${esc(name)}"`
   const ask = WORKTREE_ASK[verb]
-  return ask ? askingButton(armed(`wt ${call}`), attrs, WORKTREE_VERB_NAME[verb], `${WORKTREE_VERB_NAME[verb]} ${name}`, ask(name)) : `<button ${attrs}>${WORKTREE_VERB_NAME[verb]}</button>`
+  return ask ? askingButton(attrs, WORKTREE_VERB_NAME[verb], `${WORKTREE_VERB_NAME[verb]} ${name}`, ask(name), goAhead(WORKTREE_VERB_NAME[verb])) : `<button ${attrs}>${WORKTREE_VERB_NAME[verb]}</button>`
 }
 
 /** Throwing away an at-risk worktree's work, asked first with what it loses (`discardAsk`). */
-const discardButton = (w: Floor['worktrees'][number], discard: Extract<TreeAction, { verb: 'discard' }>['call'], armed: (key: string) => boolean) => {
-  const call = JSON.stringify(discard)
-  return askingButton(armed(`wt ${call}`), `class="danger" data-discard="${esc(call)}"`, WORKTREE_VERB_NAME.discard, 'throw its work away: each tip is noted on its review thread first', discardAsk(w))
-}
+const discardButton = (w: Floor['worktrees'][number], discard: Extract<TreeAction, { verb: 'discard' }>['call']) =>
+  askingButton(`class="danger" data-discard="${esc(JSON.stringify(discard))}"`, WORKTREE_VERB_NAME.discard, 'throw its work away: each tip is noted on its review thread first', discardAsk(w), verbLabel('worktree', 'discard'))
 
 /** Opens what landing changed on a carried branch: `git range-diff` of each edited commit and its copy. */
 const landingButton = (landing: EditedRow['landing']) =>
   `<button class="icon-btn" data-landing="${esc(JSON.stringify(landing))}" aria-label="what landing changed on ${esc(landing.branch)}" data-tip="what landing changed: git range-diff of each edited commit and its copy">${ICON.diff}</button>`
 
 /** A worktree or kept branch that landed edited: what landing changed, and a press that removes only it, asked first. */
-const editedRowHtml = (r: EditedRow, armed: (key: string) => boolean) => {
+const editedRowHtml = (r: EditedRow) => {
   const call = JSON.stringify(r.call)
   const verb = r.call[0] === 'branch/delete' ? 'delete' : 'remove'
   const name = r.what.replace(/^⎇ /, '')
-  const sure = armed(`wt ${call}`)
-  return tidyRowHtml(r, landingButton(r.landing) + askingButton(sure, `${sure ? '' : 'class="icon-btn" '}data-wt-call="${esc(call)}" data-wt-verb="${verb}" data-wt-name="${esc(name)}" aria-label="${esc(`${verb} ${name}`)}"`, ICON.tidy, 'remove only this, after looking at what landing changed', WORKTREE_ASK[verb]!(name)))
+  return tidyRowHtml(r, landingButton(r.landing) + askingButton(`class="icon-btn" data-wt-call="${esc(call)}" data-wt-verb="${verb}" data-wt-name="${esc(name)}" aria-label="${esc(`${verb} ${name}`)}"`, ICON.tidy, 'remove only this, after looking at what landing changed', WORKTREE_ASK[verb]!(name), goAhead(WORKTREE_VERB_NAME[verb])))
 }
 
 /** The floor's worktrees and kept branches, each with the verbs the board offers on it. */
-const worktreesHtml = (f: Floor, places: ShellPlace[], held: HeldWhy, armed: (key: string) => boolean) => [
+const worktreesHtml = (f: Floor, places: ShellPlace[], held: HeldWhy) => [
   ...f.worktrees.map((w) => {
     const title = [...w.repos.map((r) => r.path), ...worktreeRisk(w), ...goneBases(w.repos), ...(w.state === 'carried' ? [carriedLine(w.repos)] : [])].join('\n')
     const where = w.repos[0].path
     return `<div class="wt ${w.state}" data-tip="${esc(title)}"><span class="n"><b>${esc(w.name)}</b> ${ICON.branch} ${esc(worktreeBranch(w))}</span>
-      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.state === 'carried' ? landingButton({ project: f.id, branch: worktreeBranch(w) }) : ''}${w.actions.map((a) => (a.verb === 'discard' ? discardButton(w, a.call, armed) : wtVerb(w.name, a, armed))).join('')}
+      <span class="st">${WORKTREE_STATE_NAME[w.state]}</span>${w.state === 'carried' ? landingButton({ project: f.id, branch: worktreeBranch(w) }) : ''}${w.actions.map((a) => (a.verb === 'discard' ? discardButton(w, a.call) : wtVerb(w.name, a))).join('')}
       ${w.state === 'lost' ? '' : shellButton(places.find((pl) => pl.worktree === w.name), `new shell in ${w.name}`, held)}
       ${w.state !== 'lost' && can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(where)}" aria-label="open ${esc(w.name)} in your editor" data-tip="open ${esc(where)} in a new window of your editor">${ICON.editor}</button>` : ''}</div>`
   }),
   ...f.branches.map((b) => `<div class="wt" data-tip="${esc(keptBranchLines(b).join('\n'))}"><span class="n">${ICON.branch} ${esc(b.name)}</span><span class="st">${b.absorbed ? 'merged' : b.carried ? 'landed, edited' : 'kept'}</span>${
-    b.carried ? landingButton({ project: f.id, branch: b.name }) : ''}${b.actions.map((a) => wtVerb(b.name, a, armed)).join('')}</div>`),
+    b.carried ? landingButton({ project: f.id, branch: b.name }) : ''}${b.actions.map((a) => wtVerb(b.name, a)).join('')}</div>`),
 ].join('')
 
 /** A past worker and the conversations it held, each with the way to resume it or reach who did. */
@@ -603,12 +602,12 @@ const pastHtml = (board: Board, c: Card, held: HeldWhy) =>
         : `<button class="icon-btn" data-resume="${esc(JSON.stringify(callOf(conv, 'resume')))}" aria-label="resume this conversation" data-tip="resume this conversation">${ICON.resume}</button>`}</div>`).join('')}</div>`
 
 /** Resumes every stranded worker on a floor, asked first with their names. */
-const resumeAllButton = (f: Floor, armed: (key: string) => boolean, held: HeldWhy) => {
+const resumeAllButton = (f: Floor, held: HeldWhy) => {
   const stranded = strandedOf(f)
   if (!stranded.length) return ''
   const label = `${ICON.resume} resume all <b>${stranded.length}</b> stranded`
   return held('resume') ? heldButton(held('resume')!, 'wide', `resume all ${stranded.length} stranded`, label)
-    : askingButton(armed(`resume-all ${f.id}`), `class="wide" data-resume-all="${esc(f.id)}"`, label, 'resume every worker stopped, killed or lost before it was sent home', resumeAllAsk(f, stranded))
+    : askingButton(`class="wide" data-resume-all="${esc(f.id)}"`, label, 'resume every worker stopped, killed or lost before it was sent home', resumeAllAsk(f, stranded), 'Resume all')
 }
 
 /** A floor's + new session, held back with why while it can't run. */
@@ -619,7 +618,7 @@ const spawnButton = (f: Floor, held: HeldWhy) =>
  * A floor's desk: its dirs, its shelf, who's on duty, what they left running, and what it keeps beside them folded to
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
-export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, armed: (key: string) => boolean, held: HeldWhy, tray: string | undefined) {
+export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, held: HeldWhy, tray: string | undefined) {
   const places = shellPlaces([f])
   const edited = editedRows(f)
   const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? ICON.repo : ICON.hub} ${esc(base(dir))}</span>
@@ -653,12 +652,12 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
     <div class="section eyebrow">Dirs</div>${dirs}
     ${shelf && `<div class="section eyebrow">Shelf</div><div class="shelf" style="--p:${f.color ?? NO_BAND}">${shelf}</div>`}
     <div class="section eyebrow">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
-    ${resumeAllButton(f, armed, held)}${spawnButton(f, held)}
+    ${resumeAllButton(f, held)}${spawnButton(f, held)}
     ${running && `<div class="section eyebrow">Running</div>${running}`}
-    ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy, addedTidyOf(board, f)))}</div>${tidyPanelHtml(board, f, armed)}${askingButton(armed(`tidy ${f.id}`), 'class="wide" data-tidy', 'tidy all', 'do all of it, as listed', tidyAllAsk(f, wallNow(), addedTidyOf(board, f)))}` : ''}
-    ${edited.length ? `<div class="section eyebrow" data-tip="landed as copies, some edited on the way: not in Tidy all, look first and remove each on its own">landed edited</div>${edited.map((r) => editedRowHtml(r, armed)).join('')}` : ''}
+    ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy, addedTidyOf(board, f)))}</div>${tidyPanelHtml(board, f)}${askingButton('class="wide" data-tidy', 'tidy all', 'do all of it, as listed', tidyAllAsk(f, wallNow(), addedTidyOf(board, f)), verbLabel('floor', 'tidy'))}` : ''}
+    ${edited.length ? `<div class="section eyebrow" data-tip="landed as copies, some edited on the way: not in Tidy all, look first and remove each on its own">landed edited</div>${edited.map(editedRowHtml).join('')}` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
-    ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, places, held, armed)}` : ''}
+    ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, places, held)}` : ''}
     ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded === draftsOf(f) ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, wallNow()) : ''}`
 }
 
@@ -754,10 +753,10 @@ export function docHeadHtml(f: Floor, entry: ShelfEntry, framed: boolean) {
 }
 
 /** A kept item's head in the reader: its collection, tag, floor, title, keeper and age; a new tab, Delete, close. */
-export function keptHeadHtml(f: Floor, c: FloorCollection, item: FloorItem, title: string, armed: boolean) {
+export function keptHeadHtml(f: Floor, c: FloorCollection, item: FloorItem, title: string) {
   const acts = [
     `<button data-out="/${esc(itemPath(f.id, c.id, item.id))}" data-tip="open it on its own">${ICON.remote} new tab</button>`,
-    askingButton(armed, `data-act="delete" data-of="${esc(item.id)}" class="danger"`, 'Delete', 'the file is deleted for good', deleteAsk(c, item, title)),
+    askingButton(`data-act="delete" data-of="${esc(item.id)}" class="danger"`, 'Delete', 'the file is deleted for good', deleteAsk(c, item, title), 'Delete'),
     closeButton,
   ].join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(c.label)}</span>
