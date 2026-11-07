@@ -158,6 +158,7 @@ export function regions(deps) {
     lent: { ...commandKit, terminal, bus: deps.bus },
     fills: {
       contributions: (el, id, subject, options) => contributions(el, id, subject, /** @type {{ omit?: string[] }} */ (options)),
+      // A tabs region takes the pane scope of the view it is drawn in, found by DOM ancestry: the nearest [data-view].
       tabs: (el, id, subject, options) => {
         const view = /** @type {HTMLElement | null} */ (el.closest('[data-view]'))
         const made = tabs(el, /** @type {Region} */ (declared().find((r) => r.id === id)), subject, /** @type {Record<string, Record<string, unknown>>} */ (options), view ? scopes.get(view) : undefined)
