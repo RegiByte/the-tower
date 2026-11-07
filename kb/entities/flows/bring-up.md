@@ -49,7 +49,9 @@ sequenceDiagram
 - A daemon claims its socket path on start: it refuses one that answers or is too long for a socket, and removes one
   left by a dead process ([`claimSocket`](ref:hub/src/shared/socket.ts#claimSocket)).
 - Names pick daemons ([`daemonsNamed`](ref:hub/src/machine.ts#daemonsNamed)); with none, all four. `tower down tower
-  && tower up tower` restarts the tower alone, the host and every session untouched.
+  && tower up tower` restarts the tower alone, the host and every session untouched. Bare `tower down` ends every
+  session, so while a live one is mid-turn the command names who would be cut off and stops nothing unless given
+  `--force`; naming a daemon, the host included, is asking for that one and is not refused.
 - `tower down` signals only the pid in this system's pid file, and only while that process still runs the daemon's
   script with this system's config, since pids are reused and every system runs the same scripts
   ([`bringDown`](ref:hub/src/machine.ts#bringDown)). A daemon answering without a pid file was started by hand

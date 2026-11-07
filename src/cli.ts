@@ -90,6 +90,21 @@ const towerCommand = async (verb: 'spawn' | 'resume' | 'submit', body: unknown):
 }
 
 
+const FORCE = '--force'
+
+/** Bare `tower down` ends every session: while one is mid-turn it says who, and takes `--force` to go on. */
+const refuseCuttingOff = async () => {
+  const live = await liveIds(paths)
+  if (!live.size) return
+  const midTurn = [...live].flatMap((id) => foldLog(paths.cache, logFileOf(paths, id))?.session ?? []).filter(({ facts }) => facts.turnStartedAt !== undefined)
+  if (!midTurn.length) return
+  const callsignOf = callsignsOf(readConfig(paths.config))
+  throw new CliError(
+    `tower down would end every session, cutting off ${midTurn.map((s) => callsignOf(s.header.id)).join(', ')} mid-turn`,
+    `\`tower down tower && tower up tower\` restarts the tower alone and ends no session; \`tower down ${FORCE}\` stops everything now`,
+  )
+}
+
 const USER_RUNS: Record<VerbOf<'user'>, Run> = {
   init: async (args) => {
     const [hub = process.cwd(), ...repos] = args
@@ -106,7 +121,9 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
     for (const [daemon, answer] of await bringAllUp(daemonsNamed(paths, towerPort(readConfig(paths.config)), args))) console.log(`${daemon.name}: ${answer} · ${daemon.where} · log ${daemon.log}`)
   },
   down: async (args) => {
-    for (const [daemon, result] of await bringAllDown(daemonsNamed(paths, towerPort(readConfig(paths.config)), args))) {
+    const forced = args.length === 1 && args[0] === FORCE
+    if (!args.length) await refuseCuttingOff()
+    for (const [daemon, result] of await bringAllDown(daemonsNamed(paths, towerPort(readConfig(paths.config)), forced ? [] : args))) {
       if (result instanceof Error) {
         console.error(result.message)
         process.exitCode = 1
