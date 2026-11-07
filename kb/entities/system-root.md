@@ -34,7 +34,7 @@
   `cache/facts/<id>.v8`, each log's fold checkpoint ([[fold-checkpoints]]); `cache/types/<API_VERSION>-<hash>/`, the
   declarations `tower types` copies out, one version of the code at a time ([[library]]).
 - `control.sock`, `hooks.sock` ([[host-daemon]]), `terms.sock` ([[terms-daemon]]) and `jobs.sock` ([[jobs-daemon]]).
-- `host.log`, `terms.log`, `jobs.log`, `tower.log` and `host.pid`, `terms.pid`, `jobs.pid`, `tower.pid`: what the daemons print and their
+- `host.log`, `terms.log`, `jobs.log`, `tower.log` and `host.pid`, `terms.pid`, `jobs.pid`, `tower.pid`: what the daemons print, each line dated by [`dated-log`](ref:hub/src/dated-log.ts) from the daemon's next start, and their
   pids, written when `tower up` starts them; `tower down` removes the pids.
 
 The config is read fresh by the host on every spawn and by the tower on every read of it, so edits apply without
