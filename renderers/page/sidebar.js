@@ -1,5 +1,5 @@
 import { boardSubject, callOf, can, cardSubject, crewFoldsOf, crewTreeIn, dutyOrderIn, floorSubject, goneHome, goneHomeLine, hiresBy, orderMoving, projectOfKey, workerKeyOf, workersIn } from '/lib/board.js'
-import { addedTidyOf, ATTENTION_NAME, branchLine, carriedLine, editedRows, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, gistLine, goneBases, heededAsks, heededWaits, heldActions, keptBranchLines, lampOf, LIMITS_STALE_MS, limitsFromTitle, loudest, paceLine, pairLineOf, pastCount, renderersHtml, resetLine, risky, satellitesOf, shelfKind, shelfSource, statusName, statusTitle, statusWord, strandedOf, SUBAGENT_FADE_MS, subagentTitle, tidyLine, tidyRowAsk, tidyRows, verbHint, verbLabel, WAITING_NAME, weekElapsed, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, worktreeBranch, worktreeRisk } from '/lib/cards.js'
+import { addedTidyOf, ATTENTION_NAME, branchLine, carriedLine, editedRows, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, gistLine, goneBases, heededAsks, heededWaits, heldActions, keptBranchLines, lampOf, mainUnreadHtml, LIMITS_STALE_MS, limitsFromTitle, loudest, paceLine, pairLineOf, pastCount, renderersHtml, resetLine, risky, satellitesOf, shelfKind, shelfSource, statusName, statusTitle, statusWord, strandedOf, SUBAGENT_FADE_MS, subagentTitle, tidyLine, tidyRowAsk, tidyRows, verbHint, verbLabel, WAITING_NAME, weekElapsed, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, worktreeBranch, worktreeRisk } from '/lib/cards.js'
 import { placeOnOpen } from '/lib/chrome.js'
 import { keyshortcuts } from '/lib/keys.js'
 import { addedActions, badgesOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
@@ -305,6 +305,7 @@ export async function sidebar(deps) {
   /** @param {Floor} f @param {string} dir @param {boolean} hub */
   const dirHtml = (f, dir, hub) =>
     `<div class="dir"><span class="dname" data-tip="${esc(dir)}">${hub ? ICON.hub : ICON.repo} ${esc(base(dir))}</span>
+    ${mainUnreadHtml(f, dir)}
     ${shellButtonHtml(f, dir, base(dir))}
     ${can(f, 'editor') ? `<button class="icon-btn" data-open="${esc(dir)}" data-open-project="${esc(f.id)}" aria-label="open ${esc(base(dir))} in your editor" data-tip="open ${esc(dir)} in a new window of your editor">${ICON.editor}</button>` : ''}
     ${origins[dir] ? `<a class="icon-btn" href="${esc(origins[dir])}" target="_blank" rel="noreferrer" aria-label="${esc(base(dir))} on the web" data-tip="${esc(origins[dir])}">${originIcon(origins[dir])}</a>` : ''}

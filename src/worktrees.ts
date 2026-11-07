@@ -19,10 +19,12 @@ import {
   copiesOf,
   floorBranches,
   floorWorktrees,
+  isUnread,
   parseTowerRecords,
   parseWorktreeList,
   restoreOf,
   towerTreeName,
+  wasRead,
   type BranchRead,
   type Exposure,
   type Mark,
@@ -30,7 +32,9 @@ import {
   type FloorWorktree,
   type GitWorktree,
   type LandingRead,
+  type MainRead,
   type Occupant,
+  type ReadTree,
   type RepoRead,
   type CheckoutTip,
   type TowerRecord,
@@ -194,6 +198,20 @@ const ownCommits = async (dir: string, created: string | undefined, head: string
   return ownCounts(`${dir}\0${from}\0${head}`, async () => Number(await git(dir, ['rev-list', '--count', `${from}..${head}`])))
 }
 
+const recordOf = (entry: GitWorktree, records: Map<string, TowerRecord>): TowerRecord => (entry.branch && records.get(entry.branch)) || {}
+
+/** What holds of a worktree whether or not it can be read. */
+const listedTree = (round: Round, name: string, entry: GitWorktree, record: TowerRecord) => ({
+  name,
+  path: entry.path,
+  branch: entry.branch,
+  head: entry.head,
+  base: record.base,
+  from: record.from,
+  against: againstIn(round.commits, record.base, round.originHead),
+  present: !entry.prunable || existsSync(entry.path),
+})
+
 const treeRead = async (
   round: Round,
   name: string,
@@ -202,21 +220,14 @@ const treeRead = async (
   status: string[],
   created: string | undefined,
   counted: Counted | undefined,
-): Promise<TreeRead> => {
-  const record = (entry.branch && records.get(entry.branch)) || {}
-  const against = againstIn(round.commits, record.base, round.originHead)
-  const exposure = entry.head ? await exposureOf(round, entry.head, record, against) : { unpushed: { count: 0, named: [] as string[] }, absorbed: false }
+): Promise<ReadTree> => {
+  const record = recordOf(entry, records)
+  const listed = listedTree(round, name, entry, record)
+  const exposure = entry.head ? await exposureOf(round, entry.head, record, listed.against) : { unpushed: { count: 0, named: [] as string[] }, absorbed: false }
   return {
-    name,
-    path: entry.path,
-    branch: entry.branch,
-    head: entry.head,
-    base: record.base,
-    from: record.from,
-    present: !entry.prunable,
+    ...listed,
     dirty: status.length,
     unpushed: exposure.unpushed.count,
-    against,
     absorbed: exposure.absorbed,
     ...(exposure.carried && { carried: exposure.carried }),
     own: entry.branch && entry.head ? await ownCommits(round.dir, created, entry.head) : undefined,
@@ -280,12 +291,13 @@ const worktreeList = async (dir: string) => {
  * What a read of a repo's git found that its next read may keep: `layout`, where its git lives, for telling what a
  * change touched (`staleOf`); `facts`, what every worktree's read is judged on; `main`, the main checkout's status
  * lines; `statuses`, each present tower worktree's, by name; `created`, each read branch's oldest reflog entry;
- * `counted`, each checkout's changed files, by its name (`main` for the main checkout's).
+ * `counted`, each checkout's changed files, by its name (`main` for the main checkout's). A checkout git couldn't read
+ * has none of its own, so the next read asks it again.
  */
 export type RepoParts = {
   layout: RepoLayout
   facts: RepoFacts
-  main: string[]
+  main: string[] | undefined
   statuses: Map<string, string[]>
   created: Map<string, string | undefined>
   counted: Map<string, Counted>
@@ -340,6 +352,10 @@ type RepoFacts = {
   remotes: string
   ahead: number
 }
+
+/** One checkout's read, with the parts it leaves for the next; none when it failed. */
+type MainReading = { read: MainRead; status?: string[]; counted?: Counted }
+type TreeReading = { read: TreeRead; admin?: string; status?: string[]; created?: string; counted?: Counted }
 
 /** A repo's read, and what its next read may keep; no parts for a dir that is no repo. */
 export type RepoReading = { read: RepoRead; parts?: RepoParts }
@@ -400,39 +416,59 @@ export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale
   const keptStatus = (name: string) => prior && !fresh!.trees.includes(name) && prior.statuses.get(name)
   const keptCreation = (branch: string) =>
     prior && !fresh!.branches.includes(branch) && prior.created.has(branch) && prior.facts.heads.get(branch) === heads.get(branch)
-  const [main, statuses, created] = await Promise.all([
-    prior && !fresh!.main ? prior.main : located.gitDir === located.root ? [] : statusOf(dir),
-    Promise.all(towerEntries.filter(({ entry }) => !entry.prunable).map(async ({ name, entry }) => [name, keptStatus(name) || (await statusOf(entry.path))] as const)).then((s) => new Map(s)),
-    Promise.all(
-      [...towerEntries.flatMap(({ entry }) => (entry.branch && entry.head ? [entry.branch] : [])), ...keptBranches.map(([branch]) => branch)].map(
-        async (branch) => [branch, keptCreation(branch) ? prior!.created.get(branch) : await creationOf(dir, branch)] as const,
-      ),
-    ).then((c) => new Map(c)),
-  ])
-  const layout = { ...located, admins: Object.fromEntries(towerEntries.flatMap(({ name, entry }) => (entry.prunable ? [] : [[name, adminOf(entry.path)]])).filter(([, admin]) => admin)) }
+  const creation = async (branch: string) => (keptCreation(branch) ? prior!.created.get(branch) : await creationOf(dir, branch))
   const round: Round = { dir, originHead, commits, remotes }
   const refsKept = prior !== undefined && !fresh!.repo
-  const mainEntry = entries[0]
-  const checkouts = [
-    ...(located.gitDir !== located.root && mainEntry?.head ? [{ name: MAIN_CHECKOUT, path: dir, entry: mainEntry, treeKept: prior !== undefined && !fresh!.main }] : []),
-    ...towerEntries.filter(({ entry }) => !entry.prunable && entry.head).map(({ name, entry }) => ({ name, path: entry.path, entry, treeKept: Boolean(keptStatus(name)) })),
-  ]
-  const counted = new Map(
-    (
-      await Promise.all(
-        checkouts.map(async ({ name, path, entry, treeKept }) => [name, await countedIn(round, path, entry.branch, entry.head!, records, prior?.counted.get(name), treeKept, refsKept)] as const),
-      )
-    ).filter((c): c is [string, Counted] => c[1] !== undefined),
-  )
-  const [trees, kept] = await Promise.all([
-    Promise.all(towerEntries.map(({ name, entry }) => treeRead(round, name, entry, records, statuses.get(name) ?? [], entry.branch && created.get(entry.branch), counted.get(name)))),
-    Promise.all(keptBranches.map(([branch, record]) => branchRead(round, branch, heads.get(branch)!, record, created.get(branch)))),
-  ])
-  const mainCounted = counted.get(MAIN_CHECKOUT)
-  return {
-    read: { dir, at, git: true, bases: originBases(remotes, originHead), originHead, main: { dirty: main.length, ahead: facts.ahead, ...(mainCounted && { changed: mainCounted.changed }) }, trees, kept },
-    parts: { layout, facts, main, statuses, created, counted },
+
+  const readMain = async (): Promise<MainReading> => {
+    const mainEntry = entries[0]
+    const bare = located.gitDir === located.root
+    const keptMain = prior && !fresh!.main ? prior.main : undefined
+    try {
+      const status = keptMain ?? (bare ? [] : await statusOf(dir))
+      const counted = !bare && mainEntry?.head ? await countedIn(round, dir, mainEntry.branch, mainEntry.head, records, prior?.counted.get(MAIN_CHECKOUT), keptMain !== undefined, refsKept) : undefined
+      return { read: { dirty: status.length, ahead: facts.ahead, ...(counted && { changed: counted.changed }) }, status, counted }
+    } catch (err) {
+      return { read: { unread: (err as Error).message, ahead: facts.ahead } }
+    }
   }
+
+  const readTree = async ({ name, entry }: { name: string; entry: GitWorktree }): Promise<TreeReading> => {
+    const { path: tree, branch, head, prunable } = entry
+    try {
+      if (prunable && existsSync(tree)) throw new Error(`git lists ${tree} as prunable though its folder is here: its .git file is gone or names nothing`)
+      const kept = keptStatus(name)
+      const status = prunable ? undefined : kept || (await statusOf(tree))
+      const admin = prunable ? undefined : adminOf(tree)
+      const created = branch && head ? await creation(branch) : undefined
+      const counted = !prunable && head ? await countedIn(round, tree, branch, head, records, prior?.counted.get(name), Boolean(kept), refsKept) : undefined
+      return { read: await treeRead(round, name, entry, records, status ?? [], created, counted), admin, status, created, counted }
+    } catch (err) {
+      const why = (err as Error).message
+      return { read: { ...listedTree(round, name, entry, recordOf(entry, records)), unread: why, risk: [why] } }
+    }
+  }
+
+  const [main, readings, keptReads] = await Promise.all([
+    readMain(),
+    Promise.all(towerEntries.map(readTree)),
+    Promise.all(keptBranches.map(async ([branch, record]) => [branch, await creation(branch), record] as const)),
+  ])
+  const kept = await Promise.all(keptReads.map(([branch, created, record]) => branchRead(round, branch, heads.get(branch)!, record, created)))
+  const trees = readings.map((r) => r.read)
+  const named = readings.map((r) => [r.read.name, r] as const)
+  const parts: RepoParts = {
+    layout: { ...located, admins: Object.fromEntries(named.flatMap(([name, { admin }]) => (admin ? [[name, admin]] : []))) },
+    facts,
+    main: main.status,
+    statuses: new Map(named.flatMap(([name, { status }]) => (status ? [[name, status]] : []))),
+    created: new Map([
+      ...readings.flatMap((r) => (r.read.branch && r.read.head && !isUnread(r.read) ? [[r.read.branch, r.created] as const] : [])),
+      ...keptReads.map(([branch, created]) => [branch, created] as const),
+    ]),
+    counted: new Map([...named.flatMap(([name, { counted }]) => (counted ? [[name, counted] as const] : [])), ...(main.counted ? [[MAIN_CHECKOUT, main.counted] as const] : [])]),
+  }
+  return { read: { dir, at, git: true, bases: originBases(remotes, originHead), originHead, main: main.read, trees, kept }, parts }
 }
 
 /** What a project dir's git says about the tower's worktrees and branches, without fetching: every part read afresh. */
@@ -750,13 +786,20 @@ const undo = async (made: Made[]) => {
   }
 }
 
+/** The repos of a worktree git read: all of them in every state but `unread` and `lost`. */
+const readIn = (tree: FloorWorktree) => tree.repos.filter(wasRead)
+
 /** The project's worktree `name` after a fetch, in one of the states `expected`, else a refusal that says why not. */
 const worktreeIn = (reads: RepoRead[], projectId: string, name: string, occupants: Occupant[], expected: WorktreeState[]): FloorWorktree => {
   const tree = floorWorktrees(projectId, reads, occupants, false).find((w) => w.name === name)
   if (!tree) throw new WorktreeError('not_found', `"${projectId}" has no worktree "${name}"`)
   if (expected.includes(tree.state)) return tree
+  if (tree.state === 'unread') {
+    const why = tree.repos.filter(isUnread).map((r) => `${r.path}: ${r.unread}`)
+    throw new WorktreeError('refused', `"${name}" can't be read, so nothing says what it holds. ${why.join('. ')}. Fix what git says there and the board reads it again`)
+  }
   if (tree.state === 'at-risk') {
-    const why = tree.repos.filter((r) => r.atRisk).map((r) => `${r.dir}: ${r.dirty} uncommitted, ${r.unpushed} unpushed (${r.risk.join('; ')})`)
+    const why = readIn(tree).filter((r) => r.atRisk).map((r) => `${r.dir}: ${r.dirty} uncommitted, ${r.unpushed} unpushed (${r.risk.join('; ')})`)
     throw new WorktreeError('would_lose', `"${name}" holds work found nowhere else. ${why.join('. ')}`)
   }
   if (tree.state === 'live') throw new WorktreeError('refused', `"${name}" is in use by ${tree.sessions.join(', ')}`)
@@ -772,7 +815,8 @@ const forgetLost = (dir: string, tree: string) => wholeTree(dir, ['worktree', 'r
 /** A repo's branch as a read found it: `head`, the commit it was at; `base`, recorded when the tower cut it. */
 type Read = { dir: string; branch?: string; head?: string; base?: string }
 
-type Landed = Read & Pick<Exposure, 'absorbed' | 'carried'>
+/** A repo that wasn't read has neither, so its branch stays. */
+type Landed = Read & Partial<Pick<Exposure, 'absorbed' | 'carried'>>
 
 /**
  * `branch` deleted with its config only while it is still at `head`, the commit the read judged: git refuses once it
@@ -839,11 +883,12 @@ export type Held = { dir: string; head: string; dirty: number }
  */
 export const discardable = async (project: Project, projectId: string, name: string, occupants: Occupant[], held: Held[]): Promise<CheckoutTip[]> => {
   const tree = worktreeIn(await fetchedReads(project, true), projectId, name, occupants, ['at-risk'])
-  const moved = tree.repos.filter((r) => !held.some((h) => h.dir === r.dir && h.head === r.head && h.dirty === r.dirty))
-  if (moved.length || held.length !== tree.repos.length)
+  const repos = readIn(tree)
+  const moved = repos.filter((r) => !held.some((h) => h.dir === r.dir && h.head === r.head && h.dirty === r.dirty))
+  if (moved.length || held.length !== repos.length)
     throw new WorktreeError('refused', `"${name}" moved since it was shown: ${moved.map((r) => `${r.dir} is at ${r.head?.slice(0, 7)} with ${r.dirty} uncommitted`).join(', ') || 'its repos changed'}`)
   return Promise.all(
-    tree.repos.map(async (r) => ({
+    repos.map(async (r) => ({
       dir: r.dir,
       branch: r.branch,
       base: r.base,

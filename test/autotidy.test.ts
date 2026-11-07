@@ -2,9 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
 import { board, type Floor } from '../src/bridge/board.ts'
+import { checkoutLanded, checkoutsOn, checkoutState, mainCheckouts } from '../src/bridge/checkouts.ts'
 import type { RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
 import type { Resource } from '../src/bridge/resources.ts'
-import type { Config, SessionLog } from '../src/shared/model.ts'
+import { MAIN_CHECKOUT, type Config, type SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { byKind, fresh, GOING_MS, goingHome, leftBoard, listedBefore, planOf, type Going, type Part } from '../extensions/autotidy/plan.ts'
 import { fixture } from './replay.ts'
@@ -101,6 +102,23 @@ test('what is planned is the going workers\' part of Tidy, as the settings say: 
   assert.deepEqual(planOf(floorAt([log], later, [], [left(log, 41)], []), []), { worktrees: [], branches: [], prune: [], x: {} })
   const reapOnly = planOf(floorAt([log], later, [], [left(log, 41)], going, { ...ALL, worktrees: false }), [])
   assert.deepEqual([reapOnly.worktrees, reapOnly.prune.length], [[], 1])
+})
+
+test('a worktree git could not read is neither in Tidy nor planned, and has not landed', () => {
+  const log = inTree(fixture('tool-turn'))
+  const later = endOf(log) + DAY
+  const unread = hubRead([{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: BRANCH, present: true, unread: 'fatal: bad index', risk: ['fatal: bad index'] }])
+  const f = floorAt([log], later, [], [], [{ ...GOING, sessions: [log.header.id] }], ALL, unread)
+  assert.deepEqual(f.tidy.worktrees, [])
+  assert.deepEqual(planOf(f, []).worktrees, [])
+  assert.equal(checkoutLanded(TREE, checkoutsOn(f)), false)
+  assert.deepEqual(checkoutState(TREE, checkoutsOn(f)), { is: 'live' })
+})
+
+test('the main checkouts have not landed while one could not be read', () => {
+  const unread = mainCheckouts([{ dir: HUB, at: 0, git: true, bases: [], originHead: undefined, main: { unread: 'fatal: bad index', ahead: 0 }, trees: [], kept: [] }], false)!
+  assert.deepEqual(unread.unread, [{ dir: HUB, why: 'fatal: bad index' }])
+  assert.equal(checkoutLanded(MAIN_CHECKOUT, { worktrees: [], branches: [], main: unread }), false)
 })
 
 test('a worktree Tidy lists whose branch is pushed and not merged is not planned: its checkout has not landed', () => {

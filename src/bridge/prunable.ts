@@ -3,7 +3,7 @@
  * itself, the floor's Tidy applies the list as shown (decision `tidy`).
  */
 import type { Card } from './board.ts'
-import type { FloorWorktree } from './worktrees.ts'
+import { isUnread, type FloorWorktree } from './worktrees.ts'
 
 /** A worker working this long without a word from Claude is stuck: flagged, never killed, since a long build looks the same. */
 export const STUCK_MS = 20 * 60 * 1000
@@ -19,13 +19,13 @@ export type Prune = { t: 'reap'; id: string; pid: number } | { t: 'kill'; id: st
 const idleSince = (c: Card) => Math.max(c.enteredAt, c.typedAt ?? 0)
 
 /**
- * Its worktree's work has landed: in every repo nothing uncommitted and the branch absorbed into its base, a fork with no
+ * Its worktree's work has landed: in every repo git read it, nothing uncommitted and the branch absorbed into its base, a fork with no
  * commits of its own included, or carried there as copies: a killed hire resumes, and its worktree is then removed by
  * its own press. A worker in a main checkout has no work of its own to land.
  */
 const landed = (c: Card, worktrees: FloorWorktree[]) => {
   const tree = c.worktree && worktrees.find((w) => w.name === c.worktree!.name)
-  return tree !== undefined && tree.repos.every((r) => r.present && r.dirty === 0 && (r.absorbed || r.carried))
+  return tree !== undefined && tree.repos.every((r) => !isUnread(r) && r.present && r.dirty === 0 && (r.absorbed || r.carried))
 }
 
 /**

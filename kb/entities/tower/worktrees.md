@@ -32,6 +32,19 @@ as old as the last fetch.
   ([`changedSince`](ref:hub/src/changed-files.ts#changedSince), [[changes-view]]), counted again only when its status is
   read again or where it left its base moved.
   [`landingOf`](ref:hub/src/worktrees.ts#landingOf) reads what landing changed on a carried branch.
+- **A failed read costs only its checkout.** A checkout whose own read fails (a corrupt index, a commit gone, a `.git`
+  that names nothing, a hook past the timeout) reads as [`UnreadTree`](ref:hub/src/bridge/worktrees.ts#UnreadTree) with
+  what git said, its neighbours read as usual, and the next read of the repo asks it again, so a repair shows by
+  itself. It carries no `dirty`, `unpushed` or `absorbed`: an empty status would read as clean, and a clean worktree
+  is one Tidy offers to remove. So the type makes every typed reader of those fields say what an unread one means,
+  and a stale one gets no confident 0: what a reader must go by is the state and `atRisk`. A worktree git lists as
+  `prunable` whose folder is still there, its `.git` file gone, is one too: only a missing folder is `lost`. Its state is `unread`: it offers no
+  verb, Tidy doesn't list it, it has not landed, and every verb refuses it through
+  [`worktreeIn`](ref:hub/src/worktrees.ts#worktreeIn), which `lost` alone outranks: `prune` and `recut` touch only the
+  folders that are gone, and keep a branch nothing says landed. The main checkout's read fails the same way
+  (`MainRead`), said as `unread` on the floor's `main` beside its dir, and it hasn't landed. What every checkout
+  stands on (the worktree list, the refs, a kept branch's read) still fails the repo's read, which keeps its last
+  ([[live-system]]).
 - **One worktree or branch.** The `/worktree/*` and `/branch/*` verbs: recut a lost worktree or a [[kept-branch]],
   prune a lost one, remove one that is removable or carried, delete a kept branch once absorbed or carried. A resume
   brings a gone worktree back under its name through [`restoreWorktree`](ref:hub/src/worktrees.ts#restoreWorktree),

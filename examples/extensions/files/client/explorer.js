@@ -90,8 +90,17 @@ const dirtyOf = (board, card) => {
   return tree && tree.repos.reduce((n, r) => n + r.dirty, 0)
 }
 
+/** What git said of the worker's checkout when it couldn't read it, so what it changed is unknown. */
+const unreadOf = (board, card) => {
+  const floor = board.floors.find((f) => f.id === card.project)
+  if (card.checkout === MAIN_CHECKOUT) return floor?.main?.unread?.[0]?.why
+  return floor?.worktrees.find((w) => w.name === card.checkout)?.repos.find((r) => 'unread' in r)?.unread
+}
+
 /** The tab on every worker: how many files it has changed, as its tally. */
 export function tab(board, subject) {
+  const unread = unreadOf(board, subject.value)
+  if (unread !== undefined) return { text: '?', hint: `its checkout couldn't be read: ${unread}` }
   const dirty = dirtyOf(board, subject.value)
   return dirty ? { text: String(dirty), hint: `${dirty} file${dirty === 1 ? '' : 's'} changed in its checkout` } : {}
 }
