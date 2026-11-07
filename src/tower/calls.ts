@@ -7,6 +7,7 @@
 import { z } from 'zod'
 import type { Accepted, CompiledRead, CompiledVerb } from '../bridge/extensions.ts'
 import { offOn } from '../bridge/stores.ts'
+import { thrownWords } from '../logged.ts'
 import { apiError, isApiError, type ApiError } from '../shared/api.ts'
 import { matchRead, paramsOf, type Caller, type Deprecated, type ProblemLane, type Writer } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'
@@ -58,7 +59,7 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
       answer = await handle()
     } catch (err) {
       console.error(`${a.id}: ${qualified}:`, err)
-      return failed('threw', (err as Error).message ?? String(err))
+      return failed('threw', thrownWords(err))
     }
     if (isApiError(answer)) return answer
     const checked = reply.safeParse(answer)

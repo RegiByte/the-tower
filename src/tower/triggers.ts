@@ -9,6 +9,7 @@ import { triggerBoards, boardWithout } from '../bridge/triggers.ts'
 import { isApiError } from '../shared/api.ts'
 import type { BoardTrigger, Caller, ExtensionProblem, TriggerCall } from '../shared/extensions.ts'
 import { frozen } from '../bridge/frozen.ts'
+import { thrownWords } from '../logged.ts'
 
 /** Who a board trigger's calls are made for: the tower, at a board change. */
 export const BOARD_CALLER: Caller = { t: 'tower', id: 'board', via: 'loop', within: [] }
@@ -43,7 +44,7 @@ export const runBoardTrigger = (
       asked = trigger(frozen(boards.prev), boards.next)
     } catch (err) {
       console.error('board trigger:', err)
-      return problem({ level: 'error', code: 'threw', message: `its board trigger threw: ${(err as Error).message ?? String(err)}` })
+      return problem({ level: 'error', code: 'threw', message: `its board trigger threw: ${thrownWords(err)}` })
     }
     if (!Array.isArray(asked) || !asked.every(isCall)) return problem({ level: 'error', code: 'shape', message: 'its board trigger returned no array of calls: [{verb, input}]' })
     for (const { verb, input } of asked) {
