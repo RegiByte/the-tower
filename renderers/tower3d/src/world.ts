@@ -3,14 +3,14 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { type } from '../../../src/shared/design.ts'
 import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
 import { defaultLimits, type CommandLimits } from '/lib/board.js'
-import type { Board, Shell, Today } from './api.ts'
+import type { Board, Shell, Today, Wait } from './api.ts'
 import { duration, hours, usd } from '../../../src/shared/panels.ts'
 import { WEEKLY } from '../../../src/bridge/stats.ts'
 import { buildCork } from './cork.ts'
 import { buildWall } from './gallery.ts'
 import { WORLD, clockAt, paceWords, weekElapsed } from './cards.ts'
 import { wallNow } from './clock.ts'
-import type { Level, Plan } from './layout.ts'
+import { waitingAt, type Level, type Plan } from './layout.ts'
 import { act } from './acts.ts'
 import { CORE, DOOR_WIDTH, LOBBY_HEIGHT, SHAFT_HEAD, SLAB, STOREY, WALL, bigScreens, coreFront, levelHeight, loungeSpots, rateLimitBoxes, receptionBox, type BigScreen } from './layout.ts'
 import { instance, type Models } from './models.ts'
@@ -477,8 +477,8 @@ export function boardFace(width: number, height: number) {
   return { canvas, texture }
 }
 
-/** The lobby's directory board: a floor sign per floor, top floor first, with who's on duty and who waits. */
-export function paintDirectory(dir: World['directory'], p: Plan) {
+/** The lobby's directory board: a floor sign per floor, top floor first, with who's on duty and who waits on you among `heeded`. */
+export function paintDirectory(dir: World['directory'], p: Plan, heeded: Wait[]) {
   const g = dir.canvas.getContext('2d')!
   const { width: W, height: H } = dir.canvas
   g.fillStyle = WORLD.panel
@@ -497,7 +497,7 @@ export function paintDirectory(dir: World['directory'], p: Plan) {
   const h = row * 0.82
   floors.forEach((l, i) => {
     const y = 86 + i * row
-    const waiting = l.desks.filter((d) => d.card.waiting).length
+    const waiting = waitingAt(l, heeded).length
     const aside = waiting ? `${waiting} waiting` : `${l.desks.length} on duty`
     g.font = `700 ${Math.round(h * 0.42)}px ${type.ui}`
     const asideW = g.measureText(aside).width + h * 0.6
