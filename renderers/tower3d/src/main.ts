@@ -2975,10 +2975,13 @@ const handOver = (c: Call<'submit'>) => sendCarried(async (text) => (await offer
 /** A worker hired on the carried note goes to work on it alone: you stay where you are, and the note leaves your hand once it started. */
 async function hireOnNote(project: string) {
   const note = s.carrying!
-  if (handing || hiredOn(note)) return
+  if (hiredOn(note)) return toast(HIRED_ON_NOTE)
+  if (handing) return
   const prompt = await carriedText()
   if (prompt !== undefined) hireWith(project, spawnDefaults(floorOf(project), prompt), note)
 }
+
+const HIRED_ON_NOTE = 'A worker is being hired on the draft in your hand'
 
 /** Whether a hire waiting on the tower was made on `note`: it can't be sent anywhere else meanwhile. */
 const hiredOn = (note: Held) => Object.values(hiring.state()).some((h) => h.t === 'spawning' && h.on?.project === note.project && h.on.id === note.id)
@@ -2989,7 +2992,9 @@ const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
   board: () => s.board!,
   run: async (call, body) => {
     const reply = await tower.run(call, body)
-    hiring.dispatch({ type: 'arriving', project: body.project!, name: floorOf(body.project!).name, id: reply.id })
+    const project = call[1].project!
+    hiring.dispatch({ type: 'arriving', project, name: floorOf(project).name, id: reply.id })
+    hiring.dispatch({ type: 'board', board: s.board! })
     return reply
   },
   sign: (f) => floorSignHtml(s.plan, f.id),
@@ -3019,11 +3024,15 @@ const hiring = loop({
   handlers: hiringHandlers<Held>(),
   execute: {
     run: ({ project, form }, dispatch) =>
-      void tower.run(...spawnCall(floorOf(project), form)).then(
+      void Promise.resolve().then(() => tower.run(...spawnCall(floorOf(project), form))).then(
         (reply) => dispatch({ type: 'replied', project, reply }),
         (err: Error) => dispatch({ type: 'failed', project, message: err.message }),
       ),
-    started: ({ id, on }) => void (on ? sent(on) : (s.pendingDesk = id)),
+    started: ({ id, on }, dispatch) => {
+      if (on) void sent(on)
+      else s.pendingDesk = id
+      dispatch({ type: 'board', board: s.board! })
+    },
     open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
     toast: ({ text }) => toast(text),
     draw: () => s.board && reconcile(STATIONS, s.stations, s.plan, discard),
@@ -3032,6 +3041,7 @@ const hiring = loop({
 s.hiring = hiring.state
 
 async function openSpawnOnNote(project: string, note: Held) {
+  if (hiredOn(note)) return toast(HIRED_ON_NOTE)
   const text = await carriedText()
   if (text !== undefined) openSpawn(project, { note, text })
 }
