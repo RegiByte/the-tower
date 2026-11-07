@@ -28,6 +28,7 @@
     "hub/src/shared/attend.ts#watching",
     "hub/src/shared/viewer.ts#VIEWER_KEYS",
     "hub/renderers/tower3d/src/compass.ts#pointers",
+    "hub/renderers/tower3d/src/main.ts#goToAsk",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js"
   ]
 }
@@ -81,6 +82,11 @@ only by typing, one chime covered a question and an answer alike, and every wait
 - One ringer per viewer: a framed renderer rings nothing and leaves it to the page framing it; Tower 3D leaves
   notifications and the live region to the page, and adds edge arrows toward waiting workers out of view
   ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)).
+- Tower 3D gives asks no place in the world yet. Its HUD counts them beside the waits, its tab title counts both, a
+  new one says itself in a toast, and N goes round them after the waits
+  ([`nextAttended`](ref:hub/src/shared/waits.ts#nextAttended)) to the ask's subject
+  ([`goToAsk`](ref:hub/renderers/tower3d/src/main.ts#goToAsk)): a worker's desk, else the console of the floor it is
+  on, else its title and hint in a toast. A view an ask opens on the page stands for its subject there.
 
 **Alternatives considered.**
 - Screen regexes over the rendered screen: needs a terminal per booting session in the bridge; matching writes is

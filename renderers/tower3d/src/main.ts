@@ -23,9 +23,9 @@ import type { Layout } from '../../../src/shared/regions.ts'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { pressing } from '../../../src/shared/press.ts'
 import { wireSpawn } from '../../../src/shared/spawn.ts'
-import { defaultLimits } from '/lib/board.js'
-import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf } from './api.ts'
-import { can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, loudest, nextWait, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { defaultLimits, projectOfKey } from '/lib/board.js'
+import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cutLine, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import { probedLines, type ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '../../../src/shared/attend.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '../../../src/shared/loop.ts'
@@ -344,12 +344,14 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   const sheet = keymapSheetHtml(sheetKeys(next))
   if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
   const { began } = transitions(s.board, next)
+  const asked = askTransitions(s.board, next).began.filter((a) => !heed().dismissed.has(a.key))
   s.boards++
   s.board = next
   s.self = at
   s.plan = furnish(plan(next, wallNow(), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs), (room) => standingIn(room, s.kit!.prefabs)), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
+  for (const a of asked) toast(`${a.title}, asked by ${a.cap}`, { label: 'Go', run: () => goToAsk(a) })
   rereadViewer()
   const key = structureKey(s.plan, next)
   if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
@@ -425,8 +427,9 @@ function toggleMusic() {
 let hudKey = ''
 function renderHud() {
   const waits = heededWaits(s.board!, heed())
-  document.title = waits.length ? `(${waits.length}) The Tower` : 'The Tower'
-  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits })
+  const asks = heededAsks(s.board!, heed())
+  document.title = waits.length + asks.length ? `(${waits.length + asks.length}) The Tower` : 'The Tower'
+  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits, asks: asks.length })
   if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
   drawSettings()
   const notes = claudeUntestedHtml(s.board!) ?? ''
@@ -1047,11 +1050,14 @@ async function throwAway(project: string, id: string) {
 }
 
 /** Out of the elevator on a level, facing its floor. */
-function goLevel(index: number) {
+/** To a level, in front of the elevator, `then` once there. */
+function arriveAt(index: number, then: () => void) {
   if (s.view === 'overview') leaveOverview()
   closePanels()
-  travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, lock)
+  travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, then)
 }
+
+const goLevel = (index: number) => arriveAt(index, lock)
 
 /** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
 async function sendHome(c: Card) {
@@ -1193,17 +1199,33 @@ const panelAs = <K extends Panel['kind']>(kind: K) => {
 const setPanel = (panel: Panel | undefined) => seeing.dispatch({ type: 'panel', panel })
 
 /**
- * To the desk a move key names, in the order every renderer moves in (src/shared/cards.ts): N goes round the waits you
- * haven't dismissed, each once a round.
+ * To the desk a move key names, in the order every renderer moves in (src/shared/cards.ts): N goes round the waits and
+ * the asks you haven't dismissed (`attentionOrder`), each once a round.
  */
 function goMove(m: Move) {
   if (m !== 'waiting') {
     const to = neighboursIn(s.board!, s.viewer.crewsOrder, atDesk(), heed())[m]
     return to && goDesk(to.id)
   }
-  const step = nextWait(heededWaits(s.board!, heed()), s.visited, atDesk())
+  const step = nextAttended(attentionOrder(s.board!, heed()), s.visited, { id: atDesk() })
   s.visited = step.visited
-  if (step.to) goDesk(step.to.id)
+  if (!step.to) return
+  if (isAsk(step.to)) return goToAsk(step.to)
+  goDesk((step.to as Wait).id)
+}
+
+/**
+ * Goes to what an ask is about: a worker's desk, else the floor its subject is on, its console open. The views an ask
+ * opens on the page have no place in the building yet, so its subject stands for them; an ask about nothing on a
+ * floor is said in a toast.
+ */
+function goToAsk(a: Board['asks'][number]) {
+  const id = a.subject.startsWith('card:') ? a.subject.slice('card:'.length) : undefined
+  if (id && deskOf(s.plan, id)) return goDesk(id)
+  const project = projectOfKey(s.board!, a.subject)
+  const level = project && s.plan.levels.find((l) => l.kind === 'floor' && l.floor.id === project)
+  if (level) return arriveAt(level.index, () => openSide({ kind: 'floor', id: project, tray: undefined }))
+  toast(a.hint ? `${a.title}\n\n${a.hint}` : a.title)
 }
 
 /** What you did about the waits (`Heed`): dismissed, the attention machine's, and visited by N this round. */
