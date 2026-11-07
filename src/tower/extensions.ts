@@ -68,12 +68,11 @@ export type Instance = {
   halting: boolean
   verb(name: string, input: unknown, caller: Caller): unknown
   read(name: string, req: { params: Record<string, string>; query: unknown }, caller: Caller): unknown
-  /** Its folds by subject kind, what each gets as `own` at a subject, and its settings on a floor. */
+  /** Its folds by subject kind, and what each gets as `own` at a subject. */
   folds: Record<string, Fold>
   foldOwn(at: OwnAt): FoldCtx['own']
   /** Logs one of its facts on a session through the host, its value already checked: what a writable fact's door does. */
   writeFact(session: string, name: string, value: unknown): Promise<void>
-  settingsOf(project: string): unknown
   /** Each of its stream folds stopped before a fact its step threw on, and why. */
   threw(): { stream: string; project?: string; message: string }[]
   /** Its link around `target`, a qualified verb or hook. */
@@ -492,7 +491,6 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
       folds: { ...projectedFolds(a), ...started.folds },
       foldOwn: stores.foldOwn,
       writeFact: stores.writeFact,
-      settingsOf: ctx.settingsOf,
       threw: stores.threw,
       ...(started.launch && {
         launch: (request: LaunchRequest) =>

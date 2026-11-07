@@ -225,6 +225,12 @@ const floorSettingsIn = (config: Config, id: string, schema: z.ZodType): { setti
   }
 }
 
+/** A problem for each floor that sets settings on an extension that takes none. */
+const floorsSettingNone = (config: Config, id: string): LoadProblem[] =>
+  Object.keys(config.projects)
+    .filter((project) => config.projects[project].extensions?.[id]?.settings !== undefined)
+    .map((project) => error('invalid', `projects.${project}.extensions.${id}.settings: ${id} takes no settings`))
+
 /** An extension's settings on one floor as the config stands: its own, or the system's where it sets none or its schema refuses them. */
 export const settingsOn = (config: Config, a: Pick<Accepted, 'id' | 'settings' | 'schema'>, project: string): unknown => {
   const parsed = a.schema && parsedOnFloor(config, a.id, a.schema, project)
@@ -1003,7 +1009,7 @@ export const resolve = (found: Found[], config: Config, tower: string): Resolved
           const why = !provider ? 'which no extension provides' : !meets(provider.manifest!.version, version) ? `and ${provider.found.id} provides ${provider.manifest!.version}` : `and ${provider.found.id} doesn't run`
           return { lane: 'load', level: 'info', code: 'unmet', message: `wants ${cap} ${version}, ${why}: it runs without it, ctx.deps.${cap} undefined`, path: `wants.${cap}` }
         })
-      const floors = r.schema ? floorSettingsIn(config, r.found.id, r.schema) : { settings: {}, problems: [] }
+      const floors = r.schema ? floorSettingsIn(config, r.found.id, r.schema) : { settings: {}, problems: floorsSettingNone(config, r.found.id) }
       return [
         r.found.id,
         {
