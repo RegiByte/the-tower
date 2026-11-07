@@ -53,7 +53,7 @@ const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var
 const limitName = (kind: string) => kind.replace('five_hour', '5h').replace('seven_day', '7d').replaceAll('_', ' ')
 
 /** The strip at the bottom-left: where you are, who works and the rate limits, each piece only while it says something. */
-export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[] }) {
+export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits, asks }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[]; asks: number }) {
   const duty = cardsOf(board).filter((c) => c.onDuty)
   const count = (a: Card['attention']) => duty.filter((c) => c.attention === a).length
   const state = hostState(board)
@@ -90,6 +90,7 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
   })
   return `<span class="chip hud-group">${host}${tune}${gear}</span>${sign(levelKey(here), here.name, tint(here))}
     ${waits.length ? `<button class="chip waits ${loudest(waits.map((w) => findCard(board, w.id)!))} some" data-next data-tip="next waiting (N)"><span class="lamp"></span><b>${waits.length}</b> waiting <kbd>N</kbd></button>` : ''}
+    ${asks ? `<button class="chip offered some" data-next data-tip="what extensions ask of you that you haven't dismissed: next waiting (N) goes to them after the workers waiting on you"><span class="lamp"></span><b>${asks}</b> offered</button>` : ''}
     ${crew.length ? `<span class="chip hud-group">${crew.join('')}</span>` : ''}
     ${limits.length || probes.length ? `<span class="chip hud-group hud-limits${stale ? ' stale' : ''}">${[...limits, ...asOf, ...extra, ...probes].join('')}</span>` : ''}
     ${fresh ? `<button class="chip hud-shown" data-shown data-tip="look at the newest (V)"><b>${fresh}</b> new shown <kbd>V</kbd></button>` : ''}
