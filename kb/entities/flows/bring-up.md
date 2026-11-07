@@ -2,11 +2,11 @@
 {
   "type": "flow",
   "name": "Bring-up",
-  "summary": "tower up starts the host, the terms daemon, the jobs daemon and the tower detached, each only if this system's own does not already answer where it serves, and records their pids; tower down stops what it started. Either takes daemons by name.",
+  "summary": "tower up starts the host, the terms daemon, the jobs daemon and the tower detached, each only if this system's own does not already answer where it serves, and records their pids, and says which daemons run from another checkout; tower down stops what it started. Either takes daemons by name.",
   "in": "tower",
   "reviewed": "2026-11-07",
   "involves": ["operator", "tower-cli", "host-daemon", "terms-daemon", "jobs-daemon", "tower-server"],
-  "refs": ["hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringAllUp", "hub/src/machine.ts#bringDown", "hub/src/machine.ts#bringAllDown", "hub/src/machine.ts#daemons", "hub/src/machine.ts#daemonsNamed", "hub/src/machine.ts#startedPid", "hub/src/shared/socket.ts#claimSocket", "hub/src/shared/model.ts#towerPort"]
+  "refs": ["hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringAllUp", "hub/src/machine.ts#bringDown", "hub/src/machine.ts#bringAllDown", "hub/src/machine.ts#daemons", "hub/src/machine.ts#daemonsNamed", "hub/src/machine.ts#startedPid", "hub/src/shared/socket.ts#claimSocket", "hub/src/shared/model.ts#towerPort", "hub/src/machine.ts#runningCheckouts", "hub/src/checkouts.ts#notHere"]
 }
 ---
 ```mermaid
@@ -30,6 +30,10 @@ sequenceDiagram
   M->>S: the same with terms.sock, terms.log, terms.pid
   M->>J: the same with jobs.sock, jobs.log, jobs.pid
   M->>T: the same with the tower's port, tower.log, tower.pid
+  M->>M: each running daemon's working directory against this checkout
+  opt any runs elsewhere, or its checkout can't be read
+    M-->>O: say so on stderr: up stops nothing, so it does not refuse
+  end
   O->>M: tower down [host|terms|jobs|tower...]
   M->>T: SIGTERM the pid in tower.pid, if it still runs src/tower/server.ts, then wait for it to exit
   T->>T: halt its resources in reverse (its extensions first, connections closed, ticks and watchers stopped), then exit

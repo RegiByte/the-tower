@@ -57,7 +57,7 @@ first (`tower.prompt`, [[worker-prompts]]). `kill` takes a session id or a runni
 it first has the host append `tower.kill` to the target's log. `attach` puts the
 terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `up` and `down` take daemons by name
 ([[bring-up]]). `init` and `doctor`: [[setup]]. `update` moves the checkout to the newest release (a branch it descends from is fast-forwarded) and restarts
-the tower, never the host ([[releases]]). `app` builds the Mac app from this checkout when its source changed and opens it
+the tower, never the host, and refuses while the tower or the jobs daemon runs from another checkout ([[releases]]). `app` builds the Mac app from this checkout when its source changed and opens it
 ([[macos-app]]).
 
 `types <dir>` ([`writeTypes`](ref:hub/src/types.ts#writeTypes)) needs no daemon: it builds the library's declarations

@@ -1,5 +1,6 @@
 /**
- * `tower update`: moves this checkout to the newest release, a tag `vX.Y.Z` here or on its remote. It shows the
+ * `tower update`: moves this checkout to the newest release, a tag `vX.Y.Z` here or on its remote, and refuses while
+ * the tower or the jobs daemon, which it restarts, runs from another checkout (`updateRefusal`). It shows the
  * CHANGELOG.md entries it passes, moves the checkout there (refused while tracked files have changes): a branch the
  * release descends from is fast-forwarded, anything else is checked out at the tag. It installs, rebuilds
  * Tower 3D when it was built, and restarts the tower when it was running. The host is never restarted, since that
@@ -10,7 +11,8 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { bringDown, bringUp, daemonsNamed, heldJobs, hostLive, JOBS_SCRIPT, REPO, startedPid, type Daemon } from './machine.ts'
+import { updateRefusal } from './checkouts.ts'
+import { bringDown, bringUp, checkoutHere, daemonsNamed, heldJobs, hostLive, JOBS_SCRIPT, REPO, runningCheckouts, startedPid, type Daemon } from './machine.ts'
 import { towerPort } from './shared/model.ts'
 import type { SystemPaths } from './shared/model.ts'
 import { readConfig } from './system.ts'
@@ -70,6 +72,9 @@ const sourcesOf = async (script: string): Promise<string[]> => {
 const npm = (...args: string[]) => execFileSync('npm', args, { cwd: REPO, stdio: 'inherit', env: withoutParentSession(process.env) })
 
 export async function update(paths: SystemPaths): Promise<void> {
+  const [jobs, tower] = daemonsNamed(paths, towerPort(readConfig(paths.config)), ['jobs', 'tower'])
+  const refusal = updateRefusal(await runningCheckouts([jobs, tower]), checkoutHere())
+  if (refusal) throw new CliError(refusal.message, refusal.fix)
   await git(REPO, ['fetch', '--tags', '--quiet'])
   const tags = (await git(REPO, ['tag', '--list', RELEASE, '--sort=v:refname'])).split('\n').filter(Boolean)
   const newest = tags.at(-1)
@@ -85,7 +90,6 @@ export async function update(paths: SystemPaths): Promise<void> {
   const ahead = Number(await git(REPO, ['rev-list', '--count', `${newest}..HEAD`]))
   const move = moveTo(branch.code === 0 ? branch.stdout.trim() : undefined, (await git(REPO, ['rev-parse', '--short', 'HEAD'])).trim(), ahead)
 
-  const [jobs, tower] = daemonsNamed(paths, towerPort(readConfig(paths.config)), ['jobs', 'tower'])
   const towerUp = (await tower.holder()).t === 'ours' || (await startedPid(tower)) !== undefined
   const tower3d = existsSync(path.join(REPO, 'renderers', 'tower3d', 'out'))
   if (towerUp) console.log(`tower: ${await bringDown(tower)}`)

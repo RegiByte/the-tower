@@ -16,7 +16,8 @@ import { init } from './init.ts'
 import { writeTypes } from './types.ts'
 import { update } from './update.ts'
 import { foldLog } from './checkpoints.ts'
-import { bringAllDown, bringAllUp, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf } from './machine.ts'
+import { notHere, notHereLine } from './checkouts.ts'
+import { bringAllDown, bringAllUp, checkoutHere, daemons, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, runningCheckouts } from './machine.ts'
 import { runningNamed } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import { KILLED_BY, type Session } from './bridge/facts.ts'
@@ -118,7 +119,11 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
     if (verdicts.some((v) => v.level === 'fail')) process.exitCode = 1
   },
   up: async (args) => {
-    for (const [daemon, answer] of await bringAllUp(daemonsNamed(paths, towerPort(readConfig(paths.config)), args))) console.log(`${daemon.name}: ${answer} · ${daemon.where} · log ${daemon.log}`)
+    const port = towerPort(readConfig(paths.config))
+    for (const [daemon, answer] of await bringAllUp(daemonsNamed(paths, port, args))) console.log(`${daemon.name}: ${answer} · ${daemon.where} · log ${daemon.log}`)
+    const here = checkoutHere()
+    const elsewhere = notHere(await runningCheckouts(daemons(paths, port)), here)
+    if (elsewhere.length) console.error(`tower: ${notHereLine(elsewhere, here)}`)
   },
   down: async (args) => {
     const forced = args.length === 1 && args[0] === FORCE
