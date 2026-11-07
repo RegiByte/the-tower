@@ -2166,12 +2166,16 @@ function freshLogbooks(board: Board) {
   if (read && logbookReads.reader !== readKey(read)) readReader(read)
 }
 
-/** The brief lies over the terminal, which keeps its size: a hidden terminal would refit the PTY to nothing. */
+/**
+ * The brief lies over the terminal, which keeps its size: a hidden terminal would refit the PTY to nothing. A brief
+ * read before for this worker shows at once, then is read again.
+ */
 function openBrief(id: string) {
   s.deskTab = 'brief'
   closeShown()
   hideReviewing()
   renderPanel()
+  if (deskBrief?.id === id) (drawDeskBrief(true), show('desk-brief', true))
   readDeskBrief(findCard(s.board!, id)!)
 }
 
