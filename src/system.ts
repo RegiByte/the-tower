@@ -74,7 +74,7 @@ const configLack = (config: Config): string | undefined => {
   for (const [id, project] of Object.entries(config.projects)) {
     if (!isObject(project)) return `projects.${id} must be an object with name, hub and repos`
     if (typeof project.hub !== 'string') return `projects.${id}.hub must be the path of a directory`
-    if (!Array.isArray(project.repos)) return `projects.${id}.repos must be a list of directories, [] for none`
+    if (!Array.isArray(project.repos) || !project.repos.every((repo) => typeof repo === 'string')) return `projects.${id}.repos must be a list of directories, [] for none`
   }
   return undefined
 }
