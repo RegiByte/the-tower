@@ -429,7 +429,9 @@ function toggleMusic() {
 
 let hudKey = ''
 function renderHud() {
-  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits: heededWaits(s.board!, heed()) })
+  const waits = heededWaits(s.board!, heed())
+  document.title = waits.length ? `(${waits.length}) The Tower` : 'The Tower'
+  const html = hudHtml(s.board!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits })
   if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
   drawSettings()
   const notes = claudeUntestedHtml(s.board!) ?? ''

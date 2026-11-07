@@ -63,7 +63,8 @@ pulse once, then hold. Waiting lights take the colour of the loudest wait they l
 ([`loudest`](ref:hub/src/shared/status-words.ts#loudest)), and only one that needs you pulses. A wait that begins rings
 as the settings popover sets it ([[viewer-prefs]]); framed, it rings nothing and leaves ringing to the page
 framing it ([[attention-list]]); an arrow on the screen's edge points to each worker on your floor waiting on you
-out of view ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)).
+out of view ([`pointers`](ref:hub/renderers/tower3d/src/compass.ts#pointers)). The HUD, the elevator, both directories
+and the tab's title count only the waits you heed ([[waiting-on-you]]).
 
 **The control room** ([`buildRoom`](ref:hub/renderers/tower3d/src/room.ts#buildRoom)) on each floor's deck: a video
 wall with a live tile per worker on duty, one face into the room and one over the floor, either opening the worker's
