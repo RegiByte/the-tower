@@ -96,7 +96,9 @@ sequenceDiagram
   screen, [`replay`](ref:hub/renderers/tower3d/src/main.ts#replay) and
   [`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen), until live is chosen again or Esc),
   Changes and Reviews ([[shared-panels]], drawn by [`drawChanges`](ref:hub/renderers/tower3d/src/main.ts#drawChanges))
-  and each thing the worker showed lie over the terminal, which keeps its size. While a text box has focus, keys
+  and each thing the worker showed lie over the terminal, which keeps its size. A terminal that ends while its tab
+  shows gives way to the Logbook, as the page's gives way to the Brief, and the Terminal tab then shows its last screen
+  ([`terminalEnded`](ref:hub/renderers/tower3d/src/main.ts#terminalEnded)). While a text box has focus, keys
   type into it and never move you.
 - **Leaving.** Esc in the terminal belongs to Claude; ✕, a click on the dimmed world, or Esc outside the terminal
   ([`onKey`](ref:hub/renderers/tower3d/src/main.ts#onKey)) closes the panel. Closing unwatches the stream, and the
