@@ -86,7 +86,7 @@ only by typing, one chime covered a question and an answer alike, and every wait
   new one says itself in a toast, and N goes round them after the waits
   ([`nextAttended`](ref:hub/src/shared/waits.ts#nextAttended)) to the ask's subject
   ([`goToAsk`](ref:hub/renderers/tower3d/src/main.ts#goToAsk)): a worker's desk, else the console of the floor it is
-  on, else its title and hint in a toast. A view an ask opens on the page stands for its subject there.
+  on with its title and hint in a toast (the console draws no ask), else that toast alone. A view an ask opens on the page stands for its subject there.
 
 **Alternatives considered.**
 - Screen regexes over the rendered screen: needs a terminal per booting session in the bridge; matching writes is
