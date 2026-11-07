@@ -91,7 +91,7 @@ and how its findings reach the author.
   passes `tell`. When the author was hired, the reviewer also tells the author's hirer the verdict in one line
   (`SendMessage`), so the hirer knows the review is in even if the author stalls; the author, once it has answered
   the notes, reports to its hirer what changed and whether the work is ready (the handbook's Reviews).
-- *A hire.* `tower x reviews review` calls `reviews/hire` with `by`, a spawn with `hire` like `tower hire`, so the tower logs
+- *A hire.* `tower x reviews review` calls `reviews/review`, which shares `reviews/hire`'s function, with the calling worker as `by`, a spawn with `hire` like `tower hire`, so the tower logs
   `tower.hire` in the hirer's log and the reviewer's card names who hired it; the floor's hiring limits never refuse a
   review ([[hiring-limits]]): reviews' launch contributor ([`launch`](ref:hub/extensions/reviews/server.ts#launch))
   returns `exempt: ['hiring']` and `reportsTo: <CALLSIGN>` on a spawn whose `of` is set (never on a resume or a fork),

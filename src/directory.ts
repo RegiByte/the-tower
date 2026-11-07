@@ -10,7 +10,7 @@
  * `hire` and `review` spawn with `hire`: the tower weighs the hire against the limits and logs `tower.hire` in this
  * session's log. An item is called by its tag, as every renderer shows it.
  * Agents edit kept items in their files and never delete them: throwing one away is the user's. Review threads are
- * written only through `tower note`, which appends.
+ * written only through the reviews extension's words, which append.
  */
 import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
@@ -93,7 +93,6 @@ const cardLines = (card: Card, me: string | undefined, now: number, depth = 0): 
   ]
 }
 
-/** Where work that landed is read once no worktree holds it. */
 const reportLine = (card: Card) =>
   reviewerOf(card) ? `reviews ${reviewerOf(card)}` : card.crew ? `in ${card.crew.callsign}'s crew, by ${card.crew.by}` : `hired by ${hirerName(card.hiredBy!, card.project)}`
 
@@ -489,7 +488,6 @@ const hireFloor = (board: Board, own: Floor, id: string | undefined): Floor => {
   return floor
 }
 
-/** A session's callsign as the tower names it: from the names in the config the board was read from. */
 /** `board`: read once the hire is counted, so it holds the hire's card and the callsign it runs under. */
 const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: SpawnForm): string[] => {
   const who = board.floors.flatMap((f) => f.cards).find((c) => c.id === reply.id)!.callsign
@@ -806,7 +804,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const form = { ...spawnDefaults(floor, prompt), ...hire.fields }
     const [[verbName, body], given] = spawnCall(floor, form)
     const reply = await ask<Replies['spawn']>(verbName, { ...body, ...given, by: me, hire: true })
-    if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. \`tower review\` is never limited.`)
+    if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. A review, \`tower x reviews review\`, is never limited.`)
     if (isFailure(reply)) throw new CliError(refusedLine(verbName, reply))
     console.log(hiredLines(await readBoard(), floor, reply, form).join('\n'))
   },
