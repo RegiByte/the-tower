@@ -390,7 +390,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
     ...(s.replay ? [`screen/${s.replay.session}`] : []),
   ]))
   dressReplays()
-  paintDirectory(directory, s.plan)
+  paintDirectory(directory, s.plan, heededWaits(next, heed()))
   if (s.first) {
     for (const name of CATS) {
       const cat = makeCat(s.models!, name)
@@ -439,7 +439,7 @@ function renderHud() {
 function renderElevator() {
   const inCar = s.view === 'walk' && (s.ride !== undefined || inside(carBox(s.plan), s.me.x, s.me.z))
   show('elevator', inCar)
-  if (inCar) $('elevator').innerHTML = elevatorHtml(s.plan, s.ride ? s.ride.to : s.me.level, s.ride !== undefined)
+  if (inCar) $('elevator').innerHTML = elevatorHtml(s.plan, s.ride ? s.ride.to : s.me.level, s.ride !== undefined, heededWaits(s.board!, heed()))
 }
 
 tower.get('origins').then((o) => (s.origins = o), (err: Error) => toast(`origins: ${err.message}`))
@@ -487,7 +487,7 @@ function renderPanel() {
     $('archive-count').textContent = count
     if ($('archive-list').innerHTML !== html) $('archive-list').innerHTML = html
   }
-  if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(s.plan, held)
+  if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(s.plan, held, heededWaits(board, heed()))
   if (panel.kind === 'shell-pick') keepingFocus($('shell-pick'), () => ($('shell-pick').innerHTML = shellPickHtml(s.plan, board, panel.first, held)))
   if (panel.kind === 'drawer') {
     const f = board.floors.find((f) => f.id === panel.project)
@@ -1332,6 +1332,8 @@ function dismissWait(key: string) {
   seeing.dispatch({ type: 'dismiss', key })
   renderHud()
   renderPanel()
+  renderElevator()
+  paintDirectory(directory, s.plan, heededWaits(s.board!, heed()))
 }
 
 function chooseRing(ring: Ring) {

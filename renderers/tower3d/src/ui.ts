@@ -17,7 +17,7 @@ import { commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } from '..
 import { MOVE_COMMAND, chordLabel, keysLabel } from '../../../src/shared/keymap.ts'
 import { ICON, SHELF_ICON, originIcon, withIcons } from '../../../src/shared/icons.ts'
 import { wallNow } from './clock.ts'
-import type { Level, Plan } from './layout.ts'
+import { waitingAt, type Level, type Plan } from './layout.ts'
 import { noteTitle } from './notes.ts'
 import { gameTitle } from './arcade.ts'
 import { gameItem, gamePath, gamesOf } from './games.ts'
@@ -247,9 +247,9 @@ export function promptHtml(act: Act, board: Board, offers: Offer[], marked: numb
   return head && `${head}${offers.length ? `<div class="offers">${offersHtml(offers, marked)}</div>` : ''}`
 }
 
-export function elevatorHtml(p: Plan, here: number, riding: boolean) {
+export function elevatorHtml(p: Plan, here: number, riding: boolean, heeded: Wait[]) {
   const rows = [...p.levels].reverse().map((l) => {
-    const waits = l.kind === 'floor' ? l.desks.filter((d) => d.card.waiting).map((d) => d.card) : []
+    const waits = waitingAt(l, heeded)
     return `<button class="lift-row${l.index === here ? ' here' : ''}" style="--p:${tint(l)}" data-ride="${l.index}" ${riding ? 'disabled' : ''}>
       <span class="num">${levelKey(l)}</span><span class="name">${esc(l.name)}</span>${waits.length ? `<span class="chip ${loudest(waits)} some"><span class="lamp"></span><b>${waits.length}</b></span>` : ''}</button>`
   }).join('')
@@ -686,10 +686,10 @@ export function archiveListHtml(board: Board, f: Floor, read: ArchiveRead | unde
 }
 
 /** Every floor and who's on it: a click takes you there. */
-export function directoryHtml(p: Plan, held: HeldWhy) {
+export function directoryHtml(p: Plan, held: HeldWhy, heeded: Wait[]) {
   const floors = p.levels.filter((l) => l.kind === 'floor').reverse()
   const body = floors.map((l) => {
-    const waits = l.desks.filter((d) => d.card.waiting).length
+    const waits = waitingAt(l, heeded).length
     const count = `<small>${waits ? `<b class="waits">${waits} waiting</b> · ` : ''}${l.desks.length} on duty</small>`
     return `<div class="go" data-go="${l.index}">${sign(levelKey(l), l.name, tint(l), count)}</div>
       <div class="cards">${workerCards(l.desks.map((d) => d.card))}
