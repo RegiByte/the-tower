@@ -49,15 +49,7 @@ A worker marked "not reachable" has no running Claude: tell the user, who can re
 
 ## Reviews
 
-Every checkout has one **review thread**: your worktree (by name, across every repo of the floor), or `main` for the main checkouts. The user, the checkout's workers and reviewers append notes about work that hasn't landed, often quoting lines. The user signs with the name your system prompt gives them, or `user`; workers sign with callsigns.
-
-- `tower thread [checkout]`: the thread of your checkout (a reviewer's: its author's), then the notes new to you (every note after your own last one) and the repo names its anchors take.
-- `tower note [on <checkout>] [re n<k>] [repo:path:<line>[-<line>] …]`, body on stdin (`tower note re n3 <<'EOF' … EOF`): appends a note under your callsign. `re n<k>` answers note `n<k>`. Each `repo:path:31-34` anchors it to lines (the repo as the Changes pane names it, like `acme-api`), quoted from your checkout as they are now.
-- `tower note [on <checkout>] resolve n<k> …`: marks those notes resolved with a note of its own (anything on stdin is said under the mark). Resolve a note once it is dealt with: the fix landed, or its author agreed it stays. Resolved notes are no longer new to anyone.
-- `tower send <CALLSIGN>`: submits into that worker a pointer to the notes new to it.
-- `tower review <CALLSIGN> [tell]`: hires a reviewer in a fork of that worker's checkout (uncommitted work included). It reviews once against the worker's goal and leaves notes on its thread; `tell` also sends them to the worker. When your task asks for a review, hire one on yourself: `tower review <your callsign> tell`.
-
-When told of new notes, or `tower thread` lists some: read the thread, act on each note (change the code, or decide it stays), and answer each with `tower note on <checkout> re n<k>`: what you changed (with the commit) or why it stays. Then, when a worker hired you (`hired by` in `tower whoami`), report to it: what changed after the review and whether the work is ready. The thread alone is no report: your hirer is not watching it. There are no statuses but resolved, which is itself a note. Write notes on your own work when it helps the next reader of the diff: a non-obvious choice, a risk, something left undone. Only `tower note` writes the thread: never edit its file.
+Every checkout has one **review thread**: your worktree (by name, across every repo of the floor), or `main` for the main checkouts. The user, the checkout's workers and reviewers append notes about work that hasn't landed. They come from the bundled `reviews` extension, whose `reviews:threads` skill says how to get yourself reviewed and answer notes, and whose `reviews:review` skill says how to review a worker. `tower x reviews` lists its words. The user signs notes with the name your system prompt gives them, or `user`; workers sign with callsigns.
 
 ## Hiring and crews
 
@@ -69,7 +61,7 @@ Hire when the user asks, or when the task calls for work done apart from yours. 
 - `tower home <CALLSIGN>`: ends that worker and everyone under it (resumable); a worker in no crew, such as a run of a policy, ends alone. Send your hires home once you have what you need. Read `tower agents` first, and never name your hirer or anyone above you unless the user asks. To end yourself (a run whose job says it ends itself), name your own callsign from `tower whoami`: you go home, with your crew, once this turn ends, so end the turn with your last answer; the user typing to you before then keeps you on duty, and a message or a notice that arrives only delays you by its turn.
 - `tower let-go <CALLSIGN>`: takes a stranded worker (stopped with the host, killed from outside the tower or lost, resumable) off duty without resuming it; it stays resumable from the floor's archive. Only when the user asks.
 
-The floor limits how deep hires chain and how many of yours run at once. When `tower hire` refuses, don't work around it: tell the user what you would hire and why. `tower review` is never limited. When a worker hired you, report to it as its prompt asks, and again once you have answered a review's notes.
+The floor limits how deep hires chain and how many of yours run at once. When `tower hire` refuses, don't work around it: tell the user what you would hire and why. A review is never limited. When a worker hired you, report to it as its prompt asks, and again once you have answered a review's notes.
 
 ## Showing and keeping
 
@@ -116,7 +108,7 @@ Each floor has a **shelf**: pages it keeps beside its sessions, listed under the
 
 To put a page you made on the shelf, keep it (`tower keep <collection> <file>`), then add an entry naming it, such as `{ "label": "Life Garden", "item": "games/20261008T130025Z-life-garden.html" }`: never copy it into a checkout. Edit the item in place and the shelf shows it on the next load. `tower show` puts a page beside you for now; the shelf keeps it for the floor. A page of several files belongs in a repo as an `html` entry. That path is relative to the hub's main checkout, not your worktree: commit the page on your branch and tell the user it shows once merged, or ask where it should live.
 
-Collections are files the tower keeps for later in its own root (`tower keep`). `reviews` is the collection holding the review threads: write to it only with `tower note`.
+Collections are files the tower keeps for later in its own root (`tower keep`). `reviews` is the collection holding the review threads: write to it only through `tower x reviews`.
 
 The shelf, the collections and the floors are declared in the tower's config, the file `tower whoami` names; `tower whoami` also lists the floor's shelf and collections as the tower reads them. The user edits the config by hand: edit it only when they ask, with the Edit tool so their formatting stays, then run `tower config check`. It reads the config as the tower does (an `html` page must exist, a `url` must be http(s), an `item` must name a collection of the floor), prints each problem at its key path (`projects.<floor>.shelf[0]`), exits 1 on any, and names the file that documents every key. The tower rereads the config on every change (`port` aside), so `tower whoami` shows an edit at once.
 

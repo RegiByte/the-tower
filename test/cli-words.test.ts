@@ -145,6 +145,18 @@ test('printing names a string or lines, and a field the reply left out prints no
   assert.equal(printedOf({}, 'said'), undefined)
 })
 
+test("reviews' old words rewrite into its words, the note's grammar into flags", () => {
+  const typed = (name: string, ...words: string[]) => aliased(ALIASES[name], name, words).args.join(' ')
+  assert.equal(typed('note'), 'reviews note')
+  assert.equal(typed('note', 're', 'n3'), 'reviews note --re 3')
+  assert.equal(typed('note', 'on', 'odin-1', 're', '3', 'lab:src/a.ts:1-9', 'lab:b.ts:2'), 'reviews note --on odin-1 --re 3 --at lab:src/a.ts:1-9 --at lab:b.ts:2')
+  assert.equal(typed('note', 'resolve', 'n3', 'n4'), 'reviews resolve 3 4')
+  assert.equal(typed('note', 'on', 'odin-1', 'resolve', 'n3'), 'reviews resolve 3 --checkout odin-1')
+  assert.equal(typed('thread', 'odin-1'), 'reviews thread odin-1')
+  assert.equal(typed('send', 'ODIN-1'), 'reviews send ODIN-1')
+  assert.equal(typed('review', 'ODIN-1', 'tell'), 'reviews review ODIN-1 --tell')
+})
+
 test('an old word rewrites into its word under tower x and says so', () => {
   assert.deepEqual(aliased({ now: 'reviews note', args: (words) => words.map((w) => w.replace(/^n/, '--re=')) }, 'note', ['n3']), { args: ['reviews', 'note', '--re=3'], line: 'tower note n3 is tower x reviews note --re=3; the old word goes at 2.0' })
 })

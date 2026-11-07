@@ -35,7 +35,7 @@ answer, and a next run reading its predecessors would find no handoff note.
   in the session's own log, as `tower show` does ([[agent-show]]): no host change. A bare `tower home` stays a usage error, so ending oneself
   takes reading one's callsign (`tower whoami`). Naming anyone else is that worker's `send-home`, unchanged ([[crews]]).
 - *Folded, not stored.* The fold sets `facts.leaveAt`; a later `prompt.submit` from a user
-  origin clears it ([`USER_ORIGINS`](ref:hub/src/bridge/conversation.ts#USER_ORIGINS), a worker's `tower send` excepted),
+  origin clears it ([`USER_ORIGINS`](ref:hub/src/bridge/conversation.ts#USER_ORIGINS), a worker's `tower x reviews send` excepted),
   so someone typing to the worker keeps it on duty. Any other prompt, a peer's message, a task notification or a
   cross-session notice, leaves it set: such a prompt is often delivered as the turn ends, and a leave it cleared was
   never armed again. The worker answers it and goes when that turn ends, or, arriving before the sweep sees its turn

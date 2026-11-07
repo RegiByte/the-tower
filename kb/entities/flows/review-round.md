@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-11-07",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root"],
-  "refs": ["hub/src/directory.ts#cardNamed", "hub/src/tower/dispatch.ts#hired", "hub/src/directory.ts#threadSaid", "hub/extensions/reviews/server.ts#unreviewable", "hub/extensions/reviews/server.ts#launch", "hub/extensions/reviews/client/reviews.ts#sendText", "hub/extensions/reviews/client/reviews.ts#unseenBy", "hub/src/tower/dispatch.ts#spawnCut", "hub/extensions/reviews/server.ts#append", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
+  "refs": ["hub/extensions/reviews/server.ts#workerOf", "hub/src/tower/dispatch.ts#hired", "hub/extensions/reviews/server.ts#said", "hub/extensions/reviews/server.ts#unreviewable", "hub/extensions/reviews/server.ts#launch", "hub/extensions/reviews/client/reviews.ts#sendText", "hub/extensions/reviews/client/reviews.ts#unseenBy", "hub/src/tower/dispatch.ts#spawnCut", "hub/extensions/reviews/server.ts#append", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/mod/skills/review/SKILL.md", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
 ```mermaid
@@ -16,35 +16,35 @@ sequenceDiagram
   participant T as [[tower-server]]
   participant H as [[host-daemon]]
   participant R as [[system-root]]
-  A->>M: tower review <CALLSIGN> [tell]
+  A->>M: tower x reviews review <CALLSIGN> [--tell]
   M->>T: GET /board: the author's card
   M->>T: POST /reviews/hire {project, of: CALLSIGN, by: hirer, tell?}
-  T->>T: reviews: tower/spawn {cut: {from: checkout}, prompt: /tower:review <CALLSIGN> [tell], x: {reviews: {of}}, by, hire: true}
+  T->>T: reviews: tower/spawn {cut: {from: checkout}, prompt: /reviews:review <CALLSIGN> [tell], x: {reviews: {of}}, by, hire: true}
   T->>T: reviews' launch: reportsTo CALLSIGN, exempt hiring, so the limits skip it
   T->>T: fork: a worktree per repo from a snapshot of the author's checkout
   T->>H: spawn in the fork, its facts first (tower.x.reviews.of, tower.exempt, tower.reports-to), started on the review skill
   T->>H: fact tower.hire {id: reviewer} in the hirer's log
   H->>R: h event in the hirer's log
   Note over H: the reviewer reads the goal and the diff, runs checks in its fork
-  H->>T: reviewer: tower note on <checkout> repo:path:lines (one per finding)
+  H->>T: reviewer: tower x reviews note --on <checkout> --at repo:path:lines (one per finding)
   T->>R: reviews/append: the next n on reviews/<checkout>.md
-  H->>M: reviewer (with tell): tower send <CALLSIGN>
+  H->>M: reviewer (with tell): tower x reviews send <CALLSIGN>
   M->>T: POST /submit {id: author, text: sendText(...)}
   T->>H: the pointer typed into the author's composer
   Note over H: reviewer, when the author was hired: SendMessage the author's hirer the verdict
-  A->>T: tower note on <checkout> re n<k> (one answer per note)
+  A->>T: tower x reviews note --on <checkout> --re <k> (one answer per note)
   T->>R: reviews/append
   Note over A: when hired: SendMessage its hirer what changed and whether it is ready
 ```
 
-- **Who starts it.** Any worker with `tower review <CALLSIGN>`, or the user from the card's Review, the reviews
+- **Who starts it.** Any worker with `tower x reviews review <CALLSIGN>`, or the user from the card's Review, the reviews
   extension's action. It is offered only when the worker has a conversation, is no reviewer itself, its checkout's
   work goes on and every dir of its floor is a git repo
   ([`unreviewable`](ref:hub/extensions/reviews/server.ts#unreviewable), which `reviews/hire` refuses with). The
   action's call has no `tell`: the reviewer's notes then wait on the thread for the user, who sends them from the
-  Reviews panel. `tower review ... tell` swaps the prompt for one that makes the reviewer send them itself. The
-  tower command finds the author on the board, else in the floors' archives
-  ([`cardNamed`](ref:hub/src/directory.ts#cardNamed), [[board-archive]]).
+  Reviews panel. `tower x reviews review ... --tell` swaps the prompt for one that makes the reviewer send them itself. The
+  verb finds the author on the floor it names, else on any floor or among the cards the board leaves out
+  ([`workerOf`](ref:hub/extensions/reviews/server.ts#workerOf), [[board-archive]]).
 - **The fork, the pair and the thread** are [[reviewer]]'s and [[review-threads]]': the reviewer works in a fork of
   the author's checkout ([`fork`](ref:hub/src/worktrees.ts#fork); a failed spawn rolls the cut back,
   [`spawnCut`](ref:hub/src/tower/dispatch.ts#spawnCut)), the pair is logged at its spawn ([`launch`](ref:hub/extensions/reviews/server.ts#launch)), and notes are
@@ -55,11 +55,11 @@ sequenceDiagram
   is typed into the author's composer, so the author must be at it (the card's `submit` call). To a hired
   author it ends with whom to report to once the notes are answered: its hirer (`card.hiredBy`).
 - **One round.** The reviewer stops after delivering; a re-review is a new hire. The author answers with
-  `tower note on <checkout> re n<k>`; a note once dealt with is resolved by a note marking it
-  (`reviews/resolve`, `tower note resolve n<k>`), so it no longer counts as new ([[review-threads]]).
+  `tower x reviews note --on <checkout> --re <k>`; a note once dealt with is resolved by a note marking it
+  (`reviews/resolve`, `tower x reviews resolve <k>`), so it no longer counts as new ([[review-threads]]).
 - **The loop closes at the hirer.** When the author was hired, the reviewer tells the author's hirer its verdict in
   one line, and the author, once it has answered every note, reports to its hirer what changed and whether the work
   is ready: the thread alone reaches no one who isn't reading it (the `review` skill and the handbook's Reviews). The reviewer reports to its author, so sending the author home sends it too
   ([[crews]]); once the checkout's work lands, [[tidy]] files the thread.
-- **Failure.** `tower review` fails when `reviews/hire` refuses, saying which of those is missing, when the tower is down, or when the worker
+- **Failure.** `tower x reviews review` fails when `reviews/hire` refuses, saying which of those is missing, when the tower is down, or when the worker
   was not started by the tower (no `TOWER_SESSION_ID` or `TOWER_HOOKS_SOCKET`).

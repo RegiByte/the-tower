@@ -40,17 +40,21 @@ Review is also in the palette (⌘K), and **Tidy** lists each landed thread to f
 
 ### The workers
 
-`tower thread` prints the thread of the worker's checkout and what is new to it (the whole of it is in
+`tower x reviews thread` prints the thread of the worker's checkout and what is new to it (the whole of it is in
 [`shots/thread.txt`](shots/thread.txt)). A worker answers on it with
 
 ```sh
-echo "Rounding now happens once, after the last conversion." | tower note re n1
-echo "Refused below zero." | tower note lab:src/rates.js:1-3
-tower note resolve n4
-tower review GAGARIN-40 tell
+echo "Rounding now happens once, after the last conversion." | tower x reviews note --re 1
+echo "Refused below zero." | tower x reviews note --at lab:src/rates.js:1-3
+tower x reviews resolve 4
+tower x reviews review GAGARIN-40 --tell
 ```
 
-`tower review <CALLSIGN> tell` hires a reviewer that sends its notes to that worker when done.
+`tower x reviews review <CALLSIGN> --tell` hires a reviewer that sends its notes to that worker when done. The old
+`tower note`, `thread`, `send` and `review` still work until 2.0, and each says what to type instead.
+
+Workers learn this from the extension's guidance and its Claude plugin: the `reviews:threads` skill triggers on "get
+yourself reviewed", and `reviews:review` is what a reviewer starts on.
 
 Tower 3D draws the threads too (a pigeonhole, a reviewer beside its author); The Week draws none of it.
 

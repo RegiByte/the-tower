@@ -1545,7 +1545,7 @@ test("server: the reviews extension holds the threads under its own names, and t
   const refused = await post('collection/create', { project: 'desk', collection: 'reviews', name: 'by hand', ext: 'md', content: '# x' })
   assert.deepEqual([errorCode(refused), JSON.parse(refused.body).message], ['refused', 'reviews owns reviews: use reviews/append'])
   const said = JSON.parse((await get(`/reviews/said/desk?checkout=odin-1&reader=${AUTHOR}&sender=Ana`)).body)
-  assert.deepEqual([said.unseen, said.send], [[3, 4], `Review notes from Ana (n3, n4) on checkout odin-1: read the thread with \`tower thread odin-1\`, act on them, and answer each with \`tower note on odin-1 re n<k>\` (the reply on stdin).`])
+  assert.deepEqual([said.unseen, said.send], [[3, 4], `Review notes from Ana (n3, n4) on checkout odin-1: read the thread with \`tower x reviews thread odin-1\`, act on them, and answer each with \`tower x reviews note --on odin-1 --re <k>\` (the reply on stdin).`])
 })
 
 test("server: an archived card carries the extensions' parts and the old fields LEGACY copies, as the board's cards do", async () => {
@@ -1608,7 +1608,7 @@ test("server: reviews/hire starts a reviewer in a fork of its author's checkout,
   const hired = JSON.parse((await post('reviews/hire', { project: 'lab', of: author.callsign.toLowerCase(), by: SESSION, tell: true })).body) as Replies['spawn']
   assert.equal(hired.t, 'spawned')
   const [header, ...events] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${hired.id}.jsonl`), 'utf8'), (log) => log.includes('"o"'))).trim().split('\n').map((line) => JSON.parse(line))
-  assert.deepEqual(header.argv.slice(-2), ['--', `/tower:review ${author.callsign} tell`])
+  assert.deepEqual(header.argv.slice(-2), ['--', `/reviews:review ${author.callsign} tell`])
   assert.deepEqual(events.slice(0, 3).map(([, code, fact]) => [code, fact]), [
     ['h', { hook_event_name: 'tower.x.reviews.of', value: author.callsign }],
     ['h', { hook_event_name: 'tower.exempt', from: 'hiring', by: 'reviews' }],
@@ -1633,6 +1633,27 @@ test("server: reviews/hire starts a reviewer in a fork of its author's checkout,
   const again = await post('reviews/hire', { project: 'lab', of: cardIn(hiredBoard, hired.id)!.callsign, by: SESSION })
   assert.equal(errorCode(again), 'refused')
   assert.match(JSON.parse(again.body).message, /'s work can't be reviewed: it has no conversation yet$/)
+})
+
+test("server: reviews' words sign with their calling worker, default to its thread, and say what they did", async () => {
+  const asWorker = { 'tower-session': LAB_AUTHOR, 'tower-client': 'cli' }
+  const said = async (verb: string, input: unknown) => {
+    const reply = await post(verb, input, asWorker)
+    assert.equal(reply.status, 200, reply.body)
+    return (JSON.parse(reply.body) as { said: string; n: number })
+  }
+  const noted = await said('reviews/note', { project: 'lab', on: 'worded', body: 'From a word.' })
+  assert.match(noted.said, new RegExp(`^Noted as n${noted.n} on the thread of checkout worded: `))
+  assert.match((await said('reviews/note', { project: 'lab', on: 'worded', re: noted.n, body: 'An answer.' })).said, new RegExp(`answering n${noted.n}`))
+  assert.match((await said('reviews/resolve', { project: 'lab', checkout: 'worded', notes: [noted.n] })).said, new RegExp(`^Resolved n${noted.n} with n`))
+  const thread = await request(`/reviews/thread/lab?checkout=worded`, { headers: asWorker })
+  assert.equal(thread.status, 200, thread.body)
+  assert.match((JSON.parse(thread.body) as { said: string }).said, /From a word\.[\s\S]*Nothing new to you since your last note\.[\s\S]*A note's anchors name/)
+  assert.equal(errorCode(await post('reviews/note', { project: 'lab', on: 'worded', body: 'No worker.' })), 'refused')
+  assert.equal(errorCode(await post('reviews/note', { project: 'lab', on: 'worded', at: ['nonsense'], body: 'x' }, asWorker)), 'invalid')
+  assert.match((await post('reviews/note', { project: 'lab', on: 'worded' }, asWorker)).body, /needs its body on stdin/)
+  assert.equal(errorCode(await post('reviews/send', { project: 'lab', to: 'NOBODY-1' }, asWorker)), 'not_found')
+  assert.equal(errorCode(await post('reviews/review', { project: 'lab', of: 'NOBODY-1' }, asWorker)), 'not_found')
 })
 
 test("server: tower/spawn.gate is answered by the core's hiring limits first, then by its answerers on spawn and resume, the first refusal naming its gate; a failed answer is a problem and the worker starts; a hook nobody answers on a floor is the core's badge there", async () => {
