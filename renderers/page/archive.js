@@ -31,20 +31,33 @@ export function archive(deps) {
   const hold = (c) => void held.set(c.id, c)
 
   /**
-   * The floors' archives this page has read, by project: the `archiveKey` each was read at, and its cards once read.
-   * @type {Map<string, { key: string, cards?: Card[] }>}
+   * The floors' archives this page has read, by project: the `archiveKey` each was read at, its cards once read, and
+   * the read itself, until one fails.
+   * @type {Map<string, { key: string, cards?: Card[], read?: Promise<unknown> }>}
    */
   const archives = new Map()
 
-  /** Reads a floor's archive, keeping the cards read before until it lands; a read a later one overtook is dropped. @param {string} project */
+  /** Reads a floor's archive, keeping the cards read before until it lands; a read a later one overtook is dropped and waits for that one. @param {string} project */
   function readArchive(project) {
-    /** @type {{ key: string, cards?: Card[] }} */
+    /** @type {{ key: string, cards?: Card[], read?: Promise<unknown> }} */
     const reading = { key: archiveKey(board(), /** @type {Floor} */ (floorOf(project))), cards: archives.get(project)?.cards }
     archives.set(project, reading)
-    return tower.archive(project).then(
-      (cards) => archives.get(project) === reading && ((reading.cards = cards), render()),
-      (err) => archives.get(project) === reading && toast(`The archive of ${project} can't be read: ${err.message}`),
+    const overtaken = () => archives.get(project) !== reading
+    reading.read = tower.archive(project).then(
+      (cards) => (overtaken() ? archives.get(project)?.read : ((reading.cards = cards), render())),
+      (err) => {
+        if (overtaken()) return archives.get(project)?.read
+        reading.read = undefined
+        toast(`The archive of ${project} can't be read: ${err.message}`)
+      },
     )
+    return reading.read
+  }
+
+  /** The read of a floor's archive as this board stands: the one made at its `archiveKey`, else a new one. @param {Floor} f */
+  const readCurrent = (f) => {
+    const held = archives.get(f.id)
+    return (held?.key === archiveKey(board(), f) && held.read) || readArchive(f.id)
   }
 
   /** Reads again every archive held whose floor's archive moved since. */
@@ -57,7 +70,7 @@ export function archive(deps) {
 
   /** A card by id, reading every floor's archive on a miss: for an id the board may have left out. @param {string} id */
   async function lookUp(id) {
-    if (!findCard(id)) await Promise.all(board().floors.filter((f) => f.archived && !archives.get(f.id)?.cards).map((f) => readArchive(f.id)))
+    if (!findCard(id)) await Promise.all(board().floors.filter((f) => f.archived).map(readCurrent))
     return findCard(id)
   }
 

@@ -279,7 +279,7 @@ and a framed document's section are the same thing.
   drawn and hidden, each told `visible(false)` and never a close it didn't get, so a worker is as it was left when
   gone back to (its tab, its panes' scroll, its pick, its terminal streaming); a showing's tab is kept across workers
   up to eight. A worker the board left is a read subject the page holds
-  ([`archive`](ref:hub/renderers/page/archive.js#archive)). The grid
+  ([`archive`](ref:hub/renderers/page/archive.js#archive)), the one on screen included. The grid
   ([`examples/extensions/grid`](ref:hub/examples/extensions/grid/extension.json)) proves it: reloaded at its
   location, its cells and head toggle kept in its state, each cell (since 1.112) its own region `card.cell`, which
   holds `tower/card` at cell scale with the `head` option the toggle sets. A view is told the `scale` of the region it
