@@ -34,7 +34,7 @@
     "hub/src/bridge/legacy.ts#LEGACY_FIELDS",
     "hub/src/shared/waits.ts#attentionOrder",
     "hub/src/shared/api.ts#spawnProblems",
-    "hub/src/directory.ts#said",
+    "hub/extensions/policies/server.ts#runNow",
     "hub/src/mod/skills/handbook/SKILL.md",
     "hub/test/policies.test.ts",
     "hub/test/server.test.ts"

@@ -22,7 +22,6 @@
     "hub/src/tower/dispatch.ts#inBurst",
     "hub/src/tower/dispatch.ts#keyedBy",
     "hub/src/shared/api.ts#VERBS",
-    "hub/src/directory.ts#withBy",
     "hub/test/stats.test.ts"
   ],
   "links": [
