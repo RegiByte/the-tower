@@ -1211,6 +1211,7 @@ const mainRegion = regions({
   unshown: () => unshown,
   mainPane: () => viewing('view')?.location.pane,
   gone: () => goHome(),
+  left: () => void subjectLeft(),
   bus,
 })
 /** A floor's trays, a view per collection (`floor.trays`), mounted by the main pane's region code and placed in the sidebar's paint. */
@@ -1832,6 +1833,17 @@ function linkHash(subject) {
 async function opening(named) {
   if (named.t !== 'lookup') return go(named)
   go((await lookUp(named.id)) ? { t: 'view', location: named.location } : HOME)
+}
+
+/**
+ * What the main pane shows left what the page holds. A worker that left the board is in its floor's archive once it
+ * has gone home or its day has ended, so its view stays while that is read and draws the card the read lands; the page
+ * goes home when no archive holds it, or for any other subject, unless the viewer has moved on.
+ */
+async function subjectLeft() {
+  const id = selected()
+  if (id && (await lookUp(id))) return
+  if (selected() === id) goHome()
 }
 
 /** Every view writes its own hash in place, so the hash changes only by a link, the history or the address bar. */

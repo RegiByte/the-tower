@@ -46,6 +46,7 @@ import { menu } from './menu.js'
  *   unshown: () => ReadonlySet<string>,
  *   mainPane: () => Pane | undefined,
  *   gone: () => void,
+ *   left: () => void,
  *   bus: Bus,
  * }} RegionsDeps
  */
@@ -79,7 +80,7 @@ const tabKey = (view, subject) => `${view}|${subject}`
  * @param {RegionsDeps} deps
  */
 export function regions(deps) {
-  const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, mainPane, gone } = deps
+  const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, mainPane, gone, left } = deps
 
   /** Each tabs region, by the element of the view it is in: where a tab's chord finds it. @type {WeakMap<HTMLElement, ReturnType<typeof tabs>>} */
   const regionsByHost = new WeakMap()
@@ -1053,7 +1054,7 @@ export function regions(deps) {
     for (const k of kept.splice(0, Math.max(kept.length - CARDS_KEPT, 0))) drop(k)
   }
 
-  /** Every view the main pane holds gets the board; a hidden worker no longer there is closed, the one open takes the page home. */
+  /** Every view the main pane holds gets the board; a hidden worker no longer there is closed, the one open is told to `left`. */
   function update() {
     for (const k of kept) {
       const at = subjectOf(k.key)
@@ -1062,7 +1063,7 @@ export function regions(deps) {
     }
     if (!open) return
     const at = subjectOf(open.key)
-    if (!at) return gone()
+    if (!at) return left()
     open.hosted.update(at)
   }
 
