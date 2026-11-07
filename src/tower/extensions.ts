@@ -40,6 +40,7 @@ import {
 import { wordsOf, type Word } from '../shared/cli-words.ts'
 import { ConfigError, runtimeCommands, type Config, type Runtime } from '../shared/model.ts'
 import type { Reads } from '../shared/shelf-page.ts'
+import { asError } from '../shared/thrown.ts'
 import type { DispatchResource } from './dispatch.ts'
 import type { HttpResource } from './http.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
@@ -512,6 +513,8 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
         instance.halting = true
         try {
           await started.halt?.()
+        } catch (err) {
+          throw asError(err)
         } finally {
           dispose()
         }
@@ -520,7 +523,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
     return instance
   } catch (err) {
     dispose()
-    throw err
+    throw asError(err)
   }
 }
 
