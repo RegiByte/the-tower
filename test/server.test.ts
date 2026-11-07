@@ -72,6 +72,10 @@ const git = (...args: string[]) => gitIn(HUB, ...args)
 
 const POLICY = '# Nightly\n\n```json\n{"when": {"cron": ["0 3 1 1 *"]}}\n```\n\nNever started: a run waits on the user\'s approval.\n'
 
+/** Logs whose first line holds no header, named to sort first: the tower meets them before any other log. */
+const HEADLESS = '20000101-000000-dead'
+const FLOORLESS = '20000101-000001-dead'
+
 const MIN = 60_000
 /** The minute the root is seeded in: the kept policies' slots are placed around it. */
 const SEEDED = Math.floor(Date.now() / MIN) * MIN
@@ -173,6 +177,8 @@ function seedDesk() {
     const header = { id, project: 'desk', cwd, argv, startedAt, cols: 80, rows: 24 }
     writeFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), [header, [0.1, 'o', 'a worker\r\n'], [0.3, 'x', { exitCode: 0 }]].map((line) => JSON.stringify(line)).join('\n') + '\n')
   }
+  writeFileSync(path.join(ROOT, 'sessions', `${HEADLESS}.jsonl`), `{"id":"cut sho\n${JSON.stringify([0.1, 'h', { hook_event_name: 'SessionStart', cwd: DESK }])}\n`)
+  writeFileSync(path.join(ROOT, 'sessions', `${FLOORLESS}.jsonl`), 'null\n')
   ended(DESK_SESSIONS.author, path.join(DESK, '.worktrees', 'odin-1'), DESK_STARTED, ['bash'])
   ended(DESK_SESSIONS.reviewer, path.join(DESK, '.worktrees', 'odin-1-review'), DESK_STARTED + MIN, ['bash', '--', `/tower:review ${AUTHOR}`])
   ended(DESK_SESSIONS.lark, path.join(DESK, '.worktrees', 'lark-3'), DESK_STARTED + 2 * MIN, ['bash'])
@@ -394,6 +400,13 @@ const heldBoard = (): Promise<() => void> =>
   })
 
 const errorCode = (reply: Reply): string => ApiError.parse(JSON.parse(reply.body)).code
+
+test("server: a log that lost its header costs its own session: the tower starts, it reads broken in its floor's archive, and its reads answer", async () => {
+  const lost = (JSON.parse((await get('/archive/desk')).body) as { id: string; attention: string; broken?: { message: string } }[]).find((c) => c.id === HEADLESS)!
+  assert.equal(lost.attention, 'broken')
+  assert.match(lost.broken!.message, /^its first line isn't JSON/)
+  assert.equal((await get(`/conversations/${HEADLESS}`)).status, 200)
+})
 
 test('server: one board event is a BoardMsg by the committed schema', async () => {
   const msg = await firstEvent('/board')

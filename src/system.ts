@@ -17,7 +17,7 @@ import { scanCollections } from './collections.ts'
 import { watchRepos, type RepoAsk } from './repo-watch.ts'
 import type { RepoReading } from './worktrees.ts'
 import { heldJobs, hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
-import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
+import { ConfigError, floorOf, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
 import { projectsStreamsPath, systemStreamsPath } from './shared/paths.ts'
 import type { SystemPaths } from './shared/model.ts'
 import type { HostLive } from './shared/protocol.ts'
@@ -222,6 +222,10 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     folds.set(fold, { files, at })
     return moved
   }
+
+  /** A log that lost its header no longer says its floor: the directory it ran in does, read where the config can be. */
+  const placed = (session: Session): Session =>
+    session.header.project ? session : { ...session, header: { ...session.header, project: floorOf(readConfig(paths.config), session.header.cwd) ?? '' } }
 
   const refoldAll = (scope: StreamFold['scope']) => {
     let moved = false
@@ -491,8 +495,11 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   const livePolls = [setInterval(refreshLive, LIVE_POLL_MS), setInterval(refreshShells, LIVE_POLL_MS), setInterval(refreshJobs, LIVE_POLL_MS)]
 
   return {
-    sessions: () => [...sessions.values()].sort((a, b) => b.header.startedAt - a.header.startedAt),
-    session: (id) => sessions.get(id),
+    sessions: () => [...sessions.values()].map(placed).sort((a, b) => b.header.startedAt - a.header.startedAt),
+    session: (id) => {
+      const session = sessions.get(id)
+      return session && placed(session)
+    },
     logs: () => logs,
     items: () => items,
     foldStream: (fold) => {

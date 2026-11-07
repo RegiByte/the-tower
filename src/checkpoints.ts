@@ -86,14 +86,16 @@ const checkpointFor = (cache: string, header: SessionHeader, size: number): Chec
 
 /**
  * The session's facts, folded from its log in `cache`'s checkpoint on, and the byte offset where the log's next line
- * starts; the checkpoint moves there. `undefined` while the host hasn't written the log's header. A broken session
- * (`Facts.broken`) folds nothing more but being let go, its checkpoint included: one resumed before the break meets it again.
+ * starts; the checkpoint moves there. `undefined` while the host hasn't written the log's header. A first line that
+ * holds no header breaks the session before its first event. A broken session (`Facts.broken`) folds nothing more but
+ * being let go, its checkpoint included: one resumed before the break meets it again.
  */
 export const foldLog = (cache: string, logPath: string): { session: Session; offset: number } | undefined => {
   const head = readHeader(logPath)
   if (!head) return undefined
-  const { header } = head
-  const from = checkpointFor(cache, header, logSize(logPath)) ?? { offset: head.offset, facts: initialFacts(header) }
+  const { header, unreadable } = head
+  const start = unreadable ? { ...initialFacts(header), broken: unreadable } : initialFacts(header)
+  const from = checkpointFor(cache, header, logSize(logPath)) ?? { offset: head.offset, facts: start }
   const { events, offset } = readEvents(logPath, from.offset, from.facts.broken ? afterBreak : factEvents(from.facts.state))
   const facts = events.reduce(factsAfter(header.startedAt), from.facts)
   if (offset > from.offset) writeCheckpoint(cache, { fold: FOLD, header, offset, facts })

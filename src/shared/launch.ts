@@ -144,6 +144,9 @@ const resumeArgs = (conversation: string, prompt: string | undefined): string[] 
 export const sessionId = (startedAt: Date, suffix: string): string =>
   `${startedAt.toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-')}-${suffix}`
 
+/** The second a `sessionId` was made in (epoch ms); 0 for an id of another shape. */
+export const startOfSessionId = (id: string): number => Date.parse(id.replace(/^(\d{4})(\d\d)(\d\d)-(\d\d)(\d\d)(\d\d)-.*$/, '$1-$2-$3T$4:$5:$6Z')) || 0
+
 export const newSessionId = (): string =>
   sessionId(new Date(), [...crypto.getRandomValues(new Uint8Array(2))].map((b) => b.toString(16).padStart(2, '0')).join(''))
 
