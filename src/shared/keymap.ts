@@ -17,6 +17,8 @@
  * Control's "Switch to Desktop N" before a browser sees it, so the panes are on ⌃⇧ digits, which it leaves alone.
  */
 
+import type { Board } from '../bridge/board.ts'
+
 export type Scope = 'global' | 'terminal' | 'field'
 
 /** What holds focus when a key is pressed: a terminal, a text field (or an open dialog), or the page itself. */
@@ -68,6 +70,25 @@ export type CommandId = (typeof COMMANDS)[number]['id']
 export const PANES = (COMMANDS as readonly Command[]).flatMap((c) => (c.pane ? [{ command: c.id, ...c.pane }] : []))
 
 const COMMAND = new Map<string, Command>(COMMANDS.map((c) => [c.id, c]))
+
+/** A worker's tab with a place among the panes: `command`, what opens it; `name`, for the panes a hash's short form calls by one. @since 1.159 */
+export type BoardPane = { command: string; view: string; name?: string; label: string; does: string }
+
+/**
+ * Every pane on the board: those of the keymap, whether or not they are bound or their view runs, then each view of a
+ * started extension that is a worker's tab (`on` holds `card`, `scales` holds `pane`) with a chord bound in `keys`. A
+ * chord on such a view is all it declares. Whether a worker has that tab is the renderer's to find when it opens it.
+ * @since 1.159
+ */
+export const panesOf = ({ extensions, keys }: Pick<Board, 'extensions' | 'keys'>): BoardPane[] => {
+  const own = PANES.map((p): BoardPane => ({ ...p, label: COMMAND.get(p.command)!.label, does: COMMAND.get(p.command)!.does }))
+  const added = extensions
+    .filter((e) => e.state === 'started')
+    .flatMap((e) => e.views)
+    .filter((v) => v.on.includes('card') && v.scales.includes('pane') && keys[v.id]?.length && !own.some((p) => p.view === v.id))
+    .map((v): BoardPane => ({ command: v.id, view: v.id, label: v.words.label, does: v.words.hint ?? v.words.label }))
+  return [...own, ...added]
+}
 
 const MODIFIERS = ['Ctrl', 'Alt', 'Shift', 'Meta'] as const
 type Modifier = (typeof MODIFIERS)[number]
@@ -302,7 +323,7 @@ const isPlain = (text: string): boolean => {
 }
 
 /** Where a command's chords work, in words: a global chord without ⌥, ⌃ or ⌘ is typing in a terminal or a field. */
-const whereOf = (c: Command, chords: string[]): string => {
+const whereOf = (c: Pick<Command, 'scope'>, chords: string[]): string => {
   if (c.scope === 'terminal') return 'in a terminal'
   if (c.scope === 'field') return 'in a text field'
   const plain = chords.filter(isPlain)
@@ -317,21 +338,30 @@ const whereOf = (c: Command, chords: string[]): string => {
  */
 export const keysHint = (keys: Keys, id: string): string => {
   const chords = keys[id] ?? []
-  const c = COMMAND.get(id)
+  const c = COMMAND.get(id) ?? (isAddedId(id) ? { scope: 'global' as const } : undefined)
   if (!c || c.scope !== 'global' || !chords.some(isPlain)) return keysLabel(keys, id)
   return `${keysLabel(keys, id)}${chords.every(isPlain) ? ' ' : ', '}${whereOf(c, chords)}`
 }
 
-/**
- * The keys as a sheet, grouped, each row a command's chords and what it does with where it works; unbound commands are
- * left out. Rows are pairs of spans for a two-column grid, the chords' `.chords`, each group headed by an `<h3>`.
- */
-export const keymapSheetHtml = (keys: Keys): string =>
-  [...new Set(COMMANDS.map((c) => c.group))]
-    .map((group) => {
-      const rows = COMMANDS.filter((c) => c.group === group && keys[c.id]?.length)
-        .map((c) => `<span class="chords">${keys[c.id].map((t) => `<kbd>${esc(chordLabel(t))}</kbd>`).join(' ')}</span><span>${esc(c.does)} <small>· ${esc(whereOf(c, keys[c.id]))}</small></span>`)
-        .join('')
-      return rows && `<h3 class="eyebrow">${esc(group)}</h3>${rows}`
-    })
-    .join('')
+/** A row of the keys sheet: `pane`, whether it opens a tab. */
+type SheetRow = { group: string; pane: boolean; html: string }
+
+const rowHtml = (scoped: Pick<Command, 'scope' | 'does'>, chords: string[]) =>
+  `<span class="chords">${chords.map((t) => `<kbd>${esc(chordLabel(t))}</kbd>`).join(' ')}</span><span>${esc(scoped.does)} <small>· ${esc(whereOf(scoped, chords))}</small></span>`
+
+const commandRows = (keys: Keys): SheetRow[] =>
+  COMMANDS.filter((c) => keys[c.id]?.length).map((c) => ({ group: c.group, pane: 'pane' in c, html: rowHtml(c, keys[c.id]) }))
+
+/** Rows as a sheet, each group headed by an `<h3>`, in the order they first appear. Rows are pairs of spans for a two-column grid, the chords' `.chords`. */
+const sheetHtml = (rows: SheetRow[]): string =>
+  [...new Set(rows.map((r) => r.group))].map((group) => `<h3 class="eyebrow">${esc(group)}</h3>${rows.filter((r) => r.group === group).map((r) => r.html).join('')}`).join('')
+
+/** The keymap's keys as a sheet, grouped, each row a command's chords and what it does with where it works; unbound commands are left out. */
+export const keymapSheetHtml = (keys: Keys): string => sheetHtml(commandRows(keys))
+
+/** The keymap's sheet with a row for each of `panes` the keymap has none for, after its own panes: `panes` from `panesOf`. @since 1.159 */
+export const paneSheetHtml = (keys: Keys, panes: readonly BoardPane[]): string => {
+  const rows = commandRows(keys)
+  const added = panes.filter((p) => !p.name && keys[p.command]?.length).map((p): SheetRow => ({ group: 'Panes', pane: true, html: rowHtml({ scope: 'global', does: p.does }, keys[p.command]) }))
+  return sheetHtml(rows.toSpliced(rows.findLastIndex((r) => r.pane) + 1, 0, ...added))
+}

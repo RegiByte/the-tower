@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "One keymap: commands as data, defaults in the module, overrides in the config",
-  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does, its default chords and, for a command that opens a worker's tab, that tab's view and name, listed as PANES, from which every table of panes derives. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃⇧1–4 show a worker's panes, from inside the terminal too.",
+  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does, its default chords and, for a command that opens a worker's tab, that tab's view and name, listed as PANES, from which every table of panes derives; panesOf adds each worker's tab of a started extension with a chord bound. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃⇧1–4 show a worker's panes, from inside the terminal too.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-07",
-  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#keepTextareaEmpty", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf"]
+  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#keepTextareaEmpty", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/shared/keymap.ts#panesOf", "hub/renderers/page/page.js#pressAdded"]
 }
 ---
 **Problem.** The keys lived in several places (shared constants, the page's shortcuts and hand-written `?` sheet,
@@ -38,6 +38,13 @@ every other key, and reach every renderer the way `user.name` does.
   a renderer `keeps`, one the config set or another extension's default (both then), each a problem on its
   extension, so load order never decides; [`addedCommandOf`](ref:hub/src/shared/keymap.ts#addedCommandOf) matches
   them as global chords, on the subject in focus ([[ui-model]]), and a terminal checks them after the keymap's own.
+- A chord on a view that is a worker's tab makes it a pane, the view declaring nothing else:
+  [`panesOf`](ref:hub/src/shared/keymap.ts#panesOf) lists the keymap's panes, bound or not, then each view of a
+  started extension with `on` holding `card`, `scales` holding `pane` and a chord bound in `board.keys`. The `tab`
+  export plays no part: a view without one has a tab on every worker. The tab row's fixed tabs and tips, the `?` sheet
+  (`paneSheetHtml`, over the rows `keymapSheetHtml` draws), the palette and Tower 3D read that one list; a press runs
+  [`pressAdded`](ref:hub/renderers/page/page.js#pressAdded), while `kit.run` with a subject still displays it. Only the
+  keymap's panes have a `name`, for a hash's short form and Tower 3D, which opens no other.
 - `board.keys` carries every command's chords, recomputed when the config changes. Renderers match keydowns with
   [`commandOf`](ref:hub/src/shared/keymap.ts#commandOf) and map ids to handlers; a terminal takes
   [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap), which sends a natural key's bytes and hands any

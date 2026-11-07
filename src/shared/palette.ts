@@ -10,7 +10,7 @@ import type { Capability } from './capabilities.ts'
 import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, itemSubject, heededWaits, unboundCommands, type Heed } from './cards.ts'
 import type { Action, Added, Words } from './extensions.ts'
 import type { Subject } from './subjects.ts'
-import { COMMANDS, type CommandId } from './keymap.ts'
+import { COMMANDS, panesOf } from './keymap.ts'
 import { VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
 export type GoTarget =
@@ -39,7 +39,7 @@ export type OpenPick = { t: 'open'; subject: string; view: string }
 /** Reloading the page, which runs code the tower no longer serves (`tower.stale()`). @since 1.144 */
 export type ReloadPick = { t: 'reload' }
 
-export type Pick = { t: 'command'; id: CommandId } | ActionPick | AddedPick | OpenPick | ReloadPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
+export type Pick = { t: 'command'; id: string } | ActionPick | AddedPick | OpenPick | ReloadPick | { t: 'go'; target: GoTarget } | { t: 'patterns' } | { t: 'learn'; id: string }
 
 /** A view a renderer offers to open on a subject, as "Open <label>" in `group` (where it opens), about the floor `project` when it has one. @since 1.104 */
 export type Openable = { subject: string; view: string; words: Words; group: string; project?: string }
@@ -248,6 +248,15 @@ export const paletteEntries = (ctx: PaletteContext): Entry[] => {
     chords: board.keys[k.id],
     does: { t: 'command', id: k.id },
   }))
+  const panes = !c ? [] : panesOf(board).filter((p) => !p.name).map((p): Entry => ({
+    id: `command:${p.command}`,
+    group: 'Commands',
+    label: p.label,
+    hint: `${capitalized(p.does)}.`,
+    keywords: [p.does],
+    chords: board.keys[p.command],
+    does: { t: 'command', id: p.command },
+  }))
   const learn: Entry[] = [
     ...capabilities.filter((k) => !k.command).map((k): Entry => ({ id: `learn:${k.id}`, group: 'Learn', label: k.text, keywords: [k.id], learn: true, does: { t: 'learn', id: k.id } })),
     { id: PATTERNS_ENTRY, group: 'Learn', label: 'Patterns users are discovering', hint: 'What users found doing with the tower, as short stories.', keywords: ['stories', 'tips'], learn: true, does: { t: 'patterns' } },
@@ -271,6 +280,7 @@ export const paletteEntries = (ctx: PaletteContext): Entry[] => {
     ...extensions,
     ...openEntries(board, ctx.opens ?? []),
     ...commands,
+    ...panes,
     ...board.floors.flatMap((f) => f.cards.filter((w) => w.onDuty).map((w) => workerEntry(f, w))),
     ...board.floors.flatMap((f) => placeEntries(f, ctx)),
     ...learn,

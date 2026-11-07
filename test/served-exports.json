@@ -984,7 +984,9 @@
       "keysHint",
       "keysLabel",
       "keysProblems",
-      "keyshortcuts"
+      "keyshortcuts",
+      "paneSheetHtml",
+      "panesOf"
     ],
     "/terminal.js": [
       "cellOf",
@@ -1281,7 +1283,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "e99b1cf2ca42d01f",
+      "digest": "51a21e45d9b12ae9",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -1313,7 +1315,7 @@
     },
     "/lib/board.js": {
       "runtime": "generic",
-      "digest": "1d6e1928b816208f",
+      "digest": "dcaa1de8fd43cd42",
       "values": {
         "boardSubject": {
           "since": "1.151",
@@ -1573,7 +1575,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "349b22e29951bf3d",
+      "digest": "0aad0ad02a986eb0",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1640,7 +1642,7 @@
     },
     "/lib/capabilities.js": {
       "runtime": "generic",
-      "digest": "8884e751bd9b6abd",
+      "digest": "5e09186e66aeb471",
       "values": {
         "CAPABILITIES": {
           "since": "1.151",
@@ -1676,7 +1678,7 @@
     },
     "/lib/cards.js": {
       "runtime": "generic",
-      "digest": "87dc3b0b68de99a9",
+      "digest": "2c01ac2ec931a811",
       "values": {
         "ATTENTION_MEANS": {
           "since": "1.151"
@@ -2082,7 +2084,7 @@
     },
     "/lib/changes.js": {
       "runtime": "browser",
-      "digest": "40508c6e1794118c",
+      "digest": "5908f179a702417d",
       "values": {
         "CHANGES_POLL_MS": {
           "since": "1.151"
@@ -2202,7 +2204,7 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "5cb063c72bf2d8c5",
+      "digest": "5cd0703ebe3e8226",
       "values": {},
       "types": {
         "BoardError": {
@@ -2273,7 +2275,7 @@
     },
     "/lib/extension.js": {
       "runtime": "server",
-      "digest": "79371c3a580cbf48",
+      "digest": "f2cbd44bd1211c81",
       "values": {
         "apiError": {
           "since": "1.151"
@@ -2410,7 +2412,7 @@
     },
     "/lib/keys.js": {
       "runtime": "browser",
-      "digest": "b02b6aa270d0a981",
+      "digest": "fe1ae167ed44dbef",
       "values": {
         "COMMANDS": {
           "since": "1.151",
@@ -2455,9 +2457,21 @@
         },
         "keyshortcuts": {
           "since": "1.151"
+        },
+        "paneSheetHtml": {
+          "since": "1.159",
+          "stability": "provisional"
+        },
+        "panesOf": {
+          "since": "1.159",
+          "stability": "provisional"
         }
       },
       "types": {
+        "BoardPane": {
+          "since": "1.159",
+          "stability": "provisional"
+        },
         "KeyPress": {
           "since": "1.151",
           "stability": "provisional"
@@ -2469,7 +2483,7 @@
     },
     "/lib/layout.js": {
       "runtime": "browser",
-      "digest": "40363e9630543a25",
+      "digest": "1bfb877efe60d1b6",
       "values": {
         "actionId": {
           "since": "1.151"
@@ -2750,7 +2764,7 @@
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "837cbd9ee5537879",
+      "digest": "d91302339fddc0aa",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2785,7 +2799,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "08d5a414d7a53c53",
+      "digest": "15a5bb47fbac779c",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2830,7 +2844,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "a4d5c21e519b1e3d",
+      "digest": "b2fc4751e94d8bc1",
       "values": {
         "cutLine": {
           "since": "1.151",
@@ -2876,7 +2890,7 @@
     },
     "/lib/stats.js": {
       "runtime": "generic",
-      "digest": "4747183ef69a92af",
+      "digest": "0635b9d3e08dc76b",
       "values": {
         "STATS_ALL": {
           "since": "1.151"
@@ -2917,7 +2931,7 @@
     },
     "/lib/terminal.js": {
       "runtime": "browser",
-      "digest": "7dd617c1f4b56235",
+      "digest": "1766bfbf9aede020",
       "values": {
         "SHELL_SCROLLBACK": {
           "since": "1.151",
@@ -3005,7 +3019,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "5789509448db3c68",
+      "digest": "89e21875424f558c",
       "values": {
         "GIST_ICON": {
           "since": "1.151"
@@ -3171,7 +3185,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "f0ced12d257a0dd4",
+      "digest": "9fb0616e873e51ed",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"
@@ -3205,7 +3219,7 @@
     },
     "/lib/words.js": {
       "runtime": "generic",
-      "digest": "40f58bb63cbcdd97",
+      "digest": "8a3c3692f4eda4dd",
       "values": {
         "ago": {
           "since": "1.151"

@@ -4,7 +4,7 @@ import { briefCss } from '/lib/brief.js'
 import { CAPABILITIES } from '/lib/capabilities.js'
 import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, claudeUntestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
 import { toastsCss, watchTips } from '/lib/chrome.js'
-import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES } from '/lib/keys.js'
+import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES, panesOf } from '/lib/keys.js'
 import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
 import { loop, timers } from '/lib/machine.js'
 import { markdownCss } from '/lib/markdown.js'
@@ -567,6 +567,18 @@ function runAddedId(id, subject) {
   markSeen([id])
   void told(runCommandWith(board(), { command: name, cap }, target, commandKit))
   return true
+}
+
+/**
+ * What pressing an extension's chord runs, with `subject` in focus: a pane opens its tab as the keymap's panes do, and
+ * does nothing with no such tab, unless focus is on a subject the view is on other than a worker; anything else runs
+ * by `runAddedId`. Returns whether something ran.
+ * @param {string} id @param {Subject} subject
+ */
+function pressAdded(id, subject) {
+  const view = viewsOf(board()).find((v) => v.id === id)
+  const onFocus = view && subject.kind !== 'card' && viewOn(view.on, subject)
+  return panesOf(board()).some((p) => p.command === id) && !onFocus ? toPane(id) : runAddedId(id, subject)
 }
 
 /** What the page lends a command it runs, and the rest of what it lends a view. @type {CommandKit} */
@@ -1631,7 +1643,7 @@ function shellHere() {
 
 /** Runs the keymap's command `id` for the keydown `e`. Returns whether it did something. @param {string} id @param {{ repeat: boolean }} e */
 function run(id, e) {
-  if (isAddedId(id)) return e.repeat || runAddedId(id, focusedSubject())
+  if (isAddedId(id)) return e.repeat || pressAdded(id, focusedSubject())
   const pane = PANE_COMMAND[id]
   if (pane) return toPane(pane)
   const move = /** @type {(keyof typeof MOVE_COMMAND)[]} */ (Object.keys(MOVE_COMMAND)).find((m) => MOVE_COMMAND[m] === id)
@@ -1655,8 +1667,8 @@ document.addEventListener('keydown', (e) => {
   const focus = isTyping() ? 'field' : 'page'
   const id = commandOf(board().keys, e, focus)
   if (id && run(id, e)) return (e.preventDefault(), (enterGuard = undefined))
-  const added = !e.repeat && addedCommandOf(board().keys, e, focus)
-  if (added && runAddedId(added, focusedSubject())) (e.preventDefault(), (enterGuard = undefined))
+  const added = addedCommandOf(board().keys, e, focus)
+  if (added && run(added, e)) (e.preventDefault(), (enterGuard = undefined))
 })
 
 /**
@@ -1671,7 +1683,7 @@ function frameKey(press, editable, reaches) {
   const id = frameCommandOf(board().keys, press, focus)
   if (id) return run(id, press)
   const added = !press.repeat && addedCommandOf(board().keys, press, focus)
-  return Boolean(added && reaches(added) && runAddedId(added, focusedSubject()))
+  return Boolean(added && reaches(added) && pressAdded(added, focusedSubject()))
 }
 
 /** An extension's chord a script frame forwards runs only if it displays a view: a command's is code, and any script can claim a key. @param {string} id */
