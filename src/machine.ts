@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { closeSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { CliError } from './cli-error.ts'
 import { run as runGit } from './git.ts'
@@ -296,10 +297,13 @@ export const daemonsNamed = (paths: SystemPaths, port: number, names: string[]):
   return names.length ? all.filter((d) => names.includes(d.name)) : all
 }
 
-/** Runs `script` in a session of its own, so it outlives the caller and its terminal. Returns its pid. */
+/** A URL, since `--import` reads a specifier: a `#` or `%` in a path would be taken for URL syntax. */
+const DATED_LOG = pathToFileURL(path.join(import.meta.dirname, 'dated-log.ts')).href
+
+/** Runs `script` in a session of its own, so it outlives the caller and its terminal, its log dated. Returns its pid. */
 export const startDetached = (script: string, log: string): number => {
   const out = openSync(log, 'a')
-  const child = spawn(process.execPath, ['--import', 'tsx', script], { cwd: REPO, detached: true, stdio: ['ignore', out, out], env: withoutParentSession(process.env) })
+  const child = spawn(process.execPath, ['--import', 'tsx', '--import', DATED_LOG, script], { cwd: REPO, detached: true, stdio: ['ignore', out, out], env: withoutParentSession(process.env) })
   child.unref()
   closeSync(out)
   return child.pid!
