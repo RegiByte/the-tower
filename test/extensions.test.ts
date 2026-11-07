@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { chainOrder, mismatchOf, registry, resolve, settingsOn, withRendererLayouts, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
-import { matchRead, MAX_DEPTH, nestedIn, qualifiedOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
+import { floorSettingsOf, matchRead, MAX_DEPTH, nestedIn, qualifiedOf, settingsOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
 import { extensionFactOf, type Session } from '../src/bridge/facts.ts'
 import { floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
 import type { Config } from '../src/shared/model.ts'
@@ -418,4 +418,13 @@ test('a floor its schema refuses costs only its override: one problem, the syste
   assert.deepEqual(a.floorSettings, { app: { flash: 'blink', every: 9 } })
   assert.deepEqual(settingsOn(c, a, 'site'), a.settings)
   assert.deepEqual(settingsOn(c, a, 'app'), { flash: 'blink', every: 9 })
+})
+
+test('the board carries each extension\'s settings, its floors\' among them, for a client to read with no server code', () => {
+  const r = resolve([FLASHING, ext('plain')], onFloors({ flash: 'blink' }), TOWER)
+  const board = registry(r, new Map([['flashing', { at: NOW }], ['plain', { at: NOW }]]), NOW)
+  assert.deepEqual(settingsOf(board, 'flashing'), { flash: 'off', every: 9 })
+  assert.deepEqual(floorSettingsOf(board, 'flashing', 'site'), { flash: 'blink', every: 9 })
+  assert.deepEqual(floorSettingsOf(board, 'flashing', 'app'), { flash: 'off', every: 9 })
+  assert.equal(settingsOf(board, 'plain'), undefined)
 })
