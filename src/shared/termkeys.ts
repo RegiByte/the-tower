@@ -5,7 +5,7 @@
  * tower serves this module as `/termkeys.js`.
  */
 
-import { chordLabel, commandOf, COMMANDS, type Keys } from './keymap.ts'
+import { addedCommandOf, chordLabel, commandOf, COMMANDS, type Keys } from './keymap.ts'
 
 /** The parts of a keydown a natural key depends on. */
 export type TermKey = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>
@@ -71,9 +71,11 @@ const deadKeys = () => {
 
 /**
  * A terminal's key handler (xterm's `attachCustomKeyEventHandler`) driven by the keymap: a key that runs a command with
- * focus in a terminal (`commandOf`, over the `keys` the board holds now) runs it on keydown and is kept from xterm and
- * the browser. A natural key's command sends its bytes through `send`; any other goes to `run`, which returns whether
- * it did something, and the key goes on to xterm when it did not. A dead key and the key after it that WebKit reports
+ * focus in a terminal (`commandOf`, then on keydown an extension's by `addedCommandOf`, over the `keys` the board holds
+ * now) runs it on keydown and is kept from xterm and the browser. xterm types ⌥ text on keypress, so a chord of an
+ * extension's that nothing ran is left its keypress. A natural key's command sends its bytes through `send`; any
+ * other goes to `run`, an extension's by its `<cap>/<name>`, which returns whether it did something, and the key goes
+ * on to xterm when it did not. A dead key and the key after it that WebKit reports
  * as one (`deadKeys`) are typed through `send`; a dead key, and a text key while a composition is open,
  * are left to the browser's composition (`leftToComposition`).
  * Every other key goes to xterm.
@@ -87,7 +89,7 @@ export const terminalKeymap = (keys: () => Keys, run: (id: string, e: KeyboardEv
       if (e.type === 'keydown') (e.preventDefault(), send(text))
       return false
     }
-    const id = commandOf(keys(), e, 'terminal')
+    const id = commandOf(keys(), e, 'terminal') ?? (e.type === 'keydown' ? addedCommandOf(keys(), e, 'terminal') : undefined)
     if (!id) return true
     if (e.type !== 'keydown') return false
     if (Object.hasOwn(BYTES, id)) send(BYTES[id])

@@ -1631,6 +1631,7 @@ function shellHere() {
 
 /** Runs the keymap's command `id` for the keydown `e`. Returns whether it did something. @param {string} id @param {{ repeat: boolean }} e */
 function run(id, e) {
+  if (isAddedId(id)) return e.repeat || runAddedId(id, focusedSubject())
   const pane = PANE_COMMAND[id]
   if (pane) return toPane(pane)
   const move = /** @type {(keyof typeof MOVE_COMMAND)[]} */ (Object.keys(MOVE_COMMAND)).find((m) => MOVE_COMMAND[m] === id)

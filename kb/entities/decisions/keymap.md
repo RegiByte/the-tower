@@ -37,11 +37,12 @@ every other key, and reach every renderer the way `user.name` does.
   [`addedKeys`](ref:hub/src/shared/keymap.ts#addedKeys) drops a default that would fire with a keymap chord, a chord
   a renderer `keeps`, one the config set or another extension's default (both then), each a problem on its
   extension, so load order never decides; [`addedCommandOf`](ref:hub/src/shared/keymap.ts#addedCommandOf) matches
-  them as global chords, on the subject in focus ([[ui-model]]).
+  them as global chords, on the subject in focus ([[ui-model]]), and a terminal checks them after the keymap's own.
 - `board.keys` carries every command's chords, recomputed when the config changes. Renderers match keydowns with
   [`commandOf`](ref:hub/src/shared/keymap.ts#commandOf) and map ids to handlers; a terminal takes
   [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap), which sends a natural key's bytes and hands any
-  other command to the renderer, the key going on to xterm when the renderer did nothing with it. It also types the
+  other command, an extension's by its id too, to the renderer, the key going on to xterm when the renderer did
+  nothing with it, so a chord that runs never also types. It also types the
   dead key WebKit folds into the next keydown, which xterm would drop
   ([`deadKeys`](ref:hub/src/shared/termkeys.ts#deadKeys)), and leaves a dead key, and a text key Firefox reports
   while the composition is still open, to the browser's composition, which xterm would end early, typing the dead
