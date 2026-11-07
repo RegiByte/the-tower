@@ -146,7 +146,7 @@ test('printing names a string or lines, and a field the reply left out prints no
 })
 
 test('an old word rewrites into its word under tower x and says so', () => {
-  assert.deepEqual(aliased({ now: 'reviews note', args: (words) => words.map((w) => w.replace(/^n/, '--re=')) }, 'note', ['n3']), { args: ['reviews', 'note', '--re=3'], line: 'tower note is tower x reviews note; the old word goes at 2.0' })
+  assert.deepEqual(aliased({ now: 'reviews note', args: (words) => words.map((w) => w.replace(/^n/, '--re=')) }, 'note', ['n3']), { args: ['reviews', 'note', '--re=3'], line: 'tower note n3 is tower x reviews note --re=3; the old word goes at 2.0' })
 })
 
 test("policies' and quota's old words each reach the word that replaced them", () => {
@@ -157,4 +157,5 @@ test("policies' and quota's old words each reach the word that replaced them", (
   assert.equal(typed('runs', 'warm-lily', '--limit', '3'), 'policies runs warm-lily --limit 3')
   assert.equal(typed('probes'), 'quota probes')
   assert.equal(typed('probes', 'run', 'quota'), 'quota read-now')
+  assert.equal(aliased(ALIASES.policies, 'policies', ['run', 'warm-lily']).line, 'tower policies run warm-lily is tower x policies run-now warm-lily; the old word goes at 2.0')
 })
