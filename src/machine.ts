@@ -236,8 +236,8 @@ export const runEditor = async ([command, ...args]: string[]): Promise<void> => 
 /** The checkout this code runs from: the daemons start from it, and `tower update` moves it. */
 export const REPO = path.join(import.meta.dirname, '..')
 
-/** This checkout as a process's working directory reads: with its symlinks resolved. */
-export const checkoutHere = (): string => realpathSync(REPO)
+/** This checkout as a process's working directory reads: with its symlinks resolved and its true case. */
+export const checkoutHere = (): string => realpathSync.native(REPO)
 
 const UP_TIMEOUT_MS = 15000
 const UP_POLL_MS = 200
@@ -368,13 +368,13 @@ export const startedPid = async ({ script, config, pid }: Daemon): Promise<numbe
   return commandOf(id)?.includes(script) && (await servesConfig(id, config)) ? id : undefined
 }
 
-/** The daemon's checkout while it runs: `startDetached` starts it there. One that answers without a pid of ours can't be told. */
+/** The daemon's checkout while it runs: `startDetached` starts it there. */
 const checkoutOf = async (daemon: Daemon): Promise<DaemonCheckout[]> => {
   const { name, where } = daemon
   const pid = await startedPid(daemon)
-  if (pid === undefined) return (await daemon.holder()).t === 'ours' ? [{ t: 'unreadable', name, why: `it answers at ${where} but was not started by tower up from this system` }] : []
+  if (pid === undefined) return (await daemon.holder()).t === 'ours' ? [{ t: 'unowned', name, where }] : []
   return platform().cwdOf(pid).then(
-    (checkout) => [{ t: 'read', name, checkout }],
+    (checkout) => [{ t: existsSync(checkout) ? 'read' : 'gone', name, checkout }],
     (err: Error) => [{ t: 'unreadable', name, why: err.message.trim() }],
   )
 }

@@ -6,6 +6,7 @@ import { execFile, spawn } from 'node:child_process'
 import { readlink } from 'node:fs/promises'
 import os from 'node:os'
 import { promisify } from 'node:util'
+import { withoutParentSession } from './shared/env.ts'
 
 export type Platform = {
   name: string
@@ -36,9 +37,12 @@ const startWindows = (file: string, args: string[]): Promise<void> =>
     child.once('spawn', () => (child.unref(), resolve()))
   })
 
+/** Outside a UTF-8 locale lsof escapes every non-ASCII byte of a path. */
+const LSOF_LOCALE = 'en_US.UTF-8'
+
 /** `lsof -Fn` prints a `p<pid>` line, an `f<fd>` line, then an `n<path>` line. */
 const lsofCwd = async (pid: number): Promise<string> => {
-  const { stdout } = await run('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'])
+  const { stdout } = await run('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], { env: { ...withoutParentSession(process.env), LC_ALL: LSOF_LOCALE } })
   const line = stdout.split('\n').find((l) => l.startsWith('n'))
   if (line === undefined) throw new Error(`lsof names no working directory for pid ${pid}`)
   return line.slice(1)

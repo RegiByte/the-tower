@@ -25,13 +25,15 @@ their sessions; an update has to tell them what it asks of them, and never end t
 - **`tower update`** ([`update`](ref:hub/src/update.ts#update)), on the checkout the command runs from
   ([`REPO`](ref:hub/src/machine.ts#REPO)):
   1. refuses, before anything else, while the tower or the jobs daemon, the two it restarts, runs from another checkout
-     or from one that can't be read ([`updateRefusal`](ref:hub/src/checkouts.ts#updateRefusal)). The system root comes
+     or when its checkout can't be told ([`updateRefusal`](ref:hub/src/checkouts.ts#updateRefusal)). The system root comes
      from the environment and not from the checkout, so a second checkout would otherwise stop the daemons and start
      them from its own tree. A daemon's checkout is its working directory
      ([`runningCheckouts`](ref:hub/src/machine.ts#runningCheckouts)), which `tower up` set: nothing records it, and it
      holds for daemons older releases started. Nothing running means nothing to compare, so stopping the daemons and
      starting them from a new checkout stays the way to move a system. The refusal names the command to run in the
-     other checkout, unless that would be refused too, and how to move the two daemons here;
+     other checkout, unless that would be refused too or the checkout is gone, and how to move here only the daemons
+     that aren't; a daemon `tower up` didn't start can't be stopped with `tower down`, so it is told to stop it where
+     it runs;
   2. fetches the tags; up to date when the newest release is already in `HEAD`'s history (a checkout ahead of a
      release is left alone);
   3. shows the changelog entries after the release `HEAD` descends from
