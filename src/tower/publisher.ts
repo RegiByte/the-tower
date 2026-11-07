@@ -5,7 +5,7 @@
  */
 import type http from 'node:http'
 import { defineResource, type StartedResource } from 'braided'
-import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, type Board, type Card, type SystemView, type Viewers } from '../bridge/board.ts'
+import { allCards, archiveOf, board, boardOf as boardFrom, callsignLookup, placedOn, type Board, type Card, type SystemView, type Viewers } from '../bridge/board.ts'
 import { foldBoard, SLOW_MS } from '../bridge/folds.ts'
 import { projectLegacy } from '../bridge/legacy.ts'
 import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
@@ -95,7 +95,7 @@ export const publisher = defineResource({
     const viewOf = (): SystemView => viewAt(readConfig())
     const viewAt = (config: Config): SystemView => ({
       config,
-      sessions: system.sessions(),
+      sessions: system.sessions().map(placedOn(config)),
       host: system.live(),
       processes: system.running(),
       peers: system.peers(),

@@ -157,7 +157,7 @@ export type Facts = {
   broken?: Broken
 }
 
-/** `at`: the event's time, in seconds since the session's start. */
+/** `at`: the event's time, in seconds since the session's start. `code`: the event's, `header` for a first line that holds no header. */
 export type Broken = { message: string; at: number; code: string }
 
 /** A complete line of a log that isn't JSON, a write cut short and ended by a later append: the fold breaks on it. */

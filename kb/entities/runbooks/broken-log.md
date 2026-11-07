@@ -30,7 +30,7 @@ it is, a fact; Tidy archives it once the worker is off duty and older than the r
 fix the step and every checkpoint retires with the code that made it ([[fold-checkpoints]]): the log folds again
 from its start at the next read.
 
-**A first line that holds no header.** The reason reads `its first line isn't …`. Nothing of the session is folded, so
+**A first line that holds no header.** Its line reads `× log unreadable from its start: its first line isn't …`. Nothing of the session is folded, so
 it has no conversation to resume and, once the host no longer runs it, it sits in its floor's archive; a log that names
 no directory on a floor shows only in `tower ls`, with no project. Its log is still whole past that line: restoring the
 header by hand (`{"id","project","cwd","argv","startedAt","cols","rows"}`) gives the session back at the next start.

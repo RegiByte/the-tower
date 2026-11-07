@@ -216,7 +216,7 @@ const headOf = (logPath: string, line: Buffer): Head => {
   const read = jsonOf(line)
   if ('value' in read && isHeader(read.value)) return { header: read.value, offset }
   const why = 'notJson' in read ? `isn't JSON (${read.notJson})` : `isn't a session's header (${line.toString('utf8', 0, PREFIX_BYTES)})`
-  return { header: lostHeader(logPath, offset), offset, unreadable: { message: `its first line ${why}`, at: 0, code: '?' } }
+  return { header: lostHeader(logPath, offset), offset, unreadable: { message: `its first line ${why}`, at: 0, code: 'header' } }
 }
 
 /** The log's first line as read; `undefined` while the host hasn't written a whole line. */

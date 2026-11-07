@@ -163,7 +163,7 @@ for (const [first, message] of [
     const cwd = fixture('tool-turn').header.cwd
     const { session, offset } = foldLog(freshCache(), file)!
     assert.deepEqual(session.header, { id: LOST, project: '', cwd, argv: [], startedAt: LOST_AT, cols: 80, rows: 24 })
-    assert.deepEqual(session.facts, { ...initialFacts(session.header), broken: { message, at: 0, code: '?' } })
+    assert.deepEqual(session.facts, { ...initialFacts(session.header), broken: { message, at: 0, code: 'header' } })
     assert.equal(offset, statSync(file).size)
     assert.equal(readLog(file, screenEvents).log.header.id, LOST)
     assert.ok(readLog(file, screenEvents).log.events.length > 0)

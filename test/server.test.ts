@@ -3,6 +3,7 @@
  * root, read and driven over HTTP. No host or terms daemon runs: the one session is a log written into the root, which
  * is all the session reads need.
  */
+import { setTimeout as sleep } from 'node:timers/promises'
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -21,6 +22,7 @@ import type { FloorPart } from '../extensions/reviews/threads.ts'
 import { BUNDLED, type Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import type { Card } from '../src/bridge/board.ts'
+import { PUBLISH_DEBOUNCE_MS } from '../src/tower/publisher.ts'
 import { CORE_VIEWS_DIR, MODULES, sourceUrl, libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
 import type { Library } from './library.ts'
 import { bundledClient } from '../src/extensions.ts'
@@ -406,6 +408,7 @@ test("server: a log that lost its header costs its own session: the tower starts
   assert.equal(lost.attention, 'broken')
   assert.match(lost.broken!.message, /^its first line isn't JSON/)
   assert.equal((await get(`/conversations/${HEADLESS}`)).status, 200)
+  assert.equal((await get(`/conversations/${FLOORLESS}`)).status, 404)
 })
 
 test('server: one board event is a BoardMsg by the committed schema', async () => {
@@ -1270,6 +1273,18 @@ const handEdit = (change: (config: Record<string, any>) => void) => {
   change(config)
   writeFileSync(CONFIG, JSON.stringify(config))
 }
+
+test('server: a config that is not JSON is said on the board with a lost-header log in the system, and the tower stays up', async () => {
+  const good = readFileSync(CONFIG, 'utf8')
+  writeFileSync(CONFIG, '{ not json')
+  try {
+    await sleep(3 * PUBLISH_DEBOUNCE_MS)
+    assert.ok(((await firstEvent('/board')) as { error?: unknown }).error)
+  } finally {
+    writeFileSync(CONFIG, good)
+  }
+  await boardWhere((b) => b.floors.length > 0)
+})
 
 /**
  * The first board that `holds` on one stream held open, once `act` has run, or a failure `ms` after it ran. `act` runs

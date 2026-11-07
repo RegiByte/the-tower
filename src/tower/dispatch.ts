@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { archiveLog, archiveStream, monthPath } from '../archive.ts'
-import { occupantsOf, type TidyPlan } from '../bridge/board.ts'
+import { occupantsOf, placedOn, type TidyPlan } from '../bridge/board.ts'
 import type { Occupant } from '../bridge/worktrees.ts'
 import { carriesOn, chainsOf, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
 import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
@@ -1034,7 +1034,10 @@ export const dispatch = defineResource({
       return answer.t === 'error' ? answer : ROUTES[verb].reply.parse(answer)
     }
 
-    const extension = extensionCalls(holder, readConfig, (id) => system.session(id)?.header.project)
+    const extension = extensionCalls(holder, readConfig, (id) => {
+      const session = system.session(id)
+      return session && placedOn(readConfig())(session).header.project
+    })
     const chains = chainCalls(holder, readConfig, hookDeadline)
 
     /** A verb by its qualified name, through the chain around it: the core's, or a running extension's; a writable fact's door, which no link wraps. */
