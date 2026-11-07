@@ -804,7 +804,7 @@ function relayDoc(url: string, self: ShelfSelf) {
   docRelay = tower.relay($('doc-body').querySelector('iframe')!, url, {
     self,
     ui: { select: ({ id }) => goDesk(id), home: () => closePanels(), shelf: ({ project, n }) => openShelf(project, n) },
-    stored: () => rereadViewer(),
+    stored: () => {},
   })
 }
 
@@ -1273,8 +1273,12 @@ function rereadViewer() {
     if (viewer.statsRange !== was.statsRange) rangeStats()
     if (viewer.briefMarkdown !== was.briefMarkdown) redrawDeskBrief()
     renderHud()
+    if (String(viewer.dismissed) !== String(was.dismissed)) drawWaits()
   })
 }
+
+// A key this page set, or a shelf page it relays did, such as a dismissal: the first board reads the record anyway.
+tower.store.on(() => s.board && rereadViewer())
 
 function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
   s.viewer = { ...s.viewer, [field]: value }
@@ -1333,6 +1337,11 @@ function sawDesk(board: Board, c: Card) {
 function dismissWait(key: string) {
   seeing.dispatch({ type: 'dismiss', key })
   renderHud()
+  drawWaits()
+}
+
+/** What counts the waits you heed, besides the HUD, drawn again: the panel, the elevator and the lobby's directory. */
+function drawWaits() {
   renderPanel()
   renderElevator()
   paintDirectory(directory, s.plan, heededWaits(s.board!, heed()))
