@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
-import { aliased } from '../src/cli-verbs.ts'
+import { ALIASES, aliased } from '../src/cli-verbs.ts'
 import { helpLines, jsonArgument, jsonDeprecatedLine, missingLine, nearest, parseWord, printedOf, readUrl, typedLine, unknownWordLines, usageOf, wordNamed, wordsOf, type Word } from '../src/shared/cli-words.ts'
 import { Manifest } from '../src/shared/extensions.ts'
 
@@ -147,4 +147,14 @@ test('printing names a string or lines, and a field the reply left out prints no
 
 test('an old word rewrites into its word under tower x and says so', () => {
   assert.deepEqual(aliased({ now: 'reviews note', args: (words) => words.map((w) => w.replace(/^n/, '--re=')) }, 'note', ['n3']), { args: ['reviews', 'note', '--re=3'], line: 'tower note is tower x reviews note; the old word goes at 2.0' })
+})
+
+test("policies' and quota's old words each reach the word that replaced them", () => {
+  const typed = (name: string, ...words: string[]) => aliased(ALIASES[name], name, words).args.join(' ')
+  assert.equal(typed('policies'), 'policies list')
+  assert.equal(typed('policies', 'run', 'warm-lily'), 'policies run-now warm-lily')
+  assert.equal(typed('policies', 'approve', 'warm-lily'), 'policies approve-now warm-lily')
+  assert.equal(typed('runs', 'warm-lily', '--limit', '3'), 'policies runs warm-lily --limit 3')
+  assert.equal(typed('probes'), 'quota probes')
+  assert.equal(typed('probes', 'run', 'quota'), 'quota read-now')
 })

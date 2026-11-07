@@ -43,8 +43,8 @@ with a core word by construction, so there is nothing to reserve.
 - **A word's shape is its verb's.** A word wanting friendlier input is a verb of its own over the same function, never
   a mode on one verb. A word's name and shape are `contract.json` names, so a replacement must offer them.
 - **The JSON argument goes at 2.0.** Until then it works, is filled the same way, and says what to type instead,
-  rendered from the JSON it was given. `ALIASES` holds the old core words as they move, and is empty until the first
-  does.
+  rendered from the JSON it was given. `ALIASES` holds the old core words as they move: `policies`, `runs` and
+  `probes`, each saying so on stderr,
 
 **Alternatives considered.** Extension code run in the command (a `cli.ts` the command imports): full freedom, but a
 second runtime for extension code, with the library resolved there and version skew against the running extension. A

@@ -186,8 +186,8 @@ it was an extension.
 
 `"extensions": { "quota": { "off": true } }` turns it off: the limits then refresh only during sessions' turns. How it
 stands (its last read, why it failed, when it reads next) is the board's `x.quota`, the default command's with every
-command's in `commands`, drawn under the limits in both renderers (Tower 3D draws the default command's), in `tower probes` and in `tower doctor` (its check, `quota/reading`); its latest reads are at
-`GET /quota/reads`. A press of "read now" in either renderer, `tower probes run quota`, `tower x quota read-now` or
+command's in `commands`, drawn under the limits in both renderers (Tower 3D draws the default command's), in `tower x quota probes` and in `tower doctor` (its check, `quota/reading`); its latest reads are at
+`GET /quota/reads`. A press of "read now" in either renderer, `tower x quota read-now` or
 `POST /quota/read-now` reads at once, each command at most once a minute: `{ "command": "work" }` reads one, and left
 out it reads every command in turn. The old spelling, `"probes": { "quota": { "off": true } }`,
 is honoured until 2.0, and `tower config check` warns with the line to write instead.
@@ -269,7 +269,7 @@ shown to the user and the workers wherever it is listed). Workers add items with
 extensions declare three. `reviews`, one review thread per checkout, written only through `tower note`, is
 declared by the bundled reviews extension, owned, on every floor where its capability is on: a `reviews` entry here
 overrides its `label` and `description`, and a floor with `capabilities.reviews.off` keeps the collection only where a config entry declares it, as a plain one. `tower init` writes no entry, so a first config has the collection only where the capability is on.
-`policies`, standing work started at its slots (`tower policies` lists them, the handbook's "Policies and runs" says
+`policies`, standing work started at its slots (`tower x policies list` lists them, the handbook's "Policies and runs" says
 what a policy holds), is declared by the bundled policies extension, on every floor where its capability is on: a
 `policies` entry here overrides its `label` and `description`, and a floor with `capabilities.policies.off`, where nothing
 runs on a schedule, keeps the collection only where a config entry declares it, as a plain one. `drafts`, prompts

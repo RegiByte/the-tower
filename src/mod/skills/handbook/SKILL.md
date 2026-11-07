@@ -16,7 +16,7 @@ The tower runs every Claude Code session the user works with. Each project is a 
 - `tower x <name>`: what an extension `tower whoami` lists under "Extensions you can use" tells the workers, in full (when to use it, when not, how), then its words and their usage, then its doors, verbs and reads. Read it before you first use that extension in a session; "Extensions' commands" below says how to type them.
 - `tower agents [--all]`: the workers on duty on your floor (or every floor), as crews: a worker hired by another, or reviewing another's work, is listed under it (`└`). Each line gives the callsign, status, the name to message it by, its directory, and what it is up to (`❯` its prompt, `↳` its latest answer, `⚙` the tool it runs, `⚠` what it asks permission for).
 - `tower agent <CALLSIGN>`: one worker in full: its last prompts from the user, each with its answer, per conversation.
-- `tower probes`: the quota probe, the bundled `quota` extension, which reads each `argv` command's rate limits while no turn of that command does: its state, last read, why it failed, and when it reads next. `GET <address>/quota/reads` gives its latest reads; `tower probes run quota` reads every command now, and `tower x quota read-now --command work` reads one (each at most once a minute), when the user asks.
+- `tower x quota limits`: how much of each account's rate limits is used, and when each resets. `tower x quota probes`: the quota probe, the bundled `quota` extension, which reads each `argv` command's rate limits while no turn of that command does: its state, last read, why it failed, and when it reads next. `GET <address>/quota/reads` gives its latest reads; `tower x quota read-now` reads every command now, `--command work` one (each at most once a minute), when the user asks.
 
 ## Extensions' commands
 
@@ -93,15 +93,15 @@ A **policy** is standing work a floor keeps in its `policies` collection: the to
 { "when": { "cron": ["30 9 * * 1-5", "0 15 * * 1-5"], "tz": "America/New_York" }, "start": "auto", "hire": { "model": "opus" } }
 ```
 
-`when.cron` lists crons the tower can say in words (`tower policies` says them back); `check` is a shell line run from the hub at the slot (exit 0: work, 1: none); `start` is `ask` (each slot is offered to the user) or `auto` (started on its own while its words are approved; any edit needs a new approval); `live` is how many of its runs may run at once (1); `hire` takes the spawn's `cwd`, `cut`, `model` and `effort` (`cwd` or `cut`, not both; `cut` is `{"name": …, "branch": …, "base": "origin/<branch>"}`, every key optional, or `{"from": <worktree name or main>}` to fork a checkout, no `base` then). An unknown key makes the policy invalid; a runner's own data goes under `x`.
+`when.cron` lists crons the tower can say in words (`tower x policies list` says them back); `check` is a shell line run from the hub at the slot (exit 0: work, 1: none); `start` is `ask` (each slot is offered to the user) or `auto` (started on its own while its words are approved; any edit needs a new approval); `live` is how many of its runs may run at once (1); `hire` takes the spawn's `cwd`, `cut`, `model` and `effort` (`cwd` or `cut`, not both; `cut` is `{"name": …, "branch": …, "base": "origin/<branch>"}`, every key optional, or `{"from": <worktree name or main>}` to fork a checkout, no `base` then). An unknown key makes the policy invalid; a runner's own data goes under `x`.
 
-- `tower policies`: each policy's rule in words, approval, live runs, last run and where it stands now, the same reason the tower acts on. A slot a run on duty holds (`live` full) shows as `needs you`: end that run for the next slot to start.
-- `tower policies approve <tag>`: approves its words as they are now. Read it first (`tower read <tag>`): you approve what you read. Only when the user asks.
-- `tower policies run <tag>`: starts it now, or takes its open offer.
+- `tower x policies list`: each policy's rule in words, approval, live runs, last run and where it stands now, the same reason the tower acts on. A slot a run on duty holds (`live` full) shows as `needs you`: end that run for the next slot to start.
+- `tower x policies approve-now <tag>`: approves its words as they are now. Read it first (`tower read <tag>`): you approve what you read. Only when the user asks.
+- `tower x policies run-now <tag>`: starts it now, or takes its open offer.
 
 Write a policy with `tower keep policies` (markdown on stdin) and edit it in place like any item.
 
-**Runs.** When you are a run, `tower whoami` says so: which policy, which slot, how it started. `tower runs` lists your policy's last five runs, newest first, each with its worker, what it showed and its latest answer cut short: read it before starting, for what earlier runs did and left (`--limit n` for more, `tower agent <CALLSIGN>` for one in full). Your latest answer is what the next run reads, so end with what it needs to know. When the policy says nobody watches the run, end yourself with `tower home <your own callsign>` once your work is done.
+**Runs.** When you are a run, `tower whoami` says so: which policy, which slot, how it started. `tower x policies runs` lists your policy's last five runs, newest first, each with its worker, what it showed and its latest answer cut short: read it before starting, for what earlier runs did and left (`--limit n` for more, `tower agent <CALLSIGN>` for one in full). Your latest answer is what the next run reads, so end with what it needs to know. When the policy says nobody watches the run, end yourself with `tower home <your own callsign>` once your work is done.
 
 ## The shelf and the config
 
