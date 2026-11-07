@@ -298,18 +298,20 @@ const start: Start = (ctx) => {
     return isApiError(read) ? read : runsLines(policy, policiesOf(floorOf(ctx.board(), project))?.policies.find((p) => p.id === policy), read, Date.now())
   }
 
-  /**
-   * What the CLI prints of a floor's policies: `tower x policies list`'s lines and where each policy stands, by id, and
-   * with `policy`, its latest `runs` in words.
-   */
-  const said = async (project: string, policy: string | undefined, limit: number) => {
+  /** A floor's policies in words, each in its lines, with where each stands by id. */
+  const toldOf = async (project: string) => {
     const board = ctx.board()
     const floor = floorOf(board, project)
     const { policies } = policiesOf(floor) ?? { policies: [] }
     const archived = floor?.archived ? ((await ctx.read('tower/archive/<project>', { project })) as Card[]) : []
     const now = Date.now()
     const lines = policies.length ? policiesLines(board, policies, [...(floor?.cards ?? []), ...archived], now) : [`${floorName(floor, project)} has no policies.`]
-    const told = { lines, standing: Object.fromEntries(policies.map((p) => [p.id, standingWords(p, board, now)])) }
+    return { lines, standing: Object.fromEntries(policies.map((p) => [p.id, standingWords(p, board, now)])) }
+  }
+
+  /** What the read `said/<project>` answers: a floor's policies in words and, with `policy`, its latest `limit` runs. */
+  const said = async (project: string, policy: string | undefined, limit: number) => {
+    const told = await toldOf(project)
     if (policy === undefined) return told
     const runLines = await runWords(project, policy, limit)
     return isApiError(runLines) ? runLines : { ...told, runs: runLines }
@@ -418,6 +420,7 @@ const start: Start = (ctx) => {
     reads: {
       'runs/<project>': ({ params, query }: { params: Record<string, string>; query: { policy: string; limit?: string } }) => runs(params.project, query.policy, query.limit === undefined ? 20 : Number(query.limit)),
       'said/<project>': ({ params, query }: { params: Record<string, string>; query: { policy?: string; runs?: string } }) => said(params.project, query.policy, query.runs === undefined ? RUNS_SHOWN : Number(query.runs)),
+      'list/<project>': async ({ params }: { params: Record<string, string> }) => ({ lines: (await toldOf(params.project)).lines }),
       'run-lines/<project>': ({ params, query }: { params: Record<string, string>; query: { policy?: string; limit?: string } }, { caller }: CallCtx) => runsSaid(params.project, query.policy, query.limit === undefined ? RUNS_SHOWN : Number(query.limit), caller),
     },
     slots: { '*': slot },
