@@ -335,13 +335,18 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `palette` (the command palette) | global | `Meta+K` |
 | `help` (the `?` sheet) | global | `?` |
 | `spawn` (the new-worker form on the floor in focus, or on the draft in focus) | global | none |
-| `pane-terminal`, `pane-brief`, `pane-changes`, `pane-reviews` | global | `Ctrl+Shift+1` … `Ctrl+Shift+4` |
+| `pane-terminal`, `pane-brief`, `pane-changes` | global | `Ctrl+Shift+1` … `Ctrl+Shift+3` |
+| `reviews/thread` (the reviews extension's tab) | global | `Ctrl+Shift+4` |
 | `shell-here` (a shell in the selected worker's directory; from any shell, hides the dock and goes back) | global | `Meta+J`, `Ctrl+Backquote` |
 | `leave-terminal` | terminal | `Alt+Escape` |
 | `newline`, `delete-word`, `delete-to-start`, `delete-to-end`, `line-start`, `line-end`, `word-left`, `word-right` | terminal | `Shift+Enter`, `Ctrl+Backspace`, `Meta+Backspace`, `Meta+Delete`, `Meta+ArrowLeft`, `Meta+ArrowRight`, `Alt+ArrowLeft`, `Alt+ArrowRight` |
 | `save-draft` | field | `Meta+S`, `Ctrl+S` |
 | `submit` | field | `Meta+Enter`, `Ctrl+Enter` |
 | `cancel-pick` (drop the lines picked for a note) | field | `Escape` |
+
+`pane-reviews` is deprecated (API 1.159) and goes at the next major: a value there still binds `reviews/thread`, with a
+warning, and `reviews/thread` wins when both are set. A file that already holds it keeps working; a new `config/set
+keys.pane-reviews` is refused for its warning, so write `reviews/thread`.
 
 `tower config check` fails a value that is no chord, at `keys.<id>` or `keys.<id>[n]`, and a chord bound to two
 commands that can fire in the same place (a global chord with a modifier reaches terminals and fields too), at the

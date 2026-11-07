@@ -10,7 +10,7 @@ import type { Capability } from './capabilities.ts'
 import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, itemSubject, heededWaits, unboundCommands, type Heed } from './cards.ts'
 import type { Action, Added, Words } from './extensions.ts'
 import type { Subject } from './subjects.ts'
-import { COMMANDS, panesOf } from './keymap.ts'
+import { chordsOf, COMMANDS, panesOf } from './keymap.ts'
 import { VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
 export type GoTarget =
@@ -149,7 +149,7 @@ const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card)
       label: words.label,
       hint: words.command ? commandHint(capabilities, words.command, words.hint) : verbHint('card', a.verb, c),
       keywords: [c.callsign, a.verb],
-      chords: words.command && board.keys[words.command],
+      chords: words.command && chordsOf(board.keys, words.command),
       destructive: words.destructive,
       card: c.id,
       project: c.project,
@@ -245,7 +245,7 @@ export const paletteEntries = (ctx: PaletteContext): Entry[] => {
     label: k.label,
     hint: commandHint(capabilities, k.id, `${capitalized(k.does)}.`),
     keywords: [k.does],
-    chords: board.keys[k.id],
+    chords: chordsOf(board.keys, k.id),
     does: { t: 'command', id: k.id },
   }))
   const panes = !c ? [] : panesOf(board).filter((p) => !p.name).map((p): Entry => ({
