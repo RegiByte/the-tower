@@ -5532,6 +5532,9 @@
             "wait",
             "offer"
           ]
+        },
+        "opens": {
+          "$ref": "#/definitions/AskOpens"
         }
       },
       "required": [
@@ -5544,6 +5547,22 @@
         "title"
       ],
       "description": "An ask as the board carries it: its `key` qualified by its capability, `<cap>:<key>`, and its actions tagged."
+    },
+    "AskOpens": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "view"
+      ],
+      "additionalProperties": false,
+      "description": "Where going to an ask leads, when that is a view and not the ask's subject: a view by its id, and the core subject's key to open it on, the board with none. A viewer already there is at the ask, so the next one waiting moves past it."
     },
     "Today": {
       "type": "object",

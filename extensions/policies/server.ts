@@ -404,6 +404,7 @@ const start: Start = (ctx) => {
             until: o.until,
             sound: 'offer',
             actions: [{ verb: o.calls.accept[0], call: o.calls.accept[1], words: { label: 'Accept', hint: 'start the run this slot offers' } }],
+            opens: { view: `${POLICIES}/policies`, subject: `floor:${floor.id}` },
           }),
         )
         const slots = views.flatMap((v) => (v.header && v.header.runner === undefined ? [{ key: v.id, when: v.header.when }] : []))

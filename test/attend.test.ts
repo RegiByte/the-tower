@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import type { Board, Wait } from '../src/bridge/board.ts'
 import type { Offer } from '../src/shared/policies-legacy.ts'
 import type { BoardAsk } from '../src/shared/extensions.ts'
+import { nextAttended } from '../src/shared/waits.ts'
 import { attendNext, attendStep, attending, chooseRing, dismiss, eyeStep, remind, seeBoard, stored, watching, type AttendEffect, type AttendEvent, type AttendOut } from '../src/shared/attend.ts'
 
 const wait = (id: string, reason: Wait['reason'] = 'asks'): Wait => ({ id, key: `${id}:1`, reason, since: 0 })
@@ -76,4 +77,26 @@ test('attend: the viewer looks at a worker only as events tell it, and its waits
   assert.deepEqual(kinds(run([{ type: 'watch', at: 'A' }, { type: 'focus', focused: false }, board])[1]), ['announce', 'notify', 'sound:question'])
   assert.deepEqual(kinds(run([{ type: 'watch', at: 'A' }, { type: 'visible', visible: false }, { type: 'visible', visible: true }, board])[1]), ['announce'])
   assert.deepEqual(kinds(run([{ type: 'watch', at: 'A' }, { type: 'watch', at: undefined }, board])[1]), ['announce', 'notify', 'sound:question'])
+})
+
+test('next waiting moves past an ask opening where the viewer stands, whichever extension asks it', () => {
+  const opens = { view: 'pulse/beats', subject: 'floor:p' }
+  const ask: BoardAsk = { key: 'pulse:beat', cap: 'pulse', subject: 'floor:p', title: 'Beat', since: 0, sound: 'offer', actions: [], opens }
+  const attended = [ask, wait('A')]
+  assert.equal(nextAttended(attended, new Set(), { at: opens }).to?.key, 'A:1')
+  assert.equal(nextAttended(attended, new Set(), { at: { view: 'pulse/beats', subject: 'floor:q' } }).to?.key, 'pulse:beat')
+  assert.equal(nextAttended(attended, new Set(), { at: { view: 'tower/archive', subject: 'floor:p' } }).to?.key, 'pulse:beat')
+  assert.equal(nextAttended(attended, new Set(), {}).to?.key, 'pulse:beat')
+})
+
+test('an ask opening a view with no subject is the same place as that view on the board', () => {
+  const ask = (opens: BoardAsk['opens']): BoardAsk => ({ key: 'pulse:beat', cap: 'pulse', subject: 'board', title: 'Beat', since: 0, sound: 'offer', actions: [], opens })
+  assert.equal(nextAttended([ask({ view: 'p/wide' }), wait('A')], new Set(), { at: { view: 'p/wide', subject: 'board' } }).to?.key, 'A:1')
+  assert.equal(nextAttended([ask({ view: 'p/wide', subject: 'board' }), wait('A')], new Set(), { at: { view: 'p/wide' } }).to?.key, 'A:1')
+})
+
+test('next waiting counts an ask with no view of its own as here only on its worker', () => {
+  const ask: BoardAsk = { key: 'pulse:beat', cap: 'pulse', subject: 'card:A', title: 'Beat', since: 0, sound: 'wait', actions: [] }
+  assert.equal(nextAttended([ask, wait('B')], new Set(), { id: 'A' }).to?.key, 'B:1')
+  assert.equal(nextAttended([ask, wait('B')], new Set(), { id: 'B' }).to?.key, 'pulse:beat')
 })

@@ -85,6 +85,7 @@ const PartShape = z.strictObject({
         until: z.number().optional(),
         sound: z.enum(['wait', 'offer']),
         actions: z.array(ActionShape),
+        opens: z.strictObject({ view: z.string().min(1), subject: z.string().regex(SUBJECT_KEY, 'a subject key of the core, as `subject` is').optional() }).optional(),
       }),
     )
     .optional(),

@@ -1,12 +1,11 @@
+import { projectOfKey } from '/lib/board.js'
 import { gistLine, shownTitle, SOUNDS, statusName } from '/lib/cards.js'
-import { offerWords } from '/x/policies/panel.js'
 import { shownKey } from './kit.js'
 
 /**
  * @import { Board, Card, CardShown, Floor, Wait } from '/lib/board.js'
  * @import { Sound } from '/lib/cards.js'
  * @import { BoardAsk } from '/lib/extension.js'
- * @import { Offer } from '../../extensions/policies/policies.ts'
  */
 
 /**
@@ -16,8 +15,7 @@ import { shownKey } from './kit.js'
  *   openShown: (c: Card, s: CardShown) => void,
  *   floorOf: (project: string) => Floor | undefined,
  *   board: () => Board,
- *   openPolicies: (project: string) => void,
- *   goToSubject: (key: string) => void,
+ *   openAsk: (a: BoardAsk) => void,
  * }} AlertingDeps
  */
 
@@ -27,7 +25,7 @@ import { shownKey } from './kit.js'
  * @param {AlertingDeps} deps
  */
 export function alerting(deps) {
-  const { callsign, select, openShown, floorOf, board, openPolicies, goToSubject } = deps
+  const { callsign, select, openShown, floorOf, board, openAsk } = deps
   /**
    * One notification per wait or offer that begins (`/lib/attend.js`), closed once it is over or dismissed.
    * @type {Map<string, Notification>}
@@ -61,17 +59,15 @@ export function alerting(deps) {
     n.onclick = () => (window.focus(), openShown(c, s), n.close())
   }
 
-  /** @param {Omit<Offer, 'calls' | 'actions'>} o */
-  function showOfferAlert(o) {
-    const n = new Notification(`${o.title ?? o.tag} · offered`, { body: `${/** @type {Floor} */ (floorOf(o.project)).name}: ${offerWords(board(), o, Date.now())}`, tag: o.key })
-    n.onclick = () => (window.focus(), openPolicies(o.project), n.close())
-    return n
-  }
-
-  /** @param {BoardAsk} a */
+  /**
+   * An ask's notification: an offer says it is offered, where and its hint, anything else who asks.
+   * @param {BoardAsk} a
+   */
   function showAskAlert(a) {
-    const n = new Notification(a.title, { body: `${a.cap} asks`, tag: a.key, requireInteraction: a.sound === 'wait' })
-    n.onclick = () => (window.focus(), goToSubject(a.subject), n.close())
+    const project = projectOfKey(board(), a.subject)
+    const said = a.sound === 'offer' ? [project && floorOf(project)?.name, a.hint].filter(Boolean).join(': ') : ''
+    const n = new Notification(a.sound === 'offer' ? `${a.title} · offered` : a.title, { body: said || `${a.cap} asks`, tag: a.key, requireInteraction: a.sound === 'wait' })
+    n.onclick = () => (window.focus(), openAsk(a), n.close())
     return n
   }
 
@@ -84,5 +80,5 @@ export function alerting(deps) {
     return n
   }
 
-  return { alerts, playSound, showShownAlert, showOfferAlert, showAskAlert, showAlert }
+  return { alerts, playSound, showShownAlert, showAskAlert, showAlert }
 }

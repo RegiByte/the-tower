@@ -1,6 +1,6 @@
 import type { Board, Wait, WaitReason } from '../bridge/board.ts'
 import type { Offer } from './policies-legacy.ts'
-import type { BoardAsk } from './extensions.ts'
+import type { AskOpens, BoardAsk } from './extensions.ts'
 import { dutyOrderIn, findCard, stepFrom } from './crews.ts'
 import { VIEWER_KEYS } from './viewer.ts'
 
@@ -104,18 +104,17 @@ const keyed = <T extends { key: string }>(prev: T[], next: T[]) => {
 /**
  * The next wait to go to from the worker `here`, round-robin: the first in `waits` that isn't `here`'s and wasn't
  * visited this round, and the visited keys to keep once there. `here`'s own wait counts as visited. When every other
- * wait was visited, a new round starts at the first. An offer is no worker's: it is never `here`'s (`nextAttended` places a viewer at a floor's offers).
+ * wait was visited, a new round starts at the first.
  */
 export const nextWait = <T extends { key: string; id?: string }>(waits: T[], visited: ReadonlySet<string>, here: string | undefined): { to?: T; visited: Set<string> } =>
   nextIn(waits, visited, (w) => w.id !== undefined && w.id === here)
 
 /**
  * `nextWait` over `attentionOrder` from where the viewer is: the worker `here.id`, whose waits and the asks about it
- * count as visited, or the floor `here.policies` whose policies are open, whose offers (the policies extension's asks
- * about its policies) count as visited the same way.
+ * count as visited, and the view `here.at` open in the main pane, where each ask that opens there counts the same way.
  */
-export const nextAttended = (attended: Attended[], visited: ReadonlySet<string>, here: { id?: string; policies?: string }) =>
-  nextIn(attended, visited, (a) => (isOffer(a) ? a.project === here.policies : isAbout(a, here.id) || (here.policies !== undefined && isAsk(a) && a.cap === 'policies' && a.subject.startsWith(`item.policies:${here.policies}/`))))
+export const nextAttended = (attended: Attended[], visited: ReadonlySet<string>, here: { id?: string; at?: AskOpens }) =>
+  nextIn(attended, visited, (a) => isAbout(a, here.id) || (isAsk(a) && a.opens !== undefined && a.opens.view === here.at?.view && (a.opens.subject ?? 'board') === (here.at.subject ?? 'board')))
 
 const nextIn = <T extends { key: string }>(waits: T[], visited: ReadonlySet<string>, heres: (w: T) => boolean): { to?: T; visited: Set<string> } => {
   const at = waits.filter(heres).map((w) => w.key)

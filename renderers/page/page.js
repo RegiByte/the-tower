@@ -2,7 +2,7 @@ import { attending, attendNext, watchedIn } from '/lib/attend.js'
 import { boardSubject, callOf, can, cardSubject, noLongerOffered, offeredCall, parentOf, projectOfKey, runVerb, sentHome, shownSubject, subjectAt } from '/lib/board.js'
 import { briefCss } from '/lib/brief.js'
 import { CAPABILITIES } from '/lib/capabilities.js'
-import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, claudeUntestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, isOffer, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
+import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, claudeUntestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
 import { toastsCss, watchTips } from '/lib/chrome.js'
 import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND } from '/lib/keys.js'
 import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
@@ -16,7 +16,6 @@ import { fileButtonsHtml, fileCall, itemsCss, keepingFocus, panelsCss, pressing 
 import { readViewer, sawAll, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
 import { probedLines } from '/x/quota/quota.js'
-import { floorPolicies, offerAskKey, POLICIES } from '/x/policies/policies.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
 import { dialogs } from './dialogs.js'
@@ -40,7 +39,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
 /**
  * @import { SideView } from './stats.js'
  * @import { AttendEffect, AttendEvent, Attending } from '/lib/attend.js'
- * @import { Attention, Board, Card, Floor, Subject } from '/lib/board.js'
+ * @import { Attention, Board, Card, Floor, Subject, Wait } from '/lib/board.js'
  * @import { BriefMarkdown } from '/lib/brief.js'
  * @import { Capability } from '/lib/capabilities.js'
  * @import { Attended, Heed, Move } from '/lib/cards.js'
@@ -58,14 +57,10 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { ReadAnswer } from '../../extensions/quota/client/quota.ts'
  * @import { MainView } from './view.js'
  * @import { Draft } from '../../extensions/drafts/client/drafts.ts'
- * @import { Offer } from '../../extensions/policies/policies.ts'
  */
 
 document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + settingsCss + itemsCss + briefCss + markdownCss + toastsCss }))
 watchTips(document)
-
-/** The policy's offer an ask is, when the policies extension asks it. @param {BoardAsk} a */
-const offerOf = (a) => (a.cap === POLICIES ? board().floors.flatMap((f) => floorPolicies(f).offers).find((o) => offerAskKey(o) === a.key) : undefined)
 
 /** The board drawn until the first arrives: one with nothing on it. */
 const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], offers: [], asks: [], adds: {}, limits: [{ rateLimits: [] }], rateLimits: [], probes: [], extensions: [], viewers: {}, hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false, jobs: [], jobsUp: false }))
@@ -106,7 +101,7 @@ function render() {
   const offered = heededAsks(board(), heed()).length
   document.title = waiting + offered ? `(${waiting + offered}) The Tower` : 'The Tower'
   paintOnce($('tally'), `<span class="chip waits ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
-    (offered ? `<span class="chip offered some" tabindex="0" data-tip="${esc(withKeys("policies' slots offered and not yet started, and what extensions ask of you, that you haven't dismissed: the next waiting goes to them after the workers waiting on you", 'next-waiting'))}"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
+    (offered ? `<span class="chip offered some" tabindex="0" data-tip="${esc(withKeys("what extensions ask of you that you haven't dismissed: the next waiting goes to them after the workers waiting on you", 'next-waiting'))}"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
     /** @type {Attention[]} */ (['needs', 'ready', 'working', 'quiet', 'broken'])
       .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
   const host = lostAt() ? 'unknown' : hostState(board())
@@ -207,7 +202,7 @@ const pageHandlers = {
   started: (s, { id }) => [into({ ...s, started: new Set([...s.started, id]) })],
   'next-waiting': (s) => {
     const attended = attentionOrder(s.board ?? BLANK, heedOf(s))
-    const step = nextAttended(attended, s.visited, { id: cardIdOf(s.view), policies: located(s.view, POLICIES_VIEW)?.project })
+    const step = nextAttended(attended, s.visited, { id: cardIdOf(s.view), at: s.view.t === 'view' ? s.view.location : undefined })
     return [into({ ...s, visited: step.visited }), step.to ? { type: 'attend-to', to: step.to } : { type: 'toast', message: attended.length ? 'Nobody else is waiting on you' : 'Nobody is waiting on you' }]
   },
   dismiss: attend,
@@ -233,12 +228,12 @@ const page = loop({
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
     announce: ({ text }) => announce(text),
     notify: ({ attended: a }) => {
-      if (Notification.permission === 'granted') alerts.set(a.key, isAsk(a) ? (offerOf(a) ? showOfferAlert(/** @type {Offer} */ (offerOf(a))) : showAskAlert(a)) : isOffer(a) ? showOfferAlert(a) : showAlert(/** @type {Card} */ (findCard(a.id)), a))
+      if (Notification.permission === 'granted') alerts.set(a.key, isAsk(a) ? showAskAlert(a) : showWaitAlert(/** @type {Wait} */ (a)))
     },
     unnotify: ({ key }) => (alerts.get(key)?.close(), alerts.delete(key)),
     sound: ({ sound }) => playSound(SOUNDS[sound]),
     keep: ({ field, value }) => tower.store.set(VIEWER_KEYS[field], value),
-    'attend-to': ({ to }) => (isOffer(to) ? openPolicies(to.project) : isAsk(to) ? (offerOf(to) ? openPolicies(/** @type {Offer} */ (offerOf(to)).project) : goToSubject(to.subject)) : moveTo(to.id)),
+    'attend-to': ({ to }) => (isAsk(to) ? openAsk(to) : moveTo(/** @type {Wait} */ (to).id)),
     toast: ({ message }) => toast(message),
     leave: ({ view: v }) => {
       $('main').classList.remove(mainClass(v))
@@ -297,15 +292,17 @@ const floorPaint = (v) => paint(floorOfView(v, projectOfCard))
 
 const { findCard, freshArchives, lookUp, hold } = archive({ cards, board, floorOf, render })
 
-/** The views the page opens by name: a floor's archive and policies, a shelf entry. */
+/** The views the page opens by name: a floor's archive, a shelf entry. */
 const ARCHIVE_VIEW = 'tower/archive'
-const POLICIES_VIEW = 'policies/policies'
 const SHELF_VIEW = 'tower/shelf'
 
 /** A floor's past workers in the main pane. @param {string} project */
 const openArchive = (project) => goTo({ view: ARCHIVE_VIEW, subject: `floor:${project}` })
-/** A floor's policies in the main pane. @param {string} project */
-const openPolicies = (project) => goTo({ view: POLICIES_VIEW, subject: `floor:${project}` })
+/** A wait's notification. @param {Wait} w */
+const showWaitAlert = (w) => showAlert(/** @type {Card} */ (findCard(w.id)), w)
+
+/** Goes to what an ask is about: the view it opens, else its subject. @param {BoardAsk} a */
+const openAsk = (a) => (a.opens ? goTo(a.opens) : goToSubject(a.subject))
 /** A floor's shelf entry in the main pane, on the file of it shown last while it stays open. @param {string} project @param {number} n */
 const openShelf = (project, n) => {
   const open = at(SHELF_VIEW)
@@ -321,7 +318,7 @@ const { showLanding, showKeys, ask } = dialogs({ board })
 
 
 
-const { alerts, playSound, showShownAlert, showOfferAlert, showAskAlert, showAlert } = alerting({ callsign, select, openShown: (c, s) => display(shownSubject(c, s)), floorOf, board, openPolicies, goToSubject: (key) => goToSubject(key) })
+const { alerts, playSound, showShownAlert, showAskAlert, showAlert } = alerting({ callsign, select, openShown: (c, s) => display(shownSubject(c, s)), floorOf, board, openAsk })
 
 const { drawSettings } = settingsPane({ page, viewer, playSound })
 

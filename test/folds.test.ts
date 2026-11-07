@@ -133,6 +133,14 @@ test('x is checked against its schema; tidy and asks land on the board, an ask p
   assert.deepEqual(b.asks, [{ key: 'pulse:beat-tower', subject: 'floor:tower', title: 'Beat now?', since: 900, sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/ping', call: { project: 'tower' }, cap: 'pulse' }] }])
 })
 
+test("an ask's opens names a core subject, or the fold's part is dropped as any bad shape is", () => {
+  const asking = (opens: { view: string; subject?: string }) =>
+    fold([folder('pulse', { floor: () => ({ asks: [{ key: 'beat', subject: 'board', title: 'Beat', since: 0, sound: 'offer', actions: [], opens }] }) })])
+  assert.deepEqual(asking({ view: 'pulse/beats', subject: 'floor:lab' }).problems, [])
+  assert.deepEqual(asking({ view: 'pulse/beats' }).problems, [])
+  assert.ok(asking({ view: 'pulse/beats', subject: 'lab' }).problems.some((p) => p.problem.code === 'shape'))
+})
+
 test("a fold's input is frozen, and a build's folds of one extension over the bound are slow", () => {
   let t = 0
   const { problems, spent } = foldBoard({
