@@ -44,7 +44,9 @@ so its frame is computed once and kept in memory ([`lastFrames`](ref:hub/src/tow
 open. An interactive terminal opens the same stream as `terminal/<id>`
 ([`terminalStream`](ref:hub/src/tower/http.ts#terminalStream)), whose snapshot also says how many other terminals
 are open on the session, so a renderer claims the PTY size on open only as the sole one ([[tower3d-desk]]). A board
-client observes the machine while it holds the board ([[live-system]]). Screens and shells stream on their own routes or
+client observes the machine while it holds the board ([[live-system]]); its first board waits three seconds at most for
+that read, so a repo that hangs costs a slow first board, not a blank page, and what isn't read yet comes on later
+boards. A verb that decides from the read, Tidy among them, waits for all of it (`observe`). Screens and shells stream on their own routes or
 multiplexed on one connection per client ([`openMux`](ref:hub/src/tower/http.ts#openMux)). Requests from
 any other site are refused.
 

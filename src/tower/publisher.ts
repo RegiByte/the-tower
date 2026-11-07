@@ -24,6 +24,9 @@ const CLOCK_PUBLISH_MS = 60_000
 
 type Deps = { 'core:config': ConfigResource; 'core:system': SystemResource; 'core:extensions': ExtensionsResource }
 
+/** How long a first board waits for the machine's read: a repo that hangs holds that read for a minute or more. */
+const FIRST_BOARD_WAIT_MS = 3000
+
 export const publisher = defineResource({
   dependencies: ['core:config', 'core:system', 'core:extensions'],
   start: ({ 'core:config': { paths, read: readConfig, served }, 'core:system': system, 'core:extensions': extensions }: Deps) => {
@@ -203,20 +206,28 @@ export const publisher = defineResource({
     const unheard = extensions.onChange(schedulePublish)
     const clock = setInterval(schedulePublish, CLOCK_PUBLISH_MS)
 
-    /** A board client observes the machine while it holds the board, so its first board already says what runs. */
+    /** A board client observes the machine while it holds the board, so its first board already says what runs, unless a read hangs: what it hasn't read yet comes on later boards. */
     async function streamBoard(req: http.IncomingMessage, res: http.ServerResponse, viewer: { viewer: string; renderer?: string } | undefined) {
       let gone = false
-      let release: (() => void) | undefined
+      const { release, read } = system.watchMachine()
       if (viewer !== undefined) streamsOf.set(res, viewer)
       req.on('close', () => {
         gone = true
         boardClients.delete(res)
         behind.delete(res)
         viewerGone(res)
-        release?.()
+        release()
       })
-      release = await system.observe()
-      if (gone) return release()
+      let waited: NodeJS.Timeout | undefined
+      try {
+        await Promise.race([read, new Promise((resolve) => (waited = setTimeout(resolve, FIRST_BOARD_WAIT_MS)))])
+      } catch (err) {
+        release()
+        throw err
+      } finally {
+        clearTimeout(waited)
+      }
+      if (gone) return
       const current = currentBoard()
       if (!boardClients.size && !boardListeners.size) published = current
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' })
