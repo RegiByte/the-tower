@@ -12,6 +12,33 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.98.0
+
+A broken config no longer takes the tower down, and the library reaches the page, reviews, The Week and Tower.app.
+Restart the tower with this release (`tower down tower`, then `tower up tower`). No host restart and no config change.
+API 1.156, by addition. The fix for shells that ignore a hangup and the dated logs of the terms, jobs and host daemons
+arrive when each daemon next starts.
+
+- **One bad input costs only itself.** A config that is missing, empty or lacks a required key is said on the board and
+  answers `config`, where it used to end the tower, and a worker going home on a broken config waits. A board listener
+  that throws is logged and the next board reaches every listener. This also ends an intermittent death in the tower's
+  own tests. An unborn worktree no longer fails its repo's read, and one with uncommitted files no longer offers a
+  discard that could not work.
+- **`tower down` asks first.** Bare `tower down`, while a session is mid-turn, names who would be cut off and refuses
+  without `--force`. `tower down tower` is unchanged, and stays the way to restart the tower. A script running the bare
+  form now needs the flag.
+- **Kills and logs say what happened.** A shell that ignores its hangup is killed, and `/changes` on a checkout the floor
+  no longer names answers `not_found`. Daemon logs are dated.
+- **The library.** The page, the core views, reviews, The Week and Tower.app's attention page import only `/lib/`. The
+  page has no static import of a bundled extension left: a replacement for quota or drafts that lacks its client file
+  costs that file alone. `/x/tower/parts.js` is no longer served; take `viewCss`, `closeHtml`, `paintOnce` and `keyedTip`
+  from `/lib/view.js`. `nextAttended`, provisional, takes `at` in place of `policies`.
+- **`Ask.opens`.** An ask can name the view and subject its next-waiting jump lands on, so any extension can place one.
+- **Words.** Policies and quota declare theirs under `tower x`, and the old words stay as aliases that print what to
+  type. An extension's Claude plugin is a documented, tested door, and words with no guidance are a load warning.
+- **`tower agent`** says when it left turns out and prints the command that reads them all, and that read runs oldest
+  first with a hirer's brief named as the hirer's.
+
 ## v1.97.2
 
 Sending home the worker on screen keeps it there, on its Brief with Resume. Reload the page to get it. No restart, no
