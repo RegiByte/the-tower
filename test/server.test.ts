@@ -1634,8 +1634,11 @@ test("server: reviews' words sign with their calling worker, default to its thre
   }
   const noted = await said('reviews/note', { project: 'lab', on: 'worded', body: 'From a word.' })
   assert.match(noted.said, new RegExp(`^Noted as n${noted.n} on the thread of checkout worded: `))
-  assert.match((await said('reviews/note', { project: 'lab', on: 'worded', re: noted.n, body: 'An answer.' })).said, new RegExp(`answering n${noted.n}`))
-  assert.match((await said('reviews/resolve', { project: 'lab', checkout: 'worded', notes: [noted.n] })).said, new RegExp(`^Resolved n${noted.n} with n`))
+  assert.match((await said('reviews/note', { project: 'lab', on: 'worded', re: `n${noted.n}`, body: 'An answer.' })).said, new RegExp(`answering n${noted.n}`))
+  assert.match((await said('reviews/resolve', { project: 'lab', on: 'worded', resolves: [`n${noted.n}`] })).said, new RegExp(`^Resolved n${noted.n} with n`))
+  const plain = await said('reviews/note', { project: 'lab', on: 'worded', re: String(noted.n), body: 'Another.' })
+  assert.match((await said('reviews/resolve', { project: 'lab', checkout: 'worded', notes: [plain.n] })).said, new RegExp(`^Resolved n${plain.n} with n`))
+  assert.equal(errorCode(await post('reviews/resolve', { project: 'lab', on: 'worded' }, asWorker)), 'invalid')
   const thread = await request(`/reviews/thread/lab?checkout=worded`, { headers: asWorker })
   assert.equal(thread.status, 200, thread.body)
   assert.match((JSON.parse(thread.body) as { said: string }).said, /From a word\.[\s\S]*Nothing new to you since your last note\.[\s\S]*A note's anchors name/)
