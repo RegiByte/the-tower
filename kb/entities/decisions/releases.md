@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-07",
-  "refs": ["hub/src/update.ts#update", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#sourcesOf", "hub/src/update.ts#changedSince", "hub/src/update.ts#updateJobs", "hub/src/cli.ts", "hub/CHANGELOG.md#L3-L13", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO"]
+  "refs": ["hub/src/update.ts#update", "hub/src/update.ts#moveTo", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#sourcesOf", "hub/src/update.ts#changedSince", "hub/src/update.ts#updateJobs", "hub/src/cli.ts", "hub/CHANGELOG.md#L3-L13", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO"]
 }
 ---
 **Problem.** A `git pull` says nothing about whether it changed the host, whose restart ends every session, and gives
@@ -28,9 +28,11 @@ their sessions; an update has to tell them what it asks of them, and never end t
      release is left alone);
   2. shows the changelog entries after the release `HEAD` descends from
      ([`releasesBetween`](ref:hub/src/update.ts#releasesBetween), [`entriesFor`](ref:hub/src/update.ts#entriesFor));
-  3. refuses while tracked files have changes, then stops the tower if it runs, checks the tag out (a detached
-     `HEAD`: a branch of the user's stays as it was), `npm ci`, rebuilds Tower 3D when its `out/` exists, and starts
-     the tower again;
+  3. refuses while tracked files have changes, then stops the tower if it runs, moves the checkout to the tag
+     ([`moveTo`](ref:hub/src/update.ts#moveTo), derived from its state): a branch the tag descends from is
+     fast-forwarded with `merge --ff-only`, so it stays a branch; a detached `HEAD` or a diverged branch is checked
+     out at the tag (detached), and a diverged branch is named with the number of commits it keeps that the tag lacks; then `npm ci`, rebuilds Tower 3D when its
+     `out/` exists, and starts the tower again;
   4. restarts the jobs daemon only when its code changed since it started and it runs no job, since a restart ends
      every running job; otherwise it names the files and says to restart it once they end
      ([`updateJobs`](ref:hub/src/update.ts#updateJobs), [[jobs-own-daemon]]);

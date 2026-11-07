@@ -1,6 +1,7 @@
 /**
  * `tower update`: moves this checkout to the newest release, a tag `vX.Y.Z` here or on its remote. It shows the
- * CHANGELOG.md entries it passes, checks the tag out (refused while tracked files have changes), installs, rebuilds
+ * CHANGELOG.md entries it passes, moves the checkout there (refused while tracked files have changes): a branch the
+ * release descends from is fast-forwarded, anything else is checked out at the tag. It installs, rebuilds
  * Tower 3D when it was built, and restarts the tower when it was running. The host is never restarted, since that
  * ends every session: when a file the host's code is built from changed after the running host started (its control
  * socket was made), the update says so, after this update or any before it. The jobs daemon is restarted when its code
@@ -26,6 +27,16 @@ export const releasesBetween = (tags: string[], from: string | undefined, to: st
 /** The changelog's entries for `releases`, newest first as written: each its `## <tag>` heading and what follows. */
 export const entriesFor = (changelog: string, releases: string[]): string[] =>
   changelog.split(/^(?=## )/m).filter((section) => releases.includes(section.split('\n')[0].slice('## '.length).trim()))
+
+/**
+ * How the checkout reaches the release, out of the state it is in: a branch the release descends from moves along
+ * (fast-forward), so it stays a branch; a detached HEAD, or a branch that has commits the release lacks, is checked
+ * out at the release, which leaves the branch where it was (`ahead` commits on it, when that is not none).
+ */
+export type Move = { t: 'fast-forward'; branch: string } | { t: 'checkout'; leftBehind?: { branch: string; ahead: number } }
+
+export const moveTo = (branch: string | undefined, descends: boolean, ahead: number): Move =>
+  branch === undefined ? { t: 'checkout' } : descends ? { t: 'fast-forward', branch } : { t: 'checkout', leftBehind: { branch, ahead } }
 
 /** Every file a daemon's code is built from, relative to the checkout, read from the imports of its `script`. */
 const sourcesOf = async (script: string): Promise<string[]> => {
@@ -58,13 +69,27 @@ export async function update(paths: SystemPaths): Promise<void> {
   console.log(`${from ?? 'this checkout'} → ${newest}\n\n${entriesFor(changelog, releasesBetween(tags, from, newest)).join('').trim()}\n`)
   if ((await git(REPO, ['status', '--porcelain', '--untracked-files=no'])).trim()) throw new CliError(`${REPO} has uncommitted changes: commit or stash them, then update again`)
 
+  const branch = await run(REPO, ['symbolic-ref', '--short', '--quiet', 'HEAD'])
+  const descends = (await run(REPO, ['merge-base', '--is-ancestor', 'HEAD', newest])).code === 0
+  const ahead = branch.code === 0 && !descends ? Number(await git(REPO, ['rev-list', '--count', `${newest}..HEAD`])) : 0
+  const move = moveTo(branch.code === 0 ? branch.stdout.trim() : undefined, descends, ahead)
+
   const [jobs, tower] = daemonsNamed(paths, towerPort(readConfig(paths.config)), ['jobs', 'tower'])
   const towerUp = (await tower.holder()).t === 'ours' || (await startedPid(tower)) !== undefined
   const tower3d = existsSync(path.join(REPO, 'renderers', 'tower3d', 'out'))
   if (towerUp) console.log(`tower: ${await bringDown(tower)}`)
   try {
-    await wholeTree(REPO, ['checkout', '--quiet', newest])
-    console.log(`checked out ${newest}`)
+    if (move.t === 'fast-forward') {
+      await wholeTree(REPO, ['merge', '--ff-only', '--quiet', newest])
+      console.log(`fast-forwarded ${move.branch} to ${newest}`)
+    } else {
+      await wholeTree(REPO, ['checkout', '--quiet', newest])
+      console.log(`checked out ${newest}`)
+      if (move.leftBehind) {
+        const { branch, ahead } = move.leftBehind
+        console.log(`${branch} has ${ahead} commit(s) ${newest} lacks, so it was not moved: they stay on ${branch}, which this checkout left. Merge or rebase it onto ${newest} to bring them along.`)
+      }
+    }
     npm('ci')
     if (tower3d) npm('run', 'tower3d')
   } finally {
