@@ -9,7 +9,7 @@
  * backs off while GitHub keeps saying the same (`BACKOFF`), since a new one most often shows at a turn's end. Each
  * round is one GraphQL query per GitHub host and `CHUNK` branches, every branch an alias in it.
  */
-import type { Board, Card } from '/lib/board.js'
+import type { Board, Card, Floor } from '/lib/board.js'
 import type { FoldCtx, Start, StreamFact, TriggerCall } from '/lib/extension.js'
 
 type Settings = { every: string; gh: string[] }
@@ -88,18 +88,26 @@ const CHUNK = 20
 /** How many pull requests GitHub lists per branch name, newest first: a fork's of the same name may be newer than the branch's own. */
 const CANDIDATES = 3
 
-/** The branches the board's workers are on, once each: a worktree's, whose folder is there. The main checkout has none. */
-const branchesOf = (cards: Card[]): Branch[] => {
+/** A card's worktree in each repo of its floor that has a branch there, the card's own folder first: a worktree spans its floor's repos, each with its own branch and pull requests. */
+const treeBranches = (floor: Floor, card: Card): Branch[] => {
+  const tree = floor.worktrees.find((t) => t.name === card.worktree?.name)
+  const branches = (tree?.repos ?? []).flatMap((repo) => (repo.branch === undefined ? [] : [{ dir: repo.path, branch: repo.branch }]))
+  return branches.sort((a, b) => Number(b.dir === card.cwd) - Number(a.dir === card.cwd))
+}
+
+type Placed = { floor: Floor; card: Card }
+
+const placedOn = (board: Board): Placed[] => board.floors.flatMap((floor) => floor.cards.map((card) => ({ floor, card })))
+
+/** The branches these workers are on, once each: their worktrees', whose folders are there. The main checkout has none. */
+const branchesOf = (placed: Placed[]): Branch[] => {
   const seen = new Map<string, Branch>()
-  for (const card of cards) {
-    const branch = card.worktree?.branch
-    if (branch === undefined || card.worktree!.gone) continue
-    seen.set(keyOf(card.cwd, branch), { dir: card.cwd, branch })
+  for (const { floor, card } of placed) {
+    if (card.worktree?.gone !== false) continue
+    for (const branch of treeBranches(floor, card)) seen.set(keyOf(branch.dir, branch.branch), branch)
   }
   return [...seen.values()]
 }
-
-const cardsOf = (board: Board): Card[] => board.floors.flatMap((floor) => floor.cards)
 
 /**
  * The statuses a turn ends in: done, done with something still running, interrupted, failed, or the worker gone
@@ -113,8 +121,8 @@ const TURN_ENDS: ReadonlySet<Card['status']> = new Set(['done', 'watching', 'idl
  * pull request.
  */
 const turnsEnded = (prev: Board, next: Board): TriggerCall[] => {
-  const was = new Map(cardsOf(prev).map((card) => [card.id, card.status]))
-  const branches = branchesOf(cardsOf(next).filter((card) => was.get(card.id) === 'working' && TURN_ENDS.has(card.status)))
+  const was = new Map(placedOn(prev).map(({ card }) => [card.id, card.status]))
+  const branches = branchesOf(placedOn(next).filter(({ card }) => was.get(card.id) === 'working' && TURN_ENDS.has(card.status)))
   return branches.length ? [{ verb: 'pr-status/ask', input: { branches } }] : []
 }
 
@@ -225,27 +233,44 @@ const prHint = (pr: Pr): string => {
   return `#${pr.number} ${pr.title}\n${stand.join(' · ')}\nOpens on GitHub, ${repoOfUrl(pr.url)}`
 }
 
-const foldCard = (card: Card, { own }: FoldCtx) => {
-  const branch = card.worktree?.branch
-  if (branch === undefined) return {}
-  const seen = (own.streams.seen as State)[keyOf(card.cwd, branch)]
-  const pr = seen?.pr
-  if (!pr) return {}
+type Found = { pr: Pr; seen: Seen }
+
+/** What `x` says of a pull request. */
+const prPart = ({ pr }: Found) => {
+  const review = pr.state === 'OPEN' && pr.review ? REVIEW_WORDS[pr.review] : undefined
+  return { number: pr.number, state: stateOf(pr), url: pr.url, title: pr.title, ...(review && { review }), ...(pr.checks && { checks: pr.checks.toLowerCase() }) }
+}
+
+/** A pull request's badges: `named` says its repo, for a card showing more than one repo's. */
+const prBadges = ({ pr, seen }: Found, named: boolean) => {
   const state = stateOf(pr)
   const open = pr.state === 'OPEN'
   const review = open && pr.review ? REVIEW_WORDS[pr.review] : undefined
   const checks = open && pr.checks ? CHECKS_BADGE[pr.checks] : undefined
+  const name = named ? `${repoOfUrl(pr.url).split('/')[1]} ` : ''
+  return [
+    {
+      label: `${name}#${pr.number} ${state}${review ? ` · ${review}` : ''}`,
+      tone: TONE[state],
+      hint: seen.error === undefined ? prHint(pr) : `${prHint(pr)}\nAs last seen: GitHub can't be asked now (${firstLine(seen.error)})`,
+      href: pr.url,
+    },
+    ...(checks ? [{ ...checks, hint: `The checks on #${pr.number}'s newest commit: ${pr.checks === 'FAILURE' || pr.checks === 'ERROR' ? 'at least one failed' : 'some still run'}\nOpens them on GitHub`, href: `${pr.url}/checks` }] : []),
+  ]
+}
+
+const foldCard = (card: Card, { own, board }: FoldCtx) => {
+  const floor = board.floors.find((f) => f.id === card.project)
+  const state = own.streams.seen as State
+  const found = (floor ? treeBranches(floor, card) : []).flatMap(({ dir, branch }): Found[] => {
+    const seen = state[keyOf(dir, branch)]
+    return seen?.pr ? [{ pr: seen.pr, seen }] : []
+  })
+  const [first, ...rest] = found
+  if (!first) return {}
   return {
-    x: { number: pr.number, state, url: pr.url, title: pr.title, ...(review && { review }), ...(pr.checks && { checks: pr.checks.toLowerCase() }) },
-    badges: [
-      {
-        label: `#${pr.number} ${state}${review ? ` · ${review}` : ''}`,
-        tone: TONE[state],
-        hint: seen.error === undefined ? prHint(pr) : `${prHint(pr)}\nAs last seen: GitHub can't be asked now (${firstLine(seen.error)})`,
-        href: pr.url,
-      },
-      ...(checks ? [{ ...checks, hint: `The checks on #${pr.number}'s newest commit: ${pr.checks === 'FAILURE' || pr.checks === 'ERROR' ? 'at least one failed' : 'some still run'}\nOpens them on GitHub`, href: `${pr.url}/checks` }] : []),
-    ],
+    x: { ...prPart(first), ...(rest.length && { also: rest.map(prPart) }) },
+    badges: found.flatMap((f) => prBadges(f, rest.length > 0)),
   }
 }
 
@@ -438,7 +463,7 @@ const start: Start = (ctx) => {
     for (const dir of [...repos.keys()]) if (!dirs.has(dir)) repos.delete(dir)
   }
 
-  const onBoard = () => branchesOf(cardsOf(ctx.board()))
+  const onBoard = () => branchesOf(placedOn(ctx.board()))
   let ticking = false
 
   return {

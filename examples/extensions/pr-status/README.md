@@ -108,13 +108,18 @@ loses its merged one.
 
 **What it keeps.** What GitHub said of a branch, its pull request or none, or why it couldn't be asked, is
 appended to its system stream `seen` only when it changed, so the stream is a short history of each branch's pull
-request. The card's fold reads the stream's state by the card's folder and branch, and puts the pull request on the
-card as `x['pr-status']` (number, state, url, title, review, checks) and as its badges. A branch that couldn't be asked shows no
+request. The card's fold reads the stream's state by each folder and branch of the card's worktree, and puts the pull
+request on the card as `x['pr-status']` (number, state, url, title, review, checks) and as its badges. A branch that couldn't be asked shows no
 badge; one that fails after an answer keeps the badge it had, and an open pull request is asked about again at `every`.
 `tower x pr-status prs` says why.
 
 Every worker in the same worktree shows the same pull request, and a worker that has gone home keeps its badges while
 its card is on the board.
+
+**More than one repo.** A worktree spans its floor's repos, so a worker working in one may have opened a pull request
+from another. Each repo's branch of the worktree is asked about, and its pull request shows on every worker in that
+worktree: with more than one, each badge names its repo (`api #12 open`), the worker's own folder's first, which is
+`x['pr-status']`; the rest are in its `also`.
 
 ## Make it yours
 
