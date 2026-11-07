@@ -2,7 +2,7 @@ import { can, findCard, parentOf, shownSubject } from '/lib/board.js'
 import { shownFrom } from '/lib/brief.js'
 import { heldActions, shownHref, shownKey, shownTitle } from '/lib/cards.js'
 import { addedActions, commandUrl, offeredIn, ordered, overflowOf, paneShows, pickView, shownOf } from '/lib/layout.js'
-import { PANES } from '/lib/keys.js'
+import { panesOf } from '/lib/keys.js'
 import { mountTermView } from '/lib/terminal.js'
 import { fileSpansHtml, ICON, keyedTip } from '/lib/view.js'
 import { ago, esc } from '/lib/words.js'
@@ -61,9 +61,6 @@ const CARDS_KEPT = 4
 /** How many showings stay drawn at once across every worker, the least recently shown closed first. */
 const SHOWN_KEPT = 8
 
-/** The keymap's command that opens each of the core's tabs. */
-const PANE_COMMANDS = /** @type {Record<string, string>} */ (Object.fromEntries(PANES.map((p) => [p.view, p.command])))
-
 const WORKER = 'tower/card'
 
 /** A tab's key: its view and its subject. @param {string} view @param {string} subject */
@@ -79,6 +76,9 @@ const tabKey = (view, subject) => `${view}|${subject}`
  */
 export function regions(deps) {
   const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, mainPane, gone, left } = deps
+
+  /** The command that opens the view `id` where it is a pane. @param {string} id */
+  const paneCommand = (id) => panesOf(board()).find((p) => p.view === id)?.command
 
   /** Each tabs region, by the element of the view it is in: where a tab's chord finds it. @type {WeakMap<HTMLElement, ReturnType<typeof tabs>>} */
   const regionsByHost = new WeakMap()
@@ -544,7 +544,7 @@ export function regions(deps) {
 
     /** A view's tab, `hint` its tip. @param {TabOf} t @param {boolean} on @param {string} hint */
     function viewTabHtml(t, on, hint) {
-      const command = PANE_COMMANDS[t.view.id]
+      const command = paneCommand(t.view.id)
       const words = wordsOf(t)
       const tip = command ? keyedTip(board().keys, hint, command) : `data-tip="${esc(hint)}"`
       const tally = words.text ? `<small${words.tone ? ` class="${words.tone}"` : ''}${words.tip ? ` data-tip="${esc(words.tip)}"` : ''}>${esc(words.text)}</small>` : ''
@@ -677,13 +677,13 @@ export function regions(deps) {
     const tabsHtml = (tabs) => tabs.map((t) => tabHtml(t, t.key === open)).join('')
 
     /**
-     * The scroll form: the tabs of the keymap's pane commands stay put, and every other tab, extension views and
+     * The scroll form: the tabs of the panes stay put, and every other tab, extension views and
      * showings alike, scrolls sideways in a `.tab-scroll` past them, with a thin scrollbar and a fade at an edge past
      * which more hide. The open tab is brought into view as it opens and as the row resizes.
      * @param {TabOf[]} all @param {string} adds
      */
     function tabsScroll(all, adds) {
-      const fixed = all.filter((t) => !t.showing && PANE_COMMANDS[t.view.id])
+      const fixed = all.filter((t) => !t.showing && paneCommand(t.view.id))
       const rest = all.filter((t) => !fixed.includes(t))
       repaint(strip, tablistHtml('scroll', `${tabsHtml(fixed)}<span class="tab-scroll">${tabsHtml(rest)}</span>`) + adds)
       const scroller = /** @type {HTMLElement} */ (scrollerOf())
@@ -761,7 +761,7 @@ export function regions(deps) {
         const added = addsAt.firstElementChild ? addsAt.firstElementChild.getBoundingClientRect().width + gapOf(strip) : 0
         const free = strip.clientWidth - added
         if (widthOf(all) <= free) return { drawn: all, tucked: [], tight: false }
-        const kept = all.filter((t) => (!t.showing && PANE_COMMANDS[t.view.id]) || t.key === open)
+        const kept = all.filter((t) => (!t.showing && paneCommand(t.view.id)) || t.key === open)
         let left = free - moreWidth - widthOf(kept)
         const filled = new Set(kept)
         const picked = all.find((t) => t.key === swapped && !filled.has(t))

@@ -1,5 +1,5 @@
 import { landingHtml, statusLegendHtml } from '/lib/cards.js'
-import { keymapSheetHtml } from '/lib/keys.js'
+import { paneSheetHtml, panesOf } from '/lib/keys.js'
 import { ICON } from '/lib/view.js'
 import { $ } from './kit.js'
 
@@ -29,7 +29,7 @@ export function dialogs(deps) {
   }
 
   function showKeys() {
-    $('keys-list').innerHTML = keymapSheetHtml(board().keys)
+    $('keys-list').innerHTML = paneSheetHtml(board().keys, panesOf(board()))
     $('keys-legend').innerHTML = statusLegendHtml()
     $('keys').showModal()
     $('keys').scrollTop = 0

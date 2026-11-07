@@ -539,7 +539,7 @@ file is served once at a URL of its own, and a served module re-exports its file
 | `/x/reviews/panel.js` | the Reviews panel over the extension's part (`x.reviews` on a card and a floor): a card's thread and note call (`cardReviews`, `noteCallOf`), a floor's threads (`floorThreadsOf`), and the panel as a pure view. `/panels.js` keeps its 1.92 copy over the old fields, deprecated, until 2.0 |
 | `/icons.js` | the icons the tower's renderers draw |
 | `/termkeys.js` | the editing keys every browser terminal sends, and the terminal's key handler over the keymap (`terminalKeymap`) |
-| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `PANES` names the commands that open a worker's tab, each with its view and short name; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults), `frameCommandOf` a key from a framed page, global commands alone; chord labels, `aria-keyshortcuts` and the `?` sheet |
+| `/keymap.js` | every keyboard command as data with its name (`label`) and default chords; `PANES` names the commands that open a worker's tab, each with its view and short name, and `panesOf(board)` (API 1.158) those with the views a chord makes panes, what `paneSheetHtml` lists; `commandOf` matches a keydown against `board.keys` (the config's `keys` over the defaults), `frameCommandOf` a key from a framed page, global commands alone; chord labels, `aria-keyshortcuts` and the `?` sheet |
 | `/terminal.js` | a browser terminal's face and size from the viewer's appearance, and the size a watched one fits its PTY at |
 | `/prefs.js` | the viewer's appearance record, its defaults, and whether to move less (`reducedMotion`) |
 | `/settings.js` | the settings popover as a pure view: the ring, its sounds, notifications, the brief rendered or raw, and the viewer's appearance drawn from data and wired by `wirePrefs` |
@@ -1041,7 +1041,15 @@ as `<cap>/<name>`:
   `file.open` draws code with its own view, and a user's config line takes it back. An extension lays out only its own
   regions: the board carries no extension's layout of a region a renderer declares (`card.head`, `card.panes`; API
   1.138), and `tower extensions check` and the board warn about it.
-- `keys`: default chords that display the subject in focus with it.
+- `keys`: default chords that display the subject in focus with it. On a view that is a worker's tab (`on` holds
+  `card`, `scales` holds `pane`), a chord that stays bound makes the tab a pane, with nothing else to declare (API
+  1.158): `panesOf(board)` in `/lib/keys.js` lists it, and the tower page keeps the tab fixed in the row, names its
+  chord in the tab's tip, lists it on the `?` sheet and in the palette, and opens it the way ⌃⇧1 opens the terminal,
+  from a terminal too: on the worker in focus, else the main pane's, focus landing on the tab. With no worker on screen
+  the chord does nothing, unless focus is on another subject the view is on. A view on a card that already had a chord
+  behaves this way with no edit of its own. A view's `kit.run(id, subject)` still displays that subject with it. A
+  renderer that draws no views, such as Tower 3D, opens only the panes it knows by `name`, so the chord does nothing
+  there.
 
 **An extension's settings reach its client on the board** (API 1.154), with no server code: `settingsOf(board, 'grid')`
 from `/lib/board.js` reads them as they stand, its schema's defaults filled in, and `floorSettingsOf(board, 'grid', floor)`
