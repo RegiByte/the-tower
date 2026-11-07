@@ -290,7 +290,7 @@ const { callsign, cards, paint, waitsOnYou, floorsTopDown, letGoHtml, unresumabl
 /** The colour of the floor `v` is on, for the element it draws in. @param {MainView} v @returns {string} */
 const floorPaint = (v) => paint(floorOfView(v, projectOfCard))
 
-const { findCard, freshArchives, lookUp, hold } = archive({ cards, board, floorOf, render })
+const { findCard, freshArchives, lookUp, hold } = archive({ cards, board, render })
 
 /** The views the page opens by name: a floor's archive, a shelf entry. */
 const ARCHIVE_VIEW = 'tower/archive'
