@@ -40,11 +40,12 @@ board, and you stay on the grid. It shows where the tower lends that form to vie
 | --- | --- |
 | ![The Add worker menu](shots/add-light.png) | ![The Add worker menu](shots/add-dark.png) |
 
-**A cell flashes while its worker waits on you**, in the colour of its lamp: red while it needs you (a permission or a
-question), green while its answer is unread, the failed colour after a failed turn. It is the tower page's waiting on
-you, cell by cell: typing to the worker ends the flash, and so does **dismiss** on its head. A worker at work, or one
-whose answer goes to the worker that hired it, stays still. With reduced motion, a cell flashes once and keeps the
-colour.
+**A cell can flash while its worker waits on you**, in the colour of its lamp: red while it needs you (a permission or
+a question), green while its answer is unread, the failed colour after a failed turn. It is off until you turn it on:
+**Flash** on the bar steps through off, steady and blink, and the choice is kept in the config, so it follows you to
+every browser. It is the tower page's waiting on you, cell by cell: typing to the worker ends the flash, and so does
+**dismiss** on its head. A worker at work, or one whose answer goes to the worker that hired it, stays still. With
+reduced motion, blink flashes once and keeps the colour.
 
 | Light | Dark |
 | --- | --- |
@@ -83,6 +84,15 @@ The tower picks it up without a restart.
 
 Nothing. Its chord is the config's to change: `"keys": { "grid/grid": ["Meta+Shift+K"] }`.
 
+To set the flash in the config rather than on the bar:
+
+```json
+{ "extensions": { "grid": { "path": "/abs/path/to/grid", "settings": { "flash": "blink" } } } }
+```
+
+A floor's own value, at `projects.<id>.extensions.grid.settings.flash`, wins on that floor's grid, and Flash on that
+grid changes it there.
+
 ## How it works
 
 Grid is client code only, a view, a region and a command. Each cell is the region `card.cell`, which the tower fills
@@ -91,12 +101,13 @@ Open and ✕ (`acts`) and the swap menu (`pick`). New worker… is `kit.spawn`, 
 the worker it started, so the grid copies none of the form. Which workers fill the cells, and whether heads show, are
 the view's own state, kept in `tower.store`. A cell flashes for its worker's wait in the board's `waiting`, unless the
 viewer dismissed it (`heededWaits`, the dismissals read from the viewer's record in `tower.store`), coloured by its
-attention; nothing about it is kept.
+attention. Whether it flashes is the extension's setting `flash`, which the client reads from the board with no server
+code (`settingsOf`, `floorSettingsOf`) and the bar's button writes through the config verbs.
 
 ## Make it yours
 
 In your copy, `client/grid.js` holds it all: `MAX` and `STYLE` for how many cells and how they sit, `ACTS` for what a
-cell's head offers, `FLASH` for which attentions flash and how fast, `seed` for which workers a new grid opens with.
+cell's head offers, `FLASH` for which attentions flash and how fast, `CAP` for the id a renamed copy goes by, `seed` for which workers a new grid opens with.
 
 Its imports come from [the library](../../../docs/extending.md#the-library) (`/lib/*.js`), so a copy loads at any path. To have your editor read them in a
 copy, run [`tower types .`](../../../docs/extending.md#types-outside-the-checkout) in it and write a `tsconfig.json` of

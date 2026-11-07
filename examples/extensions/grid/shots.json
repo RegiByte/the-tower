@@ -52,27 +52,6 @@
       "crop": "[data-view=\"grid/grid\"]"
     },
     {
-      "name": "flash",
-      "open": "#v/grid/grid/floor%3Alab",
-      "size": "1280x800",
-      "steps": [
-        {
-          "until": ".grid-cell[data-flash=\"ready\"] .bar-info .call"
-        },
-        {
-          "until": ".grid-cell[data-flash=\"needs\"] .bar-info .call"
-        },
-        {
-          "until": ".grid-cell:nth-child(4) .pill [data-since]",
-          "text": "s"
-        },
-        {
-          "eval": "document.getAnimations().filter((a) => a.animationName === 'grid-flash').forEach((a) => { a.pause(); a.currentTime = 0 })"
-        }
-      ],
-      "crop": "[data-view=\"grid/grid\"]"
-    },
-    {
       "name": "pick",
       "open": "#v/grid/grid/floor%3Alab",
       "size": "1280x800",
@@ -127,6 +106,33 @@
         {
           "until": "[data-grid-heads]",
           "text": "Show heads"
+        }
+      ],
+      "crop": "[data-view=\"grid/grid\"]"
+    },
+    {
+      "name": "flash",
+      "open": "#v/grid/grid/floor%3Alab",
+      "size": "1280x800",
+      "steps": [
+        {
+          "until": "[data-grid-flash]"
+        },
+        {
+          "eval": "(async () => { const b = document.querySelector('[data-grid-flash]'); while (!b.textContent.endsWith('blink')) { const was = b.textContent; b.click(); while (b.textContent === was) await new Promise((r) => setTimeout(r, 50)) } })()"
+        },
+        {
+          "until": ".grid-cell[data-flash=\"ready\"] .bar-info .call"
+        },
+        {
+          "until": ".grid-cell[data-flash=\"needs\"] .bar-info .call"
+        },
+        {
+          "until": ".grid-cell:nth-child(4) .pill [data-since]",
+          "text": "s"
+        },
+        {
+          "eval": "document.getAnimations().filter((a) => a.animationName === 'grid-flash').forEach((a) => { a.pause(); a.currentTime = 0 })"
         }
       ],
       "crop": "[data-view=\"grid/grid\"]"

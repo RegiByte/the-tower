@@ -3,8 +3,20 @@
   "version": "2.4",
   "title": "Grid",
   "description": "Up to four workers side by side in the main pane, each one's worker view: its tabs, and its head when shown.",
-  "requires": { "tower": "1.151" },
+  "requires": { "tower": "1.154" },
   "client": "client",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "flash": {
+        "type": "string",
+        "enum": ["off", "steady", "blink"],
+        "default": "off",
+        "description": "How a cell shows that its worker waits on you: not at all, a steady ring in its attention's colour, or a blinking one. A floor's own value wins on its grid."
+      }
+    }
+  },
   "views": {
     "grid": {
       "module": "grid.js",
