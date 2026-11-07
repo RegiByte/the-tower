@@ -229,7 +229,7 @@ export const CORE_VIEWS: readonly View[] = [
   served({ ...core('tower/card', ['card'], ['pane', 'cell'], { label: 'Worker', hint: "the worker's head and its tabs" }), regions: ['card.panes'] }, ['region', 'run', 'display', 'toast', 'confirm']),
   pane('terminal', [], { label: 'Terminal', hint: 'the session in its terminal' }, ['terminal']),
   { ...pane('brief', ['conversation', 'said'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'bus', 'toast']), regions: ['card.composer'], tab: 'tab' },
-  { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast', 'confirm']), regions: ['lines.acts'], tab: 'tab' },
+  { ...pane('changes', ['lines'], { label: 'Changes', hint: "what changed in the worker's repos, as git reads it" }, ['region', 'toast']), regions: ['lines.acts'], tab: 'tab' },
   served(core('tower/archive', ['floor'], ['pane'], { label: 'Archive', hint: "the floor's past workers" }), ['display', 'toast']),
   served(core('tower/collection', ['collection'], ['pane'], { label: 'Collection', hint: "a collection's items" }), ['display']),
   served(core('tower/tray', ['collection'], ['row'], { label: 'Tray', hint: "a collection's count, unfolding to its newest items" }), ['display']),
