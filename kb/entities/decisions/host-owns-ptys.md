@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-09-30",
-  "reviewed": "2026-11-03",
+  "reviewed": "2026-11-07",
   "refs": [
     "hub/src/host/main.ts#spawnSession",
     "hub/src/host/main.ts#stop",

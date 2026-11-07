@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-06",
+  "reviewed": "2026-11-07",
   "refs": [
     "hub/src/host/main.ts#appendFact",
     "hub/src/shared/log-file.ts#wholeLinesLength",
