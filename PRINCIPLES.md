@@ -28,6 +28,9 @@ change that has to break one says so in its pull request and changes the rule an
   kept for later). Anything computable from them is computed. A diff that persists anything else is wrong, unless it
   is a cache: keyed by the code that made it, never authoritative, safe to delete. (`logs-are-facts`,
   `fold-checkpoints`, `jobs-own-daemon`)
+- **The config holds no credentials.** Workers read it all the time and it reaches every client through the board
+  and `GET /config`, extension settings included. An integration that needs a key keeps it in the script or command
+  its settings name. (`no-credentials`)
 - **A fact is what happened.** A log line records an event, not an interpretation of it and not a copy of a tool's
   output. Meaning is derived when the log is read, so it can change without a migration. (`logs-are-facts`)
 

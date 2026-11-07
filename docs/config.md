@@ -4,6 +4,10 @@
 system root: session logs, collections, sockets and the cache live next to it. The tower reads the file again whenever
 it changes, so an edit needs no restart, but for `port`.
 
+**The config holds no credentials.** Workers read it all the time, and every client reads it through `GET /config` and
+the board, extension settings included. An integration that needs a key keeps it in the script or command its settings
+name, the way narrate's sample voice reads `ELEVENLABS_API_KEY` from its own environment.
+
 The file has two writers: the user, by hand, and the tower, through its config verbs (`GET /config` reads it as the file
 holds it). `config/add` adds a key it doesn't hold yet, such as a floor; `config/append` pushes a value onto an array;
 `config/set` and `config/remove` replace or remove a value, given `was`, the value the caller read at that key, and are
