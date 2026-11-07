@@ -930,11 +930,14 @@ export function regions(deps) {
 
     return {
       update(at) {
+        const drove = can(card, 'drive')
         subject = at
         card = /** @type {Card} */ (at.value)
         for (const el of new Set([strip, panels])) el.dataset.subject = at.key
         draw()
-        for (const t of tabsOf()) mounted.get(t.key)?.hosted.update(t.subject)
+        const all = tabsOf()
+        for (const t of all) mounted.get(t.key)?.hosted.update(t.subject)
+        if (drove && !can(card, 'drive') && all.find((t) => t.key === open)?.view.id === 'tower/terminal') pick(byDefault(all))
       },
       show(s) {
         const all = tabsOf()

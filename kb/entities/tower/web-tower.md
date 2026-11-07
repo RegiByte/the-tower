@@ -60,6 +60,8 @@ density follows its own width through a container query, so a grid cell and a na
 head sits one tab row, the shared panels then the worker's showings ([[agent-show]]), drawn in the form the layout
 picks among `card.panes`' (`scroll`, `wrap`, `menu`: [`tabsScroll`](ref:hub/renderers/page/regions.js#tabsScroll),
 [`tabsWrap`](ref:hub/renderers/page/regions.js#tabsWrap), [`tabsMenu`](ref:hub/renderers/page/regions.js#tabsMenu)).
+A worker that runs opens on its terminal and a stopped one on its Brief; a terminal that ends while its tab is open,
+picked or not, gives way to the Brief, and pressing Terminal then shows the last screen.
 
 **Regions.** What extensions add to a region the page fills ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion))
 comes in the ranked order every renderer shares, and a region too full for it overflows in the form the layout picks
