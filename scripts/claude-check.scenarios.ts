@@ -70,6 +70,7 @@ export type Scenario = {
 
 const ESC = '\x1b'
 const ENTER = '\r'
+const DOWN = '\x1b[B'
 
 const TOOLS = ['Bash', 'Monitor', 'CronCreate', 'CronDelete', 'CronList', 'ScheduleWakeup', 'TaskStop', 'Read', 'Skill', 'SendMessage']
 
@@ -86,6 +87,8 @@ export const LAUNCHES = {
     argv: ['--debug-file', '{root}/debug.log'],
     env: { CLAUDE_CODE_AUTO_COMPACT_WINDOW: '100k', CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: '54' },
   },
+  /** Plain, with the question dialog. */
+  dialogs: { name: 'dialogs', tools: [...TOOLS, 'AskUserQuestion'] },
   /** Claude with no account: its sign-in screen. */
   signedOut: { name: 'signed-out', tools: TOOLS, env: { CLAUDE_CONFIG_DIR: '{root}/signed-out' } },
 } satisfies Record<string, Launch>
@@ -175,6 +178,23 @@ export const SCENARIOS: Scenario[] = [
   one('permission-denied', {
     prompt: 'Use the Write tool to create the file note.txt containing the word hello.',
     steps: [{ on: PERMISSION, pause: 1500, do: { keys: ESC } }, { on: TURN, do: { submit: 'Reply with just the word ok.' } }, { on: DONE }],
+  }),
+  one('question-dialogs', {
+    launch: LAUNCHES.dialogs,
+    prompt: 'Use the AskUserQuestion tool to ask me one question, "Which fruit?", header "Fruit", with the options Apple and Pear, each with a short preview field. Then reply with just my answer and any note I gave.',
+    steps: [
+      { on: PERMISSION, pause: 3000, do: { keys: 'n' } },
+      { pause: 1500, do: { keys: 'sweet and green' } },
+      { pause: 1500, do: { keys: ESC } },
+      { pause: 1500, do: { keys: ENTER } },
+      { on: TURN, do: { submit: 'Use the AskUserQuestion tool to ask me one question, "Which color?", header "Color", with the options Red and Blue and no previews. Then reply with just my answer.' } },
+      { on: PERMISSION, pause: 3000, do: { keys: `${DOWN}${DOWN}` } },
+      { pause: 1500, do: { keys: 'teal, a mix' } },
+      { pause: 1500, do: { keys: ENTER } },
+      { on: TURN, do: { submit: 'Use the AskUserQuestion tool to ask me one question, "Which size?", header "Size", with the options Small and Large. Then reply with just my answer.' } },
+      { on: PERMISSION, pause: 3000, do: { keys: ESC } },
+      { on: TURN },
+    ],
   }),
   one('step-answers', {
     prompt: 'Read package.json, then tsconfig.json, one at a time. Before each read, tell me in one short sentence what you are about to do. Then answer in one line: which TypeScript target does the project use?',
