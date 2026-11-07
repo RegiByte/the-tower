@@ -1294,6 +1294,8 @@ test('server: a config gone, unreadable or short of what every read stands on is
     await untaken()
     writeFileSync(CONFIG, JSON.stringify({ argv: ['x'], projects: { lab: { name: 'lab' } } }))
     await untaken()
+    writeFileSync(CONFIG, JSON.stringify({ argv: ['x'], projects: { lab: { name: 'lab', hub: '/tmp', repos: [5] } } }))
+    await untaken()
     rmSync(CONFIG)
     await untaken()
     mkdirSync(CONFIG)
