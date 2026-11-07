@@ -3,7 +3,7 @@ import { boardSubject, callOf, can, cardSubject, noLongerOffered, offeredCall, p
 import { briefCss } from '/lib/brief.js'
 import { CAPABILITIES } from '/lib/capabilities.js'
 import { addedTidyOf, ATTENTION_MEANS, ATTENTION_NAME, attentionOrder, boardErrorTitle, claudeUntestedHtml, discardAsk, discardedLine, DISMISS_TITLE, heededAsks, heededWaits, heldActions, HOST_ATTENTION, HOST_MEANS, HOST_NAME, hostState, isAsk, keptLine, killShellAsk, letGoAsk, letGoneLine, loudest, neighboursIn, nextAttended, ON_DUTY_MEANS, reapAsk, resumeAllAsk, resumeStranded, sendHomeAsk, shownKey, SOUNDS, strandedOf, tidiedLine, tidyAllAsk, verbLabel, WAITING_MEANS, WAITING_NAME, WORKTREE_ASK, WORKTREE_DONE, WORKTREE_VERB_NAME } from '/lib/cards.js'
-import { toastsCss, watchTips } from '/lib/chrome.js'
+import { ask, asking, toastsCss, watchTips } from '/lib/chrome.js'
 import { addedCommandOf, commandOf, COMMANDS, DEFAULT_KEYS, frameCommandOf, isAddedId, MOVE_COMMAND, PANES, panesOf } from '/lib/keys.js'
 import { actionId, actionWords, addedActions, busOf, declaredLayout, displayed, exemptionsOf, fill, headRanked, isCommand, isFresh, layoutKey, layoutOf, lineId, offeredIds, openable, overflowOf, rankedActions, rankedBadges, rankedLines, runCommandWith, usableConfigLayout, viewOn, viewsOf } from '/lib/layout.js'
 import { loop, timers } from '/lib/machine.js'
@@ -314,7 +314,7 @@ let redrawPalette = () => {}
 
 const { draftIo, draftTitle, pruneDraftTitles, openDraft, sentOf, spawnOn, deleteSent } = draft({ render: () => (render(), redrawPalette()), board, goTo: (location) => goTo(location), openSpawn: (project, sent) => openSpawn(project, sent) })
 
-const { showLanding, showKeys, ask } = dialogs({ board })
+const { showLanding, showKeys } = dialogs({ board })
 
 
 
@@ -1622,7 +1622,7 @@ document.fonts.addEventListener('loadingdone', () => placedRegions.forEach((r) =
 // A view or a framed page set a key the viewer's record keeps, such as a dismissal.
 tower.store.on(() => void rereadViewer().then(render))
 
-const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || $('confirm').open || $('spawn').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open || Boolean(document.querySelector('[data-view] dialog[open]'))
+const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(/** @type {string} */ (document.activeElement?.tagName)) || asking() || $('spawn').open || $('keys').open || $('landing').open || $('palette').open || $('patterns').open || Boolean(document.querySelector('[data-view] dialog[open]'))
 
 /** The keymap's command for each of the core's tabs of a worker, and the view each opens. */
 const PANE_COMMAND = /** @type {Partial<Record<string, string>>} */ (Object.fromEntries(PANES.map((p) => [p.command, p.view])))
@@ -1663,7 +1663,7 @@ function run(id, e) {
  * behind an ask: what it asks about was read as it opened.
  */
 document.addEventListener('keydown', (e) => {
-  if (e.defaultPrevented || $('confirm').open) return
+  if (e.defaultPrevented || asking()) return
   const focus = isTyping() ? 'field' : 'page'
   const id = commandOf(board().keys, e, focus)
   if (id && run(id, e)) return (e.preventDefault(), (enterGuard = undefined))

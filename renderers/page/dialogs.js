@@ -1,4 +1,5 @@
 import { landingHtml, statusLegendHtml } from '/lib/cards.js'
+import { closeOnBackdrop } from '/lib/chrome.js'
 import { paneSheetHtml, panesOf } from '/lib/keys.js'
 import { ICON } from '/lib/view.js'
 import { $ } from './kit.js'
@@ -35,38 +36,11 @@ export function dialogs(deps) {
     $('keys').scrollTop = 0
   }
 
-  /**
-   * Asks `text` (a question, then what it means after a blank line, as the shared asks are written) with `verb` on
-   * the button that goes ahead; answers whether it was pressed. Cancel, Escape and the backdrop answer no.
-   * @param {string} text @param {string} verb
-   * @returns {Promise<boolean>}
-   */
-  function ask(text, verb) {
-    const [question, ...rest] = text.split('\n\n')
-    $('confirm-title').textContent = question
-    $('confirm-body').textContent = rest.join('\n\n')
-    $('confirm-yes').textContent = verb
-    $('confirm').returnValue = ''
-    $('confirm').showModal()
-    $('confirm-yes').focus()
-    return new Promise((resolve) => $('confirm').addEventListener('close', () => resolve($('confirm').returnValue === 'yes'), { once: true }))
-  }
-
-  /** @param {HTMLDialogElement} d @param {MouseEvent} e */
-  const outside = (d, e) => {
-    const r = d.getBoundingClientRect()
-    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom
-  }
-
-  for (const d of /** @type {NodeListOf<HTMLDialogElement>} */ (document.querySelectorAll('dialog.sheet, dialog.confirm, dialog.palette'))) {
-    let pressedOutside = false
-    d.addEventListener('pointerdown', (e) => (pressedOutside = e.target === d && outside(d, e)))
-    d.addEventListener('click', (e) => e.target === d && pressedOutside && outside(d, e) && d.close())
-  }
+  for (const d of /** @type {NodeListOf<HTMLDialogElement>} */ (document.querySelectorAll('dialog.sheet, dialog.palette'))) closeOnBackdrop(d)
 
   for (const head of document.querySelectorAll('dialog.sheet header')) {
     head.insertAdjacentHTML('beforeend', `<button class="icon-btn" value="" aria-label="Close" data-tip="Close">${ICON.close}</button>`)
   }
 
-  return { showLanding, showKeys, ask }
+  return { showLanding, showKeys }
 }

@@ -2173,10 +2173,22 @@
     },
     "/lib/chrome.js": {
       "runtime": "browser",
-      "digest": "d6913b112963b6e3",
+      "digest": "723b5fb178439864",
       "values": {
+        "ask": {
+          "since": "1.160",
+          "stability": "provisional"
+        },
+        "asking": {
+          "since": "1.160",
+          "stability": "provisional"
+        },
         "closableNoticer": {
           "since": "1.151",
+          "stability": "provisional"
+        },
+        "closeOnBackdrop": {
+          "since": "1.160",
           "stability": "provisional"
         },
         "noticer": {

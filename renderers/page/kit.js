@@ -14,7 +14,7 @@ import { esc, when } from '/lib/words.js'
 /**
  * The elements `$` finds whose type is not a plain `HTMLElement`, or that exist only while their view is drawn.
  * @typedef {{
- *   spawn: HTMLDialogElement, transfer: HTMLDialogElement, landing: HTMLDialogElement, keys: HTMLDialogElement, confirm: HTMLDialogElement, palette: HTMLDialogElement, patterns: HTMLDialogElement,
+ *   spawn: HTMLDialogElement, transfer: HTMLDialogElement, landing: HTMLDialogElement, keys: HTMLDialogElement, palette: HTMLDialogElement, patterns: HTMLDialogElement,
  *   'item-doc': HTMLIFrameElement,
  *   orb: HTMLElement | null, clock: HTMLElement | null,
  * }} PageElements
