@@ -26,7 +26,9 @@ private let ATTENTION_PAGE = """
   <!doctype html><meta charset="utf-8"><title>Tower attention</title>
   <script src="/tower.js"></script>
   <script type="module">
-    const { DISMISSED_KEY, heededWaits, transitions, findCard, statusName, gistLine } = await import('/cards.js')
+    const { DISMISSED_KEY } = await import('/lib/viewer.js')
+    const { heededWaits, transitions, statusName, gistLine } = await import('/lib/cards.js')
+    const { findCard } = await import('/lib/board.js')
     let board
     let prev
     const post = async (began = [], ended = []) => {
