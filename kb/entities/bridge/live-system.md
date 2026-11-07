@@ -71,6 +71,11 @@ tower runs no `ps`, `lsof` or git, and watches no repo.
 branches and origin's branches, without fetching, with `--no-optional-locks` (every git the tower runs goes through
 `src/git.ts`) so a read neither takes the index lock a worker's git needs nor writes into what it watches.
 
+- **A repo that hangs delays only its own reads.** A hook or an fsmonitor can hold a git call to its timeout, a minute
+  ([`src/git.ts`](ref:hub/src/git.ts)). Each dir has one read at a time and each read is answered as it settles, so
+  another dir's reads land meanwhile, and what the slow dir is asked waits for it. A caller waits for the read carrying
+  its own ask, at most the one in flight and then that, so a repo that keeps being asked can't hold it. One repo, its worktrees included, holds
+  at most six of git's eight places, so a hung one with many worktrees leaves the others some.
 - **Watched.** While observed, each dir's tree is watched recursively ([`subscribe`](ref:hub/src/subscribe.ts#subscribe)),
   and its git's common dir when that lies outside it, the objects and the fsmonitor daemon's cookies left out. Each
   changed path is mapped to the parts of the repo's read it makes stale
@@ -97,7 +102,9 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   ([`readsSince`](ref:hub/src/bridge/worktrees.ts#readsSince)): an older read may predate the worktree's cut, and a
   worktree git hasn't been read with yet is not one that was removed. Until then the card says nothing is gone, as
   before the first read. While the board is observed, git is read only as its changes settle, and a session's log is
-  folded at once, so without this a new session's card could show its new worktree gone.
+  folded at once, so without this a new session's card could show its new worktree gone. A floor shows no worktrees
+  until every dir of it was read once ([`projectReads`](ref:hub/src/bridge/worktrees.ts#projectReads)), so a dir landing
+  before its neighbour never makes a worktree spanning both look removable.
 - **Fresh for verbs.** A worktree verb and `refreshRepos` read every part afresh: every destructive verb decides from
   a read made after its fetch, never from the board's ([[tower-cuts-worktrees]]).
 - **Platforms.** Every recursive watch is a `@parcel/watcher` subscription behind
