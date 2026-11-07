@@ -18,6 +18,7 @@ import * as pty from '@lydell/node-pty'
 import { jobsOf } from '../bridge/jobs.ts'
 import { headlessTerminal, serializer } from '../bridge/screen.ts'
 import { streamFacts } from '../bridge/streams.ts'
+import { logged } from '../logged.ts'
 import { withoutParentSession, withoutTerminal } from '../shared/env.ts'
 import { JOB_KEEP_COUNT, JOB_KEEP_MS, JOB_SIZE, type FromJobs, type HeldJob, type JobEnd, type JobFact, type JobStart, type JobStream, type ToJobs } from '../shared/jobs.ts'
 import { configPath, systemPaths } from '../shared/paths.ts'
@@ -126,7 +127,7 @@ function startJob(start: JobStart): string {
   proc.onExit((exit) => {
     const end = jobEnd(exit)
     const endedAt = Date.now()
-    log(endedAt, 'ended', { id, ...end })
+    logged(`job ${id}: its end isn't in the log`, log)(endedAt, 'ended', { id, ...end })
     j.end = end
     j.job = { ...j.job, endedAt }
     broadcast(j, { t: 'x', ...end })
