@@ -36,7 +36,7 @@ on, kept in each one's environment, is two copies that drift.
 - The sandbox keeps its port in its own config: `npm run sandbox -- up --port <n>` writes it into the config (for a new
   sandbox, 4399 at the shared `/tmp/tower-sandbox` and a free port at any other root, a worker's own
   `/tmp/tower-<callsign>` among them; the one already there otherwise; the rest of an existing config is left as it
-  is), and `down`, `run`, `tool:frames` and `tool:tour` read it from the config under the sandbox's root
+  is, but for the hub of its `tower` floor, [[sandbox-floor-clone]]), and `down`, `run`, `tool:frames` and `tool:tour` read it from the config under the sandbox's root
   ([`sandbox-root.ts`](ref:hub/scripts/sandbox-root.ts)).
 
 **Alternatives considered.**

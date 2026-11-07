@@ -72,6 +72,9 @@ On the sandbox, never on the real system and never by stubbing browser input (re
   reach it; `down` stops it.
 - **`tower` reads the real system** unless run as `npm run -s sandbox -- run <command>` (several: `run sh <<'SH'` …
   `SH`), which also sets `TOWER_URL`. There, plain `tower agents` refuses: use `tower agents --all`.
+- Both floors' git is the sandbox's own: `tower` is a clone of your checkout at `$TOWER_SANDBOX/tower`, so a cut, Tidy
+  or discard reaches nothing real. Its `main` is your HEAD as of the last `up`, so it shows commits and never
+  uncommitted work, and `down` removes it. What must outlive a restart goes on `lab`.
 - Stop only what you started: `down`, or a PID you saved. Never `pkill`, `killall` or `tower reap`.
 - curl: every `POST` needs `-H "origin: $TOWER_URL"`; `/board` and `/screen/<id>` are SSE, so read one event
   (`curl -sN -m 2 … | grep -m1 '^data:'`).
