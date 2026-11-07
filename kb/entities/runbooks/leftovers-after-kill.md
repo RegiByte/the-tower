@@ -5,7 +5,7 @@
   "summary": "Processes a session started can outlive it (servers, nohup'd or detached jobs); they are found by the TOWER_SESSION_ID they inherited, listed by tower ps and on the card, and ended by reap.",
   "in": "tower",
   "reviewed": "2026-11-07",
-  "refs": ["hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#parseProcesses", "hub/src/machine.ts#resourcesOf", "hub/src/machine.ts#reap", "hub/src/tower/dispatch.ts#reapSession", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/cli.ts", "hub/src/bridge/prunable.ts#prunable"]
+  "refs": ["hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#parseProcesses", "hub/src/machine.ts#resourcesOf", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#reap", "hub/src/tower/dispatch.ts#reapSession", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/cli.ts", "hub/src/bridge/prunable.ts#prunable"]
 }
 ---
 **Symptom.** A session is exited or lost, yet a port it opened still answers. Its card lists what it left running
@@ -16,7 +16,9 @@ Running board by its control room and in the floor panel, each ended on its own.
 **Where to look first.** `tower ps`: every [[leftover]] with its session, pid, `orphan` (re-parented out of
 the host's process tree) and listening ports. The list is read from `ps` and `lsof`
 ([`resourcesOf`](ref:hub/src/machine.ts#resourcesOf)), and the live system refreshes it every 5 s while a renderer holds the board, so a card lags
-a little; a reap reads it afresh when no renderer does.
+a little; a reap reads it afresh when no renderer does. A host is recognized only by this checkout's script
+([`scanProcesses`](ref:hub/src/machine.ts#scanProcesses)): the host of another checkout, a sandbox's among them, is
+not one, so its children read as orphans here.
 
 **Likely causes.**
 - Killing a session hangs up its PTY. Its ordinary descendants die; whatever ignores SIGHUP or left the terminal's

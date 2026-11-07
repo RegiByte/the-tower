@@ -13,7 +13,10 @@
     "hub/src/shared/api.ts#ERROR_CODES",
     "hub/src/bridge/facts.ts#Broken",
     "hub/src/shared/model.ts#ConfigError",
-    "hub/src/cli-error.ts#CliError"
+    "hub/src/cli-error.ts#CliError",
+    "hub/src/logged.ts#logged",
+    "hub/src/child-input.ts#endInput",
+    "hub/src/dated-log.ts"
   ],
   "links": [
     { "to": "broken-logs", "verb": "applied-in", "carries": "one unreadable log breaks its own session" },
@@ -40,6 +43,12 @@ hand-edited config: when one is wrong, the user or a worker can fix it once they
   names the key path.
 - *A failure costs only what depends on it.* One log breaks its own session, one extension its own capability
   ([[extensions]]), a config the tower can't take the board until it is fixed; never the tower process.
+- *The tower process has no catch-all.* Nothing keeps it up past an uncaught error
+  ([`dated-log.ts`](ref:hub/src/dated-log.ts) only says it is ending) and nothing restarts it, so that promise is
+  kept where each failure can happen: what runs with no caller to answer (a timer, a watcher's or event listener's
+  callback) is a boundary of its own ([`logged`](ref:hub/src/logged.ts#logged)), a promise no one awaits has a
+  rejection handler, and a child's stdin is written through [`endInput`](ref:hub/src/child-input.ts#endInput), since
+  a broken pipe's unheard `error` ends the process too.
 - *Higher-level facilities first.* Where a boundary already has a handler (the API's one dispatch, the board stream,
   the CLI's top level), errors are thrown to it, not caught and reworded on the way.
 

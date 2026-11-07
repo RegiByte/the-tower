@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-29",
   "reviewed": "2026-11-07",
-  "refs": ["hub/src/shared/model.ts#towerHosts", "hub/src/tower/http.ts#namedHostOrigins", "hub/src/tower/http.ts#isFromTower", "hub/src/config-check.ts#configProblems", "hub/docs/config.md"]
+  "refs": ["hub/src/shared/model.ts#towerHosts", "hub/src/tower/http.ts#namedHostOrigins", "hub/src/tower/http.ts#isFromTower", "hub/src/config-check.ts#configProblems", "hub/docs/config.md", "hub/src/tower/tower.js#randomHex", "hub/renderers/page/kit.js#copyText"]
 }
 ---
 **Problem.** Two towers open in one browser, one on the machine and one reached through a tunnel, are both
@@ -31,6 +31,12 @@ neither, so allowing it keeps the guard as strict. The name belongs to the syste
   requests under `127.0.0.1` and `localhost` never read it.
 - Browsers resolve every `*.localhost` name to the machine itself, so `mini.localhost` needs nothing but the key.
   Any other name needs its own DNS record or `/etc/hosts` line, and a proxy when it drops the port.
+- A page under a name over plain http is no secure context: `crypto.randomUUID` and `navigator.clipboard` don't exist
+  there, as they do on `127.0.0.1`, on `localhost` (a tunnel to it included) and over https. So code served to a page
+  doesn't assume them: ids come from `crypto.getRandomValues`
+  ([`randomHex`](ref:hub/src/tower/tower.js#randomHex)), and a copy checks `isSecureContext` and falls back to the
+  document's copy command ([`copyText`](ref:hub/renderers/page/kit.js#copyText)). The copy buttons in the shared views
+  and the bundled extensions call `navigator.clipboard` directly, and fail there.
 
 **Alternatives considered.**
 
