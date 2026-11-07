@@ -44,7 +44,9 @@ with a core word by construction, so there is nothing to reserve.
   a mode on one verb. A word's name and shape are `contract.json` names, so a replacement must offer them.
 - **The JSON argument goes at 2.0.** Until then it works, is filled the same way, and says what to type instead,
   rendered from the JSON it was given. `ALIASES` holds the old core words as they move: `policies`, `runs` and
-  `probes`, each saying so on stderr,
+  `probes`, each saying so on stderr, An extension with a
+  `cli` and no guidance gets the warning `cli`, since a word nothing names reaches nobody; one with no `cli` doesn't, as
+  a verb is a word whether or not a worker is meant to type it.
 
 **Alternatives considered.** Extension code run in the command (a `cli.ts` the command imports): full freedom, but a
 second runtime for extension code, with the library resolved there and version skew against the running extension. A

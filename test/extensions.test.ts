@@ -363,7 +363,7 @@ test("a cli naming a missing or mistyped field, or a word two share, refuses the
   const read = (cli: object) => ({ scope: 'system', reply: { type: 'object', properties: {} }, cli })
   const NOTE = { body: { type: 'string' }, n: { type: 'integer' }, at: { type: 'array', items: { type: 'string' } } }
   const found = [
-    ext('fine', { requires: { tower: '1.153' }, verbs: { note: verb(NOTE, { stdin: 'body', positional: ['n', 'at'], print: 'said', usage: 'note <n> <at> …' }), hire: verb({}, { word: 'review' }) } }),
+    ext('fine', { requires: { tower: '1.153' }, guidance: { brief: 'Its words.' }, verbs: { note: verb(NOTE, { stdin: 'body', positional: ['n', 'at'], print: 'said', usage: 'note <n> <at> …' }), hire: verb({}, { word: 'review' }) } }),
     ext('nostdin', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { stdin: 'text' }) } }),
     ext('intstdin', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { stdin: 'n' }) } }),
     ext('nopositional', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { positional: ['to'] }) } }),
@@ -374,7 +374,9 @@ test("a cli naming a missing or mistyped field, or a word two share, refuses the
     ext('nameclash', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { word: 'a2' }), a2: verb(NOTE, {}) } }),
     ext('wordless', { requires: { tower: '1.153' }, reads: { a1: read({ usage: 'a1 --n <n>' }) } }),
     ext('badusage', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { usage: 'other --n <n>' }) } }),
-    ext('early', { requires: { tower: '1.152' }, verbs: { a1: verb(NOTE, { print: 'said' }) } }),
+    ext('early', { requires: { tower: '1.152' }, guidance: { brief: 'Its words.' }, verbs: { a1: verb(NOTE, { print: 'said' }) } }),
+    ext('unguided', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { print: 'said' }) } }),
+    ext('nowords', { requires: { tower: '1.153' }, verbs: { a1: { ...verb(NOTE, {}), cli: undefined } } }),
   ]
   const r = resolve(found, config({ extensions: added(found) }), '1.153')
   const refusal = (id: string) => r.refused.get(id)?.problems.map((p) => [p.code, p.path, p.message])
@@ -393,6 +395,8 @@ test("a cli naming a missing or mistyped field, or a word two share, refuses the
   assert.deepEqual(refusal('wordless'), [['cli', 'reads.a1', 'a read is a word when its cli names one: add word']])
   assert.deepEqual(refusal('badusage'), [['cli', 'verbs.a1.usage', 'usage starts with its word, a1']])
   assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'verbs.a1.cli']])
+  assert.deepEqual(r.accepted.get('unguided')!.problems.map((p) => [p.level, p.code, p.path]), [['warn', 'cli', 'guidance']], 'words nothing teaches are a warning')
+  assert.equal(r.accepted.get('nowords')?.problems.length, 0, 'a verb with no cli declares no word for workers')
 })
 
 const FLASHING = ext('flashing', { settings: { type: 'object', additionalProperties: false, properties: { flash: { type: 'string', enum: ['off', 'blink'], default: 'off' }, every: { type: 'integer', default: 5 } } } })
