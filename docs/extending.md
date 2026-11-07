@@ -1142,6 +1142,10 @@ and leaves `el` yours to empty or remove. `.view-failed` and the flex chain a co
 (`.view-root`) are your stylesheet's too. Modules are imported by their whole address, so a host works in a classic
 script framed at an opaque origin, in Chrome as in WebKit.
 
+`ask(text, verb)` in `/lib/chrome.js` is the page's confirm dialog, for any renderer: lend it as `confirm: ask`. It makes
+its own `<dialog>` and look from `/design.css`, works in a frame, and `asking()` says whether it waits, so your keys
+stand back.
+
 **The worker view** (API 1.111). `tower/card` on a card draws its head and declares `card.panes`, its tabs, which it
 asks the kit for as a region. A tabs region's tabs are (view, subject) pairs: the views on the card (`tower/terminal`,
 `tower/brief`, `tower/changes`, the reviews extension's `reviews/thread`, then any of yours on `card`, in the layout's
