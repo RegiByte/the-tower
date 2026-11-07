@@ -8,10 +8,10 @@ import { offOn } from './bridge/stores.ts'
 import type { Accepted } from './bridge/extensions.ts'
 import type { Board } from './bridge/board.ts'
 import type { Caller } from './shared/extensions.ts'
-import { thrownWords } from './logged.ts'
 import type { Config } from './shared/model.ts'
 import { dueSlot, ON_TIME_MS, type When } from './shared/slots.ts'
 import { projectOfKey } from './shared/subjects.ts'
+import { thrownWords } from './shared/thrown.ts'
 import type { ExtensionsResource, Instance } from './tower/extensions.ts'
 
 export const TICK_MS = 30_000

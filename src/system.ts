@@ -25,7 +25,8 @@ import type { HeldJob } from './shared/jobs.ts'
 import { jobsOf, type JobRecord } from './bridge/jobs.ts'
 import type { LogFile, StreamMonth } from './bridge/retention.ts'
 import { factEvents, isArchived, logBytes, logFilesIn, logIdOf, tailLog } from './tail.ts'
-import { exitUnwatched, logged, loggedRead, serially, thrownWords, watchedOrExit } from './logged.ts'
+import { exitUnwatched, logged, loggedRead, serially, watchedOrExit } from './logged.ts'
+import { thrownWords } from './shared/thrown.ts'
 import { subscribe, type Subscription } from './subscribe.ts'
 
 const LIVE_POLL_MS = 1000

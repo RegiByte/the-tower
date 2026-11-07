@@ -27,7 +27,7 @@ import type { Board, Floor } from './board.ts'
 import { ownKindOf, type CompiledFold } from './extensions.ts'
 import { withAddedTidy } from './verbs.ts'
 import { frozen } from './frozen.ts'
-import { thrownWords } from '../logged.ts'
+import { thrownWords } from '../shared/thrown.ts'
 
 /** A build's folds of one extension over this many ms is `slow`. */
 export const SLOW_MS = 50
