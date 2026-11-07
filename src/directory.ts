@@ -217,9 +217,26 @@ const threadLines = (thread: Brief, promptBy: string | undefined): string[] => [
     : ['(no prompt yet)']),
 ]
 
+/** What `tower agent` left out of a conversation: the exact command that reads all of it. */
+const leftOutLine = (callsign: string, thread: Brief): string =>
+  `Earlier turns of this conversation are left out, and they may hold its goal: \`tower agent ${callsign} ${thread.id}\` prints every turn.`
+
 /** An earlier session of the worker, as one line: `tower agent` reads the current one in full. */
 const earlierLine = (p: BriefPart) =>
   `  ${sessionLabel(p.n, p.of, p.session.startedAt)}, session ${p.session.id}: ${p.threads.length} conversation${p.threads.length === 1 ? '' : 's'}`
+
+/** The worker that hired `card` onto `thread`, when a hire's prompt opened it. */
+const promptByOf = (card: Card, thread: Brief): string | undefined => card.conversations.find((conv) => conv.id === thread.id)?.promptBy
+
+/** Every turn of one of a worker's conversations, read from the session that holds it. */
+const wholeThread = async (card: Card, conversation: string): Promise<Brief> => {
+  const briefs = await readThreads(card.id)
+  const held = briefs.find((t) => t.id === conversation)
+  if (!held) throw new CliError(`${card.callsign} has no conversation "${conversation}"`, `\`tower agent ${card.callsign}\` names its conversations`)
+  const res = await fetch(`${towerAt()}/conversations/${held.session.id}/${conversation}`)
+  if (!res.ok) throw new CliError(`The tower answered ${res.status} for conversation ${conversation}: ${await res.text()}`)
+  return res.json()
+}
 
 /** `cards`: the cards its hires are found among, every floor's, and its floor's archive's too for a worker the board leaves out. */
 const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: number): string[] => {
@@ -236,7 +253,7 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
     ...(card.crew ? [`  in ${card.crew.callsign}'s crew, by ${card.crew.by}`] : []),
     ...(card.exempt ?? []).map((e) => `  ${exemptionWords(e)}`),
     ...(hires.length ? [`  under it: ${hires.map((h) => `${h.callsign} (${[statusName(h), ...(h.project === card.project ? [] : [`on ${h.project}`])].join(', ')})`).join(', ')}`] : []),
-    ...(current ? current.threads.flatMap((t) => ['', ...threadLines(t, card.conversations.find((conv) => conv.id === t.id)?.promptBy)]) : ['', 'No saved conversation yet.']),
+    ...(current ? current.threads.flatMap((t) => ['', ...threadLines(t, promptByOf(card, t)), ...(t.earlier ? ['', leftOutLine(card.callsign, t)] : [])]) : ['', 'No saved conversation yet.']),
     ...(earlier.length ? ['', `Earlier sessions of ${card.callsign}, each read in full at /conversations/<session>:`, ...earlier.map(earlierLine)] : []),
   ]
 }
@@ -681,10 +698,15 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const hiresEverywhere = hiresBy(board.floors.flatMap((f) => f.cards))
     console.log(floors.map((f) => floorLines(f, hiresEverywhere, me, now).join('\n')).join('\n\n'))
   },
-  agent: async ([callsign]) => {
+  agent: async ([callsign, conversation]) => {
     if (!callsign) throw new CliError(usageLine('agent'))
     const board = await readBoard()
     const card = await cardNamed(board, callsign)
+    if (conversation) {
+      const whole = await wholeThread(card, conversation)
+      console.log(threadLines(whole, promptByOf(card, whole)).join('\n'))
+      return
+    }
     const floor = board.floors.find((f) => f.id === card.project)!
     const onBoard = board.floors.flatMap((f) => f.cards)
     const cards = floor.cards.includes(card) ? onBoard : [...onBoard, ...(await readArchive(floor.id))]

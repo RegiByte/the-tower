@@ -87,7 +87,9 @@ renderer can draw the brief alike, inline.
   parses only the log's hook lines ([`hookEvents`](ref:hub/src/tail.ts#hookEvents)), all they fold from: the
   terminal's output, most of a log's bytes, is skipped unparsed, so a read stays cheap on a long session.
   [`wholeConversation`](ref:hub/src/bridge/turns.ts#wholeConversation) gives every turn of one conversation, at
-  `GET /conversations/<id>/<conversation>` ([`conversation`](ref:hub/src/tower/http.ts#conversation)).
+  `GET /conversations/<id>/<conversation>` ([`conversation`](ref:hub/src/tower/http.ts#conversation)). `tower agent`
+  prints the brief, and where a conversation's `earlier` is set, the exact `tower agent <CALLSIGN> <conversation>` that
+  prints every turn: a reviewer takes a worker's goal from it, and the goal is often before the last turns.
 - *Steps, since 1.133.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between
   its prompt and its answer, read from the log by [`stepsOf`](ref:hub/src/bridge/turns.ts#stepsOf): its words between
   tool calls (`turn.step`'s `answer`), each main-loop tool call in one line
