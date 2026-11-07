@@ -28,15 +28,27 @@ export const releasesBetween = (tags: string[], from: string | undefined, to: st
 export const entriesFor = (changelog: string, releases: string[]): string[] =>
   changelog.split(/^(?=## )/m).filter((section) => releases.includes(section.split('\n')[0].slice('## '.length).trim()))
 
+/** Commits the release lacks, on the branch the checkout is on or on the detached HEAD it is at (`sha`). */
+export type LeftBehind = { t: 'branch'; branch: string; ahead: number } | { t: 'detached'; sha: string; ahead: number }
+
 /**
  * How the checkout reaches the release, out of the state it is in: a branch the release descends from moves along
- * (fast-forward), so it stays a branch; a detached HEAD, or a branch that has commits the release lacks, is checked
- * out at the release, which leaves the branch where it was (`ahead` commits on it, when that is not none).
+ * (fast-forward), so it stays a branch; anything else is checked out at the release, and the commits it has that the
+ * release lacks (`ahead`) are named, since they stay on the branch the checkout leaves or, on a detached HEAD, on no
+ * branch at all.
  */
-export type Move = { t: 'fast-forward'; branch: string } | { t: 'checkout'; leftBehind?: { branch: string; ahead: number } }
+export type Move = { t: 'fast-forward'; branch: string } | { t: 'checkout'; leftBehind?: LeftBehind }
 
-export const moveTo = (branch: string | undefined, descends: boolean, ahead: number): Move =>
-  branch === undefined ? { t: 'checkout' } : descends ? { t: 'fast-forward', branch } : { t: 'checkout', leftBehind: { branch, ahead } }
+export const moveTo = (branch: string | undefined, sha: string, ahead: number): Move =>
+  branch !== undefined && ahead === 0
+    ? { t: 'fast-forward', branch }
+    : { t: 'checkout', leftBehind: ahead === 0 ? undefined : branch === undefined ? { t: 'detached', sha, ahead } : { t: 'branch', branch, ahead } }
+
+/** What a checkout that leaves commits behind tells the user, so they can find them again. */
+export const leftBehindNote = (left: LeftBehind, release: string): string =>
+  left.t === 'branch'
+    ? `${left.branch} has ${left.ahead} commit(s) ${release} lacks, so it was not moved: they stay on ${left.branch}, which this checkout left. Merge or rebase it onto ${release} to bring them along.`
+    : `HEAD was detached at ${left.sha}, ${left.ahead} commit(s) ahead of ${release}: they are on no branch now. Keep them with \`git branch <name> ${left.sha}\`.`
 
 /** Every file a daemon's code is built from, relative to the checkout, read from the imports of its `script`. */
 const sourcesOf = async (script: string): Promise<string[]> => {
@@ -70,9 +82,8 @@ export async function update(paths: SystemPaths): Promise<void> {
   if ((await git(REPO, ['status', '--porcelain', '--untracked-files=no'])).trim()) throw new CliError(`${REPO} has uncommitted changes: commit or stash them, then update again`)
 
   const branch = await run(REPO, ['symbolic-ref', '--short', '--quiet', 'HEAD'])
-  const descends = (await run(REPO, ['merge-base', '--is-ancestor', 'HEAD', newest])).code === 0
-  const ahead = branch.code === 0 && !descends ? Number(await git(REPO, ['rev-list', '--count', `${newest}..HEAD`])) : 0
-  const move = moveTo(branch.code === 0 ? branch.stdout.trim() : undefined, descends, ahead)
+  const ahead = Number(await git(REPO, ['rev-list', '--count', `${newest}..HEAD`]))
+  const move = moveTo(branch.code === 0 ? branch.stdout.trim() : undefined, (await git(REPO, ['rev-parse', '--short', 'HEAD'])).trim(), ahead)
 
   const [jobs, tower] = daemonsNamed(paths, towerPort(readConfig(paths.config)), ['jobs', 'tower'])
   const towerUp = (await tower.holder()).t === 'ours' || (await startedPid(tower)) !== undefined
@@ -85,10 +96,6 @@ export async function update(paths: SystemPaths): Promise<void> {
     } else {
       await wholeTree(REPO, ['checkout', '--quiet', newest])
       console.log(`checked out ${newest}`)
-      if (move.leftBehind) {
-        const { branch, ahead } = move.leftBehind
-        console.log(`${branch} has ${ahead} commit(s) ${newest} lacks, so it was not moved: they stay on ${branch}, which this checkout left. Merge or rebase it onto ${newest} to bring them along.`)
-      }
     }
     npm('ci')
     if (tower3d) npm('run', 'tower3d')
@@ -96,6 +103,7 @@ export async function update(paths: SystemPaths): Promise<void> {
     if (towerUp) console.log(`tower: ${await bringUp(tower)} · ${tower.where}`)
   }
 
+  if (move.t === 'checkout' && move.leftBehind) console.log(`\n${leftBehindNote(move.leftBehind, newest)}`)
   await updateJobs(paths, jobs)
   if (!(await hostLive(paths))) return
   const changed = await changedSince(paths.control, 'src/host/main.ts')
