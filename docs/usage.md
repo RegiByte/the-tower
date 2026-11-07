@@ -70,8 +70,9 @@ that exact callsign is on duty. The callsign is kept for good, across resumes.
 > "Check on HOLMES-42: why has it been working for an hour?"
 > "Ask ODIN-07 which branch its fix is on."
 
-A worker reads another's recent prompts and answers with `tower agent <CALLSIGN>`, and messages it by the name
-`tower agents` gives. You see the same in the brief (a worker's last turns) on the tower page.
+A worker reads another's recent prompts and answers with `tower agent <CALLSIGN>`, which says when it left earlier
+turns out, and `tower agent <CALLSIGN> <conversation>` prints every turn. It messages a worker by the name `tower agents`
+gives. You see the same in the brief (a worker's last turns) on the tower page.
 
 A worker's terminal is Claude Code's own screen, so its keys are Claude's: drag to select and Ctrl+C copies (⌘C
 doesn't; Claude also copies as you select unless its `copyOnSelect` setting is off), and Ctrl+V pastes text and images.
