@@ -49,7 +49,9 @@ and shows its last screen read-only; a stranded one offers Let go beside Resume 
 every keyboard lies the worker's logbook ([[logbook]]). Each floor's Running board
 ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)) lists what the floor's workers left running
 and the hires whose work landed, ended from there or from the floor panel's Tidy ([[tidy]], [[carried]],
-[[discard]], [[press-feedback]]). Where you stand is kept with `tower.remember`.
+[[discard]], [[press-feedback]]). Where you stand is kept with `tower.remember`. What you keep for every renderer of
+yours in `tower.store` is read again on every board and on each key it, or a shelf page it relays, sets, as the page
+does ([[web-tower]]).
 
 Sitting at a desk opens the session's real terminal in a modal over the world, which stops drawing until it
 closes; the worker stays at its keyboard, posed for its status
