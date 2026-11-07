@@ -1348,6 +1348,16 @@ const boardAfter = (act: () => Promise<unknown>, holds: (board: Board) => boolea
     req.on('error', done)
   })
 
+test('server: a session whose floor no longer names its checkout is not_found on /changes', async () => {
+  const hub = configNow().projects.lab.hub
+  handEdit((c) => (c.projects.lab.hub = path.join(ROOT, 'moved')))
+  try {
+    assert.equal(errorCode(await get(`/changes/${SESSION}`)), 'not_found')
+  } finally {
+    handEdit((c) => (c.projects.lab.hub = hub))
+  }
+})
+
 test('server: GET /config is the config file as it holds it, parsed', async () => {
   assert.deepEqual(JSON.parse((await get('/config')).body), configNow())
 })
