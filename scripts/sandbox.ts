@@ -1,24 +1,27 @@
 /**
  * A throwaway system for checking renderers: its own config, sockets and logs under its root, sessions as bash loops in
- * place of Claude, and a tower on its own port, kept as `port` in its config. Nothing here reaches the real system.
+ * place of Claude, and a tower on its own port, kept as `port` in its config. Nothing here reaches the real system: its
+ * two floors' git lives under its root too, the `tower` floor in a clone of this checkout (below).
  *
  * The root (`sandbox-root.ts`) is `TOWER_SANDBOX` when set (sockets cap the path near 104 bytes), else a tower worker's
  * own `/tmp/tower-<callsign>`, else `/tmp/tower-sandbox`. A new sandbox at `/tmp/tower-sandbox` gets port 4399, any
  * other a free port, so workers running at once never share one: run yours with no root or port.
  *
- *   npm run sandbox -- up [--port <n>]   write the config when the sandbox has none, start the host, terms, jobs and tower,
- *                                        and print how to reach it; an existing config stays as it is (hand-edit it:
- *                                        `hiring`, more projects), only --port is written into it, and a later `up`
- *                                        without --port keeps the port. A config from an older script keeps its old
- *                                        shape: delete the root to get the current one. `up` refuses a port another
- *                                        tower holds
- *   npm run sandbox -- down              stop this sandbox's three, and no other's
+ *   npm run sandbox -- up [--port <n>]   write the config when the sandbox has none, mend the `tower` floor's clone, start
+ *                                        the host, terms, jobs and tower, and print how to reach it; an existing config
+ *                                        stays as it is (hand-edit it: `hiring`, more projects), but for the `tower`
+ *                                        floor's hub; only --port is written into it, and a later `up` without --port
+ *                                        keeps the port. A config from an older script keeps its old shape otherwise:
+ *                                        delete the root to get the current one. `up` refuses a port another tower holds,
+ *                                        and a root inside a git repository
+ *   npm run sandbox -- down              stop this sandbox's three, and no other's, then remove the `tower` floor's clone
  *   npm run -s sandbox -- run <cmd…>     run a command against the sandbox: TOWER_CONFIG names its config, so `tower`
  *                                        reads it; TOWER_URL is its URL; this checkout's `tower` is first on PATH; and
  *                                        TOWER_SESSION_ID and TOWER_HOOKS_SOCKET are unset, so a worker's own session
  *                                        doesn't reach the real tower. When the sandbox can't be named, nothing runs;
  *                                        nor when this checkout has no node_modules of its own (`npm ci`), which its
- *                                        `tower` runs from
+ *                                        `tower` runs from; nor when the `tower` floor's clone is broken or isn't
+ *                                        its hub: `up` mends both
  *   npm run -s sandbox -- env            the same environment as `export` lines, for a shell of your own to `eval`
  *
  * Outside `run`, `tower` reads the real system: the sandbox's root names it only to these scripts and to `tool:frames`
@@ -40,8 +43,17 @@
  *     http://host/hooks/<id>                                                                     a release untested
  *   SH
  *
- * Worktrees: `lab` (hub `lab`, repo `lab-api`) has bare origins under `origins/`. Cut on `lab` only: the `tower` floor
- * is this repo, and a cut there is a real worktree in it.
+ * Worktrees: `lab` (hub `lab`, repo `lab-api`) has bare origins under `origins/`, and so has `tower`, whose hub
+ * `$TOWER_SANDBOX/tower` is a clone of this checkout. The sandbox's git is its own: a cut, Tidy, a discard or a push on
+ * either floor reaches nothing outside the root. On `tower`, `main` is this checkout's HEAD as of the last `up`, so that
+ * floor shows commits, never uncommitted work, and commit-then-`up` shows a commit. Every other branch and tag is as
+ * of the clone. `up` follows HEAD and restores the hub's tracked files, dropping what was done on its `main`. It re-makes
+ * a clone git finds damaged and says so, worktrees cut in it going with it: macOS deletes files under `/tmp` idle for
+ * three days one by one, so a clone left alone breaks a piece at a time. On a sound clone a failure to follow stops
+ * `up` with git's message, and nothing is lost. `down` removes the clone, so what should outlive a restart belongs on
+ * `lab`. The clone's objects are hardlinks to this repository's: it costs its tree, about
+ * 30 MB, and holds on to packs the repository has since dropped until `down`. It is never `--shared`, which would break
+ * when the repository collects its objects.
  *
  *   curl -s -XPOST $TOWER_URL/spawn -H "origin: $TOWER_URL" -H 'content-type: application/json' -d '{"project":"lab","cut":{}}'
  *   curl -s -XPOST $TOWER_URL/tidy  -H "origin: $TOWER_URL" -H 'content-type: application/json' -d '{"project":"lab"}'
@@ -50,8 +62,8 @@
  * `/screen/<id>` and `/shell/<id>` are SSE streams that never end: bound them, or curl hangs. Stop only what you
  * started: `down`, or `kill` a PID you saved; never `pkill`, `killall` or `tower reap`, which reach every worker's.
  */
-import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { execFileSync, spawnSync, type ExecFileSyncOptions } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { initialConfig } from '../src/init.ts'
@@ -90,7 +102,8 @@ post '{"hook_event_name":"turn.complete","answer":"Hello from the sandbox, sessi
 trap 'exit 143' TERM
 while :; do sleep 3600 & wait; done`
 
-const git = (dir: string, ...args: string[]) => execFileSync('git', ['-C', dir, ...args], { stdio: 'ignore' })
+const GIT_OUTPUT: ExecFileSyncOptions = { stdio: ['ignore', 'ignore', 'pipe'] }
+const git = (dir: string, ...args: string[]) => execFileSync('git', ['-C', dir, ...args], GIT_OUTPUT)
 
 /**
  * A repo the tower can cut worktrees in: a first commit on `main` pushed to a bare origin under `origins/`, an ignored
@@ -117,6 +130,66 @@ function seedRepo(dir: string) {
   git(dir, 'remote', 'set-head', 'origin', '--auto')
 }
 
+const FLOOR_ORIGIN = path.join(ROOT, 'origins', 'tower.git')
+const FLOOR_HUB = path.join(ROOT, 'tower')
+
+const removeFloorClone = () => {
+  for (const dir of [FLOOR_ORIGIN, FLOOR_HUB]) rmSync(dir, { recursive: true, force: true })
+}
+
+/** Brings the floor's `main`, here and on its origin, to this checkout's HEAD, whatever branch that is or none. */
+function followCheckout() {
+  git(FLOOR_ORIGIN, 'fetch', '-q', '--force', REPO, '+HEAD:refs/heads/main')
+  git(FLOOR_HUB, 'fetch', '-q', 'origin')
+  git(FLOOR_HUB, 'remote', 'set-head', 'origin', 'main')
+  git(FLOOR_HUB, 'checkout', '-q', '--force', '-B', 'main', 'origin/main')
+}
+
+/** Reflogs stay out: fsck walking one fails on a sound repository when a branch is deleted as it runs. */
+const FSCK = ['fsck', '--connectivity-only', '--no-reflogs']
+
+/** What git finds wrong with the floor's clone, in its words; nothing when the clone is sound. */
+function floorDamage() {
+  const checks = [
+    [FLOOR_ORIGIN, ...FSCK],
+    [FLOOR_HUB, ...FSCK],
+    [FLOOR_HUB, 'remote', 'get-url', 'origin'],
+  ]
+  for (const [dir, ...args] of checks) {
+    const check = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'ignore', 'pipe'] })
+    if (check.status !== 0) return check.stderr.trim().split('\n').at(-1)
+  }
+}
+
+/**
+ * The `tower` floor's git, this checkout's history and none of its links: a bare origin that forgets where it came
+ * from, since a clone's own `origin` would name this repository and take a push, and a clone of that as the hub.
+ */
+function makeFloorClone() {
+  removeFloorClone()
+  mkdirSync(path.dirname(FLOOR_ORIGIN), { recursive: true })
+  execFileSync('git', ['clone', '-q', '--bare', '--local', REPO, FLOOR_ORIGIN], GIT_OUTPUT)
+  git(FLOOR_ORIGIN, 'remote', 'remove', 'origin')
+  git(FLOOR_ORIGIN, 'symbolic-ref', 'HEAD', 'refs/heads/main')
+  git(FLOOR_ORIGIN, 'fetch', '-q', '--force', REPO, '+HEAD:refs/heads/main')
+  execFileSync('git', ['clone', '-q', '--local', FLOOR_ORIGIN, FLOOR_HUB], GIT_OUTPUT)
+}
+
+function mendFloorClone() {
+  /** A hub whose `.git` went would read as the repository around it, and the tower would act on that one. */
+  if (spawnSync('git', ['-C', ROOT, 'rev-parse', '--git-dir'], { stdio: 'ignore' }).status === 0) throw new Error(`${ROOT} is inside a git repository: give the sandbox a root outside any`)
+  const damage = floorDamage()
+  if (damage) {
+    if (existsSync(FLOOR_HUB)) console.log(`the tower floor's clone was broken (${damage}): re-making it, and the worktrees cut in it go with it`)
+    makeFloorClone()
+  }
+  try {
+    followCheckout()
+  } catch (err) {
+    throw new Error(`the tower floor's clone couldn't follow this checkout, though git finds it sound: fix what git says, or \`down\` and \`up\` re-make it. ${(err as Error).message}`)
+  }
+}
+
 function freshConfig(port: number) {
   const lab = path.join(ROOT, 'lab')
   const labApi = path.join(ROOT, 'lab-api')
@@ -125,7 +198,7 @@ function freshConfig(port: number) {
     argv: ['bash', '-c', SESSION, 'session'],
     port,
     projects: {
-      tower: { name: 'tower', color: '#c792ea', hub: REPO, repos: [] },
+      tower: { name: 'tower', color: '#c792ea', hub: FLOOR_HUB, repos: [] },
       lab: { name: 'lab', color: '#7fb069', hub: lab, repos: [labApi], collections: { notes: { label: 'Notes', description: 'Notes the lab keeps on its experiments.' } } },
     },
     collections: {
@@ -139,12 +212,25 @@ function freshConfig(port: number) {
 async function prepareConfig(port: number | undefined) {
   const config = existsSync(CONFIG) ? JSON.parse(readFileSync(CONFIG, 'utf8')) : freshConfig(port ?? (ROOT === SHARED_SANDBOX ? 4399 : await freePort()))
   if (port !== undefined) config.port = port
+  /** A config written when this floor's hub was the checkout itself, whose git is the real repository's. */
+  if (config.projects.tower) config.projects.tower.hub = FLOOR_HUB
   /** A sandbox's quota probe would read the real account: it is turned on by hand to try it. */
   if (config.probes === undefined) config.extensions = { quota: { off: true }, ...config.extensions }
   writeFileSync(CONFIG, JSON.stringify(config, null, 2))
 }
 
 const OWN_SANDBOX = `Run one of your own beside it: TOWER_SANDBOX=/tmp/tower-<you> npm run sandbox -- up (the root under ~80 bytes: sockets cap it; a new root gets a free port).`
+
+/** Refuses a sandbox whose `tower` floor could act on the real repository or fail on a broken clone. */
+function checkFloorClone() {
+  const hub = readConfig(CONFIG).projects.tower?.hub
+  if (hub === undefined) return
+  const mend = 'npm run sandbox -- up mends it'
+  if (hub !== FLOOR_HUB) throw new Error(`${CONFIG} has the tower floor's hub at ${hub}, which is no clone of this sandbox's own: ${mend}`)
+  if (!existsSync(FLOOR_HUB)) throw new Error(`the tower floor has no clone at ${FLOOR_HUB}, which \`down\` removes: npm run sandbox -- up makes it`)
+  const damage = floorDamage()
+  if (damage) throw new Error(`the tower floor's clone at ${FLOOR_HUB} is broken (${damage}): ${mend}`)
+}
 
 /**
  * What a command run against the sandbox has in its environment: the sandbox's config for `tower`, this checkout's
@@ -153,8 +239,10 @@ const OWN_SANDBOX = `Run one of your own beside it: TOWER_SANDBOX=/tmp/tower-<yo
 const sandboxEnv = (): NodeJS.ProcessEnv => {
   /** `bin/tower` runs the checkout's own tsx, which node's lookup up the tree doesn't stand in for. */
   if (!existsSync(path.join(REPO, 'node_modules', '.bin', 'tsx'))) throw new Error(`${REPO} has no node_modules of its own, which its tower runs from: npm ci there first`)
+  const TOWER_URL = sandboxUrl()
+  checkFloorClone()
   const { TOWER_SESSION_ID, TOWER_HOOKS_SOCKET, ...env } = process.env
-  return { ...env, TOWER_SANDBOX: ROOT, TOWER_CONFIG: CONFIG, TOWER_URL: sandboxUrl() }
+  return { ...env, TOWER_SANDBOX: ROOT, TOWER_CONFIG: CONFIG, TOWER_URL }
 }
 
 const RUN_LINE = `npm run -s sandbox -- run <command>    one command, or several as a script: run sh <<'SH' … SH`
@@ -176,6 +264,7 @@ if (command === 'run') {
 } else if (command === 'up') {
   const { values } = parseArgs({ args: rest, options: { port: { type: 'string' } } })
   mkdirSync(ROOT, { recursive: true })
+  mendFloorClone()
   await prepareConfig(values.port !== undefined ? Number(values.port) : undefined)
   const port = towerPort(readConfig(CONFIG))
   const URL = sandboxUrl()
@@ -193,6 +282,7 @@ if (command === 'run') {
       process.exitCode = 1
     } else console.log(`${daemon.name}: ${result}`)
   }
+  if (!process.exitCode) removeFloorClone()
 } else {
   throw new Error('usage: npm run sandbox -- up [--port <n>] | down | run <command> | env')
 }
