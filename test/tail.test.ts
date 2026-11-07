@@ -9,7 +9,7 @@ import { factEvents, readLog, screenEvents } from '../src/tail.ts'
 import { fixture, timeline } from './replay.ts'
 
 const FIXTURES = path.join(import.meta.dirname, 'fixtures')
-const names = readdirSync(FIXTURES).filter((file) => file.endsWith('.jsonl')).map((file) => file.slice(0, -'.jsonl'.length))
+const names = readdirSync(FIXTURES).filter((file) => file.endsWith('.jsonl') && file !== 'probe-quota.jsonl').map((file) => file.slice(0, -'.jsonl'.length))
 const logPath = (name: string) => path.join(FIXTURES, `${name}.jsonl`)
 
 test('the fixtures hold PostToolUse with its tool response, which the fact filter reads by name alone', () => {

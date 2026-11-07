@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "A log the fold can't read past breaks its own session, never the tower",
-  "summary": "An event whose fold throws stops that one log's fold where it stands: its facts keep what came before, Facts.broken records the error, the event's time and code, and nothing after it is folded. The board says it as a card's broken (attention broken, status word broken, the reason as its gist), and every other session and the tower live on.",
+  "summary": "An event whose fold throws, a line that holds no event, or a first line that holds no header stops that one log's fold where it stands: its facts keep what came before, Facts.broken records the error, the event's time and code, and nothing after it is folded. The board says it as a card's broken (attention broken, status word broken, the reason as its gist), and every other session and the tower live on.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-06",
+  "reviewed": "2026-11-07",
   "refs": [
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/facts.ts#Broken",
@@ -23,7 +23,12 @@
     "hub/test/board.test.ts",
     "hub/test/fixtures/stop-without-tasks.jsonl",
     "hub/test/checkpoints.test.ts",
-    "hub/src/bridge/facts.ts#Unreadable"
+    "hub/src/bridge/facts.ts#Unreadable",
+    "hub/src/tail.ts#readHeader",
+    "hub/src/tail.ts#Head",
+    "hub/src/shared/launch.ts#startOfSessionId",
+    "hub/src/shared/model.ts#floorOf",
+    "hub/test/server.test.ts"
   ]
 }
 ---
@@ -56,7 +61,7 @@ the session's start) and its code. A broken session's facts fold nothing more.
   runs it). Its facts say nothing reliable after the break, so it waits on no one and is never stuck. The shared
   words ([`statusName`](ref:hub/src/shared/status-words.ts#statusName), [`gistOf`](ref:hub/src/shared/status-words.ts#gistOf),
   [`statusTitle`](ref:hub/src/shared/status-words.ts#statusTitle)) say `broken`, the reason as its gist (`× log unreadable
-  past a hook (time): <error>`) and what to do on hover, so both renderers draw it alike.
+  past a hook (time): <error>`) and what to do on hover, so every renderer draws it alike.
 
 **What the user does** (runbook [[broken-log]]): the verbs stand as the facts allow. While the host runs it, drive
 it or kill it; once it no longer runs, resume its conversation, which starts a new log and a healthy session under the
@@ -64,7 +69,9 @@ same callsign. Off duty, Tidy archives it like any ended worker's log.
 
 [`test/board.test.ts`](ref:hub/test/board.test.ts) replays
 [`stop-without-tasks`](ref:hub/test/fixtures/stop-without-tasks.jsonl) to hold this, and
-[`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) resumes every fixture's fold before and after a break.
+[`test/checkpoints.test.ts`](ref:hub/test/checkpoints.test.ts) resumes every fixture's fold before and after a break
+and folds logs whose first line or an event line is bad; [`test/server.test.ts`](ref:hub/test/server.test.ts) starts
+the tower with such logs in place.
 
 **Alternatives considered.**
 - `?? []` at `stopStatus`: fixes the one shape found, leaves the next fatal, and [[fail-clearly]] rules out defensive checks.
@@ -76,12 +83,34 @@ same callsign. Off duty, Tidy archives it like any ended worker's log.
 **Impact.** A bad line costs its own session's facts from that line on, said on its card; the tower, every other
 session and `tower ls` carry on, and a restart meets the same break in the same place.
 
-*A line that isn't JSON.* A write cut short by a crash leaves an incomplete last line every reader leaves unread
+*A line that holds no event.* A write cut short by a crash leaves an incomplete last line every reader leaves unread
 until something appends after it. The fact filter ([`factEvents`](ref:hub/src/tail.ts#factEvents)) reads such a
 complete line as [`Unreadable`](ref:hub/src/bridge/facts.ts#Unreadable) (its time and code as far as its prefix
-reads), for `factsAfter` to break on like any event it can't follow; only a line the filter parses can break the
-fold, so a torn output line past the session's start costs nothing. After a break the filter keeps what `afterBreak`
+reads, the session's start and `?` past that), for `factsAfter` to break on like any event it can't follow. So does
+JSON that isn't `[time, code, …]` (a `null`, a `{}`), which the host never writes and which would otherwise end the
+fold silently or break it with no time. Only a line the filter parses can break the fold, so a torn output line past the session's start costs nothing. After a break the filter keeps what `afterBreak`
 keeps, and a live tail that stops at a break folds the log again from its checkpoint
 ([`watchSystem`](ref:hub/src/system.ts#watchSystem)). The screen and every-event readers skip the line. The host
 itself makes no such line: before it appends a fact to a log it doesn't run, it cuts an unfinished last line back to
 the log's whole lines ([`appendFact`](ref:hub/src/host/main.ts#appendFact), [[let-go]]).
+
+*A first line that holds no header.* Every reader of a log starts at its header, so the fold, the screen and the
+brief all need one. It is read in one step ([`readHeader`](ref:hub/src/tail.ts#readHeader), and `readLog` through it). A first line that isn't JSON or
+isn't a header's shape gives a [`Head`](ref:hub/src/tail.ts#Head) with a header made of what is left, and `unreadable`,
+which [`foldLog`](ref:hub/src/checkpoints.ts#foldLog) starts the facts broken on: at 0, code `?`, so the facts are the
+initial ones and only `afterBreak` reads on. A log with no whole line is still a log the host hasn't finished writing a
+header to, not a broken one.
+
+What is left is derived from the log, so a checkpoint for it holds: the id from the file name, the start from that id
+([`startOfSessionId`](ref:hub/src/shared/launch.ts#startOfSessionId)), the directory from its first hook that names
+one, no argv, an 80×24 terminal for its screen. `project` is `''`: a directory says its floor only against the config,
+so the live view fills it in with [`floorOf`](ref:hub/src/shared/model.ts#floorOf) when a session is read, not the fold.
+The session holds no conversations, so it is neither resumable nor on duty once the host no longer runs it, and it
+offers no let-go, which the host could not append anyway (`appendFact` reads the header for the event's time). It is an
+ended session in its floor's archive, reading broken. While the host runs it, it is on duty and can be driven and
+killed. A log whose directory is unknown or on no floor has no floor to be drawn on: `tower ls` is what says it.
+
+Alternatives considered here: a try/catch at `track`, `tower ls` and `trackNew` would keep the tower up and leave the
+session unseen; keeping the bad session out of the system would too. Folding on past a lost header (its events are
+intact) would give a session built on a made-up start, against a broken session folding nothing more. A board-wide
+list of floorless logs would reach the few logs with no hook, at the cost of a board field every renderer must draw.

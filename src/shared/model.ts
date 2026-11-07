@@ -93,6 +93,10 @@ export const inProject = (project: Project, cwd: string): boolean => checkoutDir
 export const outsideProject = (project: Project, cwd: string): string | undefined =>
   inProject(project, cwd) ? undefined : `"${cwd}" is neither a directory of project "${project.name}" (${projectDirs(project).join(', ')}) nor a worktree of one (<dir>/${WORKTREES_DIR}/<name>)`
 
+/** The floor a session in `cwd` works on. */
+export const floorOf = (config: Pick<Config, 'projects'>, cwd: string): string | undefined =>
+  Object.keys(config.projects).find((id) => inProject(config.projects[id], cwd))
+
 /**
  * The directories a session in `cwd` works in, its own first: the project's dirs, or the same worktree of each of them.
  * A session in a worktree never reaches the main checkouts, which belong to other workers.

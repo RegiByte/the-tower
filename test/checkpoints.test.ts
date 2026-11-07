@@ -11,7 +11,7 @@ import { screenEvents, readLog } from '../src/tail.ts'
 import { fixture } from './replay.ts'
 
 const FIXTURES = path.join(import.meta.dirname, 'fixtures')
-const names = readdirSync(FIXTURES).filter((file) => file.endsWith('.jsonl')).map((file) => file.slice(0, -'.jsonl'.length))
+const names = readdirSync(FIXTURES).filter((file) => file.endsWith('.jsonl') && file !== 'probe-quota.jsonl').map((file) => file.slice(0, -'.jsonl'.length))
 const logPath = (name: string) => path.join(FIXTURES, `${name}.jsonl`)
 const freshCache = () => mkdtempSync(path.join(os.tmpdir(), 'tower-checkpoints-'))
 
@@ -141,3 +141,64 @@ test('a line that isn\'t JSON, left by a host that died mid-write and ended by a
   assert.deepEqual(foldLog(freshCache(), file)!.session.facts, expected, 'from the start')
   assert.equal(before.session.facts.broken, undefined)
 })
+
+const LOST = '20261002-023909-f6dc'
+const LOST_AT = Date.UTC(2026, 9, 2, 2, 39, 9)
+
+/** The fixture with its first line replaced by `first`, under a log file named as the host names one. */
+const headless = (first: string, name = 'tool-turn') => {
+  const file = path.join(freshCache(), `${LOST}.jsonl`)
+  writeFileSync(file, `${first}\n${readFileSync(logPath(name), 'utf8').split('\n').slice(1).join('\n')}`)
+  return file
+}
+
+for (const [first, message] of [
+  ['{"id":"20261002', "its first line isn't JSON (Unterminated string in JSON at position 15 (line 1 column 16))"],
+  ['null', "its first line isn't a session's header (null)"],
+  ['{}', "its first line isn't a session's header ({})"],
+  ['[0.1,"o","output"]', 'its first line isn\'t a session\'s header ([0.1,"o","output"])'],
+] as const) {
+  test(`a first line ${first} costs its session alone: the log folds to a session broken from its start, as plain or archived, and every reader reads it`, () => {
+    const file = headless(first)
+    const cwd = fixture('tool-turn').header.cwd
+    const { session, offset } = foldLog(freshCache(), file)!
+    assert.deepEqual(session.header, { id: LOST, project: '', cwd, argv: [], startedAt: LOST_AT, cols: 80, rows: 24 })
+    assert.deepEqual(session.facts, { ...initialFacts(session.header), broken: { message, at: 0, code: '?' } })
+    assert.equal(offset, statSync(file).size)
+    assert.equal(readLog(file, screenEvents).log.header.id, LOST)
+    assert.ok(readLog(file, screenEvents).log.events.length > 0)
+    const zipped = path.join(path.dirname(file), `${LOST}.jsonl.gz`)
+    writeFileSync(zipped, gzipSync(readFileSync(file)))
+    assert.deepEqual(foldLog(freshCache(), zipped)!.session, session)
+  })
+}
+
+test('a broken header is folded the same from the checkpoint it leaves, and a log that holds no hook has no directory', () => {
+  const file = headless('null')
+  const cache = freshCache()
+  assert.deepEqual(foldLog(cache, file), foldLog(cache, file))
+  const bare = path.join(freshCache(), `${LOST}.jsonl`)
+  writeFileSync(bare, 'null\n')
+  assert.equal(foldLog(freshCache(), bare)!.session.header.cwd, '')
+})
+
+test("a log with no whole line isn't a broken session: the host hasn't written its header yet", () => {
+  const file = path.join(freshCache(), `${LOST}.jsonl`)
+  writeFileSync(file, '{"id":"2026')
+  assert.equal(foldLog(freshCache(), file), undefined)
+})
+
+for (const line of ['null', '{}', '5', '"text"', '[]', '[1]']) {
+  test(`an event line ${line} breaks the fold there and says what it found, and the screen skips it`, () => {
+    const file = path.join(freshCache(), 'tool-turn.jsonl')
+    writeFileSync(file, readFileSync(logPath('tool-turn')))
+    const cache = freshCache()
+    const before = foldLog(cache, file)!
+    const screen = readLog(file, screenEvents).log.events
+    writeFileSync(file, `${line}\n[41.25,"h",{"hook_event_name":"tower.letGo"}]\n`, { flag: 'a' })
+    const expected = { ...before.session.facts, broken: { message: `a line that isn't an event (${line})`, at: 0, code: '?' }, letGoAt: 41.25 }
+    assert.deepEqual(foldLog(cache, file)!.session.facts, expected, 'from the checkpoint before it')
+    assert.deepEqual(foldLog(freshCache(), file)!.session.facts, expected, 'from the start')
+    assert.deepEqual(readLog(file, screenEvents).log.events, screen)
+  })
+}

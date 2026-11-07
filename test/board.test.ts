@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict'
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { test } from 'node:test'
+import { foldLog } from '../src/checkpoints.ts'
 import { factsOf } from '../src/bridge/facts.ts'
 import { board, unresumableAt, type Board, type Floor, type SystemView } from '../src/bridge/board.ts'
 import { heldBy, resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { gistLine, speechOf, statusName } from '../src/shared/cards.ts'
-import type { Config, SessionLog } from '../src/shared/model.ts'
+import { floorOf, type Config, type SessionLog } from '../src/shared/model.ts'
 import type { BranchRead, RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
 import { HOST_PROTOCOL, type HostLive } from '../src/shared/protocol.ts'
 import { tagOf } from '../src/shared/tags.ts'
@@ -596,6 +600,25 @@ test('a hire’s answer to its hirer’s prompt waits on the hirer while it runs
   assert.deepEqual([hirerGone.card.waiting, hirerGone.card.waitsOn, hirerGone.waits], [true, undefined, [hire.header.id]])
   const usersPrompt = at([answered, { ...hirer, events: [...idle.events, [110, 'h', { hook_event_name: 'tower.hire', id: answered.header.id }]] } as SessionLog], both)
   assert.deepEqual([usersPrompt.card.waiting, usersPrompt.card.attention, usersPrompt.waits], [true, 'ready', [hire.header.id]])
+})
+
+test("a log that lost its header reads broken on the floor its directory is on, with a real time, offers nothing that needs its facts, and leaves other sessions alone", () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'tower-board-'))
+  const file = path.join(dir, '20261002-023909-f6dc.jsonl')
+  writeFileSync(file, `null\n[1,"h",${JSON.stringify({ hook_event_name: 'SessionStart', cwd: '/lab' })}]\n`)
+  const lost = foldLog(path.join(dir, 'cache'), file)!.session
+  const placed = { ...lost, header: { ...lost.header, project: floorOf(CONFIG, lost.header.cwd)! } }
+  assert.equal(placed.header.project, 'lab')
+  const healthy = homed(fixture('tool-turn'))
+  const b = board(viewOf(CONFIG, { sessions: [placed, { header: healthy.header, facts: factsOf(healthy) }], host: hostWith(), now: lost.header.startedAt + 1000 }))
+  const card = b.floors.find((f) => f.id === 'lab')!.cards[0]
+  assert.equal(card.id, lost.header.id)
+  assert.equal(card.attention, 'broken')
+  assert.equal(statusName(card), 'broken')
+  assert.deepEqual(card.broken, { message: "its first line isn't a session's header (null)", at: Date.UTC(2026, 9, 2, 2, 39, 9), code: '?' })
+  assert.equal(card.onDuty, false)
+  assert.ok(!card.verbs.includes('resume') && !card.verbs.includes('let-go'))
+  assert.equal(b.floors.find((f) => f.id === 'tower')!.cards.length, 1)
 })
 
 test("a Stop the fold can't follow breaks its session there: its facts stop, the card reads broken and why, and it can still be killed, then resumed", () => {
