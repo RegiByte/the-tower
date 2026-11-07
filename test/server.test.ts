@@ -1278,7 +1278,7 @@ const handEdit = (change: (config: Record<string, any>) => void) => {
   writeFileSync(CONFIG, JSON.stringify(config))
 }
 
-test('server: a config gone or short of what every read stands on is a config error on the board, and the tower stays up', async () => {
+test('server: a config gone, unreadable or short of what every read stands on is a config error on the board, and the tower stays up', async () => {
   const good = readFileSync(CONFIG, 'utf8')
   const untaken = async () => {
     await sleep(3 * PUBLISH_DEBOUNCE_MS)
@@ -1296,7 +1296,10 @@ test('server: a config gone or short of what every read stands on is a config er
     await untaken()
     rmSync(CONFIG)
     await untaken()
+    mkdirSync(CONFIG)
+    await untaken()
   } finally {
+    rmSync(CONFIG, { recursive: true, force: true })
     writeFileSync(CONFIG, good)
   }
   await boardWhere((b) => b.floors.length > 0)

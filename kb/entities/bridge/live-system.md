@@ -54,7 +54,7 @@ again once a write settles: only facts past where it stood are stepped, from `in
 target's directory when the config is a link into another folder, where its writes land; a change signals, and a config fixed after it broke
 brings the board back ([[board-errors]]). `refreshConfig` signals the same change at once, called by the config verbs
 after the tower's own write ([[config-writes]]).
-[`readConfig`](ref:hub/src/system.ts#readConfig) throws a `ConfigError` naming the file for JSON that doesn't parse.
+[`readConfig`](ref:hub/src/system.ts#readConfig) throws a `ConfigError` naming the file for a file gone or unreadable, and for JSON that doesn't parse.
 
 **The machine.** `live()`, `shells()` and `heldJobs()` poll the host, the terms daemon and the jobs daemon every 1 s,
 `undefined` while each is down. `jobs()` is the jobs log folded ([`jobsOf`](ref:hub/src/bridge/jobs.ts#jobsOf)), read
