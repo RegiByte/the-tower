@@ -368,7 +368,7 @@ button[aria-busy='true'], .icon-btn[aria-busy='true'] { position: relative; curs
 button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after { content: ''; position: absolute; left: 3px; right: 3px; bottom: 2px; height: 2px; border-radius: 1px;
   background: linear-gradient(90deg, transparent, currentColor, transparent) 0 0 / 50% 100% no-repeat; animation: busy 1s ease-in-out infinite; }
 @keyframes busy { from { background-position: -100% 0; } to { background-position: 200% 0; } }
-${reduced(':is(*, ::before, ::after)', 'animation-iteration-count: 1 !important;')}
+${['*', '::before', '::after'].map((target) => reduced(target, 'animation-iteration-count: 1 !important;')).join('\n')}
 ${reduced("button[aria-busy='true']::after, .icon-btn[aria-busy='true']::after", 'animation: none; background-size: 100% 100%;')}
 .meter { position: relative; height: 6px; border-radius: var(--radius-pill); background: var(--sunk); }
 .meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--fill, var(--ink)); }
