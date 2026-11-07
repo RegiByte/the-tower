@@ -439,3 +439,8 @@ test('settingsOf reads the running provider of a capability when a user extensio
   assert.deepEqual(board.extensions.map((e) => [e.id, e.provides, e.state]), [['grid', 'grid', 'off'], ['my-grid', 'grid', 'started']])
   assert.deepEqual(settingsOf(board, 'grid'), { flash: 'blink' })
 })
+
+test('a floor setting settings on an extension that takes none is a problem, as it is on the system', () => {
+  const c = config({ extensions: { plain: { path: '/ext/plain' } }, projects: { app: { name: 'App', hub: '/app', repos: [], extensions: { plain: { settings: { a: 1 } } } } } })
+  assert.deepEqual(resolve([ext('plain')], c, TOWER).accepted.get('plain')?.problems.map((p) => [p.code, p.message]), [['invalid', 'projects.app.extensions.plain.settings: plain takes no settings']])
+})

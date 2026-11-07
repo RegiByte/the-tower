@@ -276,13 +276,16 @@ export type ExtensionView = {
   guidance?: Guided
 }
 
+/** The entry holding the settings of `cap`: a provider turned off and replaced by another holds none, whatever its place on the board. */
+const settingsHolder = (board: { extensions: readonly ExtensionView[] }, cap: string) => board.extensions.find((e) => e.provides === cap && e.settings !== undefined)
+
 /** The settings of the extension providing `cap`, as they stand on the system. @since 1.154 */
-export const settingsOf = (board: { extensions: readonly ExtensionView[] }, cap: string): unknown => board.extensions.find((e) => e.provides === cap)?.settings
+export const settingsOf = (board: { extensions: readonly ExtensionView[] }, cap: string): unknown => settingsHolder(board, cap)?.settings
 
 /** The settings of the extension providing `cap` on one floor: its own where it sets any, else the system's. @since 1.154 */
 export const floorSettingsOf = (board: { extensions: readonly ExtensionView[] }, cap: string, floor: string): unknown => {
-  const extension = board.extensions.find((e) => e.provides === cap)
-  return extension?.floorSettings?.[floor] ?? extension?.settings
+  const holder = settingsHolder(board, cap)
+  return holder?.floorSettings?.[floor] ?? holder?.settings
 }
 
 /**
