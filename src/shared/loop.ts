@@ -24,7 +24,16 @@ export type Executors<F extends Tagged, E> = {
   [K in Exclude<F['type'], 'state'>]: (effect: Extract<F, { type: K }>, dispatch: (event: E) => void) => void
 }
 
-export type Loop<S, E> = { dispatch(event: E): void; state(): S }
+export type Loop<S, E> = {
+  dispatch(event: E): void
+  state(): S
+  /**
+   * Waits for the machine to reach a state: the first state `holds` is true of, now if it holds already, else once the
+   * events dispatched have all been handled. A waiter whose predicate never holds is kept as long as the loop.
+   * Provisional, as `Loop` is. @since 1.162
+   */
+  until(holds: (state: S) => boolean): Promise<S>
+}
 
 /**
  * Runs a machine from `state`. An event dispatched while another is handled (an executor drawing, and the draw asking
@@ -34,6 +43,7 @@ export function loop<S, E extends Tagged, F extends Tagged>(m: { state: S; handl
   let state = m.state
   const queue: E[] = []
   let handling = false
+  let waiting: { holds: (state: S) => boolean; resolve: (state: S) => void }[] = []
   const step = (event: E) => {
     const handler = m.handlers[event.type as E['type']] as (state: S, event: E) => F[]
     for (const effect of handler(state, event)) {
@@ -50,8 +60,13 @@ export function loop<S, E extends Tagged, F extends Tagged>(m: { state: S; handl
     } finally {
       handling = false
     }
+    const met = waiting.filter((w) => w.holds(state))
+    waiting = waiting.filter((w) => !met.includes(w))
+    for (const w of met) w.resolve(state)
   }
-  return { dispatch, state: () => state }
+  const until = (holds: (state: S) => boolean) =>
+    holds(state) ? Promise.resolve(state) : new Promise<S>((resolve) => void waiting.push({ holds, resolve }))
+  return { dispatch, state: () => state, until }
 }
 
 /** The executors of `TimerEffect`s, each loop its own. */

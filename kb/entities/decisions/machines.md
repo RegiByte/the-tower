@@ -74,7 +74,10 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   dispatches what comes of its I/O ([`reading`](ref:hub/src/shared/reads.ts#reading)) and decides nothing.
 - *One loop.* [`loop`](ref:hub/src/shared/loop.ts#loop) runs a machine: it applies `state`, runs the other effects
   in order, and queues an event dispatched while another is handled until that one's effects have run, so every
-  handler sees the state the one before it left. It holds no subscriptions, interceptors or registries.
+  handler sees the state the one before it left. It holds no subscriptions, interceptors or registries. Its one wait
+  is [`until`](ref:hub/src/shared/loop.ts#Loop): a promise of the first state a predicate holds of, checked after
+  each dispatch has run all it queued, so the shell can await a machine (the tower page's lookup of an archived
+  worker waits for its floors' archive reads) without keeping a copy of its state.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
   minor): held reads ([`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers)), attention (`/attend.js`), the
   new-worker dialog ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), a hosted view's lifecycle
