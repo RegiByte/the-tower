@@ -47,6 +47,7 @@
     "hub/extensions/reviews/client/panel.ts#threadViewOf",
     "hub/extensions/reviews/client/panel.ts#cardThread",
     "hub/extensions/reviews/client/panel.ts#floorThread",
+    "hub/extensions/reviews/client/thread.ts#mountThread",
     "hub/extensions/reviews/client/reviews.ts#threadCheckoutOf",
     "hub/renderers/tower3d/src/reviews.ts",
     "hub/renderers/tower3d/src/pigeonhole.ts",
@@ -153,7 +154,11 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
 - *On the board:* the extension's [`parse`](ref:hub/extensions/reviews/server.ts) reads each thread once per
   version of its file; [`floorThreads`](ref:hub/extensions/reviews/threads.ts#floorThreads) gives each floor
   `x.reviews.threads` (checkout, item, count, last message, `landed`, `resolved`, `state`, the note call), each a subject
-  `reviews.thread:<project>/<checkout>` others may contribute to; `floor.threads` is their copy until 2.0.
+  `reviews.thread:<project>/<checkout>` others may contribute to; `floor.threads` is their copy until 2.0. The view
+  `reviews/checkout-thread` draws such a subject where no worker's view is
+  ([`mountThread`](ref:hub/extensions/reviews/client/thread.ts#mountThread)): the same view as a worker's Reviews tab,
+  over the place [`floorThread`](ref:hub/extensions/reviews/client/panel.ts#floorThread) gives it, read as the worker on
+  duty in the checkout, so a note's lines and where its anchors stand are reached only while one is.
 - *Workers:* reviews' words under `tower x reviews`, the old `tower note`, `thread`, `send` and `review` aliases of them until 2.0 ([[cli-words]]). `thread [checkout]` is the read `thread/<project>`: the thread, the notes new to the caller and the repos an anchor can name. `note [--on <checkout>] [--re <k>] [--at repo:path:<line>[-<line>] …]` is the verb `reviews/note`, the text form of `append`: it signs with the calling worker's callsign and quotes each anchor from the checkout's files where the tower runs, from the caller's own copy when it is a fork of that checkout. `resolve <k> … [--on <checkout>]` fills the checkout and author from its caller. Both take a note's number as `3` or `n3`, which is how workers type it first. `send <CALLSIGN>` is Send for workers, through `tower/submit`. `review` and `send` find their worker on any floor.
 - *One file per note, threads worked out from replies naming their parent:* nobody can read the thread as one file.
 - *A thread per branch or per repo:* one ticket spanning repos would split into several threads.
