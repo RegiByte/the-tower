@@ -133,9 +133,12 @@ export const nearest = (name: string, names: string[]): string | undefined => {
 
 const nearestSaid = (near: string | undefined, listing: string) => `${near ? `Did you mean ${near}? ` : ''}${listing}`
 
+/** The words a capability offers as typed: a read's pattern (`thread/<project>`) is filled in, so it is none of them. */
+export const typedWords = (words: Word[]): string[] => words.flatMap((w) => w.word ?? (w.name.includes('<') ? [] : w.name))
+
 /** What to say of a word the capability doesn't offer: the nearest it does, and the listing command. */
 export const unknownWordLines = (cap: string, words: Word[], name: string): { message: string; fix: string } => {
-  const typed = words.flatMap((w) => w.word ?? (w.name.includes('<') ? [] : w.name))
+  const typed = typedWords(words)
   return { message: `${cap} has no word "${name}"`, fix: nearestSaid(nearest(name, typed), `\`tower x ${cap}\` lists its words`) }
 }
 

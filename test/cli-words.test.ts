@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
-import { ALIASES, aliased } from '../src/cli-verbs.ts'
+import { ALIASES, aliased, movedLine, type WordOwner } from '../src/cli-verbs.ts'
 import { helpLines, jsonArgument, jsonDeprecatedLine, missingLine, nearest, parseWord, printedOf, readUrl, typedLine, unknownWordLines, usageOf, wordNamed, wordsOf, type Word } from '../src/shared/cli-words.ts'
 import { Manifest } from '../src/shared/extensions.ts'
 
@@ -163,6 +163,16 @@ test("reviews' old words rewrite into its words, the note's grammar into flags",
 
 test('an old word rewrites into its word under tower x and says so', () => {
   assert.deepEqual(aliased({ now: 'reviews note', args: (words) => words.map((w) => w.replace(/^n/, '--re=')) }, 'note', ['n3']), { args: ['reviews', 'note', '--re=3'], line: 'tower note n3 is tower x reviews note --re=3; the old word goes at 2.0' })
+})
+
+test('a capability or its word typed at the top names its form under tower x, a stopped owner with its state', () => {
+  const owner = (provides: string, words: string[], state: WordOwner['state'] = 'started'): WordOwner => ({ provides, state, words: words.map((w) => ({ ...word('echo'), name: w, word: w })) })
+  const owners = [owner('quota', ['limits', 'status']), owner('pr-status', ['status']), owner('reviews', ['thread', 'note']), owner('narrate', ['say'], 'failed')]
+  assert.deepEqual(movedLine('limits', owners), { message: '"limits" is under tower x: tower x quota limits', fix: '`tower x quota limits --help` says what it takes' })
+  assert.deepEqual(movedLine('status', owners), { message: '"status" is under tower x: tower x quota status, or tower x pr-status status', fix: '`tower x quota` and `tower x pr-status` list their words' })
+  assert.deepEqual(movedLine('reviews', owners), { message: '"reviews" is under tower x: tower x reviews', fix: '`tower x reviews` lists its words' })
+  assert.deepEqual(movedLine('say', owners), { message: '"say" is under tower x: tower x narrate say (narrate: failed to start)', fix: '`tower extensions` lists each extension and its state' })
+  assert.equal(movedLine('x-typo', owners), undefined)
 })
 
 test("policies' and quota's old words each reach the word that replaced them", () => {

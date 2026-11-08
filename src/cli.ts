@@ -8,8 +8,8 @@ import { parseArgs } from 'node:util'
 import { openApp } from './app.ts'
 import { attach } from './attach.ts'
 import { CliError, reported } from './cli-error.ts'
-import { ALIASES, aliased, helpLines, unknownLine, usageLine, verbNamed, type Run, type VerbName, type VerbOf } from './cli-verbs.ts'
-import { WORKER_RUNS } from './directory.ts'
+import { ALIASES, aliased, helpLines, movedLine, unknownLine, usageLine, verbNamed, type Run, type VerbName, type VerbOf } from './cli-verbs.ts'
+import { WORKER_RUNS, wordOwners } from './directory.ts'
 import { checkConfigFile, CONFIG_DOCS, problemLines } from './config-check.ts'
 import { doctor, verdictLines } from './doctor.ts'
 import { init } from './init.ts'
@@ -232,7 +232,12 @@ const main = async ([name, ...args]: string[]): Promise<void> => {
     return
   }
   const verb = verbNamed(name)
-  if (!verb) throw new CliError(unknownLine(name), '`tower --help` says what each takes and does; the tower:handbook skill says what each is for')
+  if (!verb) {
+    const owners = await wordOwners()
+    const moved = owners && movedLine(name, owners)
+    if (moved) throw new CliError(moved.message, moved.fix)
+    throw new CliError(unknownLine(name), '`tower --help` says what each takes and does; the tower:handbook skill says what each is for')
+  }
   if (isHelp(args[0])) {
     console.log(usageLine(verb))
     return
