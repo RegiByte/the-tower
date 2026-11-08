@@ -1291,7 +1291,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "cb2e33d4c900d8de",
+      "digest": "70beaf5b2f898150",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -2256,7 +2256,7 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "7cda0797dd61ea6a",
+      "digest": "799572a36183d544",
       "values": {
         "clientOf": {
           "since": "1.160",
@@ -2544,7 +2544,7 @@
     },
     "/lib/layout.js": {
       "runtime": "browser",
-      "digest": "a986744243ded7e4",
+      "digest": "c8957da774c8a8e3",
       "values": {
         "actionId": {
           "since": "1.151"
@@ -2825,7 +2825,7 @@
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "bf54dc91f1b1b7fd",
+      "digest": "5c7b53d99512f4dd",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2860,7 +2860,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "c18612614ede85bc",
+      "digest": "30f7e65117bffc91",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2905,7 +2905,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "0726257e219cb629",
+      "digest": "e3168577323e4ab4",
       "values": {
         "cutLine": {
           "since": "1.151",
@@ -2992,7 +2992,7 @@
     },
     "/lib/terminal.js": {
       "runtime": "browser",
-      "digest": "30441ccde09f88f1",
+      "digest": "535cd087f3eb99d6",
       "values": {
         "SHELL_SCROLLBACK": {
           "since": "1.151",
@@ -3080,7 +3080,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "2ad0e6edba25ad05",
+      "digest": "4174bd3a8d6ab22d",
       "values": {
         "GIST_ICON": {
           "since": "1.151"
@@ -3278,7 +3278,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "9185f777df27d01b",
+      "digest": "84d19ae87c4d42c1",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"

@@ -36,7 +36,7 @@ import { readConfig } from './system.ts'
 import { CliError } from './cli-error.ts'
 import { checkFolder, freezeFolder } from './extension-check.ts'
 import { plural } from './shared/format.ts'
-import { usageLine, type Run, type VerbOf } from './cli-verbs.ts'
+import { usageLine, type Run, type VerbOf, type WordOwner } from './cli-verbs.ts'
 import { SHELF_KINDS } from './shelf.ts'
 import { recentJobs, type Job } from './bridge/jobs.ts'
 
@@ -66,6 +66,15 @@ const towerGet = (route: string): Promise<Response> =>
   fetch(`${towerAt()}${route}`, { headers: callerHeaders(me) }).catch((err) => {
     throw new CliError(`No tower answers at ${towerAt()} (${err.cause?.code ?? err.message})`, 'the user starts it with `tower up`')
   })
+
+/** Every extension and its words, as `tower x` reads them; none when no tower answers. */
+export const wordOwners = async (): Promise<WordOwner[] | undefined> => {
+  const res = await fetch(`${towerAt()}/extensions`, { headers: callerHeaders(me) }).catch((err) => {
+    if (err.cause?.code === 'ECONNREFUSED') return undefined
+    throw err
+  })
+  return res && ((await res.json()) as Reads['extensions']).extensions
+}
 
 /** `/board` is a stream: its first event is the board now. */
 const readBoard = async (): Promise<Board> => {

@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-11-05",
   "reviewed": "2026-11-08",
-  "refs": ["hub/src/shared/cli-words.ts#wordsOf", "hub/src/shared/cli-words.ts#parseWord", "hub/src/shared/cli-words.ts#missingLine", "hub/src/shared/cli-words.ts#jsonDeprecatedLine", "hub/src/shared/extensions.ts#Manifest", "hub/src/bridge/extensions.ts#cliProblems", "hub/src/bridge/extensions.ts#contractNames", "hub/src/directory.ts#runWord", "hub/src/directory.ts#withCallerFloor", "hub/src/directory.ts#textOnStdin", "hub/src/cli-verbs.ts#ALIASES", "hub/test/cli-words.test.ts"]
+  "refs": ["hub/src/shared/cli-words.ts#wordsOf", "hub/src/shared/cli-words.ts#parseWord", "hub/src/shared/cli-words.ts#missingLine", "hub/src/shared/cli-words.ts#jsonDeprecatedLine", "hub/src/shared/extensions.ts#Manifest", "hub/src/bridge/extensions.ts#cliProblems", "hub/src/bridge/extensions.ts#contractNames", "hub/src/directory.ts#runWord", "hub/src/directory.ts#withCallerFloor", "hub/src/directory.ts#textOnStdin", "hub/src/cli-verbs.ts#ALIASES", "hub/src/cli-verbs.ts#movedLine", "hub/test/cli-words.test.ts"]
 }
 ---
 **Problem.** `tower x` took one JSON argument. A worker had to write a whole object by hand to do what a core word does
@@ -51,6 +51,11 @@ with a core word by construction, so there is nothing to reserve.
 - **The JSON argument goes at 2.0.** Until then it works, is filled the same way, and says what to type instead,
   rendered from the JSON it was given. `ALIASES` holds the old core words as they move: `policies`, `runs` and
   `probes`, each saying on stderr the command it runs, so the line can be typed.
+- **A moved word is an error that names its fix, never an alias.** An unknown top-level word that is a capability's
+  name or an extension's word exits non-zero, runs nothing and names every form it has under `tower x`, read from
+  `GET /extensions` with no table, an owner not running with its state. It already teaches words that never had an
+  alias (`tower limits`), and takes over the `ALIASES` words when their table goes at 2.0. It matches exactly and
+  echoes none of the arguments, since an old word's grammar may not be its new one's.
 - **Words want guidance.** An extension with a `cli` and no guidance gets the warning `cli`, since a word nothing names
   reaches nobody; one with no `cli` doesn't, as a verb is a word whether or not a worker is meant to type it.
 
