@@ -5,6 +5,7 @@ export {
 } from '../shared/loop.ts'
 export {
   /** @provisional */ failRead,
+  failureAt,
   failureOf,
   heldHandlers,
   /** @provisional */ landRead,
@@ -12,6 +13,7 @@ export {
   reading,
   /** @provisional */ refreshRead,
   /** @provisional */ stepped,
+  valueAt,
   valueOf,
 } from '../shared/reads.ts'
 export type {
