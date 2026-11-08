@@ -11,9 +11,8 @@ type Drafts = typeof import('/x/drafts/drafts.js')
 type Quota = typeof import('/x/quota/quota.js')
 type Reviews = typeof import('/x/reviews/reviews.js')
 type Panel = typeof import('/x/reviews/panel.js')
-type Anchors = typeof import('/x/reviews/anchors.js')
 
-const [drafts, quota, reviews, panel, anchors] = await Promise.all([
+const [drafts, quota, reviews, panel] = await Promise.all([
   clientOf<Drafts>('/x/drafts/drafts.js', { draftsOf: () => undefined, draftItem: () => undefined, draftTitles: () => ({ title: () => '', prune: () => {} }) }),
   clientOf<Quota>('/x/quota/quota.js', { commandProbes: () => [] }),
   clientOf<Reviews>('/x/reviews/reviews.js', { reviewerOf: () => undefined }),
@@ -21,11 +20,8 @@ const [drafts, quota, reviews, panel, anchors] = await Promise.all([
     cardReviews: () => undefined,
     floorThreadsOf: () => [],
     keepsThreads: () => false,
-    noteCallOf: () => undefined,
     threadCheckout: (c) => c.checkout,
-    readThread: () => () => Promise.reject(new Error('No review threads are served')),
   }),
-  clientOf<Anchors>('/x/reviews/anchors.js', { anchorOf: () => undefined }),
 ])
 
 export const {
@@ -33,9 +29,5 @@ export const {
   keepsApart, keepUnsent, leave, newDraft, openDraft, readDraft, restore, save, sendable, settle, titleOf,
 } = drafts
 export const { commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probedLines, probeTitle } = quota
-export const { parseThread, reviewerOf, sendText, THE_USER, unseenBy } = reviews
-export const {
-  cardReviews, cardThread, floorThread, floorThreadsOf, heldThread, keepsThreads, noteCallOf, readThread, resolveAction, reviewsHtml,
-  threadCheckout, threadFailure, threadViewAt, threadWant,
-} = panel
-export const { anchorOf } = anchors
+export const { reviewerOf, THE_USER } = reviews
+export const { cardReviews, floorThreadsOf, keepsThreads, threadCheckout } = panel
