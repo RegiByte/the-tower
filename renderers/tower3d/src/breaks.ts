@@ -1,4 +1,5 @@
 import type { Card } from './api.ts'
+import type { Seats } from './seating.ts'
 import type { Room } from './floorplan.ts'
 import { rendezvous } from './hashed.ts'
 import { frame, series, type Place } from './meetings.ts'
@@ -19,7 +20,7 @@ import type { Prefabs } from './zones.ts'
 export const GRACE = 2 * 60_000
 
 /** When a worker waiting on its hirer leaves for the break room (epoch ms): never for a reviewer beside its author. */
-const leavesAt = (c: Card) => (c.waitsOn && !('beside' in c.seat!) ? c.enteredAt + GRACE : Infinity)
+const leavesAt = (c: Card, seats: Seats) => (c.waitsOn && !('beside' in seats.get(c.id)!) ? c.enteredAt + GRACE : Infinity)
 
 /** A place in the game room: before a cabinet, playing it, or standing about. */
 export type BreakPlace = Place & { play: boolean }
@@ -31,9 +32,9 @@ export function standingIn(room: Room, prefabs: Prefabs): BreakPlace[] {
   return own.map((s) => ({ name: s.name, ...inRoom(s.at, s.turn), stand: true, play: false }))
 }
 
-/** The workers on `cards` in the break room at `now`, each at the place it took among `places`. */
-export function breaksOf(cards: Card[], places: BreakPlace[], now: number): { card: Card; place: BreakPlace }[] {
-  const due = cards.filter((c) => leavesAt(c) <= now).sort((a, b) => leavesAt(a) - leavesAt(b) || a.id.localeCompare(b.id))
+/** The seated workers on `cards` in the break room at `now`, each at the place it took among `places`. */
+export function breaksOf(cards: Card[], seats: Seats, places: BreakPlace[], now: number): { card: Card; place: BreakPlace }[] {
+  const due = cards.filter((c) => leavesAt(c, seats) <= now).sort((a, b) => leavesAt(a, seats) - leavesAt(b, seats) || a.id.localeCompare(b.id))
   const taken = new Set<string>()
   return due.flatMap((card) => {
     const free = (play: boolean) => places.filter((p) => p.play === play && !taken.has(p.name)).map((p) => p.name)
@@ -45,5 +46,5 @@ export function breaksOf(cards: Card[], places: BreakPlace[], now: number): { ca
   })
 }
 
-/** The next moment after `now` one of `cards` leaves for the break room: what the break room draws holds until then. */
-export const nextBreak = (cards: Card[], now: number) => Math.min(...cards.map(leavesAt).filter((t) => t > now))
+/** The next moment after `now` one of the seated `cards` leaves for the break room: what the break room draws holds until then. */
+export const nextBreak = (cards: Card[], seats: Seats, now: number) => Math.min(...cards.map((c) => leavesAt(c, seats)).filter((t) => t > now))

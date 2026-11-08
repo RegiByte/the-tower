@@ -9,7 +9,7 @@ import { documentHtml, markdownHtml } from '/lib/markdown.js'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '/lib/brief.js'
 import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
-import type { Board, Brief, Card, Floor, KeptBy, SessionRef, Shell, Wait } from './api.ts'
+import type { Board, Brief, Card, Floor, GalleryShowing, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { verbLabel } from '/lib/cards.js'
 import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, neighboursIn, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
@@ -112,7 +112,7 @@ const leftHtml = (c: Card) => {
 }
 
 /** What you're looking at: its name and state. */
-function aimedHead(act: Act, board: Board, cats: CatNames) {
+function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GalleryShowing[]) {
   if (act.kind === 'desk' || act.kind === 'tile') {
     const c = findCard(board, act.id)
     if (!c) return ''
@@ -157,7 +157,7 @@ function aimedHead(act: Act, board: Board, cats: CatNames) {
       <div class="meta">${esc(c.callsign)} showed you this ${ago(wallNow() - latest.at)} ago${more}</div>`
   }
   if (act.kind === 'picture') {
-    const picture = pictureOf(board, act.id, act.target)
+    const picture = pictureOf(galleries, board, act.id, act.target)
     if (!picture) return ''
     const { worker, shown: sh, card: c } = picture
     const where = c?.onDuty ? 'on duty' : c ? statusName(c) : 'archived'
@@ -247,8 +247,8 @@ const offersHtml = (offers: Offer[], marked: number) =>
     <kbd${HELD.has(o.verb) ? ' class="held"' : ''}>${KEY[o.verb]}</kbd><span>${HELD.has(o.verb) ? 'hold · ' : ''}${esc(o.label)}${o.whyNot ? `<small>${esc(o.whyNot)}</small>` : ''}</span></div>`).join('')
 
 /** The aimed thing and what it offers, each verb on its own key. Empty for a thing gone from the board. */
-export function promptHtml(act: Act, board: Board, offers: Offer[], marked: number, cats: CatNames) {
-  const head = aimedHead(act, board, cats)
+export function promptHtml(act: Act, board: Board, offers: Offer[], marked: number, cats: CatNames, galleries: GalleryShowing[]) {
+  const head = aimedHead(act, board, cats, galleries)
   return head && `${head}${offers.length ? `<div class="offers">${offersHtml(offers, marked)}</div>` : ''}`
 }
 

@@ -10,7 +10,7 @@
   "refs": [
     "hub/renderers/tower3d/src/layout.ts#wallFor",
     "hub/renderers/tower3d/src/layout.ts#HANG",
-    "hub/src/bridge/board.ts#galleryOf",
+    "hub/renderers/tower3d/src/showings.ts#galleryOf",
     "hub/renderers/tower3d/src/layout.ts#corkFor",
     "hub/renderers/tower3d/src/gallery.ts",
     "hub/renderers/tower3d/src/layers.ts#GALLERY",
@@ -34,7 +34,9 @@ it goes home.
   before the back glass, right of the elevator core, facing the desks, with its own collider. The corkboard
   ([[corkboard]]) hangs on its left only when the floor keeps drafts; the gallery keeps its right half either way.
 - **The gallery**: the floor's latest showings from every card on the floor, on duty or not, newest first: the
-  bridge gathers them as `floor.gallery` ([`galleryOf`](ref:hub/src/bridge/board.ts#galleryOf), [[board-archive]])
+  Tower 3D gathers them from the floor's history, its board's and its archive's cards
+  ([`galleryOf`](ref:hub/renderers/tower3d/src/showings.ts#galleryOf), [[board-archive]], [[workstations]]), as the
+  bridge's `floor.gallery`, kept on the board until 2.0, does
   and the wall hangs as many as [`HANG`](ref:hub/renderers/tower3d/src/layout.ts#HANG) has places, a fixed salon
   arrangement with the newest centred at eye level. All of it is in the plan, derived from the board. A card another
   continues (`continuedBy`) gives the gallery nothing: its showings hang once, under the worker as it is now.
@@ -46,7 +48,7 @@ it goes home.
   to the centre ([`heldUpAt`](ref:hub/renderers/tower3d/src/desk.ts#heldUpAt)).
 - **Verbs** ([`OFFERS`](ref:hub/renderers/tower3d/src/acts.ts#OFFERS)): a picture opens in the reader where you
   stand ([`openPicture`](ref:hub/renderers/tower3d/src/main.ts#openPicture)) or goes to its worker's desk while it is
-  on duty. A picture is looked up in `floor.gallery` ([`pictureOf`](ref:hub/renderers/tower3d/src/cards.ts#pictureOf)),
+  on duty. A picture is looked up in the plan's galleries ([`pictureOf`](ref:hub/renderers/tower3d/src/cards.ts#pictureOf)),
   its worker's card only while the board carries it.
 - **Checked by frames** ([`FIXTURES`](ref:hub/scripts/tower3d-fixtures.ts#FIXTURES)): a fixture is a list of
   boards, and the door's `advance()` delivers the next, so the walk

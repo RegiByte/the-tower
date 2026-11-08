@@ -1,6 +1,6 @@
-import { failureOf, heldHandlers, noReads, reading, valueOf, loop } from '/lib/machine.js'
-import type { Board, Card } from './api.ts'
-import { archivedCard, type ArchiveReads, archiveWant } from './cards.ts'
+import { failureAt, failureOf, heldHandlers, noReads, reading, valueAt, valueOf, loop } from '/lib/machine.js'
+import type { Board, Card, Floor } from './api.ts'
+import { archivedCard, archiveKey, type ArchiveReads, archiveWant } from './cards.ts'
 import { readArchive } from './fixtures.ts'
 import { FILING } from './layout.ts'
 
@@ -46,6 +46,23 @@ export const archiveOf = (project: string) => valueOf(archives.state().held[proj
 
 /** Why a floor's archive can't be read, while none of it is. */
 export const archiveFailure = (project: string) => failureOf(archives.state().held[project])
+
+/**
+ * A floor's history as `board` stands: every card it has had, the board's and its archive's as read at the board's
+ * `archiveKey`. `undefined` until that read lands, and while it failed.
+ */
+export function historyOf(board: Board, f: Floor): Card[] | undefined {
+  const archive = valueAt(archives.state().held[f.id], archiveKey(board, f))
+  return archive && [...f.cards, ...archive]
+}
+
+/** Whether every floor's archive is read, or failed to be, at `board`'s `archiveKey`: a floor's history is then as current as `board`. */
+export const archivesSettled = (board: Board) =>
+  board.floors.every((f) => {
+    const held = archives.state().held[f.id]
+    const key = archiveKey(board, f)
+    return valueAt(held, key) !== undefined || failureAt(held, key) !== undefined
+  })
 
 /** A past worker by id in the archives read. */
 export const archivedOf = (id: string) => archivedCard(archives.state(), id)

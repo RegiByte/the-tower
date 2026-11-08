@@ -2,7 +2,7 @@ import { palettes } from '/lib/design.js'
 import { findCard } from '/lib/board.js'
 import { gistLine, tidyRows } from '/lib/cards.js'
 import { plain } from '/lib/words.js'
-import type { Board, Card, Floor } from './api.ts'
+import type { Board, Card, Floor, GalleryShowing } from './api.ts'
 
 export * from '/lib/board.js'
 export * from '/lib/cards.js'
@@ -31,9 +31,9 @@ export const statusColor = (c: Card) => WORLD[c.attention]
 /** Text on a card's attention colour in the world. */
 export const onStatusColor = (c: Card) => WORLD[`on${c.attention[0].toUpperCase()}${c.attention.slice(1)}` as `on${Capitalize<Card['attention']>}`]
 
-/** A gallery's picture by its worker and target, with the worker's card while the board carries it. */
-export const pictureOf = (board: Board, id: string, target: string) => {
-  const showing = board.floors.flatMap((f) => f.gallery).find((g) => g.worker.id === id && g.shown.target === target)
+/** A picture among `galleries` (every floor's, `galleryOf`) by its worker and target, with the worker's card while the board carries it. */
+export const pictureOf = (galleries: GalleryShowing[], board: Board, id: string, target: string) => {
+  const showing = galleries.find((g) => g.worker.id === id && g.shown.target === target)
   return showing && { ...showing, card: findCard(board, id) }
 }
 

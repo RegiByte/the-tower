@@ -1,7 +1,7 @@
 import type * as THREE from 'three'
 import { draftItem, cardReviews, floorThreadsOf, keepsThreads as floorKeepsThreads, threadCheckout } from './clients.ts'
 import type { ShelfEntry } from '/lib/board.js'
-import type { Board, Card } from './api.ts'
+import type { Board, Card, GalleryShowing } from './api.ts'
 import type { Added, VerbAction } from '/lib/extension.js'
 import { HOST_MEANS, addedActions, base, can, cardSubject, cardsOf, sentHome, current, defaultWhere, findCard, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
@@ -110,7 +110,7 @@ export type Carried = Held & { title: string; tag: string }
  * What the building around you is doing, and what you carry, for the verbs that depend on them. `lost`: the tower
  * stopped answering, so the board on show can't say a daemon verb would run.
  */
-export type Scene = { sharing: boolean; framed: boolean; music: boolean; carrying: Carried | undefined; beer: boolean; cats: CatNames; lost: boolean }
+export type Scene = { sharing: boolean; framed: boolean; music: boolean; carrying: Carried | undefined; beer: boolean; cats: CatNames; lost: boolean; galleries: GalleryShowing[] }
 
 /** Why a daemon verb can't run now: the tower lost (`lost`), or a daemon it needs down (`whyNot`). */
 export const heldWhy = (board: Board, lost: boolean, verb: DaemonVerb) => (lost ? HOST_MEANS.unknown : whyNot(board, verb))
@@ -247,8 +247,8 @@ const OFFERS: ByKind<Offer[], [Board, Scene]> = {
     const latest = findCard(board, a.id)?.shown.at(-1)
     return latest ? [{ verb: 'use', label: `look at ${quoted(shownTitle(latest))}` }] : []
   },
-  picture(a, board) {
-    const picture = pictureOf(board, a.id, a.target)
+  picture(a, board, scene) {
+    const picture = pictureOf(scene.galleries, board, a.id, a.target)
     if (!picture) return []
     return [
       { verb: 'use', label: `look at ${quoted(shownTitle(picture.shown))}` },
