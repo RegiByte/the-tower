@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.106.0
+
+Tower 3D seats its workers itself, and archive reads got faster. Restart the tower with this release (`tower down
+tower`, then `tower up tower`); `tower update` does that for you, and rebuilds Tower 3D. No host restart. API 1.165, an
+addition.
+
+- **Tower 3D works out its own seats and gallery.** Each worker's desk and each floor's gallery come from the floor's
+  whole history: the cards on the board plus the floor's archive. A worker keeps its desk until it leaves, across
+  midnight and across reloads, as before. Tower 3D draws a board once every floor's archive is current for it, so a desk
+  never jumps while an archive read is on its way. If a floor's archive can't be read, its workers show without desks
+  and Tower 3D says why.
+- **Archive reads arriving together share one build.** Reading several floors' archives at once, as Tower 3D does on
+  every load, builds the system once instead of once per floor. Each read's answer is unchanged. On a tower with
+  thousands of archived sessions, Tower 3D's first load now waits for the archives, and this takes back most of that
+  wait: about a tenth of a second slower to open than v1.105.0, where it would otherwise be up to half a second.
+- **For renderer authors:** `valueAt` and `failureAt` join `/lib/machine.js`: the value or failure a held read has
+  for a key, when it is current for that key.
+- **For contributors:** the core views' shared parts `frame.ts`, `item.ts` and `sections.ts` live in `src/shared/` as
+  `view-frame.ts`, `view-item.ts` and `view-sections.ts`. `/x/tower/` now serves only the core's views.
+
 ## v1.105.0
 
 Tower 3D draws every review thread with the page's own view, and a mistyped extension word says where it lives.
