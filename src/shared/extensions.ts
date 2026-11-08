@@ -884,7 +884,7 @@ const Deprecated = z.strictObject({
   why: sinceCalls(z.string().optional()),
 })
 const Cli = z.strictObject({
-  stdin: words(z.string().min(1).optional().describe('The string field that receives stdin verbatim; without it the word takes nothing on stdin.')),
+  stdin: words(z.string().min(1).optional().describe('The string field that receives stdin verbatim when it is a pipe or a file; without it the word takes nothing on stdin.')),
   positional: words(z.array(z.string().min(1)).min(1).optional().describe('The fields taken without a flag, in order; only the last may be an array, which takes all that is left.')),
   print: words(z.string().min(1).optional().describe('The reply field to print, a string or lines; without it the reply prints as JSON.')),
   usage: words(z.string().min(1).optional().describe('Its one line of usage, starting with its word; made from its fields when left out.')),

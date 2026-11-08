@@ -728,7 +728,7 @@ read whose path matches.
 
   | Key | What it does |
   | --- | --- |
-  | `stdin` | The string field that receives stdin verbatim, when no flag gave it. What the text means is the verb's: it may well read JSON. Without it the word takes nothing on stdin. |
+  | `stdin` | The string field that receives stdin verbatim, when no flag gave it and stdin is a pipe or a file (a heredoc, `\|`, `<`). A terminal, `/dev/null` or a socket gives no text, so a program that spawns the command and writes to its stdin (Node's `spawn` or `execFile`, whose stdin is a socket) passes the text as the flag, a file or a pipe instead. What the text means is the verb's: it may well read JSON. Without it the word takes nothing on stdin. |
   | `positional` | The fields taken without a flag, in order. Only the last may be an array, which takes all that is left. |
   | `print` | A reply field to print, a string or lines. Without it the reply prints as JSON. |
   | `usage` | Its line in `tower x <cap>`, starting with its word. Made from its fields when left out. |

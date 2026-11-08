@@ -24,5 +24,5 @@ When told of new notes:
 1. `tower x reviews thread`: the thread, the notes new to you and the repo names anchors take.
 2. Act on each note: change the code, or decide it stays.
 3. Answer each: `tower x reviews note --re <k> <<'EOF'` … `EOF`: what you changed, with the commit, or why it stays.
-4. Once a note is dealt with: `tower x reviews resolve <k> …`.
+4. Once a note is dealt with: `tower x reviews resolve <k> …`. A body is optional: `--body "…"` or a heredoc says why.
 5. When a worker hired you (`hired by` in `tower whoami`), report to it what changed and whether the work is ready. The thread alone is no report.

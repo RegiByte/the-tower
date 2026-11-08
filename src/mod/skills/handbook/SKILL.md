@@ -29,7 +29,7 @@ Every extension's commands live under `tower x`, on the same terms for the ones 
 A word is typed like a command:
 
 - **Flags** come from what the word takes: `--name value` or `--name=value`; a yes/no is a bare `--name`; a list repeats its flag (`--tag a --tag b`). A string is taken as typed, a number or yes/no is converted, and a structured field takes JSON as its flag's value: the one place JSON stays.
-- **Text goes on stdin** where a word takes it, verbatim, usually as a heredoc: `tower x <capability> <word> --flag value <<'EOF'` … `EOF`.
+- **Text goes on stdin** where a word takes it, verbatim, usually as a heredoc: `tower x <capability> <word> --flag value <<'EOF'` … `EOF`. Only a heredoc, a pipe or a file is read: a word given none goes without its text.
 - **Positional arguments** work where the usage line shows them.
 - **Your session and floor are filled in**: every call carries you as its caller, and a word that works on a floor takes yours unless you say `--project <id>`.
 - **A failed word says what to do next**: what is missing with an example, the type a value wants, the nearest word or flag. It exits non-zero, and what the word prints on success is its answer.
