@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-11-07",
+  "reviewed": "2026-11-08",
   "refs": [
     "hub/renderers/tower3d/src/life.ts#moveTo",
     "hub/scripts/tower3d-characters.ts",
