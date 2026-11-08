@@ -244,10 +244,7 @@ function dressReplays() {
   screensAt = { ...screensAt, plan: undefined }
 }
 
-function archiveFailed(message: string) {
-  toast(`The archive can't be read: ${message}`)
-  drawSettled()
-}
+const archiveFailed = (message: string) => toast(`The archive can't be read: ${message}`)
 
 /** An archive read landed or failed: a board waiting for it draws, the cabinets file it, and a panel listing it shows it. */
 function archiveArrived() {

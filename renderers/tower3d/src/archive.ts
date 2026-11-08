@@ -14,7 +14,7 @@ const dayOf = (at: number) => new Date(at).setHours(0, 0, 0, 0)
 
 let arrived = () => {}
 let failed = (_: string) => {}
-/** Runs `then` whenever an archive read lands, or fails with nothing read before; `fail` with why one failed over cards read. */
+/** Runs `then` whenever an archive read lands or fails, and `fail` with why whenever one fails, whether or not cards were read before. */
 export const onArchives = (then: () => void, fail: (message: string) => void) => ((arrived = then), (failed = fail))
 
 /** The board the reads were last asked against: a fixture board serves its own archive. */
@@ -24,9 +24,14 @@ const archives = loop({
   state: noReads<Card[]>() as ArchiveReads,
   handlers: heldHandlers<Card[]>(),
   execute: {
-    read: reading((slot) => readArchive(readBoard!, slot)),
+    read: reading((slot) =>
+      readArchive(readBoard!, slot).catch((err: Error) => {
+        failed(err.message)
+        throw err
+      }),
+    ),
     draw: () => arrived(),
-    toast: ({ message }) => failed(message),
+    toast: () => arrived(),
   },
 })
 
