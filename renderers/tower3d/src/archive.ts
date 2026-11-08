@@ -2,6 +2,7 @@ import { failureAt, failureOf, heldHandlers, noReads, reading, valueAt, valueOf,
 import type { Board, Card, Floor } from './api.ts'
 import { archivedCard, archiveKey, type ArchiveReads, archiveWant } from './cards.ts'
 import { readArchive } from './fixtures.ts'
+import { historyFrom } from './seating.ts'
 import { FILING } from './layout.ts'
 
 /**
@@ -53,7 +54,7 @@ export const archiveFailure = (project: string) => failureOf(archives.state().he
  */
 export function historyOf(board: Board, f: Floor): Card[] | undefined {
   const archive = valueAt(archives.state().held[f.id], archiveKey(board, f))
-  return archive && [...f.cards, ...archive]
+  return archive && historyFrom(f.cards, archive)
 }
 
 /** Whether every floor's archive is read, or failed to be, at `board`'s `archiveKey`: a floor's history is then as current as `board`. */
