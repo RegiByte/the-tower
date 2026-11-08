@@ -12,6 +12,28 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.105.0
+
+Tower 3D draws every review thread with the page's own view, and a mistyped extension word says where it lives.
+Restart the tower with this release (`tower down tower`, then `tower up tower`); `tower update` does that for you, and
+rebuilds Tower 3D. No host restart. API 1.164, unchanged.
+
+- **Tower 3D's review threads are the page's.** At a worker's desk, Reviews mounts the same thread view the tower
+  page shows: write, reply, resolve and send notes as on the page, and a note's lines open in the desk's Changes,
+  marked. The reader, which opens a checkout's thread from its pigeonhole, mounts it too. A note being written is one
+  draft per checkout, wherever you write it. When a worker comes on duty while the reader is open, its head names that
+  worker, and the thread shows what changed since the worker last read it. "Go to its lines" then opens that worker's
+  desk at the lines.
+- **A thread with no worker opens live.** In the page's reviews tray, a thread whose checkout has no worker on the
+  board opens as its live thread, with the note box, resolve and send, instead of the plain file. A thread whose
+  checkout has a worker, on duty or not, still opens that worker's card at its Reviews tab.
+- **An extension's word typed at the top says where it lives.** `tower limits` answers
+  `"limits" is under tower x: tower x quota limits` and does nothing; `tower reviews` names `tower x reviews`. A word
+  whose extension isn't running is named with its state. Words that are still aliases, such as `tower note`, run as
+  before.
+- **For extension authors:** reviews adds the view `reviews/checkout-thread`, on the extension's own `reviews.thread`
+  subject: a checkout's thread, read as the worker on duty there.
+
 ## v1.104.0
 
 Tower 3D runs on the tower's library, and its desk shows the page's own Changes. Restart the tower with this release
