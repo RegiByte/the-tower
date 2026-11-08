@@ -1,5 +1,5 @@
 import { can, type Card, conversationSubject, saidSubject, type Subject } from '/lib/board.js'
-import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, joinedWholes, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole } from '/lib/brief.js'
+import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
 import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
 import { drawPanel, type Mount, type Tab } from '/lib/view.js'
@@ -110,12 +110,12 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     const first = readAt === undefined
     readAt = key
     void tower.conversations(card.id)
-      .then((read) => Promise.all(joinedWholes(read, wholes).behind.map((w) => tower.conversation(w.session.id, w.id))).then((again) => ({ read, again })))
-      .then(({ read, again }) => {
+      .then((read) => withWholesRead(read, () => wholes, (session, id) => tower.conversation(session, id)))
+      .then((read) => {
         if (readAt !== key) return
-        const joined = joinedWholes(read, again.reduce(withWhole, wholes))
-        threads = joined.briefs
-        wholes = joined.wholes
+        threads = read.briefs
+        wholes = read.wholes
+        for (const err of read.failed) kit.toast(err.message)
         draw(!first)
       }, (err: Error) => kit.toast(err.message))
   }

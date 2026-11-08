@@ -965,7 +965,8 @@
       "toolCallSettled",
       "toolKey",
       "wholeHolds",
-      "withWhole"
+      "withWhole",
+      "withWholesRead"
     ],
     "/termkeys.js": [
       "NATURAL_KEYS",
@@ -1582,7 +1583,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "6b636afbdc521019",
+      "digest": "4b04c8fb5c6134b2",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1641,6 +1642,9 @@
         },
         "withWhole": {
           "since": "1.151"
+        },
+        "withWholesRead": {
+          "since": "1.163"
         }
       },
       "types": {

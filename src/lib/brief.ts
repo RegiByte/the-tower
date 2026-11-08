@@ -18,6 +18,7 @@ export {
   toolCallHtml,
   toolCallSettled,
   withWhole,
+  withWholesRead,
 } from '../shared/brief.ts'
 export type {
   Brief,
