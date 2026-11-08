@@ -22,8 +22,8 @@ rebuilds Tower 3D. No host restart. API 1.164, unchanged.
   page shows: write, reply, resolve and send notes as on the page, and a note's lines open in the desk's Changes,
   marked. The reader, which opens a checkout's thread from its pigeonhole, mounts it too. A note being written is one
   draft per checkout, wherever you write it. When a worker comes on duty while the reader is open, its head names that
-  worker, and the thread shows what changed since the worker last read it. "Go to its lines" then opens that worker's
-  desk at the lines.
+  worker, and each note shows how its quoted lines stand among that worker's changes. "Go to its lines" then opens that
+  worker's desk at the lines.
 - **A thread with no worker opens live.** In the page's reviews tray, a thread whose checkout has no worker on the
   board opens as its live thread, with the note box, resolve and send, instead of the plain file. A thread whose
   checkout has a worker, on duty or not, still opens that worker's card at its Reviews tab.
