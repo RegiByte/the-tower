@@ -86,7 +86,8 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   `cat`. Each message is a heading `## <author> · <time> · n<k>[ · re n<j>]`, then optional anchors as
   `` `repo:path:lines` `` each followed by the quoted lines as they were, then the body. The quote keeps a note
   readable once the code moves on; [`anchorState`](ref:hub/extensions/reviews/client/reviews.ts#anchorState) looks for those
-  lines in a worker's current Changes to say whether they changed or left the diff. The extension answers it for every
+  lines in a worker's current Changes to say whether they changed or left the diff; an anchor without a quote, as
+  `reviews/append` may write one, can't go stale and only leaves the diff with its file. The extension answers it for every
   anchor of a card's thread with its read `anchors/<project>?card=<id>`
   ([`anchors`](ref:hub/extensions/reviews/server.ts#anchors)), against the core's `changes/<id>` (since 1.116), so a
   renderer's Reviews read no diff of their own.

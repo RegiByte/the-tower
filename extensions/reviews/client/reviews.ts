@@ -259,7 +259,8 @@ export const unseenBy = (thread: ReviewThread, author: string): Message[] => {
 /**
  * Whether an anchor's quote can still be read in the diff: `same` where its lines appear in the file's changes as they
  * were (moved or not), `changed` where the file changed and they don't, `gone` where the file has no changes left
- * (reverted, or landed upstream). A `diff` quote is looked for with its marks, any other in the file as it is now.
+ * (reverted, or landed upstream). A `diff` quote is looked for with its marks, any other in the file as it is now. An
+ * anchor without a quote has nothing to go stale: `same` while its file has changes.
  */
 export type AnchorState = 'same' | 'changed' | 'gone'
 
@@ -269,7 +270,8 @@ const holds = (lines: string[], quote: string[]) =>
 export const anchorState = (anchor: Anchor, repos: RepoChanges[]): AnchorState => {
   const file = repos.filter((r) => repoName(r.dir) === anchor.repo).flatMap((r) => r.files).find((f) => f.path === anchor.path)
   if (!file) return 'gone'
-  if (!anchor.quote || !file.hunks) return 'changed'
+  if (!anchor.quote) return 'same'
+  if (!file.hunks) return 'changed'
   const marked = file.hunks.flatMap((h) => h.lines)
   const now = marked.filter((l) => l[0] === ' ' || l[0] === '+').map((l) => l.slice(1))
   return holds(anchor.quote.lang === 'diff' ? marked : now, anchor.quote.lines) ? 'same' : 'changed'
