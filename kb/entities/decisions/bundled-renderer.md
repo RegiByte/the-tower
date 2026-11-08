@@ -18,7 +18,7 @@ files carry CORS ([`ANY_ORIGIN`](ref:hub/src/tower/http.ts#ANY_ORIGIN), the rule
 ([[library]]): one instance of each library module, shared with the extension clients it draws.
 
 **Decision.** [[tower3d]]'s source is TypeScript modules, bundled by esbuild into one minified ES module per page
-(`out/tower3d.js`, the lab's, the dresser's, the editor's), each loaded as `<script type="module">`, the renderer's own page after the classic `/tower.js`. Three.js, `@xterm/xterm` and highlight.js come from npm and are bundled in. The library and the
+(`out/tower3d.js`, the lab's, the dresser's, the editor's), each loaded as `<script type="module">`, the renderer's own page after the classic `/tower.js`. Three.js and `@xterm/xterm` come from npm and are bundled in. The library and the
 extension clients are not: the build passes `--external:/lib/*` and `--external:/x/*`, so each `/lib/<module>.js`
 and `/x/<cap>/<file>.js` import stays a URL the browser resolves at run time. esbuild honours the tsconfig's `/lib/*`
 path, so without the flag it would quietly bundle a copy instead; `npm run test:tower3d-boot` fails when a built page
@@ -58,9 +58,8 @@ KayKit kit into one file (`out/kaykit/kit.kaykit`, [[office-kaykit]]), then clea
 pile up: a kit that fails leaves the last build whole. A first load fetches the library as separate modules (about
 135 on a busy board, 1.6 MB), which a later load takes from the browser's cache; the page's own module is fetched
 each time. Tower 3D's fixture boards are data (`renderers/tower3d/fixtures/*.json`, [[tower3d-door]]), copied to
-`out/fixtures/` by `npm run tower3d` and fetched only on a fixture page. Until Tower 3D mounts the page's panels, the legacy
-Changes anchors (`src/shared/panels.ts` and what it reaches, highlight.js among it) stay bundled beside the library
-instance: they hold caches and nothing that must be shared. Tower 3D sees code change under it as the page does, and
+`out/fixtures/` by `npm run tower3d` and fetched only on a fixture page. No file of the core is bundled: what Tower 3D draws
+alike with the page comes from the library or is the page's own view, mounted ([[ui-model]]). Tower 3D sees code change under it as the page does, and
 standalone says so with a reload (framed, the page's own notice does). Models are files beside the pages or come
 from a CORS-enabled CDN, never shelf files; Tower 3D's own are Blender scripts (`renderers/tower3d/models/*.py`,
 `npm run tower3d:models`) exported to committed `.glb` files. The build copies the four pages into `out/` beside

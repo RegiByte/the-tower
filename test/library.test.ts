@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { spawnProblems } from '/lib/extension.js'
 import { libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
 import { checkRuntime, libraryInCore, libraryShapes, modulesOf, namedTwice, reachesCore, reachNow, REPO, RUNTIMES, shapeOf, type Library } from './library.ts'
 
-const REACH = path.join(import.meta.dirname, 'library-reach.json')
 const listedLibrary = () => (JSON.parse(readFileSync(path.join(import.meta.dirname, 'served-exports.json'), 'utf8')) as { library: Library }).library
 
 test('library: each file holds only named re-exports and deprecated aliases', () => {
@@ -77,12 +76,8 @@ test('library: the node source of each module exports what the list says', async
   }
 })
 
-test('library: nothing outside the core reaches into it but the listed files, which only shrink', () => {
-  const now = reachNow()
-  if (process.env.UPDATE_REACH) return writeFileSync(REACH, `${JSON.stringify(now, null, 2)}\n`)
-  const listed: string[] = JSON.parse(readFileSync(REACH, 'utf8'))
-  assert.deepEqual(now.filter((line) => !listed.includes(line)), [], `new ways into the core: import from /lib/ instead, or add the name there (${path.relative(REPO, REACH)} only shrinks)`)
-  assert.deepEqual(listed.filter((line) => !now.includes(line)), [], `gone: delete these lines from ${path.relative(REPO, REACH)}`)
+test('library: nothing outside the core reaches into it', () => {
+  assert.deepEqual(reachNow(), [], 'these reach into the core: import from /lib/ (or an extension\'s client from /x/<cap>/), never src/ by relative path, and add a name the library lacks to src/lib/')
 })
 
 test("library: docs/extending.md's table names each module and where it runs", () => {
