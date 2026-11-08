@@ -5,7 +5,7 @@ import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../extensions/reviews/client/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
-import { briefCss, briefKey, expandedSaid, keptWholes, movedWholes, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole } from '../../../src/shared/brief.ts'
+import { briefCss, briefKey, expandedSaid, joinedWholes, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole } from '../../../src/shared/brief.ts'
 import type { BriefMarkdown, DiffLayout, StatsRange } from '../../../src/shared/viewer.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
@@ -2167,7 +2167,7 @@ const AT_END = 48
 const readsAtEnd = (el: HTMLElement) => el.scrollHeight - el.scrollTop - el.clientHeight < AT_END
 
 /**
- * Reads a logbook's conversations, and its `wholes` the read moved whole again (`movedWholes`), handing them to `land`
+ * Reads a logbook's conversations, and whole again its `wholes` they no longer meet (`joinedWholes`), handing them to `land`
  * unless a later read of that logbook started since. A failed read is said, and lands as none only where nothing was
  * read before (`held`).
  */
@@ -2175,7 +2175,7 @@ function readLogbook(where: keyof typeof logbookReads, c: Card, held: boolean, w
   const key = readKey(c)
   logbookReads[where] = key
   readConversations(s.board!, c.id)
-    .then((threads) => Promise.all(movedWholes(threads, wholes).map((w) => tower.conversation(w.session.id, w.id))).then((again) => ({ threads, again })))
+    .then((threads) => Promise.all(joinedWholes(threads, wholes).behind.map((w) => tower.conversation(w.session.id, w.id))).then((again) => ({ threads, again })))
     .then(
       ({ threads, again }) => logbookReads[where] === key && land(threads, again),
       (err: Error) => (toast(err.message), logbookReads[where] === key && !held && land([], [])),
@@ -2210,9 +2210,9 @@ function readDeskBrief(c: Card) {
   readLogbook('desk', c, deskBrief?.id === c.id, deskBrief?.id === c.id ? deskBrief.wholes : [], (read, again) => {
     if (!findCard(s.board!, c.id) || atDesk() !== c.id || s.deskTab !== 'brief') return
     const same = deskBrief?.id === c.id
-    const { briefs, wholes } = keptWholes(read, same ? deskBrief!.wholes : [])
+    const { briefs, wholes } = joinedWholes(read, again.reduce(withWhole, same ? deskBrief!.wholes : []))
     const atEnd = !same || readsAtEnd($('desk-brief'))
-    deskBrief = { id: c.id, threads: again.reduce(withWhole, briefs), wholes: [...wholes, ...again] }
+    deskBrief = { id: c.id, threads: briefs, wholes }
     drawDeskBrief(same)
     show('desk-brief', true)
     if (atEnd) $('desk-brief').scrollTop = $('desk-brief').scrollHeight
@@ -2668,9 +2668,9 @@ function readReader(c: Card) {
   readLogbook('reader', c, panelAs('logbook')?.threads !== undefined, panelAs('logbook')?.wholes ?? [], (read, again) => {
     const open = panelAs('logbook')
     if (open?.card.id !== c.id) return
-    const { briefs, wholes } = keptWholes(read, open.wholes)
+    const { briefs, wholes } = joinedWholes(read, again.reduce(withWhole, open.wholes))
     const atEnd = open.threads === undefined || readsAtEnd($('logbook-text'))
-    setPanel({ ...open, threads: again.reduce(withWhole, briefs), wholes: [...wholes, ...again] })
+    setPanel({ ...open, threads: briefs, wholes })
     renderPanel()
     if (atEnd) $('logbook-text').scrollTop = $('logbook-text').scrollHeight
   })

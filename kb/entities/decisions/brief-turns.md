@@ -20,7 +20,7 @@
     "hub/src/shared/brief.ts#openTools",
     "hub/src/shared/brief.ts#withWhole",
     "hub/src/shared/brief.ts#wholeHolds",
-    "hub/src/shared/brief.ts#movedWholes",
+    "hub/src/shared/brief.ts#joinedWholes",
     "hub/src/shared/brief.ts#toolCallSettled",
     "hub/src/shared/brief.ts#saidWhat",
     "hub/src/tower/http.ts#conversation",
@@ -135,10 +135,12 @@ renderer can draw the brief alike, inline.
   ([`toolCallSettled`](ref:hub/src/shared/brief.ts#toolCallSettled): one still running is read again as it is drawn
   open); a run of five or more calls folds to its count, naming
   those that failed, were denied or stopped. "earlier turns" on a conversation reads it whole, drawn in place
-  ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)), kept there while a read leaves its latest turn as it was
-  ([`wholeHolds`](ref:hub/src/shared/brief.ts#wholeHolds), [`keptWholes`](ref:hub/src/shared/brief.ts#keptWholes))
-  and read whole again when a read moved it ([`movedWholes`](ref:hub/src/shared/brief.ts#movedWholes)), so a worker
-  at work, its latest turn moving with each tool call, keeps it whole and what the viewer expanded in it open. A
+  ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)) and joined to each later read's last turns of it
+  ([`joinedWholes`](ref:hub/src/shared/brief.ts#joinedWholes)): a turn once past never changes, so its turns before
+  those, then those, are the conversation whole as of that read, with no read of its own. Only when a read's last turns
+  start past every turn the whole holds, turns having come between, is it read whole again. So a worker at work, its
+  latest turn moving with each tool call and message, keeps it whole and what the viewer expanded in it open. The
+  earlier `keptWholes` and `wholeHolds` (1.161) stay served for renderers that use them. A
   tool call opened while it runs is drawn as last read until it is read again. A
   brief shown is read again whenever its card's status, tool, conversations or their additions move
   ([`briefKey`](ref:hub/src/shared/brief.ts#briefKey)), in the page's Brief and Tower 3D's logbook alike. A message to a subagent is its `SendMessage` call, its

@@ -19,11 +19,11 @@
  *                                         (`toolCallHtml`), and hand it to the next draw as `tools` once it ended
  *                                         (`toolCallSettled`): a call drawn open fires `toggle` again as it is drawn
  *   data-brief-earlier="<session>:<conversation>"   read the conversation whole (`tower.conversation`) and draw it in place
- *                                                   of its last turns (`withWhole`), read whole again when a
- *                                                   later read moves its latest turn (`movedWholes`)
+ *                                                   of its last turns (`withWhole`), joined to each later
+ *                                                   read's last turns (`joinedWholes`)
  *
  * and each fence's `data-copy-code` of `/markdown.js`. A brief shown is read again as its card moves (`briefKey`), each
- * read with the conversations read whole put back while they hold (`keptWholes`).
+ * read with the conversations read whole joined to its last turns of them (`joinedWholes`).
  */
 import type { Board, Card, CardShown, LineageSession } from '../bridge/board.ts'
 import type { SessionRef } from '../bridge/chains.ts'
@@ -179,11 +179,29 @@ export const keptWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[]; w
 }
 
 /**
- * The conversations read whole that a later brief moved and still holds: a renderer reads them whole again and draws
- * them in place of their last turns (`withWhole`), so a worker at work keeps them whole as its latest turn moves. @since 1.163
+ * A conversation read whole joined to a later read of its last turns: its turns before them, then them. A turn once
+ * past never changes, so the join is the conversation whole as of the later read. `undefined` when the last turns
+ * start past every turn the whole holds: turns came between that neither holds, and it is read whole again.
  */
-export const movedWholes = (read: Brief[], wholes: Brief[]): Brief[] =>
-  wholes.filter((whole) => !wholeHolds(read, whole) && read.some((b) => conversationKey(b) === conversationKey(whole)))
+const joined = (last: Brief, whole: Brief): Brief | undefined => {
+  if (!last.earlier) return last
+  const at = whole.turns.findIndex((t) => t.startedAt === last.turns[0]?.startedAt)
+  return at < 0 ? undefined : { ...last, earlier: false, turns: [...whole.turns.slice(0, at), ...last.turns] }
+}
+
+/**
+ * A brief as read again, with the conversations read whole before joined to their last turns in it: the brief to draw,
+ * the wholes to keep for the next read, and those `behind`, which the read's turns no longer meet, to read whole again
+ * and draw in place (`withWhole`). A conversation the read no longer holds is let go. A worker at work so keeps a
+ * conversation read whole as it calls tools and messages arrive, with no read of its own. @since 1.163
+ */
+export const joinedWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[]; wholes: Brief[]; behind: Brief[] } =>
+  wholes.reduce<{ briefs: Brief[]; wholes: Brief[]; behind: Brief[] }>((acc, whole) => {
+    const last = acc.briefs.find((b) => conversationKey(b) === conversationKey(whole))
+    if (!last) return acc
+    const now = joined(last, whole)
+    return now ? { ...acc, briefs: withWhole(acc.briefs, now), wholes: [...acc.wholes, now] } : { ...acc, behind: [...acc.behind, whole] }
+  }, { briefs: read, wholes: [], behind: [] })
 
 /**
  * What a worker's brief is read at: its status, its tool, its conversations and what extensions add to them. A brief
