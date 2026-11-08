@@ -250,10 +250,10 @@ button.wide { width: 100%; }
 .view-root { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .view-root[hidden] { display: none; }
 .view-failed { margin: auto; padding: var(--sp-m); color: var(--broken-text); font-size: var(--fs-s); }
-#doc-body[data-thread], #doc-body[data-stats] { display: block; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); }
+#doc-body[data-stats] { display: block; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); }
 
 #doc { display: flex; flex-direction: column; overflow: hidden; }
-#doc-body { flex: 1; min-height: 0; display: flex; }
+#doc-body { position: relative; flex: 1; min-height: 0; display: flex; }
 #draft { position: fixed; top: 14px; right: 14px; bottom: 14px; width: min(40vw, 680px); display: flex; flex-direction: column; overflow: hidden; }
 #draft-note { display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-m) var(--sp-l); background: color-mix(in oklab, var(--broken) 11%, var(--panel)); border-bottom: 1px solid var(--line); }
 #draft-note span { margin-right: auto; }

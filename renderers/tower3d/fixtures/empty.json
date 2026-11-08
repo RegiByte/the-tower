@@ -290,7 +290,13 @@
             "facts": [],
             "commands": [],
             "slots": [],
-            "subjects": [],
+            "subjects": [
+              {
+                "kind": "reviews.thread",
+                "in": "floor",
+                "list": "threads"
+              }
+            ],
             "views": [
               {
                 "id": "reviews/thread",
@@ -313,6 +319,25 @@
                 "words": {
                   "label": "Reviews",
                   "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
+                }
+              },
+              {
+                "id": "reviews/checkout-thread",
+                "module": "thread.js",
+                "export": "mountThread",
+                "on": [
+                  "reviews.thread"
+                ],
+                "scales": [
+                  "pane"
+                ],
+                "needs": [
+                  "display",
+                  "toast"
+                ],
+                "words": {
+                  "label": "Review thread",
+                  "hint": "a checkout's review thread: notes from you, its workers and reviewers"
                 }
               },
               {

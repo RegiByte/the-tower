@@ -1,17 +1,16 @@
 import * as THREE from 'three'
-import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, sendText, unseenBy, cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, resolveAction, reviewsHtml, threadViewAt, probedLines, anchorOf } from './clients.ts'
+import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, sendText, unseenBy, cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, probedLines } from './clients.ts'
 import type { Deleted, Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts'
-import type { Call, Replies, Verb as ApiVerb, Verbs, VerbAction } from '/lib/extension.js'
+import type { Call, Verb as ApiVerb, Verbs, VerbAction } from '/lib/extension.js'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
-import { onReviews, rereadThread, threadFailed, threadOf } from './reviews.ts'
+import { threadOf } from './reviews.ts'
 import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText, markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
 import { placeOnOpen, watchTips, toaster, toastsCss, ask, asking, closableNoticer, type Notice } from '/lib/chrome.js'
 import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
-import type { ThreadPlace, ThreadView } from '../../../extensions/reviews/client/panel.ts'
-import type { NoteCall } from '../../../extensions/reviews/threads.ts'
+import type { ThreadPlace } from '../../../extensions/reviews/client/panel.ts'
 import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer, reducedMotion } from '/lib/viewer.js'
 import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey, layoutOf, usableConfigLayout, type Layout } from '/lib/layout.js'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
@@ -61,7 +60,7 @@ import { random } from './random.ts'
 import { wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
-import { CHANGES, THREAD, deskViews } from './hosting.ts'
+import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
 import * as loading from './loading.ts'
 import { archivedOf, archiveFailure, archiveOf, drawersAt, onArchives, readArchives, rereadArchive } from './archive.ts'
 import { poseFiling } from './filing.ts'
@@ -456,28 +455,33 @@ function renderElevator() {
   if (inCar) $('elevator').innerHTML = elevatorHtml(s.plan, s.ride ? s.ride.to : s.me.level, s.ride !== undefined, heededWaits(s.board!, heed()))
 }
 
-/** The page's views the desk mounts. */
-const desk = deskViews({
+const viewDeps = {
   tower: viewTower,
   board: () => s.board!,
   layout: () => layoutNow(s.board!),
   declared: () => s.declared!,
-  toast: (message) => toast(message),
-  display: (subject) => display(subject),
+  toast: (message: string) => toast(message),
+  display: (subject: Subject | string) => display(subject),
   redraw: () => renderPanel(),
-})
+}
+const hosting = viewHosting(viewDeps)
+/** The page's views the desk mounts. */
+const desk = deskViews(viewDeps, hosting)
+/** The page's thread view the reader mounts, on a checkout's thread where no worker's desk is. */
+const reader = readerView(viewDeps, hosting)
 
 /**
- * Places a subject a mounted view hands Tower 3D (the kit's `display`): lines on the worker at the open desk show in its
- * Changes; anything else is said in a toast, as the page says what it can't place.
+ * Places a subject a mounted view hands Tower 3D (the kit's `display`): a worker's lines show in its desk's Changes,
+ * at the open desk or by going to the worker's; anything else is said in a toast, as the page says what it can't place.
  */
 function display(target: Subject | string) {
   const key = typeof target === 'string' ? target : target.key
   if (typeof target === 'string' || target.kind !== 'lines') return toast(`Nothing here shows ${key}`)
   const lines = target.value as Lines
   if (!findCard(s.board!, lines.card)) return toast(`${key} is no longer on the board`)
-  if (atDesk() !== lines.card) return toast(`Nothing here shows ${key}`)
-  openChanges(lines.card, lines)
+  if (atDesk() === lines.card) return openChanges(lines.card, lines)
+  s.pendingTab = { id: lines.card, tab: 'changes', lines }
+  goDesk(lines.card)
 }
 
 tower.get('origins').then((o) => (s.origins = o), (err: Error) => toast(`origins: ${err.message}`))
@@ -549,10 +553,8 @@ function renderPanel() {
   }
   if (panel.kind === 'thread') {
     const f = board.floors.find((f) => f.id === panel.project)
-    const t = (f ? floorThreadsOf(f) : []).find((t) => t.checkout === panel.checkout)
-    if (!t) return closeDoc()
+    if (!(f ? floorThreadsOf(f) : []).some((t) => t.checkout === panel.checkout) || !reader.update(board)) return closeDoc()
     $('doc-head').innerHTML = threadHeadHtml(f!, panel.checkout)
-    drawThread($('doc-body'), floorThread(floorOf(panel.project), t))
   }
   if (panel.kind === 'stats') {
     $('doc-head').innerHTML = statsHeadHtml()
@@ -704,8 +706,8 @@ function closeDoc() {
   if (panelAs('logbook')?.tab === 'screen') closeTerm($('logbook-screen'))
   show('doc', false)
   closeDocRelay()
+  reader.close()
   $('doc-body').innerHTML = ''
-  delete $('doc-body').dataset.thread
   delete $('doc-body').dataset.stats
   delete $('doc-body').dataset.logbook
   clearInterval(statsPoll)
@@ -942,10 +944,11 @@ function focusDesk(id: string) {
   closeShown()
   renderPanel()
   mountDeskScreen(c)
-  const tab = s.pendingTab?.id === id ? s.pendingTab.tab : undefined
+  const tab = s.pendingTab?.id === id ? s.pendingTab : undefined
   s.pendingTab = undefined
-  if (tab === 'brief') openBrief(id)
-  if (tab === 'reviews') openReviews()
+  if (tab?.tab === 'brief') openBrief(id)
+  if (tab?.tab === 'reviews') openReviews()
+  if (tab?.tab === 'changes') openChanges(id, tab.lines)
   const pending = s.pendingShown?.id === id ? c.shown.find((sh) => sh.target === s.pendingShown!.target) : undefined
   s.pendingShown = undefined
   if (pending) openShown(id, pending)
@@ -2410,29 +2413,6 @@ function hideReviewing() {
   show('desk-view', false)
 }
 
-/** The thread the reader shows. */
-function shownThread(): ThreadPlace | undefined {
-  const panel = panelNow()
-  if (panel?.kind !== 'thread') return undefined
-  const t = floorThreadsOf(floorOf(panel.project)).find((t) => t.checkout === panel.checkout)
-  return t && floorThread(floorOf(panel.project), t)
-}
-
-const noting = (t: ThreadPlace) => t.note !== undefined
-
-/** The worker the viewer picked to send a thread's notes to. */
-const pickedFor = (at: ThreadPlace) => s.sendPicks.get(`${at.project}/${at.checkout}`)
-
-/** A thread as the reader draws it, where its anchors stand unknown. */
-const threadView = (at: ThreadPlace): ThreadView =>
-  threadViewAt(s.board!, at, { thread: threadOf(s.board!, at), failed: threadFailed(s.board!, at), states: undefined, picked: pickedFor(at), re: s.noteRe })
-
-function drawThread(el: HTMLElement, at: ThreadPlace) {
-  el.dataset.thread = `${at.project}/${at.checkout}`
-  drawPanel(el, reviewsHtml(threadView(at)), { 'note-text': s.noteTexts.get(el.dataset.thread) ?? '' })
-}
-
-/** A worker's Changes, its lines marked by the notes on the thread its Reviews tab shows, where a note on picked lines goes. */
 /** Each `data-since` time under `el`, as how long ago it was. */
 const showSince = (el: HTMLElement) => {
   for (const t of el.querySelectorAll<HTMLElement>('[data-since]')) t.textContent = ago(wallNow() - Number(t.dataset.since))
@@ -2467,11 +2447,14 @@ function openThread(project: string, checkout: string) {
     s.pendingTab = { id: worker.id, tab: 'reviews' }
     return goDesk(worker.id)
   }
+  const t = floorThreadsOf(floorOf(project)).find((t) => t.checkout === checkout)
+  if (!t) return
   closePanels()
   setPanel({ kind: 'thread', project, checkout })
   unlock()
   show('paused', false)
   show('doc', true)
+  reader.open($('doc-body'), `reviews.thread:floor:${project}/${t.key}`)
   renderPanel()
 }
 
@@ -2484,87 +2467,13 @@ async function sendNotes(at: ThreadPlace, to: Card | undefined) {
   if (await tried(() => tower.run(offeredCall(to, 'submit', to.callsign), { text }))) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
 }
 
-/** A note added with a thread's note call while it is offered, else a toast saying `name` no longer offers one. */
-const note = (call: NoteCall | undefined, name: string, fields: Partial<Verbs['review/append']>) =>
-  tried(() => {
-    if (!call) throw new Error(noLongerOffered(name, 'note'))
-    return tower.call(call[0] as never, { ...call[1], ...fields } as never) as Promise<Replies['review/append']>
-  })
-
-async function addNote(at: ThreadPlace) {
-  const { project, checkout } = at
-  const key = `${project}/${checkout}`
-  const reply = await note(at.note, `the thread of ${checkout}`, { author: s.board!.user.name, re: s.noteRe, anchors: [], body: s.noteTexts.get(key) ?? '' })
-  if (!reply) return
-  toast(`n${reply.n} is on the thread of ${checkout}`)
-  s.noteTexts.delete(key)
-  s.noteRe = undefined
-  renderPanel()
-}
-
-/** Marks note `n` of the thread `at` resolved, signed by the user. */
-async function resolveNote(button: HTMLElement, at: ThreadPlace, n: number) {
-  const reply = await pressing(button, () => tried(() => runVerb(resolveAction({ project: at.project, checkout: at.checkout, user: s.board!.user.name }, n))))
-  if (reply) toast(`n${n} is resolved on the thread of ${at.checkout}`)
-}
-
 const copiedAs = (text: string, what: string) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err: Error) => toast(err.message))
-const copied = (text: string) => copiedAs(text, text)
 
-/** The thread an element shows, as `drawThread` drew it. */
-const threadIn = (el: HTMLElement) => {
-  const key = el.closest<HTMLElement>('[data-thread]')!.dataset.thread!
-  const at = key.indexOf('/')
-  return { project: key.slice(0, at), checkout: key.slice(at + 1), key }
-}
-
-function onThreadClick(e: MouseEvent) {
-  const el = e.target as HTMLElement
-  const box = el.closest<HTMLElement>('[data-thread]')
-  if (!box) return
-  const at = shownThread()
-  if (!at) return
-  const { project, checkout } = at
-  if (el.closest('[data-send]')) return sendNotes(at, sendTarget(floorOf(project), checkout, pickedFor(at)))
-  if (el.closest('[data-note-add]')) return addNote(at)
-  if (el.closest('[data-thread-read]')) return (rereadThread(s.board!, at), renderPanel())
-  if (el.closest('[data-reply-clear]')) return ((s.noteRe = undefined), renderPanel())
-  const resolve = el.closest<HTMLElement>('[data-resolve]')
-  if (resolve) return resolveNote(resolve, at, Number(resolve.dataset.resolve))
-  const copy = el.closest<HTMLElement>('[data-copy]')?.dataset.copy
-  if (copy) return copied(copy)
-  const reply = el.closest<HTMLElement>('[data-reply]')?.dataset.reply
-  if (reply) return ((s.noteRe = Number(reply)), renderPanel(), box.querySelector<HTMLTextAreaElement>('[data-note-text]')?.focus())
-  const toNote = el.closest<HTMLElement>('[data-to-note]')?.dataset.toNote
-  if (toNote) return box.querySelector(`[data-note="${toNote}"]`)?.scrollIntoView({ block: 'center' })
-  const anchor = el.closest<HTMLElement>('[data-anchor]')?.dataset.anchor
-  const thread = threadOf(s.board!, at)
-  const a = anchor && thread ? anchorOf(thread, anchor) : undefined
-  if (a) toast(`Nobody works in ${checkout} now: its Changes are read at a worker's desk`)
-}
-
-$('doc-body').addEventListener('click', onThreadClick)
-$('doc-body').addEventListener('input', (e) => {
-  const el = e.target as HTMLTextAreaElement
-  if (el.matches('[data-note-text]')) s.noteTexts.set(threadIn(el).key, el.value)
-})
-$('doc-body').addEventListener('change', (e) => {
-  const el = e.target as HTMLSelectElement
-  if (el.matches('[data-send-pick]')) (s.sendPicks.set(threadIn(el).key, el.value), renderPanel())
-})
-$('doc-body').addEventListener('keydown', (e) => {
-  const el = e.target as HTMLElement
-  if (!el.matches('[data-note-text]') || e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return
-  e.preventDefault()
-  const at = shownThread()
-  if (at && noting(at)) addNote(at)
-})
 setInterval(() => {
   if (panelNow()?.kind === 'desk' && s.deskTab === 'changes') showSince($('desk-view'))
   if (panelNow()?.kind === 'stats') showSince($('doc-body'))
 }, 1000)
 
-onReviews(renderPanel, toast)
 onArchives(archiveArrived, archiveFailed)
 
 /**
