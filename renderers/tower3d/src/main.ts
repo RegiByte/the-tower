@@ -552,7 +552,8 @@ function renderPanel() {
   if (panel.kind === 'thread') {
     const f = board.floors.find((f) => f.id === panel.project)
     if (!(f ? floorThreadsOf(f) : []).some((t) => t.checkout === panel.checkout) || !reader.update(board)) return closeDoc()
-    $('doc-head').innerHTML = threadHeadHtml(f!, panel.checkout)
+    const worker = workerIn(f!, panel.checkout)
+    $('doc-head').innerHTML = threadHeadHtml(f!, panel.checkout, worker?.onDuty ? worker : undefined)
   }
   if (panel.kind === 'stats') {
     $('doc-head').innerHTML = statsHeadHtml()
