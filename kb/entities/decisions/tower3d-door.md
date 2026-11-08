@@ -25,7 +25,8 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   `step(n)` stops it and runs n frames; `?stepped` starts it stopped. One seeded `random` (`?seed=`) replaces
   `Math.random` wherever chance reaches a frame. `?at=<ISO time>` pins the wall clock (`clock.ts`), so repeats hold
   on any day.
-- `window.tower3d` is typed and always present; its verbs and their contracts are the comment and `Door` type in
+- `window.tower3d` is typed and present from the page's first script, holding only `ready` until the page's
+  modules have loaded ([`boot.ts`](ref:hub/renderers/tower3d/src/boot.ts) opens it, `installDoor` fills it); its verbs and their contracts are the comment and `Door` type in
   [`door.ts`](ref:hub/renderers/tower3d/src/door.ts). `locate`, `teleport` and `aimAt` work over the world as the
   next frame draws it, so they hold with no frame between them. A verb used wrongly throws with what to do instead
   (a verb not offered, a held verb pressed, a thing placed only by a frame not yet run). `ready()` resolves once the

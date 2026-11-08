@@ -14,7 +14,8 @@ import { aim, eyes, facing, type Walker } from './walker.ts'
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
  * produce, and steps the same clock the screen's frames do.
  *
- *   await tower3d.ready()                  the first board is built and its pictures read; rejects with why a start failed (a file that would not load)
+ *   await tower3d.ready()                  the first board is built and its pictures read; rejects with why a start failed (a file that would not load).
+ *                                          The door is there from the page's first script, but until ready() resolves only ready is on it
  *   tower3d.capture()                      walk as if the mouse were locked (headless Chrome never grants the lock)
  *   tower3d.teleport({ level: 1, x, z })   stand somewhere at once (y: how high over its floor, on the deck)
  *   tower3d.acts('station')                every thing in the world of a kind, as it is aimed at (all without a kind)
@@ -117,6 +118,7 @@ const isAncestor = (a: THREE.Object3D, o: THREE.Object3D): boolean => !!o.parent
 /** An act's identity, whatever order its fields were written in. */
 const actKey = (a: Act) => JSON.stringify(Object.entries(a).sort(([x], [y]) => x.localeCompare(y)))
 
+/** Fills the door the entry opened (`boot.ts`), so whoever held it from the first script on now holds the whole door. */
 export function installDoor(e: Engine) {
   /**
    * The outermost object standing for `target`, among everything pickable that is drawn on its level (a desk's second
@@ -189,7 +191,7 @@ export function installDoor(e: Engine) {
     counts: { boards: s.boards, rebuilds: s.rebuilds, desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
   })
 
-  window.tower3d = {
+  Object.assign(window.tower3d, {
     ready: () => e.ready,
     pictured,
     capture() {
@@ -254,5 +256,5 @@ export function installDoor(e: Engine) {
       e.render()
       return canvas.toDataURL('image/png')
     },
-  }
+  } satisfies Door)
 }
