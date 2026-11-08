@@ -95,9 +95,12 @@ sequenceDiagram
   [`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen), until live is chosen again or Esc),
   Changes (the page's `tower/changes` view, mounted at the desk through the library's view host, with the reviews
   extension's note box in its `lines.acts`: [`deskViews`](ref:hub/renderers/tower3d/src/hosting.ts#deskViews),
-  [`openChanges`](ref:hub/renderers/tower3d/src/main.ts#openChanges), [[ui-model]]), Reviews ([[shared-panels]]) and
-  each thing the worker showed lie over the terminal, which keeps its size. Changes is hidden and kept while another
-  tab shows, its reads stopped, and closed with the desk; its tab and Reviews' are tallied by their views' `tab`. A terminal that ends while its tab
+  [`openChanges`](ref:hub/renderers/tower3d/src/main.ts#openChanges), [[ui-model]]), Reviews (the reviews extension's
+  `reviews/thread` view, mounted the same way, [`openReviews`](ref:hub/renderers/tower3d/src/main.ts#openReviews)) and
+  each thing the worker showed lie over the terminal, which keeps its size. Changes and Reviews are each hidden and
+  kept while another tab shows, their reads stopped, and closed with the desk; each tab is tallied by its view's `tab`.
+  A note's lines, which the thread hands Tower 3D to display, open in the desk's Changes
+  ([`display`](ref:hub/renderers/tower3d/src/main.ts#display)); a subject Tower 3D has no place for is said in a toast. A terminal that ends while its tab
   shows gives way to the Logbook, as the page's gives way to the Brief, and the Terminal tab then shows its last screen
   ([`terminalEnded`](ref:hub/renderers/tower3d/src/main.ts#terminalEnded)). While a text box has focus, keys
   type into it and never move you.

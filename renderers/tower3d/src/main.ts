@@ -1,10 +1,9 @@
 import * as THREE from 'three'
-import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, sendText, unseenBy, cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, resolveAction, reviewsHtml, threadViewOf, probedLines, anchorOf } from './clients.ts'
+import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, sendText, unseenBy, cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, resolveAction, reviewsHtml, threadViewAt, probedLines, anchorOf } from './clients.ts'
 import type { Deleted, Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, Replies, Verb as ApiVerb, Verbs, VerbAction } from '/lib/extension.js'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
-import type { Anchor } from '/x/reviews/reviews.js'
-import { changesOf, followChanges, onReviews, rereadThread, threadFailed, threadOf } from './reviews.ts'
+import { onReviews, rereadThread, threadFailed, threadOf } from './reviews.ts'
 import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText, markdownCss } from '/lib/markdown.js'
@@ -18,7 +17,7 @@ import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { wireSpawn } from '/lib/spawn.js'
 import { hiringHandlers, noHires } from './hiring.ts'
-import { defaultLimits, projectOfKey, type FloorCollection, type FloorItem } from '/lib/board.js'
+import { defaultLimits, projectOfKey, type FloorCollection, type FloorItem, type Lines, type Subject } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { can, runVerb, boardErrorTitle, bubbleOf, claudeUntestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
@@ -464,15 +463,28 @@ const desk = deskViews({
   layout: () => layoutNow(s.board!),
   declared: () => s.declared!,
   toast: (message) => toast(message),
+  display: (subject) => display(subject),
   redraw: () => renderPanel(),
 })
+
+/**
+ * Places a subject a mounted view hands Tower 3D (the kit's `display`): lines on the worker at the open desk show in its
+ * Changes; anything else is said in a toast, as the page says what it can't place.
+ */
+function display(target: Subject | string) {
+  const key = typeof target === 'string' ? target : target.key
+  if (typeof target === 'string' || target.kind !== 'lines') return toast(`Nothing here shows ${key}`)
+  const lines = target.value as Lines
+  if (!findCard(s.board!, lines.card)) return toast(`${key} is no longer on the board`)
+  if (atDesk() !== lines.card) return toast(`Nothing here shows ${key}`)
+  openChanges(lines.card, lines)
+}
 
 tower.get('origins').then((o) => (s.origins = o), (err: Error) => toast(`origins: ${err.message}`))
 
 function renderPanel() {
   const board = s.board
   const panel = panelNow()
-  followChanges(board && panel?.kind === 'desk' && s.deskTab === 'reviews' ? findCard(board, panel.id) : undefined)
   if (!board || !panel) return
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
@@ -481,7 +493,6 @@ function renderPanel() {
     sawDesk(board, c)
     $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh), { changes: desk.tabOf(CHANGES, c), reviews: desk.tabOf(THREAD, c) })
     keepShownTabs($('desk-tabs').parentElement!, c.id)
-    if (s.deskTab === 'reviews') drawThread($('desk-reviews'), cardThread(c))
     $('desk-activity').innerHTML = activityHtml(c)
     $('desk-activity').dataset.tip = gistLine(c)
     $('desk-moves').innerHTML = movesHtml(board, c, heed(), s.viewer.crewsOrder)
@@ -2387,28 +2398,21 @@ onAppearance(() => {
   if (sh && isMarkdown(sh)) openShown(desk, sh)
 })
 
-/** The desk's Reviews and Changes hidden as another of its tabs opens, its Changes kept. */
+/** The desk's Reviews and Changes hidden and kept, as another of its tabs opens. */
 function hideTabs() {
-  followChanges(undefined)
-  show('desk-reviews', false)
-  hideChanges()
+  desk.hide()
+  show('desk-view', false)
 }
 
 /** The desk's Reviews and Changes closed, as the desk closes or another opens: what the desk mounted ends with it. */
 function hideReviewing() {
-  followChanges(undefined)
-  show('desk-reviews', false)
   desk.close()
   show('desk-view', false)
 }
 
-/** The thread the open panel shows: the desk's, or the reader's. */
+/** The thread the reader shows. */
 function shownThread(): ThreadPlace | undefined {
   const panel = panelNow()
-  if (panel?.kind === 'desk') {
-    const c = findCard(s.board!, panel.id)
-    return c && floorKeepsThreads(floorOf(c.project)) ? cardThread(c) : undefined
-  }
   if (panel?.kind !== 'thread') return undefined
   const t = floorThreadsOf(floorOf(panel.project)).find((t) => t.checkout === panel.checkout)
   return t && floorThread(floorOf(panel.project), t)
@@ -2419,12 +2423,9 @@ const noting = (t: ThreadPlace) => t.note !== undefined
 /** The worker the viewer picked to send a thread's notes to. */
 const pickedFor = (at: ThreadPlace) => s.sendPicks.get(`${at.project}/${at.checkout}`)
 
-/** A thread as the Reviews tab and the thread panel draw it: anchors looked for in its reader's Changes. */
+/** A thread as the reader draws it, where its anchors stand unknown. */
 const threadView = (at: ThreadPlace): ThreadView =>
-  threadViewOf(s.board!, at, {
-    thread: threadOf(s.board!, at), failed: threadFailed(s.board!, at), changes: at.reader && changesOf(at.reader.id)?.repos,
-    picked: pickedFor(at), re: s.noteRe,
-  })
+  threadViewAt(s.board!, at, { thread: threadOf(s.board!, at), failed: threadFailed(s.board!, at), states: undefined, picked: pickedFor(at), re: s.noteRe })
 
 function drawThread(el: HTMLElement, at: ThreadPlace) {
   el.dataset.thread = `${at.project}/${at.checkout}`
@@ -2437,33 +2438,26 @@ const showSince = (el: HTMLElement) => {
   for (const t of el.querySelectorAll<HTMLElement>('[data-since]')) t.textContent = ago(wallNow() - Number(t.dataset.since))
 }
 
-/** The Reviews tab lies over the terminal like the brief; its anchors are looked for in the desk's worker's Changes. */
+/** The worker's review thread, the page's `reviews/thread` mounted at its desk over the terminal, like the brief. */
 function openReviews() {
-  s.deskTab = 'reviews'
-  show('desk-brief', false)
-  hideChanges()
-  closeShown()
-  show('desk-reviews', true)
+  openDeskView(THREAD, atDesk()!)
   renderPanel()
 }
 
-/** What changed in the worker's repos, the page's `tower/changes` mounted at its desk; `jump`: a note's anchor whose lines to scroll to. */
-function openChanges(id: string, jump: Anchor | undefined) {
-  const c = findCard(s.board!, id)!
-  s.deskTab = 'changes'
+/** What changed in the worker's repos, the page's `tower/changes` mounted at its desk; `jump`: lines to scroll to. */
+function openChanges(id: string, jump: Lines | undefined) {
+  openDeskView(CHANGES, id)
+  if (jump) desk.showLines(jump)
+  renderPanel()
+}
+
+/** The desk's tab `view` on the worker `id` seen, the desk's other views hidden and kept. */
+function openDeskView(view: typeof CHANGES | typeof THREAD, id: string) {
+  s.deskTab = view === THREAD ? 'reviews' : 'changes'
   show('desk-brief', false)
-  show('desk-reviews', false)
   closeShown()
   show('desk-view', true)
-  desk.openChanges($('desk-view'), c)
-  if (jump) desk.showLines({ card: c.id, project: c.project, repo: jump.repo, path: jump.path, from: jump.from, to: jump.to, ...(jump.quote && { quote: jump.quote }) })
-  renderPanel()
-}
-
-/** The desk's Changes hidden and kept, as another of its tabs opens. */
-function hideChanges() {
-  desk.hide()
-  show('desk-view', false)
+  desk.open(view, $('desk-view'), findCard(s.board!, id)!)
 }
 
 /** A thread's slot: at the desk of whoever works in its checkout, else in the reader. */
@@ -2549,27 +2543,25 @@ function onThreadClick(e: MouseEvent) {
   if (!a) return
   const desk = atDesk()
   if (!desk) return toast(`Nobody works in ${checkout} now: its Changes are read at a worker's desk`)
-  openChanges(desk, a)
+  openChanges(desk, { card: desk, project, repo: a.repo, path: a.path, from: a.from, to: a.to, ...(a.quote && { quote: a.quote }) })
 }
 
-for (const id of ['desk-reviews', 'doc-body']) {
-  $(id).addEventListener('click', onThreadClick)
-  $(id).addEventListener('input', (e) => {
-    const el = e.target as HTMLTextAreaElement
-    if (el.matches('[data-note-text]')) s.noteTexts.set(threadIn(el).key, el.value)
-  })
-  $(id).addEventListener('change', (e) => {
-    const el = e.target as HTMLSelectElement
-    if (el.matches('[data-send-pick]')) (s.sendPicks.set(threadIn(el).key, el.value), renderPanel())
-  })
-  $(id).addEventListener('keydown', (e) => {
-    const el = e.target as HTMLElement
-    if (!el.matches('[data-note-text]') || e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return
-    e.preventDefault()
-    const at = shownThread()
-    if (at && noting(at)) addNote(at)
-  })
-}
+$('doc-body').addEventListener('click', onThreadClick)
+$('doc-body').addEventListener('input', (e) => {
+  const el = e.target as HTMLTextAreaElement
+  if (el.matches('[data-note-text]')) s.noteTexts.set(threadIn(el).key, el.value)
+})
+$('doc-body').addEventListener('change', (e) => {
+  const el = e.target as HTMLSelectElement
+  if (el.matches('[data-send-pick]')) (s.sendPicks.set(threadIn(el).key, el.value), renderPanel())
+})
+$('doc-body').addEventListener('keydown', (e) => {
+  const el = e.target as HTMLElement
+  if (!el.matches('[data-note-text]') || e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return
+  e.preventDefault()
+  const at = shownThread()
+  if (at && noting(at)) addNote(at)
+})
 setInterval(() => {
   if (panelNow()?.kind === 'desk' && s.deskTab === 'changes') showSince($('desk-view'))
   if (panelNow()?.kind === 'stats') showSince($('doc-body'))
