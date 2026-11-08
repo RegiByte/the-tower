@@ -17,15 +17,15 @@
     "hub/src/shared/subjects.ts#linkedFile",
     "hub/src/tower/served.ts#MODULES",
     "hub/test/markdown.test.ts",
-    "hub/src/views/frame.ts#writeLinks",
-    "hub/src/views/frame.ts#linkTo",
-    "hub/src/views/frame.ts#contain",
-    "hub/src/views/frame.ts#DOCUMENT_SANDBOX",
-    "hub/src/views/frame.ts#scrollToFragment",
+    "hub/src/shared/view-frame.ts#writeLinks",
+    "hub/src/shared/view-frame.ts#linkTo",
+    "hub/src/shared/view-frame.ts#contain",
+    "hub/src/shared/view-frame.ts#DOCUMENT_SANDBOX",
+    "hub/src/shared/view-frame.ts#scrollToFragment",
     "hub/renderers/page/page.js#linkHash",
     "hub/scripts/webkit.ts",
     "hub/src/views/document.ts#mount",
-    "hub/src/views/sections.ts#followSections",
+    "hub/src/shared/view-sections.ts#followSections",
     "hub/src/shared/markdown.ts#sectionsHtml",
     "hub/src/views/link.ts#mount",
     "hub/src/views/brief.ts#mount",
@@ -67,7 +67,7 @@ would reach for a markdown library's `parse` and draw it inline.
   resolves to `http:`. The href written is the string checked, escaped, so an entity (`&#106;avascript:`) reaches the
   browser as the text it was checked as.
 - No document frame runs scripts. Each frame the tower page writes a document into (a shown or kept markdown or text
-  file, [`framedText`](ref:hub/src/views/item.ts#framedText); the page asking to open a link,
+  file, [`framedText`](ref:hub/src/shared/view-item.ts#framedText); the page asking to open a link,
   [`tower/link`](ref:hub/src/views/link.ts#mount); a shelf file) is
   `allow-same-origin` without `allow-scripts`, so the renderer reaches its document and geometry: beside
   `allow-same-origin`, a script there would run as the tower. A `javascript:` link it carries runs nowhere, in the
@@ -92,14 +92,14 @@ would reach for a markdown library's `parse` and draw it inline.
   (`contentDocument.createElement`) and fills it there from [`sectionsHtml`](ref:hub/src/shared/markdown.ts#sectionsHtml),
   never on a node of the page's own document, where an `onerror` in the raw HTML would run as the tower; a frame that
   navigated itself away holds a document the renderer didn't write, and nothing is bound there.
-- *Containment* ([`contain`](ref:hub/src/views/frame.ts#contain)). Before a document's part joins the frame's
+- *Containment* ([`contain`](ref:hub/src/shared/view-frame.ts#contain)). Before a document's part joins the frame's
   document, a nested `iframe` or `frame` loses its `src` and `srcdoc`, an `object` its `data`, an `embed` its `src`,
   and a `<base>` or `<meta http-equiv>` is removed: a nested frame would take the document frame's sandbox (top
   navigation included) with links no rule wrote, a base would move where every link resolves, and a meta refresh
   would navigate the frame away. Raw HTML otherwise stays as written.
 - *The gutter* ([[ui-model]]). Nothing of the renderer's that paints or takes a click lives in a document
   frame: a section's commands (`section.acts`) are drawn in a gutter beside the frame, in the page's own document,
-  each row kept level with its section ([`followSections`](ref:hub/src/views/sections.ts#followSections): each
+  each row kept level with its section ([`followSections`](ref:hub/src/shared/view-sections.ts#followSections): each
   animation frame while the view is seen it reads the frame's `scrollY`, and when that or the body's size changed
   reads every anchor and writes every row), so a
   file's CSS, SVG, top layer or `inert` can't cover, move or click through one: an iframe paints only inside its own
@@ -109,8 +109,8 @@ would reach for a markdown library's `parse` and draw it inline.
   misalignment (a file's CSS moving its headings, an inner scroller of its own, an offset changing with no resize or
   scroll of the frame): a correctly
   labelled button beside the wrong text.
-- *Links are data* ([`writeLinks`](ref:hub/src/views/frame.ts#writeLinks), one rule every document frame shares,
-  [`linkTo`](ref:hub/src/views/frame.ts#linkTo)). As the view draws a document it writes each `a` and `area` (an SVG
+- *Links are data* ([`writeLinks`](ref:hub/src/shared/view-frame.ts#writeLinks), one rule every document frame shares,
+  [`linkTo`](ref:hub/src/shared/view-frame.ts#linkTo)). As the view draws a document it writes each `a` and `area` (an SVG
   link's `xlink:href` read as its href) where it goes, so pressing one needs nothing heard: a `#fragment` naming an
   element (headings get their GitHub slug as an id) stays in the frame, written as `about:srcdoc#…` since a srcdoc
   resolves a bare `#` against the page's address; a link the view places itself takes the page to one of its
@@ -123,7 +123,7 @@ would reach for a markdown library's `parse` and draw it inline.
   own (`_blank`), unless it is relative, which no other document can place (a frame's document is the page's, so a
   relative link would resolve against the page's address, a tower error); any other loses its href, its title naming
   it and why. The frame is sandboxed with `allow-top-navigation-by-user-activation`
-  ([`DOCUMENT_SANDBOX`](ref:hub/src/views/frame.ts#DOCUMENT_SANDBOX)): still no script runs, and only a click takes
+  ([`DOCUMENT_SANDBOX`](ref:hub/src/shared/view-frame.ts#DOCUMENT_SANDBOX)): still no script runs, and only a click takes
   the page anywhere. Every link's target is written by the rule and nested frames are emptied, so the page goes only
   to its own address; in Tower.app a web address in the main frame opens in the default browser anyway.
 - [`markdown.test.ts`](ref:hub/test/markdown.test.ts) runs the payloads of the brief's audit and the usual ways around

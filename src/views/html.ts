@@ -1,5 +1,5 @@
 import { esc } from '/lib/words.js'
-import { typeView, versioned } from './item.ts'
+import { typeView, versioned } from '../shared/view-item.ts'
 
 /** `tower/html`, the html view: the page framed where it runs at an origin of its own, with no API. */
 export const mount = typeView({

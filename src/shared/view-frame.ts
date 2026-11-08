@@ -1,4 +1,4 @@
-import { relativeHref, safeHref } from '/lib/markdown.js'
+import { relativeHref, safeHref } from './markdown.ts'
 
 /**
  * What every document frame a core view draws does alike: a frame where nothing runs, which the view reaches into and

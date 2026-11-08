@@ -1,10 +1,15 @@
-import { type Board, type CardShown, type CheckoutFile, type Floor, type FloorCollection, type FloorItem, itemSubject, type Subject } from '/lib/board.js'
-import { shownHref, shownTitle } from '/lib/cards.js'
-import type { Tower } from '/lib/client.js'
-import { documentCss } from '/lib/design.js'
-import { viewsOf } from '/lib/layout.js'
-import { closeHtml, deleteAsk, failedHtml, fileButtonsHtml, fileCall, ICON, itemFile, itemPath, itemsCss, keptTitles, type Kit, type Mount, paintOnce, viewCss } from '/lib/view.js'
-import { esc, span } from '/lib/words.js'
+import type { Board, CardShown, Floor, FloorCollection, FloorItem } from '../bridge/board.ts'
+import { type CheckoutFile, itemSubject, type Subject } from './subjects.ts'
+import { shownHref, shownTitle } from './worker-details.ts'
+import type { Tower } from './shelf-page.ts'
+import { documentCss } from './design.ts'
+import { type Kit, type Mount, viewsOf } from './views.ts'
+import { closeHtml, paintOnce, viewCss } from './view-parts.ts'
+import { deleteAsk, itemFile, itemPath, itemsCss, keptTitles } from './items.ts'
+import { failedHtml } from './panel-html.ts'
+import { fileButtonsHtml, fileCall } from './file-acts.ts'
+import { ICON } from './icons.ts'
+import { esc, span } from './format.ts'
 
 /**
  * A view by type: one body per media type, drawn in a frame by the kind of its subject. A kept item's frame is a head
@@ -225,7 +230,7 @@ const bodyOf = (subject: Subject): Omit<Body, 'tower' | 'kit' | 'subject' | 'sta
       return { url: `/${f.text}`, title: name, name, file: f.file, docCss: SHOWN_DOC_CSS }
     }
     default:
-      throw new Error(`A view by type draws no ${subject.kind} alone: give bodyOf in src/views/item.ts a case for it`)
+      throw new Error(`A view by type draws no ${subject.kind} alone: give bodyOf in src/shared/view-item.ts a case for it`)
   }
 }
 
