@@ -12,6 +12,30 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.103.0
+
+Stability fixes, and a word to delete kept items. Restart the tower with this release (`tower down tower`, then `tower
+up tower`); `tower update` does that for you. No host restart. API unchanged.
+
+- **`tower x` words no longer hang on stdin.** A word that takes text on stdin read it whenever stdin wasn't a
+  terminal, so run from a worker's Bash tool in a command that held a heredoc anywhere, it waited forever on a stdin
+  that never ends (`tower x reviews resolve 3 && tower x reviews note <<'EOF' …` hung on the resolve). Stdin is now
+  read only from a pipe or a file: a heredoc, `|` or `<`. A bare word reads nothing: `resolve` appends its mark alone,
+  and a `note` with no body says it needs one. `tower keep` and `tower hire` with nothing given print their usage at
+  once, rather than waiting or keeping an empty item. A program that runs a word with its text written to the child's
+  stdin from node (`spawn`, `execFile`, `ctx.run`) hands it a socket, which isn't read: pass the text as a flag.
+- **`tower unkeep <tag>…` deletes kept items.** One or more, by tag or id, across the floor's collections. Every name
+  is checked first, and if any is unknown, shared or in a collection owned by an extension (a review thread), nothing
+  is deleted and each reason is said. Deleted for good: nothing keeps a copy. Workers are told to delete an item only
+  when the user said to, for that item.
+- **Escape with a popover open** closes the popover and leaves the view as it is, instead of also going to the
+  skyline.
+- **`tower doctor` on a broken config** fails cleanly with its fix and exits 1, for any config `tower config check`
+  refuses (`null`, `{}`, no `projects`, a bad port), instead of printing a stack. The checks that read the config say
+  they wait until it is fixed.
+- **Review notes on lines with no quote** read as unchanged while their file is among the changes, and gone once it
+  isn't, instead of always "changed".
+
 ## v1.102.0
 
 The Brief keeps what you are reading while its worker works. Restart the tower with this release (`tower down tower`,
