@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Workers keep and edit items in their floor's collections; who kept one is a fact in its log",
-  "summary": "tower keep adds a file to one of the floor's collections through the renderer API and logs tower.keep in the worker's own log, which the board joins onto the item as keptBy; a worker edits an item it or anyone kept in place, never keeping a second copy, and deleting one stays the user's.",
+  "summary": "tower keep adds a file to one of the floor's collections through the renderer API and logs tower.keep in the worker's own log, which the board joins onto the item as keptBy; a worker edits an item it or anyone kept in place, never keeping a second copy, and deletes one with tower unkeep only when the user said to, for that item.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-05",
@@ -13,6 +13,8 @@
     "hub/src/directory.ts#collectionLine",
     "hub/src/directory.ts#collectionLines",
     "hub/src/directory.ts#overviewLines",
+    "hub/src/directory.ts#unkeepable",
+    "hub/src/directory.ts#unkeepRefusal",
     "hub/src/shared/titles.ts#titleIn",
     "hub/src/bridge/facts.ts#Kept",
     "hub/src/bridge/facts.ts#factsAfter",
@@ -49,14 +51,21 @@ versions of one idea with nothing saying which was current.
   made any other way (the tower, an editor, a shell) has none. Both renderers name the keeper.
 - Titles are derived where they are shown: a markdown or text item's first line, an html item's `<title>`. Nothing
   about an item is stored beside it.
-- To change a kept item, a worker edits its file in place and never keeps a second copy; it never deletes one:
-  throwing an item away is the user's. The brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) and the
+- To change a kept item, a worker edits its file in place and never keeps a second copy. Throwing an item away is
+  the user's call: a worker deletes one only when the user said to, for that item (after a triage they approved),
+  never on its own judgment that it is done or stale. The brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) and the
   handbook say so. Where the floor has drafts, its extension adds the line that says to keep off-goal ideas and later
   prompts with `tower keep drafts` and carry on ([[brief-first]]).
 - Every spawn and resume passes the project's collections directory as `--add-dir`
   ([`keptArgs`](ref:hub/src/shared/launch.ts#keptArgs)), so an edit there asks no permission. The directory holds no
   `.claude/`, so [[repos-file-access-only]]'s reason for `additionalDirectories` does not apply, and the flag is the
   client's: no host change. A project that has kept nothing yet has no directory; Claude starts anyway.
+- `tower unkeep <tag|id>...` deletes items with the renderer API's `collection/delete`. Every name is resolved
+  first ([`unkeepable`](ref:hub/src/directory.ts#unkeepable)), and one unknown, shared by two items or in an owned
+  collection refuses the whole call, so a batch never stops halfway on a typo. The owned refusal reads the
+  collection's `delete` door from the board ([`unkeepRefusal`](ref:hub/src/directory.ts#unkeepRefusal)); the
+  tower refuses the generic delete there on its own too. It prints each item deleted and says nothing keeps a copy:
+  `collection/restore` needs the content, which a CLI process doesn't hold once it exits. It logs no fact.
 - No edit verb: the renderers take a change made on disk. An open draft with no edits shows the new text, and one
   with edits raises take theirs / keep mine ([`follow`](ref:hub/extensions/drafts/client/drafts.ts#follow)).
 
@@ -68,6 +77,10 @@ versions of one idea with nothing saying which was current.
 - *Workers only add.* The duplicates above; and it protected nothing, since a worker's shell can always reach the files.
 - *An edit verb on the API and the CLI.* The files are plain and the session's own tools edit them.
 - *Workers delete their own items too.* A worker could tidy away a draft the user meant to send.
+- *No delete verb, workers never delete.* It protected nothing (the API's `collection/delete` and a shell reach the
+  files), and a worker carrying out a triage the user approved hand-rolled the calls, resolving tags by scraping
+  `tower kept`, and stopped halfway. The guard is the rule on whose word deletes, not a missing verb.
+- *A copy kept for undo.* It is stored state nothing reads back; the user who wants the words reads the item first.
 
 **Consequences.** `create` and `tower.keep` are two writes: if the second fails, the item exists with no keeper. A
 deleted item's `tower.keep` stays in the log and joins nothing. Who kept an item is a fact; who last edited it is not

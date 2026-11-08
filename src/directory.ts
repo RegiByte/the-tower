@@ -9,7 +9,7 @@
  * verb, the host logs them (`tower.show`, `tower.keep`, `tower.leave`), and every renderer draws them from the board.
  * `hire` and `review` spawn with `hire`: the tower weighs the hire against the limits and logs `tower.hire` in this
  * session's log. An item is called by its tag, as every renderer shows it.
- * Agents edit kept items in their files and never delete them: throwing one away is the user's. Review threads are
+ * Agents edit kept items in their files, and delete them only when the user said to, for each one. Review threads are
  * written only through the reviews extension's words, which append.
  */
 import { existsSync, fstatSync, readFileSync, realpathSync } from 'node:fs'
@@ -454,6 +454,24 @@ const itemNamed = (floor: Floor, name: string): { collection: FloorCollection; i
   return found[0]
 }
 
+/** Why the generic delete is refused in `collection`: its owner's delete door, the word to use or why there is none. */
+const unkeepRefusal = ({ id, owner, doors }: FloorCollection): string | undefined => {
+  if (!owner) return undefined
+  const door = doors!.delete
+  return `${owner} owns ${id}: ${typeof door === 'string' ? `use ${door}` : door.none}`
+}
+
+/** The items `names` call, each once, all of them deletable: any name that isn't refuses the whole call. */
+const unkeepable = (floor: Floor, names: string[]): { collection: FloorCollection; item: FloorItem }[] => {
+  const named = [...new Map(names.map((n) => itemNamed(floor, n)).map((f) => [`${f.collection.id}/${f.item.id}`, f])).values()]
+  const refused = named.flatMap(({ collection, item }) => {
+    const why = unkeepRefusal(collection)
+    return why ? [`${item.tag} (${why})`] : []
+  })
+  if (refused.length) throw new CliError(`Nothing was deleted: ${refused.join('; ')}`)
+  return named
+}
+
 const KEEP_USAGE = `${usageLine('keep')}, or the markdown on stdin`
 
 /** `[file] [name <words>]`: the file to keep, stdin without one, and the words its id is named by. */
@@ -804,6 +822,25 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const floor = ownFloor(await readBoard(), me)
     const { collection, item } = itemNamed(floor, tagOrId)
     process.stdout.write(await readItem(floor, collection.id, item.id))
+  },
+  unkeep: async (names) => {
+    if (!names.length) throw new CliError(usageLine('unkeep'))
+    const floor = ownFloor(await readBoard(), me)
+    const items = unkeepable(floor, names)
+    const titles = await Promise.all(items.map(async ({ collection, item }) => (titled(item.id) ? titleIn(item.id, await readItem(floor, collection.id, item.id)) : undefined)))
+    const deleted: string[] = []
+    for (const [n, { collection, item }] of items.entries()) {
+      const reply = await ask('collection/delete', { project: floor.id, collection: collection.id, id: item.id })
+      if (isFailure(reply)) {
+        const left = items.slice(n + 1).map((i) => i.item.tag)
+        throw new CliError(
+          [...deleted, `${refusedLine('collection/delete', reply)}, so ${item.tag} is kept${left.length ? `, and ${left.join(', ')} not tried` : ''}`].join('\n'),
+          '`tower kept` lists what the floor still keeps',
+        )
+      }
+      deleted.push(`Deleted ${item.tag} ${titles[n] ? `"${titles[n]}" ` : ''}from ${collection.label}: ${collection.dir}/${item.id}`)
+    }
+    console.log([...deleted, 'Deleted for good: nothing keeps a copy.'].join('\n'))
   },
   hire: async (args) => {
     const hire = hireArgs(args)

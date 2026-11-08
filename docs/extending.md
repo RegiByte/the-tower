@@ -600,7 +600,7 @@ business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in
 `drafts` itself is declared by the bundled drafts extension; a config line of that name overrides its label and
 description.
 `/items.js` lists and reads any collection without a meaning, as `tower/tray`, the tower page's tray of a collection, does ([Views](#views)).
-Workers add with `tower keep <collection>`. `reviews` is the bundled reviews extension's, owned: one markdown thread
+Workers add with `tower keep <collection>`, and delete with `tower unkeep <tag>`, which refuses an owned collection with its `delete` door. `reviews` is the bundled reviews extension's, owned: one markdown thread
 per checkout, written only through `reviews/append`. Each card carries its thread as `x.reviews` (the checkout it is
 about, where that work stands, the notes new to it, and its note call while the work is live) and each floor its
 threads; until 2.0 the board copies them to `floor.threads`, `card.threadState`, `card.unseen`, the card's `note`

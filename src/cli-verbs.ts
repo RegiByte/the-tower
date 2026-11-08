@@ -86,6 +86,11 @@ export const CLI_VERBS = {
     help: "the floor's collections with their item counts and latest items, or every item of one: tag, title, age, size, keeper and file",
   },
   read: { of: 'worker', usage: 'read <tag|id>', help: "one item of the floor's collections, in full" },
+  unkeep: {
+    of: 'worker',
+    usage: 'unkeep <tag|id>...',
+    help: "delete items of the floor's collections for good, only when the user said to, for each one: never on your own judgment that one is done or stale. Every name is checked first, and one unknown or in a collection an extension owns deletes none",
+  },
   job: {
     of: 'worker',
     usage: 'job start [--cwd <dir>] [--label <words>] [--env NAME=VALUE...] -- <command...> | job cancel <id> | job list [--all]',
