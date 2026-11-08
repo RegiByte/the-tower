@@ -370,7 +370,7 @@ export const briefCss = `.brief-view { display: flex; flex-direction: column; ga
 .brief-view .raw { white-space: pre-wrap; overflow-wrap: anywhere; font: var(--fs-m)/1.55 var(--mono); font-variant-ligatures: none; }
 .brief-view .long > :is(.md, .raw) { max-height: 18em; overflow: hidden; mask-image: linear-gradient(#000 65%, transparent); }
 .brief-view .long:has(.more input:checked) > :is(.md, .raw) { max-height: none; mask-image: none; }
-.brief-view .more { display: inline-block; margin-top: var(--sp-xs); font: 700 var(--fs-s)/1.4 var(--ui); color: var(--accent); cursor: pointer; }
+.brief-view .more { position: relative; display: inline-block; margin-top: var(--sp-xs); font: 700 var(--fs-s)/1.4 var(--ui); color: var(--accent); cursor: pointer; }
 .brief-view .bubble:is(.you, .peer) :is(.md a, .more) { color: var(--ink); text-decoration: underline; }
 .brief-view .more input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .brief-view .more:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-s); }
