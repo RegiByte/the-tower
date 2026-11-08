@@ -20,6 +20,7 @@
     "hub/src/shared/brief.ts#openTools",
     "hub/src/shared/brief.ts#withWhole",
     "hub/src/shared/brief.ts#wholeHolds",
+    "hub/src/shared/brief.ts#movedWholes",
     "hub/src/shared/brief.ts#toolCallSettled",
     "hub/src/shared/brief.ts#saidWhat",
     "hub/src/tower/http.ts#conversation",
@@ -134,8 +135,11 @@ renderer can draw the brief alike, inline.
   ([`toolCallSettled`](ref:hub/src/shared/brief.ts#toolCallSettled): one still running is read again as it is drawn
   open); a run of five or more calls folds to its count, naming
   those that failed, were denied or stopped. "earlier turns" on a conversation reads it whole, drawn in place
-  ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)) until a read moves its latest turn
-  ([`wholeHolds`](ref:hub/src/shared/brief.ts#wholeHolds), [`keptWholes`](ref:hub/src/shared/brief.ts#keptWholes)). A
+  ([`withWhole`](ref:hub/src/shared/brief.ts#withWhole)), kept there while a read leaves its latest turn as it was
+  ([`wholeHolds`](ref:hub/src/shared/brief.ts#wholeHolds), [`keptWholes`](ref:hub/src/shared/brief.ts#keptWholes))
+  and read whole again when a read moved it ([`movedWholes`](ref:hub/src/shared/brief.ts#movedWholes)), so a worker
+  at work, its latest turn moving with each tool call, keeps it whole and what the viewer expanded in it open. A
+  tool call opened while it runs is drawn as last read until it is read again. A
   brief shown is read again whenever its card's status, tool, conversations or their additions move
   ([`briefKey`](ref:hub/src/shared/brief.ts#briefKey)), in the page's Brief and Tower 3D's logbook alike. A message to a subagent is its `SendMessage` call, its
   address no worker's. Each bubble copies

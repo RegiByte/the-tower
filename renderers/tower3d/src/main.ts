@@ -5,7 +5,7 @@ import type { VerbAction } from '../../../src/shared/extensions.ts'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { THE_USER, sendText, unseenBy, type Anchor } from '../../../extensions/reviews/client/reviews.ts'
 import { changesFailed, changesOf, compare, followChanges, markViewed, scopeOf, onReviews, rereadChanges, rereadThread, threadFailed, threadOf } from './reviews.ts'
-import { briefCss, briefKey, expandedSaid, keptWholes, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole } from '../../../src/shared/brief.ts'
+import { briefCss, briefKey, expandedSaid, keptWholes, movedWholes, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole } from '../../../src/shared/brief.ts'
 import type { BriefMarkdown, DiffLayout, StatsRange } from '../../../src/shared/viewer.ts'
 import { fenceText, markdownCss } from '../../../src/shared/markdown.ts'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '../../../src/shared/settings.ts'
@@ -2167,16 +2167,19 @@ const AT_END = 48
 const readsAtEnd = (el: HTMLElement) => el.scrollHeight - el.scrollTop - el.clientHeight < AT_END
 
 /**
- * Reads a logbook's conversations, handing them to `land` unless a later read of that logbook started since. A failed
- * read is said, and lands as none only where nothing was read before (`held`).
+ * Reads a logbook's conversations, and its `wholes` the read moved whole again (`movedWholes`), handing them to `land`
+ * unless a later read of that logbook started since. A failed read is said, and lands as none only where nothing was
+ * read before (`held`).
  */
-function readLogbook(where: keyof typeof logbookReads, c: Card, held: boolean, land: (threads: Threads) => void) {
+function readLogbook(where: keyof typeof logbookReads, c: Card, held: boolean, wholes: Brief[], land: (threads: Threads, again: Brief[]) => void) {
   const key = readKey(c)
   logbookReads[where] = key
-  readConversations(s.board!, c.id).then(
-    (threads) => logbookReads[where] === key && land(threads),
-    (err: Error) => (toast(err.message), logbookReads[where] === key && !held && land([])),
-  )
+  readConversations(s.board!, c.id)
+    .then((threads) => Promise.all(movedWholes(threads, wholes).map((w) => tower.conversation(w.session.id, w.id))).then((again) => ({ threads, again })))
+    .then(
+      ({ threads, again }) => logbookReads[where] === key && land(threads, again),
+      (err: Error) => (toast(err.message), logbookReads[where] === key && !held && land([], [])),
+    )
 }
 
 /** Each open logbook read again where its worker's card moved since it was read, as the page's Brief is. */
@@ -2204,12 +2207,12 @@ function openBrief(id: string) {
 
 /** The desk's logbook read now, drawn as it lands while the desk still shows it, and kept at its end while you read there. */
 function readDeskBrief(c: Card) {
-  readLogbook('desk', c, deskBrief?.id === c.id, (read) => {
+  readLogbook('desk', c, deskBrief?.id === c.id, deskBrief?.id === c.id ? deskBrief.wholes : [], (read, again) => {
     if (!findCard(s.board!, c.id) || atDesk() !== c.id || s.deskTab !== 'brief') return
     const same = deskBrief?.id === c.id
     const { briefs, wholes } = keptWholes(read, same ? deskBrief!.wholes : [])
     const atEnd = !same || readsAtEnd($('desk-brief'))
-    deskBrief = { id: c.id, threads: briefs, wholes }
+    deskBrief = { id: c.id, threads: again.reduce(withWhole, briefs), wholes: [...wholes, ...again] }
     drawDeskBrief(same)
     show('desk-brief', true)
     if (atEnd) $('desk-brief').scrollTop = $('desk-brief').scrollHeight
@@ -2219,8 +2222,9 @@ function readDeskBrief(c: Card) {
 /** The desk's brief as last read, with the conversations read whole in it: what it is drawn again from, and what a copy reads its text from. */
 let deskBrief: { id: string; threads: Threads; wholes: Brief[] } | undefined
 
-/** The tool calls read in a logbook that had ended, by key, as drawn: one still running is read again when drawn open. */
+/** The tool calls read in a logbook, by key, as last drawn: one still running is read again when drawn open, drawn as last read meanwhile. */
 const toolsRead = new Map<string, string>()
+const toolsSettled = new Set<string>()
 const toolRead = (key: string) => toolsRead.get(key)
 
 /** What the viewer opened in a drawn logbook, and how they read its words. */
@@ -2273,12 +2277,13 @@ function readWhole(key: string, atDeskBrief: boolean) {
 /** A logbook's tool call opened: read and drawn in its body, kept once it ended. */
 document.addEventListener('toggle', (e) => {
   const details = e.target
-  if (!(details instanceof HTMLDetailsElement) || !details.dataset.tool || !details.open || toolsRead.has(details.dataset.tool)) return
+  if (!(details instanceof HTMLDetailsElement) || !details.dataset.tool || !details.open || toolsSettled.has(details.dataset.tool)) return
   const key = details.dataset.tool
   const [session, call] = key.split(':')
   tower.toolCall(session, call).then((read) => {
     const html = toolCallHtml(read)
-    if (toolCallSettled(read)) toolsRead.set(key, html)
+    toolsRead.set(key, html)
+    if (toolCallSettled(read)) toolsSettled.add(key)
     for (const drawn of document.querySelectorAll<HTMLElement>('details[data-tool]'))
       if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = html
   }, (err: Error) => toast(err.message))
@@ -2660,12 +2665,12 @@ function openLogbook(c: Card) {
 
 /** The reader's logbook read now, drawn as it lands while it is open on that worker, and kept at its end while you read there. */
 function readReader(c: Card) {
-  readLogbook('reader', c, panelAs('logbook')?.threads !== undefined, (read) => {
+  readLogbook('reader', c, panelAs('logbook')?.threads !== undefined, panelAs('logbook')?.wholes ?? [], (read, again) => {
     const open = panelAs('logbook')
     if (open?.card.id !== c.id) return
     const { briefs, wholes } = keptWholes(read, open.wholes)
     const atEnd = open.threads === undefined || readsAtEnd($('logbook-text'))
-    setPanel({ ...open, threads: briefs, wholes })
+    setPanel({ ...open, threads: again.reduce(withWhole, briefs), wholes: [...wholes, ...again] })
     renderPanel()
     if (atEnd) $('logbook-text').scrollTop = $('logbook-text').scrollHeight
   })

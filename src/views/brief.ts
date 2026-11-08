@@ -1,5 +1,5 @@
 import { can, type Card, conversationSubject, saidSubject, type Subject } from '/lib/board.js'
-import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, keptWholes, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole } from '/lib/brief.js'
+import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, keptWholes, movedWholes, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
 import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
 import { drawPanel, type Mount, type Tab } from '/lib/view.js'
@@ -10,8 +10,9 @@ import { saidOf } from '../shared/brief.ts'
 /**
  * A worker's brief: its earlier sessions folded, then its session's conversations, each turn's prompt, Claude's steps
  * and its answer, the latest at the bottom, in the viewer's markdown. Read again as its conversations change and, while
- * it works, as it calls each tool; kept at the end while the viewer reads there. A tool call opened is read once; a
- * conversation's earlier turns are read whole when asked for, and kept until its latest turn moves. Each conversation's heading holds what extensions add to it (`conversation.head`). Each prompt
+ * it works, as it calls each tool; kept at the end while the viewer reads there. A tool call opened is read once it
+ * ended, and again on each draw while it runs, drawn as last read meanwhile; a conversation's earlier turns are read
+ * whole when asked for, and read whole again as its latest turn moves. Each conversation's heading holds what extensions add to it (`conversation.head`). Each prompt
  * and answer drawn is a viewer subject on the page's bus (`said`), and holds the commands offered on it beside its copy
  * (`said.acts`). Its foot, under the scroll, holds the view that writes to the worker (`card.composer`), at its natural
  * height up to a cap, then scrolling; with no view there it takes no room.
@@ -65,9 +66,10 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
 
   const actsOn = (b: typeof board) => addedActions(b, saidSubject({ session: '', conversation: '', startedAt: 0, side: 'prompt', card: card.id, project: card.project, body: '' })).length > 0
 
-  /** The tool calls read that had ended, by key, as drawn. */
+  /** The tool calls read, by key, as last drawn; those that had ended are read no more. */
   const tools = new Map<string, string>()
-  /** The conversations read whole: drawn in place of their last turns until a read moves their latest turn, then let go. */
+  const settled = new Set<string>()
+  /** The conversations read whole: drawn in place of their last turns, read whole again when a read moves their latest turn. */
   let wholes: Brief[] = []
 
   /** Draws the brief read; `same`, a redraw of what is drawn, keeps its folds and opened answers. */
@@ -107,16 +109,15 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     if (!seen || key === readAt) return
     const first = readAt === undefined
     readAt = key
-    void tower.conversations(card.id).then(
-      (read) => {
+    void tower.conversations(card.id)
+      .then((read) => Promise.all(movedWholes(read, wholes).map((w) => tower.conversation(w.session.id, w.id))).then((again) => ({ read, again })))
+      .then(({ read, again }) => {
         if (readAt !== key) return
         const kept = keptWholes(read, wholes)
-        threads = kept.briefs
-        wholes = kept.wholes
+        threads = again.reduce(withWhole, kept.briefs)
+        wholes = [...kept.wholes, ...again]
         draw(!first)
-      },
-      (err: Error) => kit.toast(err.message),
-    )
+      }, (err: Error) => kit.toast(err.message))
   }
 
   /** The viewer's markdown, as `tower.store` keeps it for every renderer of theirs; the brief drawn again when it changed. */
@@ -150,13 +151,14 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     }, (err: Error) => kit.toast(err.message))
   }
 
-  /** A tool call opened: read, drawn in its body, and kept for every draw after once it ended. */
+  /** A tool call opened: read, drawn in its body, and kept for every draw after, read no more once it ended. */
   function readTool(details: HTMLDetailsElement) {
     const key = details.dataset.tool!
-    if (!details.open || tools.has(key)) return
+    if (!details.open || settled.has(key)) return
     void tower.toolCall(...(key.split(':') as [string, string])).then((call) => {
       const html = toolCallHtml(call)
-      if (toolCallSettled(call)) tools.set(key, html)
+      tools.set(key, html)
+      if (toolCallSettled(call)) settled.add(key)
       for (const drawn of body.querySelectorAll<HTMLElement>('details[data-tool]'))
         if (drawn.dataset.tool === key) drawn.querySelector('[data-tool-body]')!.innerHTML = html
     }, (err: Error) => kit.toast(err.message))
