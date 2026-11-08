@@ -12,6 +12,29 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.104.0
+
+Tower 3D runs on the tower's library, and its desk shows the page's own Changes. Restart the tower with this release
+(`tower down tower`, then `tower up tower`); `tower update` does that for you, and rebuilds Tower 3D. No host restart.
+API 1.164, an addition.
+
+- **Tower 3D's Changes tab is the page's.** At a worker's desk, Changes mounts the same view the tower page shows,
+  with reviews' note box under picked lines: the same diff, viewed marks, folds, picking by drag and notes. The tab
+  now counts files viewed (`2/5`), as the page does. Switching tabs keeps your pick and note; closing the desk stops
+  its reads.
+- **Tower 3D says when the tower serves other code.** Opened on its own, it shows the same notice the page does,
+  with a reload. Framed in the page, the page's notice covers both.
+- **Tower 3D survives an extension being off or replaced.** It loads the drafts, quota and reviews clients the way
+  the page does: one missing or replaced leaves its part empty instead of stopping the renderer.
+- **For renderer authors:** `askTransitions` joins `/lib/cards.js` (provisional): the asks that began and ended
+  between two boards. Tower 3D now builds one ES module per page that imports `/lib/` and `/x/` at run time, so it
+  shares one instance of the library with the views and clients it draws, and the browser caches the library across
+  loads. No renderer imports the core's source by path any more, and a check keeps it so.
+- **For contributors:** Tower 3D's fixture boards (`?board=busy` and the others) are committed data,
+  `renderers/tower3d/fixtures/*.json`, written by `npm run tower3d:fixtures`; a test fails when they differ from what
+  the script writes, so a change to the bridge's offers regenerates them. Fixture pages run on the fixtures' own
+  clock, 2026-10-04 15:00 UTC (`night`: 22:30), and refuse a `?at=` that disagrees.
+
 ## v1.103.0
 
 Stability fixes, and a word to delete kept items. Restart the tower with this release (`tower down tower`, then `tower
