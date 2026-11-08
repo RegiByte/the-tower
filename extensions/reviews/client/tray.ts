@@ -2,12 +2,12 @@ import { type Floor, type FloorCollection, itemKey, workerIn } from '/lib/board.
 import { ICON, type Mount, foldTrayHtml, itemsCss, openItemOf } from '/lib/view.js'
 import { esc, noun, plural } from '/lib/words.js'
 import { floorThreadsOf } from './panel.ts'
-import { landedThreads, REVIEWS, threadId } from './reviews.ts'
+import { landedThreads, REVIEWS } from './reviews.ts'
 
 /**
  * `reviews/tray`, the reviews collection in a floor's row of trays: how many threads are open and how many landed,
- * unfolding to each open thread by its checkout, opened in its worker's Reviews tab while one works in the checkout,
- * else as the thread's item; then the threads Tidy filed once their work landed, folded, newest first.
+ * unfolding to each open thread by its checkout, opened in its worker's Reviews tab while one is on duty in the
+ * checkout, else as the checkout's thread (`reviews/checkout-thread`); then the threads Tidy filed once their work landed, folded, newest first.
  */
 
 const ID = 'reviews/tray'
@@ -78,7 +78,7 @@ export const mount: Mount = (host, { board: first, subject, kit, state }) => {
     const checkout = target.closest<HTMLElement>('[data-thread]')?.dataset.thread
     if (checkout !== undefined) {
       const worker = workerIn(floor(), checkout)
-      return worker ? kit.display(`card:${worker.id}`, { view: 'reviews/thread' }) : kit.display(itemKey(project, REVIEWS, threadId(checkout)))
+      return worker?.onDuty ? kit.display(`card:${worker.id}`, { view: 'reviews/thread' }) : kit.display(`reviews.thread:floor:${project}/${project}/${checkout}`)
     }
     const filed = target.closest<HTMLElement>('[data-filed]')?.dataset.filed
     if (filed !== undefined) kit.display(itemKey(project, REVIEWS, filed))
