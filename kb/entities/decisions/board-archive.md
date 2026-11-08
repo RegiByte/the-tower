@@ -28,6 +28,9 @@ every card.
   a conversation's `resumes` and `resumedBy` (on the board and in the brief) and a card's `continuedBy`; `keptBy` carries
   `{session, callsign}` and `hiredBy` `{session, callsign, project}`. [`bubbleOf`](ref:hub/renderers/tower3d/src/cards.ts#bubbleOf), a status's glyph, is
   Tower 3D's own; `/cards.js` serves a copy until 2.0.
+- Tower 3D derives its seats and gallery itself, over the board's cards and the archive read beside it, which are
+  every card again ([[workstations]], [[shared-wall]]); the bridge's `card.seat` and `floor.gallery` stay on the
+  board until 2.0.
 - [`allCards`](ref:hub/src/bridge/board.ts#allCards) derives every card (seats, crews, the gallery and
   Tidy's plan run over all of them); [`board`](ref:hub/src/bridge/board.ts#board) keeps those
   [`onBoard`](ref:hub/src/bridge/board.ts#onBoard): on duty, waiting, holding leftovers, or started since the start

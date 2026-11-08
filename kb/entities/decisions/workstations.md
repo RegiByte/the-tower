@@ -11,7 +11,9 @@
     "hub/renderers/tower3d/src/layout.ts#AwaySlot",
     "hub/renderers/tower3d/src/layout.ts#plan",
     "hub/renderers/tower3d/src/layout.ts#openStation",
-    "hub/src/bridge/seats.ts#withSeats",
+    "hub/renderers/tower3d/src/seating.ts#seatsOf",
+    "hub/renderers/tower3d/src/archive.ts#historyOf",
+    "hub/renderers/tower3d/src/main.ts#whenSettled",
     "hub/renderers/tower3d/src/layers.ts#STATIONS",
     "hub/renderers/tower3d/src/desk.ts#makeStation",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
@@ -36,9 +38,17 @@ defaults, and the new-worker form as the optional path.
 - [`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan) gives each floor its occupied `desks` and its `free`
   workstations: the building's rows of four, two rows at least and as many as the highest seat on any floor needs.
   A full floor has no open desk.
-- Seats stay derived: a worker takes the lowest free desk when it comes on duty, replayed from the floor's
-  cards in the bridge ([`withSeats`](ref:hub/src/bridge/seats.ts#withSeats)) and read by Tower 3D as `card.seat`
-  (`{n}`, a workstation, or `{beside}`, the lead's id) ([[board-archive]]). A worker whose crew edge names a seated
+- Seats stay derived: a worker takes the lowest free desk when it comes on duty, replayed by Tower 3D
+  ([`seatsOf`](ref:hub/renderers/tower3d/src/seating.ts#seatsOf): `{n}`, a workstation, or `{beside}`, the lead's id)
+  over the floor's history: the board's cards and its archive's as read at the board's `archiveKey`
+  ([`historyOf`](ref:hub/renderers/tower3d/src/archive.ts#historyOf), [[board-archive]]). The archive is part of the
+  input because a long-running worker keeps its desk at midnight: the workers who came before it leave the board for
+  the archive then, and a replay of the board alone would move it to a desk one of them left. A board is drawn only
+  once every floor's archive is read at its key, or failed to be
+  ([`whenSettled`](ref:hub/renderers/tower3d/src/main.ts#whenSettled)), so no board draws with an archive older than
+  itself and a reload seats everyone where they were; a floor whose archive can't be read draws its workers on duty
+  without desks. The seats are a map by card id, so a layer of placements by hand can later sit over them. The
+  bridge's `card.seat` is the same replay over every card, kept on the board until 2.0. A worker whose crew edge names a seated
   worker ([[crews]]: a [[reviewer]] and its author) sits beside it, taking no workstation; one whose lead leaves first
   takes the lowest free desk then. So the open
   desk, where the next worker sits, is the lowest free one

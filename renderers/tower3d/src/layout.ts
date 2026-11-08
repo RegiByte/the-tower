@@ -8,6 +8,7 @@ import { DECK, STRIP, anchorsOf, loftOf, loftWalls, roomOf, roomsOf, type Anchor
 import { turnXZ } from '../../kaykit/src/catalog.ts'
 import { gamesOf } from './games.ts'
 import { breaksOf, nextBreak, type BreakPlace } from './breaks.ts'
+import { stationsTaken, type Seats } from './seating.ts'
 import { meetingsOf, stateFor, type MeetingKit, type Place } from './meetings.ts'
 import type { PrefabBox, ZoneSlot } from './zones.ts'
 
@@ -182,13 +183,19 @@ export type Level =
   | { kind: 'roof'; index: number; y: number; name: string; zones: ZoneSlot[]; limits: RateLimit[]; floors: DanceFloor[]; guests: GuestSlot[] }
 
 /** What a floor's corkboard and pigeonhole read from the extensions that keep drafts and review threads. */
-export type FloorReads = { draftsOf: typeof draftsOf; keepsThreads: typeof keepsThreads; floorThreadsOf: typeof floorThreadsOf }
+/**
+ * What the plan reads beside the board: the extensions' reads, and what Tower 3D derives from each floor's history
+ * (`historyOf`): every seated worker's seat (`seatsOf`) and each floor's gallery by project (`galleryOf`).
+ */
+export type FloorReads = { draftsOf: typeof draftsOf; keepsThreads: typeof keepsThreads; floorThreadsOf: typeof floorThreadsOf; seats: Seats; galleries: Map<string, GalleryShowing[]> }
 
 export type Plan = {
   width: number
   depth: number
   /** Lobby first, a floor per project, the roof last. */
   levels: Level[]
+  /** Every floor's gallery (`galleryOf`), hung on its wall or not. */
+  galleries: GalleryShowing[]
   /** Every floor's loft, the same on each. */
   loft: Loft
   /** Every floor's rooms on the ground and its named points, the same on each (src/floorplan.ts). */
@@ -404,8 +411,11 @@ export const floorOfProject = (floors: DanceFloor[], project: string) => floors.
 const guestCards = (board: Board, today: number) =>
   board.floors.flatMap((f) => f.cards).filter((c) => !c.onDuty && c.startedAt >= today).sort((a, b) => b.startedAt - a.startedAt).slice(0, MAX_GUESTS)
 
-/** The workstations a floor's seats take (`card.seat`, replayed in the bridge). */
-const stationsTaken = (floor: Floor) => floor.cards.flatMap((c) => (c.seat && 'n' in c.seat ? [c.seat.n] : []))
+/** The workstations a floor's seats take. */
+const floorStations = (floor: Floor, seats: Seats) => stationsTaken(floor.cards.flatMap((c) => seats.get(c.id) ?? []))
+
+/** A floor's seated workers on duty, the earliest first: every one, once its history is read (`historyOf`). */
+const seatedOf = (floor: Floor, seats: Seats) => onDuty(floor.cards).filter((c) => seats.has(c.id))
 
 /** The wall's frame on a plate `depth` deep: right of the core, the corkboard's stretch then the gallery's. */
 function wallFrame(depth: number) {
@@ -419,18 +429,18 @@ function wallFrame(depth: number) {
 /** How much of its place a picture takes: what was made to be read most, a link least. */
 const sizeOf = (s: Shown) => (s.kind === 'link' ? 0.72 : s.kind === 'url' ? 0.86 : 1)
 
-/** The floor's gallery (`floor.gallery`, newest first), hung in `HANG`'s places, as many as there are. */
-function pictures(floor: Floor, x: number): PictureSlot[] {
-  return floor.gallery.slice(0, HANG.length).map(({ worker, shown }, i) => {
+/** The floor's gallery (`galleryOf`, newest first), hung in `HANG`'s places, as many as there are. */
+function pictures(gallery: GalleryShowing[], x: number): PictureSlot[] {
+  return gallery.slice(0, HANG.length).map(({ worker, shown }, i) => {
     const place = HANG[i]
     const w = Math.min(place.w, place.h * PICTURE_ASPECT) * sizeOf(shown)
     return { worker, shown, x: x + place.x, y: place.y, w, h: w / PICTURE_ASPECT }
   })
 }
 
-function wallFor(floor: Floor, depth: number): WallSlot {
+function wallFor(gallery: GalleryShowing[], depth: number): WallSlot {
   const f = wallFrame(depth)
-  return { minX: f.minX, maxX: f.maxX, z: f.z, face: f.face, height: PARTITION.height, gallery: { x: f.galleryX, width: GALLERY.width }, pictures: pictures(floor, f.galleryX) }
+  return { minX: f.minX, maxX: f.maxX, z: f.z, face: f.face, height: PARTITION.height, gallery: { x: f.galleryX, width: GALLERY.width }, pictures: pictures(gallery, f.galleryX) }
 }
 
 /** A floor's corkboard, when it keeps drafts: its notes in rows from the top left, as many as fit, oldest first. */
@@ -518,7 +528,8 @@ const breakPlaces = (arcade: ArcadeSlot | undefined, standing: BreakPlace[]): Br
 export function plan(board: Board, now: number, beside: (author: Card) => { x: number; z: number; turn: number }, meet: MeetingKit, standing: (room: Room) => BreakPlace[], reads: FloorReads): Plan {
   const today = new Date(now).setHours(0, 0, 0, 0)
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
-  const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
+  const { seats } = reads
+  const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...floorStations(f, seats)) + 1)), MIN_ROWS)
   const shells = board.floors.map((f) => board.shells.filter((s) => s.project === f.id))
   const depth = CORE.depth + LANDING + Math.max(rows, PLATE_ROWS) * ROW_SPACING + BACK_MARGIN + STRIP.depth + STRIP.aisle
   const rooms = roomsOf({ width, depth })
@@ -542,14 +553,15 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
   const meetingRooms = rooms.filter((r) => r.seats).sort((a, b) => b.seats! - a.seats!)
   const gameRoom = roomOf(rooms, 'game')
   const floors = board.floors.map((floor, i): Level => {
-    const own = (id: string) => stationAt((floor.cards.find((c) => c.id === id)!.seat as { n: number }).n)
-    const meetings = meetingsOf(floor.cards, meetingRooms, meet)
+    const own = (id: string) => stationAt((seats.get(id) as { n: number }).n)
+    const seated = seatedOf(floor, seats)
+    const meetings = meetingsOf(floor.cards.filter((c) => !c.onDuty || seats.has(c.id)), meetingRooms, meet)
     const gathered = new Map(meetings.flatMap((m) => m.seats.map(({ card, place }) => [card.id, { room: m.room, place: { ...place, play: false } }] as const)))
     const arcade = arcadeFor(floor, rooms)
-    const onBreak = breaksOf(onDuty(floor.cards), breakPlaces(arcade, standing(gameRoom)), now)
+    const onBreak = breaksOf(seated, seats, breakPlaces(arcade, standing(gameRoom)), now)
     const away = new Map([...gathered, ...onBreak.map(({ card, place }) => [card.id, { room: gameRoom, place }] as const)])
-    const desks = onDuty(floor.cards).map((card): DeskSlot => {
-      const seat = card.seat!
+    const desks = seated.map((card): DeskSlot => {
+      const seat = seats.get(card.id)!
       const kept = 'n' in seat ? stationAt(seat.n) : own(seat.beside)
       const meeting = away.get(card.id)
       if (meeting) return { card, ...kept, ...atPlace(meeting.place), meeting: { room: meeting.room.id, label: meeting.room.label, place: meeting.place.name, stand: meeting.place.stand, play: meeting.place.play } }
@@ -558,7 +570,7 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
       return { card, ...kept, ...fromDesk(kept, by.x, by.z), turn: kept.turn + by.turn, beside: seat.beside }
     })
     const taken = new Set(desks.filter((d) => !d.beside).map((d) => d.n))
-    const stations = desks.flatMap((d) => (d.meeting && 'n' in d.card.seat! ? [{ ...stationAt(d.n), card: d.card, room: d.meeting.label }] : []))
+    const stations = desks.flatMap((d) => (d.meeting && 'n' in seats.get(d.card.id)! ? [{ ...stationAt(d.n), card: d.card, room: d.meeting.label }] : []))
     const tables = meetingRooms.map((room): TableSlot => {
       const state = meetings.find((m) => m.room === room)?.state ?? stateFor(room, Infinity, meet.states)
       return { room: room.id, ...meet.table(room), state, places: meet.places(room, state), boxes: meet.footprint(room, state) }
@@ -577,7 +589,7 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
       kiosks: kiosksOf(shells[i]),
       tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, card: desks[i].card })),
       shelf: shelfSlots(floor.shelf ?? [], runs),
-      wall: wallFor(floor, depth),
+      wall: wallFor(reads.galleries.get(floor.id) ?? [], depth),
       cork: corkFor(floor, depth, reads),
       pigeonhole: pigeonholeFor(floor, rooms, reads),
       arcade,
@@ -593,7 +605,8 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
     loft,
     rooms,
     anchors,
-    until: nextBreak(board.floors.flatMap((f) => onDuty(f.cards)), now),
+    until: nextBreak(board.floors.flatMap((f) => seatedOf(f, seats)), seats, now),
+    galleries: [...reads.galleries.values()].flat(),
     levels: [
       { kind: 'lobby', index: 0, y: 0, name: 'Lobby', zones: [] },
       ...floors,

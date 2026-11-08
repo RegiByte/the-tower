@@ -28,7 +28,7 @@ or free) and shell kiosk slot, and what a walker bumps into. The scene, the walk
 positions from it. The building is rebuilt when its shape changes; desks are kept by session id and re-dressed on
 every board, so a status change never tears the floor down. Only the levels you can see are drawn
 ([[tower3d-levels]]). Every workstation is an L dressed from its worker's card ([[desk-dressing]]); every level has
-KayKit zones placed from the plan ([[office-kaykit]]). A worker's desk is `card.seat`, and every floor has the same
+KayKit zones placed from the plan ([[office-kaykit]]). A worker's desk is replayed from its floor's history, the board's and the archive's cards, and every floor has the same
 workstations whether anyone sits at them or not, the lowest free one open and offering a hire ([[workstations]]).
 Every floor has a shared wall with the corkboard and the gallery ([[shared-wall]], [[corkboard]]), and a loft over
 its left wing with the control room on its deck; the rooms under and before it are [[floor-plan]]'s.

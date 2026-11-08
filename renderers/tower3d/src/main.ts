@@ -60,7 +60,9 @@ import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
 import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
 import * as loading from './loading.ts'
-import { archivedOf, archiveFailure, archiveOf, drawersAt, onArchives, readArchives, rereadArchive } from './archive.ts'
+import { archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, onArchives, readArchives, rereadArchive } from './archive.ts'
+import { buildingSeats } from './seating.ts'
+import { galleryOf } from './showings.ts'
 import { poseFiling } from './filing.ts'
 import { ARCADE_SIGNS, CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
@@ -242,12 +244,49 @@ function dressReplays() {
   screensAt = { ...screensAt, plan: undefined }
 }
 
-const archiveFailed = (message: string) => toast(`The archive can't be read: ${message}`)
+function archiveFailed(message: string) {
+  toast(`The archive can't be read: ${message}`)
+  drawSettled()
+}
 
-/** An archive read landed or failed: the cabinets file it, and a panel listing it shows it. */
+/** An archive read landed or failed: a board waiting for it draws, the cabinets file it, and a panel listing it shows it. */
 function archiveArrived() {
+  drawSettled()
   reconcile(FILINGS, s.filings, s.plan, discard)
   renderPanel()
+}
+
+/** The latest board waiting for its floors' archives to be read at its keys (`archivesSettled`), and what draws it then. */
+let unsettled: { board: Board; draw: () => void } | undefined
+
+/**
+ * Draws `board` with `draw` once every floor's archive is read at its keys, or failed to be: seats and galleries are
+ * derived from the floors' histories (`historyOf`), so a board never draws with an archive older than itself. A later
+ * board waiting replaces an earlier one.
+ */
+function whenSettled(board: Board, draw: () => void) {
+  readArchives(board)
+  unsettled = { board, draw }
+  drawSettled()
+}
+
+function drawSettled() {
+  if (!unsettled || !archivesSettled(unsettled.board)) return
+  const { draw } = unsettled
+  unsettled = undefined
+  draw()
+}
+
+/**
+ * What Tower 3D derives from each floor's history as `board` stands: every seated worker's seat and each floor's
+ * gallery. A floor whose archive can't be read has neither: its workers on duty have no desks.
+ */
+function historyReads(board: Board) {
+  const histories = new Map(board.floors.flatMap((f) => {
+    const history = historyOf(board, f)
+    return history ? [[f.id, history] as const] : []
+  }))
+  return { seats: buildingSeats(histories), galleries: new Map([...histories].map(([id, history]) => [id, galleryOf(history)])) }
 }
 
 /** A showing new since the last board: its worker holds it up, and you hear it; at its desk, it opens. */
@@ -358,7 +397,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   s.board = next
   s.self = at
   desk.update(next)
-  s.plan = furnish(plan(next, wallNow(), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs), (room) => standingIn(room, s.kit!.prefabs), { draftsOf, keepsThreads: floorKeepsThreads, floorThreadsOf }), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
+  s.plan = furnish(plan(next, wallNow(), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs), (room) => standingIn(room, s.kit!.prefabs), { draftsOf, keepsThreads: floorKeepsThreads, floorThreadsOf, ...historyReads(next) }), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
   celebrate(next)
   if (began.length) s.waitedAt = s.simNow
   for (const a of asked) toast(`${a.title}, asked by ${a.cap}`, { label: 'Go', run: () => goToAsk(a) })
@@ -565,7 +604,7 @@ function renderPanel() {
     showSince($('doc-body'))
   }
   if (panel.kind === 'picture') {
-    const picture = pictureOf(board, panel.id, panel.target)
+    const picture = pictureOf(s.plan.galleries, board, panel.id, panel.target)
     if (!picture) return closeDoc()
     $('doc-head').innerHTML = pictureHeadHtml(picture.worker, picture.card?.onDuty ?? false, picture.shown, `#${hueOf(panel.id).getHexString()}`)
   }
@@ -887,7 +926,7 @@ async function deleteKept(panel: Extract<Panel, { kind: 'kept' }>) {
 
 /** A gallery's picture in the reader where you stand, as its desk's tab shows it; it counts as seen once opened. */
 async function openPicture(id: string, target: string) {
-  const picture = pictureOf(s.board!, id, target)
+  const picture = pictureOf(s.plan.galleries, s.board!, id, target)
   if (!picture) return
   const { worker, shown: sh } = picture
   closePanels()
@@ -1610,12 +1649,12 @@ function showPrompt(a: Act | undefined, at?: { x: number; y: number }) {
   $('crosshair').classList.toggle('on', Boolean(a) && s.view === 'walk')
   const which = JSON.stringify(a ?? null)
   if (which !== s.offersOfAimed) (s.offersOfAimed = which, s.marked = 0, s.hold = undefined)
-  s.offers = a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost }) : []
+  s.offers = a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: s.plan.galleries }) : []
   s.marked = Math.min(s.marked, Math.max(0, s.offers.length - 1))
   const key = a ? `${which}|${JSON.stringify(s.offers)}|${s.marked}|${Math.floor(s.simNow / 1000)}` : ''
   if (key !== promptKey) {
     promptKey = key
-    const html = a && s.board ? promptHtml(a, s.board, s.offers, s.marked, s.catNames) : ''
+    const html = a && s.board ? promptHtml(a, s.board, s.offers, s.marked, s.catNames, s.plan.galleries) : ''
     $('prompt').innerHTML = html
     show('prompt', Boolean(html))
   }
@@ -1684,7 +1723,7 @@ function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
   seeing.dispatch({ type: 'lost', lost: false })
   seeing.dispatch({ type: 'board', board: next })
   if (!loaded || starting) return void (latest = [next, at])
-  if (!s.first) return onBoard(next, at)
+  if (!s.first) return whenSettled(next, () => onBoard(next, at))
   start(next, at)
 }
 
@@ -1702,8 +1741,9 @@ function start(next: Board, at: ShelfSelf | undefined) {
   starting = true
   startOn(next, at).then(() => {
     starting = false
-    if (latest) onBoard(...latest)
+    const waiting = latest
     latest = undefined
+    if (waiting) whenSettled(waiting[0], () => onBoard(...waiting))
   }, failStart)
 }
 
@@ -1717,6 +1757,7 @@ const failStart = (err: Error) => (toast(`start: ${err.message}`), loading.fail(
 async function startOn(next: Board, at: ShelfSelf | undefined) {
   loading.stage('building')
   await painted()
+  await new Promise<void>((settled) => whenSettled(next, settled))
   onBoard(next, at)
   loading.stage('lighting')
   await painted()
@@ -3020,7 +3061,7 @@ function advance() {
 
 function onFixtureBoard(next: Board) {
   seeing.dispatch({ type: 'board', board: next })
-  onBoard(next, undefined)
+  whenSettled(next, () => onBoard(next, undefined))
 }
 
 /** The HUD's limits count down to their resets and age between boards. */
