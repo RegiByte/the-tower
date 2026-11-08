@@ -950,8 +950,8 @@
       "briefKey",
       "briefParts",
       "expandedSaid",
+      "joinedWholes",
       "keptWholes",
-      "movedWholes",
       "openFolds",
       "openTools",
       "resumedIdle",
@@ -1582,7 +1582,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "a782816b15364703",
+      "digest": "e55c71ffe5f66da7",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1600,11 +1600,11 @@
         "expandedSaid": {
           "since": "1.151"
         },
+        "joinedWholes": {
+          "since": "1.163"
+        },
         "keptWholes": {
           "since": "1.161"
-        },
-        "movedWholes": {
-          "since": "1.163"
         },
         "openFolds": {
           "since": "1.151"
