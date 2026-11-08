@@ -446,11 +446,25 @@ const overviewLines = async (floor: Floor, now: number): Promise<string[]> => {
   ]
 }
 
+type NamedItem = { collection: FloorCollection; item: FloorItem }
+
+/** Every item whose tag or id is `name`. */
+const itemsCalled = (floor: Floor, name: string): NamedItem[] =>
+  floor.collections.flatMap((collection) => collection.items.filter((i) => i.id === name || i.tag === name).map((item) => ({ collection, item })))
+
+/** Why `name` names no one item: none has it, or it is the tag two items share. */
+const unnamedWhy = (floor: Floor, name: string, found: NamedItem[]): string | undefined =>
+  !found.length
+    ? `No item "${name}" on ${floorTitle(floor)}. \`tower kept\` lists them.`
+    : found.length > 1
+      ? `"${name}" is the tag of ${found.map((f) => `${f.collection.id}/${f.item.id}`).join(' and ')}: name one by its id`
+      : undefined
+
 /** An item by its tag or its id. A tag two items share names neither. */
-const itemNamed = (floor: Floor, name: string): { collection: FloorCollection; item: FloorItem } => {
-  const found = floor.collections.flatMap((collection) => collection.items.filter((i) => i.id === name || i.tag === name).map((item) => ({ collection, item })))
-  if (!found.length) throw new CliError(`No item "${name}" on ${floorTitle(floor)}. \`tower kept\` lists them.`)
-  if (found.length > 1) throw new CliError(`"${name}" is the tag of ${found.map((f) => `${f.collection.id}/${f.item.id}`).join(' and ')}: name one by its id`)
+const itemNamed = (floor: Floor, name: string): NamedItem => {
+  const found = itemsCalled(floor, name)
+  const why = unnamedWhy(floor, name, found)
+  if (why) throw new CliError(why)
   return found[0]
 }
 
@@ -461,14 +475,18 @@ const unkeepRefusal = ({ id, owner, doors }: FloorCollection): string | undefine
   return `${owner} owns ${id}: ${typeof door === 'string' ? `use ${door}` : door.none}`
 }
 
-/** The items `names` call, each once, all of them deletable: any name that isn't refuses the whole call. */
-const unkeepable = (floor: Floor, names: string[]): { collection: FloorCollection; item: FloorItem }[] => {
-  const named = [...new Map(names.map((n) => itemNamed(floor, n)).map((f) => [`${f.collection.id}/${f.item.id}`, f])).values()]
-  const refused = named.flatMap(({ collection, item }) => {
-    const why = unkeepRefusal(collection)
-    return why ? [`${item.tag} (${why})`] : []
-  })
-  if (refused.length) throw new CliError(`Nothing was deleted: ${refused.join('; ')}`)
+/** The items `names` call, each once, all of them deletable: any name that isn't refuses the whole call, saying each. */
+const unkeepable = (floor: Floor, names: string[]): NamedItem[] => {
+  const called = names.map((name) => ({ name, found: itemsCalled(floor, name) }))
+  const named = [...new Map(called.flatMap(({ found }) => (found.length === 1 ? found : [])).map((f) => [`${f.collection.id}/${f.item.id}`, f])).values()]
+  const refused = [
+    ...called.flatMap(({ name, found }) => unnamedWhy(floor, name, found) ?? []),
+    ...named.flatMap(({ collection, item }) => {
+      const why = unkeepRefusal(collection)
+      return why ? [`${item.tag}: ${why}`] : []
+    }),
+  ]
+  if (refused.length) throw new CliError(['Nothing was deleted:', ...refused.map((r) => `  ${r}`)].join('\n'))
   return named
 }
 
