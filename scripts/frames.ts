@@ -1,7 +1,7 @@
 /**
  * Frames: a before/after check that a Tower 3D change draws and behaves exactly as before. It walks a fixed scenario
  * (`scripts/frames.scenario.js`) through the door on each fixture board, with the clock stepped, chance seeded and the
- * wall clock pinned, and keeps every stage's `state()` and scene PNG. Two recordings of the same code are identical
+ * wall clock pinned in UTC, and keeps every stage's `state()` and scene PNG. Two recordings of the same code are identical
  * byte for byte, so any difference is the change.
  *
  *   npm run sandbox -- up                         the tower it reads (the sandbox's: sandbox-root.ts)
@@ -40,7 +40,7 @@ const sha = (data: Buffer) => createHash('sha256').update(data).digest('hex').sl
 const pngOf = (dataUrl: string) => Buffer.from(dataUrl.split(',', 2)[1], 'base64')
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
-const walk = (board: string) => withPage(PAGE(board), {}, (page) => page.eval(SCENARIO) as Promise<Walked[]>)
+const walk = (board: string) => withPage(PAGE(board), { timezone: 'UTC' }, (page) => page.eval(SCENARIO) as Promise<Walked[]>)
 
 /** The stages whose state or picture differ between two walks, by name. */
 const differing = (a: Walked[], b: Walked[]) =>
