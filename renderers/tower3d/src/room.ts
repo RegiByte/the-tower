@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { type } from '../../../src/shared/design.ts'
+import { type } from '/lib/design.js'
 import { act } from './acts.ts'
 import { WORLD, base, onStatusColor, shelfPage, statusColor, statusName } from './cards.ts'
 import type { Shell } from './api.ts'

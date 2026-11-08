@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { type } from '../../../src/shared/design.ts'
-import { cardReviews } from '../../../extensions/reviews/client/panel.ts'
+import { type } from '/lib/design.js'
+import { cardReviews } from './clients.ts'
 import { act } from './acts.ts'
 import { WORLD, workerIn } from './cards.ts'
 import { PIGEONHOLE, type Level, type PigeonholeSlot } from './layout.ts'

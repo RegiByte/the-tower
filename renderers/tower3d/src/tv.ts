@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { type } from '../../../src/shared/design.ts'
+import { type } from '/lib/design.js'
 import { WORLD } from './cards.ts'
 import { glows, loadFaces } from './toon.ts'
 

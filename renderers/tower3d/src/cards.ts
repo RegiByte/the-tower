@@ -1,9 +1,14 @@
-import { palettes } from '../../../src/shared/design.ts'
-import { findCard, gistLine, tidyRows } from '../../../src/shared/cards.ts'
+import { palettes } from '/lib/design.js'
+import { findCard } from '/lib/board.js'
+import { gistLine, tidyRows } from '/lib/cards.js'
 import { plain } from '/lib/words.js'
 import type { Board, Card, Floor } from './api.ts'
 
-export * from '../../../src/shared/cards.ts'
+export * from '/lib/board.js'
+export * from '/lib/cards.js'
+export * from '/lib/layout.js'
+export * from '/lib/spawn.js'
+export * from '/lib/words.js'
 
 /** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
 export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')

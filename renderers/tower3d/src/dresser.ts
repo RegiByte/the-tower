@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { transformControls } from './gizmo.ts'
-import { esc } from '../../../src/shared/cards.ts'
+import { esc } from '/lib/words.js'
 import { CHARACTERS, CLIPS, SLOTS, bodyOf, type ClipName, type Slot } from './contract.ts'
 import { avatar, fitted, place, seatedAt, type Avatar } from './avatar.ts'
 import { CHAIR } from './chair.ts'

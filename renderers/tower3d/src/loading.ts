@@ -1,4 +1,4 @@
-import { reducedMotion } from '../../../src/shared/prefs.ts'
+import { reducedMotion } from '/lib/viewer.js'
 
 /**
  * The loading screen index.html draws before the bundle runs: the elevator's panel, a button per stage of the start

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ATLAS_NAMES, BONES, CHARACTERS, SLOTS, bodyOf, type Atlas, type Bone, type Character, type RigKind, type Slot } from './contract.ts'
-import { nameIn } from '../../../src/shared/callsign.ts'
+import { nameIn } from '/lib/cards.js'
 import { rendezvous, roll, weighted } from './hashed.ts'
 
 /**

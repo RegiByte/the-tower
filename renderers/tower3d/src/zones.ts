@@ -1,4 +1,4 @@
-import { mixOklab } from '../../../src/shared/design.ts'
+import { mixOklab } from '/lib/design.js'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { DECK } from './floorplan.ts'

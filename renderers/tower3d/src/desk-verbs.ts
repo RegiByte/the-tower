@@ -1,6 +1,6 @@
-import type { Board, Card } from '../../../src/bridge/board.ts'
-import { addedActions, cardSubject, heldActions, rankedActions, type Ranked } from '../../../src/shared/adds.ts'
-import type { Hold, LayoutEntry } from '../../../src/shared/regions.ts'
+import { type Board, type Card, cardSubject } from '/lib/board.js'
+import { addedActions, rankedActions, type Ranked, type Hold, type LayoutEntry } from '/lib/layout.js'
+import { heldActions } from '/lib/cards.js'
 
 /** The desk's region, `card.desk`: what it holds, as its `renderer.json` declares, and its entry in the layout. */
 export type DeskRegion = { holds: readonly Hold[]; entry: LayoutEntry | undefined }

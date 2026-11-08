@@ -35,6 +35,7 @@ import { PREFABS } from '../renderers/tower3d/src/zones.ts'
 import { designCss, fonts } from '../src/shared/design.ts'
 import { fontFile } from '../src/packages.ts'
 import { withPage } from './drive.ts'
+import { answerModule } from './served-modules.ts'
 
 const REPO = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(REPO, 'renderers/tower3d/out')
@@ -127,6 +128,7 @@ async function serve(port: number, rebuild: boolean, start: string | undefined) 
     } catch (e) {
       return res.writeHead(404, { 'content-type': 'text/plain' }).end((e as Error).message)
     }
+    if (answerModule(pathname, res)) return
     if (pathname === '/design.css') return res.writeHead(200, { 'content-type': 'text/css' }).end(designCss())
     const face = fonts.find((f) => pathname === `/fonts/${f.file}`)
     if (face) return res.writeHead(200, { 'content-type': 'font/woff2' }).end(fs.readFileSync(fontFile(face)))

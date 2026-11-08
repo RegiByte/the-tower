@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Sky } from '../../../../src/shared/design.ts'
+import type { Sky } from '/lib/design.js'
 import { rng } from './geo.ts'
 
 /**

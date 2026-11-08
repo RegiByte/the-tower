@@ -1,4 +1,4 @@
-import { mixOklab } from '../../../src/shared/design.ts'
+import { mixOklab } from '/lib/design.js'
 
 /** The color of a project that names none. */
 export const NO_COLOR = '#8a9ab8'

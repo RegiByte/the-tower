@@ -20,7 +20,7 @@ import { buildFiling, filingKey, type Filing } from './filing.ts'
 import { hangOn } from './levels.ts'
 import { s, type WallItem } from './state.ts'
 import type { Card } from './api.ts'
-import type { AddedTidy } from '../../../src/shared/extensions.ts'
+import type { AddedTidy } from '/lib/extension.js'
 import { wallNow } from './clock.ts'
 
 /**

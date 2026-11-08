@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { Terminal, type IBufferCell } from '@xterm/xterm'
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
-import { terminalTheme, type } from '../../../src/shared/design.ts'
+import { terminalTheme, type } from '/lib/design.js'
 import { watchStream } from './fixtures.ts'
 
 /**

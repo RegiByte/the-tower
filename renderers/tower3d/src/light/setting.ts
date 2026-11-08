@@ -1,4 +1,4 @@
-import { choice, section } from '../../../../src/shared/settings.ts'
+import { choice, section } from '/lib/settings.js'
 import { tower } from '../api.ts'
 import { FIXTURE } from '../fixtures.ts'
 

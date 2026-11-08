@@ -1,5 +1,4 @@
-import { failureOf, heldHandlers, noReads, reading, valueOf } from '../../../src/shared/reads.ts'
-import { loop } from '../../../src/shared/loop.ts'
+import { failureOf, heldHandlers, noReads, reading, valueOf, loop } from '/lib/machine.js'
 import type { Board, Card } from './api.ts'
 import { archivedCard, type ArchiveReads, archiveWant } from './cards.ts'
 import { readArchive } from './fixtures.ts'

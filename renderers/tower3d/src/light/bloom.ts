@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js'
-import { skyAt } from '../../../../src/shared/design.ts'
+import { skyAt } from '/lib/design.js'
 import { wallNow } from '../clock.ts'
 import { interiorOff } from './rig.ts'
 
