@@ -1,7 +1,7 @@
 /**
  * Tour: Tower 3D shot from a fixed set of spots on the busy fixture board, by day and by night, to judge how the
- * building looks after a visual change. Same seed, same stepped clock and same wall-clock date on every run, so two
- * tours of the same code are the same pictures.
+ * building looks after a visual change. Same seed, same stepped clock and same wall-clock date, in UTC, on every
+ * run, so two tours of the same code are the same pictures.
  *
  *   npm run sandbox -- up                  the tower it reads (the sandbox's: sandbox-root.ts)
  *   npm run tool:tour -- <label>           builds the bundle, writes <TOWER_TOUR>/<label>/<time>-<spot>.png
@@ -83,7 +83,7 @@ const walk = (spots: Spot[]) => `(async () => {
 })()`
 
 for (const [time, at] of Object.entries(TIMES)) {
-  const shots = await withPage(`${TOWER}/r/tower3d/?board=busy&seed=1&stepped&at=${at}`, {}, (page) => page.eval(walk(spots)) as Promise<[string, string][]>)
+  const shots = await withPage(`${TOWER}/r/tower3d/?board=busy&seed=1&stepped&at=${at}`, { timezone: 'UTC' }, (page) => page.eval(walk(spots)) as Promise<[string, string][]>)
   for (const [name, png] of shots) writeFileSync(path.join(dir, `${time}-${name}.png`), Buffer.from(png.split(',', 2)[1], 'base64'))
 }
 console.log(`${dir}: ${spots.length * 2} shots`)

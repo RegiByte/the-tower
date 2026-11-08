@@ -175,7 +175,7 @@ export type Page = {
  * `flags` are Chrome's own, after the driver's. `scale` is the device pixel ratio: 2 draws as a retina display does.
  * `throttle` emulates its network from before the navigation.
  */
-export async function withPage<T>(url: string, { width = 1280, height = 800, scale = 1, scheme, motion, throttle, flags = [] }: { width?: number; height?: number; scale?: number; scheme?: string; motion?: string; throttle?: Throttle; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
+export async function withPage<T>(url: string, { width = 1280, height = 800, scale = 1, scheme, motion, timezone, throttle, flags = [] }: { width?: number; height?: number; scale?: number; scheme?: string; motion?: string; timezone?: string; throttle?: Throttle; flags?: string[] }, use: (page: Page) => Promise<T>): Promise<T> {
   const port = await freePort()
   const profile = mkdtempSync(path.join(os.tmpdir(), 'tower-drive-'))
   const started = startChrome([
@@ -197,6 +197,7 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
     await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile: false })
     const features = [scheme && { name: 'prefers-color-scheme', value: scheme }, motion && { name: 'prefers-reduced-motion', value: motion }].filter(Boolean)
     if (features.length) await cdp.send('Emulation.setEmulatedMedia', { features })
+    if (timezone) await cdp.send('Emulation.setTimezoneOverride', { timezoneId: timezone })
     if (throttle) {
       await cdp.send('Network.enable')
       await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: throttle.latencyMs, downloadThroughput: (throttle.downKbps * 1000) / 8, uploadThroughput: -1 })
