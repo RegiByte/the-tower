@@ -20,6 +20,7 @@ const [drafts, quota, reviews, panel] = await Promise.all([
     cardReviews: () => undefined,
     floorThreadsOf: () => [],
     keepsThreads: () => false,
+    noteCallOf: () => undefined,
     threadCheckout: (c) => c.checkout,
     readThread: () => () => Promise.reject(new Error('No review threads are served')),
   }),
