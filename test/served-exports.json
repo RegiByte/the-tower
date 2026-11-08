@@ -1582,7 +1582,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "e55c71ffe5f66da7",
+      "digest": "6b636afbdc521019",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
