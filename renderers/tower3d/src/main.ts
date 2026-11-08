@@ -1,16 +1,14 @@
 import * as THREE from 'three'
-import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, sendText, unseenBy, cardReviews, cardThread, floorThread, floorThreadsOf, keepsThreads as floorKeepsThreads, probedLines } from './clients.ts'
+import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, cardReviews, floorThreadsOf, threadCheckout, keepsThreads as floorKeepsThreads, probedLines } from './clients.ts'
 import type { Deleted, Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, Verb as ApiVerb, Verbs, VerbAction } from '/lib/extension.js'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
-import { threadOf } from './reviews.ts'
 import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText, markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
 import { placeOnOpen, watchTips, toaster, toastsCss, ask, asking, closableNoticer, type Notice } from '/lib/chrome.js'
 import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
-import type { ThreadPlace } from '../../../extensions/reviews/client/panel.ts'
 import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer, reducedMotion } from '/lib/viewer.js'
 import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey, layoutOf, usableConfigLayout, type Layout } from '/lib/layout.js'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
@@ -1147,7 +1145,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   papers(a, verb) {
     const c = findCard(s.board!, a.id)
     if (!c) return
-    if (verb === 'send') return sendNotes(cardThread(c), c)
+    if (verb === 'send') return sendNotes(c.project, threadCheckout(c), c)
     if (verb === 'thread') s.pendingTab = { id: a.id, tab: 'reviews' }
     goDesk(a.id)
   },
@@ -1159,7 +1157,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   drawer: (a) => openSide({ kind: 'drawer', project: a.project, n: a.n }),
   thread(a, verb) {
     const t = floorThreadsOf(floorOf(a.project)).find((t) => t.checkout === a.checkout)
-    if (verb === 'send' && t) return sendNotes(floorThread(floorOf(a.project), t), sendTarget(floorOf(a.project), a.checkout, undefined))
+    if (verb === 'send' && t) return sendNotes(a.project, a.checkout, sendTarget(floorOf(a.project), a.checkout, undefined))
     openThread(a.project, a.checkout)
   },
   station(a, verb) {
@@ -2458,13 +2456,19 @@ function openThread(project: string, checkout: string) {
   renderPanel()
 }
 
-/** Types a pointer to the thread into `to`'s composer, naming the notes new to it. */
-async function sendNotes(at: ThreadPlace, to: Card | undefined) {
-  const { checkout } = at
+/**
+ * Types a pointer to the thread of `checkout` into `to`'s composer, naming the notes new to it: the prompt the reviews
+ * extension's `said/<project>` read gives for Send, read as the user presses it.
+ */
+async function sendNotes(project: string, checkout: string, to: Card | undefined) {
   if (!to) return toast(`Pick a worker to send the notes on ${checkout} to`)
-  const thread = threadOf(s.board!, at)
-  const text = sendText(THE_USER, checkout, thread ? unseenBy(thread, to.callsign).map((m) => m.n) : [], to.hiredBy?.callsign)
-  if (await tried(() => tower.run(offeredCall(to, 'submit', to.callsign), { text }))) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
+  const query = new URLSearchParams({ checkout, reader: to.callsign, sender: THE_USER, ...(to.hiredBy && { hirer: to.hiredBy.callsign }) })
+  const sent = await tried(async () => {
+    const { send } = (await tower.get(`reviews/said/${project}?${query}` as never)) as { send?: string }
+    if (send === undefined) throw new Error(`The thread of ${checkout} has no notes to send`)
+    return tower.run(offeredCall(to, 'submit', to.callsign), { text: send })
+  })
+  if (sent) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
 }
 
 const copiedAs = (text: string, what: string) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err: Error) => toast(err.message))

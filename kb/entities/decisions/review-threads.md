@@ -49,7 +49,7 @@
     "hub/extensions/reviews/client/panel.ts#floorThread",
     "hub/extensions/reviews/client/thread.ts#mountThread",
     "hub/extensions/reviews/client/reviews.ts#threadCheckoutOf",
-    "hub/renderers/tower3d/src/reviews.ts",
+    "hub/renderers/tower3d/src/main.ts#sendNotes",
     "hub/renderers/tower3d/src/pigeonhole.ts",
     "hub/renderers/tower3d/src/layout.ts#pigeonholeFor",
     "hub/renderers/tower3d/src/desk.ts#dressPapers",
@@ -120,7 +120,8 @@ checkout's unlanded work, sometimes pointing at code. One primitive covers all o
   [`sendText`](ref:hub/extensions/reviews/client/reviews.ts#sendText) never carries notes inline: one line naming the sender, the
   notes new to the target and the checkout, how to read and answer them, and, to a hired worker, that it reports
   to its hirer (`card.hiredBy`) once it has, whoever sends it. Sending a few notes and "go read the
-  new ones" are the same call.
+  new ones" are the same call. Tower 3D's world (a desk's papers, a thread in the pigeonholes) reads that line from
+  `said/<project>` as Send is pressed ([`sendNotes`](ref:hub/renderers/tower3d/src/main.ts#sendNotes)).
 - *Where the work stands.* [`checkoutState`](ref:hub/src/bridge/checkouts.ts#checkoutState) folds each checkout to
   `live`, `landed` or `gone`: `main` is always live; a worktree is landed by the rule Tidy files on (absorbed or
   [[carried]] everywhere), with `empty` when every branch cut under it gained no commits of its own
