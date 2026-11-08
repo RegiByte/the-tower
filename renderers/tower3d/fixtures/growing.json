@@ -1,0 +1,4182 @@
+{
+  "at": "2026-10-04T15:00:00.000Z",
+  "boards": [
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "grow",
+            "name": "grow",
+            "color": "#c3e88d",
+            "hub": "/work/grow",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-grow",
+                "callsign": "DON-73",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-grow",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-grow-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Coordinate the parser rewrite",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-grow",
+                "callsign": "PATHFINDER-95",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-grow",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-grow-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Rewrite parser stage 1",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090014-grow",
+                "callsign": "FORGER-06",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123360000,
+                "startedAt": 1791123300000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-grow",
+                    "startedAt": 1791123300000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-grow-conversation",
+                    "startedAt": 1791123300000,
+                    "prompt": "Rewrite parser stage 2",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090021-grow",
+                "callsign": "MARLOWE-72",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-grow",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-grow-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Rewrite parser stage 3",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 3
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    },
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "grow",
+            "name": "grow",
+            "color": "#c3e88d",
+            "hub": "/work/grow",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-grow",
+                "callsign": "DON-73",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-grow",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-grow-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Coordinate the parser rewrite",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-grow",
+                "callsign": "PATHFINDER-95",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-grow",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-grow-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Rewrite parser stage 1",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090014-grow",
+                "callsign": "FORGER-06",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123360000,
+                "startedAt": 1791123300000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-grow",
+                    "startedAt": 1791123300000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-grow-conversation",
+                    "startedAt": 1791123300000,
+                    "prompt": "Rewrite parser stage 2",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090021-grow",
+                "callsign": "MARLOWE-72",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-grow",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-grow-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Rewrite parser stage 3",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090028-grow",
+                "callsign": "TYR-65",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125760000,
+                "startedAt": 1791125700000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-grow",
+                    "startedAt": 1791125700000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-grow-conversation",
+                    "startedAt": 1791125700000,
+                    "prompt": "Rewrite parser stage 4",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 4
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    },
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "grow",
+            "name": "grow",
+            "color": "#c3e88d",
+            "hub": "/work/grow",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-grow",
+                "callsign": "DON-73",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-grow",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-grow-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Coordinate the parser rewrite",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-grow",
+                "callsign": "PATHFINDER-95",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-grow",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-grow-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Rewrite parser stage 1",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090014-grow",
+                "callsign": "FORGER-06",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123360000,
+                "startedAt": 1791123300000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-grow",
+                    "startedAt": 1791123300000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-grow-conversation",
+                    "startedAt": 1791123300000,
+                    "prompt": "Rewrite parser stage 2",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090021-grow",
+                "callsign": "MARLOWE-72",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-grow",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-grow-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Rewrite parser stage 3",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090028-grow",
+                "callsign": "TYR-65",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125760000,
+                "startedAt": 1791125700000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-grow",
+                    "startedAt": 1791125700000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-grow-conversation",
+                    "startedAt": 1791125700000,
+                    "prompt": "Rewrite parser stage 4",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 4
+                }
+              },
+              {
+                "id": "20261004-090035-grow",
+                "callsign": "RAPUNZEL-48",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125820000,
+                "startedAt": 1791125760000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090035-grow",
+                    "startedAt": 1791125760000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090035-grow-conversation",
+                    "startedAt": 1791125760000,
+                    "prompt": "Rewrite parser stage 5",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090035-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090035-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090035-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090035-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 5
+                }
+              },
+              {
+                "id": "20261004-090042-grow",
+                "callsign": "HEPHAESTUS-18",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125880000,
+                "startedAt": 1791125820000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090042-grow",
+                    "startedAt": 1791125820000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090042-grow-conversation",
+                    "startedAt": 1791125820000,
+                    "prompt": "Rewrite parser stage 6",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090042-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090042-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090042-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090042-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 6
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    },
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "grow",
+            "name": "grow",
+            "color": "#c3e88d",
+            "hub": "/work/grow",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-grow",
+                "callsign": "DON-73",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-grow",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-grow-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Coordinate the parser rewrite",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-grow",
+                "callsign": "PATHFINDER-95",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-grow",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-grow-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Rewrite parser stage 1",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090014-grow",
+                "callsign": "FORGER-06",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "exited",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": true,
+                "cutOff": false,
+                "onDuty": false,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125940000,
+                "startedAt": 1791123300000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-grow",
+                    "startedAt": 1791123300000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-grow-conversation",
+                    "startedAt": 1791123300000,
+                    "prompt": "Rewrite parser stage 2",
+                    "answer": "Rewritten.",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090014-grow",
+                          "conversation": "20261004-090014-grow-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090014-grow",
+                            "conversation": "20261004-090014-grow-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090014-grow",
+                      "conversation": "20261004-090014-grow-conversation"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090014-grow",
+                        "conversation": "20261004-090014-grow-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow"
+              },
+              {
+                "id": "20261004-090021-grow",
+                "callsign": "MARLOWE-72",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-grow",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-grow-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Rewrite parser stage 3",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090028-grow",
+                "callsign": "TYR-65",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125760000,
+                "startedAt": 1791125700000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-grow",
+                    "startedAt": 1791125700000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-grow-conversation",
+                    "startedAt": 1791125700000,
+                    "prompt": "Rewrite parser stage 4",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 4
+                }
+              },
+              {
+                "id": "20261004-090035-grow",
+                "callsign": "RAPUNZEL-48",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125820000,
+                "startedAt": 1791125760000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090035-grow",
+                    "startedAt": 1791125760000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090035-grow-conversation",
+                    "startedAt": 1791125760000,
+                    "prompt": "Rewrite parser stage 5",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090035-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090035-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090035-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090035-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 5
+                }
+              },
+              {
+                "id": "20261004-090042-grow",
+                "callsign": "HEPHAESTUS-18",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125880000,
+                "startedAt": 1791125820000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090042-grow",
+                    "startedAt": 1791125820000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090042-grow-conversation",
+                    "startedAt": 1791125820000,
+                    "prompt": "Rewrite parser stage 6",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090042-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090042-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090042-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090042-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 6
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    },
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "grow",
+            "name": "grow",
+            "color": "#c3e88d",
+            "hub": "/work/grow",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-grow",
+                "callsign": "DON-73",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-grow",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-grow-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Coordinate the parser rewrite",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-grow"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-grow",
+                "callsign": "PATHFINDER-95",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-grow",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-grow-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Rewrite parser stage 1",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090021-grow",
+                "callsign": "MARLOWE-72",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-grow",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-grow-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Rewrite parser stage 3",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090028-grow",
+                "callsign": "TYR-65",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125760000,
+                "startedAt": 1791125700000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-grow",
+                    "startedAt": 1791125700000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-grow-conversation",
+                    "startedAt": 1791125700000,
+                    "prompt": "Rewrite parser stage 4",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090035-grow",
+                "callsign": "RAPUNZEL-48",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125820000,
+                "startedAt": 1791125760000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090035-grow",
+                    "startedAt": 1791125760000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090035-grow-conversation",
+                    "startedAt": 1791125760000,
+                    "prompt": "Rewrite parser stage 5",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090035-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090035-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090035-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090035-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 4
+                }
+              },
+              {
+                "id": "20261004-090042-grow",
+                "callsign": "HEPHAESTUS-18",
+                "project": "grow",
+                "cwd": "/work/grow",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-grow",
+                  "callsign": "DON-73",
+                  "project": "grow"
+                },
+                "enteredAt": 1791125880000,
+                "startedAt": 1791125820000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090042-grow",
+                    "startedAt": 1791125820000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090042-grow-conversation",
+                    "startedAt": 1791125820000,
+                    "prompt": "Rewrite parser stage 6",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090042-grow"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090042-grow"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090042-grow"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090042-grow"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-grow",
+                "seat": {
+                  "n": 5
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "grow"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "grow"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 1,
+            "gallery": []
+          }
+        ],
+        "waiting": [],
+        "offers": [],
+        "archiveAt": 1790985600000,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": [
+        {
+          "id": "20261004-090014-grow",
+          "callsign": "FORGER-06",
+          "project": "grow",
+          "cwd": "/work/grow",
+          "checkout": "main",
+          "checkoutState": {
+            "is": "live"
+          },
+          "status": "exited",
+          "live": false,
+          "leaving": false,
+          "waiting": false,
+          "attention": "quiet",
+          "stuck": false,
+          "compacting": false,
+          "stranded": false,
+          "killed": true,
+          "cutOff": false,
+          "onDuty": false,
+          "hiredBy": {
+            "session": "20261004-090000-grow",
+            "callsign": "DON-73",
+            "project": "grow"
+          },
+          "enteredAt": 1790946600000,
+          "startedAt": 1790946000000,
+          "cols": 120,
+          "rows": 40,
+          "tool": "Edit",
+          "says": [],
+          "subagents": 0,
+          "subagentRuns": [],
+          "turns": 0,
+          "lineage": [
+            {
+              "id": "20261004-090014-grow",
+              "startedAt": 1790946000000
+            }
+          ],
+          "claudeUntested": false,
+          "resources": [],
+          "shown": [],
+          "pages": [],
+          "sent": [],
+          "conversations": [
+            {
+              "id": "20261004-090014-grow-conversation",
+              "startedAt": 1790946000000,
+              "prompt": "Rewrite parser stage 2",
+              "answer": "Rewritten.",
+              "verbs": [
+                "resume"
+              ],
+              "calls": {
+                "resume": [
+                  "resume",
+                  {
+                    "id": "20261004-090014-grow",
+                    "conversation": "20261004-090014-grow-conversation"
+                  }
+                ]
+              },
+              "actions": [
+                {
+                  "verb": "resume",
+                  "call": [
+                    "resume",
+                    {
+                      "id": "20261004-090014-grow",
+                      "conversation": "20261004-090014-grow-conversation"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "verbs": [
+            "resume",
+            "brief"
+          ],
+          "calls": {
+            "resume": [
+              "resume",
+              {
+                "id": "20261004-090014-grow",
+                "conversation": "20261004-090014-grow-conversation"
+              }
+            ]
+          },
+          "actions": [
+            {
+              "verb": "resume",
+              "call": [
+                "resume",
+                {
+                  "id": "20261004-090014-grow",
+                  "conversation": "20261004-090014-grow-conversation"
+                }
+              ]
+            },
+            {
+              "verb": "brief"
+            }
+          ],
+          "reportsTo": "20261004-090000-grow"
+        }
+      ]
+    }
+  ],
+  "threads": {},
+  "drafts": {},
+  "games": {},
+  "changes": {}
+}
