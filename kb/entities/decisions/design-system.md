@@ -84,5 +84,5 @@ terminal that is a block of the ink colour.
   in git.
 
 **Impact.** A renderer or shelf page gets the look by linking `/design.css`, or importing `/design.js` for data such
-as the terminal theme and the sky. Tower 3D bundles the same module; its floors keep large planes neutral and the
+as the terminal theme and the sky. Tower 3D imports the same module as `/lib/design.js`; its floors keep large planes neutral and the
 project colour on small things ([`floorPalette`](ref:hub/renderers/tower3d/src/palette.ts#floorPalette)).
