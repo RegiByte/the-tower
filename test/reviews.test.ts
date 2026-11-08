@@ -99,4 +99,7 @@ test('anchors in the diff: the quoted lines as they were, changed since, or gone
   assert.equal(anchorState(thread.messages[0].anchors[0], repos), 'gone')
   const port: Anchor = { repo: 'lab-api', path: 'config.ts', from: 1, to: 1, quote: { lang: 'ts', lines: ['export const port = 4000'] } }
   assert.equal(anchorState(port, repos), 'same')
+  const { quote: _, ...unquoted } = port
+  assert.equal(anchorState(unquoted, repos), 'same')
+  assert.equal(anchorState({ ...unquoted, path: 'server.ts' }, repos), 'gone')
 })
