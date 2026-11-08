@@ -1,7 +1,7 @@
 import { documentCss } from '/lib/design.js'
-import { DRAFT_STATE, draftItem, draftState, draftsOf, cardReviews, floorThreadsOf, keepsThreads, threadCheckout, reviewerOf, commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } from './clients.ts'
+import { DRAFT_STATE, draftItem, draftState, draftsOf, cardReviews, floorThreadsOf, keepsThreads, reviewerOf, commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } from './clients.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
-import { collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, failedHtml, fileButtonsHtml, fileSpansHtml, ICON, SHELF_ICON, originIcon, withIcons } from '/lib/view.js'
+import { type TabWords, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, failedHtml, fileButtonsHtml, fileSpansHtml, ICON, SHELF_ICON, originIcon, withIcons } from '/lib/view.js'
 import { type FloorCollection, type FloorItem, defaultLimits } from '/lib/board.js'
 import { keptTitle } from './kept.ts'
 import { usd } from '/lib/stats.js'
@@ -401,16 +401,13 @@ const LOGBOOK_TAB_NAME: Record<LogbookTab, string> = { screen: 'Screen', brief: 
 export const logbookTabsHtml = (tab: LogbookTab) =>
   (['screen', 'brief'] as const).map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${LOGBOOK_TAB_NAME[t]}</button>`).join('')
 
-/** The Reviews tab's tally: the notes new to the worker, else how many its thread holds. */
-const reviewsTally = (c: Card, f: Floor) => {
-  const notes = floorThreadsOf(f).find((t) => t.checkout === threadCheckout(c))?.messages
-  const unseen = cardReviews(c)?.unseen
-  return unseen ? ` <small class="unseen">${unseen} new</small>` : notes ? ` <small>${notes}</small>` : ''
-}
+/** A tab's tally, as its view's `tab` gives it. */
+const tallyHtml = (words: TabWords | undefined) => (words?.text ? ` <small${words.tone === 'unseen' ? ' class="unseen"' : ''}>${esc(words.text)}</small>` : '')
 
-export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean) {
+/** The desk's tabs, each tallied by what its view says of it (`tallies`), then a tab for each thing the worker showed. */
+export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean, tallies: Partial<Record<DeskTab, TabWords>>) {
   const own = (['screen', 'brief', 'changes', ...(keepsThreads(f) ? ['reviews'] as const : [])] as const)
-    .map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${TAB_NAME[t]}${t === 'reviews' ? reviewsTally(c, f) : ''}</button>`).join('')
+    .map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${TAB_NAME[t]}${tallyHtml(tallies[t])}</button>`).join('')
   return own + (c.shown.length ? `<span class="shown-tabs">${c.shown.map((s) => shownTabHtml(c, s, shownTab(s) === tab, fresh(s))).join('')}</span>` : '')
 }
 

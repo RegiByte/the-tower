@@ -2,9 +2,10 @@
   "regions": [
     { "id": "card.desk", "subject": "card", "holds": ["badges", "lines", "verbs"], "overflows": ["wrap"], "description": "the worker's panel at its desk" },
     { "id": "floor.console", "subject": "floor", "holds": ["tidy"], "overflows": ["wrap"], "description": "the floor's Tidy" },
-    { "id": "conversation.head", "subject": "conversation", "holds": ["badges"], "overflows": ["wrap"], "description": "the conversation's heading in the logbook" }
+    { "id": "conversation.head", "subject": "conversation", "holds": ["badges"], "overflows": ["wrap"], "description": "the conversation's heading in the logbook" },
+    { "id": "lines.acts", "subject": "lines", "holds": ["views"], "scale": "row", "arity": "one", "description": "under lines picked in a worker's Changes at its desk: what writes a note on them" }
   ],
-  "kit": [],
+  "kit": ["region", "toast"],
   "keeps": [
     "W", "A", "S", "D", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space",
     "B", "Backquote", "C", "E", "F", "G", "H", "M", "N", "P", "Q", "R", "T", "V", "X", "Y", "Z",

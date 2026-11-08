@@ -84,7 +84,8 @@ desk.
 **Panels and world** ([[design-system]]). The panels are the shared components of `/design.css` in the viewer's
 scheme: the HUD ([`hudHtml`](ref:hub/renderers/tower3d/src/ui.ts#hudHtml)), the prompt card, the elevator list, the
 floor panel and directory, the desk panel (Terminal, Logbook, Changes, Reviews and a tab per showing,
-[[shared-panels]]) and the reader. What is drawn into the scene keeps one palette with them, and the building's
+[[shared-panels]]; Changes is the page's view, mounted through the library's view host,
+[`deskViews`](ref:hub/renderers/tower3d/src/hosting.ts#deskViews)) and the reader. What is drawn into the scene keeps one palette with them, and the building's
 signage is the panels' floor sign painted on canvas
 ([`paintSign`](ref:hub/renderers/tower3d/src/sign.ts#paintSign),
 [`paintDirectory`](ref:hub/renderers/tower3d/src/world.ts#paintDirectory)).

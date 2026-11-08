@@ -27,6 +27,10 @@
       out.push({ name: `${name}:error`, error: e.message })
     }
   }
+  /** Waits, in real time and up to 5 s, for `selector` to match: what a mounted view draws arrives after its module and reads. */
+  const drawn = async (selector) => {
+    for (let waited = 0; !document.querySelector(selector) && waited < 5000; waited += 50) await new Promise((resolve) => setTimeout(resolve, 50))
+  }
   /** Stand `d` m from the target on the side facing where the walker stands now, then aim at it. */
   const near = (target, d) => {
     const l = t.locate(target)
@@ -188,13 +192,16 @@
       t.press('use')
       document.querySelector('#desk-tabs [data-tab=changes]').click()
     })
-    await new Promise((resolve) => setTimeout(resolve))
+    await drawn('#desk-view td.ln[data-pick]')
     t.step(5); snap('desk-changes')
     tryDo('pick-lines', () => {
-      const numbers = () => [...document.querySelectorAll('#desk-changes td.ln[data-pick]')].filter((td) => td.cellIndex === 1)
+      const numbers = () => [...document.querySelectorAll('#desk-view td.ln[data-pick]')].filter((td) => td.cellIndex === 1)
       numbers()[3].click()
       numbers()[5].dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
-      if (!document.querySelector('#desk-changes [data-pick-text]')) throw new Error('no note box under the picked lines')
+    })
+    await drawn('#desk-view [data-note-text]')
+    tryDo('note-box', () => {
+      if (!document.querySelector('#desk-view [data-note-text]')) throw new Error('no note box under the picked lines')
     }); t.step(1); snap('desk-picked')
   }
   const cabinet = t.acts('arcade')[0]

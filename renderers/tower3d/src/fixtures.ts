@@ -38,6 +38,41 @@ export const FIXTURE_CHANGES: FixtureFile['changes'] = file?.changes ?? {}
 /** Each fixture board's archived cards, newest first: what `GET /archive/<project>` would serve with it. */
 const archives = new Map(file?.boards.map(({ board, archive }) => [board, archive]))
 
+/** A fixture tower's `tower.store`: kept in the page, so nothing the viewer's browser keeps reaches a fixture. */
+function storeInPage(): typeof tower.store {
+  const kept = new Map<string, unknown>()
+  const watchers = new Set<(key: string) => void>()
+  return {
+    get: (key) => Promise.resolve(kept.get(key)),
+    set: (key, value) => (kept.set(key, value), watchers.forEach((fn) => fn(key))),
+    on: (fn) => (watchers.add(fn), () => void watchers.delete(fn)),
+  }
+}
+
+/** A fixture worker's Changes as `changes/<id>` reads them, the same under every scope; none for a worker without. */
+const changesAt = (path: string) => {
+  const id = /^changes\/([^?]+)/.exec(path)?.[1]
+  return id === undefined ? undefined : (FIXTURE_CHANGES[id] ?? [])
+}
+
+/**
+ * The tower the views Tower 3D mounts read through: on a fixture board, one answering a worker's Changes from the
+ * fixture and keeping `store` in the page, with no tower behind anything else.
+ */
+export const viewTower: typeof tower =
+  FIXTURE === undefined
+    ? tower
+    : {
+        ...tower,
+        get: ((path: string) => {
+          const changes = changesAt(path)
+          return changes ? Promise.resolve(changes) : Promise.reject(new Error(`a fixture board answers no ${path}`))
+        }) as typeof tower.get,
+        store: storeInPage(),
+        call: (() => Promise.reject(new Error('a fixture board has no tower behind it'))) as typeof tower.call,
+        run: () => Promise.reject(new Error('a fixture board has no tower behind it')),
+      }
+
 /** A fixture board has no host behind it: its streams are never opened, so monitors stay blank and desks stay open. */
 export const watchStream: typeof tower.watch = FIXTURE === undefined ? (...a) => tower.watch(...a) : () => () => {}
 

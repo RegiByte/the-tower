@@ -1,4 +1,4 @@
-import { type RepoChanges, changesFailure, changesHandlers, changesPath, changesOf as changesIn, noChanges, readChanges, scopeOf as scopeIn, type ChangesEvent, type ChangesScope } from '/lib/changes.js'
+import { type RepoChanges, changesHandlers, changesPath, changesOf as changesIn, noChanges, readChanges, type ChangesEvent, type ChangesScope } from '/lib/changes.js'
 import { loop, timers, heldHandlers, noReads, reading } from '/lib/machine.js'
 import { heldThread, readThread, threadFailure, threadWant, parseThread } from './clients.ts'
 import type { ThreadAt } from '../../../extensions/reviews/client/panel.ts'
@@ -8,9 +8,9 @@ import { wallNow } from './clock.ts'
 import { FIXTURE, FIXTURE_CHANGES, FIXTURE_THREADS } from './fixtures.ts'
 
 /**
- * Review threads and Changes as Tower 3D reads them: a thread's file is read and parsed once per version the board
- * names, the open desk's worker's Changes while its Changes or Reviews are open, with the viewed marks every renderer
- * keeps in `tower.store`. A fixture board reads its own, the same on every load.
+ * Review threads as Tower 3D reads them: a thread's file is read and parsed once per version the board names, and the
+ * open desk's worker's Changes while its Reviews are open, where the thread's anchors are looked for. A fixture board
+ * reads its own, the same on every load.
  */
 
 let arrived = () => {}
@@ -57,30 +57,18 @@ const changes = loop({
   handlers: changesHandlers,
   execute: {
     ...timers<ChangesEvent>(),
-    read: reading(readChanges({
-      repos: readRepos,
-      viewed: (key) => (FIXTURE === undefined ? tower.store.get(key) : Promise.resolve(undefined)) as Promise<Record<string, string> | undefined>,
-      now: wallNow,
-    })),
+    read: reading(readChanges({ repos: readRepos, viewed: () => Promise.resolve(undefined), now: wallNow })),
     draw: () => arrived(),
     toast: ({ message }) => failed(message),
-    keep: ({ key, marks }) => void (FIXTURE === undefined && tower.store.set(key, marks)),
+    keep: () => {},
   },
 })
 
-/** Follows the worker whose Changes or Reviews are open, or none: read as they open, when its turn ends and every `CHANGES_POLL_MS`. */
+/**
+ * Follows the worker whose Reviews are open, or none: its Changes against its base, read as they open, when its turn
+ * ends and every `CHANGES_POLL_MS`, so the thread's anchors say where they stand among them.
+ */
 export const followChanges = (c: Card | undefined) => changes.dispatch({ type: 'follow', card: c })
 
-/** What a worker's Changes compare: all since the base until the viewer picks another. */
-export const scopeOf = (id: string): ChangesScope => scopeIn(changes.state(), id)
-/** A worker's Changes as last read under the scope it compares now. */
+/** A worker's Changes against its base, as last read. */
 export const changesOf = (id: string) => changesIn(changes.state(), id)
-/** Compares a worker's Changes under another scope, read now. */
-export const compare = (id: string, scope: ChangesScope) => changes.dispatch({ type: 'compare', id, scope })
-/** Why a worker's Changes couldn't be read, while none is held. */
-export const changesFailed = (id: string) => changesFailure(changes.state(), id)
-/** Reads a worker's Changes again, after a read that failed. */
-export const rereadChanges = (id: string) => changes.dispatch({ type: 'retry', id })
-
-/** Keeps a repo's viewed marks, on the read they were marked on and for every renderer in this browser; a fixture board keeps them in the page. */
-export const markViewed = (id: string, repo: RepoChanges, marks: Record<string, string>) => changes.dispatch({ type: 'mark', id, repo, marks })
