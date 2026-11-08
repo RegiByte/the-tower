@@ -10,7 +10,7 @@ import { type DiffLayout, type ChangesRead, changedFiles, fileKey, isFolded, kee
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText, markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
-import { placeOnOpen, watchTips, toaster, toastsCss, ask, asking } from '/lib/chrome.js'
+import { placeOnOpen, watchTips, toaster, toastsCss, ask, asking, closableNoticer, type Notice } from '/lib/chrome.js'
 import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
 import { anchorOf, anchorSpot, changesHtml, pickAnchor } from '../../../src/shared/panels.ts'
 import type { ThreadPlace, ThreadView } from '../../../extensions/reviews/client/panel.ts'
@@ -134,6 +134,25 @@ const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTex
 
 /** Tells what just happened, with an action that follows it up when given (`/toasts.js`). */
 const toast = toaster($('toasts'))
+
+/**
+ * While the tower serves other code than this page loaded with (`tower.stale()`), a notice offers to reload the page,
+ * never reloading it alone: a draft in progress would be lost. Its × hides it until the tower serves other code again.
+ * Framed, the page framing Tower 3D says so, and its Reload reloads the frame.
+ */
+const staleNotice: { shown?: Notice; hiddenFor?: string } = {}
+const closableNotice = closableNoticer($('toasts'))
+if (!tower.framed)
+  tower.onStale((served) => {
+    staleNotice.shown?.close()
+    staleNotice.shown = undefined
+    if (served === null || served.id === staleNotice.hiddenFor) return
+    const words = served.version && served.version !== tower.served.version ? `The tower was updated to ${served.version}` : 'The tower was updated'
+    staleNotice.shown = closableNotice(words, { label: 'Reload', run: () => location.reload() }, () => {
+      staleNotice.hiddenFor = served.id
+      staleNotice.shown = undefined
+    })
+  })
 
 const call = <K extends Parameters<typeof tower.call>[0]>(verb: K, body: Parameters<typeof tower.call<K>>[1]) =>
   tower.call(verb, body).catch((err: Error) => (toast(err.message), undefined))
