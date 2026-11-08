@@ -1,4 +1,4 @@
-import { type Card, type Floor, linesSubject, noLongerOffered, offeredCall, runVerb, sendTarget } from '/lib/board.js'
+import { type Board, type Card, type Floor, type Subject, linesSubject, noLongerOffered, offeredCall, runVerb, sendTarget } from '/lib/board.js'
 import { CHANGES_POLL_MS } from '/lib/changes.js'
 import type { Replies, Verbs } from '/lib/extension.js'
 import { commandOf } from '/lib/keys.js'
@@ -6,28 +6,31 @@ import { heldHandlers, loop, noReads, reading, valueOf } from '/lib/machine.js'
 import { type Mount, type Tab, drawPanel, fileCall, panelsCss, pressing } from '/lib/view.js'
 import { plural } from '/lib/words.js'
 import { anchorOf } from './anchors.ts'
-import type { NoteCall } from '../threads.ts'
-import { cardReviews, cardThread, floorThreadsOf, heldThread, noteCallOf, readThread, resolveAction, reviewsHtml, threadCheckout, threadFailure, threadViewAt, threadWant } from './panel.ts'
+import type { FloorThread, NoteCall } from '../threads.ts'
+import { type ThreadPlace, cardReviews, cardThread, floorThread, floorThreadsOf, heldThread, readThread, resolveAction, reviewsHtml, threadCheckout, threadFailure, threadViewAt, threadWant } from './panel.ts'
 import { THE_USER, sendText, unseenBy, type AnchorStates, type ReviewThread } from './reviews.ts'
 
 /**
- * `reviews/thread`: a worker's checkout's review thread in its tabs, read once per version of its file, its notes'
- * quotes marked as they stand among the worker's changes against its default branch (`anchors/<project>`); a note written, answered and resolved
- * by the user, the notes sent to a worker, and a note's lines shown (`display` of a `lines` subject).
+ * `reviews/thread`: a worker's checkout's review thread in its tabs; `reviews/checkout-thread`: a checkout's thread
+ * where no worker's view is, read as the worker on duty there. Each is read once per version of its file, its notes'
+ * quotes marked as they stand among its reader's changes against its default branch (`anchors/<project>`); a note
+ * written, answered and resolved by the user, the notes sent to a worker, and a note's lines shown (`display` of a
+ * `lines` subject) while a worker reads it.
  */
 
-const ID = 'reviews/thread'
-
-const CSS = `:where([data-view="${ID}"]) {
+const CSS = `:where([data-view="reviews/thread"], [data-view="reviews/checkout-thread"]) {
   position: absolute; inset: 0;
   & > .reviews { position: absolute; inset: 0; overflow: auto; padding: 0 var(--sp-xl) 48px; background: var(--panel); color: var(--ink); scrollbar-gutter: stable; }
 }`
 
-/** The note being written on each checkout, by `<project>/<checkout>`, and the worker picked to send its notes to: this page's. */
+/**
+ * The note being written on each checkout, by `<project>/<checkout>`, and the worker picked to send its notes to: this
+ * page's, shared by every view of the same thread.
+ */
 const noteDrafts = new Map<string, string>()
 const sendPicks = new Map<string, string>()
 
-const draftKey = (c: Card) => `${c.project}/${threadCheckout(c)}`
+const draftKey = (at: ThreadPlace) => `${at.project}/${at.checkout}`
 
 /** A worker has a Reviews tab where reviews is on: its tally what it hasn't seen of the thread, else how many notes it holds. */
 export const tab: Tab = (board, subject) => {
@@ -40,9 +43,11 @@ export const tab: Tab = (board, subject) => {
   return part.unseen ? { text: `${part.unseen} new`, tip: `${plural(part.unseen, 'note')} ${c.callsign} hasn't seen`, tone: 'unseen', hint } : notes ? { text: String(notes), hint } : { hint }
 }
 
-export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
+/** A thread's view on the subject it is mounted on, its place read from the board and the subject as they are now. */
+const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): Mount => (host, { tower, board: first, subject: firstSubject, kit }) => {
   let board = first
-  let card = subject.value as Card
+  let subject = firstSubject
+  const place = () => placeOf(board, subject)
   let seen = true
   /** The note the composer answers. */
   let re: number | undefined
@@ -63,63 +68,72 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     state: noReads<AnchorStates>(),
     handlers: heldHandlers<AnchorStates>(),
     execute: {
-      read: reading((slot) => tower.get(`reviews/anchors/${card.project}?card=${encodeURIComponent(slot)}` as never).then((r) => (r as { states: AnchorStates }).states)),
+      read: reading((slot) => tower.get(`reviews/anchors/${place().project}?card=${encodeURIComponent(slot)}` as never).then((r) => (r as { states: AnchorStates }).states)),
       draw: () => draw(),
       toast: () => {},
     },
   })
-  const statesKey = () => `${threadWant(board.floors, cardThread(card))?.key ?? ''}|${card.status === 'working' ? 'working' : 'still'}`
+  const statesKey = (reader: Card) => `${threadWant(board.floors, place())?.key ?? ''}|${reader.status === 'working' ? 'working' : 'still'}`
   let poll: ReturnType<typeof setInterval> | undefined
 
-  const threadOf = () => heldThread(threadReads.state(), board.floors, cardThread(card))
-  const picked = () => sendPicks.get(draftKey(card))
+  const threadOf = () => heldThread(threadReads.state(), board.floors, place())
+  const picked = () => sendPicks.get(draftKey(place()))
 
+  /** The thread read while it is seen, and where its anchors stand while it is seen and a worker reads it. */
   function follow() {
-    if (seen) stateReads.dispatch({ type: 'want', slot: card.id, key: statesKey() })
-    if (seen && !poll) poll = setInterval(() => stateReads.dispatch({ type: 'refresh', slot: card.id, key: statesKey() }), CHANGES_POLL_MS)
-    if (!seen) (clearInterval(poll), (poll = undefined))
-    const want = seen && threadWant(board.floors, cardThread(card))
+    const reader = seen ? place().reader : undefined
+    if (reader) stateReads.dispatch({ type: 'want', slot: reader.id, key: statesKey(reader) })
+    if (reader && !poll) poll = setInterval(() => {
+      const now = place().reader
+      if (now) stateReads.dispatch({ type: 'refresh', slot: now.id, key: statesKey(now) })
+    }, CHANGES_POLL_MS)
+    if (!reader) (clearInterval(poll), (poll = undefined))
+    const want = seen && threadWant(board.floors, place())
     if (want) threadReads.dispatch(want)
   }
 
   function draw() {
+    const at = place()
     const thread = threadOf()
-    const view = threadViewAt(board, cardThread(card), {
-      thread, failed: thread ? undefined : threadFailure(threadReads.state(), cardThread(card)), states: valueOf(stateReads.state().held[card.id]), picked: picked(), re,
+    const view = threadViewAt(board, at, {
+      thread, failed: thread ? undefined : threadFailure(threadReads.state(), at), states: at.reader && valueOf(stateReads.state().held[at.reader.id]), picked: picked(), re,
     })
-    drawPanel(el, reviewsHtml(view), { 'note-text': noteDrafts.get(draftKey(card)) ?? '' })
+    drawPanel(el, reviewsHtml(view), { 'note-text': noteDrafts.get(draftKey(at)) ?? '' })
   }
 
   const note = ([verb, input]: NoteCall, fields: Partial<Verbs['review/append']>) => tower.call(verb as never, { ...input, ...fields } as never) as Promise<Replies['review/append']>
   const told = <T,>(request: Promise<T>) => request.catch((err: Error) => void kit.toast(err.message))
 
   async function addWritten(button: HTMLElement) {
+    const at = place()
     const reply = await told(
       pressing(button, async () => {
-        const call = noteCallOf(card)
-        if (!call) throw new Error(noLongerOffered(card.callsign, 'note'))
-        return note(call, { author: board.user.name, re, body: noteDrafts.get(draftKey(card)) ?? '' })
+        if (!at.note) throw new Error(noLongerOffered(`the thread of ${at.checkout}`, 'note'))
+        return note(at.note, { author: board.user.name, re, body: noteDrafts.get(draftKey(at)) ?? '' })
       }),
     )
     if (!reply) return
-    kit.toast(`n${reply.n} is on the thread of ${threadCheckout(card)}`)
-    noteDrafts.delete(draftKey(card))
+    kit.toast(`n${reply.n} is on the thread of ${at.checkout}`)
+    noteDrafts.delete(draftKey(at))
     re = undefined
     draw()
   }
 
   async function resolveNote(button: HTMLElement, n: number) {
-    const reply = await told(pressing(button, () => runVerb(resolveAction({ project: card.project, checkout: threadCheckout(card), user: board.user.name }, n))))
-    if (reply) kit.toast(`n${n} is resolved on the thread of ${threadCheckout(card)}`)
+    const at = place()
+    const reply = await told(pressing(button, () => runVerb(resolveAction({ project: at.project, checkout: at.checkout, user: board.user.name }, n))))
+    if (reply) kit.toast(`n${n} is resolved on the thread of ${at.checkout}`)
   }
 
-  /** Send reaches a worker whenever it is drawn. */
+  /** Send is drawn enabled only while it reaches a worker. */
   function sendNotes(button: HTMLElement) {
-    const f = board.floors.find((f) => f.id === card.project) as Floor
-    const target = sendTarget(f, threadCheckout(card), picked()) as Card
+    const at = place()
+    const f = board.floors.find((f) => f.id === at.project) as Floor
+    const target = sendTarget(f, at.checkout, picked())
+    if (!target) return kit.toast(`Pick a worker to send the notes on ${at.checkout} to`)
     const thread = threadOf()
-    const text = sendText(THE_USER, threadCheckout(card), thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [], target.hiredBy?.callsign)
-    void told(pressing(button, async () => tower.run(offeredCall(target, 'submit', target.callsign), { text }))).then((r) => r && kit.toast(`Sent ${target.callsign} to the thread of ${threadCheckout(card)}`))
+    const text = sendText(THE_USER, at.checkout, thread ? unseenBy(thread, target.callsign).map((m) => m.n) : [], target.hiredBy?.callsign)
+    void told(pressing(button, async () => tower.run(offeredCall(target, 'submit', target.callsign), { text }))).then((r) => r && kit.toast(`Sent ${target.callsign} to the thread of ${at.checkout}`))
   }
 
   host.addEventListener('click', (e) => {
@@ -138,12 +152,14 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     const anchored = target.closest<HTMLElement>('[data-anchor]')?.dataset.anchor
     const anchor = anchored && threadOf() ? anchorOf(threadOf()!, anchored) : undefined
     if (anchor) {
+      const { project, checkout, reader } = place()
+      if (!reader) return kit.toast(`Nobody works in ${checkout} now, so its Changes aren't read`)
       const { repo, path, from, to, quote } = anchor
-      return kit.display(linesSubject({ card: card.id, project: card.project, repo, path, from, to, ...(quote && { quote }) }))
+      return kit.display(linesSubject({ card: reader.id, project, repo, path, from, to, ...(quote && { quote }) }))
     }
     const send = target.closest<HTMLElement>('[data-send]')
     if (send) return sendNotes(send)
-    const want = target.closest('[data-thread-read]') && threadWant(board.floors, cardThread(card))
+    const want = target.closest('[data-thread-read]') && threadWant(board.floors, place())
     if (want) return (threadReads.dispatch({ ...want, type: 'refresh' }), draw())
     const copy = target.closest<HTMLElement>('[data-copy]')?.dataset.copy
     if (copy) void navigator.clipboard.writeText(copy).then(() => kit.toast(`Copied ${copy}`), (err: Error) => kit.toast(err.message))
@@ -152,13 +168,13 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   host.addEventListener('change', (e) => {
     const picker = (e.target as Element).closest<HTMLSelectElement>('[data-send-pick]')
     if (!picker) return
-    sendPicks.set(draftKey(card), picker.value)
+    sendPicks.set(draftKey(place()), picker.value)
     draw()
   })
 
   host.addEventListener('input', (e) => {
     const box = e.target as HTMLTextAreaElement
-    if (box.matches('[data-note-text]')) noteDrafts.set(draftKey(card), box.value)
+    if (box.matches('[data-note-text]')) noteDrafts.set(draftKey(place()), box.value)
   })
 
   host.addEventListener('keydown', (e) => {
@@ -172,7 +188,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   return {
     update(next, now) {
       board = next
-      card = now.value as Card
+      subject = now
       follow()
       draw()
     },
@@ -185,3 +201,8 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     },
   }
 }
+
+export const mount: Mount = threadMount((_, subject) => cardThread(subject.value as Card))
+
+/** `reviews/checkout-thread`, on a `reviews.thread` subject: a floor's thread, read as the worker on duty in its checkout. */
+export const mountThread: Mount = threadMount((board, subject) => floorThread(board.floors.find((f) => f.id === subject.project) as Floor, subject.value as FloorThread))

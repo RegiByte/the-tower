@@ -68,6 +68,7 @@
     "client.reviews.js#unseenBy",
     "client.reviews.js#verdictOf",
     "client.thread.js#mount",
+    "client.thread.js#mountThread",
     "client.thread.js#tab",
     "client.tray.js#mount",
     "words.append",
