@@ -4,7 +4,7 @@
   "name": "Jobs",
   "summary": "Commands run to their end outside the tower, each a job whose start, cancel and end are facts in the jobs log, so a clone or a build outlives a tower restart and its outcome survives it.",
   "in": "tower",
-  "reviewed": "2026-11-05"
+  "reviewed": "2026-11-08"
 }
 ---
 The [[jobs-daemon]] is the only part, and the only writer of the jobs log in [[system-root]]. A job is one command
