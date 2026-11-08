@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { Sky } from '../../../../src/shared/design.ts'
+import type { Sky } from '/lib/design.js'
 
 /**
  * A light rig that follows the clock, drawn while the lighting setting is on (setting.ts).

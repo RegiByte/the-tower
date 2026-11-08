@@ -33,6 +33,7 @@ import { fontFile } from '../src/packages.ts'
 import { formatWardrobe, parseWardrobe } from '../renderers/tower3d/src/wardrobe.ts'
 import { CHARACTERS } from '../renderers/tower3d/src/contract.ts'
 import { withPage } from './drive.ts'
+import { answerModule } from './served-modules.ts'
 
 const REPO = path.resolve(import.meta.dirname, '..')
 const OUT = path.join(REPO, 'renderers/tower3d/out')
@@ -75,6 +76,7 @@ async function serve(port: number, rebuild: boolean, kept = WARDROBE) {
     if (url === '/design.css') return res.writeHead(200, { 'content-type': 'text/css' }).end(designCss())
     const face = fonts.find((f) => url === `/fonts/${f.file}`)
     if (face) return res.writeHead(200, { 'content-type': 'font/woff2' }).end(fs.readFileSync(fontFile(face)))
+    if (answerModule(url, res)) return
     if (url === '/dresser.html' && rebuild) build()
     const file = path.join(OUT, url)
     if (!file.startsWith(OUT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return res.writeHead(404).end()

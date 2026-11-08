@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { transformControls } from './gizmo.ts'
-import { esc } from '../../../src/shared/cards.ts'
+import { esc } from '/lib/words.js'
 import { loadAtlases } from '../../kaykit/src/atlas.ts'
 import { fit, type Catalog, type Vec3 } from '../../kaykit/src/catalog.ts'
 import { build, cameraFor, type Assets, type Built } from '../../kaykit/src/draw.ts'

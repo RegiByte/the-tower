@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { projectTones, type } from '../../../src/shared/design.ts'
+import { projectTones, type } from '/lib/design.js'
 import { WORLD } from './cards.ts'
 import type { Level } from './layout.ts'
 import { cssHex } from './palette.ts'

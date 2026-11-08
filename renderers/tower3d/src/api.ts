@@ -1,8 +1,7 @@
-import type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, Wait } from '../../../src/bridge/board.ts'
-import type { Brief } from '../../../src/bridge/turns.ts'
-import type { Stats } from '../../../src/bridge/stats.ts'
-import type { Status } from '../../../src/bridge/status.ts'
-import type { ShelfSelf, StreamMsg, Tower } from '../../../src/shared/shelf-page.ts'
+import type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, Wait, Status } from '/lib/board.js'
+import type { Brief } from '/lib/brief.js'
+import type { Stats } from '/lib/stats.js'
+import type { ShelfSelf, StreamMsg, Tower } from '/lib/client.js'
 
 export type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, ShelfSelf, Status, Brief, Wait, StreamMsg }
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { type } from '../../../src/shared/design.ts'
-import { itemTitles, titleIn } from '../../../src/shared/titles.ts'
+import { type } from '/lib/design.js'
+import { itemTitles, titleIn } from '/lib/words.js'
 import { act } from './acts.ts'
 import { tower } from './api.ts'
 import { FIXTURE, FIXTURE_GAMES } from './fixtures.ts'

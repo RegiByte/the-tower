@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { wallNow } from './clock.ts'
 import { listen } from './input.ts'
-import { skyAt } from '../../../src/shared/design.ts'
+import { skyAt } from '/lib/design.js'
 import { glowKit } from './kit.ts'
 import { outside } from './outside.ts'
 

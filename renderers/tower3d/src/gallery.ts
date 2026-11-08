@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { type } from '../../../src/shared/design.ts'
+import { type } from '/lib/design.js'
 import type { SessionRef } from './api.ts'
 import { act } from './acts.ts'
 import { hueOf } from './avatar.ts'

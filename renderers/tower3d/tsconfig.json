@@ -11,7 +11,7 @@
     "types": ["node"],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "paths": { "/lib/*.js": ["../../src/lib/*.ts"] }
+    "paths": { "/lib/*.js": ["../../src/lib/*.ts"], "/x/drafts/*.js": ["../../extensions/drafts/client/*.ts"], "/x/quota/*.js": ["../../extensions/quota/client/*.ts"], "/x/reviews/*.js": ["../../extensions/reviews/client/*.ts"] }
   },
   "include": ["src"]
 }

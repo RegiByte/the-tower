@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { type } from '../../../src/shared/design.ts'
+import { type } from '/lib/design.js'
 import { WORLD } from './cards.ts'
 import { rigRamp } from './light/rig.ts'
 import { LIT } from './light/setting.ts'
