@@ -1,6 +1,5 @@
 import { palettes } from '../../../src/shared/design.ts'
-import { base, findCard, gistLine, modelName, pairLineOf, tidyRows } from '../../../src/shared/cards.ts'
-import { reviewerOf } from '../../../extensions/reviews/client/reviews.ts'
+import { findCard, gistLine, tidyRows } from '../../../src/shared/cards.ts'
 import type { Board, Card, Floor } from './api.ts'
 
 export * from '../../../src/shared/cards.ts'
@@ -48,8 +47,3 @@ export function speechLines(text: string): string[] {
   const kept = lines.slice(0, SPEECH_LINES).map((l) => (l.length > SPEECH_CHARS ? `${l.slice(0, SPEECH_CHARS - 1)}…` : l))
   return lines.length > SPEECH_LINES ? [...kept.slice(0, -1), `${kept.at(-1)!.slice(0, SPEECH_CHARS - 1)}…`] : kept
 }
-
-export const metaOf = (c: Card) =>
-  [modelName(c.model), c.effort, c.context !== undefined && `ctx ${c.context}%`, c.costUsd !== undefined && `$${c.costUsd.toFixed(2)}`, base(c.cwd), pairLineOf(c, reviewerOf(c))]
-    .filter(Boolean)
-    .join(' · ')

@@ -1,5 +1,5 @@
-import { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
-import { floorThreadsOf, keepsThreads } from '../../../extensions/reviews/client/panel.ts'
+import type { draftsOf } from '../../../extensions/drafts/client/drafts.ts'
+import type { floorThreadsOf, keepsThreads } from '../../../extensions/reviews/client/panel.ts'
 import type { FloorThread } from '../../../extensions/reviews/threads.ts'
 import { defaultLimits, type CommandLimits } from '/lib/board.js'
 import type { Board, Card, Floor, GalleryShowing, Shell, Wait } from './api.ts'
@@ -180,6 +180,9 @@ export type Level =
   | { kind: 'lobby'; index: number; y: number; name: string; zones: ZoneSlot[] }
   | { kind: 'floor'; index: number; y: number; name: string; zones: ZoneSlot[]; floor: Floor; desks: DeskSlot[]; free: StationSlot[]; away: AwaySlot[]; tables: TableSlot[]; kiosks: KioskSlot[]; tiles: TileSlot[]; shelf: ShelfSlot[]; wall: WallSlot; cork: CorkSlot | undefined; pigeonhole: PigeonholeSlot | undefined; arcade: ArcadeSlot | undefined; arcadeSign: ArcadeSignSlot | undefined }
   | { kind: 'roof'; index: number; y: number; name: string; zones: ZoneSlot[]; limits: RateLimit[]; floors: DanceFloor[]; guests: GuestSlot[] }
+
+/** What a floor's corkboard and pigeonhole read from the extensions that keep drafts and review threads. */
+export type FloorReads = { draftsOf: typeof draftsOf; keepsThreads: typeof keepsThreads; floorThreadsOf: typeof floorThreadsOf }
 
 export type Plan = {
   width: number
@@ -431,7 +434,7 @@ function wallFor(floor: Floor, depth: number): WallSlot {
 }
 
 /** A floor's corkboard, when it keeps drafts: its notes in rows from the top left, as many as fit, oldest first. */
-function corkFor(floor: Floor, depth: number): CorkSlot | undefined {
+function corkFor(floor: Floor, depth: number, { draftsOf }: FloorReads): CorkSlot | undefined {
   const drafts = draftsOf(floor)
   if (!drafts) return undefined
   const { corkX: x, face } = wallFrame(depth)
@@ -486,7 +489,7 @@ export const PIGEONHOLE = { columns: 4, rows: 3, cell: 0.44, height: 0.36, depth
 const lastAt = (t: FloorThread) => t.last?.at ?? ''
 
 /** A floor's pigeonhole beside the nook, on the game room's outer wall between its back and its door. */
-function pigeonholeFor(floor: Floor, rooms: Room[]): PigeonholeSlot | undefined {
+function pigeonholeFor(floor: Floor, rooms: Room[], { keepsThreads, floorThreadsOf }: FloorReads): PigeonholeSlot | undefined {
   if (!keepsThreads(floor)) return undefined
   const game = roomOf(rooms, 'game')
   const fit = PIGEONHOLE.columns * PIGEONHOLE.rows
@@ -512,7 +515,7 @@ const breakPlaces = (arcade: ArcadeSlot | undefined, standing: BreakPlace[]): Br
  * is turned from it, at the author's desk as it is drawn (`besideOf`); `meet`, the meeting rooms' furniture, where a
  * crew gathers; `standing`, where workers on a break stand in the game room.
  */
-export function plan(board: Board, now: number, beside: (author: Card) => { x: number; z: number; turn: number }, meet: MeetingKit, standing: (room: Room) => BreakPlace[]): Plan {
+export function plan(board: Board, now: number, beside: (author: Card) => { x: number; z: number; turn: number }, meet: MeetingKit, standing: (room: Room) => BreakPlace[], reads: FloorReads): Plan {
   const today = new Date(now).setHours(0, 0, 0, 0)
   const width = 2 * SIDE_MARGIN + COLUMNS * COLUMN_SPACING + ROOM.width
   const rows = Math.max(...board.floors.map((f) => rowsFor(Math.max(-1, ...stationsTaken(f)) + 1)), MIN_ROWS)
@@ -575,8 +578,8 @@ export function plan(board: Board, now: number, beside: (author: Card) => { x: n
       tiles: tiles(desks.map((d) => d.card)).map((t, i) => ({ ...t, card: desks[i].card })),
       shelf: shelfSlots(floor.shelf ?? [], runs),
       wall: wallFor(floor, depth),
-      cork: corkFor(floor, depth),
-      pigeonhole: pigeonholeFor(floor, rooms),
+      cork: corkFor(floor, depth, reads),
+      pigeonhole: pigeonholeFor(floor, rooms, reads),
       arcade,
       arcadeSign: arcadeSignFor(floor, rooms),
     }
