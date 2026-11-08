@@ -185,18 +185,20 @@ const reviewsCollection = (project: string, threads: Record<string, string>, now
 }]
 
 /**
- * The reviews extension as a fixture board shows it, started: its views, the regions they declare and their layout,
- * read from its manifest, so the views offered on a fixture are those a tower offers. It adds nothing else here: the
+ * The reviews extension as a fixture board shows it, started: its own subject kinds, its views, the regions they declare
+ * and their layout, read from its manifest, so the views offered on a fixture are those a tower offers. It adds nothing else here: the
  * fixtures write its parts and marks themselves (`withThreads`).
  */
 const REVIEWS_ON_BOARD: Board['extensions'][number] = (() => {
   const manifest = JSON.parse(readFileSync(path.join(import.meta.dirname, '../extensions/reviews/extension.json'), 'utf8')) as {
     title: string; version: string; views: Record<string, Omit<Board['extensions'][number]['views'][number], 'id'>>
+    subjects: Record<string, Omit<Board['extensions'][number]['subjects'][number], 'kind'>>
     regions?: Record<string, Board['extensions'][number]['regions'][number] & { layout?: unknown }>
   }
   return {
     id: REVIEWS, provides: REVIEWS, version: manifest.version, title: manifest.title, bundled: true, state: 'started', problems: [],
-    verbs: [], reads: [], facts: [], commands: [], slots: [], subjects: [],
+    verbs: [], reads: [], facts: [], commands: [], slots: [],
+    subjects: Object.entries(manifest.subjects).map(([kind, { in: within, list }]) => ({ kind: `${REVIEWS}.${kind}`, in: within, list })),
     views: Object.entries(manifest.views).map(([name, view]) => ({ id: `${REVIEWS}/${name}`, ...view })),
     regions: Object.entries(manifest.regions ?? {}).map(([id, { layout: _, ...region }]) => ({ ...region, id })),
   }

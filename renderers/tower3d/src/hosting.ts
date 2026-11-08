@@ -1,4 +1,4 @@
-import { cardSubject, linesSubject, type Board, type Card, type Lines, type Renderer, type Subject } from '/lib/board.js'
+import { cardSubject, linesSubject, subjectAt, type Board, type Card, type Lines, type Renderer, type Subject } from '/lib/board.js'
 import { viewsOf, type Layout } from '/lib/layout.js'
 import { viewHost, type Hosted, type TabWords, type View, type ViewHost } from '/lib/view.js'
 import type { tower } from './api.ts'
@@ -25,14 +25,17 @@ export type DeskViewsDeps = {
 export const CHANGES = 'tower/changes'
 /** The desk's Reviews, `reviews/thread`. */
 export const THREAD = 'reviews/thread'
+/** The reader's thread, `reviews/checkout-thread`, on a `reviews.thread` subject. */
+export const CHECKOUT_THREAD = 'reviews/checkout-thread'
 
-export function deskViews(deps: DeskViewsDeps) {
+/**
+ * The one view host behind every view Tower 3D mounts, made the first time one is: the desk's and the reader's views
+ * load the same modules, so what a module keeps (a thread's note being written) is the same at both.
+ */
+export function viewHosting(deps: DeskViewsDeps) {
   const { board } = deps
   let host: ViewHost | undefined
-  /** The views mounted at the desk, on the worker `id`, by view id: each kept, hidden, while another is seen. */
-  let held: { id: string; views: Map<string, Hosted> } | undefined
-
-  const hosting = () =>
+  return () =>
     (host ??= (() => {
       const made = viewHost({
         tower: deps.tower,
@@ -51,6 +54,12 @@ export function deskViews(deps: DeskViewsDeps) {
       made.onArrival(deps.redraw)
       return made
     })())
+}
+
+export function deskViews(deps: DeskViewsDeps, hosting: () => ViewHost) {
+  const { board } = deps
+  /** The views mounted at the desk, on the worker `id`, by view id: each kept, hidden, while another is seen. */
+  let held: { id: string; views: Map<string, Hosted> } | undefined
 
   const viewOf = (id: string): View | undefined => viewsOf(board()).find((v) => v.id === id)
 
@@ -113,5 +122,37 @@ export function deskViews(deps: DeskViewsDeps) {
     },
     close,
     tabOf,
+  }
+}
+
+/** The reader's view: a checkout's review thread where no desk is, `reviews/checkout-thread` on its subject. */
+export function readerView(deps: Pick<DeskViewsDeps, 'board'>, hosting: () => ViewHost) {
+  let held: { key: string; hosted: Hosted } | undefined
+
+  function close() {
+    held?.hosted.close()
+    held?.hosted.el.remove()
+    held = undefined
+  }
+
+  return {
+    /** The thread `key` names in `into`, mounted afresh. */
+    open(into: HTMLElement, key: string) {
+      close()
+      const view = viewsOf(deps.board()).find((v) => v.id === CHECKOUT_THREAD)!
+      const el = document.createElement('div')
+      el.className = 'view-root'
+      into.append(el)
+      held = { key, hosted: hosting().mountView(view, el, subjectAt(deps.board(), key)!, { scale: 'pane', options: {} }) }
+    },
+    /** The board as it stands, handed to the view while its thread is on it: false once it isn't. */
+    update(b: Board) {
+      if (!held) return true
+      const subject = subjectAt(b, held.key)
+      if (!subject) return false
+      held.hosted.update(subject)
+      return true
+    },
+    close,
   }
 }

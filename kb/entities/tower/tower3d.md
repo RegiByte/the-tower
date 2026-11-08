@@ -85,7 +85,9 @@ desk.
 scheme: the HUD ([`hudHtml`](ref:hub/renderers/tower3d/src/ui.ts#hudHtml)), the prompt card, the elevator list, the
 floor panel and directory, the desk panel (Terminal, Logbook, Changes, Reviews and a tab per showing,
 [[shared-panels]]; Changes and Reviews are the page's views, mounted through the library's view host,
-[`deskViews`](ref:hub/renderers/tower3d/src/hosting.ts#deskViews)) and the reader. What is drawn into the scene keeps one palette with them, and the building's
+[`deskViews`](ref:hub/renderers/tower3d/src/hosting.ts#deskViews)) and the reader (a checkout's review thread where no
+worker is on duty: the reviews extension's `reviews/checkout-thread` view, mounted through the same view host,
+[`readerView`](ref:hub/renderers/tower3d/src/hosting.ts#readerView)). What is drawn into the scene keeps one palette with them, and the building's
 signage is the panels' floor sign painted on canvas
 ([`paintSign`](ref:hub/renderers/tower3d/src/sign.ts#paintSign),
 [`paintDirectory`](ref:hub/renderers/tower3d/src/world.ts#paintDirectory)).

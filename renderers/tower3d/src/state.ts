@@ -4,7 +4,7 @@ import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
 import type { Board, Brief, Card, ShelfSelf, Stats, tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
-import type { Renderer } from '/lib/board.js'
+import type { Lines, Renderer } from '/lib/board.js'
 import type { Note } from './cork.ts'
 import type { ArcadeSign, Cabinet } from './arcade.ts'
 import type { Desk, Station } from './desk.ts'
@@ -154,7 +154,7 @@ export type State = {
   pendingDesk: string | undefined
   /** The hires in flight by floor, as the hiring machine in main holds them: read by the open workstations. */
   hiring: () => Hiring<Held>
-  pendingTab: { id: string; tab: 'brief' | 'reviews' } | undefined
+  pendingTab: { id: string; tab: 'brief' | 'reviews' } | { id: string; tab: 'changes'; lines: Lines } | undefined
   pendingShell: string | undefined
   /** A desk to open on a showing's tab, by its worker and target. */
   pendingShown: { id: string; target: string } | undefined
@@ -168,13 +168,6 @@ export type State = {
   /** A beer from the roof's bar in your right hand. */
   beer: boolean
   draft: Draft | undefined
-  /**
-   * Review threads: the note being written on each, by `<project>/<checkout>`, and the note it answers; the worker
-   * each one's Send was pointed at.
-   */
-  noteTexts: Map<string, string>
-  noteRe: number | undefined
-  sendPicks: Map<string, string>
 
   /** What the crosshair is on, what it offers, the offer the wheel marked, and the held one. */
   aimed: Act | undefined
@@ -230,7 +223,7 @@ export const s: State = {
   visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: LIT, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, hiring: noHires, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
-  carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(),
+  carrying: undefined, beer: false, draft: undefined,
   aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, down: undefined,
   doorMode: false, doorHeld: false, still: false,
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,

@@ -100,7 +100,8 @@ sequenceDiagram
   each thing the worker showed lie over the terminal, which keeps its size. Changes and Reviews are each hidden and
   kept while another tab shows, their reads stopped, and closed with the desk; each tab is tallied by its view's `tab`.
   A note's lines, which the thread hands Tower 3D to display, open in the desk's Changes
-  ([`display`](ref:hub/renderers/tower3d/src/main.ts#display)); a subject Tower 3D has no place for is said in a toast. A terminal that ends while its tab
+  ([`display`](ref:hub/renderers/tower3d/src/main.ts#display)): at the open desk, or, from the reader, at the desk of the
+  worker whose lines they are, gone to; a subject Tower 3D has no place for is said in a toast. A terminal that ends while its tab
   shows gives way to the Logbook, as the page's gives way to the Brief, and the Terminal tab then shows its last screen
   ([`terminalEnded`](ref:hub/renderers/tower3d/src/main.ts#terminalEnded)). While a text box has focus, keys
   type into it and never move you.
