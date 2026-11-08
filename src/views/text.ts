@@ -1,5 +1,5 @@
 import { esc } from '/lib/words.js'
-import { framedText, typeView } from './item.ts'
+import { framedText, typeView } from '../shared/view-item.ts'
 
 /** `tower/text`, the text view, or any text's source: its text as written, in a frame where nothing runs. */
 export const mount = typeView({ id: 'tower/text', rules: '', draw: framedText((text) => `<pre class="item-text">${esc(text)}</pre>`), restyled: true })

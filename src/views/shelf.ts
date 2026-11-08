@@ -3,9 +3,9 @@ import { onDisk, rendererUrl, shelfKind, shelfPage, shelfPaths, shelfSource } fr
 import { closeHtml, failedHtml, fileButtonsHtml, fileCall, ICON, type Mount, viewCss } from '/lib/view.js'
 import { base, esc, tagOf } from '/lib/words.js'
 import type { RelayedUi } from '../shared/shelf-page.ts'
-import { decoded, type LinkTo, NO_HREF } from './frame.ts'
-import type { Drawn } from './item.ts'
-import { drawSections, SECTIONS_RULES } from './sections.ts'
+import { decoded, type LinkTo, NO_HREF } from '../shared/view-frame.ts'
+import type { Drawn } from '../shared/view-item.ts'
+import { drawSections, SECTIONS_RULES } from '../shared/view-sections.ts'
 
 /**
  * `tower/shelf`, a shelf entry's view, by its kind: a page framed with the relay at an origin of its own (an `html`

@@ -1,5 +1,5 @@
 import { esc } from '/lib/words.js'
-import { typeView, versioned } from './item.ts'
+import { typeView, versioned } from '../shared/view-item.ts'
 
 /** `tower/video`, the video view: the video, whole, centred, with the browser's controls. */
 export const mount = typeView({

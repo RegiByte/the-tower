@@ -1,9 +1,9 @@
 import { type CheckoutFile, fileSubject, linkedFile } from '/lib/board.js'
 import { relativeHref } from '/lib/markdown.js'
 import type { Kit } from '/lib/view.js'
-import { decoded, linkTo, type LinkTo, NO_HREF, scrollToFragment } from './frame.ts'
-import { type Body, bodyText, type Drawn, typeView } from './item.ts'
-import { drawSections, SECTIONS_RULES } from './sections.ts'
+import { decoded, linkTo, type LinkTo, NO_HREF, scrollToFragment } from '../shared/view-frame.ts'
+import { type Body, bodyText, type Drawn, typeView } from '../shared/view-item.ts'
+import { drawSections, SECTIONS_RULES } from '../shared/view-sections.ts'
 
 /**
  * `tower/document`, the markdown view, of a kept item or a showing: the document drawn by sections (`drawSections`),
