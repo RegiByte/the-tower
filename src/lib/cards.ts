@@ -108,6 +108,7 @@ export {
   verbLabel,
 } from '../shared/verb-words.ts'
 export {
+  /** @provisional */ askTransitions,
   /** @provisional */ attentionOrder,
   /** @provisional */ DISMISS_ASK_TITLE,
   DISMISS_OFFER_TITLE,
