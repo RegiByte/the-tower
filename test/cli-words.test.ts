@@ -167,10 +167,12 @@ test('an old word rewrites into its word under tower x and says so', () => {
 
 test('a capability or its word typed at the top names its form under tower x, a stopped owner with its state', () => {
   const owner = (provides: string, words: string[], state: WordOwner['state'] = 'started'): WordOwner => ({ provides, state, words: words.map((w) => ({ ...word('echo'), name: w, word: w })) })
-  const owners = [owner('quota', ['limits', 'status']), owner('pr-status', ['status']), owner('reviews', ['thread', 'note']), owner('narrate', ['say'], 'failed')]
+  const owners = [owner('quota', [], 'off'), owner('quota', ['limits', 'status']), owner('pr-status', ['status']), owner('reviews', ['thread', 'note']), owner('narrate', ['say'], 'failed')]
   assert.deepEqual(movedLine('limits', owners), { message: '"limits" is under tower x: tower x quota limits', fix: '`tower x quota limits --help` says what it takes' })
   assert.deepEqual(movedLine('status', owners), { message: '"status" is under tower x: tower x quota status, or tower x pr-status status', fix: '`tower x quota` and `tower x pr-status` list their words' })
   assert.deepEqual(movedLine('reviews', owners), { message: '"reviews" is under tower x: tower x reviews', fix: '`tower x reviews` lists its words' })
+  assert.deepEqual(movedLine('quota', owners), { message: '"quota" is under tower x: tower x quota', fix: '`tower x quota` lists its words' })
+  assert.deepEqual(movedLine('quota', [owner('quota', [], 'off')]), { message: '"quota" is under tower x: tower x quota (quota: off)', fix: '`tower extensions` lists each extension and its state' })
   assert.deepEqual(movedLine('say', owners), { message: '"say" is under tower x: tower x narrate say (narrate: failed to start)', fix: '`tower extensions` lists each extension and its state' })
   assert.equal(movedLine('x-typo', owners), undefined)
 })
