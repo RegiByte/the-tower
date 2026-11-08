@@ -21,7 +21,7 @@ import { ConfigError, commandNames, editorArgv, resolveCommand, towerPort, type 
 import { withoutParentSession } from './shared/env.ts'
 import type { SystemPaths } from './shared/model.ts'
 import type { Reads } from './shared/shelf-page.ts'
-import { isObject, readConfig } from './system.ts'
+import { readConfig } from './system.ts'
 import { detected } from './platform.ts'
 
 export type Verdict = { level: 'ok' | 'warn' | 'fail'; what: string; fix?: string }
@@ -144,14 +144,20 @@ const claudeVerdicts = async (claude: Claude): Promise<Verdict[]> => {
 }
 
 /**
- * The Claude each of the config's `argv` commands starts, checked as the host would start it: its version against the
- * tested range, and that someone is signed in. Unchecked until the config reads with an `argv` the tower can take.
+ * The config the checks that read it run on: read, and with no failure `tower config check` would name, so no check
+ * meets a shape it can't read. `undefined` until it is fixed, `configValid` saying how.
  */
-const claudes = async (config: Config | Error): Promise<Verdict[]> => {
-  if (config instanceof Error) return [{ level: 'warn', what: 'claude: unchecked until the config reads', fix: 'fix the config first' }]
-  if (configProblems(config).some((p) => p.key === 'argv')) return [{ level: 'warn', what: "claude: unchecked until the config's argv is fixed", fix: 'fix argv in the config' }]
-  return (await Promise.all(claudesOf(config).map(claudeVerdicts))).flat()
-}
+const checkable = (config: Config | Error): Config | undefined =>
+  config instanceof Error || configProblems(config).some((p) => p.level === 'fail') ? undefined : config
+
+const unchecked = (what: string): Verdict => ({ level: 'warn', what: `${what}: unchecked until the config is fixed`, fix: 'fix the config first' })
+
+/**
+ * The Claude each of the config's `argv` commands starts, checked as the host would start it: its version against the
+ * tested range, and that someone is signed in.
+ */
+const claudes = async (config: Config | undefined): Promise<Verdict[]> =>
+  config ? (await Promise.all(claudesOf(config).map(claudeVerdicts))).flat() : [unchecked('claude')]
 
 const writable = (paths: SystemPaths): Verdict => {
   const root = path.dirname(paths.config)
@@ -178,8 +184,8 @@ const configValid = (paths: SystemPaths, config: Config | Error): Verdict => {
 }
 
 /** The user's editor opens projects and files from the tower: without it, only that is lost. */
-const editor = async (config: Config | Error): Promise<Verdict> => {
-  if (config instanceof Error) return { level: 'warn', what: 'the editor: unchecked until the config reads', fix: 'fix the config first' }
+const editor = async (config: Config | undefined): Promise<Verdict> => {
+  if (!config) return unchecked('the editor')
   const [command] = editorArgv(config, 'window', { dir: '.' })
   const found = await ran('/bin/sh', ['-c', `command -v '${command.replaceAll("'", `'\\''`)}'`])
   return found?.code === 0
@@ -267,11 +273,9 @@ const checkVerdicts = async (config: Config, tower: Daemon, answering: boolean):
   )
 }
 
-/** The config as its file holds it, or the error that says why it can't be checked: a file that holds no JSON object is one. */
 const readable = (paths: SystemPaths): Config | Error => {
   try {
-    const config = readConfig(paths.config)
-    return isObject(config) ? config : new ConfigError(`${paths.config} holds no JSON object`)
+    return readConfig(paths.config)
   } catch (err) {
     if (err instanceof ConfigError) return err
     throw err
@@ -281,16 +285,17 @@ const readable = (paths: SystemPaths): Config | Error => {
 /** What the tower needs before it starts: the machine, Claude and the config. */
 export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
   const config = readable(paths)
+  const checked = checkable(config)
   return [
     supported(),
     node(),
-    ...(await claudes(config)),
+    ...(await claudes(checked)),
     await gitVersion(),
     await onPath('curl', ['--version'], installs('curl')),
     await onPath('lsof', ['-h'], installs('lsof')),
     writable(paths),
     configValid(paths, config),
-    await editor(config),
+    await editor(checked),
   ]
 }
 
@@ -300,16 +305,9 @@ export const readiness = async (paths: SystemPaths): Promise<Verdict[]> => {
  * extensions declare.
  */
 export const running = async (paths: SystemPaths, all: boolean): Promise<Verdict[]> => {
-  const config = readable(paths)
-  if (config instanceof Error) return [{ level: 'warn', what: 'the daemons: unchecked until the config reads', fix: 'fix the config first' }]
-  let port: number
-  try {
-    port = towerPort(config)
-  } catch (err) {
-    if (!(err instanceof ConfigError)) throw err
-    return [{ level: 'warn', what: 'the daemons: unchecked until the config names a port', fix: 'fix the config first' }]
-  }
-  const every = daemons(paths, port)
+  const config = checkable(readable(paths))
+  if (!config) return [unchecked('the daemons')]
+  const every = daemons(paths, towerPort(config))
   const verdicts = await Promise.all(
     every.map(async (d) => {
       const holder = await d.holder()
