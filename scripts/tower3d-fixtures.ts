@@ -6,6 +6,9 @@
  *
  *   npm run tower3d:fixtures      write every fixture's file
  *
+ * `npm run tower3d` copies them into `out/fixtures/`, which the page fetches from; `npm run tower3d:watch` copies them
+ * once, as it starts, so restart it after writing them.
+ *
  * Each fixture is built at one instant, in UTC, which its file records as `at`: the page's wall clock on that fixture.
  */
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
