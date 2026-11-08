@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-20",
-  "reviewed": "2026-11-05",
+  "reviewed": "2026-11-08",
   "refs": [
     "hub/scripts/tower3d-kit.ts#vendorForge",
     "hub/scripts/tower3d-kit.ts#checkBinding",
