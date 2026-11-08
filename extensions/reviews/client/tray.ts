@@ -2,12 +2,13 @@ import { type Floor, type FloorCollection, itemKey, workerIn } from '/lib/board.
 import { ICON, type Mount, foldTrayHtml, itemsCss, openItemOf } from '/lib/view.js'
 import { esc, noun, plural } from '/lib/words.js'
 import { floorThreadsOf } from './panel.ts'
-import { landedThreads, REVIEWS, threadId } from './reviews.ts'
+import { landedThreads, REVIEWS } from './reviews.ts'
 
 /**
  * `reviews/tray`, the reviews collection in a floor's row of trays: how many threads are open and how many landed,
- * unfolding to each open thread by its checkout, opened in its worker's Reviews tab while one works in the checkout,
- * else as the thread's item; then the threads Tidy filed once their work landed, folded, newest first.
+ * unfolding to each open thread by its checkout, opened in the Reviews tab of the worker in the checkout (`workerIn`,
+ * on duty or not), else, where the board holds no worker of it, as the checkout's live thread (`reviews/checkout-thread`); then the
+ * threads Tidy filed once their work landed, folded, newest first.
  */
 
 const ID = 'reviews/tray'
@@ -43,7 +44,7 @@ export const mount: Mount = (host, { board: first, subject, kit, state }) => {
   const threadsHtml = () => {
     const rows = floorThreadsOf(floor()).map((t) => {
       const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
-      return `<button class="thread-row" data-thread="${esc(t.checkout)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}">${ICON.thread}<span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
+      return `<button class="thread-row" data-thread="${esc(t.checkout)}" data-key="${esc(t.key)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}">${ICON.thread}<span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
     })
     const landed = landedThreads(collection.items)
     const open = openItemOf(kit.location?.(), project, REVIEWS)
@@ -75,10 +76,10 @@ export const mount: Mount = (host, { board: first, subject, kit, state }) => {
       state.set(landedKey, landedOpen)
       return draw()
     }
-    const checkout = target.closest<HTMLElement>('[data-thread]')?.dataset.thread
-    if (checkout !== undefined) {
-      const worker = workerIn(floor(), checkout)
-      return worker ? kit.display(`card:${worker.id}`, { view: 'reviews/thread' }) : kit.display(itemKey(project, REVIEWS, threadId(checkout)))
+    const row = target.closest<HTMLElement>('[data-thread]')
+    if (row) {
+      const worker = workerIn(floor(), row.dataset.thread!)
+      return worker ? kit.display(`card:${worker.id}`, { view: 'reviews/thread' }) : kit.display(`reviews.thread:floor:${project}/${row.dataset.key}`)
     }
     const filed = target.closest<HTMLElement>('[data-filed]')?.dataset.filed
     if (filed !== undefined) kit.display(itemKey(project, REVIEWS, filed))
