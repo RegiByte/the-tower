@@ -145,7 +145,9 @@ renderer can draw the brief alike, inline.
   address no worker's. Each bubble copies
   its text as written, read from the reply the renderer holds ([`saidText`](ref:hub/src/shared/brief.ts#saidText),
   [`saidWhat`](ref:hub/src/shared/brief.ts#saidWhat) naming it),
-  never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds.
+  never from the html. A long prompt or answer folds to its start in CSS alone; the brief's latest answer never folds, and stays shown in
+  full once a later turn comes ([`expandedSaid`](ref:hub/src/shared/brief.ts#expandedSaid)), so what arrives folds
+  nothing the viewer reads.
   A renderer passes `adds` to draw what extensions contribute to a conversation (its badges, its actions) on that
   conversation's heading, and `acts` (since 1.118) what is offered on a prompt, an answer, or Claude's words or message
   on the way (`said`, side `step.<n>` since 1.133, [[ui-model]]) beside

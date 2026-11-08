@@ -9,7 +9,8 @@
  *
  * What a viewer opens is read back from what was drawn, so a redraw keeps it: an earlier session's fold is a
  * `<details data-brief-session="<id>">` (`openFolds`), a long prompt or answer folded to its start has a
- * `<input type="checkbox" data-expand="<key>">` that shows it all (`expandedSaid`, pure CSS), and a tool call or a run
+ * `<input type="checkbox" data-expand="<key>">` that shows it all (`expandedSaid`, pure CSS; the latest answer, never
+ * folded, is drawn `data-said-whole="<key>"` and stays shown in full once a later turn comes), and a tool call or a run
  * of them is a `<details data-tool="<key>">` or `<details data-tool-run="<key>">` (`openTools`). A renderer wires:
  *
  *   data-copy-said="<key>"           copy that prompt's, answer's or step's text as written (`saidText`, `saidWhat`)
@@ -110,9 +111,12 @@ export type BriefView = {
 export const openFolds = (root: ParentNode | null | undefined): Set<string> =>
   new Set([...(root?.querySelectorAll<HTMLElement>('[data-brief-session][open]') ?? [])].map((el) => el.dataset.briefSession!))
 
-/** The long prompts and answers a viewer showed in full in a drawn brief, by key. */
+/**
+ * The long prompts and answers shown in full in a drawn brief, by key: those the viewer showed all of, and the latest
+ * answer, drawn whole (`data-said-whole`), so a turn arriving folds nothing being read. @since 1.163 the latest answer
+ */
 export const expandedSaid = (root: ParentNode | null | undefined): Set<string> =>
-  new Set([...(root?.querySelectorAll<HTMLInputElement>('input[data-expand]:checked') ?? [])].map((el) => el.dataset.expand!))
+  new Set([...(root?.querySelectorAll<HTMLElement>('input[data-expand]:checked, [data-said-whole]') ?? [])].map((el) => el.dataset.expand ?? el.dataset.saidWhole!))
 
 /** The tool calls and runs of them a viewer opened in a drawn brief, by key. @since 1.133 */
 export const openTools = (root: ParentNode | null | undefined): Set<string> =>
@@ -225,8 +229,9 @@ type Speaker = 'you' | 'peer' | 'claude' | 'step' | 'sent'
 /** `what` names it for its copy button; `folds`, whether a long one folds to its start. */
 const bubbleHtml = (what: string, speaker: Speaker, key: string, text: string, who: string, d: Drawing, folds: boolean) => {
   const long = folds && isLong(text)
+  const whole = !folds && isLong(text) ? ` data-said-whole="${esc(key)}"` : ''
   const words = d.raw ? `<div class="raw">${esc(text)}</div>` : `<div class="md">${d.said(text)}</div>`
-  return `<div class="bubble ${speaker}${long ? ' long' : ''}"><header><span class="who">${who}</span><span class="acts">${d.acts?.(key) ?? ''}<button type="button" data-copy-said="${esc(key)}" aria-label="copy ${esc(what)} as written">copy</button></span></header>${words}${
+  return `<div class="bubble ${speaker}${long ? ' long' : ''}"${whole}><header><span class="who">${who}</span><span class="acts">${d.acts?.(key) ?? ''}<button type="button" data-copy-said="${esc(key)}" aria-label="copy ${esc(what)} as written">copy</button></span></header>${words}${
     long ? `<label class="more"><input type="checkbox" data-expand="${esc(key)}"${d.expanded.has(key) ? ' checked' : ''}><span class="show">show all</span><span class="hide">fold</span></label>` : ''}</div>`
 }
 
