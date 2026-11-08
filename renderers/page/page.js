@@ -1644,11 +1644,17 @@ function run(id, e) {
 }
 
 /**
+ * An open popover the browser dismisses on Escape (any but a `manual` one, such as the shared tip): Escape is its own,
+ * closing it, and runs no command.
+ */
+const escapeDismisses = (/** @type {KeyboardEvent} */ e) => e.key === 'Escape' && Boolean(document.querySelector(':popover-open:not([popover=manual])'))
+
+/**
  * A terminal's own key handler already ran the keys typed into it; a field's listener, the field's. No shortcut runs
  * behind an ask: what it asks about was read as it opened.
  */
 document.addEventListener('keydown', (e) => {
-  if (e.defaultPrevented || asking()) return
+  if (e.defaultPrevented || asking() || escapeDismisses(e)) return
   const focus = isTyping() ? 'field' : 'page'
   const id = commandOf(board().keys, e, focus)
   if (id && run(id, e)) return (e.preventDefault(), (enterGuard = undefined))
