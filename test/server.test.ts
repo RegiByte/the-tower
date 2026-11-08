@@ -7,7 +7,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { appendFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { appendFileSync, closeSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
@@ -597,15 +597,28 @@ test("server: the quota probe, moved into its extension, answers its old names t
   assert.deepEqual([newest.ok, newest.error], [false, probed.error], 'the read is appended to the old folder, newest first')
 })
 
-/** The `tower` command run with text on stdin: its stdout, its stderr and how it exited. */
-const typed = (session: string | undefined, args: string[], input = '') => {
+/** The `tower` command run with `stdin` as its fd 0: its stdout, its stderr and how it exited. */
+const typedWith = (stdin: 'pipe' | number, session: string | undefined, args: string[], input?: string) => {
   const { stdout, stderr, status } = spawnSync(process.execPath, ['--import', 'tsx', path.join('src', 'cli.ts'), 'x', 'typed', ...args], {
     cwd: REPO,
     env: { ...ENV, ...(session && { TOWER_SESSION_ID: session }) },
     encoding: 'utf8',
+    stdio: [stdin, 'pipe', 'pipe'],
     input,
   })
   return { stdout, stderr, status }
+}
+
+/** The `tower` command run with text in a file on stdin, as a heredoc gives it. */
+const typed = (session: string | undefined, args: string[], input = '') => {
+  const file = path.join(ROOT, 'typed-stdin')
+  writeFileSync(file, input)
+  const fd = openSync(file, 'r')
+  try {
+    return typedWith(fd, session, args)
+  } finally {
+    closeSync(fd)
+  }
 }
 
 test('server: an extension typed as a command gets its input as written, its caller and its floor, through one path', async () => {
@@ -617,6 +630,7 @@ test('server: an extension typed as a command gets its input as written, its cal
   assert.deepEqual(replied(['tags', '--tag', 'a', '--tag', 'b', '--n', '1']).input, { tag: ['a', 'b'], n: [1] })
   assert.deepEqual(replied(['shape', '--box', '{"w": 1}']).input, { box: { w: 1 } })
   assert.deepEqual(replied(['resolve', '3', '4'], 'Done.\n').input, { notes: [3, 4], body: 'Done.\n' })
+  assert.deepEqual(JSON.parse(typedWith('pipe', SESSION, ['resolve', '3', '4'], 'Done.\n').stdout).input, { notes: [3, 4] }, 'a socket on stdin, which may never end, gives no text')
   assert.deepEqual(replied(['review', 'ODIN-7', '--tell']).input, { of: 'ODIN-7', tell: true })
   assert.deepEqual(replied(['hire', '--of', 'ODIN-7']).input, { of: 'ODIN-7' })
 

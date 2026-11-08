@@ -12,7 +12,7 @@
  * Agents edit kept items in their files and never delete them: throwing one away is the user's. Review threads are
  * written only through the reviews extension's words, which append.
  */
-import { existsSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, fstatSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import type { Board, Card, Floor, FloorCollection, FloorItem } from './bridge/board.ts'
 import type { Brief, Turn } from './bridge/turns.ts'
@@ -45,6 +45,15 @@ const towerAt = (): string => towerUrl(readConfig(configPath()))
 
 const me = process.env.TOWER_SESSION_ID
 const now = Date.now()
+
+/**
+ * Whether stdin carries text: a pipe or a file (a heredoc, `|`, `<`). A terminal, a character device or a socket gives
+ * none, since a socket may never end: Claude Code's Bash tool holds one open as stdin when the command contains `<<`.
+ */
+const textOnStdin = (): boolean => {
+  const stdin = fstatSync(0)
+  return stdin.isFIFO() || stdin.isFile()
+}
 
 /** Stdin read as a stream to its end: a pipe whose writer hasn't written yet is waited on. */
 const readStdin = async (): Promise<string> => {
@@ -333,9 +342,9 @@ const ask = async <T>(verb: string, body: unknown): Promise<T | Failure> => {
   return (await res.json()) as T | Failure
 }
 
-/** Stdin as a word's `cli.stdin` field, verbatim, unless a flag gave it: a terminal has none to give. */
+/** Stdin as a word's `cli.stdin` field, verbatim, unless a flag gave it or stdin carries no text. */
 const withStdin = async (word: Word, input: Record<string, unknown>): Promise<Record<string, unknown>> => {
-  if (!word.stdin || input[word.stdin] !== undefined || process.stdin.isTTY) return input
+  if (!word.stdin || input[word.stdin] !== undefined || !textOnStdin()) return input
   const text = await readStdin()
   return text ? { ...input, [word.stdin]: text } : input
 }
@@ -464,7 +473,7 @@ const keepContent = async (file: string | undefined): Promise<{ ext: string; con
     if (!ext) throw new CliError(`${resolved} has no extension: the item's type is its extension`)
     return { ext, content: readFileSync(resolved, 'utf8'), name: path.basename(resolved, `.${ext}`) }
   }
-  if (process.stdin.isTTY) throw new CliError(KEEP_USAGE)
+  if (!textOnStdin()) throw new CliError(KEEP_USAGE)
   const content = await readStdin()
   return { ext: 'md', content, name: titleIn('stdin.md', content) }
 }
@@ -798,7 +807,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
   },
   hire: async (args) => {
     const hire = hireArgs(args)
-    if (!hire.item && process.stdin.isTTY) throw new CliError(HIRE_USAGE)
+    if (!hire.item && !textOnStdin()) throw new CliError(HIRE_USAGE)
     if (!me) throw new CliError('TOWER_SESSION_ID is not set: this Claude was not started by the tower')
     const board = await readBoard()
     const own = ownFloor(board, me)

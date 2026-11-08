@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
-  "reviewed": "2026-11-07",
-  "refs": ["hub/src/shared/cli-words.ts#wordsOf", "hub/src/shared/cli-words.ts#parseWord", "hub/src/shared/cli-words.ts#missingLine", "hub/src/shared/cli-words.ts#jsonDeprecatedLine", "hub/src/shared/extensions.ts#Manifest", "hub/src/bridge/extensions.ts#cliProblems", "hub/src/bridge/extensions.ts#contractNames", "hub/src/directory.ts#runWord", "hub/src/directory.ts#withCallerFloor", "hub/src/cli-verbs.ts#ALIASES", "hub/test/cli-words.test.ts"]
+  "reviewed": "2026-11-08",
+  "refs": ["hub/src/shared/cli-words.ts#wordsOf", "hub/src/shared/cli-words.ts#parseWord", "hub/src/shared/cli-words.ts#missingLine", "hub/src/shared/cli-words.ts#jsonDeprecatedLine", "hub/src/shared/extensions.ts#Manifest", "hub/src/bridge/extensions.ts#cliProblems", "hub/src/bridge/extensions.ts#contractNames", "hub/src/directory.ts#runWord", "hub/src/directory.ts#withCallerFloor", "hub/src/directory.ts#textOnStdin", "hub/src/cli-verbs.ts#ALIASES", "hub/test/cli-words.test.ts"]
 }
 ---
 **Problem.** `tower x` took one JSON argument. A worker had to write a whole object by hand to do what a core word does
@@ -34,6 +34,12 @@ with a core word by construction, so there is nothing to reserve.
   word reaches the tower, and [`withCallerFloor`](ref:hub/src/directory.ts#withCallerFloor) gives a project-scoped word
   the worker's floor unless `--project` names one. Defaults that depend on who calls are the verb's: it knows the
   caller and reads the board.
+- **Stdin is text only from a pipe or a file.** [`textOnStdin`](ref:hub/src/directory.ts#textOnStdin) reads the
+  `cli.stdin` field, and `keep`'s and `hire`'s text, only when stdin is a FIFO or a regular file: a heredoc, `|` or
+  `<`. A terminal, `/dev/null` or a socket gives none, so a word whose text is optional runs without it and one that
+  needs it says so. A socket may never end: Claude Code's Bash tool holds one open as stdin whenever the command
+  contains `<<`, and a word reading it to its end waited forever. The cost falls on a program that spawns the command
+  and writes to its stdin (Node's `spawn`, whose stdin is a socket): it passes the text as the flag, a file or a pipe.
 - **Help and errors say what to do next.** `tower x` lists capabilities, `tower x <cap>` words before raw calls; a
   missing input names it with an example, a wrong value names its type, and an unknown word or flag names the nearest.
 - **A door's `--value` is required.** A bare door word is the missing-flag error, so it clears nothing by accident.
