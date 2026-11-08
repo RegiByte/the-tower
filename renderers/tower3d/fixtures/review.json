@@ -1006,9 +1006,145 @@
         ],
         "rateLimits": [],
         "probes": [],
-        "extensions": [],
+        "extensions": [
+          {
+            "id": "reviews",
+            "provides": "reviews",
+            "version": "1.0",
+            "title": "Review threads",
+            "bundled": true,
+            "state": "started",
+            "problems": [],
+            "verbs": [],
+            "reads": [],
+            "facts": [],
+            "commands": [],
+            "slots": [],
+            "subjects": [],
+            "views": [
+              {
+                "id": "reviews/thread",
+                "module": "thread.js",
+                "export": "mount",
+                "on": [
+                  "card"
+                ],
+                "scales": [
+                  "pane"
+                ],
+                "needs": [
+                  "display",
+                  "toast"
+                ],
+                "tab": "tab",
+                "keys": [
+                  "Ctrl+Shift+4"
+                ],
+                "words": {
+                  "label": "Reviews",
+                  "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
+                }
+              },
+              {
+                "id": "reviews/composer",
+                "module": "composer.js",
+                "export": "mount",
+                "on": [
+                  "lines"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "toast"
+                ],
+                "words": {
+                  "label": "Note",
+                  "hint": "a note on these lines, on the review thread of the worker's checkout"
+                }
+              },
+              {
+                "id": "reviews/tray",
+                "module": "tray.js",
+                "export": "mount",
+                "on": [
+                  "collection.reviews"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "display"
+                ],
+                "words": {
+                  "label": "Review threads",
+                  "hint": "the floor's review threads by checkout, and those filed once their work landed"
+                }
+              }
+            ],
+            "regions": []
+          }
+        ],
         "viewers": {},
-        "adds": {},
+        "adds": {
+          "card:20261004-090000-labx": {
+            "marks": [
+              {
+                "repo": "lab-api",
+                "path": "src/scheduler.ts",
+                "line": 41,
+                "to": 43,
+                "label": "n3",
+                "hint": "noted in n3",
+                "cap": "reviews"
+              },
+              {
+                "repo": "lab-api",
+                "path": "src/config.ts",
+                "line": 7,
+                "label": "n4",
+                "hint": "noted in n4",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090007-labx": {
+            "marks": [
+              {
+                "repo": "lab-api",
+                "path": "src/scheduler.ts",
+                "line": 41,
+                "to": 43,
+                "label": "n3",
+                "hint": "noted in n3",
+                "cap": "reviews"
+              },
+              {
+                "repo": "lab-api",
+                "path": "src/config.ts",
+                "line": 7,
+                "label": "n4",
+                "hint": "noted in n4",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090014-labx": {
+            "marks": [
+              {
+                "repo": "lab",
+                "path": "README.md",
+                "line": 3,
+                "label": "n1",
+                "hint": "noted in n1",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090028-labx": {
+            "marks": []
+          }
+        },
         "asks": [],
         "today": {
           "since": 1791072000000,
@@ -2035,9 +2171,145 @@
         ],
         "rateLimits": [],
         "probes": [],
-        "extensions": [],
+        "extensions": [
+          {
+            "id": "reviews",
+            "provides": "reviews",
+            "version": "1.0",
+            "title": "Review threads",
+            "bundled": true,
+            "state": "started",
+            "problems": [],
+            "verbs": [],
+            "reads": [],
+            "facts": [],
+            "commands": [],
+            "slots": [],
+            "subjects": [],
+            "views": [
+              {
+                "id": "reviews/thread",
+                "module": "thread.js",
+                "export": "mount",
+                "on": [
+                  "card"
+                ],
+                "scales": [
+                  "pane"
+                ],
+                "needs": [
+                  "display",
+                  "toast"
+                ],
+                "tab": "tab",
+                "keys": [
+                  "Ctrl+Shift+4"
+                ],
+                "words": {
+                  "label": "Reviews",
+                  "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
+                }
+              },
+              {
+                "id": "reviews/composer",
+                "module": "composer.js",
+                "export": "mount",
+                "on": [
+                  "lines"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "toast"
+                ],
+                "words": {
+                  "label": "Note",
+                  "hint": "a note on these lines, on the review thread of the worker's checkout"
+                }
+              },
+              {
+                "id": "reviews/tray",
+                "module": "tray.js",
+                "export": "mount",
+                "on": [
+                  "collection.reviews"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "display"
+                ],
+                "words": {
+                  "label": "Review threads",
+                  "hint": "the floor's review threads by checkout, and those filed once their work landed"
+                }
+              }
+            ],
+            "regions": []
+          }
+        ],
         "viewers": {},
-        "adds": {},
+        "adds": {
+          "card:20261004-090000-labx": {
+            "marks": [
+              {
+                "repo": "lab-api",
+                "path": "src/scheduler.ts",
+                "line": 41,
+                "to": 43,
+                "label": "n3",
+                "hint": "noted in n3",
+                "cap": "reviews"
+              },
+              {
+                "repo": "lab-api",
+                "path": "src/config.ts",
+                "line": 7,
+                "label": "n4",
+                "hint": "noted in n4",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090007-labx": {
+            "marks": [
+              {
+                "repo": "lab-api",
+                "path": "src/scheduler.ts",
+                "line": 41,
+                "to": 43,
+                "label": "n3",
+                "hint": "noted in n3",
+                "cap": "reviews"
+              },
+              {
+                "repo": "lab-api",
+                "path": "src/config.ts",
+                "line": 7,
+                "label": "n4",
+                "hint": "noted in n4",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090014-labx": {
+            "marks": [
+              {
+                "repo": "lab",
+                "path": "README.md",
+                "line": 3,
+                "label": "n1",
+                "hint": "noted in n1",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090028-labx": {
+            "marks": []
+          }
+        },
         "asks": [],
         "today": {
           "since": 1791072000000,
@@ -3064,9 +3336,145 @@
         ],
         "rateLimits": [],
         "probes": [],
-        "extensions": [],
+        "extensions": [
+          {
+            "id": "reviews",
+            "provides": "reviews",
+            "version": "1.0",
+            "title": "Review threads",
+            "bundled": true,
+            "state": "started",
+            "problems": [],
+            "verbs": [],
+            "reads": [],
+            "facts": [],
+            "commands": [],
+            "slots": [],
+            "subjects": [],
+            "views": [
+              {
+                "id": "reviews/thread",
+                "module": "thread.js",
+                "export": "mount",
+                "on": [
+                  "card"
+                ],
+                "scales": [
+                  "pane"
+                ],
+                "needs": [
+                  "display",
+                  "toast"
+                ],
+                "tab": "tab",
+                "keys": [
+                  "Ctrl+Shift+4"
+                ],
+                "words": {
+                  "label": "Reviews",
+                  "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
+                }
+              },
+              {
+                "id": "reviews/composer",
+                "module": "composer.js",
+                "export": "mount",
+                "on": [
+                  "lines"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "toast"
+                ],
+                "words": {
+                  "label": "Note",
+                  "hint": "a note on these lines, on the review thread of the worker's checkout"
+                }
+              },
+              {
+                "id": "reviews/tray",
+                "module": "tray.js",
+                "export": "mount",
+                "on": [
+                  "collection.reviews"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "display"
+                ],
+                "words": {
+                  "label": "Review threads",
+                  "hint": "the floor's review threads by checkout, and those filed once their work landed"
+                }
+              }
+            ],
+            "regions": []
+          }
+        ],
         "viewers": {},
-        "adds": {},
+        "adds": {
+          "card:20261004-090000-labx": {
+            "marks": [
+              {
+                "repo": "lab-api",
+                "path": "src/scheduler.ts",
+                "line": 41,
+                "to": 43,
+                "label": "n3",
+                "hint": "noted in n3",
+                "cap": "reviews"
+              },
+              {
+                "repo": "lab-api",
+                "path": "src/config.ts",
+                "line": 7,
+                "label": "n4",
+                "hint": "noted in n4",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090007-labx": {
+            "marks": [
+              {
+                "repo": "lab-api",
+                "path": "src/scheduler.ts",
+                "line": 41,
+                "to": 43,
+                "label": "n3",
+                "hint": "noted in n3",
+                "cap": "reviews"
+              },
+              {
+                "repo": "lab-api",
+                "path": "src/config.ts",
+                "line": 7,
+                "label": "n4",
+                "hint": "noted in n4",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090014-labx": {
+            "marks": [
+              {
+                "repo": "lab",
+                "path": "README.md",
+                "line": 3,
+                "label": "n1",
+                "hint": "noted in n1",
+                "cap": "reviews"
+              }
+            ]
+          },
+          "card:20261004-090028-labx": {
+            "marks": []
+          }
+        },
         "asks": [],
         "today": {
           "since": 1791072000000,
