@@ -119,7 +119,7 @@ stay the loudest thing on a floor, big planes muted, colour spent on small count
   least eye high stops sight ([`solids`](ref:hub/renderers/tower3d/src/layout.ts#solids)). A new place is a scene document in
   `renderers/kaykit/scenes/prefabs` plus a line in `zones.ts`.
 - Judged by pictures: [`tool:tour`](ref:hub/scripts/tour.ts) shoots fixed spots on the busy fixture by day and
-  night.
+  on the `night` fixture, busy at 22:30, by night.
 
 **Alternatives considered.**
 - *Two KayKit paths* (desk dressing's own and the playground's): zones would be code, and two scale rules drift.
