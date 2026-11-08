@@ -1,4 +1,4 @@
-import { cardSubject, linesSubject, type Board, type Card, type Lines, type Renderer } from '/lib/board.js'
+import { cardSubject, linesSubject, type Board, type Card, type Lines, type Renderer, type Subject } from '/lib/board.js'
 import { viewsOf, type Layout } from '/lib/layout.js'
 import { viewHost, type Hosted, type TabWords, type View, type ViewHost } from '/lib/view.js'
 import type { tower } from './api.ts'
@@ -15,20 +15,22 @@ export type DeskViewsDeps = {
   layout: () => Layout
   declared: () => Renderer
   toast: (message: string) => void
+  /** Where Tower 3D places a subject a view hands it (the kit's `display`). */
+  display: (subject: Subject | string) => void
   /** Told when a view's module arrives or a mounted view's tally changes: the desk's tabs are drawn again. */
   redraw: () => void
 }
 
 /** The desk's Changes, `tower/changes`, its notes on picked lines in `lines.acts` beneath them. */
 export const CHANGES = 'tower/changes'
-/** The desk's Reviews, `reviews/thread`: only its tab's tally is read here. */
+/** The desk's Reviews, `reviews/thread`. */
 export const THREAD = 'reviews/thread'
 
 export function deskViews(deps: DeskViewsDeps) {
   const { board } = deps
   let host: ViewHost | undefined
-  /** The view mounted at the desk, on the worker `id`. */
-  let held: { id: string; hosted: Hosted } | undefined
+  /** The views mounted at the desk, on the worker `id`, by view id: each kept, hidden, while another is seen. */
+  let held: { id: string; views: Map<string, Hosted> } | undefined
 
   const hosting = () =>
     (host ??= (() => {
@@ -39,7 +41,7 @@ export function deskViews(deps: DeskViewsDeps) {
         layout: deps.layout,
         declared: () => deps.declared().regions ?? [],
         kit: deps.declared().kit ?? [],
-        lent: { toast: deps.toast },
+        lent: { toast: deps.toast, display: deps.display },
         fills: {
           contributions: (_, id) => {
             throw new Error(`Tower 3D draws nothing extensions add inside a view, so it can't draw ${id}`)
@@ -52,24 +54,35 @@ export function deskViews(deps: DeskViewsDeps) {
 
   const viewOf = (id: string): View | undefined => viewsOf(board()).find((v) => v.id === id)
 
-  /** Closes what the desk mounted, its element emptied. */
+  /** Closes what the desk mounted, its elements removed. */
   function close() {
-    if (!held) return
-    held.hosted.close()
-    held.hosted.el.remove()
+    for (const hosted of held?.views.values() ?? []) {
+      hosted.close()
+      hosted.el.remove()
+    }
     held = undefined
   }
 
-  /** `c`'s Changes in `into`, seen: mounted afresh unless they are already. */
-  function openChanges(into: HTMLElement, c: Card) {
+  /** Every view the desk holds hidden, its reads stopped until it is seen again. */
+  function hide() {
+    for (const hosted of held?.views.values() ?? []) {
+      hosted.el.hidden = true
+      hosted.visible(false)
+    }
+  }
+
+  /** `c`'s view `id` in `into`, seen, the desk's others hidden: mounted afresh unless it is already. */
+  function open(id: string, into: HTMLElement, c: Card) {
     if (held?.id !== c.id) close()
-    if (held) return held.hosted.visible(true)
-    const view = viewOf(CHANGES)!
+    hide()
+    held ??= { id: c.id, views: new Map() }
+    const kept = held.views.get(id)
+    if (kept) return ((kept.el.hidden = false), kept.visible(true))
     const el = document.createElement('div')
     el.className = 'view-root'
-    into.replaceChildren(el)
+    into.append(el)
     el.addEventListener('tab', deps.redraw)
-    held = { id: c.id, hosted: hosting().mountView(view, el, cardSubject(c), { scale: 'pane', options: {} }) }
+    held.views.set(id, hosting().mountView(viewOf(id)!, el, cardSubject(c), { scale: 'pane', options: {} }))
   }
 
   /**
@@ -79,7 +92,7 @@ export function deskViews(deps: DeskViewsDeps) {
   function tabOf(id: string, c: Card): TabWords | undefined {
     const view = viewOf(id)
     if (!view?.tab || view.off?.includes(c.project)) return undefined
-    const mounted = held?.id === c.id && held.hosted.view.id === id ? held.hosted.tab() : undefined
+    const mounted = held?.id === c.id ? held.views.get(id)?.tab() : undefined
     if (mounted) return mounted
     const module = hosting().loaded(view)
     if (!module) return void hosting().moduleOf(view)
@@ -87,17 +100,16 @@ export function deskViews(deps: DeskViewsDeps) {
   }
 
   return {
-    openChanges,
+    open,
     /** Lines of the mounted worker's Changes to scroll to, their file unfolded. */
-    showLines: (lines: Lines) => held?.hosted.show(linesSubject(lines)),
-    /** The mounted view hidden and kept, its reads stopped until it is seen again. */
-    hide: () => held?.hosted.visible(false),
-    /** The board as it stands, handed to the mounted view while its worker is on it; closed once it isn't. */
+    showLines: (lines: Lines) => held?.views.get(CHANGES)?.show(linesSubject(lines)),
+    hide,
+    /** The board as it stands, handed to the mounted views while their worker is on it; closed once it isn't. */
     update(b: Board) {
       if (!held) return
       const c = b.floors.flatMap((f) => f.cards).find((c) => c.id === held!.id)
-      if (c) held.hosted.update(cardSubject(c))
-      else close()
+      if (!c) return close()
+      for (const hosted of held.views.values()) hosted.update(cardSubject(c))
     },
     close,
     tabOf,

@@ -36,6 +36,6 @@ export const { commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probedLines, pr
 export const { parseThread, reviewerOf, sendText, THE_USER, unseenBy } = reviews
 export const {
   cardReviews, cardThread, floorThread, floorThreadsOf, heldThread, keepsThreads, noteCallOf, readThread, resolveAction, reviewsHtml,
-  threadCheckout, threadFailure, threadViewOf, threadWant,
+  threadCheckout, threadFailure, threadViewAt, threadWant,
 } = panel
 export const { anchorOf } = anchors

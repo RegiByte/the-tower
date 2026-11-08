@@ -49,15 +49,31 @@ function storeInPage(): typeof tower.store {
   }
 }
 
-/** A fixture worker's Changes as `changes/<id>` reads them, the same under every scope; none for a worker without. */
-const changesAt = (path: string) => {
-  const id = /^changes\/([^?]+)/.exec(path)?.[1]
-  return id === undefined ? undefined : (FIXTURE_CHANGES[id] ?? [])
+/** Where each fixture worker's thread's anchors stand among its Changes, by session id. */
+const FIXTURE_ANCHORS: FixtureFile['anchors'] = file?.anchors ?? {}
+
+/**
+ * What a fixture answers a view's `get`: a worker's Changes as `changes/<id>` reads them, the same under every scope,
+ * none for a worker without; where its thread's anchors stand as `reviews/anchors/<project>?card=<id>` reads them.
+ */
+const gotAt = (path: string): unknown => {
+  const changes = /^changes\/([^?]+)/.exec(path)?.[1]
+  if (changes !== undefined) return FIXTURE_CHANGES[changes] ?? []
+  const card = /^reviews\/anchors\/[^?]+\?card=([^&]+)$/.exec(path)?.[1]
+  if (card !== undefined) return { states: FIXTURE_ANCHORS[decodeURIComponent(card)] ?? {} }
+  return undefined
+}
+
+/** A fixture's review thread as `collection/<project>/reviews/<id>` reads it, by its slot `<project>/<id>`. */
+const textAt = (path: string): string | undefined => {
+  const [, project, id] = /^collection\/([^/]+)\/reviews\/([^/]+)$/.exec(path) ?? []
+  return project === undefined ? undefined : FIXTURE_THREADS[`${project}/${decodeURIComponent(id)}`]
 }
 
 /**
- * The tower the views Tower 3D mounts read through: on a fixture board, one answering a worker's Changes from the
- * fixture and keeping `store` in the page, with no tower behind anything else.
+ * The tower the views Tower 3D mounts read through: on a fixture board, one answering a worker's Changes, its review
+ * thread and where the thread's anchors stand from the fixture, and keeping `store` in the page, with no tower behind
+ * anything else.
  */
 export const viewTower: typeof tower =
   FIXTURE === undefined
@@ -65,9 +81,13 @@ export const viewTower: typeof tower =
     : {
         ...tower,
         get: ((path: string) => {
-          const changes = changesAt(path)
-          return changes ? Promise.resolve(changes) : Promise.reject(new Error(`a fixture board answers no ${path}`))
+          const got = gotAt(path)
+          return got === undefined ? Promise.reject(new Error(`a fixture board answers no ${path}`)) : Promise.resolve(got)
         }) as typeof tower.get,
+        text: (path: string) => {
+          const text = textAt(path)
+          return text === undefined ? Promise.reject(new Error(`a fixture board answers no ${path}`)) : Promise.resolve(text)
+        },
         store: storeInPage(),
         call: (() => Promise.reject(new Error('a fixture board has no tower behind it'))) as typeof tower.call,
         run: () => Promise.reject(new Error('a fixture board has no tower behind it')),

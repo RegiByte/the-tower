@@ -27,7 +27,7 @@ import { DEFAULT_KEYS } from '/lib/keys.js'
 import type { Board, Card, CommandLimits, Floor, Status } from '/lib/board.js'
 import type { RepoChanges } from '/lib/changes.js'
 import { DRAFTS } from '../extensions/drafts/client/drafts.ts'
-import { REVIEWS, parseThread, resolvedIn, reviewPrompt, threadCheckoutOf, threadId, unseenBy } from '../extensions/reviews/client/reviews.ts'
+import { REVIEWS, anchorStates, parseThread, resolvedIn, reviewPrompt, threadCheckoutOf, threadId, unseenBy, type AnchorStates } from '../extensions/reviews/client/reviews.ts'
 import { threadMarks } from '../extensions/reviews/client/anchors.ts'
 import type { CardPart, FloorPart, NoteCall } from '../extensions/reviews/threads.ts'
 import type { ProbeStatus } from '../extensions/quota/client/quota.ts'
@@ -204,11 +204,12 @@ const REVIEWS_ON_BOARD: Board['extensions'][number] = (() => {
 
 /**
  * A floor's threads as the reviews extension folds them, each card's reviews part with what of its checkout's thread
- * is new to it, and the marks its thread's notes put on its changed lines (`adds`, by `card:<id>`); on a floor keeping
- * threads, every checkout's work goes on, so each offers a note.
+ * is new to it, the marks its thread's notes put on its changed lines (`adds`, by `card:<id>`), and where its anchors
+ * stand among its Changes as `reviews/anchors/<project>?card=<id>` answers (`anchors`, by session id); on a floor
+ * keeping threads, every checkout's work goes on, so each offers a note.
  */
-function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Card[]; adds?: Board['adds'] } {
-  if (!f.threads) return { cards }
+function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Card[]; adds?: Board['adds']; anchors: Record<string, AnchorStates> } {
+  if (!f.threads) return { cards, anchors: {} }
   const parsed = Object.entries(f.threads).map(([checkout, text]) => ({ checkout, thread: parseThread(text) }))
   const note = (checkout: string): NoteCall => ['reviews/append', { project: f.id, checkout }]
   const threads: FloorPart['threads'] = parsed.map(({ checkout, thread }) => ({
@@ -222,6 +223,10 @@ function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Car
     adds: Object.fromEntries(cards.flatMap((c) => {
       const thread = threadOf(c)
       return thread ? [[`card:${c.id}`, { marks: threadMarks(thread).map((m) => ({ ...m, cap: REVIEWS })) }]] : []
+    })),
+    anchors: Object.fromEntries(cards.flatMap((c, n) => {
+      const thread = threadOf(c)
+      return thread ? [[c.id, anchorStates(thread, f.changes?.[n] ?? [])]] : []
     })),
     cards: cards.map((c) => {
       const checkout = threadCheckoutOf(c)
@@ -248,7 +253,7 @@ const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => 
 type Built = { board: Board; archive: Card[] } & Omit<FixtureFile, 'at' | 'boards'>
 
 /** What a floor's files read, by `<project>/<id>`, and its workers' Changes, by session id. */
-const textsOf = (f: FloorFacts): Omit<FixtureFile, 'at' | 'boards'> => ({
+const textsOf = (f: FloorFacts): Omit<FixtureFile, 'at' | 'boards' | 'anchors'> => ({
   threads: Object.fromEntries(Object.entries(f.threads ?? {}).map(([checkout, text]) => [`${f.id}/${threadId(checkout)}`, text])),
   drafts: Object.fromEntries((f.drafts ?? []).map((text, n) => [`${f.id}/${draftId(n)}`, text])),
   games: Object.fromEntries((f.games ?? []).map((g, n) => [`${f.id}/${gameId(n)}`, g.html])),
@@ -317,6 +322,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     drafts: Object.assign({}, ...texts.map((t) => t.drafts)),
     games: Object.assign({}, ...texts.map((t) => t.games)),
     changes: Object.assign({}, ...texts.map((t) => t.changes)),
+    anchors: Object.assign({}, ...threaded.map((t) => t.anchors)),
   }
 }
 
@@ -759,6 +765,7 @@ function fixtureFile({ at, boards }: (typeof FIXTURES)[string]): FixtureFile {
     drafts: Object.assign({}, ...built.map((b) => b.drafts)),
     games: Object.assign({}, ...built.map((b) => b.games)),
     changes: Object.assign({}, ...built.map((b) => b.changes)),
+    anchors: Object.assign({}, ...built.map((b) => b.anchors)),
   }
 }
 

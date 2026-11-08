@@ -248,8 +248,8 @@ button.wide { width: 100%; }
 .desk-tabs button.on small { color: inherit; }
 #desk-view { position: absolute; inset: 0 12px 12px; display: flex; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
 .view-root { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.view-root[hidden] { display: none; }
 .view-failed { margin: auto; padding: var(--sp-m); color: var(--broken-text); font-size: var(--fs-s); }
-#desk-reviews { position: absolute; inset: 0 12px 12px; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
 #doc-body[data-thread], #doc-body[data-stats] { display: block; overflow-y: auto; padding: 0 var(--sp-xl) var(--sp-xl); }
 
 #doc { display: flex; flex-direction: column; overflow: hidden; }
@@ -331,7 +331,7 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
   <div class="desk-bar tab-row"><span class="desk-tabs tab-set" id="desk-tabs"></span><button class="activity" id="desk-activity" popovertarget="desk-details"></button>
     <span class="desk-mode" id="desk-mode"></span><span class="moves" id="desk-moves"></span></div>
   <div id="desk-details" popover></div>
-  <div id="desk-body"><div id="desk-screen"></div><div id="desk-stamp" class="stamp hidden"></div><div id="desk-brief" class="hidden"></div><div id="desk-view" class="hidden"></div><div id="desk-reviews" class="hidden"></div><div id="desk-shown" class="hidden"></div></div>
+  <div id="desk-body"><div id="desk-screen"></div><div id="desk-stamp" class="stamp hidden"></div><div id="desk-brief" class="hidden"></div><div id="desk-view" class="hidden"></div><div id="desk-shown" class="hidden"></div></div>
 </div>
 <div id="doc" class="glass hidden">
   <div class="desk-head" id="doc-head"></div>
