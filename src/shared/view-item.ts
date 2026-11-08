@@ -1,4 +1,4 @@
-import { type Board, type CardShown, type Floor, type FloorCollection, type FloorItem } from '../bridge/board.ts'
+import type { Board, CardShown, Floor, FloorCollection, FloorItem } from '../bridge/board.ts'
 import { type CheckoutFile, itemSubject, type Subject } from './subjects.ts'
 import { shownHref, shownTitle } from './worker-details.ts'
 import type { Tower } from './shelf-page.ts'
