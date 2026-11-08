@@ -1,6 +1,6 @@
 import { choice, section } from '/lib/settings.js'
 import { tower } from '../api.ts'
-import { FIXTURE } from '../fixtures.ts'
+import { FIXTURE } from '../fixture-name.ts'
 
 /**
  * The lighting setting: the light rig that follows the clock (rig.ts), contact shadows under your level (contact.ts)

@@ -34,8 +34,8 @@
     "hub/renderers/kaykit/scenes/prefabs/meeting_long.json",
     "hub/renderers/kaykit/scenes/prefabs/room_meeting_8.json",
     "hub/renderers/kaykit/scenes/prefabs/room_meeting_4.json",
-    "hub/renderers/tower3d/src/fixtures.ts#crews",
-    "hub/renderers/tower3d/src/fixtures.ts#growing"
+    "hub/scripts/tower3d-fixtures.ts#crews",
+    "hub/scripts/tower3d-fixtures.ts#growing"
   ],
   "links": [
     { "to": "crews", "verb": "uses", "carries": "card.reportsTo, card.onDuty and today's sent-home cards: who a crew is and when each of it came and went" },
@@ -106,6 +106,6 @@ It can be a pure function of one board: the board keeps today's sent-home cards 
   instancing keeps a level's chairs to a draw call per material.
 
 **Impact.** Tower 3D only; no board or API change. The
-[`crews`](ref:hub/renderers/tower3d/src/fixtures.ts#crews) and
-[`growing`](ref:hub/renderers/tower3d/src/fixtures.ts#growing) fixture boards cover gathering, overflow, two rooms, a
+[`crews`](ref:hub/scripts/tower3d-fixtures.ts#crews) and
+[`growing`](ref:hub/scripts/tower3d-fixtures.ts#growing) fixture boards cover gathering, overflow, two rooms, a
 waiting crew and the table growing.
