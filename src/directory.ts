@@ -62,18 +62,20 @@ const readStdin = async (): Promise<string> => {
   return Buffer.concat(chunks).toString('utf8')
 }
 
+const noTower = (err: { cause?: { code?: string }; message: string }) => new CliError(`No tower answers at ${towerAt()} (${err.cause?.code ?? err.message})`, 'the user starts it with `tower up`')
+
 const towerGet = (route: string): Promise<Response> =>
   fetch(`${towerAt()}${route}`, { headers: callerHeaders(me) }).catch((err) => {
-    throw new CliError(`No tower answers at ${towerAt()} (${err.cause?.code ?? err.message})`, 'the user starts it with `tower up`')
+    throw noTower(err)
   })
 
-/** Every extension and its words, as `tower x` reads them; none when no tower answers. */
+/** Every extension and its words, as `tower x` reads them; none when no tower listens, or one too old to read them. */
 export const wordOwners = async (): Promise<WordOwner[] | undefined> => {
   const res = await fetch(`${towerAt()}/extensions`, { headers: callerHeaders(me) }).catch((err) => {
     if (err.cause?.code === 'ECONNREFUSED') return undefined
-    throw err
+    throw noTower(err)
   })
-  return res && ((await res.json()) as Reads['extensions']).extensions
+  return res?.ok ? ((await res.json()) as Reads['extensions']).extensions : undefined
 }
 
 /** `/board` is a stream: its first event is the board now. */

@@ -199,17 +199,17 @@ export type WordOwner = Pick<ExtensionView, 'provides' | 'state'> & { words: Wor
 
 /**
  * An unknown top-level word that is a capability's name or an extension's word lives under `tower x`: what to say of
- * it, every form it has, each owner not running with its state. Nothing for any other word.
+ * it, every form it has, a capability none of whose providers runs with its state. Nothing for any other word.
  */
 export const movedLine = (name: string, owners: WordOwner[]): { message: string; fix: string } | undefined => {
   const named = owners.filter((o) => o.provides === name)
   const owning = owners.filter((o) => typedWords(o.words).includes(name))
   if (!named.length && !owning.length) return undefined
-  const forms = [...named.map((o) => ({ o, form: `tower x ${o.provides}` })), ...owning.map((o) => ({ o, form: `tower x ${o.provides} ${name}` }))]
-  const said = forms.map(({ o, form }) => (o.state === 'started' ? form : `${form} (${o.provides}: ${EXTENSION_STATE_NAME[o.state]})`))
-  const stopped = forms.some(({ o }) => o.state !== 'started')
-  const listed = forms.map(({ o }) => `\`tower x ${o.provides}\``)
-  const fix = stopped ? '`tower extensions` lists each extension and its state' : forms.length === 1 && owning.length ? `\`${forms[0].form} --help\` says what it takes` : forms.length === 1 ? `${listed[0]} lists its words` : `${listed.join(' and ')} list their words`
+  const providers = Map.groupBy([...named.map((o) => ({ o, form: `tower x ${o.provides}` })), ...owning.map((o) => ({ o, form: `tower x ${o.provides} ${name}` }))], ({ form }) => form)
+  const forms = [...providers].map(([form, of]) => ({ form, provides: of[0].o.provides, stopped: of.some(({ o }) => o.state === 'started') ? undefined : of[0].o.state }))
+  const said = forms.map(({ form, provides, stopped }) => (stopped ? `${form} (${provides}: ${EXTENSION_STATE_NAME[stopped]})` : form))
+  const listed = forms.map(({ provides }) => `\`tower x ${provides}\``)
+  const fix = forms.some((f) => f.stopped) ? '`tower extensions` lists each extension and its state' : forms.length === 1 && owning.length ? `\`${forms[0].form} --help\` says what it takes` : forms.length === 1 ? `${listed[0]} lists its words` : `${listed.join(' and ')} list their words`
   return { message: `"${name}" is under tower x: ${said.join(', or ')}`, fix }
 }
 
