@@ -103,7 +103,8 @@ and its reviewers discuss the work before it lands.
 **Collections** are folders of files a floor keeps: `drafts` (prompts waiting for a session), `reviews` (the
 threads above), and any you declare, each with a description of what it's for. Workers add with `tower keep`;
 every item gets a two-word tag to refer to it by (`ivory-otter`). `tower kept` lists what a floor keeps, and
-`tower read <tag>` reads one item in full. A draft starts a worker from the tower page, or `tower hire <tag>`. Declare your own collections in the config (notes, reports, templates…): the tower keeps the
+`tower read <tag>` reads one item in full. `tower unkeep <tag>...` deletes items for good: workers use it only when
+you said to, for those items. A draft starts a worker from the tower page, or `tower hire <tag>`. Declare your own collections in the config (notes, reports, templates…): the tower keeps the
 files, and you and your workers decide what they mean.
 
 **Jobs** are commands run to their end outside the tower, in the jobs daemon: a clone, an install, a build. A job
