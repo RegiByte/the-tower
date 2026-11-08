@@ -21,8 +21,6 @@ import type { VideoWall } from './room.ts'
 import type { Running } from './running.ts'
 import type { Pigeonhole } from './pigeonhole.ts'
 import type { Filing } from './filing.ts'
-import type { LinePick } from '/lib/changes.js'
-import type { Anchor } from '../../../src/shared/reviews.ts'
 import type { DeskTab, LogbookTab } from './ui.ts'
 import { STATS_ALL } from '/lib/stats.js'
 import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
@@ -177,19 +175,6 @@ export type State = {
   noteTexts: Map<string, string>
   noteRe: number | undefined
   sendPicks: Map<string, string>
-  /**
-   * The desk's Changes: files folded or unfolded against their viewed mark (`fileKey`), the lines picked (`picking`
-   * while they are dragged across) and the note written under them (`pickFresh` until its box takes focus), and an
-   * anchor whose lines to scroll to once drawn.
-   */
-  folds: Set<string>
-  /** The file tree's folders folded at the desk, by `data-tree-fold`. */
-  treeFolds: Set<string>
-  pick: LinePick | undefined
-  picking: boolean
-  pickText: string
-  pickFresh: boolean
-  jump: Anchor | undefined
 
   /** What the crosshair is on, what it offers, the offer the wheel marked, and the held one. */
   aimed: Act | undefined
@@ -245,7 +230,7 @@ export const s: State = {
   visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: LIT, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, hiring: noHires, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
-  carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(), folds: new Set(), treeFolds: new Set(), pick: undefined, picking: false, pickText: '', pickFresh: false, jump: undefined,
+  carrying: undefined, beer: false, draft: undefined, noteTexts: new Map(), noteRe: undefined, sendPicks: new Map(),
   aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, down: undefined,
   doorMode: false, doorHeld: false, still: false,
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,

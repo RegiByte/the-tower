@@ -960,7 +960,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `conversation` | `conversation.head`, the conversation's heading in the Brief: badges, verbs, commands | `conversation.head`, the conversation's heading in the logbook: badges | not drawn | not drawn |
 | `floor` | `floor.sign`, the floor's sign in the sidebar while the floor is open, and the palette: each command its icon alone, its label and hint the tip: commands<br>`floor.section`, the floor's section in the sidebar, its Tidy and the palette: badges, verbs, asks, tidy | `floor.console`, the floor's Tidy: tidy | not drawn | not drawn |
 | `shown` | `shown.head`, beside the worker's tabs while the showing is open: badges, verbs<br>`shown.tab`, inside the showing's tab while it is open, beside its own icons: each command its icon alone, its label and hint the tip: commands | not drawn | not drawn | not drawn |
-| `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | not drawn | not drawn | not drawn |
+| `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | `lines.acts`, under lines picked in a worker's Changes at its desk: what writes a note on them: views | not drawn | not drawn |
 | `said` | `said.acts`, beside a prompt's or an answer's copy in the Brief: commands | not drawn | not drawn | not drawn |
 | `section` | `section.acts`, in a gutter beside a markdown document, level with each of its sections: commands | not drawn | not drawn | not drawn |
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands | not drawn | not drawn | not drawn |

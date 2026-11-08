@@ -11,8 +11,9 @@ type Drafts = typeof import('/x/drafts/drafts.js')
 type Quota = typeof import('/x/quota/quota.js')
 type Reviews = typeof import('/x/reviews/reviews.js')
 type Panel = typeof import('/x/reviews/panel.js')
+type Anchors = typeof import('/x/reviews/anchors.js')
 
-const [drafts, quota, reviews, panel] = await Promise.all([
+const [drafts, quota, reviews, panel, anchors] = await Promise.all([
   clientOf<Drafts>('/x/drafts/drafts.js', { draftsOf: () => undefined, draftItem: () => undefined, draftTitles: () => ({ title: () => '', prune: () => {} }) }),
   clientOf<Quota>('/x/quota/quota.js', { commandProbes: () => [] }),
   clientOf<Reviews>('/x/reviews/reviews.js', { reviewerOf: () => undefined }),
@@ -24,6 +25,7 @@ const [drafts, quota, reviews, panel] = await Promise.all([
     threadCheckout: (c) => c.checkout,
     readThread: () => () => Promise.reject(new Error('No review threads are served')),
   }),
+  clientOf<Anchors>('/x/reviews/anchors.js', { anchorOf: () => undefined }),
 ])
 
 export const {
@@ -36,3 +38,4 @@ export const {
   cardReviews, cardThread, floorThread, floorThreadsOf, heldThread, keepsThreads, noteCallOf, readThread, resolveAction, reviewsHtml,
   threadCheckout, threadFailure, threadViewOf, threadWant,
 } = panel
+export const { anchorOf } = anchors
