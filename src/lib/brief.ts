@@ -5,6 +5,7 @@ export {
   briefKey,
   expandedSaid,
   keptWholes,
+  movedWholes,
   openFolds,
   openTools,
   /** @provisional */ RESUMED_IDLE,

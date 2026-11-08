@@ -18,8 +18,8 @@
  *                                         (`toolCallHtml`), and hand it to the next draw as `tools` once it ended
  *                                         (`toolCallSettled`): a call drawn open fires `toggle` again as it is drawn
  *   data-brief-earlier="<session>:<conversation>"   read the conversation whole (`tower.conversation`) and draw it in place
- *                                                   of its last turns (`withWhole`) while its latest turn
- *                                                   holds (`wholeHolds`)
+ *                                                   of its last turns (`withWhole`), read whole again when a
+ *                                                   later read moves its latest turn (`movedWholes`)
  *
  * and each fence's `data-copy-code` of `/markdown.js`. A brief shown is read again as its card moves (`briefKey`), each
  * read with the conversations read whole put back while they hold (`keptWholes`).
@@ -173,6 +173,13 @@ export const keptWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[]; w
   const kept = wholes.filter((whole) => wholeHolds(read, whole))
   return { briefs: kept.reduce(withWhole, read), wholes: kept }
 }
+
+/**
+ * The conversations read whole that a later brief moved and still holds: a renderer reads them whole again and draws
+ * them in place of their last turns (`withWhole`), so a worker at work keeps them whole as its latest turn moves. @since 1.163
+ */
+export const movedWholes = (read: Brief[], wholes: Brief[]): Brief[] =>
+  wholes.filter((whole) => !wholeHolds(read, whole) && read.some((b) => conversationKey(b) === conversationKey(whole)))
 
 /**
  * What a worker's brief is read at: its status, its tool, its conversations and what extensions add to them. A brief
