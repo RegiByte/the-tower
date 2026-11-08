@@ -3314,7 +3314,85 @@
         ],
         "rateLimits": [],
         "probes": [],
-        "extensions": [],
+        "extensions": [
+          {
+            "id": "reviews",
+            "provides": "reviews",
+            "version": "1.0",
+            "title": "Review threads",
+            "bundled": true,
+            "state": "started",
+            "problems": [],
+            "verbs": [],
+            "reads": [],
+            "facts": [],
+            "commands": [],
+            "slots": [],
+            "subjects": [],
+            "views": [
+              {
+                "id": "reviews/thread",
+                "module": "thread.js",
+                "export": "mount",
+                "on": [
+                  "card"
+                ],
+                "scales": [
+                  "pane"
+                ],
+                "needs": [
+                  "display",
+                  "toast"
+                ],
+                "tab": "tab",
+                "keys": [
+                  "Ctrl+Shift+4"
+                ],
+                "words": {
+                  "label": "Reviews",
+                  "hint": "the review thread of the worker's checkout: notes from you, its workers and reviewers"
+                }
+              },
+              {
+                "id": "reviews/composer",
+                "module": "composer.js",
+                "export": "mount",
+                "on": [
+                  "lines"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "toast"
+                ],
+                "words": {
+                  "label": "Note",
+                  "hint": "a note on these lines, on the review thread of the worker's checkout"
+                }
+              },
+              {
+                "id": "reviews/tray",
+                "module": "tray.js",
+                "export": "mount",
+                "on": [
+                  "collection.reviews"
+                ],
+                "scales": [
+                  "row"
+                ],
+                "needs": [
+                  "display"
+                ],
+                "words": {
+                  "label": "Review threads",
+                  "hint": "the floor's review threads by checkout, and those filed once their work landed"
+                }
+              }
+            ],
+            "regions": []
+          }
+        ],
         "viewers": {},
         "adds": {},
         "asks": [],

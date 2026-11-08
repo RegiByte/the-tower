@@ -11,7 +11,7 @@
  *
  * Each fixture is built at one instant, in UTC, which its file records as `at`: the page's wall clock on that fixture.
  */
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { archiveAtOf, galleryOf, onBoard, waitingOrder, withReports } from '../src/bridge/board.ts'
 import { awaitsResume, lifeOf } from '../src/bridge/life.ts'
@@ -28,6 +28,7 @@ import type { Board, Card, CommandLimits, Floor, Status } from '/lib/board.js'
 import type { RepoChanges } from '/lib/changes.js'
 import { DRAFTS } from '../extensions/drafts/client/drafts.ts'
 import { REVIEWS, parseThread, resolvedIn, reviewPrompt, threadCheckoutOf, threadId, unseenBy } from '../extensions/reviews/client/reviews.ts'
+import { threadMarks } from '../extensions/reviews/client/anchors.ts'
 import type { CardPart, FloorPart, NoteCall } from '../extensions/reviews/threads.ts'
 import type { ProbeStatus } from '../extensions/quota/client/quota.ts'
 import type { QuotaPart } from '../extensions/quota/status.ts'
@@ -184,10 +185,29 @@ const reviewsCollection = (project: string, threads: Record<string, string>, now
 }]
 
 /**
- * A floor's threads as the reviews extension folds them, and each card's reviews part with what of its checkout's
- * thread is new to it; on a floor keeping threads, every checkout's work goes on, so each offers a note.
+ * The reviews extension as a fixture board shows it, started: its views, the regions they declare and their layout,
+ * read from its manifest, so the views offered on a fixture are those a tower offers. It adds nothing else here: the
+ * fixtures write its parts and marks themselves (`withThreads`).
  */
-function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Card[] } {
+const REVIEWS_ON_BOARD: Board['extensions'][number] = (() => {
+  const manifest = JSON.parse(readFileSync(path.join(import.meta.dirname, '../extensions/reviews/extension.json'), 'utf8')) as {
+    title: string; version: string; views: Record<string, Omit<Board['extensions'][number]['views'][number], 'id'>>
+    regions?: Record<string, Board['extensions'][number]['regions'][number] & { layout?: unknown }>
+  }
+  return {
+    id: REVIEWS, provides: REVIEWS, version: manifest.version, title: manifest.title, bundled: true, state: 'started', problems: [],
+    verbs: [], reads: [], facts: [], commands: [], slots: [], subjects: [],
+    views: Object.entries(manifest.views).map(([name, view]) => ({ id: `${REVIEWS}/${name}`, ...view })),
+    regions: Object.entries(manifest.regions ?? {}).map(([id, { layout: _, ...region }]) => ({ ...region, id })),
+  }
+})()
+
+/**
+ * A floor's threads as the reviews extension folds them, each card's reviews part with what of its checkout's thread
+ * is new to it, and the marks its thread's notes put on its changed lines (`adds`, by `card:<id>`); on a floor keeping
+ * threads, every checkout's work goes on, so each offers a note.
+ */
+function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Card[]; adds?: Board['adds'] } {
   if (!f.threads) return { cards }
   const parsed = Object.entries(f.threads).map(([checkout, text]) => ({ checkout, thread: parseThread(text) }))
   const note = (checkout: string): NoteCall => ['reviews/append', { project: f.id, checkout }]
@@ -196,8 +216,13 @@ function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Car
     verbs: ['note'], calls: { note: note(checkout) }, actions: [{ verb: 'note', call: note(checkout) }],
     last: thread.messages.at(-1) && { author: thread.messages.at(-1)!.author, at: thread.messages.at(-1)!.at, n: thread.messages.at(-1)!.n },
   }))
+  const threadOf = (c: Card) => parsed.find((t) => t.checkout === threadCheckoutOf(c))?.thread
   return {
     x: { [REVIEWS]: { threads } satisfies FloorPart },
+    adds: Object.fromEntries(cards.flatMap((c) => {
+      const thread = threadOf(c)
+      return thread ? [[`card:${c.id}`, { marks: threadMarks(thread).map((m) => ({ ...m, cap: REVIEWS })) }]] : []
+    })),
     cards: cards.map((c) => {
       const checkout = threadCheckoutOf(c)
       const thread = parsed.find((t) => t.checkout === checkout)?.thread
@@ -270,9 +295,9 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     ...(extra.extraUsage && { extraUsage: extra.extraUsage }),
     probes: [],
     ...(extra.quota && { x: { quota: { ...extra.quota, commands: [extra.quota] } satisfies QuotaPart } }),
-    extensions: [],
+    extensions: [REVIEWS_ON_BOARD],
     viewers: {},
-    adds: {},
+    adds: Object.assign({}, ...threaded.map((t) => t.adds ?? {})),
     asks: [],
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
     hostUp: true,
