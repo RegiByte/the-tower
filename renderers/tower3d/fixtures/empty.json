@@ -1,0 +1,310 @@
+{
+  "at": "2026-10-04T15:00:00.000Z",
+  "boards": [
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "alpha",
+            "name": "alpha",
+            "color": "#c792ea",
+            "hub": "/work/alpha",
+            "repos": [],
+            "collections": [
+              {
+                "id": "drafts",
+                "label": "Drafts",
+                "by": "drafts",
+                "dir": "/system/collections/alpha/drafts",
+                "items": [
+                  {
+                    "id": "20261004T150000.000Z.md",
+                    "tag": "cosy-flute",
+                    "size": 32,
+                    "modifiedAt": 1791125940000
+                  }
+                ]
+              }
+            ],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "alpha"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "alpha"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "alpha"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "alpha"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "beta",
+            "name": "beta",
+            "color": "#7fb069",
+            "hub": "/work/beta",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "beta"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "beta"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "beta"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "beta"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    }
+  ],
+  "threads": {},
+  "drafts": {
+    "alpha/20261004T150000.000Z.md": "Hire someone for the empty floor"
+  },
+  "games": {},
+  "changes": {}
+}

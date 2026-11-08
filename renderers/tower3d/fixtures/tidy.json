@@ -1,0 +1,1424 @@
+{
+  "at": "2026-10-04T15:00:00.000Z",
+  "boards": [
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "ops",
+            "name": "ops",
+            "color": "#82aaff",
+            "hub": "/work/ops",
+            "repos": [],
+            "collections": [],
+            "worktrees": [
+              {
+                "name": "stage-docs",
+                "repos": [
+                  {
+                    "dir": "/work/ops",
+                    "path": "/work/ops/.worktrees/stage-docs",
+                    "branch": "tower/stage-docs",
+                    "present": true,
+                    "dirty": 0,
+                    "unpushed": 0,
+                    "absorbed": true,
+                    "risk": [],
+                    "atRisk": false
+                  }
+                ],
+                "sessions": [
+                  "20261004-090042-opsx"
+                ],
+                "state": "live",
+                "verbs": [],
+                "calls": {},
+                "actions": []
+              },
+              {
+                "name": "stage-bench",
+                "repos": [
+                  {
+                    "dir": "/work/ops",
+                    "path": "/work/ops/.worktrees/stage-bench",
+                    "branch": "tower/stage-bench",
+                    "present": true,
+                    "dirty": 0,
+                    "unpushed": 2,
+                    "absorbed": false,
+                    "risk": [],
+                    "atRisk": false
+                  }
+                ],
+                "sessions": [
+                  "20261004-090049-opsx"
+                ],
+                "state": "live",
+                "verbs": [],
+                "calls": {},
+                "actions": []
+              }
+            ],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [
+                {
+                  "t": "reap",
+                  "id": "20261004-090000-opsx",
+                  "pid": 5101
+                },
+                {
+                  "t": "reap",
+                  "id": "20261004-090000-opsx",
+                  "pid": 5102
+                },
+                {
+                  "t": "reap",
+                  "id": "20261004-090007-opsx",
+                  "pid": 5201
+                }
+              ],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-opsx",
+                "callsign": "OTTO-29",
+                "project": "ops",
+                "cwd": "/work/ops",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "exited",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": true,
+                "cutOff": false,
+                "onDuty": false,
+                "enteredAt": 1791108060000,
+                "startedAt": 1791108000000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-opsx",
+                    "startedAt": 1791108000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [
+                  {
+                    "pid": 5101,
+                    "command": "python3 -m http.server 8080",
+                    "ports": [
+                      8080
+                    ],
+                    "orphan": true,
+                    "verbs": [
+                      "reap"
+                    ],
+                    "calls": {
+                      "reap": [
+                        "reap/process",
+                        {
+                          "id": "20261004-090000-opsx",
+                          "pid": 5101
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "reap",
+                        "call": [
+                          "reap/process",
+                          {
+                            "id": "20261004-090000-opsx",
+                            "pid": 5101
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "pid": 5102,
+                    "command": "tail -f build.log",
+                    "ports": [],
+                    "orphan": true,
+                    "verbs": [
+                      "reap"
+                    ],
+                    "calls": {
+                      "reap": [
+                        "reap/process",
+                        {
+                          "id": "20261004-090000-opsx",
+                          "pid": 5102
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "reap",
+                        "call": [
+                          "reap/process",
+                          {
+                            "id": "20261004-090000-opsx",
+                            "pid": 5102
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-opsx-conversation",
+                    "startedAt": 1791108000000,
+                    "prompt": "Serve the docs",
+                    "answer": "Serving on :8080.",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090000-opsx",
+                          "conversation": "20261004-090000-opsx-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090000-opsx",
+                            "conversation": "20261004-090000-opsx-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief",
+                  "reap"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090000-opsx",
+                      "conversation": "20261004-090000-opsx-conversation"
+                    }
+                  ],
+                  "reap": [
+                    "reap",
+                    {
+                      "id": "20261004-090000-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090000-opsx",
+                        "conversation": "20261004-090000-opsx-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "reap",
+                    "call": [
+                      "reap",
+                      {
+                        "id": "20261004-090000-opsx"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "20261004-090007-opsx",
+                "callsign": "BISHOP-22",
+                "project": "ops",
+                "cwd": "/work/ops",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "lost",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "broken",
+                "stuck": false,
+                "compacting": false,
+                "stranded": true,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791114060000,
+                "startedAt": 1791114000000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-opsx",
+                    "startedAt": 1791114000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [
+                  {
+                    "pid": 5201,
+                    "command": "esbuild --watch --outdir=out",
+                    "ports": [],
+                    "orphan": false,
+                    "verbs": [
+                      "reap"
+                    ],
+                    "calls": {
+                      "reap": [
+                        "reap/process",
+                        {
+                          "id": "20261004-090007-opsx",
+                          "pid": 5201
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "reap",
+                        "call": [
+                          "reap/process",
+                          {
+                            "id": "20261004-090007-opsx",
+                            "pid": 5201
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-opsx-conversation",
+                    "startedAt": 1791114000000,
+                    "prompt": "Watch the bundle",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090007-opsx",
+                          "conversation": "20261004-090007-opsx-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090007-opsx",
+                            "conversation": "20261004-090007-opsx-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief",
+                  "reap",
+                  "let-go"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090007-opsx",
+                      "conversation": "20261004-090007-opsx-conversation"
+                    }
+                  ],
+                  "reap": [
+                    "reap",
+                    {
+                      "id": "20261004-090007-opsx"
+                    }
+                  ],
+                  "let-go": [
+                    "let-go",
+                    {
+                      "id": "20261004-090007-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090007-opsx",
+                        "conversation": "20261004-090007-opsx-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "reap",
+                    "call": [
+                      "reap",
+                      {
+                        "id": "20261004-090007-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "let-go",
+                    "call": [
+                      "let-go",
+                      {
+                        "id": "20261004-090007-opsx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090014-opsx",
+                "callsign": "SOCRATES-17",
+                "project": "ops",
+                "cwd": "/work/ops",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "idle",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791115260000,
+                "startedAt": 1791115200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-opsx",
+                    "startedAt": 1791115200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-opsx-conversation",
+                    "startedAt": 1791115200000,
+                    "prompt": "Look around",
+                    "answer": "Looked.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-opsx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090014-opsx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090014-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-opsx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090021-opsx",
+                "callsign": "KOROLEV-05",
+                "project": "ops",
+                "cwd": "/work/ops",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791125460000,
+                "startedAt": 1791125400000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 2,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-opsx",
+                    "startedAt": 1791125400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-opsx-conversation",
+                    "startedAt": 1791125400000,
+                    "prompt": "Count the routes",
+                    "answer": "Thirty-one.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-opsx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090021-opsx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090021-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-opsx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 6
+                }
+              },
+              {
+                "id": "20261004-090028-opsx",
+                "callsign": "ADA-17",
+                "project": "ops",
+                "cwd": "/work/ops",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": true,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 1,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-opsx",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-opsx-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Run the full soak test",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-opsx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-opsx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090035-opsx",
+                "callsign": "WOLF-41",
+                "project": "ops",
+                "cwd": "/work/ops",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 5,
+                "lineage": [
+                  {
+                    "id": "20261004-090035-opsx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [
+                  {
+                    "pid": 5301,
+                    "command": "vite --port 5173",
+                    "ports": [
+                      5173
+                    ],
+                    "orphan": false,
+                    "verbs": [
+                      "reap"
+                    ],
+                    "calls": {
+                      "reap": [
+                        "reap/process",
+                        {
+                          "id": "20261004-090035-opsx",
+                          "pid": 5301
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "reap",
+                        "call": [
+                          "reap/process",
+                          {
+                            "id": "20261004-090035-opsx",
+                            "pid": 5301
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090035-opsx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "Split the deploy into stages",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "reap",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090035-opsx"
+                    }
+                  ],
+                  "reap": [
+                    "reap",
+                    {
+                      "id": "20261004-090035-opsx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090035-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090035-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "reap",
+                    "call": [
+                      "reap",
+                      {
+                        "id": "20261004-090035-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090035-opsx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090042-opsx",
+                "callsign": "OTTO-77",
+                "project": "ops",
+                "cwd": "/work/ops/.worktrees/stage-docs",
+                "checkout": "stage-docs",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "stage-docs",
+                  "branch": "tower/stage-docs",
+                  "gone": false
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090035-opsx",
+                  "callsign": "WOLF-41",
+                  "project": "ops"
+                },
+                "enteredAt": 1791124560000,
+                "startedAt": 1791124500000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 3,
+                "lineage": [
+                  {
+                    "id": "20261004-090042-opsx",
+                    "startedAt": 1791124500000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090042-opsx-conversation",
+                    "startedAt": 1791124500000,
+                    "prompt": "Document the stages",
+                    "answer": "Documented; merged as #88.",
+                    "promptBy": "WOLF-41",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090042-opsx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090042-opsx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090042-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090042-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090042-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090042-opsx"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090035-opsx",
+                "waitsOn": {
+                  "id": "20261004-090035-opsx",
+                  "callsign": "WOLF-41"
+                },
+                "seat": {
+                  "n": 4
+                }
+              },
+              {
+                "id": "20261004-090049-opsx",
+                "callsign": "ARGUS-93",
+                "project": "ops",
+                "cwd": "/work/ops/.worktrees/stage-bench",
+                "checkout": "stage-bench",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "stage-bench",
+                  "branch": "tower/stage-bench",
+                  "gone": false
+                },
+                "status": "idle",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090035-opsx",
+                  "callsign": "WOLF-41",
+                  "project": "ops"
+                },
+                "enteredAt": 1791124860000,
+                "startedAt": 1791124800000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 2,
+                "lineage": [
+                  {
+                    "id": "20261004-090049-opsx",
+                    "startedAt": 1791124800000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090049-opsx-conversation",
+                    "startedAt": 1791124800000,
+                    "prompt": "Benchmark each stage",
+                    "answer": "Numbers committed, not merged yet.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090049-opsx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090049-opsx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090049-opsx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090049-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090049-opsx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090049-opsx"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090035-opsx",
+                "seat": {
+                  "n": 5
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor",
+              "tidy"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "ops"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "ops"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ],
+              "tidy": [
+                "tidy",
+                {
+                  "project": "ops",
+                  "plan": {
+                    "worktrees": [],
+                    "branches": [],
+                    "threads": [],
+                    "prune": [
+                      {
+                        "t": "reap",
+                        "id": "20261004-090000-opsx",
+                        "pid": 5101
+                      },
+                      {
+                        "t": "reap",
+                        "id": "20261004-090000-opsx",
+                        "pid": 5102
+                      },
+                      {
+                        "t": "reap",
+                        "id": "20261004-090007-opsx",
+                        "pid": 5201
+                      }
+                    ],
+                    "logs": [],
+                    "streams": []
+                  }
+                }
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "ops"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "ops"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              },
+              {
+                "verb": "tidy",
+                "call": [
+                  "tidy",
+                  {
+                    "project": "ops",
+                    "plan": {
+                      "worktrees": [],
+                      "branches": [],
+                      "threads": [],
+                      "prune": [
+                        {
+                          "t": "reap",
+                          "id": "20261004-090000-opsx",
+                          "pid": 5101
+                        },
+                        {
+                          "t": "reap",
+                          "id": "20261004-090000-opsx",
+                          "pid": 5102
+                        },
+                        {
+                          "t": "reap",
+                          "id": "20261004-090007-opsx",
+                          "pid": 5201
+                        }
+                      ],
+                      "logs": [],
+                      "streams": []
+                    }
+                  }
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    }
+  ],
+  "threads": {},
+  "drafts": {},
+  "games": {},
+  "changes": {}
+}

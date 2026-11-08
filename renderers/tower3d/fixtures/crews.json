@@ -1,0 +1,3346 @@
+{
+  "at": "2026-10-04T15:00:00.000Z",
+  "boards": [
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "crew",
+            "name": "crew",
+            "color": "#ff9e64",
+            "hub": "/work/crew",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-crew",
+                "callsign": "SHANNON-26",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791120660000,
+                "startedAt": 1791120600000,
+                "cols": 120,
+                "rows": 40,
+                "context": 52,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 12,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-crew",
+                    "startedAt": 1791120600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-crew-conversation",
+                    "startedAt": 1791120600000,
+                    "prompt": "Coordinate the storage rewrite",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-crew"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-crew",
+                "callsign": "ARIADNE-80",
+                "project": "crew",
+                "cwd": "/work/crew/.worktrees/storage-split",
+                "checkout": "storage-split",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "storage-split",
+                  "branch": "tower/storage-split",
+                  "gone": false
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791121260000,
+                "startedAt": 1791121200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-crew",
+                    "startedAt": 1791121200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-crew-conversation",
+                    "startedAt": 1791121200000,
+                    "prompt": "Split the storage layer into reads and writes",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090014-crew",
+                "callsign": "COLOMBO-41",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791121380000,
+                "startedAt": 1791121320000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-crew",
+                    "startedAt": 1791121320000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-crew-conversation",
+                    "startedAt": 1791121320000,
+                    "prompt": "Write the migration",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090021-crew",
+                "callsign": "VEGA-16",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "needs_input",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "needs",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791121500000,
+                "startedAt": 1791121440000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-crew",
+                    "startedAt": 1791121440000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-crew-conversation",
+                    "startedAt": 1791121440000,
+                    "prompt": "Benchmark the new layer",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090028-crew",
+                "callsign": "BROKER-67",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791121620000,
+                "startedAt": 1791121560000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-crew",
+                    "startedAt": 1791121560000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-crew-conversation",
+                    "startedAt": 1791121560000,
+                    "prompt": "Port the readers",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 4
+                }
+              },
+              {
+                "id": "20261004-090035-crew",
+                "callsign": "JOHN-58",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791121740000,
+                "startedAt": 1791121680000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090035-crew",
+                    "startedAt": 1791121680000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090035-crew-conversation",
+                    "startedAt": 1791121680000,
+                    "prompt": "Port the writers",
+                    "answer": "Ported.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090035-crew"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090035-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090035-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090035-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090035-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090035-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 5
+                }
+              },
+              {
+                "id": "20261004-090042-crew",
+                "callsign": "CHIRON-73",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "exited",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": true,
+                "cutOff": false,
+                "onDuty": false,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791121860000,
+                "startedAt": 1791121800000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090042-crew",
+                    "startedAt": 1791121800000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090042-crew-conversation",
+                    "startedAt": 1791121800000,
+                    "prompt": "Update the docs",
+                    "answer": "Documented.",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090042-crew",
+                          "conversation": "20261004-090042-crew-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090042-crew",
+                            "conversation": "20261004-090042-crew-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090042-crew",
+                      "conversation": "20261004-090042-crew-conversation"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090042-crew",
+                        "conversation": "20261004-090042-crew-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew"
+              },
+              {
+                "id": "20261004-090049-crew",
+                "callsign": "EIFFEL-18",
+                "project": "crew",
+                "cwd": "/work/crew/.worktrees/storage-split-review",
+                "checkout": "storage-split-review",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "storage-split-review",
+                  "branch": "tower/storage-split-review",
+                  "from": "storage-split",
+                  "gone": false
+                },
+                "reviews": "ARIADNE-80",
+                "crew": {
+                  "callsign": "ARIADNE-80",
+                  "session": "20261004-090007-crew",
+                  "by": "reviews"
+                },
+                "exempt": [
+                  {
+                    "from": "hiring",
+                    "by": "reviews"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "of": "ARIADNE-80"
+                  }
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090007-crew",
+                  "callsign": "ARIADNE-80",
+                  "project": "crew"
+                },
+                "enteredAt": 1791121980000,
+                "startedAt": 1791121920000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090049-crew",
+                    "startedAt": 1791121920000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090049-crew-conversation",
+                    "startedAt": 1791121920000,
+                    "prompt": "/tower:review ARIADNE-80",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090049-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090049-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090049-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090049-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090007-crew",
+                "seat": {
+                  "beside": "20261004-090007-crew"
+                }
+              },
+              {
+                "id": "20261004-090056-crew",
+                "callsign": "HUDSON-20",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122100000,
+                "startedAt": 1791122040000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090056-crew",
+                    "startedAt": 1791122040000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090056-crew-conversation",
+                    "startedAt": 1791122040000,
+                    "prompt": "Fix the flaky test",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090056-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090056-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090056-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090056-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 6
+                }
+              },
+              {
+                "id": "20261004-090063-crew",
+                "callsign": "RANGER-67",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122220000,
+                "startedAt": 1791122160000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090063-crew",
+                    "startedAt": 1791122160000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090063-crew-conversation",
+                    "startedAt": 1791122160000,
+                    "prompt": "Profile the cache",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090063-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090063-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090063-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090063-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 7
+                }
+              },
+              {
+                "id": "20261004-090070-crew",
+                "callsign": "TURING-50",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "idle",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122340000,
+                "startedAt": 1791122280000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090070-crew",
+                    "startedAt": 1791122280000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090070-crew-conversation",
+                    "startedAt": 1791122280000,
+                    "prompt": "Trim the indexes",
+                    "answer": "Trimmed.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090070-crew"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090070-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090070-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090070-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090070-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090070-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 8
+                }
+              },
+              {
+                "id": "20261004-090077-crew",
+                "callsign": "FREYR-49",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090077-crew",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090077-crew-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Check the backups",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090077-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090077-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090077-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090077-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 9
+                }
+              },
+              {
+                "id": "20261004-090084-crew",
+                "callsign": "DON-95",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122580000,
+                "startedAt": 1791122520000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090084-crew",
+                    "startedAt": 1791122520000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090084-crew-conversation",
+                    "startedAt": 1791122520000,
+                    "prompt": "Rename the tables",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090084-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090084-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090084-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090084-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 10
+                }
+              },
+              {
+                "id": "20261004-090091-crew",
+                "callsign": "SAILOR-01",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122700000,
+                "startedAt": 1791122640000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090091-crew",
+                    "startedAt": 1791122640000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090091-crew-conversation",
+                    "startedAt": 1791122640000,
+                    "prompt": "Read the old schema",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090091-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090091-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090091-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090091-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 11
+                }
+              },
+              {
+                "id": "20261004-090098-crew",
+                "callsign": "RIGEL-41",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122820000,
+                "startedAt": 1791122760000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090098-crew",
+                    "startedAt": 1791122760000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090098-crew-conversation",
+                    "startedAt": 1791122760000,
+                    "prompt": "Count the rows",
+                    "answer": "Forty million.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090098-crew"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090098-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090098-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090098-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090098-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090098-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 12
+                }
+              },
+              {
+                "id": "20261004-090105-crew",
+                "callsign": "WALT-97",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-crew",
+                  "callsign": "SHANNON-26",
+                  "project": "crew"
+                },
+                "enteredAt": 1791122940000,
+                "startedAt": 1791122880000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090105-crew",
+                    "startedAt": 1791122880000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090105-crew-conversation",
+                    "startedAt": 1791122880000,
+                    "prompt": "Draw the new schema",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090105-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090105-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090105-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090105-crew"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-crew",
+                "seat": {
+                  "n": 13
+                }
+              },
+              {
+                "id": "20261004-090112-crew",
+                "callsign": "SHACKLETON-24",
+                "project": "crew",
+                "cwd": "/work/crew",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Read",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090112-crew",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090112-crew-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Something else entirely",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090112-crew"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090112-crew"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090112-crew"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090112-crew"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 14
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "crew"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "crew"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "crew"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "crew"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "pairs",
+            "name": "pairs",
+            "color": "#73daca",
+            "hub": "/work/pairs",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-pair",
+                "callsign": "QUIXOTE-87",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Read",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-pair",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-pair-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Lead the API review",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-pair"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-pair",
+                "callsign": "DUPIN-17",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-pair",
+                  "callsign": "QUIXOTE-87",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-pair",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-pair-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Read the routes",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-pair",
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090014-pair",
+                "callsign": "LESTRADE-17",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-pair",
+                  "callsign": "QUIXOTE-87",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791123360000,
+                "startedAt": 1791123300000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-pair",
+                    "startedAt": 1791123300000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-pair-conversation",
+                    "startedAt": 1791123300000,
+                    "prompt": "Read the schemas",
+                    "answer": "The schemas agree.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-pair"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090014-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090014-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-pair",
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090021-pair",
+                "callsign": "KEPLER-34",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791122760000,
+                "startedAt": 1791122700000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-pair",
+                    "startedAt": 1791122700000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-pair-conversation",
+                    "startedAt": 1791122700000,
+                    "prompt": "Lead the release",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-pair"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090028-pair",
+                "callsign": "FRANKLIN-88",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090021-pair",
+                  "callsign": "KEPLER-34",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-pair",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-pair-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Write the notes",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090021-pair",
+                "seat": {
+                  "n": 4
+                }
+              },
+              {
+                "id": "20261004-090035-pair",
+                "callsign": "BEN-26",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090021-pair",
+                  "callsign": "KEPLER-34",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791123960000,
+                "startedAt": 1791123900000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090035-pair",
+                    "startedAt": 1791123900000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090035-pair-conversation",
+                    "startedAt": 1791123900000,
+                    "prompt": "Tag the build",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090035-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090035-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090035-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090035-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090021-pair",
+                "seat": {
+                  "n": 5
+                }
+              },
+              {
+                "id": "20261004-090042-pair",
+                "callsign": "FRIDAY-22",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "idle",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090021-pair",
+                  "callsign": "KEPLER-34",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090042-pair",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090042-pair-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "Check the installers",
+                    "answer": "Checked.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090042-pair"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090042-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090042-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090042-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090042-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090042-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090021-pair",
+                "seat": {
+                  "n": 6
+                }
+              },
+              {
+                "id": "20261004-090049-pair",
+                "callsign": "ALTAIR-17",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090021-pair",
+                  "callsign": "KEPLER-34",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791124560000,
+                "startedAt": 1791124500000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090049-pair",
+                    "startedAt": 1791124500000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090049-pair-conversation",
+                    "startedAt": 1791124500000,
+                    "prompt": "Bump the version",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090049-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090049-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090049-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090049-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090021-pair",
+                "seat": {
+                  "n": 8
+                }
+              },
+              {
+                "id": "20261004-090056-pair",
+                "callsign": "ARTHUR-33",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090056-pair",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090056-pair-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "Lead the cleanup",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090056-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090056-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090056-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090056-pair"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 7
+                }
+              },
+              {
+                "id": "20261004-090063-pair",
+                "callsign": "BROK-55",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090056-pair",
+                  "callsign": "ARTHUR-33",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791124860000,
+                "startedAt": 1791124800000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090063-pair",
+                    "startedAt": 1791124800000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090063-pair-conversation",
+                    "startedAt": 1791124800000,
+                    "prompt": "Delete the dead code",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090063-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090063-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090063-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090063-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090056-pair",
+                "seat": {
+                  "n": 9
+                }
+              },
+              {
+                "id": "20261004-090070-pair",
+                "callsign": "FREYR-85",
+                "project": "pairs",
+                "cwd": "/work/pairs",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090056-pair",
+                  "callsign": "ARTHUR-33",
+                  "project": "pairs"
+                },
+                "enteredAt": 1791125160000,
+                "startedAt": 1791125100000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090070-pair",
+                    "startedAt": 1791125100000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090070-pair-conversation",
+                    "startedAt": 1791125100000,
+                    "prompt": "Drop the old flags",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090070-pair"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090070-pair"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090070-pair"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090070-pair"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090056-pair",
+                "seat": {
+                  "n": 10
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "pairs"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "pairs"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "pairs"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "pairs"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [
+          {
+            "id": "20261004-090021-crew",
+            "key": "20261004-090021-crew@1791121500000",
+            "reason": "asks",
+            "since": 1791121500000,
+            "detail": "Bash"
+          },
+          {
+            "id": "20261004-090014-pair",
+            "key": "20261004-090014-pair@1791123360000",
+            "reason": "done",
+            "since": 1791123360000
+          }
+        ],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    }
+  ],
+  "threads": {},
+  "drafts": {},
+  "games": {},
+  "changes": {}
+}

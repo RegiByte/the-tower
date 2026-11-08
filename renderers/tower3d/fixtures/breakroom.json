@@ -1,0 +1,1872 @@
+{
+  "at": "2026-10-04T15:00:00.000Z",
+  "boards": [
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "arcade",
+            "name": "arcade",
+            "color": "#e0af68",
+            "hub": "/work/arcade",
+            "repos": [],
+            "collections": [
+              {
+                "id": "games",
+                "label": "Games",
+                "dir": "/system/collections/arcade/games",
+                "items": [
+                  {
+                    "id": "20261004T140000.000Z.html",
+                    "tag": "bright-brook",
+                    "size": 75,
+                    "modifiedAt": 1791118800000,
+                    "keptBy": {
+                      "session": "20261004-090021-arca",
+                      "callsign": "AMUNDSEN-97"
+                    }
+                  },
+                  {
+                    "id": "20261004T140100.000Z.html",
+                    "tag": "cheery-brook",
+                    "size": 79,
+                    "modifiedAt": 1791122400000,
+                    "keptBy": {
+                      "session": "20261004-090014-arca",
+                      "callsign": "WHEELMAN-31"
+                    }
+                  }
+                ]
+              }
+            ],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-arca",
+                "callsign": "RATATOSK-78",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791120660000,
+                "startedAt": 1791120600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 8,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-arca",
+                    "startedAt": 1791120600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-arca-conversation",
+                    "startedAt": 1791120600000,
+                    "prompt": "Coordinate the parser rewrite",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-arca"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-arca",
+                "callsign": "HUGO-68",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78",
+                  "project": "arcade"
+                },
+                "enteredAt": 1791125280000,
+                "startedAt": 1791121200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-arca",
+                    "startedAt": 1791121200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-arca-conversation",
+                    "startedAt": 1791121200000,
+                    "prompt": "Split the lexer out",
+                    "answer": "Split; the tests pass.",
+                    "promptBy": "RATATOSK-78",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-arca"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090007-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090007-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-arca"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-arca",
+                "waitsOn": {
+                  "id": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78"
+                },
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090014-arca",
+                "callsign": "WHEELMAN-31",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78",
+                  "project": "arcade"
+                },
+                "enteredAt": 1791125400000,
+                "startedAt": 1791121500000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-arca",
+                    "startedAt": 1791121500000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-arca-conversation",
+                    "startedAt": 1791121500000,
+                    "prompt": "Port the error messages",
+                    "answer": "Ported all forty.",
+                    "promptBy": "RATATOSK-78",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-arca"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090014-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090014-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-arca"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-arca",
+                "waitsOn": {
+                  "id": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78"
+                },
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090021-arca",
+                "callsign": "AMUNDSEN-97",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78",
+                  "project": "arcade"
+                },
+                "enteredAt": 1791125520000,
+                "startedAt": 1791121800000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-arca",
+                    "startedAt": 1791121800000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-arca-conversation",
+                    "startedAt": 1791121800000,
+                    "prompt": "Measure the parse times",
+                    "answer": "Twice as fast on the big files.",
+                    "promptBy": "RATATOSK-78",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-arca"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090021-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090021-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-arca"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-arca",
+                "waitsOn": {
+                  "id": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78"
+                },
+                "seat": {
+                  "n": 3
+                }
+              },
+              {
+                "id": "20261004-090028-arca",
+                "callsign": "PROMETHEUS-16",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78",
+                  "project": "arcade"
+                },
+                "enteredAt": 1791125940000,
+                "startedAt": 1791122100000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-arca",
+                    "startedAt": 1791122100000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-arca-conversation",
+                    "startedAt": 1791122100000,
+                    "prompt": "Drop the old grammar",
+                    "answer": "Dropped.",
+                    "promptBy": "RATATOSK-78",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090028-arca"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090028-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090028-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090028-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090028-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090028-arca"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-arca",
+                "waitsOn": {
+                  "id": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78"
+                },
+                "seat": {
+                  "n": 4
+                }
+              },
+              {
+                "id": "20261004-090035-arca",
+                "callsign": "HECTOR-60",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-arca",
+                  "callsign": "RATATOSK-78",
+                  "project": "arcade"
+                },
+                "enteredAt": 1791122460000,
+                "startedAt": 1791122400000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090035-arca",
+                    "startedAt": 1791122400000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090035-arca-conversation",
+                    "startedAt": 1791122400000,
+                    "prompt": "Write the migration notes",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090035-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090035-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090035-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090035-arca"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-arca",
+                "seat": {
+                  "n": 5
+                }
+              },
+              {
+                "id": "20261004-090042-arca",
+                "callsign": "ALTAIR-72",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123060000,
+                "startedAt": 1791123000000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090042-arca",
+                    "startedAt": 1791123000000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090042-arca-conversation",
+                    "startedAt": 1791123000000,
+                    "prompt": "Tidy the changelog",
+                    "answer": "Tidied.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090042-arca"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090042-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090042-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090042-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090042-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090042-arca"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 6
+                }
+              },
+              {
+                "id": "20261004-090049-arca",
+                "callsign": "ARGUS-59",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123360000,
+                "startedAt": 1791123300000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Read",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090049-arca",
+                    "startedAt": 1791123300000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090049-arca-conversation",
+                    "startedAt": 1791123300000,
+                    "prompt": "Lead the docs pass",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090049-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090049-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090049-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090049-arca"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 7
+                }
+              },
+              {
+                "id": "20261004-090056-arca",
+                "callsign": "TURING-38",
+                "project": "arcade",
+                "cwd": "/work/arcade",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090049-arca",
+                  "callsign": "ARGUS-59",
+                  "project": "arcade"
+                },
+                "enteredAt": 1791125640000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090056-arca",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090056-arca-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Read the old docs",
+                    "answer": "Read; three pages are stale.",
+                    "promptBy": "ARGUS-59",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090056-arca"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090056-arca"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090056-arca"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090056-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090056-arca"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090056-arca"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090049-arca",
+                "waitsOn": {
+                  "id": "20261004-090049-arca",
+                  "callsign": "ARGUS-59"
+                },
+                "seat": {
+                  "n": 8
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "arcade"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "arcade"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "arcade"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "arcade"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "quiet",
+            "name": "quiet",
+            "color": "#7dcfff",
+            "hub": "/work/quiet",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-quie",
+                "callsign": "KOWALSKI-17",
+                "project": "quiet",
+                "cwd": "/work/quiet",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Read",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-quie",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-quie-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Plan the release",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-quie"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-quie"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-quie"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-quie"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-quie",
+                "callsign": "MARSHAL-38",
+                "project": "quiet",
+                "cwd": "/work/quiet",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090000-quie",
+                  "callsign": "KOWALSKI-17",
+                  "project": "quiet"
+                },
+                "enteredAt": 1791124800000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-quie",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-quie-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "List the open issues",
+                    "answer": "Seven, two of them blockers.",
+                    "promptBy": "KOWALSKI-17",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-quie"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090007-quie"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-quie"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-quie"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090007-quie"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-quie"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-quie",
+                "waitsOn": {
+                  "id": "20261004-090000-quie",
+                  "callsign": "KOWALSKI-17"
+                },
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090014-quie",
+                "callsign": "WALT-02",
+                "project": "quiet",
+                "cwd": "/work/quiet/.worktrees/release-script",
+                "checkout": "release-script",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "release-script",
+                  "branch": "tower/release-script",
+                  "gone": false
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123960000,
+                "startedAt": 1791123900000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-quie",
+                    "startedAt": 1791123900000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-quie-conversation",
+                    "startedAt": 1791123900000,
+                    "prompt": "Rework the release script",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-quie"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-quie"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-quie"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-quie"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090021-quie",
+                "callsign": "COLOMBO-20",
+                "project": "quiet",
+                "cwd": "/work/quiet/.worktrees/release-script-review",
+                "checkout": "release-script-review",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "release-script-review",
+                  "branch": "tower/release-script-review",
+                  "from": "release-script",
+                  "gone": false
+                },
+                "reviews": "WALT-02",
+                "crew": {
+                  "callsign": "WALT-02",
+                  "session": "20261004-090014-quie",
+                  "by": "reviews"
+                },
+                "exempt": [
+                  {
+                    "from": "hiring",
+                    "by": "reviews"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "of": "WALT-02"
+                  }
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "hiredBy": {
+                  "session": "20261004-090014-quie",
+                  "callsign": "WALT-02",
+                  "project": "quiet"
+                },
+                "enteredAt": 1791125100000,
+                "startedAt": 1791124500000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-quie",
+                    "startedAt": 1791124500000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-quie-conversation",
+                    "startedAt": 1791124500000,
+                    "prompt": "/tower:review WALT-02",
+                    "answer": "Two notes left on the thread.",
+                    "promptBy": "WALT-02",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-quie"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090021-quie"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-quie"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-quie"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090021-quie"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-quie"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090014-quie",
+                "waitsOn": {
+                  "id": "20261004-090014-quie",
+                  "callsign": "WALT-02"
+                },
+                "seat": {
+                  "beside": "20261004-090014-quie"
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "quiet"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "quiet"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "quiet"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "quiet"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [
+          {
+            "id": "20261004-090042-arca",
+            "key": "20261004-090042-arca@1791123060000",
+            "reason": "done",
+            "since": 1791123060000
+          }
+        ],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    }
+  ],
+  "threads": {},
+  "drafts": {},
+  "games": {
+    "arcade/20261004T140000.000Z.html": "<!doctype html><title>Catch the Tower Cat</title><p>Catch the Tower Cat</p>",
+    "arcade/20261004T140100.000Z.html": "<!doctype html><title>Merge Conflict Tetris</title><p>Merge Conflict Tetris</p>"
+  },
+  "changes": {}
+}

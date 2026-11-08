@@ -1,0 +1,2280 @@
+{
+  "at": "2026-10-04T15:00:00.000Z",
+  "boards": [
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "f1",
+            "name": "floor 1",
+            "color": "hsl(0 60% 60%)",
+            "hub": "/work/f1",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f1xx",
+                "callsign": "EITRI-89",
+                "project": "f1",
+                "cwd": "/work/f1",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "needs_input",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "needs",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f1xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f1xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 1",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f1xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f1xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f1"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f1"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f1"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f1"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f2",
+            "name": "floor 2",
+            "color": "hsl(47 60% 60%)",
+            "hub": "/work/f2",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f2xx",
+                "callsign": "MARCO-42",
+                "project": "f2",
+                "cwd": "/work/f2",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f2xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f2xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 2",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f2xx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f2xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f2xx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f2xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f2"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f2"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f2"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f2"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f3",
+            "name": "floor 3",
+            "color": "hsl(94 60% 60%)",
+            "hub": "/work/f3",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f3xx",
+                "callsign": "COURIER-65",
+                "project": "f3",
+                "cwd": "/work/f3",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f3xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f3xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 3",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f3xx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f3xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f3xx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f3xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f3"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f3"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f3"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f3"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f4",
+            "name": "floor 4",
+            "color": "hsl(141 60% 60%)",
+            "hub": "/work/f4",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f4xx",
+                "callsign": "HANDLER-25",
+                "project": "f4",
+                "cwd": "/work/f4",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "needs_input",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "needs",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f4xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f4xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 4",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f4xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f4xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f4"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f4"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f4"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f4"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f5",
+            "name": "floor 5",
+            "color": "hsl(188 60% 60%)",
+            "hub": "/work/f5",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f5xx",
+                "callsign": "DON-32",
+                "project": "f5",
+                "cwd": "/work/f5",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f5xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f5xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 5",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f5xx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f5xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f5xx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f5xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f5"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f5"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f5"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f5"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f6",
+            "name": "floor 6",
+            "color": "hsl(235 60% 60%)",
+            "hub": "/work/f6",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f6xx",
+                "callsign": "THOTH-96",
+                "project": "f6",
+                "cwd": "/work/f6",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f6xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f6xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 6",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f6xx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f6xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f6xx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f6xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f6"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f6"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f6"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f6"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f7",
+            "name": "floor 7",
+            "color": "hsl(282 60% 60%)",
+            "hub": "/work/f7",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f7xx",
+                "callsign": "PORTHOS-18",
+                "project": "f7",
+                "cwd": "/work/f7",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "needs_input",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "needs",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f7xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f7xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 7",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f7xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f7xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f7"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f7"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f7"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f7"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f8",
+            "name": "floor 8",
+            "color": "hsl(329 60% 60%)",
+            "hub": "/work/f8",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f8xx",
+                "callsign": "KEPLER-76",
+                "project": "f8",
+                "cwd": "/work/f8",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f8xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f8xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 8",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f8xx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f8xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f8xx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f8xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f8"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f8"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f8"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f8"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f9",
+            "name": "floor 9",
+            "color": "hsl(16 60% 60%)",
+            "hub": "/work/f9",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f9xx",
+                "callsign": "MYCROFT-83",
+                "project": "f9",
+                "cwd": "/work/f9",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f9xx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f9xx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 9",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f9xx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f9xx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f9xx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f9xx"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f9"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f9"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f9"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f9"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f10",
+            "name": "floor 10",
+            "color": "hsl(63 60% 60%)",
+            "hub": "/work/f10",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f10x",
+                "callsign": "FRANKLIN-90",
+                "project": "f10",
+                "cwd": "/work/f10",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "needs_input",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "needs",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f10x",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f10x-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 10",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f10x"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f10x"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f10"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f10"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f10"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f10"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f11",
+            "name": "floor 11",
+            "color": "hsl(110 60% 60%)",
+            "hub": "/work/f11",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f11x",
+                "callsign": "PUCK-90",
+                "project": "f11",
+                "cwd": "/work/f11",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f11x",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f11x-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 11",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f11x"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f11x"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f11x"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f11x"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f11"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f11"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f11"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f11"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          },
+          {
+            "id": "f12",
+            "name": "floor 12",
+            "color": "hsl(157 60% 60%)",
+            "hub": "/work/f12",
+            "repos": [],
+            "collections": [],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-f12x",
+                "callsign": "ENDURANCE-88",
+                "project": "f12",
+                "cwd": "/work/f12",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-f12x",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-f12x-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "task 12",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-f12x"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-f12x"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-f12x"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-f12x"
+                      }
+                    ]
+                  }
+                ],
+                "seat": {
+                  "n": 0
+                }
+              }
+            ],
+            "policies": [],
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "f12"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "f12"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "f12"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "f12"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [
+          {
+            "id": "20261004-090000-f1xx",
+            "key": "20261004-090000-f1xx@1791124260000",
+            "reason": "asks",
+            "since": 1791124260000,
+            "detail": "Edit"
+          },
+          {
+            "id": "20261004-090000-f4xx",
+            "key": "20261004-090000-f4xx@1791124260000",
+            "reason": "asks",
+            "since": 1791124260000,
+            "detail": "Edit"
+          },
+          {
+            "id": "20261004-090000-f7xx",
+            "key": "20261004-090000-f7xx@1791124260000",
+            "reason": "asks",
+            "since": 1791124260000,
+            "detail": "Edit"
+          },
+          {
+            "id": "20261004-090000-f10x",
+            "key": "20261004-090000-f10x@1791124260000",
+            "reason": "asks",
+            "since": 1791124260000,
+            "detail": "Edit"
+          }
+        ],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    }
+  ],
+  "threads": {},
+  "drafts": {},
+  "games": {},
+  "changes": {}
+}

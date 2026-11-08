@@ -1,0 +1,3254 @@
+{
+  "at": "2026-10-04T15:00:00.000Z",
+  "boards": [
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "lab",
+            "name": "lab",
+            "color": "#5fb3b3",
+            "hub": "/work/lab",
+            "repos": [
+              "/work/lab-api"
+            ],
+            "collections": [
+              {
+                "id": "reviews",
+                "label": "Reviews",
+                "dir": "/system/collections/lab/reviews",
+                "items": [
+                  {
+                    "id": "retry-budget.md",
+                    "tag": "slow-octopus",
+                    "size": 812,
+                    "modifiedAt": 1791126000000
+                  },
+                  {
+                    "id": "readme.md",
+                    "tag": "early-fox",
+                    "size": 198,
+                    "modifiedAt": 1791125940000
+                  },
+                  {
+                    "id": "old-flags.md",
+                    "tag": "little-walnut",
+                    "size": 96,
+                    "modifiedAt": 1791125880000
+                  }
+                ]
+              }
+            ],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-labx",
+                "callsign": "DARTAGNAN-67",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/retry-budget",
+                "checkout": "retry-budget",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "retry-budget",
+                  "branch": "tower/retry-budget",
+                  "gone": false
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "context": 38,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 7,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-labx",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-labx-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Add a retry budget to the scheduler",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "retry-budget",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 3,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "retry-budget"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-labx",
+                "callsign": "FREYR-79",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/retry-budget-review",
+                "checkout": "retry-budget-review",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "retry-budget-review",
+                  "branch": "tower/retry-budget-review",
+                  "from": "retry-budget",
+                  "gone": false
+                },
+                "reviews": "DARTAGNAN-67",
+                "crew": {
+                  "callsign": "DARTAGNAN-67",
+                  "session": "20261004-090000-labx",
+                  "by": "reviews"
+                },
+                "exempt": [
+                  {
+                    "from": "hiring",
+                    "by": "reviews"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "retry-budget",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 0,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "retry-budget"
+                      }
+                    ]
+                  }
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791125340000,
+                "startedAt": 1791125280000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 1,
+                "subagentRuns": [
+                  {
+                    "id": "20261004-090007-labx-agent-0",
+                    "type": "general-purpose",
+                    "description": "Search the codebase",
+                    "background": true,
+                    "startedAt": 1791125340000,
+                    "tokens": {
+                      "input": 12,
+                      "output": 840,
+                      "cacheRead": 40000,
+                      "cacheWrite": 6000
+                    },
+                    "running": true
+                  }
+                ],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-labx",
+                    "startedAt": 1791125280000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-labx-conversation",
+                    "startedAt": 1791125280000,
+                    "prompt": "/tower:review DARTAGNAN-67",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-labx"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-labx",
+                "seat": {
+                  "beside": "20261004-090000-labx"
+                }
+              },
+              {
+                "id": "20261004-090014-labx",
+                "callsign": "RAGNAR-12",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/readme",
+                "checkout": "readme",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "readme",
+                  "branch": "tower/readme",
+                  "gone": false
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 3,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-labx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-labx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "Document the port",
+                    "answer": "Added the port to the README.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "readme",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 0,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "readme"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090021-labx",
+                "callsign": "AMUNDSEN-99",
+                "project": "lab",
+                "cwd": "/work/lab",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "idle",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791125580000,
+                "startedAt": 1791125520000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-labx",
+                    "startedAt": 1791125520000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-labx-conversation",
+                    "startedAt": 1791125520000,
+                    "prompt": "Look around",
+                    "answer": "Looked.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "main",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "main"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090028-labx",
+                "callsign": "AURELIUS-26",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/old-flags",
+                "checkout": "old-flags",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "old-flags",
+                  "branch": "tower/old-flags",
+                  "gone": false
+                },
+                "status": "exited",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": true,
+                "cutOff": false,
+                "onDuty": false,
+                "enteredAt": 1791115260000,
+                "startedAt": 1791115200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-labx",
+                    "startedAt": 1791115200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-labx-conversation",
+                    "startedAt": 1791115200000,
+                    "prompt": "Drop the old flags",
+                    "answer": "Dropped three.",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090028-labx",
+                          "conversation": "20261004-090028-labx-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090028-labx",
+                            "conversation": "20261004-090028-labx-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090028-labx",
+                      "conversation": "20261004-090028-labx-conversation"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090028-labx",
+                        "conversation": "20261004-090028-labx-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "old-flags",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 1,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "old-flags"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "policies": [],
+            "x": {
+              "reviews": {
+                "threads": [
+                  {
+                    "key": "lab/retry-budget",
+                    "checkout": "retry-budget",
+                    "id": "retry-budget.md",
+                    "tag": "slow-octopus",
+                    "messages": 5,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "retry-budget"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "retry-budget"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "FREYR-79",
+                      "at": "2026-10-04 14:55",
+                      "n": 5
+                    }
+                  },
+                  {
+                    "key": "lab/readme",
+                    "checkout": "readme",
+                    "id": "readme.md",
+                    "tag": "early-fox",
+                    "messages": 2,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "readme"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "readme"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "RAGNAR-12",
+                      "at": "2026-10-04 13:20",
+                      "n": 2
+                    }
+                  },
+                  {
+                    "key": "lab/old-flags",
+                    "checkout": "old-flags",
+                    "id": "old-flags.md",
+                    "tag": "little-walnut",
+                    "messages": 1,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "old-flags"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "old-flags"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "user",
+                      "at": "2026-10-04 11:40",
+                      "n": 1
+                    }
+                  }
+                ]
+              }
+            },
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "lab"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "lab"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "lab"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "lab"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [
+          {
+            "id": "20261004-090014-labx",
+            "key": "20261004-090014-labx@1791124260000",
+            "reason": "done",
+            "since": 1791124260000
+          }
+        ],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    },
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "lab",
+            "name": "lab",
+            "color": "#5fb3b3",
+            "hub": "/work/lab",
+            "repos": [
+              "/work/lab-api"
+            ],
+            "collections": [
+              {
+                "id": "reviews",
+                "label": "Reviews",
+                "dir": "/system/collections/lab/reviews",
+                "items": [
+                  {
+                    "id": "retry-budget.md",
+                    "tag": "slow-octopus",
+                    "size": 812,
+                    "modifiedAt": 1791126000000
+                  },
+                  {
+                    "id": "readme.md",
+                    "tag": "early-fox",
+                    "size": 198,
+                    "modifiedAt": 1791125940000
+                  },
+                  {
+                    "id": "old-flags.md",
+                    "tag": "little-walnut",
+                    "size": 96,
+                    "modifiedAt": 1791125880000
+                  }
+                ]
+              }
+            ],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-labx",
+                "callsign": "DARTAGNAN-67",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/retry-budget",
+                "checkout": "retry-budget",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "retry-budget",
+                  "branch": "tower/retry-budget",
+                  "gone": false
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "context": 38,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 7,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-labx",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-labx-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Add a retry budget to the scheduler",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "retry-budget",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 3,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "retry-budget"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-labx",
+                "callsign": "FREYR-79",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/retry-budget-review",
+                "checkout": "retry-budget-review",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "retry-budget-review",
+                  "branch": "tower/retry-budget-review",
+                  "from": "retry-budget",
+                  "gone": false
+                },
+                "reviews": "DARTAGNAN-67",
+                "crew": {
+                  "callsign": "DARTAGNAN-67",
+                  "session": "20261004-090000-labx",
+                  "by": "reviews"
+                },
+                "exempt": [
+                  {
+                    "from": "hiring",
+                    "by": "reviews"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "retry-budget",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 0,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "retry-budget"
+                      }
+                    ]
+                  }
+                },
+                "status": "exited",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": true,
+                "cutOff": false,
+                "onDuty": false,
+                "enteredAt": 1791125340000,
+                "startedAt": 1791125280000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 1,
+                "subagentRuns": [
+                  {
+                    "id": "20261004-090007-labx-agent-0",
+                    "type": "general-purpose",
+                    "description": "Search the codebase",
+                    "background": true,
+                    "startedAt": 1791125340000,
+                    "tokens": {
+                      "input": 12,
+                      "output": 840,
+                      "cacheRead": 40000,
+                      "cacheWrite": 6000
+                    },
+                    "running": true
+                  }
+                ],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-labx",
+                    "startedAt": 1791125280000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-labx-conversation",
+                    "startedAt": 1791125280000,
+                    "prompt": "/tower:review DARTAGNAN-67",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090007-labx",
+                          "conversation": "20261004-090007-labx-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090007-labx",
+                            "conversation": "20261004-090007-labx-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090007-labx",
+                      "conversation": "20261004-090007-labx-conversation"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090007-labx",
+                        "conversation": "20261004-090007-labx-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  }
+                ],
+                "reportsTo": "20261004-090000-labx"
+              },
+              {
+                "id": "20261004-090014-labx",
+                "callsign": "RAGNAR-12",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/readme",
+                "checkout": "readme",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "readme",
+                  "branch": "tower/readme",
+                  "gone": false
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 3,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-labx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-labx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "Document the port",
+                    "answer": "Added the port to the README.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "readme",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 0,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "readme"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090021-labx",
+                "callsign": "AMUNDSEN-99",
+                "project": "lab",
+                "cwd": "/work/lab",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "idle",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791125580000,
+                "startedAt": 1791125520000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-labx",
+                    "startedAt": 1791125520000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-labx-conversation",
+                    "startedAt": 1791125520000,
+                    "prompt": "Look around",
+                    "answer": "Looked.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "main",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "main"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090028-labx",
+                "callsign": "AURELIUS-26",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/old-flags",
+                "checkout": "old-flags",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "old-flags",
+                  "branch": "tower/old-flags",
+                  "gone": false
+                },
+                "status": "exited",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": true,
+                "cutOff": false,
+                "onDuty": false,
+                "enteredAt": 1791115260000,
+                "startedAt": 1791115200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-labx",
+                    "startedAt": 1791115200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-labx-conversation",
+                    "startedAt": 1791115200000,
+                    "prompt": "Drop the old flags",
+                    "answer": "Dropped three.",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090028-labx",
+                          "conversation": "20261004-090028-labx-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090028-labx",
+                            "conversation": "20261004-090028-labx-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090028-labx",
+                      "conversation": "20261004-090028-labx-conversation"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090028-labx",
+                        "conversation": "20261004-090028-labx-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "old-flags",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 1,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "old-flags"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "policies": [],
+            "x": {
+              "reviews": {
+                "threads": [
+                  {
+                    "key": "lab/retry-budget",
+                    "checkout": "retry-budget",
+                    "id": "retry-budget.md",
+                    "tag": "slow-octopus",
+                    "messages": 5,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "retry-budget"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "retry-budget"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "FREYR-79",
+                      "at": "2026-10-04 14:55",
+                      "n": 5
+                    }
+                  },
+                  {
+                    "key": "lab/readme",
+                    "checkout": "readme",
+                    "id": "readme.md",
+                    "tag": "early-fox",
+                    "messages": 2,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "readme"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "readme"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "RAGNAR-12",
+                      "at": "2026-10-04 13:20",
+                      "n": 2
+                    }
+                  },
+                  {
+                    "key": "lab/old-flags",
+                    "checkout": "old-flags",
+                    "id": "old-flags.md",
+                    "tag": "little-walnut",
+                    "messages": 1,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "old-flags"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "old-flags"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "user",
+                      "at": "2026-10-04 11:40",
+                      "n": 1
+                    }
+                  }
+                ]
+              }
+            },
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "lab"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "lab"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "lab"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "lab"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [
+          {
+            "id": "20261004-090014-labx",
+            "key": "20261004-090014-labx@1791124260000",
+            "reason": "done",
+            "since": 1791124260000
+          }
+        ],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    },
+    {
+      "board": {
+        "user": {
+          "name": "user"
+        },
+        "config": "/system/config.json",
+        "keys": {
+          "prev-worker": [
+            "Alt+ArrowUp"
+          ],
+          "next-worker": [
+            "Alt+ArrowDown"
+          ],
+          "next-waiting": [
+            "Alt+J",
+            "N"
+          ],
+          "home": [
+            "Escape"
+          ],
+          "sidebar": [
+            "Meta+B"
+          ],
+          "palette": [
+            "Meta+K"
+          ],
+          "help": [
+            "?"
+          ],
+          "spawn": [],
+          "pane-terminal": [
+            "Ctrl+Shift+1"
+          ],
+          "pane-brief": [
+            "Ctrl+Shift+2"
+          ],
+          "pane-changes": [
+            "Ctrl+Shift+3"
+          ],
+          "pane-reviews": [],
+          "shell-here": [
+            "Meta+J",
+            "Ctrl+Backquote"
+          ],
+          "leave-terminal": [
+            "Alt+Escape"
+          ],
+          "newline": [
+            "Shift+Enter"
+          ],
+          "delete-word": [
+            "Ctrl+Backspace"
+          ],
+          "delete-to-start": [
+            "Meta+Backspace"
+          ],
+          "delete-to-end": [
+            "Meta+Delete"
+          ],
+          "line-start": [
+            "Meta+ArrowLeft"
+          ],
+          "line-end": [
+            "Meta+ArrowRight"
+          ],
+          "word-left": [
+            "Alt+ArrowLeft"
+          ],
+          "word-right": [
+            "Alt+ArrowRight"
+          ],
+          "save-draft": [
+            "Meta+S",
+            "Ctrl+S"
+          ],
+          "submit": [
+            "Meta+Enter",
+            "Ctrl+Enter"
+          ],
+          "cancel-pick": [
+            "Escape"
+          ],
+          "reviews/thread": [
+            "Ctrl+Shift+4"
+          ]
+        },
+        "floors": [
+          {
+            "id": "lab",
+            "name": "lab",
+            "color": "#5fb3b3",
+            "hub": "/work/lab",
+            "repos": [
+              "/work/lab-api"
+            ],
+            "collections": [
+              {
+                "id": "reviews",
+                "label": "Reviews",
+                "dir": "/system/collections/lab/reviews",
+                "items": [
+                  {
+                    "id": "retry-budget.md",
+                    "tag": "slow-octopus",
+                    "size": 812,
+                    "modifiedAt": 1791126000000
+                  },
+                  {
+                    "id": "readme.md",
+                    "tag": "early-fox",
+                    "size": 198,
+                    "modifiedAt": 1791125940000
+                  },
+                  {
+                    "id": "old-flags.md",
+                    "tag": "little-walnut",
+                    "size": 96,
+                    "modifiedAt": 1791125880000
+                  }
+                ]
+              }
+            ],
+            "worktrees": [],
+            "branches": [],
+            "git": true,
+            "bases": [],
+            "branchPrefix": "tower/",
+            "cutByDefault": true,
+            "hiring": {
+              "depth": 2,
+              "live": 3
+            },
+            "tidy": {
+              "worktrees": [],
+              "branches": [],
+              "threads": [],
+              "prune": [],
+              "logs": [],
+              "streams": []
+            },
+            "threads": [],
+            "cards": [
+              {
+                "id": "20261004-090000-labx",
+                "callsign": "DARTAGNAN-67",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/retry-budget",
+                "checkout": "retry-budget",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "retry-budget",
+                  "branch": "tower/retry-budget",
+                  "gone": false
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791123660000,
+                "startedAt": 1791123600000,
+                "cols": 120,
+                "rows": 40,
+                "context": 38,
+                "tool": "Edit",
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 7,
+                "lineage": [
+                  {
+                    "id": "20261004-090000-labx",
+                    "startedAt": 1791123600000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090000-labx-conversation",
+                    "startedAt": 1791123600000,
+                    "prompt": "Add a retry budget to the scheduler",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090000-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090000-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090000-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090000-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "retry-budget",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 3,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "retry-budget"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 0
+                }
+              },
+              {
+                "id": "20261004-090007-labx",
+                "callsign": "FREYR-79",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/retry-budget-review",
+                "checkout": "retry-budget-review",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "retry-budget-review",
+                  "branch": "tower/retry-budget-review",
+                  "from": "retry-budget",
+                  "gone": false
+                },
+                "reviews": "DARTAGNAN-67",
+                "crew": {
+                  "callsign": "DARTAGNAN-67",
+                  "session": "20261004-090000-labx",
+                  "by": "reviews"
+                },
+                "exempt": [
+                  {
+                    "from": "hiring",
+                    "by": "reviews"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "retry-budget",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 0,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "retry-budget"
+                      }
+                    ]
+                  }
+                },
+                "status": "working",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "working",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791125340000,
+                "startedAt": 1791125280000,
+                "cols": 120,
+                "rows": 40,
+                "tool": "Bash",
+                "says": [],
+                "subagents": 1,
+                "subagentRuns": [
+                  {
+                    "id": "20261004-090007-labx-agent-0",
+                    "type": "general-purpose",
+                    "description": "Search the codebase",
+                    "background": true,
+                    "startedAt": 1791125340000,
+                    "tokens": {
+                      "input": 12,
+                      "output": 840,
+                      "cacheRead": 40000,
+                      "cacheWrite": 6000
+                    },
+                    "running": true
+                  }
+                ],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090007-labx",
+                    "startedAt": 1791125280000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090007-labx-conversation",
+                    "startedAt": 1791125280000,
+                    "prompt": "/tower:review DARTAGNAN-67",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090007-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090007-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090007-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090007-labx"
+                      }
+                    ]
+                  }
+                ],
+                "reportsTo": "20261004-090000-labx",
+                "seat": {
+                  "beside": "20261004-090000-labx"
+                }
+              },
+              {
+                "id": "20261004-090014-labx",
+                "callsign": "RAGNAR-12",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/readme",
+                "checkout": "readme",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "readme",
+                  "branch": "tower/readme",
+                  "gone": false
+                },
+                "status": "done",
+                "live": true,
+                "leaving": false,
+                "waiting": true,
+                "attention": "ready",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791124260000,
+                "startedAt": 1791124200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 3,
+                "lineage": [
+                  {
+                    "id": "20261004-090014-labx",
+                    "startedAt": 1791124200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090014-labx-conversation",
+                    "startedAt": 1791124200000,
+                    "prompt": "Document the port",
+                    "answer": "Added the port to the README.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090014-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090014-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "readme",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 0,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "readme"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 1
+                }
+              },
+              {
+                "id": "20261004-090021-labx",
+                "callsign": "AMUNDSEN-99",
+                "project": "lab",
+                "cwd": "/work/lab",
+                "checkout": "main",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "status": "idle",
+                "live": true,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": false,
+                "cutOff": false,
+                "onDuty": true,
+                "enteredAt": 1791125580000,
+                "startedAt": 1791125520000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090021-labx",
+                    "startedAt": 1791125520000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090021-labx-conversation",
+                    "startedAt": 1791125520000,
+                    "prompt": "Look around",
+                    "answer": "Looked.",
+                    "verbs": [],
+                    "calls": {},
+                    "actions": []
+                  }
+                ],
+                "verbs": [
+                  "drive",
+                  "submit",
+                  "prompt",
+                  "brief",
+                  "kill"
+                ],
+                "calls": {
+                  "submit": [
+                    "submit",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ],
+                  "prompt": [
+                    "submit/at-prompt",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ],
+                  "kill": [
+                    "kill",
+                    {
+                      "id": "20261004-090021-labx"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "drive"
+                  },
+                  {
+                    "verb": "submit",
+                    "call": [
+                      "submit",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "prompt",
+                    "call": [
+                      "submit/at-prompt",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  },
+                  {
+                    "verb": "kill",
+                    "call": [
+                      "kill",
+                      {
+                        "id": "20261004-090021-labx"
+                      }
+                    ]
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "main",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "main"
+                      }
+                    ]
+                  }
+                },
+                "seat": {
+                  "n": 2
+                }
+              },
+              {
+                "id": "20261004-090028-labx",
+                "callsign": "AURELIUS-26",
+                "project": "lab",
+                "cwd": "/work/lab/.worktrees/old-flags",
+                "checkout": "old-flags",
+                "checkoutState": {
+                  "is": "live"
+                },
+                "worktree": {
+                  "name": "old-flags",
+                  "branch": "tower/old-flags",
+                  "gone": false
+                },
+                "status": "exited",
+                "live": false,
+                "leaving": false,
+                "waiting": false,
+                "attention": "quiet",
+                "stuck": false,
+                "compacting": false,
+                "stranded": false,
+                "killed": true,
+                "cutOff": false,
+                "onDuty": false,
+                "enteredAt": 1791115260000,
+                "startedAt": 1791115200000,
+                "cols": 120,
+                "rows": 40,
+                "says": [],
+                "subagents": 0,
+                "subagentRuns": [],
+                "turns": 0,
+                "lineage": [
+                  {
+                    "id": "20261004-090028-labx",
+                    "startedAt": 1791115200000
+                  }
+                ],
+                "claudeUntested": false,
+                "resources": [],
+                "shown": [],
+                "pages": [],
+                "sent": [],
+                "conversations": [
+                  {
+                    "id": "20261004-090028-labx-conversation",
+                    "startedAt": 1791115200000,
+                    "prompt": "Drop the old flags",
+                    "answer": "Dropped three.",
+                    "verbs": [
+                      "resume"
+                    ],
+                    "calls": {
+                      "resume": [
+                        "resume",
+                        {
+                          "id": "20261004-090028-labx",
+                          "conversation": "20261004-090028-labx-conversation"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "resume",
+                        "call": [
+                          "resume",
+                          {
+                            "id": "20261004-090028-labx",
+                            "conversation": "20261004-090028-labx-conversation"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "verbs": [
+                  "resume",
+                  "brief"
+                ],
+                "calls": {
+                  "resume": [
+                    "resume",
+                    {
+                      "id": "20261004-090028-labx",
+                      "conversation": "20261004-090028-labx-conversation"
+                    }
+                  ]
+                },
+                "actions": [
+                  {
+                    "verb": "resume",
+                    "call": [
+                      "resume",
+                      {
+                        "id": "20261004-090028-labx",
+                        "conversation": "20261004-090028-labx-conversation"
+                      }
+                    ]
+                  },
+                  {
+                    "verb": "brief"
+                  }
+                ],
+                "x": {
+                  "reviews": {
+                    "thread": "old-flags",
+                    "threadState": {
+                      "is": "live"
+                    },
+                    "unseen": 1,
+                    "note": [
+                      "reviews/append",
+                      {
+                        "project": "lab",
+                        "checkout": "old-flags"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "policies": [],
+            "x": {
+              "reviews": {
+                "threads": [
+                  {
+                    "key": "lab/retry-budget",
+                    "checkout": "retry-budget",
+                    "id": "retry-budget.md",
+                    "tag": "slow-octopus",
+                    "messages": 5,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "retry-budget"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "retry-budget"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "FREYR-79",
+                      "at": "2026-10-04 14:55",
+                      "n": 5
+                    }
+                  },
+                  {
+                    "key": "lab/readme",
+                    "checkout": "readme",
+                    "id": "readme.md",
+                    "tag": "early-fox",
+                    "messages": 2,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "readme"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "readme"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "RAGNAR-12",
+                      "at": "2026-10-04 13:20",
+                      "n": 2
+                    }
+                  },
+                  {
+                    "key": "lab/old-flags",
+                    "checkout": "old-flags",
+                    "id": "old-flags.md",
+                    "tag": "little-walnut",
+                    "messages": 1,
+                    "landed": false,
+                    "resolved": [],
+                    "state": {
+                      "is": "live"
+                    },
+                    "verbs": [
+                      "note"
+                    ],
+                    "calls": {
+                      "note": [
+                        "reviews/append",
+                        {
+                          "project": "lab",
+                          "checkout": "old-flags"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "verb": "note",
+                        "call": [
+                          "reviews/append",
+                          {
+                            "project": "lab",
+                            "checkout": "old-flags"
+                          }
+                        ]
+                      }
+                    ],
+                    "last": {
+                      "author": "user",
+                      "at": "2026-10-04 11:40",
+                      "n": 1
+                    }
+                  }
+                ]
+              }
+            },
+            "verbs": [
+              "spawn",
+              "shell",
+              "editor"
+            ],
+            "calls": {
+              "spawn": [
+                "spawn",
+                {
+                  "project": "lab"
+                }
+              ],
+              "shell": [
+                "shell/spawn",
+                {
+                  "project": "lab"
+                }
+              ],
+              "editor": [
+                "open",
+                {}
+              ]
+            },
+            "actions": [
+              {
+                "verb": "spawn",
+                "call": [
+                  "spawn",
+                  {
+                    "project": "lab"
+                  }
+                ]
+              },
+              {
+                "verb": "shell",
+                "call": [
+                  "shell/spawn",
+                  {
+                    "project": "lab"
+                  }
+                ]
+              },
+              {
+                "verb": "editor",
+                "call": [
+                  "open",
+                  {}
+                ]
+              }
+            ],
+            "archived": 0,
+            "gallery": []
+          }
+        ],
+        "waiting": [
+          {
+            "id": "20261004-090014-labx",
+            "key": "20261004-090014-labx@1791124260000",
+            "reason": "done",
+            "since": 1791124260000
+          }
+        ],
+        "offers": [],
+        "archiveAt": 0,
+        "limits": [
+          {
+            "rateLimits": []
+          }
+        ],
+        "rateLimits": [],
+        "probes": [],
+        "extensions": [],
+        "viewers": {},
+        "adds": {},
+        "asks": [],
+        "today": {
+          "since": 1791072000000,
+          "spend": 0,
+          "agentHours": 0,
+          "waits": {
+            "n": 0,
+            "p50": 0
+          }
+        },
+        "hostUp": true,
+        "hostOutdated": false,
+        "claudeDefaults": {},
+        "claudeUntested": [],
+        "shells": [],
+        "termsUp": true,
+        "jobs": [],
+        "jobsUp": true
+      },
+      "archive": []
+    }
+  ],
+  "threads": {
+    "lab/retry-budget.md": "# retry-budget\n\n## user · 2026-10-04 14:10 · n1\nKeep the budget per minute, not per job: the scheduler restarts jobs.\n\n## DARTAGNAN-67 · 2026-10-04 14:22 · n2 · re n1\nDone: the budget is a token bucket refilled every minute.\n\n## FREYR-79 · 2026-10-04 14:51 · n3\n`lab-api:src/scheduler.ts:41-43`\n```ts\n  if (bucket.tokens <= 0) return defer(job)\n  bucket.tokens -= 1\n  return run(job)\n```\n**bug** · correctness: a deferred job never refunds its token, so a burst of deferrals drains the bucket for the minute.\n\n## FREYR-79 · 2026-10-04 14:53 · n4\n`lab-api:src/config.ts:7`\n```ts\nexport const RETRY_BUDGET = 60\n```\n**nit** · naming: say the unit, `RETRIES_PER_MINUTE`.\n\n## FREYR-79 · 2026-10-04 14:55 · n5\n**fix first**: n3 loses retries under load. Ran `npm test` in my fork: green, the burst case isn't covered.\n",
+    "lab/readme.md": "# readme\n\n## user · 2026-10-04 13:02 · n1\n`lab:README.md:3`\n```md\nRun it with `npm start`.\n```\nSay which port it listens on.\n\n## RAGNAR-12 · 2026-10-04 13:20 · n2 · re n1\nAdded: it listens on 5173.\n",
+    "lab/old-flags.md": "# old-flags\n\n## user · 2026-10-04 11:40 · n1\nBefore this lands: who still reads `LEGACY_FLAGS`?\n"
+  },
+  "drafts": {},
+  "games": {},
+  "changes": {
+    "20261004-090000-labx": [
+      {
+        "dir": "/work/lab-api/.worktrees/retry-budget",
+        "against": "origin/main",
+        "since": "3f2a9c1e",
+        "commits": [],
+        "shows": "all",
+        "more": 0,
+        "files": [
+          {
+            "path": "src/scheduler.ts",
+            "change": "modified",
+            "binary": false,
+            "added": 5,
+            "removed": 1,
+            "hash": "a1",
+            "hunks": [
+              {
+                "old": 1,
+                "new": 1,
+                "heading": "",
+                "lines": [
+                  " import { run } from './run.ts'",
+                  "+import { bucketFor } from './bucket.ts'",
+                  " import type { Job } from './job.ts'"
+                ]
+              },
+              {
+                "old": 38,
+                "new": 39,
+                "heading": "const defer = (job: Job) => queue.push(job)",
+                "lines": [
+                  " export function schedule(job: Job) {",
+                  "-  return run(job)",
+                  "+  const bucket = bucketFor(job)",
+                  "+  if (bucket.tokens <= 0) return defer(job)",
+                  "+  bucket.tokens -= 1",
+                  "+  return run(job)",
+                  " }"
+                ]
+              }
+            ]
+          },
+          {
+            "path": "src/config.ts",
+            "change": "modified",
+            "binary": false,
+            "added": 1,
+            "removed": 1,
+            "hash": "b2",
+            "hunks": [
+              {
+                "old": 7,
+                "new": 7,
+                "heading": "",
+                "lines": [
+                  "-export const RETRY_LIMIT = 5",
+                  "+export const RETRIES_PER_MINUTE = 60"
+                ]
+              }
+            ]
+          },
+          {
+            "path": "src/bucket.ts",
+            "change": "added",
+            "binary": false,
+            "added": 15,
+            "removed": 0,
+            "hash": "c3",
+            "hunks": [
+              {
+                "old": 0,
+                "new": 1,
+                "heading": "",
+                "lines": [
+                  "+import { RETRIES_PER_MINUTE } from './config.ts'",
+                  "+import type { Job } from './job.ts'",
+                  "+",
+                  "+/** A job kind's retries per minute: a bucket of tokens refilled every minute. */",
+                  "+export type Bucket = { tokens: number; refilledAt: number }",
+                  "+",
+                  "+const buckets = new Map<string, Bucket>()",
+                  "+",
+                  "+export function bucketFor(job: Job): Bucket {",
+                  "+  const now = Date.now()",
+                  "+  const b = buckets.get(job.kind) ?? { tokens: RETRIES_PER_MINUTE, refilledAt: now }",
+                  "+  if (now - b.refilledAt >= 60_000) Object.assign(b, { tokens: RETRIES_PER_MINUTE, refilledAt: now })",
+                  "+  buckets.set(job.kind, b)",
+                  "+  return b",
+                  "+}"
+                ]
+              }
+            ]
+          },
+          {
+            "path": "test/scheduler.test.ts",
+            "change": "modified",
+            "binary": false,
+            "added": 5,
+            "removed": 0,
+            "hash": "d4",
+            "hunks": [
+              {
+                "old": 12,
+                "new": 12,
+                "heading": "describe('schedule', () => {",
+                "lines": [
+                  "   it('runs a job', () => {",
+                  "     expect(schedule(job())).toBe('ran')",
+                  "   })",
+                  "+",
+                  "+  it('defers a job once the bucket is empty', () => {",
+                  "+    bucketFor(job()).tokens = 0",
+                  "+    expect(schedule(job())).toBe('deferred')",
+                  "+  })",
+                  " })"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "dir": "/work/lab/.worktrees/retry-budget",
+        "against": "origin/main",
+        "since": "9b0c44d2",
+        "commits": [],
+        "shows": "all",
+        "more": 0,
+        "files": [
+          {
+            "path": "README.md",
+            "change": "modified",
+            "binary": false,
+            "added": 2,
+            "removed": 0,
+            "hash": "e5",
+            "hunks": [
+              {
+                "old": 3,
+                "new": 3,
+                "heading": "",
+                "lines": [
+                  " Run it with `npm start`.",
+                  "+",
+                  "+Retries are budgeted per minute: `RETRIES_PER_MINUTE` in `src/config.ts`."
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
