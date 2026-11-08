@@ -21,7 +21,7 @@ import { ConfigError, commandNames, editorArgv, resolveCommand, towerPort, type 
 import { withoutParentSession } from './shared/env.ts'
 import type { SystemPaths } from './shared/model.ts'
 import type { Reads } from './shared/shelf-page.ts'
-import { readConfig } from './system.ts'
+import { isObject, readConfig } from './system.ts'
 import { detected } from './platform.ts'
 
 export type Verdict = { level: 'ok' | 'warn' | 'fail'; what: string; fix?: string }
@@ -267,9 +267,11 @@ const checkVerdicts = async (config: Config, tower: Daemon, answering: boolean):
   )
 }
 
+/** The config as its file holds it, or the error that says why it can't be checked: a file that holds no JSON object is one. */
 const readable = (paths: SystemPaths): Config | Error => {
   try {
-    return readConfig(paths.config)
+    const config = readConfig(paths.config)
+    return isObject(config) ? config : new ConfigError(`${paths.config} holds no JSON object`)
   } catch (err) {
     if (err instanceof ConfigError) return err
     throw err
