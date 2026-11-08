@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-07",
+  "reviewed": "2026-11-08",
   "refs": ["hub/src/shared/launch.ts#towerBrief", "hub/extensions/drafts/server.ts", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
