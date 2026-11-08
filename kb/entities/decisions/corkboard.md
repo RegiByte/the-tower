@@ -36,7 +36,8 @@ tower page.
   a save) is [`extensions/drafts/client/drafts.ts`](ref:hub/extensions/drafts/client/drafts.ts): DOM-free, its
   collection reads and writes passed in. It is the client file of the bundled drafts extension ([[extensions]]): the
   tower page imports it as `/x/drafts/drafts.js` (served by [`clientFile`](ref:hub/src/tower/http.ts#clientFile));
-  Tower 3D bundles it. Each keeps its own textarea, layout and autosave timer. The tower's server never imports it:
+  Tower 3D imports it there too, going on without drafts when a replacing extension serves no such file
+  ([`clients.ts`](ref:hub/renderers/tower3d/src/clients.ts)). Each keeps its own textarea, layout and autosave timer. The tower's server never imports it:
   what drafts mean stays with renderers.
 - **The corkboard** ([`corkFor`](ref:hub/renderers/tower3d/src/layout.ts#corkFor)): only on floors where the
   `drafts` collection is the drafts extension's (`draftsOf` reads its `by`: a plain one of that name is no drafts), on the left of the floor's shared wall ([[shared-wall]]). Each note is a paper card titled by

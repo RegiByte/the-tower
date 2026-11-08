@@ -12,7 +12,8 @@
 }
 ---
 The built-in renderer `tower3d`, served at `/r/tower3d/` ([[renderers-in-config]]). Its TypeScript is bundled into
-a git-ignored `renderers/tower3d/out/` beside copies of its pages ([[bundled-renderer]]): `npm run tower3d`, or
+one ES module per page in a git-ignored `renderers/tower3d/out/`, beside copies of its pages, importing the library
+(`/lib/`) and the extension clients it draws (`/x/`) at run time ([[bundled-renderer]]): `npm run tower3d`, or
 `npm run tower3d:watch`. `out/` is the renderer's root, so a fresh checkout lists Tower 3D as not built until it
 builds. Its settings name the cats by coat (`settings.cats`, [`catName`](ref:hub/renderers/tower3d/src/acts.ts#catName)).
 It can sit on a shelf, framed, as a `renderer` entry, its settings with it. Its pause card lists the declared

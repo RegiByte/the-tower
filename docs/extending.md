@@ -282,10 +282,11 @@ The layering advice that makes this work:
 Outside the checkout, `tower update` never conflicts with your work, and your copy may move to any stack (a framework,
 a bundler, another language) while still importing the served modules where they help.
 
-Tower 3D is built from the checkout's sources: they import the core's TypeScript by relative path, and its build
-runs the checkout's scripts. Copy it as a clone of the tower at the release you start from, kept apart from the
+Tower 3D is built from the checkout's sources: it imports the library and the extension clients at run time from the
+tower that serves it, a few of its files still import the core's TypeScript by relative path, and its build runs the
+checkout's scripts. Copy it as a clone of the tower at the release you start from, kept apart from the
 checkout that runs your tower: change `renderers/tower3d/` there in commits of your own, `npm ci`, `npm run tower3d`,
-and declare `<the clone>/renderers/tower3d/out` as your renderer's root: it holds the pages, their bundles and the
+and declare `<the clone>/renderers/tower3d/out` as your renderer's root: it holds the pages, their modules and the
 models they fetch (`out/assets/`). Taking an update is checking out the new
 tag and putting your commits on it.
 
