@@ -38,8 +38,9 @@ and reads items alike ([[renderer-is-disposable]]).
   rest in the main pane, so a floor keeping many drafts doesn't push its workers out of sight.
 - Drafts keep their own tray on the shared rows (`drafts/tray`), with a way to make one, where the floor's `drafts`
   collection is the drafts extension's (a plain one of that name is drawn by `tower/tray`); review threads keep theirs
-  (`reviews/tray`): each open thread opened in the Reviews tab of the worker on duty in its checkout, else as the
-  checkout's `reviews.thread` subject (`reviews/checkout-thread`), with the threads Tidy filed in a fold below
+  (`reviews/tray`): each open thread opened in the Reviews tab of the worker in its checkout, on duty or not (where the
+  work happened, with its brief), else, where no worker is on the board, as the checkout's `reviews.thread` subject
+  (`reviews/checkout-thread`), with the threads Tidy filed in a fold below
   ([`landedThreads`](ref:hub/extensions/reviews/client/reviews.ts#landedThreads), read off the board's `reviews`
   items), each opened in its view by type; policies keep a count that opens their own panel (`policies/tray`).
 - A prompt in the new-worker form that closes without starting is kept
