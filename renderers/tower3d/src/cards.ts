@@ -1,8 +1,15 @@
 import { palettes } from '../../../src/shared/design.ts'
 import { findCard, gistLine, tidyRows } from '../../../src/shared/cards.ts'
+import { plain } from '/lib/words.js'
 import type { Board, Card, Floor } from './api.ts'
 
 export * from '../../../src/shared/cards.ts'
+
+/** A status as one glyph over a worker: a question (a screen's, too), a failure, an outcome nobody has looked at, or a doze; none while at work or stranded. */
+export const bubbleOf = (c: Card) => (c.broken ? '×' : c.stranded ? '' : c.status === 'needs_input' || c.status === 'blocked' ? '?' : c.waiting && c.status === 'failed' ? '×' : c.waiting ? '!' : c.status === 'idle' ? 'z' : '')
+
+/** What a worker says over its head while it works: once the turn ends, its gist speaks. */
+export const speechOf = (c: Card): string[] => (c.status === 'working' && !c.broken ? c.says.map(plain) : [])
 
 /** The Tidy row that kills the hire `id`, its work landed: its call applies only that. */
 export const landedRow = (f: Floor, id: string, now: number) =>
