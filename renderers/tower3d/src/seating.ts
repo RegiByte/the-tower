@@ -19,6 +19,16 @@ function leftAt(c: Card, everyone: Card[]) {
   return resumer ? everyone.find((r) => r.id === resumer.id)!.startedAt : c.enteredAt
 }
 
+/**
+ * A floor's history from its board's cards and its archive's: every card once, the board's where both hold it. The
+ * archive is read at the time it is served, not the board's, so one served just past midnight holds the day's off-duty
+ * cards the board before it still carries; a card replayed twice would arrive twice and move a desk.
+ */
+export const historyFrom = (cards: Card[], archive: Card[]): Card[] => {
+  const onBoard = new Set(cards.map((c) => c.id))
+  return [...cards, ...archive.filter((c) => !onBoard.has(c.id))]
+}
+
 /** The workstations seats take. */
 export const stationsTaken = (seats: Iterable<Seat>) => [...seats].flatMap((seat) => ('n' in seat ? [seat.n] : []))
 

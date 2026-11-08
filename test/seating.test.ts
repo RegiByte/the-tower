@@ -8,7 +8,7 @@ import type { Config, SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { FIXTURES_DIR } from '../scripts/tower3d-fixtures.ts'
 import type { FixtureFile } from '../renderers/tower3d/src/fixture-file.ts'
-import { buildingSeats, seatsOf } from '../renderers/tower3d/src/seating.ts'
+import { buildingSeats, historyFrom, seatsOf } from '../renderers/tower3d/src/seating.ts'
 import { galleryOf } from '../renderers/tower3d/src/showings.ts'
 import { fixture } from './replay.ts'
 import { viewOf } from './view.ts'
@@ -16,7 +16,7 @@ import { viewOf } from './view.ts'
 const DAY = 86_400_000
 
 /** Each floor's history, by project: the board's cards and its archive's, as Tower 3D's `historyOf` joins them. */
-const historiesOf = (b: Board, archive: (project: string) => Card[]) => new Map(b.floors.map((f) => [f.id, [...f.cards, ...archive(f.id)]]))
+const historiesOf = (b: Board, archive: (project: string) => Card[]) => new Map(b.floors.map((f) => [f.id, historyFrom(f.cards, archive(f.id))]))
 
 /** What Tower 3D derives from the histories, beside what the bridge put on the board. */
 function derivedBeside(b: Board, archive: (project: string) => Card[]) {
@@ -84,7 +84,23 @@ test('a long-running worker keeps its desk at midnight, when the worker who came
   const [floor] = board(view).floors
   const archive = archiveOf(allCards(view), 'tower', now)
   assert.deepEqual([floor.cards.map((c) => c.id), archive.map((c) => c.id)], [[long.header.id], [early.header.id]])
-  const history = [...floor.cards, ...archive]
+  const history = historyFrom(floor.cards, archive)
   assert.deepEqual(seatsOf(history, history).get(long.header.id), { n: 1 }, 'the history keeps it at the workstation it took beside the earlier worker')
   assert.deepEqual(seatsOf(floor.cards, floor.cards).get(long.header.id), { n: 0 }, 'the board alone would move it to the one the earlier worker left')
+})
+
+test("a board built just before midnight, with its archive served just after, keeps the bridge's seat: the board's card counts once", () => {
+  const day = new Date(2026, 9, 4).getTime()
+  const session = (id: string, hour: number, exitAfter?: number): SessionLog => ({
+    header: { id, project: 'tower', cwd: '/hub', argv: ['claude'], startedAt: day + hour * 3_600_000, cols: 80, rows: 24 },
+    events: exitAfter === undefined ? [] : [[exitAfter, 'x', { exitCode: 0 }]],
+  })
+  const early = session('20261004-100000-aaaa', 10, 5 * 3600)
+  const long = session('20261004-110000-bbbb', 11)
+  const at = (now: number) =>
+    viewOf(configFor([early, long]), { sessions: [early, long].map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set([long.header.id]), protocol: HOST_PROTOCOL }, now })
+  const midnight = day + DAY
+  const [floor] = board(at(midnight - 1000)).floors
+  const history = historyFrom(floor.cards, archiveOf(allCards(at(midnight + 1000)), 'tower', midnight + 1000))
+  assert.deepEqual(seatsOf(history, history).get(long.header.id), floor.cards.find((c) => c.id === long.header.id)!.seat)
 })
