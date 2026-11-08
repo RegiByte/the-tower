@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-11-08",
-  "refs": ["hub/src/bridge/board.ts#board", "hub/src/bridge/board.ts#onBoard", "hub/src/bridge/board.ts#allCards", "hub/src/bridge/board.ts#archiveOf", "hub/src/bridge/board.ts#archiveAtOf", "hub/src/tower/http.ts#archive", "hub/src/tower/publisher.ts#archivedCards", "hub/src/shared/past.ts#pastOf", "hub/src/shared/past.ts#archiveKey", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/chains.ts#SessionRef", "hub/src/bridge/seats.ts#withSeats", "hub/src/bridge/board.ts#galleryOf", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#findCard", "hub/src/directory.ts#everyCard", "hub/src/directory.ts#readArchive", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
+  "refs": ["hub/src/bridge/board.ts#board", "hub/src/bridge/board.ts#onBoard", "hub/src/bridge/board.ts#allCards", "hub/src/bridge/board.ts#archiveOf", "hub/src/bridge/board.ts#archiveAtOf", "hub/src/tower/http.ts#archive", "hub/src/tower/publisher.ts#archivedCards", "hub/src/tower/publisher.ts#archiveCore", "hub/src/shared/past.ts#pastOf", "hub/src/shared/past.ts#archiveKey", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/chains.ts#SessionRef", "hub/src/bridge/seats.ts#withSeats", "hub/src/bridge/board.ts#galleryOf", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#findCard", "hub/src/directory.ts#everyCard", "hub/src/directory.ts#readArchive", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
 **Problem.** The board is pushed whole, to every client, on every change. Holding every session ever run, it grows
@@ -44,7 +44,11 @@ every card.
   [`archiveOf`](ref:hub/src/bridge/board.ts#archiveOf) over `allCards` (`Card[]`, newest first, the same card
   shape), typed in `Reads` and as `tower.archive`. Its cards are folded as the board's are
   ([`archivedCards`](ref:hub/src/tower/publisher.ts#archivedCards): each running extension's card folds, then
-  `LEGACY`'s copies), so an archived card carries `x` and the old fields too ([[extensions]]).
+  `LEGACY`'s copies), so an archived card carries `x` and the old fields too ([[extensions]]). Reads arriving
+  together share one build of every card and the core's board, the last one a board or a read made, while its key
+  holds (`changes` reported, the config's text, the viewers, the day) for at most `ARCHIVE_SHARE_MS` (1 s): each read
+  folds its own floor on it, served as a read at the instant the build was made
+  ([`archiveCore`](ref:hub/src/tower/publisher.ts#archiveCore)). A cache, dropped once that second is over.
 - A past list is the board's off-duty cards with the archive read
   ([`pastOf`](ref:hub/src/shared/past.ts#pastOf)), listed by crew ([[crews]]); its tray counts `pastCount` before the read.
   A renderer holds the archives it reads as held reads ([[machines]]): a slot per floor read at its `archiveKey`
