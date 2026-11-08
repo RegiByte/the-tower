@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.102.0
+
+The Brief keeps what you are reading while its worker works. Restart the tower with this release (`tower down tower`,
+then `tower up tower`); `tower update` does that for you. No host restart. API 1.163, by addition.
+
+- **Earlier turns stay open.** A conversation opened whole ("earlier turns") was dropped on the next tool call or
+  message, taking every message you had expanded in it and your place in the scroll. It now stays whole: each new read
+  is joined to it, with no extra request, and it is read whole again only after turns came that neither holds. One
+  that fails to read again falls back to its last turns and says why. In the page's Brief and Tower 3D's logbooks.
+- **The answer you are reading stays unfolded.** The latest answer, shown in full, no longer folds to its start when
+  the next turn arrives.
+- **A running tool call keeps its height.** One opened while it runs shows what was last read of it until it is read
+  again, not "reading the call…" on each redraw.
+- **Show all stays in place.** Expanding a long message no longer scrolls the pane it sits in, which pushed the brief
+  out of its frame.
+- **For renderers.** `joinedWholes` and `withWholesRead` in `/lib/brief.js` and `/brief.js`: a conversation read whole
+  joined to each later read, and the read step that keeps them. `expandedSaid` also counts the latest answer drawn
+  whole (`data-said-whole`).
+
 ## v1.101.1
 
 Tower 3D hires one worker at a time per floor. Restart the tower with this release (`tower down tower`, then `tower up
