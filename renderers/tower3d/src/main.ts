@@ -2540,10 +2540,7 @@ function onThreadClick(e: MouseEvent) {
   const anchor = el.closest<HTMLElement>('[data-anchor]')?.dataset.anchor
   const thread = threadOf(s.board!, at)
   const a = anchor && thread ? anchorOf(thread, anchor) : undefined
-  if (!a) return
-  const desk = atDesk()
-  if (!desk) return toast(`Nobody works in ${checkout} now: its Changes are read at a worker's desk`)
-  openChanges(desk, { card: desk, project, repo: a.repo, path: a.path, from: a.from, to: a.to, ...(a.quote && { quote: a.quote }) })
+  if (a) toast(`Nobody works in ${checkout} now: its Changes are read at a worker's desk`)
 }
 
 $('doc-body').addEventListener('click', onThreadClick)
