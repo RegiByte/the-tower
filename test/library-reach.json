@@ -17,7 +17,6 @@
   "renderers/tower3d/src/desk-verbs.ts -> ../../../src/bridge/board.ts",
   "renderers/tower3d/src/desk-verbs.ts -> ../../../src/shared/adds.ts",
   "renderers/tower3d/src/desk-verbs.ts -> ../../../src/shared/regions.ts",
-  "renderers/tower3d/src/dress.ts -> ../../../src/shared/hash.ts",
   "renderers/tower3d/src/dresser.ts -> ../../../src/shared/cards.ts",
   "renderers/tower3d/src/editor.ts -> ../../../src/shared/cards.ts",
   "renderers/tower3d/src/exterior/clouds.ts -> ../../../../src/shared/design.ts",

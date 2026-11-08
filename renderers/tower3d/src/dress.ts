@@ -1,4 +1,4 @@
-import { fnv1a, mix } from '../../../src/shared/hash.ts'
+import { fnv1a, mix } from './hash.ts'
 import { fit, type Model } from '../../kaykit/src/catalog.ts'
 import type { Card } from './api.ts'
 import { DESK, RETURN } from './layout.ts'
