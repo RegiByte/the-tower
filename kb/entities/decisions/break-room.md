@@ -18,7 +18,7 @@
     "hub/renderers/tower3d/src/layout.ts#DeskSlot",
     "hub/renderers/tower3d/src/main.ts#update",
     "hub/renderers/tower3d/src/desk.ts#standingPose",
-    "hub/renderers/tower3d/src/fixtures.ts#breakroom",
+    "hub/scripts/tower3d-fixtures.ts#breakroom",
     "hub/scripts/frames.scenario.js",
     "hub/src/bridge/board.ts#answerWait"
   ],
@@ -74,5 +74,5 @@ nobody has typed to it since, its latest prompt was its hirer's and the hirer ru
 - *The first free place in order*: one worker going back would move every later one along a place.
 
 **Impact.** Tower 3D only; no board or API change. The `breakroom` fixture
-([`breakroom`](ref:hub/renderers/tower3d/src/fixtures.ts#breakroom)) covers the cases, and frames' `break-room` and
+([`breakroom`](ref:hub/scripts/tower3d-fixtures.ts#breakroom)) covers the cases, and frames' `break-room` and
 `reviewer-stays` stages look at them ([`frames.scenario.js`](ref:hub/scripts/frames.scenario.js)).

@@ -1,5 +1,5 @@
 import { prefetch } from './files.ts'
-import { FIXTURE } from './fixtures.ts'
+import { FIXTURE } from './fixture-name.ts'
 import { startLighting } from './light/setting.ts'
 import { drop, stage } from './loading.ts'
 import type { Door } from './door.ts'

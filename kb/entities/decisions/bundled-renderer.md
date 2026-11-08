@@ -57,7 +57,8 @@ named by a hash of their bytes; each import is the file's URL relative to the pa
 KayKit kit into one file (`out/kaykit/kit.kaykit`, [[office-kaykit]]), then clears `out/assets/` so old hashes don't
 pile up: a kit that fails leaves the last build whole. A first load fetches the library as separate modules (about
 135 on a busy board, 1.6 MB), which a later load takes from the browser's cache; the page's own module is fetched
-each time. Until the fixture boards are data and Tower 3D mounts the page's panels, the fixture bridge and the legacy
+each time. Tower 3D's fixture boards are data (`renderers/tower3d/fixtures/*.json`, [[tower3d-door]]), copied to
+`out/fixtures/` by `npm run tower3d` and fetched only on a fixture page. Until Tower 3D mounts the page's panels, the legacy
 Changes anchors (`src/shared/panels.ts` and what it reaches, highlight.js among it) stay bundled beside the library
 instance: they hold caches and nothing that must be shared. Tower 3D sees code change under it as the page does, and
 standalone says so with a reload (framed, the page's own notice does). Models are files beside the pages or come

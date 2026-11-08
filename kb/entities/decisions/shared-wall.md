@@ -17,7 +17,7 @@
     "hub/renderers/tower3d/src/desk.ts#heldUpAt",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
     "hub/renderers/tower3d/src/main.ts#openPicture",
-    "hub/renderers/tower3d/src/fixtures.ts#FIXTURES",
+    "hub/scripts/tower3d-fixtures.ts#FIXTURES",
     "hub/scripts/frames.scenario.js"
   ]
 }
@@ -48,7 +48,7 @@ it goes home.
   stand ([`openPicture`](ref:hub/renderers/tower3d/src/main.ts#openPicture)) or goes to its worker's desk while it is
   on duty. A picture is looked up in `floor.gallery` ([`pictureOf`](ref:hub/renderers/tower3d/src/cards.ts#pictureOf)),
   its worker's card only while the board carries it.
-- **Checked by frames** ([`FIXTURES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURES)): a fixture is a list of
+- **Checked by frames** ([`FIXTURES`](ref:hub/scripts/tower3d-fixtures.ts#FIXTURES)): a fixture is a list of
   boards, and the door's `advance()` delivers the next, so the walk
   ([`frames.scenario.js`](ref:hub/scripts/frames.scenario.js)) records a showing held up and hung.
 
