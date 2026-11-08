@@ -16,11 +16,12 @@
  *   data-copy-said="<key>"           copy that prompt's, answer's or step's text as written (`saidText`, `saidWhat`)
  *   data-brief-markdown="<choice>"   draw words rendered or raw (`BRIEF_MARKDOWNS`), the viewer's, kept under `BRIEF_MARKDOWN_KEY`
  *   data-tool="<session>:<call>" opened   read the call (`tower.toolCall`), draw it in its `[data-tool-body]`
- *                                         (`toolCallHtml`), and hand it to the next draw as `tools` once it ended
- *                                         (`toolCallSettled`): a call drawn open fires `toggle` again as it is drawn
+ *                                         (`toolCallHtml`), hand it to the next draw as `tools`, and read it no more
+ *                                         once it ended (`toolCallSettled`): a call drawn open fires `toggle` again as
+ *                                         it is drawn, and one still running is read again, drawn as last read meanwhile
  *   data-brief-earlier="<session>:<conversation>"   read the conversation whole (`tower.conversation`) and draw it in place
  *                                                   of its last turns (`withWhole`), joined to each later
- *                                                   read's last turns (`joinedWholes`)
+ *                                                   read's last turns (`joinedWholes`, `withWholesRead`)
  *
  * and each fence's `data-copy-code` of `/markdown.js`. A brief shown is read again as its card moves (`briefKey`), each
  * read with the conversations read whole joined to its last turns of them (`joinedWholes`).
@@ -202,6 +203,20 @@ export const joinedWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[];
     const now = joined(last, whole)
     return now ? { ...acc, briefs: withWhole(acc.briefs, now), wholes: [...acc.wholes, now] } : { ...acc, behind: [...acc.behind, whole] }
   }, { briefs: read, wholes: [], behind: [] })
+
+/**
+ * A brief as read again, with the conversations read whole joined to it (`joinedWholes`), those it no longer meets
+ * read whole again through `conversation` (`tower.conversation`) and drawn in place. `wholes` gives the renderer's
+ * wholes as they stand once those reads land, so one read whole meanwhile is kept. A conversation that fails to read
+ * whole again is let go, drawn as its last turns, its error among `failed` for the renderer to say. @since 1.163
+ */
+export async function withWholesRead(read: Brief[], wholes: () => Brief[], conversation: (session: string, id: string) => Promise<Brief>): Promise<{ briefs: Brief[]; wholes: Brief[]; failed: Error[] }> {
+  const settled = await Promise.allSettled(joinedWholes(read, wholes()).behind.map((w) => conversation(w.session.id, w.id)))
+  const again = settled.flatMap((s) => (s.status === 'fulfilled' ? [s.value] : []))
+  const failed = settled.flatMap((s) => (s.status === 'rejected' ? [s.reason as Error] : []))
+  const { briefs, wholes: kept } = joinedWholes(read, again.reduce(withWhole, wholes()))
+  return { briefs, wholes: kept, failed }
+}
 
 /**
  * What a worker's brief is read at: its status, its tool, its conversations and what extensions add to them. A brief
