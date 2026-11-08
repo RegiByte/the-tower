@@ -415,8 +415,9 @@ export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) 
 export const statsHeadHtml = () =>
   `<span class="call">Stats</span><span class="meta">every floor, from the logs</span><span class="acts">${closeButton}</span>`
 
-export const threadHeadHtml = (f: Floor, checkout: string) =>
-  `${swatch(f.color ?? NO_BAND)}<span class="call">Thread</span><span class="meta">${esc(f.name)} · ${esc(checkout)} · nobody works there now</span>
+/** The reader's head: the thread's floor and checkout, and who is on duty there, `worker`, if anyone. */
+export const threadHeadHtml = (f: Floor, checkout: string, worker: Card | undefined) =>
+  `${swatch(f.color ?? NO_BAND)}<span class="call">Thread</span><span class="meta">${esc(f.name)} · ${esc(checkout)} · ${worker ? `${esc(worker.callsign)} works there` : 'nobody works there now'}</span>
     <span class="acts">${closeButton}</span>`
 
 /**
