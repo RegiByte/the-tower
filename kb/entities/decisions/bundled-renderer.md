@@ -18,8 +18,7 @@ files carry CORS ([`ANY_ORIGIN`](ref:hub/src/tower/http.ts#ANY_ORIGIN), the rule
 ([[library]]): one instance of each library module, shared with the extension clients it draws.
 
 **Decision.** [[tower3d]]'s source is TypeScript modules, bundled by esbuild into one minified ES module per page
-(`out/tower3d.js`, the lab's, the dresser's, the editor's), each loaded as `<script type="module">` after the classic
-`/tower.js`. Three.js, `@xterm/xterm` and highlight.js come from npm and are bundled in. The library and the
+(`out/tower3d.js`, the lab's, the dresser's, the editor's), each loaded as `<script type="module">`, the renderer's own page after the classic `/tower.js`. Three.js, `@xterm/xterm` and highlight.js come from npm and are bundled in. The library and the
 extension clients are not: the build passes `--external:/lib/*` and `--external:/x/*`, so each `/lib/<module>.js`
 and `/x/<cap>/<file>.js` import stays a URL the browser resolves at run time. esbuild honours the tsconfig's `/lib/*`
 path, so without the flag it would quietly bundle a copy instead; `npm run test:tower3d-boot` fails when a built page
