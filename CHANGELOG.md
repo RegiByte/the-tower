@@ -24,8 +24,9 @@ addition.
   never jumps while an archive read is on its way. If a floor's archive can't be read, its workers show without desks
   and Tower 3D says why.
 - **Archive reads arriving together share one build.** Reading several floors' archives at once, as Tower 3D does on
-  every load, builds the system once instead of once per floor. Tower 3D opens about a fifth faster on a tower with
-  thousands of archived sessions. Each read's answer is unchanged.
+  every load, builds the system once instead of once per floor. Each read's answer is unchanged. On a tower with
+  thousands of archived sessions, Tower 3D's first load now waits for the archives, and this takes back most of that
+  wait: about a tenth of a second slower to open than v1.105.0, where it would otherwise be up to half a second.
 - **For renderer authors:** `valueAt` and `failureAt` join `/lib/machine.js`: the value or failure a held read has
   for a key, when it is current for that key.
 - **For contributors:** the core views' shared parts `frame.ts`, `item.ts` and `sections.ts` live in `src/shared/` as
