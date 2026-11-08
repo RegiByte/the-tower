@@ -724,7 +724,7 @@
   "reads": {
     "anchors/<project>": {
       "scope": "project",
-      "description": "Where each anchor of a worker's thread stands among its changes against its default branch, by `<n>|<i>` (its note's number and its place among the note's anchors): `same` where its quote still reads in the diff, `changed` where the file changed and it doesn't, `gone` where the file has no changes left.",
+      "description": "Where each anchor of a worker's thread stands among its changes against its default branch, by `<n>|<i>` (its note's number and its place among the note's anchors): `same` where its quote still reads in the diff (or, for an anchor without a quote, while its file has changes), `changed` where the file changed and it doesn't, `gone` where the file has no changes left.",
       "query": {
         "type": "object",
         "additionalProperties": false,
