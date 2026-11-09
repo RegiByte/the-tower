@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-09",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withReports",
@@ -111,11 +111,10 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   acts on once the turn ends ([[leave]]). A crew can span floors (a hire on another floor, [[hire]]): `reportsTo` and
   `send-home` are derived over every floor's cards and `crewTree` runs per floor, so the hire heads a crew on its own
   floor, its card saying "hired by X (floor)", while `tower agents` links it under its hirer in one line,
-  `└ KBKEEPER-86 · working · on lab`. The board carries what the link needs (`reportsTo`, `hiredBy.project`), folded by
-  [`awayHiresOf`](ref:hub/src/shared/crews.ts#awayHiresOf): the tower page draws each such hire still on duty as a
-  link row in its hirer's crew, painted in its floor's colour, that opens the hire's card on its floor. Tower 3D draws
-  no link. Tower 3D sends a worker home with its crew and draws no crew tree on duty; a crew of three on duty gathers in a meeting room
-  until its lead goes home ([[whereabouts]]).
+  `└ KBKEEPER-86 · working · on lab`. The board carries what the link needs (`reportsTo`, `hiredBy.project`), and
+  [`awayHiresOf`](ref:hub/src/shared/crews.ts#awayHiresOf) is the shared fold of a worker's hires on other floors. The
+  tower page's [sidebar](ref:hub/renderers/page/sidebar.js#sidebar) draws each such hire still on duty as a link row in its hirer's crew, painted in its floor's colour, that opens the hire's card on its floor. Tower 3D draws
+  no link. Tower 3D sends a worker home with its crew and draws no crew tree on duty; its crews gather in meeting rooms instead ([[whereabouts]]).
 - *The archive by crew.* [`pastCrews`](ref:hub/src/shared/past.ts#pastCrews) groups `pastOf`'s cards (the board's
   off-duty ones and the archive read, [[board-archive]], so a crew split between them stays whole) into the same tree:
   archived cards carry `reportsTo` because `withCrews` runs over every card before the past ones are picked. A worker
@@ -137,7 +136,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   every crew read upside down, the other way round from the floor on duty.
 - *Keeping a non-matching coordinator as a dimmed context row while filtering*: more rows than the words asked for.
 
-**Impact.** Board: `card.reportsTo` (and since 1.87 `card.crew`, the edge a launch contributor logged) and the card verb `send-home`, its call a list of kills, on every worker;
+**Impact.** Board: `card.reportsTo` (and `card.crew`, the edge a launch contributor logged) and the card verb `send-home`, its call a list of kills, on every worker;
 renderers draw no Kill on a worker. Shared: the crew folds and the archive's order are `/cards.js` exports every
 renderer draws from. The board carries only today's past cards, so the sidebar's fold counts those; the archive's
 tree reads the archive too.
