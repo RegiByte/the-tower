@@ -26,7 +26,8 @@ function run(events: Event[], state: Hiring = empty) {
   return { state, effects }
 }
 
-const types = (effects: { type: string }[]) => effects.map((f) => f.type)
+/** The effects' kinds without `draw`, which only picks a callsign and is not what a test about hiring is about. */
+const types = (effects: { type: string }[]) => effects.map((f) => f.type).filter((type) => type !== 'draw')
 const hire = (project = 'p', on?: typeof note, starting?: string): Event => ({ type: 'hire', project, name: project.toUpperCase(), form, on, starting })
 const replied = (id: string, project = 'p'): Event => ({ type: 'replied', project, reply: { t: 'spawned', id } })
 /** A board holding one card with `id`, on duty or not. */
@@ -34,20 +35,20 @@ const boardWith = (id: string, onDuty: boolean) => ({ floors: [{ id: 'p', cards:
 
 test('hiring: a second press on a floor hiring starts nothing until the board shows the worker the first started', () => {
   const pressed = run([hire(), hire(), replied('s1'), hire()])
-  assert.deepEqual(types(pressed.effects), ['toast', 'draw', 'run', 'toast', 'started', 'toast'])
+  assert.deepEqual(types(pressed.effects), ['toast', 'run', 'toast', 'started', 'toast'])
   assert.deepEqual(pressed.state, { p: { t: 'arriving', name: 'P', id: 's1' } })
   assert.equal(pressed.effects.filter((f) => f.type === 'run').length, 1)
   const seated = run([{ type: 'board', board: boardWith('s1', true) }, hire()], pressed.state)
-  assert.deepEqual(types(seated.effects), ['draw', 'toast', 'draw', 'run'])
+  assert.deepEqual(types(seated.effects), ['toast', 'run'])
 })
 
 test('hiring: each floor hires on its own, and the floor the dialog starts on takes no hire meanwhile', () => {
   assert.deepEqual(Object.keys(run([hire('p'), hire('q')]).state), ['p', 'q'])
   assert.deepEqual(run([hire('p', undefined, 'p')]), { state: empty, effects: [{ type: 'toast', text: 'Already hiring a worker on P: wait for its desk' }] })
   const opened = run([hire(), { type: 'open', project: 'p', name: 'P', on: undefined, text: '' }, { type: 'open', project: 'q', name: 'Q', on: undefined, text: '' }])
-  assert.deepEqual(types(opened.effects), ['toast', 'draw', 'run', 'toast', 'open'])
+  assert.deepEqual(types(opened.effects), ['toast', 'run', 'toast', 'open'])
   const dialog = run([{ type: 'arriving', project: 'p', name: 'P', id: 's2' }, hire()])
-  assert.deepEqual(types(dialog.effects), ['draw', 'toast'], "the dialog's worker holds the floor until it sits down")
+  assert.deepEqual(types(dialog.effects), ['toast'], "the dialog's worker holds the floor until it sits down")
 })
 
 test('hiring: a failure, a worker that ended before its desk, or a lost tower unlocks the floor, said in a toast', () => {
