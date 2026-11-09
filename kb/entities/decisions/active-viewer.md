@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-31",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-09",
   "refs": [
     "hub/src/shared/api.ts#VIEWER_ID",
     "hub/src/tower/publisher.ts#viewerActive",
