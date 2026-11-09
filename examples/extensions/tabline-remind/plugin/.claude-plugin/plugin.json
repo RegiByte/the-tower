@@ -1,0 +1,5 @@
+{
+  "name": "tabline-remind",
+  "version": "1.0.0",
+  "description": "Reminds a worker at each prompt to keep its tab line saying what it is on"
+}

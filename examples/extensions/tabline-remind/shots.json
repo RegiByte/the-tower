@@ -1,0 +1,56 @@
+{
+  "seed": [
+    "tower x tabline facts/line --value 'writing the migration'"
+  ],
+  "scenes": [
+    {
+      "name": "row",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "until": ".sess .adds-line",
+          "text": "writing the migration"
+        }
+      ],
+      "crop": ".sess.sel"
+    },
+    {
+      "name": "head",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "until": ".bar-top .adds-line",
+          "text": "writing the migration"
+        },
+        {
+          "until": ".bar-top .pill [data-since]",
+          "text": "s"
+        }
+      ],
+      "crop": ".bar-top"
+    },
+    {
+      "name": "name-tab",
+      "open": "#$WORKER_1",
+      "size": "1180x560",
+      "steps": [
+        {
+          "click": ".bar-top button",
+          "text": "Name tab"
+        },
+        {
+          "until": "dialog[open] input"
+        }
+      ],
+      "crop": "dialog[open]"
+    }
+  ],
+  "text": [
+    {
+      "name": "whoami",
+      "run": "tower whoami | sed -E -n '1,3p;/tabline  ·/p' | sed -E 's/session [0-9a-f-]+/session <id>/'"
+    }
+  ]
+}
