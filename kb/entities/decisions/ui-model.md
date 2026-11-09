@@ -115,8 +115,10 @@ and a framed document's section are the same thing.
   view once it has; a mount that settles after its view failed or closed is closed at once; a failed view takes nothing
   more until closed.
 - *Viewer subjects* are what a renderer page holds and the board never carries: their kinds are `file`, `lines`,
-  `said` and `section` ([`ViewerKind`](ref:hub/src/shared/extensions.ts#ViewerKind)); views, commands and regions may
-  be on one, and no fold may. A file in a checkout, `file:<card>/<repo>/<path>`
+  `said`, `section` and `passage` ([`ViewerKind`](ref:hub/src/shared/extensions.ts#ViewerKind)); views, commands and
+  regions may be on one, and no fold may. A `passage` is text picked in a file a view frames
+  ([`passageSubject`](ref:hub/src/shared/subjects.ts#passageSubject), [[passage-picks]]): it lives only in the
+  `passage.acts` region the view asks for under the pick, and is never published on the bus. A file in a checkout, `file:<card>/<repo>/<path>`
   ([`fileSubject`](ref:hub/src/shared/subjects.ts#fileSubject)), is a child of its card like `lines`, carrying `text`,
   the read path its content is served at, `type`, its absolute path `file` when it has one (the binary fallback's Finder
   and editor buttons need it), and a `fragment` saying where to open it. It is how a view that browses a worker's files
