@@ -117,7 +117,7 @@ test('a worktree git could not read is neither in Tidy nor planned, and has not 
 })
 
 test('the main checkouts have not landed while one could not be read', () => {
-  const unread = mainCheckouts([{ dir: HUB, at: 0, git: true, bases: [], originHead: undefined, main: { unread: 'fatal: bad index', ahead: 0 }, trees: [], kept: [] }], false)!
+  const unread = mainCheckouts([repoRead(HUB, { at: 0, main: { unread: 'fatal: bad index', ahead: 0 } })], false)!
   assert.deepEqual(unread.unread, [{ dir: HUB, why: 'fatal: bad index' }])
   assert.equal(checkoutLanded(MAIN_CHECKOUT, { worktrees: [], branches: [], main: unread }), false)
 })
