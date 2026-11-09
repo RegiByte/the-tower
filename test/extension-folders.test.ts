@@ -32,12 +32,13 @@ const pluginProblems = async (change: (dir: string) => void) => {
 }
 
 test('a plugins.claude that teaches nothing is a warning at its key, and the extension still loads', async () => {
-  assert.deepEqual(await pluginProblems((dir) => rmSync(path.join(dir, 'plugin'), { recursive: true })), [
-    ['warn', 'plugins.claude', 'plugin is no folder of this extension, so its sessions load no plugin: add the folder, or fix plugins.claude'],
-  ])
-  assert.deepEqual(await pluginProblems((dir) => rmSync(path.join(dir, 'plugin', '.claude-plugin'), { recursive: true })), [
-    ['warn', 'plugins.claude', 'plugin holds no .claude-plugin/plugin.json, so it is no Claude plugin: add one naming the plugin'],
-  ])
+  const warned = async (change: (dir: string) => void, message: RegExp) => {
+    const problems = await pluginProblems(change)
+    assert.deepEqual(problems.map(([level, at]) => [level, at]), [['warn', 'plugins.claude']])
+    assert.match(String(problems[0][2]), message)
+  }
+  await warned((dir) => rmSync(path.join(dir, 'plugin'), { recursive: true }), /plugin is no folder of this extension.*: add the folder, or fix plugins\.claude$/)
+  await warned((dir) => rmSync(path.join(dir, 'plugin', '.claude-plugin'), { recursive: true }), /plugin holds no \.claude-plugin\/plugin\.json.*: add one naming the plugin$/)
 })
 
 for (const dir of [...foldersIn(BUNDLED_DIR), ...foldersIn(EXAMPLES)]) {

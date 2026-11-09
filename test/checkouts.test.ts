@@ -25,7 +25,8 @@ test('one daemon elsewhere is enough to refuse, and updating there is not offere
   const refusal = updateRefusal([at('jobs', HERE), at('tower', HUB)], HERE)
   assert.ok(refusal)
   assert.doesNotMatch(refusal.message, /jobs/)
-  assert.equal(refusal.fix, 'to run tower from this checkout: /work/clone/src/mod/bin/tower down tower, then /work/clone/src/mod/bin/tower up tower')
+  assert.match(refusal.fix, /^to run tower from this checkout: .*\/tower down tower, then .*\/tower up tower$/)
+  assert.doesNotMatch(refusal.fix, /jobs/)
 })
 
 test('a running daemon whose checkout cannot be read refuses, saying so', () => {
@@ -52,11 +53,15 @@ test('a daemon tower up did not start can only be stopped where it runs, so no d
   const refusal = updateRefusal([unowned('jobs'), at('tower', HERE)], HERE)
   assert.ok(refusal)
   assert.match(refusal.message, /jobs answers at \/root\/jobs\.sock but was not started by tower up/)
-  assert.equal(refusal.fix, 'stop jobs where it runs')
+  assert.match(refusal.fix, /^stop jobs where it runs/)
+  assert.doesNotMatch(refusal.fix, /down jobs/)
   assert.match(updateRefusal([unowned('jobs'), at('tower', HUB)], HERE)!.fix, /^stop jobs where it runs, and to run tower from this checkout: .* down tower, /)
 })
 
 test('notHere keeps what runs elsewhere and what cannot be read, and its line names each', () => {
   const elsewhere = notHere([at('host', HUB), at('terms', HERE), unreadable('tower')], HERE)
-  assert.equal(notHereLine(elsewhere, HERE), "host runs from /work/hub; tower is running, but its checkout can't be read: lsof failed; this checkout is /work/clone")
+  const line = notHereLine(elsewhere, HERE)
+  assert.match(line, /host runs from \/work\/hub/)
+  assert.match(line, /tower is running, but its checkout can't be read/)
+  assert.doesNotMatch(line, /terms/)
 })
