@@ -168,6 +168,8 @@ export type Page = {
   drop(file: string): Promise<void>
   /** Every page error, unhandled rejection and console error so far, as printed. */
   errors: string[]
+  /** The url of every request the page has sent, in the order it sent them, each added when sent, not when answered. */
+  requests: string[]
 }
 
 /**
@@ -191,6 +193,9 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
     cdp.on('Runtime.exceptionThrown', (p) => report(`page error: ${describe(p.exceptionDetails)}`))
     cdp.on('Runtime.consoleAPICalled', (p) => p.type === 'error' && report(`page console: ${p.args.map((a: any) => a.value ?? a.description).join(' ')}`))
     cdp.on('Log.entryAdded', (p) => p.entry.level === 'error' && !p.entry.url?.endsWith('/favicon.ico') && report(`page log: ${p.entry.text}${p.entry.url ? ` (${p.entry.url})` : ''}`))
+    const requests: string[] = []
+    cdp.on('Network.requestWillBeSent', (p) => requests.push(p.request.url))
+    await cdp.send('Network.enable')
     await cdp.send('Runtime.enable')
     await cdp.send('Log.enable')
     await cdp.send('Page.enable')
@@ -199,7 +204,6 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
     if (features.length) await cdp.send('Emulation.setEmulatedMedia', { features })
     if (timezone) await cdp.send('Emulation.setTimezoneOverride', { timezoneId: timezone })
     if (throttle) {
-      await cdp.send('Network.enable')
       await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: throttle.latencyMs, downloadThroughput: (throttle.downKbps * 1000) / 8, uploadThroughput: -1 })
     }
     const loaded = new Promise((resolve) => cdp.on('Page.loadEventFired', resolve))
@@ -209,6 +213,7 @@ export async function withPage<T>(url: string, { width = 1280, height = 800, sca
     let buttons = 0
     const result = await use({
       errors,
+      requests,
       async eval(expression) {
         const r = await cdp.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })
         if (r.exceptionDetails) throw new Error(`${expression}\n  threw: ${describe(r.exceptionDetails)}`)
