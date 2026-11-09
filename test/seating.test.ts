@@ -100,7 +100,7 @@ test('a long-running worker keeps its desk at midnight, when the worker who came
 })
 
 test("a board built just before midnight, with its archive served just after, keeps the bridge's seat: the board's card counts once", () => {
-  const day = new Date(2026, 9, 4).getTime()
+  const day = Date.UTC(2026, 9, 4)
   const session = (id: string, hour: number, exitAfter?: number): SessionLog => ({
     header: { id, project: 'tower', cwd: '/hub', argv: ['claude'], startedAt: day + hour * 3_600_000, cols: 80, rows: 24 },
     events: exitAfter === undefined ? [] : [[exitAfter, 'x', { exitCode: 0 }]],
