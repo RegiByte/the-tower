@@ -1,0 +1,18 @@
+{
+  "id": "quote",
+  "version": "1.0",
+  "title": "Quote to worker",
+  "description": "Pick text in a markdown, text, code or html file a worker showed and write the worker a prompt about it: the prompt quotes the passage and says where it is in the file.",
+  "requires": { "tower": "1.170" },
+  "client": "client",
+  "views": {
+    "composer": {
+      "module": "composer.js",
+      "export": "mount",
+      "on": ["passage"],
+      "scales": ["row"],
+      "needs": ["toast"],
+      "words": { "label": "Ask", "hint": "Write the worker that showed this a prompt about the passage picked" }
+    }
+  }
+}
