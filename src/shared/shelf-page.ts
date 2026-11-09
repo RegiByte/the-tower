@@ -191,6 +191,12 @@ export type FromPage =
    * hears it only from the frame holding focus, and runs only a global command for it.
    */
   | { t: 'key'; key: string; code: string; mods: ('Alt' | 'Ctrl' | 'Meta' | 'Shift')[]; editable: boolean }
+  /**
+   * The page's selection, sent by `/frame-picks.js` with no token on each change: `sig` its ends, `quote` its words,
+   * and `rect` where it is in the frame; none of them when there is none. The page's
+   * word: the tower takes it only from a frame showing a worker's file, while it holds the document it loaded. @since 1.170
+   */
+  | { t: 'pick'; sig?: string; quote?: string; rect?: { top: number; bottom: number; left: number } }
 
 export type ToPage =
   /**
@@ -210,6 +216,8 @@ export type ToPage =
   | { t: 'scheme'; scheme: SchemeChoice }
   /** The viewer's whole appearance (`tower.prefs`): sent after `hello`, then whenever it changes. */
   | { t: 'prefs'; prefs: Prefs }
+  /** Clear the page's selection: what was picked in it is let go. Heard by `/frame-picks.js`. @since 1.170 */
+  | { t: 'unpick' }
 
 /** The verbs a framed page moves its framing page's own view with; `go` and `display` (since 1.104) where the framing renderer hosts views. */
 export type RelayedUi = { [V in 'select' | 'home' | 'shelf']: (fields: Extract<TowerVerb, { verb: V }>) => void } & {
