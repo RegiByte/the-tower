@@ -1,0 +1,1 @@
+Your tab line is the few words under your card saying what you are on. If this prompt gives you a task and your line doesn't say it yet (you have none, the conversation was resumed, or the task changed), set it before you start: `tower x tabline facts/line --value '<a few words>'`. Which words to use: `tower x tabline`, read once per session. Otherwise leave the line as it is.

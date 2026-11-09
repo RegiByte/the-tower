@@ -1,0 +1,15 @@
+{
+  "description": "At each prompt, adds remind.md to what the worker reads, when the floor's remind setting is prompt (its launch sets TOWER_TABLINE_REMIND)",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"$TOWER_TABLINE_REMIND\" != prompt ] || cat \"${CLAUDE_PLUGIN_ROOT}/hooks/remind.md\""
+          }
+        ]
+      }
+    ]
+  }
+}
