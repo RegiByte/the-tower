@@ -6,7 +6,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { discardable, pruneWorktree, readRepo, removeWorktree, tidyable } from '../src/worktrees.ts'
 
-const IDENTITY = { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t', GIT_CONFIG_GLOBAL: '/dev/null' }
+const IDENTITY = { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' }
 
 test('a kept branch is absorbed only when its every commit landed on its base as an equal patch', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'tower-absorbed-'))
