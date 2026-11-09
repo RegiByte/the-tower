@@ -126,7 +126,8 @@ The ranking is shared code in `/lib/layout.js`, so every renderer orders a regio
 - `heldActions(holds, actions)`, in `/lib/cards.js`: the actions a region holding `holds` draws, as `landing` places
   them: commands where it holds `commands`, verbs where it holds `verbs` (API 1.142).
 - `rankedActions(actions, entry)`: less the hidden, the pinned first in their order, then board order. Pass what you
-  draw, after leaving out what the holder omits: `rankedActions(omitted(heldActions(region.holds, addedActions(board, s)), omit), entry)`.
+  draw, after leaving out the commands (`<cap>/<name>`) the holder omits:
+  ``rankedActions(heldActions(region.holds, addedActions(board, s)).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`))), entry)``.
 - `rankedBadges(board, subject)`: the folds' badges, the most severe tone first, board order within a tone. A card's exemptions are
   apart (`exemptionsOf`): draw them with its identity and never tuck them. `badgesOf(board, subject)` is the two
   together, exemptions first: the order a region that draws all of a subject's badges draws them in.
@@ -496,8 +497,8 @@ The tower serves a few things next to the library, each on its own terms:
 |---|---|---|
 | `/tower.js` | the client: the board, every verb and read, streams, `tower.store`, the viewer's appearance (`tower.prefs`) | the API's: removing or renaming a `tower` member is a major |
 | `/design.css` | the design's tokens as custom properties (colours in both schemes, the type and spacing scales, corners), the faces, a few classes (`.needs`, `.pill`, `.eyebrow`…), and every button's pressed, held (`disabled`, `aria-disabled`) and busy (`aria-busy`) states | the API's: removing or renaming a token or a class is a major |
-| `/x/<cap>/<module>.js` | an extension's client modules; the bundled ones are under `/x/drafts/`, `/x/reviews/`, `/x/policies/` and `/x/quota/` | the extension's own `contract.json`, at its major ([the author's loop](#extensions)) |
-| `/x/tower/<name>.js` | the core's views, which a renderer mounts by id ([Views](#views)) | the view's id and what it `needs`; what a module exports beside its mount is not for import |
+| `/x/<cap>/<module>.js` | an extension's client modules; the bundled ones are under `/x/drafts/`, `/x/floors/`, `/x/policies/`, `/x/quota/` and `/x/reviews/` | the extension's own `contract.json`, at its major ([the author's loop](#extensions)) |
+| `/x/tower/<name>.js` | the core's views, which a renderer mounts by id ([Views](#views)) | the view's id and what it `needs`, which a renderer relies on; the library holds no types for these modules |
 | `/xterm.js`, `/xterm.css`, `/addon-fit.js`, `/addon-web-links.js`, `/addon-unicode-graphemes.js`, `/marked.js` | the libraries the tower's own page uses, at the version it depends on | none: those are the libraries' APIs. Vendor your own copy when you need one to stay put |
 
 A bundled extension's client holds what a renderer draws of that extension. `/x/drafts/drafts.js` edits a floor's
