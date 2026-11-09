@@ -29,6 +29,7 @@ import { decide, standing } from '../extensions/policies/client/policies.ts'
 import { slotWords } from '../src/shared/slots.ts'
 import { callsignsOf } from '../src/shared/model.ts'
 import { tagOf } from '../src/shared/tags.ts'
+import { isObject } from '../src/system.ts'
 
 /**
  * A zone of whole hours where now is about noon. The board keeps a finished card only while it started that local day
@@ -814,11 +815,18 @@ test('server: policies kept before the policies extension keep their approvals, 
   assert.ok(whoami.slice(guided + 1).includes('  tabline  ·  Set a short line under your card saying what you are on, when that changes.'), whoami.join('\n'))
 })
 
+/** `actual` with only the keys `expected` holds, at every depth, so fields an API minor adds leave the assertion as it was. */
+const narrowedTo = (actual: unknown, expected: unknown): unknown => {
+  if (Array.isArray(expected) && Array.isArray(actual)) return actual.map((a, i) => narrowedTo(a, expected[i]))
+  if (isObject(expected) && isObject(actual)) return Object.fromEntries(Object.keys(expected).map((k) => [k, narrowedTo(actual[k], expected[k])]))
+  return actual
+}
+
 test('server: an extension the config adds is started as x:<cap>, after the core and what it requires, and shown on the board and at GET /extensions', async () => {
   const msg = (await firstEvent('/board')) as BoardMsg
   assert.ok('board' in msg)
   const pulse = msg.board.extensions.find((e) => e.id === 'pulse')
-  assert.deepEqual(pulse, {
+  const expected = {
     id: 'pulse',
     provides: 'pulse',
     version: '1.0',
@@ -845,7 +853,8 @@ test('server: an extension the config adds is started as x:<cap>, after the core
     views: [],
     regions: [],
     settings: { every: 3_600_000 },
-  })
+  }
+  assert.deepEqual(narrowedTo(pulse, expected), expected)
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   const exempted = (id: string) => (id === 'reviews' ? [{ session: DESK_SESSIONS.reviewer, callsign: REVIEWER, from: 'hiring' }] : [])
   assert.deepEqual(read.extensions.map(({ words: _, ...e }) => e), msg.board.extensions.map((e) => ({ ...e, exempted: exempted(e.id) })), "the desk's reviewer, spawned on its prompt alone, is exempted by reviews")
