@@ -61,19 +61,6 @@ export const bodyText = async (el: HTMLElement, { tower, title, url, body, stale
 export const frameDoc = (tower: Tower, docCss: string, html: string) =>
   `<!doctype html><html ${tower.prefs.attributes()}><meta charset="utf-8"><link rel="stylesheet" href="/design.css"><style>${documentCss}${docCss}</style>${html}`
 
-/**
- * A body's text drawn by `article` in a document frame where nothing runs, from the design's tokens; links open a tab
- * of their own.
- */
-export const framedText =
-  (article: (text: string, url: string) => string) =>
-  async (el: HTMLElement, at: Body) => {
-    const text = await bodyText(el, at)
-    if (text === undefined || at.stale()) return
-    el.innerHTML = `<iframe title="${esc(at.title)}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>`
-    el.querySelector('iframe')!.srcdoc = frameDoc(at.tower, at.docCss, `<base target="_blank"><article>${article(text, at.url)}</article>`)
-  }
-
 /** A body's file as served, as of its version when it has one: a frame or an element loading it gets the newest. */
 export const versioned = ({ url, version }: Body) => (version === undefined ? esc(url) : `${esc(url)}?v=${version}`)
 

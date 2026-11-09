@@ -13,6 +13,7 @@
     { "id": "conversation.head", "subject": "conversation", "holds": ["badges", "verbs", "commands"], "description": "the conversation's heading in the Brief", "overflows": ["wrap"] },
     { "id": "said.acts", "subject": "said", "holds": ["commands"], "description": "beside a prompt's or an answer's copy in the Brief", "overflows": ["wrap"] },
     { "id": "section.acts", "subject": "section", "holds": ["commands"], "description": "in a gutter beside a markdown document, level with each of its sections", "overflows": ["wrap"] },
+    { "id": "passage.acts", "subject": "passage", "holds": ["commands", "views"], "scale": "row", "arity": "one", "description": "over a markdown document, a text file or a page a worker showed, under text picked in it: what acts on the passage, asking its worker about it among them", "overflows": ["wrap"] },
     { "id": "shown.head", "subject": "shown", "holds": ["badges", "verbs"], "description": "beside the worker's tabs while the showing is open", "overflows": ["wrap"] },
     { "id": "shown.tab", "subject": "shown", "holds": ["commands"], "description": "inside the showing's tab while it is open, beside its own icons: each command its icon alone, its label and hint the tip", "overflows": ["wrap"] },
     { "id": "card.composer", "subject": "card", "holds": ["views"], "scale": "row", "arity": "one", "description": "at the foot of the worker's Brief, under its latest turn: what writes to the worker" },

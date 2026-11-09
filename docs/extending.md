@@ -317,7 +317,9 @@ viewer's. A `url` entry's frame gets the colour scheme alone, as `{t: 'scheme', 
 
 Every page the tower frames forwards the tower's global keys (⌘K, Escape, the pane chords), with nothing to add:
 `/tower.js` sends them, and the tower appends `/frame-keys.js`, which sends keys and nothing else, to every html file
-it serves sandboxed. A key one of the page's handlers took stays in the page, as does typing in a field: a page that
+it serves sandboxed. It appends `/frame-picks.js` too, which sends the page's selection as `{ t: 'pick' }` (API 1.170)
+and clears it on `{ t: 'unpick' }`: `tower/html` takes it as a `passage` only from a frame showing a worker's file,
+and only while that frame holds the document it loaded first. A key one of the page's handlers took stays in the page, as does typing in a field: a page that
 handles a key (Escape closing its own dialog) calls `preventDefault` to keep it. A renderer that frames pages hears
 them as `{ t: 'key' }` messages and runs a global command (`frameCommandOf`, `/lib/keys.js`) only for one from the frame
 holding focus; a remote `url` page forwards nothing. What a forwarded key opens (the palette, a dialog) takes focus
@@ -920,6 +922,7 @@ config declares; this table says it for the ones that ship, generated from their
 | `lines` | `lines.acts`, under lines picked in a worker's Changes: what acts on them, a review's note box among them: commands, views | `lines.acts`, under lines picked in a worker's Changes at its desk: what writes a note on them: views | not drawn | not drawn |
 | `said` | `said.acts`, beside a prompt's or an answer's copy in the Brief: commands | not drawn | not drawn | not drawn |
 | `section` | `section.acts`, in a gutter beside a markdown document, level with each of its sections: commands | not drawn | not drawn | not drawn |
+| `passage` | `passage.acts`, over a markdown document, a text file or a page a worker showed, under text picked in it: what acts on the passage, asking its worker about it among them: commands, views | not drawn | not drawn | not drawn |
 | `item.*` | `item.head`, the item's view, the drafts editor for a draft, and the palette: badges, verbs, commands | not drawn | not drawn | not drawn |
 | `collection` | `floor.trays`, a floor's row of trays in the sidebar, one view for each of its collections: the id names where it sits, its subject is the collection: views | not drawn | not drawn | not drawn |
 | `shelf` | not drawn | not drawn | not drawn | not drawn |
@@ -1169,6 +1172,18 @@ the frame lit; other views draw no marks yet.
   its markdown as `body` and the document's type. A document splits before each heading of the shallowest level that
   occurs more than once (a document under one `#` title splits at its `##`s), the text before the first such heading
   section 0 (left out when it is blank), and each section is named once ("Notes", "Notes · 2").
+- `passage` (API 1.170): `passageSubject(passage)` in `/lib/board.js`, keyed `passage:<of key>#<from>-<to>:<hash>`,
+  text picked in a markdown document drawn by sections or a text file drawn as written (`tower/text`: plain text,
+  source code, JSON), of the showing or item it is in (`value.of`). Its `Passage` carries `quote` (the words as the
+  frame draws them, also its `body`, typed `text/plain`), and `from` and `to` (its source lines: in a markdown
+  document those of the blocks it starts and ends in, in a text file exactly its own, `textLines` of `/picks.js`), and for a showing of a
+  file `card` and `file`, the worker that showed it and the file's real path.
+  `sectionsHtml` writes a comment `<!--src:<from>-<to>-->` (`SOURCE_MARK`) before each top-level block, and
+  `linesPicked` reads a pick's lines from the marks before it and in it. When a passage settles, `tower/document`,
+  `tower/shelf` and `tower/text` ask the kit for `passage.acts`: commands and one view at `row` scale, drawn in a box over the frame,
+  under the passage or over it where there is no room below. A view there that dispatches a bubbling `done` lets the
+  pick go, and so do a click outside the box and a click in the document. The bundled `quote` extension's
+  `composer` asks the worker that showed the file about the passage, a code file's quoted in a fence.
 
 `tower/document` draws each section in its frame and, beside the frame in the page's own document, a gutter of one
 row per section, level with it as the document scrolls or resizes and never over the row before it: each row is
@@ -1186,7 +1201,9 @@ to the hash `kit.href` gives the file it names (below); any other link loses its
 relative link in a showing or a kept item among them. The frame is sandboxed `allow-top-navigation-by-user-activation`
 for the links to the page, and what in a document could hold one of its own (a nested frame, an object, an embed) is
 emptied, and a `<base>` or meta refresh removed, before it is drawn. The gutter follows the frame's scroll position
-from the page, each animation frame while the view is seen. Keys pressed with the focus in a document frame reach
+from the page, each animation frame while the view is seen, and the frame's selection is read from the page too
+(`/picks.js` says when it has stopped changing long enough to be a pick, since nothing is heard in the frame); the
+passage picked is lit by a highlight (`::highlight(tower-passage)`, the frame's `::selection` the same color), not by an element written into the document. Keys pressed with the focus in a document frame reach
 the page's keymap in Chrome only: in WebKit a click outside the frame gives the page its keys back.
 
 **A worker in a view of yours.** Declare a region on `card` holding views at `cell` scale, one at a time,
