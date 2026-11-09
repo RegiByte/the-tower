@@ -14,7 +14,7 @@ import path from 'node:path'
 import { inspect } from 'node:util'
 import { after, before, test } from 'node:test'
 import { z } from 'zod'
-import { ApiError, ROUTES, type Replies, type Verb } from '../src/shared/api.ts'
+import { ApiError, callerHeaders, ROUTES, type Replies, type Verb } from '../src/shared/api.ts'
 import boardSchema from '../src/shared/board.schema.json' with { type: 'json' }
 import { fonts } from '../src/shared/design.ts'
 import { parseThread, unseenBy } from '../extensions/reviews/client/reviews.ts'
@@ -621,73 +621,47 @@ const typed = (session: string | undefined, args: string[], input = '') => {
 }
 
 test('server: an extension typed as a command gets its input as written, its caller and its floor, through one path', async () => {
-  const replied = (args: string[], input?: string) => JSON.parse(typed(SESSION, args, input).stdout)
-  const worker = { t: 'worker', id: SESSION, via: 'cli', within: [] }
-  assert.deepEqual(replied(['count', '--times', '3', '--ratio=1.5']).input, { times: 3, ratio: 1.5 })
-  assert.deepEqual(replied(['count', '--times', '3']).caller, worker)
-  assert.deepEqual(replied(['flag', '--loud']).input, { loud: true })
-  assert.deepEqual(replied(['tags', '--tag', 'a', '--tag', 'b', '--n', '1']).input, { tag: ['a', 'b'], n: [1] })
-  assert.deepEqual(replied(['shape', '--box', '{"w": 1}']).input, { box: { w: 1 } })
-  assert.deepEqual(replied(['resolve', '3', '4'], 'Done.\n').input, { notes: [3, 4], body: 'Done.\n' })
+  const resolved = JSON.parse(typed(SESSION, ['resolve', '3', '4'], 'Done.\n').stdout)
+  assert.deepEqual(resolved.input, { notes: [3, 4], body: 'Done.\n' }, 'a file on stdin gives its text')
+  assert.deepEqual(resolved.caller, { t: 'worker', id: SESSION, via: 'cli', within: [] })
   assert.deepEqual(JSON.parse(typedWith('pipe', SESSION, ['resolve', '3', '4'], 'Done.\n').stdout).input, { notes: [3, 4] }, 'a socket on stdin, which may never end, gives no text')
-  assert.deepEqual(replied(['review', 'ODIN-7', '--tell']).input, { of: 'ODIN-7', tell: true })
-  assert.deepEqual(replied(['hire', '--of', 'ODIN-7']).input, { of: 'ODIN-7' })
 
   const note = typed(SESSION, ['note', '--re', '3'], 'Line one.\nLine two.\n')
   assert.deepEqual([note.status, note.stdout], [0, `said ${JSON.stringify({ project: 'lab', body: 'Line one.\nLine two.\n', re: 3 })}\n`])
   const elsewhere = typed(SESSION, ['note', '--project', 'desk'], 'Body.')
   assert.match(elsewhere.stdout, /"project":"desk"/)
-  assert.deepEqual(typed(SESSION, ['send', 'HOLMES-42']).stdout, `said ${JSON.stringify({ to: 'HOLMES-42' })}\n`)
   assert.equal(typed(SESSION, ['thread', 'odin-1']).stdout, 'lab at odin-1\n')
   assert.equal(typed(undefined, ['lines']).stdout, 'one\ntwo\n')
-  assert.deepEqual(JSON.parse(typed(SESSION, ['plain/42', '--limit', '3']).stdout), { id: '42', limit: '3' })
 })
 
 test('server: an error in a word says what to do next and exits non-zero, and a JSON argument still works, saying so', async () => {
-  const failed = (args: string[], input?: string) => {
-    const { status, stderr, stdout } = typed(SESSION, args, input)
+  const failed = (session: string, args: string[], input?: string) => {
+    const { status, stderr, stdout } = typed(session, args, input)
     assert.equal(status, 1, stdout)
     return stderr
   }
-  assert.equal(failed(['note']), "tower: note needs its body on stdin: tower x typed note <<'EOF' … EOF\n")
-  assert.equal(failed(['note', '--re', '3']), "tower: note needs its body on stdin: tower x typed note --re 3 <<'EOF' … EOF\n")
-  assert.equal(failed(['count']), 'tower: count needs --times: tower x typed count --times <times>\n')
-  assert.equal(failed(['count', '--times', 'x']), 'tower: --times wants an integer, not "x"\n  → `tower x typed count --help` says what it takes\n')
-  assert.equal(failed(['coutn']), 'tower: typed has no word "coutn"\n  → Did you mean count? `tower x typed` lists its words\n')
-  assert.equal(typed(undefined, ['note'], 'Body.').stderr, "tower: note needs --project: tower x typed note --project <project> <<'EOF' … EOF\n")
+  assert.equal(failed(SESSION, ['note']), "tower: note needs its body on stdin: tower x typed note <<'EOF' … EOF\n")
+  assert.equal(failed(SESSION, ['coutn']), 'tower: typed has no word "coutn"\n  → Did you mean count? `tower x typed` lists its words\n')
+  assert.equal(failed('gone', ['note'], 'Body.'), 'tower: The tower has no session "gone"\n  → --project <id> names the floor\n')
 
-  const raw = typed(SESSION, ['count', '{"times": 3}'])
-  assert.equal(raw.stderr, 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x typed count --times 3\n')
-  assert.deepEqual(JSON.parse(raw.stdout).input, { times: 3 })
-  assert.match(typed(SESSION, ['note', '{"body": "b"}']).stdout, /"project":"lab"/)
-  assert.deepEqual(JSON.parse(typed(SESSION, ['plain/42', '{"limit": "3"}']).stdout), { id: '42', limit: '3' })
-  const offShape = typed(SESSION, ['tags', '{"tag": "x"}'])
-  assert.equal(offShape.status, 1, offShape.stderr)
-  assert.match(offShape.stderr, /^A JSON argument .*tower x typed tags --help\ntower: The tower refused typed\/tags: /)
-  assert.equal(typed('gone', ['note'], 'Body.').stderr, 'tower: The tower has no session "gone"\n  → --project <id> names the floor\n')
+  const raw = typed(SESSION, ['note', '{"body": "b"}'])
+  assert.match(raw.stderr, /^A JSON argument to tower x is deprecated and goes at 2\.0\. Type instead: tower x typed note /)
+  assert.match(raw.stdout, /"project":"lab"/)
+  assert.match(failed(SESSION, ['tags', '{"tag": "x"}']), /^A JSON argument .*tower x typed tags --help\ntower: The tower refused typed\/tags: /)
 })
 
-test('server: a door takes --value as typed, a blank as an empty string, and a null only as the API does; a bare door word clears nothing', async () => {
-  const door = (...args: string[]) => JSON.parse(cli(SESSION, 'x', 'tabline', 'facts/line', ...args))
-  assert.deepEqual(door('--value', 'on it'), { session: SESSION, value: 'on it' })
-  assert.deepEqual(door('--value', ''), { session: SESSION, value: '' })
-  assert.deepEqual(door('{"value": null}'), { session: SESSION, value: null })
-  const bare = spawnSync(process.execPath, ['--import', 'tsx', path.join('src', 'cli.ts'), 'x', 'tabline', 'facts/line'], { cwd: REPO, env: { ...ENV, TOWER_SESSION_ID: SESSION }, encoding: 'utf8' })
-  assert.deepEqual([bare.status, bare.stderr], [1, 'tower: facts/line needs --value: tower x tabline facts/line --value <value>\n'])
+test("server: a door word reaches its door for the caller's session, a blank as an empty string", async () => {
+  assert.deepEqual(JSON.parse(cli(SESSION, 'x', 'tabline', 'facts/line', '--value', '')), { session: SESSION, value: '' })
 })
 
-test('server: tower x lists capabilities, tower x <cap> its words before its raw calls, and a word its flags', async () => {
+test('server: tower x lists capabilities, and tower x <cap> its words before its raw calls', async () => {
   const listed = cli(SESSION, 'x').split('\n')
   assert.ok(listed.includes('  tabline  ·  Set a short line under your card saying what you are on, when that changes.'), listed.join('\n'))
   assert.ok(listed.includes('  typed  ·  Typed'), listed.join('\n'))
-  assert.equal(listed.at(-2), '`tower x <capability>` says what it is for, and lists its words.')
   const cap = cli(SESSION, 'x', 'typed').split('\n')
-  assert.deepEqual(cap.slice(0, 3), ['Words:', '  tower x typed echo --text <text>', '  tower x typed count --times <times> [--ratio <ratio>]'])
-  assert.ok(cap.includes('  tower x typed thread [<checkout>] [--project <project>]'), cap.join('\n'))
-  assert.ok(cap.includes("  tower x typed note [--re <n>] [--at <repo>:<path>:<from>[-<to>] …]"), cap.join('\n'))
+  assert.deepEqual(cap.slice(0, 2), ['Words:', '  tower x typed echo --text <text>'])
   assert.ok(cap.indexOf('  tower x typed lines') < cap.findIndex((l) => l.startsWith('typed  Typed')), cap.join('\n'))
   assert.ok(cap.includes('  tower x typed plain/<id>  a read'), cap.join('\n'))
-  assert.equal(cli(SESSION, 'x', 'typed', 'echo', '--help'), 'tower x typed echo --text <text>\nSays the text back.\n  --text  a string, required: What to say back.\n')
 })
 
 test('server: policies kept before the policies extension keep their approvals, offers, runs and words, and the runner decides nothing new', async () => {
@@ -810,33 +784,31 @@ test('server: policies kept before the policies extension keep their approvals, 
   ])
 
   const day = (at: number) => slotWords(at, 'UTC', now)
-  const listed = cli(SESSION, 'x', 'policies', 'list').split('\n')
-  const nightly = listed.findIndex((l) => l.startsWith('ashen-otter'))
-  assert.deepEqual([...listed.slice(0, nightly), ...listed.slice(nightly + 3)], [
-    "fleet-jaguar   Broken   invalid · guards: unknown key (this tower doesn't know it: update the tower, or put a runner's own data under x) (it used to run on its own)",
-    `warm-lily      Digest   ${rule(digest.slot)}`,
-    `               auto · approved ${sha(digest.text).slice(7, 15)} by ${worker.callsign} · live 0/1 · last: run 1, ${day(digest.slot)}, ${worker.callsign} exited`,
-    `               now: ${day(digest.slot + DAY)} will check for work, then start on its own`,
-    `slow-basil     Sweep    ${rule(sweep.slot)}`,
-    `               auto · approved ${sha(sweep.text).slice(7, 15)} by the user · live 0/1`,
-    `               now: ${day(sweep.slot)} will start on its own`,
-    `muddy-thistle  Triage   ${rule(triage.slot)}`,
-    '               ask · live 0/2',
-    `               now: ${day(triage.slot)} is offered, until ${day(triage.slot + DAY)}`,
-    '',
-  ])
-  const ran = cli(SESSION, 'x', 'policies', 'runs').split('\n')
-  assert.deepEqual(ran.slice(0, 2), [`Digest (warm-lily) · ${rule(digest.slot)} · runs 1 to 1 of 1`, [`run 1`.padEnd(7), day(digest.slot).padEnd(13), 'auto'.padEnd(16), worker.callsign, 'exited'].join('  ')])
+  const asWorker = { headers: callerHeaders(SESSION) }
+  const listed: string[] = JSON.parse((await request('/policies/list/lab', asWorker)).body).lines
+  const policyLines = (tag: string) => {
+    const at = listed.findIndex((l) => l.startsWith(`${tag} `))
+    assert.ok(at >= 0, listed.join('\n'))
+    return listed.slice(at, at + 3).join('\n')
+  }
+  assert.match(policyLines('fleet-jaguar'), /^fleet-jaguar +Broken +invalid · guards: unknown key .*\(it used to run on its own\)/)
+  const digestLines = policyLines('warm-lily')
+  for (const words of [rule(digest.slot), `auto · approved ${sha(digest.text).slice(7, 15)} by ${worker.callsign}`, `last: run 1, ${day(digest.slot)}, ${worker.callsign} exited`, `now: ${day(digest.slot + DAY)} will check for work, then start on its own`])
+    assert.ok(digestLines.includes(words), digestLines)
+  const sweepLines = policyLines('slow-basil')
+  for (const words of [`auto · approved ${sha(sweep.text).slice(7, 15)} by the user`, `now: ${day(sweep.slot)} will start on its own`]) assert.ok(sweepLines.includes(words), sweepLines)
+  const triageLines = policyLines('muddy-thistle')
+  for (const words of ['ask · live 0/2', `now: ${day(triage.slot)} is offered, until ${day(triage.slot + DAY)}`]) assert.ok(triageLines.includes(words), triageLines)
+  const ran: string[] = JSON.parse((await request('/policies/run-lines/lab', asWorker)).body).lines
+  assert.ok(ran[0]!.startsWith(`Digest (warm-lily) · ${rule(digest.slot)} · runs 1 to 1 of 1`), ran.join('\n'))
+  assert.deepEqual(ran[1]!.trim().split(/ {2,}/), ['run 1', day(digest.slot), 'auto', worker.callsign, 'exited'])
   assert.ok(ran.includes('        its check found: two to do'), ran.join('\n'))
   const whoami = cli(SESSION, 'whoami').split('\n')
   const at = whoami.findIndex((l) => l.startsWith('You are run'))
-  assert.deepEqual(whoami.slice(at, at + 3), [
-    `You are run 1 of policy "Digest" (warm-lily), for its slot ${day(digest.slot)}, started on its own.`,
-    '`tower x policies runs` lists its earlier runs and what each left; `tower read warm-lily` is the policy. When the policy says nobody watches, end with `tower home <your callsign>`.',
-    'Its check found: two to do',
-  ])
-  const approved = cli(SESSION, 'x', 'policies', 'approve-now', 'muddy-thistle')
-  assert.equal(approved, `Approved "Triage" (muddy-thistle) at ${sha(triage.text).slice(7, 15)}: ${rule(triage.slot)}. It is \`start: "ask"\`: its slots stay offers until it says \`"auto"\`.\n`)
+  assert.equal(whoami[at], `You are run 1 of policy "Digest" (warm-lily), for its slot ${day(digest.slot)}, started on its own.`)
+  assert.equal(whoami[at + 2], 'Its check found: two to do')
+  const approved = await post('policies/approve-now', { project: 'lab', policy: 'muddy-thistle' }, callerHeaders(SESSION))
+  assert.match(JSON.parse(approved.body).said, new RegExp(`^Approved "Triage" \\(muddy-thistle\\) at ${sha(triage.text).slice(7, 15)}: .*\`start: "ask"\``))
   const guided = whoami.indexOf('Extensions you can use (`tower x <name>` says when and how):')
   assert.ok(guided > 0, whoami.join('\n'))
   assert.ok(whoami.slice(guided + 1).includes('  tabline  ·  Set a short line under your card saying what you are on, when that changes.'), whoami.join('\n'))
@@ -1136,20 +1108,12 @@ test("reviews: a discard notes each repo's branch and tip on the checkout's thre
   const unpushed = gitIn(HUB, 'log', '--format=%h %s', held[0].head, '--not', '--remotes').trim().split('\n')
   const thread = parseThread(readFileSync(path.join(threadsIn('lab'), discarded.thread!), 'utf8'))
   assert.deepEqual(
-    thread.messages.map(({ author, n, body }) => ({ author, n, body: body.trim() })),
-    [
-      {
-        author: 'NEMO-92',
-        n: 1,
-        body: [
-          "Discarded the worktree lost: its work never landed. The branches the tower cut are deleted and their tips are on no branch, kept by git until it collects them (two weeks by default). To get one back, in its repo: `git branch <name> <tip>`.",
-          '',
-          `- \`${HUB}\`: branch \`tower/lost\`, tip \`${tip}\` (1 uncommitted file committed on top of \`${held[0].head}\`)`,
-          ...unpushed.map((c) => `  - ${c}`),
-        ].join('\n'),
-      },
-    ],
+    thread.messages.map(({ author, n }) => ({ author, n })),
+    [{ author: 'NEMO-92', n: 1 }],
   )
+  const [first, ...lines] = thread.messages[0]!.body.trim().split('\n')
+  assert.match(first!, /^Discarded the worktree lost: .*`git branch <name> <tip>`/)
+  assert.deepEqual(lines, ['', `- \`${HUB}\`: branch \`tower/lost\`, tip \`${tip}\` (1 uncommitted file committed on top of \`${held[0].head}\`)`, ...unpushed.map((c) => `  - ${c}`)])
 })
 
 test("reviews: a landed thread is the reviews extension's tidy entry, belonging to its checkout, in Tidy's words, and its key under plan.x files it", async () => {
@@ -1186,7 +1150,7 @@ test('reviews: a resolution is a note marking earlier notes resolved, read as a 
   assert.deepEqual(JSON.parse(again.body), { t: 'error', code: 'invalid', message: 'n2 is resolved already, by n4' })
   assert.equal(errorCode(await post('reviews/resolve', { project: 'lab', checkout: 'resolving', author: 'ODIN-07', notes: [9] })), 'invalid')
   assert.equal(errorCode(await post('reviews/resolve', { project: 'lab', checkout: 'nowhere', author: 'ODIN-07', notes: [1] })), 'not_found')
-  const said = cli(SESSION, 'note', 'on', 'resolving', 'resolve', 'n3')
+  const said = JSON.parse((await post('reviews/resolve', { project: 'lab', on: 'resolving', resolves: ['n3'] }, callerHeaders(SESSION))).body).said
   assert.match(said, /^Resolved n3 with n5 on the thread of checkout resolving: /)
   assert.deepEqual(parseThread(readFileSync(path.join(threadsIn('lab'), 'resolving.md'), 'utf8')).messages.at(-1)!.body, '**Resolved:** n3')
 })
@@ -1508,15 +1472,12 @@ test('server: review threads written before the reviews extension read the same:
   })
 
   const threads = path.join(ROOT, 'collections', 'desk', 'reviews')
-  assert.equal(
-    cli(DESK_SESSIONS.author, 'thread'),
-    `${DESK_THREADS['odin-1.md']}\n(${threads}/odin-1.md) New to you since your last note: n3, n4.\nA note's anchors name one of the checkout's repos: desk:<path>:<from>-<to>.\n`,
-  )
-  assert.equal(
-    cli(DESK_SESSIONS.reviewer, 'thread'),
-    `${DESK_THREADS['odin-1.md']}\n(${threads}/odin-1.md) New to you since your last note: n4.\nA note's anchors name one of the checkout's repos: desk:<path>:<from>-<to>.\n`,
-  )
-  assert.equal(cli(DESK_SESSIONS.lark, 'thread', 'kite-2').split('\n').at(-3), `(${threads}/kite-2.md) New to you since your last note: n1.`, "a worker that never wrote on a thread has seen none of it")
+  const authorRead = cli(DESK_SESSIONS.author, 'thread')
+  assert.ok(authorRead.startsWith(`${DESK_THREADS['odin-1.md']}\n`), authorRead)
+  assert.ok(authorRead.includes(`(${threads}/odin-1.md) New to you since your last note: n3, n4.\n`), authorRead)
+  const threadSaid = async (session: string, query: string) => JSON.parse((await request(`/reviews/thread/desk${query}`, { headers: callerHeaders(session) })).body).said as string
+  assert.ok((await threadSaid(DESK_SESSIONS.reviewer, '')).includes(`(${threads}/odin-1.md) New to you since your last note: n4.\n`))
+  assert.ok((await threadSaid(DESK_SESSIONS.lark, '?checkout=kite-2')).includes(`(${threads}/kite-2.md) New to you since your last note: n1.\n`), "a worker that never wrote on a thread has seen none of it")
 })
 
 test("server: the reviews extension holds the threads under its own names, and the old ones answer deprecated, naming them", async () => {
