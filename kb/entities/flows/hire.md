@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-11-09",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
-  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/dispatch.ts#counted", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf", "hub/src/tower/dispatch.ts#newLaunch"]
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/hires.ts#hireSettled", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf", "hub/src/tower/dispatch.ts#newLaunch"]
 }
 ---
 ```mermaid
@@ -35,8 +35,9 @@ sequenceDiagram
   extension's, and past it answers `limited` (409), the command telling the worker to ask the user. An extension's
   gate may refuse it after, as `refused` or `limited` naming its gate; one that doesn't answer within the gate's 10 s
   has failed, and the hire goes on. A hirer's hires queue by its callsign
-  ([`inTurn`](ref:hub/src/tower/dispatch.ts#inTurn)), each holding the turn until the system
-  [`counted`](ref:hub/src/tower/dispatch.ts#counted) it, so the next is weighed against it.
+  ([`inTurn`](ref:hub/src/tower/dispatch.ts#inTurn)), each holding the turn until the hire
+  [settles](ref:hub/src/tower/hires.ts#hireSettled): the system counts it, so the next is weighed against it, or its
+  log holds its exit.
 - **What is hired.** The same form the user's quick hire sends, everything left to its default
   ([`spawnDefaults`](ref:hub/src/shared/spawn-form.ts#spawnDefaults), [`spawnCall`](ref:hub/src/shared/spawn-form.ts#spawnCall)):
   a new worktree when the floor cuts by default, else the hub. The prompt is stdin or a kept item's text; an empty
