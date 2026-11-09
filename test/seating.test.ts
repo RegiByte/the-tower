@@ -28,10 +28,11 @@ function derivedBeside(b: Board, archive: (project: string) => Card[]) {
   }
 }
 
-const sessionLogs = readdirSync(path.join(import.meta.dirname, 'fixtures'))
-  .filter((file) => file.endsWith('.jsonl'))
-  .map((file) => fixture(file.slice(0, -'.jsonl'.length)))
-  .filter((log) => log.header.id !== undefined)
+/** The bridge's seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither. */
+const { sessionFixtures, cases: frozen }: { sessionFixtures: string[]; cases: Record<string, ReturnType<typeof derivedBeside>['bridge']> } = JSON.parse(
+  readFileSync(path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json'), 'utf8'),
+)
+const sessionLogs = sessionFixtures.map((name) => fixture(name))
 
 const configFor = (logs: SessionLog[]): Config => ({
   argv: ['claude'],
@@ -47,15 +48,16 @@ const fixtureView = (now: number) =>
     now,
   })
 
-/** What the bridge gave each case when this was recorded, so the derivation is proven without the bridge once it is gone. */
-const frozen: Record<string, ReturnType<typeof derivedBeside>['bridge']> = JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json'), 'utf8'))
-
 /** The derivation is the bridge's now, and the bridge's as frozen then (a card with no seat is `null` in the data). */
 function assertSeating(label: string, b: Board, archive: (project: string) => Card[]) {
   const { derived, bridge } = derivedBeside(b, archive)
   assert.deepEqual(derived, bridge, label)
   assert.deepEqual(JSON.parse(JSON.stringify(derived)), frozen[label], `${label}, against the frozen expectations`)
+  ran.push(label)
 }
+
+const ran: string[] = []
+test.after(() => assert.deepEqual(ran.toSorted(), Object.keys(frozen).toSorted(), 'every frozen case ran, and every case that ran is frozen'))
 
 test("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every session fixture", () => {
   const latest = Math.max(...sessionLogs.map((l) => l.header.startedAt))
