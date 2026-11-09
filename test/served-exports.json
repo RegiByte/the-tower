@@ -758,6 +758,7 @@
       "pairLine",
       "pairLineOf",
       "parentOf",
+      "passageSubject",
       "pastCount",
       "pastCrews",
       "pastMatching",
@@ -1069,9 +1070,11 @@
       "rankingOf"
     ],
     "/markdown.js": [
+      "SOURCE_MARK",
       "documentHtml",
       "fenceText",
       "imagePath",
+      "linesPicked",
       "markdownCss",
       "markdownHtml",
       "relativeHref",
@@ -1115,6 +1118,12 @@
     "/loop.js": [
       "loop",
       "timers"
+    ],
+    "/picks.js": [
+      "PICK_HANDLERS",
+      "PICK_START",
+      "SETTLE_MS",
+      "textLines"
     ],
     "/reads.js": [
       "failRead",
@@ -1291,7 +1300,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "399b8cc0ffd7456e",
+      "digest": "48df172a0ab1a4d4",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -1323,7 +1332,7 @@
     },
     "/lib/board.js": {
       "runtime": "generic",
-      "digest": "5e2a9558821b2bb1",
+      "digest": "32496d46c8bd0e3c",
       "values": {
         "boardSubject": {
           "since": "1.151",
@@ -1436,6 +1445,9 @@
         "parentOf": {
           "since": "1.151",
           "stability": "provisional"
+        },
+        "passageSubject": {
+          "since": "1.166"
         },
         "projectOfKey": {
           "since": "1.151",
@@ -1552,6 +1564,9 @@
         "Lines": {
           "since": "1.151"
         },
+        "Passage": {
+          "since": "1.166"
+        },
         "RateLimit": {
           "since": "1.151"
         },
@@ -1583,7 +1598,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "4adf59cd11a54543",
+      "digest": "dbf4b67386fcb509",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1662,7 +1677,7 @@
     },
     "/lib/capabilities.js": {
       "runtime": "generic",
-      "digest": "4bf6843a307cbdf5",
+      "digest": "dae9e6a0e5d00dce",
       "values": {
         "CAPABILITIES": {
           "since": "1.151",
@@ -1698,7 +1713,7 @@
     },
     "/lib/cards.js": {
       "runtime": "generic",
-      "digest": "5f367229efe63ff6",
+      "digest": "fffbcee978041d8b",
       "values": {
         "ATTENTION_MEANS": {
           "since": "1.151"
@@ -2124,7 +2139,7 @@
     },
     "/lib/changes.js": {
       "runtime": "browser",
-      "digest": "f54f9f285d098005",
+      "digest": "0de50cffa3237751",
       "values": {
         "CHANGES_POLL_MS": {
           "since": "1.151"
@@ -2256,7 +2271,7 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "c74a7fda857fa27c",
+      "digest": "9cf4bf57a563f6ec",
       "values": {
         "clientOf": {
           "since": "1.160",
@@ -2332,7 +2347,7 @@
     },
     "/lib/extension.js": {
       "runtime": "server",
-      "digest": "dfe395d4538e49ff",
+      "digest": "9ebbc910594a6ff9",
       "values": {
         "apiError": {
           "since": "1.151"
@@ -2469,7 +2484,7 @@
     },
     "/lib/keys.js": {
       "runtime": "browser",
-      "digest": "98e29d060a293039",
+      "digest": "de58c14c7108e3d2",
       "values": {
         "COMMANDS": {
           "since": "1.151",
@@ -2544,7 +2559,7 @@
     },
     "/lib/layout.js": {
       "runtime": "browser",
-      "digest": "40da7a65a3afa2be",
+      "digest": "9155cb48f0ff34b3",
       "values": {
         "actionId": {
           "since": "1.151"
@@ -2795,7 +2810,7 @@
     },
     "/lib/markdown.js": {
       "runtime": "generic",
-      "digest": "caf6bdf0f6a4e214",
+      "digest": "ac543300e33bfe28",
       "values": {
         "documentHtml": {
           "since": "1.151",
@@ -2831,7 +2846,7 @@
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "1e9bbc474cfebac0",
+      "digest": "f7b42f7e8e3c962a",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2866,7 +2881,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "dcaa2888aa953589",
+      "digest": "0f2ad6efb6775544",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2911,7 +2926,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "639071d204b954ae",
+      "digest": "d9049bbdc8d91156",
       "values": {
         "cutLine": {
           "since": "1.151",
@@ -2957,7 +2972,7 @@
     },
     "/lib/stats.js": {
       "runtime": "generic",
-      "digest": "12fff3deb6dddbde",
+      "digest": "1c7ded7aa2459c80",
       "values": {
         "STATS_ALL": {
           "since": "1.151"
@@ -2998,7 +3013,7 @@
     },
     "/lib/terminal.js": {
       "runtime": "browser",
-      "digest": "905372fb9d36a87c",
+      "digest": "debf1ac725ea850a",
       "values": {
         "SHELL_SCROLLBACK": {
           "since": "1.151",
@@ -3086,7 +3101,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "1e709b31c8b85677",
+      "digest": "dabd0d3e6988df09",
       "values": {
         "GIST_ICON": {
           "since": "1.151"
@@ -3284,7 +3299,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "2b282917880d9cc7",
+      "digest": "f426bd323948ca37",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"
@@ -3322,7 +3337,7 @@
     },
     "/lib/words.js": {
       "runtime": "generic",
-      "digest": "dbdfc9689be20657",
+      "digest": "8775e06fc6efed86",
       "values": {
         "ago": {
           "since": "1.151"

@@ -50,6 +50,7 @@ export const MODULES: Record<string, string> = {
   '/toasts.js': path.join(SHARED, 'toasts.ts'),
   '/slots.js': path.join(SHARED, 'slots.ts'),
   '/loop.js': path.join(SHARED, 'loop.ts'),
+  '/picks.js': path.join(SHARED, 'picks.ts'),
   '/reads.js': path.join(SHARED, 'reads.ts'),
   '/viewer.js': path.join(SHARED, 'viewer.ts'),
   '/spawn.js': path.join(SHARED, 'spawn.ts'),
@@ -182,6 +183,9 @@ export const clientModule = (file: string) => cached(`client:${file}`, () => esm
 
 /** `/frame-keys.js`: a framed page's keys sent to the tower framing it, run by every sandboxed html page and by `/tower.js`. */
 export const FRAME_KEYS = path.join(import.meta.dirname, 'frame-keys.js')
+
+/** `/frame-picks.js`: a framed page's selection sent to the tower framing it, run by every sandboxed html page. @since 1.166 */
+export const FRAME_PICKS = path.join(import.meta.dirname, 'frame-picks.js')
 
 /** The folders of the checkout whose files the tower runs or serves, and the lock that pins the packages it serves at `/vendor/`. */
 const CODE = { dirs: ['src', 'renderers', 'extensions'], files: ['package-lock.json'] }

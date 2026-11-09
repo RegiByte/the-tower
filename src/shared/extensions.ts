@@ -77,6 +77,9 @@ const VIEWER = '1.116'
 /** The minor a brief's prompts and answers (`said`) and a document's sections (`section`) became viewer subjects in. */
 const SECTIONS = '1.118'
 
+/** The minor text picked in a document drawn by sections (`passage`) became a viewer subject in. */
+const PASSAGES = '1.166'
+
 /** The minor writable facts arrived in: a fact's door and the manifest-only projection of a card's fold. */
 export const WRITABLE = '1.126'
 
@@ -819,6 +822,7 @@ const files = sinceAt(FILES)
 const tabs = sinceAt(TABS)
 const viewer = sinceAt(VIEWER)
 const sections = sinceAt(SECTIONS)
+const passages = sinceAt(PASSAGES)
 const writable = sinceAt(WRITABLE)
 const guided = sinceAt(GUIDANCE)
 const icons = sinceAt(ICONS)
@@ -869,10 +873,10 @@ const Chords = z.array(
 const MediaTypes = z.array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*')).min(1)
 /**
  * A viewer subject's kind, which only a renderer page holds (a file of a worker's checkout, lines picked in its
- * Changes, a brief's prompt or answer, a document's section): views, commands and regions are on one, and no fold is,
- * since the board never carries one.
+ * Changes, a brief's prompt or answer, a document's section, text picked in a document): views, commands and regions
+ * are on one, and no fold is, since the board never carries one.
  */
-const ViewerKind = z.union([files(z.literal('file')), viewer(z.literal('lines')), sections(z.enum(['said', 'section']))])
+const ViewerKind = z.union([files(z.literal('file')), viewer(z.literal('lines')), sections(z.enum(['said', 'section'])), passages(z.literal('passage'))])
 /** A kind a view or a command is on: a board subject's or a viewer subject's. */
 const OnKind = z.union([SubjectKind, z.literal('item.*'), ViewerKind])
 const Kinds = z.array(OnKind).min(1)

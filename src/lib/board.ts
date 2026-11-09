@@ -56,6 +56,7 @@ export {
   linesSubject,
   /** @provisional */ linkedFile,
   /** @provisional */ parentOf,
+  passageSubject,
   /** @provisional */ projectOfKey,
   /** @provisional */ saidSubject,
   /** @provisional */ sectionSubject,
@@ -110,5 +111,6 @@ export type {
 export type {
   /** @provisional */ CheckoutFile,
   Lines,
+  Passage,
   Subject,
 } from '../shared/subjects.ts'

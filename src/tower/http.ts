@@ -23,6 +23,7 @@
  *   GET  /tower.js      the client a renderer page includes to read the board and drive the system (src/shared/shelf-page.ts);
  *                       `?v=<major>.<minor>` pins the version the page was written against
  *   GET  /frame-keys.js a framed page's keys sent to the tower framing it, appended to every html page served sandboxed
+ *   GET  /frame-picks.js a framed page's selection sent to the tower framing it, appended the same way
  *   GET  /origins       the web page of each project directory's origin remote, by directory
  *   GET  /config        the config file as it holds it now, parsed: what the config verbs edit (src/config-edit.ts)
  *   GET  /patterns      what users found doing with the tower, from the checkout's docs/patterns/*.md (src/shared/capabilities.ts)
@@ -143,7 +144,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, hashedUrl, importMap, moduleGraph, moduleScripts, MODULES, SERVER_ONLY, servedModule, serverOnlyModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withImportMap, withPreloads } from './served.ts'
+import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, FRAME_PICKS, hashedUrl, importMap, moduleGraph, moduleScripts, MODULES, SERVER_ONLY, servedModule, serverOnlyModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withImportMap, withPreloads } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
@@ -195,6 +196,7 @@ export const httpServer = defineResource({
       '/addon-unicode-graphemes.js': [path.join(packageDir('@xterm/addon-unicode-graphemes'), 'lib', 'addon-unicode-graphemes.js'), 'text/javascript'],
       '/marked.js': [path.join(packageDir('marked'), 'lib', 'marked.umd.js'), 'text/javascript'],
       '/frame-keys.js': [FRAME_KEYS, 'text/javascript'],
+      '/frame-picks.js': [FRAME_PICKS, 'text/javascript'],
     }
 
     /** The design and the renderers reach framed pages too, at an opaque origin: fonts and modules load only with CORS. */
@@ -266,8 +268,11 @@ export const httpServer = defineResource({
      */
     const SHELF_SANDBOX = 'sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox allow-pointer-lock'
 
-    /** What a sandboxed html page gets appended: its keys sent to the tower framing it, with no API and at its own origin. */
-    const FRAME_KEYS_TAG = '\n<script src="/frame-keys.js"></script>\n'
+    /**
+     * What a sandboxed html page gets appended: its selection and its keys sent to the tower framing it, with no API and
+     * at its own origin.
+     */
+    const FRAME_KEYS_TAG = '\n<script src="/frame-picks.js"></script>\n<script src="/frame-keys.js"></script>\n'
 
     /** The tower's own modules and styles, sent as their bare type. */
     const SCRIPTS = ['text/javascript', 'text/css']
@@ -737,7 +742,7 @@ export const httpServer = defineResource({
     const scriptRead = (req: http.IncomingMessage) => req.headers['sec-fetch-dest'] === 'empty'
 
     /**
-     * A file served sandboxed: an html page with `/frame-keys.js` appended after it, which keeps its doctype first;
+     * A file served sandboxed: an html page with `/frame-picks.js` and `/frame-keys.js` appended after it, which keeps its doctype first;
      * read by a script, the file as written.
      */
     const serveSandboxed = (req: http.IncomingMessage, res: http.ServerResponse, file: string) =>
