@@ -106,6 +106,17 @@ func run(_ i: Int) {
     web.mouseDown(with: mouse(.leftMouseDown, at: NSPoint(x: xy[0], y: xy[1])))
     web.mouseUp(with: mouse(.leftMouseUp, at: NSPoint(x: xy[0], y: xy[1])))
     next()
+  case "--drag":
+    let xy = value.split(separator: ",").compactMap { Double($0) }
+    guard xy.count == 4 else { fail("--drag takes x,y,x2,y2 in the page's CSS pixels") }
+    let (from, to) = (NSPoint(x: xy[0], y: xy[1]), NSPoint(x: xy[2], y: xy[3]))
+    web.mouseDown(with: mouse(.leftMouseDown, at: from))
+    for n in 1...10 {
+      let t = Double(n) / 10
+      web.mouseDragged(with: mouse(.leftMouseDragged, at: NSPoint(x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t)))
+    }
+    web.mouseUp(with: mouse(.leftMouseUp, at: to))
+    next()
   case "--key":
     press(value)
     next()
