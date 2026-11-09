@@ -9,6 +9,7 @@ import type { ExtensionView, Fold } from '../src/shared/extensions.ts'
 import { parentOf, projectOfKey, subjectAt, type Subject } from '../src/shared/subjects.ts'
 import type { Config } from '../src/shared/model.ts'
 import { fixture } from './replay.ts'
+import { folder } from './repos.ts'
 import { viewOf } from './view.ts'
 
 const CONFIG: Config = {
@@ -24,18 +25,10 @@ const core = (): Board => {
 const CARD = (b: Board) => b.floors[0].cards[0]
 
 /** An extension providing `cap` that folds `folds`, each declared with an x of any shape and every add. */
-const folder = (cap: string, folds: Record<string, Fold>, over: Partial<Folder> = {}): Folder => ({
-  id: cap,
-  cap,
-  requires: [],
-  wants: [],
-  off: [],
+const folderOf = (cap: string, folds: Record<string, Fold>, over: Partial<Folder> = {}): Folder => folder(cap, {
   specs: new Map(Object.keys(folds).map((kind) => [kind, { x: z.unknown(), adds: ['actions', 'badges', 'asks', ...(kind === 'card' ? (['lines'] as const) : []), ...(kind === 'floor' ? (['tidy'] as const) : [])] }])),
   folds,
-  commands: [],
   verbs: new Map([[cap, new Set(['ping'])]]),
-  settings: () => undefined,
-  own: () => ({ streams: {}, collections: {} }),
   ...over,
 })
 
@@ -65,7 +58,7 @@ const started = (provides: string, over: Partial<ExtensionView>): ExtensionView 
 test('an extension folds card, floor, then board, each seeing its own parts made before; its part goes at x.<cap>', () => {
   const seen: string[] = []
   const { board: b, problems } = fold([
-    folder('pulse', {
+    folderOf('pulse', {
       board: (board: Board) => (seen.push(`board ${JSON.stringify(board.floors.map((f) => f.x))}`), { x: { floors: board.floors.length } }),
       floor: (floor) => (seen.push(`floor ${JSON.stringify(floor.cards.map((c: { x?: unknown }) => c.x))}`), { x: { cards: floor.cards.length } }),
       card: (card) => (seen.push(`card ${card.id}`), { x: { beat: 1 } }),
@@ -81,10 +74,10 @@ test('an extension folds card, floor, then board, each seeing its own parts made
 test("a fold sees only the parts of the capabilities it declares, in resolved order; its contributions are tagged by capability", () => {
   const sawOf: Record<string, unknown> = {}
   const { board: b } = fold([
-    folder('alpha', { card: () => ({ x: 'a', badges: [{ label: 'A' }] }) }),
-    folder('beta', { card: () => ({ x: 'b', actions: [{ verb: 'beta/ping', call: {} }] }) }),
-    folder('gamma', { card: (card) => ((sawOf.gamma = card.x), { badges: [{ label: 'G', tone: 'ready' }] }) }, { requires: ['alpha'] }),
-    folder('delta', { card: (card) => ((sawOf.delta = card.x), {}) }),
+    folderOf('alpha', { card: () => ({ x: 'a', badges: [{ label: 'A' }] }) }),
+    folderOf('beta', { card: () => ({ x: 'b', actions: [{ verb: 'beta/ping', call: {} }] }) }),
+    folderOf('gamma', { card: (card) => ((sawOf.gamma = card.x), { badges: [{ label: 'G', tone: 'ready' }] }) }, { requires: ['alpha'] }),
+    folderOf('delta', { card: (card) => ((sawOf.delta = card.x), {}) }),
   ])
   assert.deepEqual(sawOf, { gamma: { alpha: 'a' }, delta: undefined })
   assert.deepEqual(b.adds[`card:${CARD(b).id}`], { badges: [{ label: 'A', cap: 'alpha' }, { label: 'G', tone: 'ready', cap: 'gamma' }], actions: [{ verb: 'beta/ping', call: {}, cap: 'beta' }] })
@@ -92,11 +85,11 @@ test("a fold sees only the parts of the capabilities it declares, in resolved or
 
 test("a fold that throws or returns what it doesn't declare drops its part there and its dependents' there, each a problem with the subject", () => {
   const { board: b, problems } = fold([
-    folder('alpha', { card: () => { throw new Error('no beat') } }),
-    folder('beta', { card: () => ({ x: 1 }) }, { requires: ['alpha'] }),
-    folder('gamma', { card: (card) => ({ x: card.x ?? 'none' }) }, { wants: ['alpha'] }),
-    folder('delta', { card: () => ({ lines: ['hi'], slots: [] }) as never }),
-    folder('eps', { card: () => ({ actions: [{ verb: 'chime/ring', call: {} }] }) }),
+    folderOf('alpha', { card: () => { throw new Error('no beat') } }),
+    folderOf('beta', { card: () => ({ x: 1 }) }, { requires: ['alpha'] }),
+    folderOf('gamma', { card: (card) => ({ x: card.x ?? 'none' }) }, { wants: ['alpha'] }),
+    folderOf('delta', { card: () => ({ lines: ['hi'], slots: [] }) as never }),
+    folderOf('eps', { card: () => ({ actions: [{ verb: 'chime/ring', call: {} }] }) }),
   ])
   const key = `card:${CARD(b).id}`
   assert.deepEqual(CARD(b).x, { gamma: 'none' })
@@ -113,7 +106,7 @@ test("a fold that throws or returns what it doesn't declare drops its part there
 
 test('x is checked against its schema; tidy and asks land on the board, an ask past its until gone; a floor off skips its subjects', () => {
   const folders = [
-    folder('pulse', {
+    folderOf('pulse', {
       card: () => ({ x: { beat: 'one' } }),
       floor: (floor) => ({
         tidy: [{ key: 'old', label: 'file old beats' }],
@@ -135,7 +128,7 @@ test('x is checked against its schema; tidy and asks land on the board, an ask p
 
 test("an ask's opens names a core subject, or the fold's part is dropped as any bad shape is", () => {
   const asking = (opens: { view: string; subject?: string }) =>
-    fold([folder('pulse', { floor: () => ({ asks: [{ key: 'beat', subject: 'board', title: 'Beat', since: 0, sound: 'offer', actions: [], opens }] }) })])
+    fold([folderOf('pulse', { floor: () => ({ asks: [{ key: 'beat', subject: 'board', title: 'Beat', since: 0, sound: 'offer', actions: [], opens }] }) })])
   assert.deepEqual(asking({ view: 'pulse/beats', subject: 'floor:lab' }).problems, [])
   assert.deepEqual(asking({ view: 'pulse/beats' }).problems, [])
   assert.ok(asking({ view: 'pulse/beats', subject: 'lab' }).problems.some((p) => p.problem.code === 'shape'))
@@ -146,7 +139,7 @@ test("a fold's input is frozen, and a build's folds of one extension over the bo
   const { problems, spent } = foldBoard({
     board: core(),
     callsignOf: () => undefined,
-    folders: [folder('pulse', { card: (card) => ((t += SLOW_MS + 1), (card.status = 'done'), {}) })],
+    folders: [folderOf('pulse', { card: (card) => ((t += SLOW_MS + 1), (card.status = 'done'), {}) })],
     subjects: new Map(),
     now: 1000,
     clock: () => t,
@@ -163,7 +156,7 @@ test("what a worker showed and a floor's shelf entries are folded; an action's o
     { kind: 'file', target: '/hub/shot.png', at: 6, session: card.id },
   ]
   const { board: folded, problems } = fold(
-    [folder('narrate', { shown: (s) => ({ actions: [{ command: 'speak', words: { label: `Listen · ${s.target}` } }] }), shelf: (e) => ({ badges: [{ label: e.label }] }) }, { commands: ['speak'] })],
+    [folderOf('narrate', { shown: (s) => ({ actions: [{ command: 'speak', words: { label: `Listen · ${s.target}` } }] }), shelf: (e) => ({ badges: [{ label: e.label }] }) }, { commands: ['speak'] })],
     built,
   )
   assert.deepEqual(problems, [])
@@ -186,7 +179,7 @@ test("what a worker showed and a floor's shelf entries are folded; an action's o
 
 test("an own kind's entry is keyed by the subject it was found in, its contributions copied to its old key, and resolved while its extension runs", () => {
   const { board: folded, problems } = fold(
-    [folder('reviews', { floor: () => ({ x: { threads: [{ key: 'main' }] } }) }), folder('chime', { 'reviews.thread': (t) => ({ badges: [{ label: t.key }] }) }, { wants: ['reviews'] })],
+    [folderOf('reviews', { floor: () => ({ x: { threads: [{ key: 'main' }] } }) }), folderOf('chime', { 'reviews.thread': (t) => ({ badges: [{ label: t.key }] }) }, { wants: ['reviews'] })],
     core(),
     new Map([['reviews.thread', { in: 'floor', list: 'threads' }]]),
   )

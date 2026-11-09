@@ -3,12 +3,13 @@ import { test } from 'node:test'
 import { factsOf } from '../src/bridge/facts.ts'
 import { board, type Floor } from '../src/bridge/board.ts'
 import { checkoutLanded, checkoutsOn, checkoutState, mainCheckouts } from '../src/bridge/checkouts.ts'
-import type { RepoRead, TreeRead } from '../src/bridge/worktrees.ts'
+import type { TreeRead } from '../src/bridge/worktrees.ts'
 import type { Resource } from '../src/bridge/resources.ts'
 import { MAIN_CHECKOUT, type Config, type SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { byKind, fresh, GOING_MS, goingHome, leftBoard, listedBefore, planOf, type Going, type Part } from '../extensions/autotidy/plan.ts'
 import { fixture } from './replay.ts'
+import { reposOf, repoRead, treeRead } from './repos.ts'
 import { viewOf } from './view.ts'
 
 const HUB = '/hub'
@@ -26,9 +27,9 @@ const left = (log: SessionLog, pid: number): Resource => ({ pid, session: log.he
 const endOf = (log: SessionLog) => at(log, log.events.at(-1)![0])
 
 /** Git's read of the hub holding `trees`. */
-const hubRead = (trees: TreeRead[]) => new Map<string, RepoRead>([[HUB, { dir: HUB, at: Date.now(), git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees, kept: [] }]])
+const hubRead = (trees: TreeRead[]) => reposOf(repoRead(HUB, { trees }))
 /** Worktree odin-42, clean and pushed, its branch `absorbed` into its base or not. */
-const odin = (absorbed: boolean): TreeRead => ({ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: BRANCH, present: true, dirty: 0, unpushed: 0, absorbed, risk: [] })
+const odin = (absorbed: boolean): TreeRead => treeRead(HUB, TREE, { branch: BRANCH, absorbed })
 const REPOS = hubRead([odin(true)])
 const PUSHED = hubRead([odin(false)])
 

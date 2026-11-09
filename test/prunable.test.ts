@@ -8,6 +8,7 @@ import type { Resource } from '../src/bridge/resources.ts'
 import type { Config, SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { fixture } from './replay.ts'
+import { reposOf, repoRead, treeRead } from './repos.ts'
 import { viewOf } from './view.ts'
 
 const CONFIG: Config = { argv: ['claude'], env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [] }, lab: { name: 'lab', hub: '/lab', repos: [] }, rec: { name: 'rec', hub: '/tmp/mc-prometheus-30/work', repos: [] } } }
@@ -54,9 +55,7 @@ const hired = (log: SessionLog, where: 'worktree' | 'main', upTo = Infinity): Se
 
 /** Git's read of the tower floor's hub: worktree odin-42 with its work landed or not. */
 const repos = (absorbed: boolean, dirty: number) =>
-  new Map<string, RepoRead>([
-    [HUB, { dir: HUB, at: Date.now(), git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: `tower/${TREE}`, present: true, dirty, unpushed: absorbed ? 0 : 1, absorbed, risk: [] }], kept: [] }],
-  ])
+  reposOf(repoRead(HUB, { trees: [treeRead(HUB, TREE, { dirty, unpushed: absorbed ? 0 : 1, absorbed })] }))
 
 /** The tower floor at `now` with `logs`, the last of them running, and every one when `allLive`. */
 const towerAt = (logs: SessionLog[], now: number, read: Map<string, RepoRead>, allLive = false) =>
@@ -92,7 +91,7 @@ test('a hire whose work has not landed, or that works in the main checkout, is n
   assert.deepEqual(towerAt(hired(log, 'worktree'), later, repos(false, 0)).tidy.prune, [])
   assert.deepEqual(towerAt(hired(log, 'worktree'), later, repos(true, 1)).tidy.prune, [])
   assert.deepEqual(towerAt(hired(log, 'main'), later, repos(true, 0)).tidy.prune, [])
-  const unread: RepoRead = { dir: HUB, at: Date.now(), git: true, bases: [], originHead: undefined, main: { dirty: 0, ahead: 0 }, trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: `tower/${TREE}`, present: true, unread: 'fatal: bad index', risk: ['fatal: bad index'] }], kept: [] }
+  const unread = repoRead(HUB, { trees: [{ name: TREE, path: `${HUB}/.worktrees/${TREE}`, branch: `tower/${TREE}`, present: true, unread: 'fatal: bad index', risk: ['fatal: bad index'] }] })
   assert.deepEqual(towerAt(hired(log, 'worktree'), later, new Map([[HUB, unread]])).tidy.prune, [])
 })
 
