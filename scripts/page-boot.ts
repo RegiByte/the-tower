@@ -102,27 +102,39 @@ const ONCE = `(async () => {
   const { pressing } = await import('/press.js')
   let release
   const held = pressing(twin, () => new Promise((r) => (release = r)))
-  const sent = () => performance.getEntriesByType('resource').filter((e) => new URL(e.name).pathname.endsWith('/append')).length
-  const before = sent()
+  await fetch('/config?before-press')
   add.click()
-  await new Promise((r) => setTimeout(r, 1000))
   const busy = add.getAttribute('aria-busy') === 'true'
-  const appends = sent() - before
+  await fetch('/config?pressed')
+  await fetch('/config?after-press')
   release()
   await held
   twin.remove()
   const fetched = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((p) => /^\\/(shared|src|vendor)\\//.test(p)).map((p) => p.replace(/\\.[0-9a-f]{10}\\.js$/, '.js'))
-  return { identical, unloaded, busy, appends, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
+  return { identical, unloaded, busy, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
 })()`
 
-type Once = { identical: Record<string, boolean>; unloaded: string[]; busy: boolean; appends: number; fetched: number; twice: string[] }
+type Once = { identical: Record<string, boolean>; unloaded: string[]; busy: boolean; fetched: number; twice: string[] }
+
+/**
+ * The notes the page sent between the two marker requests ONCE fetches around its click, the second after a round trip
+ * to the tower that follows the click. The page's requests reach the driver in the order it sent them, so an append the
+ * click sends within that round trip is counted; one sent later is not.
+ */
+async function appendsDuringPress(requests: string[]) {
+  const at = (marker: string) => requests.findIndex((url) => url.endsWith(`/config?${marker}`))
+  for (const end = Date.now() + DRAWN_MS; at('after-press') < 0; await new Promise((r) => setTimeout(r, 20))) {
+    if (Date.now() > end) throw new Error(`the driver saw no /config?after-press request after the click on the Reviews tab's Add note: waited ${DRAWN_MS} ms`)
+  }
+  return requests.slice(at('before-press'), at('after-press')).filter((url) => new URL(url).pathname.endsWith('/append')).length
+}
 
 /** What a page loading each module once fails to show, in words. */
-const onceProblems = (o: Once, errors: string[]) => [
+const onceProblems = (o: Once, appends: number, errors: string[]) => [
   ...Object.entries(o.identical).flatMap(([name, same]) => (same ? [] : [`${name} is two instances: the served module's is not its file's`])),
   ...(o.unloaded.join() === SERVER_ONLY.join() ? [] : [`the library modules a browser couldn't load are ${o.unloaded.join(', ') || 'none'}, not ${SERVER_ONLY.join(', ')} alone`]),
   ...(o.busy ? [] : ["the Reviews tab's Add note isn't busy while a control of its identity is pressed through /press.js"]),
-  ...(o.appends === 0 ? [] : [`the Reviews tab's Add note sent ${o.appends} note(s) while a control of its identity was in flight`]),
+  ...(appends === 0 ? [] : [`the Reviews tab's Add note sent ${appends} note(s) while a control of its identity was in flight`]),
   ...(o.fetched ? [] : ['the page fetched no /shared/, /src/ or /vendor/ module']),
   ...o.twice.map((url) => `${url} was fetched twice`),
   ...errors,
@@ -131,12 +143,13 @@ const onceProblems = (o: Once, errors: string[]) => [
 /** The second check: one worker's card on its Reviews tab, every module loaded once. */
 async function once() {
   await withTower('page-once', seedWorker, async (url) => {
-    const { result, errors } = await withPage(`${url}/#${WORKER}/reviews`, {}, async (page) => {
+    const { result, appends, errors } = await withPage(`${url}/#${WORKER}/reviews`, {}, async (page) => {
       await page.eval(until('[data-view="tower/card"]', '[data-view="reviews/thread"] [data-note-add]'))
-      return { result: (await page.eval(ONCE)) as Once, errors: page.errors }
+      const result = (await page.eval(ONCE)) as Once
+      return { result, appends: await appendsDuringPress(page.requests), errors: page.errors }
     })
-    console.log(`loaded once: ${JSON.stringify(result)}`)
-    const failed = onceProblems(result, errors)
+    console.log(`loaded once: ${JSON.stringify({ ...result, appends })}`)
+    const failed = onceProblems(result, appends, errors)
     if (failed.length) throw new Error(`the tower page did not load each module once:\n  ${failed.join('\n  ')}`)
   })
 }
