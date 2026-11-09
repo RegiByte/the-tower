@@ -31,7 +31,7 @@ function derivedBeside(b: Board, archive: (project: string) => Card[]) {
 /**
  * The bridge's seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither.
  * `npm run seating:update` (`UPDATE_SEATING=1`) rewrites the file from what Tower 3D derives now, keeping its list of session fixtures; read the
- * diff before committing it, since the test no longer holds the seats it replaced. A run where the derivation and the bridge disagree writes nothing.
+ * diff before committing it, since the test no longer holds the seats it replaced. A run in which any test does not run to its end writes nothing.
  */
 const FROZEN = path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json')
 const UPDATE = Boolean(process.env.UPDATE_SEATING)
@@ -57,12 +57,7 @@ const fixtureView = (now: number) =>
 /** The derivation is the bridge's now, and the bridge's as frozen then (a card with no seat is `null` in the data). */
 function assertSeating(label: string, b: Board, archive: (project: string) => Card[]) {
   const { derived, bridge } = derivedBeside(b, archive)
-  try {
-    assert.deepEqual(derived, bridge, label)
-  } catch (error) {
-    disagreed = true
-    throw error
-  }
+  assert.deepEqual(derived, bridge, label)
   const settled = JSON.parse(JSON.stringify(derived))
   if (UPDATE) written[label] = settled
   else assert.deepEqual(settled, frozen[label], `${label}, against the frozen expectations`)
@@ -71,13 +66,26 @@ function assertSeating(label: string, b: Board, archive: (project: string) => Ca
 
 const ran: string[] = []
 const written: Record<string, unknown> = {}
-let disagreed = false
+let started = 0
+let finished = 0
+
+/** A test of this file, counted when its body begins and when it returns, so that an update run can tell whether every one ran to its end. */
+const seatingTest = (name: string, body: () => void) =>
+  test(name, () => {
+    started++
+    body()
+    finished++
+  })
+
 test.after(() => {
-  if (UPDATE) return disagreed ? undefined :  writeFileSync(FROZEN, JSON.stringify({ sessionFixtures, cases: written }, null, 1) + '\n')
+  if (UPDATE) {
+    if (started === finished) writeFileSync(FROZEN, JSON.stringify({ sessionFixtures, cases: written }, null, 1) + '\n')
+    return
+  }
   assert.deepEqual(ran.toSorted(), Object.keys(frozen).toSorted(), 'every frozen case ran, and every case that ran is frozen')
 })
 
-test("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every session fixture", () => {
+seatingTest("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every session fixture", () => {
   const latest = Math.max(...sessionLogs.map((l) => l.header.startedAt))
   for (const now of [0, latest + 2 * DAY]) {
     const view = fixtureView(now)
@@ -86,7 +94,7 @@ test("Tower 3D's seats and galleries, derived from each floor's board and archiv
   }
 })
 
-test("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every Tower 3D fixture board", () => {
+seatingTest("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every Tower 3D fixture board", () => {
   for (const file of readdirSync(FIXTURES_DIR)) {
     const { boards }: FixtureFile = JSON.parse(readFileSync(path.join(FIXTURES_DIR, file), 'utf8'))
     for (const [i, { board: b, archive }] of boards.entries()) {
@@ -95,7 +103,7 @@ test("Tower 3D's seats and galleries, derived from each floor's board and archiv
   }
 })
 
-test('a long-running worker keeps its desk at midnight, when the worker who came before it leaves the board for the archive', () => {
+seatingTest('a long-running worker keeps its desk at midnight, when the worker who came before it leaves the board for the archive', () => {
   const day = Date.UTC(2026, 9, 4)
   const session = (id: string, hour: number, exitAfter?: number): SessionLog => ({
     header: { id, project: 'tower', cwd: '/hub', argv: ['claude'], startedAt: day + hour * 3_600_000, cols: 80, rows: 24 },
@@ -117,7 +125,7 @@ test('a long-running worker keeps its desk at midnight, when the worker who came
   assert.deepEqual(seatsOf(floor.cards, floor.cards).get(long.header.id), { n: 0 }, 'the board alone would move it to the one the earlier worker left')
 })
 
-test("a board built just before midnight, with its archive served just after, keeps the bridge's seat: the board's card counts once", () => {
+seatingTest("a board built just before midnight, with its archive served just after, keeps the bridge's seat: the board's card counts once", () => {
   const day = new Date(2026, 9, 4).getTime()
   const session = (id: string, hour: number, exitAfter?: number): SessionLog => ({
     header: { id, project: 'tower', cwd: '/hub', argv: ['claude'], startedAt: day + hour * 3_600_000, cols: 80, rows: 24 },
