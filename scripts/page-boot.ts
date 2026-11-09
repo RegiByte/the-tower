@@ -104,19 +104,22 @@ const ONCE = `(async () => {
   const held = pressing(twin, () => new Promise((r) => (release = r)))
   await fetch('/config?before-press')
   add.click()
+  const busy = add.getAttribute('aria-busy') === 'true'
+  await fetch('/config?pressed')
   await fetch('/config?after-press')
   release()
   await held
   twin.remove()
   const fetched = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((p) => /^\\/(shared|src|vendor)\\//.test(p)).map((p) => p.replace(/\\.[0-9a-f]{10}\\.js$/, '.js'))
-  return { identical, unloaded, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
+  return { identical, unloaded, busy, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
 })()`
 
-type Once = { identical: Record<string, boolean>; unloaded: string[]; fetched: number; twice: string[] }
+type Once = { identical: Record<string, boolean>; unloaded: string[]; busy: boolean; fetched: number; twice: string[] }
 
 /**
- * The notes the page sent between the two marker requests ONCE fetches around its click. The page sends its requests in
- * order and the driver sees each when it is sent, so once the second marker is seen, an append the click sent has been.
+ * The notes the page sent between the two marker requests ONCE fetches around its click, the second after a round trip
+ * to the tower that follows the click. The page's requests reach the driver in the order it sent them, so an append the
+ * click sends within that round trip is counted; one sent later is not.
  */
 async function appendsDuringPress(requests: string[]) {
   const at = (marker: string) => requests.findIndex((url) => url.endsWith(`/config?${marker}`))
@@ -130,6 +133,7 @@ async function appendsDuringPress(requests: string[]) {
 const onceProblems = (o: Once, appends: number, errors: string[]) => [
   ...Object.entries(o.identical).flatMap(([name, same]) => (same ? [] : [`${name} is two instances: the served module's is not its file's`])),
   ...(o.unloaded.join() === SERVER_ONLY.join() ? [] : [`the library modules a browser couldn't load are ${o.unloaded.join(', ') || 'none'}, not ${SERVER_ONLY.join(', ')} alone`]),
+  ...(o.busy ? [] : ["the Reviews tab's Add note isn't busy while a control of its identity is pressed through /press.js"]),
   ...(appends === 0 ? [] : [`the Reviews tab's Add note sent ${appends} note(s) while a control of its identity was in flight`]),
   ...(o.fetched ? [] : ['the page fetched no /shared/, /src/ or /vendor/ module']),
   ...o.twice.map((url) => `${url} was fetched twice`),
