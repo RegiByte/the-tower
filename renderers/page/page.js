@@ -142,14 +142,18 @@ function tick() {
  * and offers N visited this round (`Heed` in cards.ts), and the workers it started that the board doesn't carry yet
  * (`started`), which it waits for as they arrive, and the viewer's own layout of this renderer's regions as `tower.store`
  * keeps it (`layout`). The view and the rings follow one selection because every handler that sets `view` does it
- * through `viewed`, which tells attention.
- * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, layout: Layout | undefined, view: MainView, attending: Attending, visited: ReadonlySet<string>, started: ReadonlySet<string> }} PageState
+ * through `viewed`, which tells attention. A worker the page doesn't hold is looked up in the floors' archives before
+ * the page goes to it (`looking`, the location it was asked for): any way the viewer goes meanwhile, but to that worker,
+ * cancels it, so a read that lands late takes nobody anywhere.
+ * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, layout: Layout | undefined, view: MainView, attending: Attending, visited: ReadonlySet<string>, started: ReadonlySet<string>, looking: Looking | undefined }} PageState
+ * @typedef {{ id: string, location: import('/lib/view.js').Location }} Looking
  * @typedef {{ [K in keyof Viewer]: { type: 'keep', field: K, value: Viewer[K] } }[keyof Viewer]} ViewerKept
  * @typedef {AttendEvent | { type: 'stored', viewer: Viewer } | { type: 'laid-out', layout: Layout | undefined } | ViewerKept | { type: 'board-error', error: BoardError, at: number } | { type: 'next-waiting' }
- *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'started', id: string } | { type: 'followed', location: import('/lib/view.js').Location }} PageEvent
+ *   | { type: 'go', view: MainView } | { type: 'reopen', view: MainView } | { type: 'started', id: string } | { type: 'followed', location: import('/lib/view.js').Location }
+ *   | { type: 'look-up' } & Looking | { type: 'subject-left' } & Looking | { type: 'looked-up', id: string, found: boolean }} PageEvent
  * @typedef {Exclude<AttendEffect, StateEffect<Attending>> | ViewerKept | StateEffect<PageState> | TimerEffect<PageEvent>
  *   | { type: 'leave', view: MainView } | { type: 'enter', view: MainView } | { type: 'hash', hash: string } | { type: 'draw' }
- *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string }} PageEffect
+ *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string } | { type: 'look-up', id: string }} PageEffect
  */
 
 /** The workers started here that `b` doesn't carry yet. @param {ReadonlySet<string>} started @param {Board} b */
@@ -187,9 +191,38 @@ const marked = (s, lost, at) => lost === (s.lostAt !== undefined) ? [into(s)] : 
 /** Leaves the view open for `view` and enters it, its hash in the address bar. @param {PageState} s @param {MainView} view @returns {PageEffect[]} */
 const moved = (s, view) => viewed(s, view, [{ type: 'leave', view: s.view }, { type: 'enter', view }, { type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }])
 
-/** The one way a handler sets `view`: attention hears of the worker the view is on, then `effects` follow. @param {PageState} s @param {MainView} view @param {PageEffect[]} effects @returns {PageEffect[]} */
+/**
+ * The one way a handler sets `view`: a worker being looked up is let go unless `view` is on it, attention hears of the
+ * worker the view is on, then `effects` follow.
+ * @param {PageState} s @param {MainView} view @param {PageEffect[]} effects @returns {PageEffect[]}
+ */
 const viewed = (s, view, effects) =>
-  chain({ ...s, view }, [(s) => attend(s, { type: 'watch', at: cardIdOf(s.view) }), () => effects])
+  chain({ ...s, view, looking: cardIdOf(view) === s.looking?.id ? s.looking : undefined }, [(s) => attend(s, { type: 'watch', at: cardIdOf(s.view) }), () => effects])
+
+/** Goes to `view`: the view open is left, unless `view` is the same place. @param {PageState} s @param {MainView} view @returns {PageEffect[]} */
+const went = (s, view) => (sameRoom(s.view, view) ? viewed(s, view, [{ type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }]) : moved(s, view))
+
+/**
+ * Waits on the worker `looking` names, at the location asked for last: it is read once however often it is asked for.
+ * @param {PageState} s @param {Looking} looking @returns {PageEffect[]}
+ */
+const lookingUp = (s, looking) => (s.looking?.id === looking.id ? [into({ ...s, looking })] : [into({ ...s, looking }), { type: 'look-up', id: looking.id }])
+
+/**
+ * A worker looked up and found, or not, while the page still waits on it: found, the page goes to it, or stays on it
+ * when the view is already there; not found, a view on it goes home and any other stays, its own hash back in the
+ * address bar, and a toast says the worker is gone; the draw tells of a worker on screen that left meanwhile.
+ * @param {PageState} s @param {string} id @param {boolean} found @returns {PageEffect[]}
+ */
+function lookedUp(s, id, found) {
+  if (s.looking?.id !== id) return []
+  const settled = { ...s, looking: undefined }
+  const on = cardIdOf(s.view) === id
+  if (found) return on ? [into(settled), { type: 'draw' }] : went(settled, { t: 'view', location: s.looking.location })
+  /** @type {PageEffect} */
+  const gone = { type: 'toast', message: `card:${id} is no longer on the board` }
+  return on ? [...moved(settled, HOME), gone] : [into(settled), { type: 'hash', hash: hashOf(s.view, s.board ?? BLANK) }, gone, { type: 'draw' }]
+}
 
 /** @type {Handlers<PageState, PageEvent, PageEffect>} */
 const pageHandlers = {
@@ -211,18 +244,21 @@ const pageHandlers = {
   focus: attend,
   visible: attend,
   watch: attend,
-  go: (s, { view }) => (sameRoom(s.view, view) ? viewed(s, view, [{ type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }]) : moved(s, view)),
+  go: (s, { view }) => went(s, view),
   reopen: (s, { view }) => moved(s, view),
   followed: (s, { location }) => {
     if (s.view.t !== 'view') return []
     const view = /** @type {MainView} */ ({ t: 'view', location })
     return viewed(s, view, [{ type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }])
   },
+  'look-up': (s, { id, location }) => lookingUp(s, { id, location }),
+  'subject-left': (s, { id, location }) => (s.looking && s.looking.id !== id ? [] : lookingUp(s, { id, location })),
+  'looked-up': (s, { id, found }) => lookedUp(s, id, found),
 }
 
 /** @type {Loop<PageState, PageEvent>} */
 const page = loop({
-  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), layout: undefined, view: HOME, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }), visited: new Set(), started: new Set() },
+  state: { board: undefined, error: undefined, lostAt: undefined, viewer: await readViewer(tower.store.get), layout: undefined, view: HOME, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }), visited: new Set(), started: new Set(), looking: undefined },
   handlers: pageHandlers,
   execute: {
     .../** @type {Executors<TimerEffect<PageEvent>, PageEvent>} */ (timers()),
@@ -249,6 +285,7 @@ const page = loop({
     },
     hash: ({ hash }) => location.hash !== hash && history.replaceState(null, '', hash || location.pathname),
     draw: () => render(),
+    'look-up': ({ id }) => void lookUp(id).then((c) => page.dispatch({ type: 'looked-up', id, found: c !== undefined })),
   },
 })
 /** The main pane goes to `view`: the view open is left, unless `view` is the same place, and `view` entered. @param {MainView} view */
@@ -539,13 +576,12 @@ function display(target, opts = {}) {
 
 /**
  * A worker the board doesn't carry: one this page started, opened once the board carries it; else one of an archive,
- * read first; else it is gone.
+ * looked up first.
  * @param {string} id
  */
-async function awaitCard(id) {
+function awaitCard(id) {
   if (page.state().started.has(id)) return go({ t: 'arriving', id })
-  if (await lookUp(id)) return go(cardView(id))
-  toast(`card:${id} is no longer on the board`)
+  page.dispatch({ type: 'look-up', id, location: { view: WORKER, subject: `card:${id}` } })
 }
 
 /**
@@ -1824,23 +1860,32 @@ function linkHash(subject) {
 }
 
 /** Goes to `named`, a worker it names that the page doesn't hold looked up first. @param {MainView | import('./view.js').Lookup} named */
-async function opening(named) {
+function opening(named) {
   if (named.t !== 'lookup') return go(named)
-  go((await lookUp(named.id)) ? { t: 'view', location: named.location } : HOME)
+  page.dispatch({ type: 'look-up', id: named.id, location: named.location })
 }
 
 /**
  * What the main pane shows left what the page holds. A worker that left the board is in its floor's archive once it
- * has gone home or its day has ended, so its view stays while that is read and draws the card the read lands; the page
- * goes home when no archive holds it, or for any other subject, unless the viewer has moved on.
+ * has gone home or its day has ended, so its view stays while that is looked up and draws the card the read lands; the
+ * page goes home when no archive holds it, or for any other subject. A worker the viewer asked for meanwhile is looked
+ * up first: the view host tells of the one that left again on the next board.
  */
-async function subjectLeft() {
+function subjectLeft() {
+  const at = viewing('view')?.location
   const id = selected()
-  if (id && (await lookUp(id))) return
-  if (selected() === id) goHome()
+  if (id && at) page.dispatch({ type: 'subject-left', id, location: at })
+  else goHome()
 }
 
-/** Every view writes its own hash in place, so the hash changes only by a link, the history or the address bar. */
-addEventListener('hashchange', () => opened() && location.hash !== hashOf(view(), board()) && route(location.hash.slice(1)))
+/**
+ * Every view writes its own hash in place, so the hash changes only by a link, the history or the address bar. One
+ * back at the view's own hash, the history going back while a worker is looked up, stays on that view.
+ */
+addEventListener('hashchange', () => {
+  if (!opened()) return
+  if (location.hash !== hashOf(view(), board())) return route(location.hash.slice(1))
+  if (page.state().looking) go(view())
+})
 setInterval(tick, 1000)
 sideView.dispatch({ type: 'side', side: sideView.state().side })
