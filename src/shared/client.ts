@@ -1,5 +1,5 @@
 import net from 'node:net'
-import { frame, onLines, type FromHost, type ToHost } from './protocol.ts'
+import { frame, onLines, type FromHost, type ToAnyHost } from './protocol.ts'
 import type { FromJobs, JobStream, ToJobs } from './jobs.ts'
 import type { FromTerms, ShellStream, ToTerms } from './terms.ts'
 
@@ -8,7 +8,7 @@ export type Client<Request, Reply> = {
   close: () => void
 }
 
-export type HostClient = Client<ToHost, FromHost>
+export type HostClient = Client<ToAnyHost, FromHost>
 
 /** A line a server sent, read as JSON, or why it can't be. */
 const parseLine = (line: string): { json: unknown } | { error: Error } => {
@@ -71,7 +71,7 @@ const connect = <Request extends { t: string }, Reply>(socketPath: string, serve
   })
 
 export const connectHost = (socketPath: string): Promise<HostClient> =>
-  connect<ToHost, FromHost>(socketPath, 'host', 'npm run host')
+  connect<ToAnyHost, FromHost>(socketPath, 'host', 'npm run host')
 
 export const connectTerms = (socketPath: string): Promise<Client<ToTerms, FromTerms>> =>
   connect<ToTerms, FromTerms>(socketPath, 'terms daemon', 'npm run terms')

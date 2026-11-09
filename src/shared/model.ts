@@ -274,6 +274,13 @@ export const runtimeCommands = (config: Config, runtime: Runtime): { name?: stri
   return Array.isArray(config.argv) ? [{ argv: config.argv, env }] : Object.entries(config.argv).map(([name, argv]) => ({ name, argv, env }))
 }
 
+/** The command a session of `runtime` runs: the one `name` names, else the default (`resolvedCommandName`). */
+export const sessionCommand = (config: Config, runtime: Runtime, name: string | undefined): { name?: string; argv: string[]; env: Record<string, string> } => {
+  const commands = runtimeCommands(config, runtime)
+  const resolved = resolvedCommandName(config, name)
+  return commands.find((c) => c.name === resolved) ?? commands[0]
+}
+
 /** The argv to actually run: the legacy array as-is, or the named command when valid, else the object's first. */
 export const resolveCommand = (config: Config, name: string | undefined): string[] => {
   if (Array.isArray(config.argv)) return config.argv
@@ -406,12 +413,17 @@ export const projectPlugins = (config: Config, projectId: string): string[] => [
 export const RUNTIMES = ['claude'] as const
 export type Runtime = (typeof RUNTIMES)[number]
 
+export const isRuntime = (runtime: string): runtime is Runtime => (RUNTIMES as readonly string[]).includes(runtime)
+
 /** First line of a session log: everything known about the session when it started. */
 export type SessionHeader = {
   id: string
   project: string
-  /** Absent in a log written before runtimes were logged: Claude's. */
-  runtime?: Runtime
+  /**
+   * The label the spawn gave, which the host never reads: one of `RUNTIMES` from the tower, any string from another
+   * client. Absent in a log written before runtimes were logged: Claude's.
+   */
+  runtime?: string
   cwd: string
   argv: string[]
   /** The `argv` command this session was started under, by name; absent for the legacy array shape. */

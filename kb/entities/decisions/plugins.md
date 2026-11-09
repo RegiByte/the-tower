@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-07",
-  "refs": ["hub/src/shared/model.ts#projectPlugins", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/launch.ts#resumeRequest", "hub/src/host/session.ts#sessionArgv", "hub/src/tower/extensions.ts#extensions"]
+  "reviewed": "2026-11-09",
+  "refs": ["hub/src/shared/model.ts#projectPlugins", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#hostSpawn", "hub/src/tower/extensions.ts#extensions"]
 }
 ---
 **Problem.** A user's own commands and skills, copied into every repo's `.claude/`, drift apart: one change has to be
@@ -26,8 +26,8 @@ touching any repo.
 - *The flags.* [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest) and
   [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest) take the list and pass each directory as
   `--plugin-dir` ([`pluginArgs`](ref:hub/src/shared/launch.ts#pluginArgs)), so spawn, resume, a cut, a fork, `tower
-  hire` and `tower x reviews review` all load them. The host composes none of it ([[host-owns-ptys]]): it adds the mod's
-  `--plugin-dir` before the client's args, and Claude takes the flag repeated. Each Claude reads its plugins as it
+  hire` and `tower x reviews review` all load them. The host composes none of it ([[host-owns-ptys]]): the tower puts the mod's
+  `--plugin-dir` before these args ([`hostSpawn`](ref:hub/src/shared/launch.ts#hostSpawn)), and Claude takes the flag repeated. Each Claude reads its plugins as it
   starts: a changed plugin reaches the next session started, a changed list the next spawn or resume.
 - *An extension's.* A manifest's `plugins.claude` names a folder inside the extension; each running extension's joins
   the list after the config's, on floors where it is on, for every spawn, resume and fork ([[extensions]]).

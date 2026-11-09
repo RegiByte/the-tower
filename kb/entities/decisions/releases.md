@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-09",
   "refs": ["hub/src/update.ts#update", "hub/src/update.ts#moveTo", "hub/src/update.ts#leftBehindNote", "hub/src/update.ts#releasesBetween", "hub/src/update.ts#entriesFor", "hub/src/update.ts#sourcesOf", "hub/src/update.ts#changedSince", "hub/src/update.ts#updateJobs", "hub/src/cli.ts", "hub/CHANGELOG.md#L3-L13", "hub/.github/workflows/release.yml", "hub/src/machine.ts#REPO", "hub/src/checkouts.ts#updateRefusal", "hub/src/machine.ts#runningCheckouts"]
 }
 ---
