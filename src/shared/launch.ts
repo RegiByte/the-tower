@@ -1,4 +1,4 @@
-import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project, type Runtime } from './model.ts'
+import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project, type Runtime, type SessionCommand } from './model.ts'
 import type { OldHostSpawn, ToHost } from './protocol.ts'
 
 /** What a new session is asked for. Whatever is left out is Claude's own default. */
@@ -228,9 +228,6 @@ const startArgs = (s: Start): string[] => [
  * `oldHostSpawn`). `args` are Claude's own, after the command and the mod; `command` names one of the config's `argv`.
  */
 export type HostStart = { id: string; project: string; cwd: string; runtime: Runtime; args: string[]; command?: string; facts: ModEvent[] }
-
-/** A command of the config's `argv`, with the env its sessions run with (`sessionCommand`). */
-export type SessionCommand = { name?: string; argv: string[]; env: Record<string, string> }
 
 const hostStart = (s: Start, args: string[], command: string | undefined): HostStart => ({
   id: s.id,

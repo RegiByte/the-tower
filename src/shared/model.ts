@@ -264,18 +264,21 @@ export const hiringConfig = (config: Config, projectId: string): Required<Hiring
 /** Every name `argv` offers, in write order; `undefined` for the legacy array shape (one unnamed command). */
 export const commandNames = (config: Config): string[] | undefined => (Array.isArray(config.argv) ? undefined : Object.keys(config.argv))
 
+/** A command of the config's `argv`, by its name when `argv` names its commands, with the env its sessions run with. */
+export type SessionCommand = { name?: string; argv: string[]; env: Record<string, string> }
+
 /**
  * Every command `runtime` starts with, in `argv`'s order, the default first: `argv` holds the one runtime's commands
  * today. A runtime the tower doesn't know is refused.
  */
-export const runtimeCommands = (config: Config, runtime: Runtime): { name?: string; argv: string[]; env: Record<string, string> }[] => {
+export const runtimeCommands = (config: Config, runtime: Runtime): SessionCommand[] => {
   if (!RUNTIMES.includes(runtime)) throw new Error(`runtime ${JSON.stringify(runtime)} is none the tower knows: it runs ${RUNTIMES.join(', ')}`)
   const env = config.env ?? {}
   return Array.isArray(config.argv) ? [{ argv: config.argv, env }] : Object.entries(config.argv).map(([name, argv]) => ({ name, argv, env }))
 }
 
 /** The command a session of `runtime` runs: the one `name` names, else the default (`resolvedCommandName`). */
-export const sessionCommand = (config: Config, runtime: Runtime, name: string | undefined): { name?: string; argv: string[]; env: Record<string, string> } => {
+export const sessionCommand = (config: Config, runtime: Runtime, name: string | undefined): SessionCommand => {
   const commands = runtimeCommands(config, runtime)
   const resolved = resolvedCommandName(config, name)
   return commands.find((c) => c.name === resolved) ?? commands[0]
