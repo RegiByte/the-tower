@@ -12,6 +12,7 @@ import http from 'node:http'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
+import { inspect } from 'node:util'
 import { after, before, test } from 'node:test'
 import { z } from 'zod'
 import { ApiError, ROUTES, type Replies, type Verb } from '../src/shared/api.ts'
@@ -893,11 +894,15 @@ test("server: an extension's owned collection joins its floor, and refuses the g
   assert.equal(errorCode(await get('/collection/lab/pulse/none.md')), 'not_found')
 })
 
-/** What `read` answers once `holds` is true of it, read again every 50 ms: the tower folds a write once it settles. */
+/**
+ * What `read` answers once `holds` is true of it, read again every 50 ms: the tower folds a write once it settles. One
+ * that never holds within 40 reads fails with its last value.
+ */
 async function settled<T>(read: () => Promise<T>, holds: (value: T) => boolean): Promise<T> {
   for (let tries = 0; ; tries++) {
     const value = await read()
-    if (holds(value) || tries === 40) return value
+    if (holds(value)) return value
+    if (tries === 40) assert.fail(`never held within ${tries + 1} reads, the last: ${inspect(value, { depth: 4 })}`)
     await new Promise((done) => setTimeout(done, 50))
   }
 }
