@@ -4,8 +4,8 @@
   "name": "PRINCIPLES.md",
   "summary": "The rules a change to the repository keeps, each with its reason and the decision behind it; loaded into every agent's context and taking precedence over a contributor's own or their agent's general instructions when working here.",
   "in": "tower",
-  "reviewed": "2026-11-07",
-  "refs": ["hub/PRINCIPLES.md", "hub/CLAUDE.md", "hub/AGENTS.md"]
+  "reviewed": "2026-11-09",
+  "refs": ["hub/PRINCIPLES.md", "hub/CLAUDE.md", "hub/AGENTS.md", "hub/extensions/reviews/plugin/skills/review/SKILL.md"]
 }
 ---
 `PRINCIPLES.md` at the repository root states the values the architecture rests on as rules a diff can be checked
@@ -15,8 +15,8 @@ code ([[functional-core]], [[composition-over-optionality]], [[machines]], [[fai
 [[renderer-api-contract]]). Each rule names its decision; the decision holds the reasoning.
 
 Claude loads it through `CLAUDE.md`, which imports it before `AGENTS.md`; other agents read only `AGENTS.md`, whose
-first line sends them to it. The `tower:review` skill has a reviewer check a diff against the project's stated rules
-([[tower-mod]]).
+first line sends them to it. The reviews extension's `reviews:review` skill has a reviewer check a diff against the project's stated rules
+([[reviewer]]).
 
 A change that has to break a rule changes the rule and its decision in the same pull request. A decision that
 changes what a rule says updates the rule.
