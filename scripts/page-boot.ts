@@ -105,23 +105,24 @@ const ONCE = `(async () => {
   const sent = () => performance.getEntriesByType('resource').filter((e) => new URL(e.name).pathname.endsWith('/append')).length
   const before = sent()
   add.click()
-  await new Promise((r) => setTimeout(r, 1000))
-  const busy = add.getAttribute('aria-busy') === 'true'
+  for (const end = Date.now() + ${DRAWN_MS}; add.getAttribute('aria-busy') !== 'true';) {
+    if (Date.now() > end) throw new Error('the Reviews tab Add note never got aria-busy after a click while a control of its identity was pressed through /press.js: waited ${DRAWN_MS} ms')
+    await new Promise((r) => setTimeout(r, 20))
+  }
   const appends = sent() - before
   release()
   await held
   twin.remove()
   const fetched = performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname).filter((p) => /^\\/(shared|src|vendor)\\//.test(p)).map((p) => p.replace(/\\.[0-9a-f]{10}\\.js$/, '.js'))
-  return { identical, unloaded, busy, appends, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
+  return { identical, unloaded, appends, fetched: fetched.length, twice: [...new Set(fetched.filter((p, i) => fetched.indexOf(p) !== i))] }
 })()`
 
-type Once = { identical: Record<string, boolean>; unloaded: string[]; busy: boolean; appends: number; fetched: number; twice: string[] }
+type Once = { identical: Record<string, boolean>; unloaded: string[]; appends: number; fetched: number; twice: string[] }
 
 /** What a page loading each module once fails to show, in words. */
 const onceProblems = (o: Once, errors: string[]) => [
   ...Object.entries(o.identical).flatMap(([name, same]) => (same ? [] : [`${name} is two instances: the served module's is not its file's`])),
   ...(o.unloaded.join() === SERVER_ONLY.join() ? [] : [`the library modules a browser couldn't load are ${o.unloaded.join(', ') || 'none'}, not ${SERVER_ONLY.join(', ')} alone`]),
-  ...(o.busy ? [] : ["the Reviews tab's Add note isn't busy while a control of its identity is pressed through /press.js"]),
   ...(o.appends === 0 ? [] : [`the Reviews tab's Add note sent ${o.appends} note(s) while a control of its identity was in flight`]),
   ...(o.fetched ? [] : ['the page fetched no /shared/, /src/ or /vendor/ module']),
   ...o.twice.map((url) => `${url} was fetched twice`),
