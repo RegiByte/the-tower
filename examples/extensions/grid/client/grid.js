@@ -15,7 +15,8 @@ import { esc } from '/lib/words.js'
  * worker…, the tower's new-worker form on the floor (`kit.spawn`, where the renderer lends it; one row per floor on the
  * board's grid), whose worker takes a new cell, drawn as starting until the board carries it, the page staying on the
  * grid. A reload while it
- * starts keeps its cell but not that it is starting: the cell shows the worker, or that it isn't on the board. Three
+ * starts keeps its cell but not that it is starting: the cell shows the worker, or that it isn't on the board, with
+ * Pick a worker: the floor's workers on duty in no cell, the one picked taking that cell's place. Three
  * cells are two over one. A card displayed with this view joins its floor's grid. A cell whose worker waits on you
  * (`heededWaits`: the board's waits the viewer hasn't dismissed, the tower page's "waiting on you") flashes in its
  * attention's colour (`FLASH`): red while it needs you, green while its answer is unread, the failed colour after a
@@ -121,11 +122,14 @@ export async function mount(host, { tower, board, subject, kit, state }) {
   const label = () => (key === 'board' ? 'every floor' : floorsOf(now, key)[0]?.name ?? key)
 
   const pop = `grid-add-${uuid()}`
-  host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-flash data-tip="How a cell shows that its worker waits on you, in every browser: off, a steady ring, or a blinking one"></button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div>`
+  host.innerHTML = `<style>${STYLE}</style><div class="grid-bar"><b>Grid</b><span></span><button data-grid-open-add popovertarget="${pop}">Add worker</button><button data-grid-flash data-tip="How a cell shows that its worker waits on you, in every browser: off, a steady ring, or a blinking one"></button><button data-grid-heads></button><div class="grid-add" id="${pop}" popover></div></div><div class="grid-cells"></div><div class="grid-add" id="${pop}-fill" popover></div>`
   const bar = host.querySelector('.grid-bar')
   const adder = bar.querySelector('[data-grid-open-add]')
   const menu = bar.querySelector('.grid-add')
   const grid = host.querySelector('.grid-cells')
+  const filler = host.querySelector(`[id="${pop}-fill"]`)
+  /** The gone-home cell whose worker the filler's menu picks, set when the menu opens. @type {string | undefined} */
+  let filling
 
   /** The menu opens under Add worker, its right edge on the button's. */
   menu.addEventListener('beforetoggle', (e) => {
@@ -135,21 +139,27 @@ export async function mount(host, { tower, board, subject, kit, state }) {
   })
 
   let painted = ''
+  let paintedFill = ''
 
   /** New worker…, on each floor the grid holds where a worker can start now (none while the host is down), when the renderer lends `kit.spawn`. */
-  const newRowsHtml = () =>
+  const newRowsHtml = (attrs = '') =>
     (kit.spawn ? floorsOf(now, key) : [])
       .filter((f) => can(f, 'spawn'))
-      .map((f) => `<button data-grid-new="${esc(f.id)}">${ICON.plus}${key === 'board' ? `New worker on ${esc(f.name)}…` : 'New worker…'}</button>`)
+      .map((f) => `<button data-grid-new="${esc(f.id)}" ${attrs}>${ICON.plus}${key === 'board' ? `New worker on ${esc(f.name)}…` : 'New worker…'}</button>`)
       .join('')
 
-  /** The menu of workers to add: the floor's on duty and in no cell, each by its lamp, callsign and status, then New worker…. */
-  const addMenuHtml = () => {
-    const rows = cardsOf(now, key)
+  /** The floor's workers on duty and in no cell, each a button carrying `attr`, by its lamp, callsign and status, or a note that there are none. */
+  const freeWorkersHtml = (attr) =>
+    cardsOf(now, key)
       .filter((c) => c.onDuty && !ids.includes(c.id))
-      .map((c) => `<button data-grid-add="${esc(c.id)}"><span class="lamp ${lampOf(c)}"></span>${esc(c.callsign)}<small>${esc(statusName(c))}</small></button>`)
-    return `<h3>Add a worker on duty</h3>${rows.join('') || '<div class="none">no other worker on duty</div>'}${newRowsHtml()}`
-  }
+      .map((c) => `<button ${attr}="${esc(c.id)}"><span class="lamp ${lampOf(c)}"></span>${esc(c.callsign)}<small>${esc(statusName(c))}</small></button>`)
+      .join('') || '<div class="none">no other worker on duty</div>'
+
+  /** The menu of workers to add: the free workers, then New worker…. */
+  const addMenuHtml = () => `<h3>Add a worker on duty</h3>${freeWorkersHtml('data-grid-add')}${newRowsHtml()}`
+
+  /** The menu of workers to put in a gone-home cell. */
+  const replaceMenuHtml = () => `<h3>Put a worker in this cell</h3>${freeWorkersHtml('data-grid-fill')}${newRowsHtml('data-grid-fill-new')}`
 
   /** What the worker in a cell is told: the heads toggle, the grid's controls, the floor's workers on duty to pick from, and no "Add to grid". */
   const optionsOf = (id) => ({
@@ -178,6 +188,8 @@ export async function mount(host, { tower, board, subject, kit, state }) {
     if (adder.hidden && menu.matches(':popover-open')) menu.hidePopover()
     const items = addMenuHtml()
     if (items !== painted) menu.innerHTML = painted = items
+    const fills = replaceMenuHtml()
+    if (fills !== paintedFill) filler.innerHTML = paintedFill = fills
     grid.style.setProperty('--cols', String(ids.length >= 3 ? 2 : Math.max(ids.length, 1)))
     grid.classList.toggle('three', ids.length === 3)
     for (const [id, cell] of cells) if (!ids.includes(id)) (letGo(cell), cell.el.remove(), cells.delete(id))
@@ -204,7 +216,7 @@ export async function mount(host, { tower, board, subject, kit, state }) {
       const options = optionsOf(id)
       const given = JSON.stringify(options)
       const gone = starting.has(id) ? 'Starting a worker…' : `${esc(id)} is no longer on the board`
-      if (!c) (letGo(cell), (cell.el.innerHTML = `<p class="grid-note">${gone} <button class="icon-btn" data-grid-drop aria-label="Take it out of the grid">${ICON.close}</button></p>`))
+      if (!c) (letGo(cell), (cell.el.innerHTML = `<p class="grid-note">${gone} ${starting.has(id) ? '' : '<button data-grid-fill-open>Pick a worker</button> '}<button class="icon-btn" data-grid-drop aria-label="Take it out of the grid">${ICON.close}</button></p>`))
       else if (!cell.region) cell.region = kit.region(cell.el, 'card.cell', cardSubject(c), options)
       else {
         cell.region.update(cardSubject(c))
@@ -226,15 +238,27 @@ export async function mount(host, { tower, board, subject, kit, state }) {
     draw()
   }
 
-  /** The tower's new-worker form on the floor `project`: the worker it starts takes a new cell. @param {string} project */
-  async function startOn(project) {
-    menu.hidePopover()
+  /** The tower's new-worker form on the floor `project`: the id of the worker it starts, drawn as starting until the board carries it. @param {string} project */
+  async function spawnOn(project) {
     const f = now.floors.find((f) => f.id === project)
     if (!f) return
     const id = await kit.spawn(floorSubject(f))
-    if (!id) return
-    starting.add(id)
-    join(id)
+    if (id) starting.add(id)
+    return id
+  }
+
+  /** The worker started on `project` takes a new cell. @param {string} project */
+  async function startOn(project) {
+    menu.hidePopover()
+    const id = await spawnOn(project)
+    if (id) join(id)
+  }
+
+  /** The worker started on `project` takes the place of the gone-home cell `gone`. @param {string} gone @param {string} project */
+  async function startIn(gone, project) {
+    filler.hidePopover()
+    const id = await spawnOn(project)
+    if (id) fill(gone, id)
   }
 
   /** The worker `to` takes the cell of `from`: one already in a cell swaps places with it. */
@@ -246,10 +270,29 @@ export async function mount(host, { tower, board, subject, kit, state }) {
     draw()
   }
 
+  /** The worker `to` takes the place of the gone-home cell `gone`, in one write. */
+  function fill(gone, to) {
+    ids = ids.map((id) => (id === gone ? to : id))
+    keep()
+    draw()
+  }
+
   host.addEventListener('click', (e) => {
+    const opener = e.target.closest('[data-grid-fill-open]')
+    if (opener) {
+      filling = opener.closest('[data-cell]').dataset.cell
+      const at = opener.getBoundingClientRect()
+      filler.showPopover()
+      const left = Math.max(8, Math.min(at.left, document.documentElement.clientWidth - filler.offsetWidth - 8))
+      return Object.assign(filler.style, { top: `${at.bottom + 4}px`, left: `${left}px` })
+    }
+    const filled = e.target.closest('[data-grid-fill]')
+    if (filled) return (filler.hidePopover(), fill(filling, filled.dataset.gridFill))
     if (e.target.closest('[data-grid-drop]')) return drop(e.target.closest('[data-cell]').dataset.cell)
     const added = e.target.closest('[data-grid-add]')
     if (added) return (menu.hidePopover(), join(added.dataset.gridAdd))
+    const freshHere = e.target.closest('[data-grid-fill-new]')
+    if (freshHere) return void startIn(filling, freshHere.dataset.gridNew)
     const fresh = e.target.closest('[data-grid-new]')
     if (fresh) return void startOn(fresh.dataset.gridNew)
     if (e.target.closest('[data-grid-flash]')) return void stepFlash()

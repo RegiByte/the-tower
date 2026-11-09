@@ -40,6 +40,14 @@ board, and you stay on the grid. It shows where the tower lends that form to vie
 | --- | --- |
 | ![The Add worker menu](shots/add-light.png) | ![The Add worker menu](shots/add-dark.png) |
 
+**A cell whose worker went home** says it is no longer on the board and offers **Pick a worker**: the same list of the
+floor's workers on duty that are in no cell, then **New worker…**: the one picked, or started, takes that cell's place,
+the others keeping theirs.
+
+| Light | Dark |
+| --- | --- |
+| ![Picking a worker for a gone-home cell](shots/gone-light.png) | ![Picking a worker for a gone-home cell](shots/gone-dark.png) |
+
 **A cell can flash while its worker waits on you**, in the colour of its lamp: red while it needs you (a permission or
 a question), green while its answer is unread, the failed colour after a failed turn. It is off until you turn it on:
 **Flash** on the bar steps through off, steady and blink, and the choice is kept in the config, so it follows you to
