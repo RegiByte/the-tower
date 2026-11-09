@@ -474,10 +474,9 @@ that loads it gets an error saying so, and a client takes its types with `import
 
 **Versioning.** The library has no version of its own: `API_VERSION` is it, and `requires.tower` or a renderer's
 `/tower.js?v=` covers it. `test/served-exports.json` lists each module's runtime, its names with the minor each arrived
-in, and a digest of the declarations it reaches. Adding a name is a minor. Removing, renaming or changing the meaning of
+in. Adding a name is a minor. Removing, renaming or changing the meaning of
 one is a major, after a deprecation: the name stays as an alias marked `@deprecated`, with its replacement, until that
-major. A digest that moves means a type a library name reaches changed, and the pull request says which kind of change
-that is. A name marked `@provisional` has met one consumer: it may change in a minor, with a `CHANGELOG.md` line saying
+major. A name marked `@provisional` has met one consumer: it may change in a minor, with a `CHANGELOG.md` line saying
 what to use, and is never removed without a replacement before a major. A second consumer promotes it, for good.
 
 

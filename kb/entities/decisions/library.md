@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
-  "reviewed": "2026-11-08",
-  "refs": ["hub/src/lib/words.ts", "hub/src/shared/view-parts.ts", "hub/src/lib/extension.ts", "hub/src/tower/served.ts#LIBRARY", "hub/src/tower/served.ts#SERVER_ONLY", "hub/src/tower/served.ts#serverOnlyModule", "hub/src/lent-modules.ts", "hub/src/types.ts#writeTypes", "hub/test/types.test.ts", "hub/tsconfig.types.json", "hub/test/library.ts#shapeOf", "hub/test/library.ts#declarationDigests", "hub/test/library.ts#reachNow", "hub/test/library.ts#libraryInCore", "hub/test/library.test.ts", "hub/test/runtimes/generic.json"]
+  "reviewed": "2026-11-09",
+  "refs": ["hub/src/lib/words.ts", "hub/src/shared/view-parts.ts", "hub/src/lib/extension.ts", "hub/src/tower/served.ts#LIBRARY", "hub/src/tower/served.ts#SERVER_ONLY", "hub/src/tower/served.ts#serverOnlyModule", "hub/src/lent-modules.ts", "hub/src/types.ts#writeTypes", "hub/test/types.test.ts", "hub/tsconfig.types.json", "hub/test/library.ts#shapeOf", "hub/test/library.ts#reachNow", "hub/test/library.ts#libraryInCore", "hub/test/library.test.ts", "hub/test/runtimes/generic.json"]
 }
 ---
 **Problem.** The contract for code outside the core was whatever `src/shared` happened to export through a barrel:
@@ -45,9 +45,8 @@ contract if authors can find everything they need on it.
   ([`serverOnlyModule`](ref:hub/src/tower/served.ts#serverOnlyModule)), still exporting its names so that the browser
   doesn't stop first at a missing name.
 - **Versioned by `API_VERSION`.** `test/served-exports.json`'s `library` holds each module's runtime, each name's
-  `since`, and a digest of the declarations the module reaches, comments dropped. `served:update` stamps a new name and
-  keeps a known name's `since`. A name removed under the same major fails the test. A moved digest shows in review which
-  modules' types changed, and the pull request calls it a minor or a major.
+  `since`. `served:update` stamps a new name and keeps a known name's `since`. A name removed under the same major fails
+  the test. What a name's type means is for the pull request to call a minor or a major.
 - **Five checks in `npm test`** ([`library.test.ts`](ref:hub/test/library.test.ts)): shape, with once across modules;
   declarations; reach, nothing in `extensions/`, `examples/`, `renderers/` and `apps/` importing the core by path, nor through
   its old served modules or a core view's URL; runtimes; direction, nothing in `src/` importing the library by path, and only a core
@@ -65,7 +64,14 @@ contract if authors can find everything they need on it.
 **Alternatives considered.** Keeping the 28 modules with named lists fixes accidents but keeps the grab-bags. Two
 surfaces, one for authors and one for renderers, means two contracts. An npm package needs an account and a release
 step, and the project is local only. `tower:` as the one specifier can't resolve in a browser without an import map on
-every page. A version number of the library's own would be a second number that must agree with `API_VERSION`.
+every page. A version number of the library's own would be a second number that must agree with `API_VERSION`. A digest of the
+declarations each module reaches, kept in `served-exports.json` to show in review which modules' types moved, was
+dropped: it hashed the transitive declaration closure by file path, so moving a type between files, or nearly any
+shared-type edit, moved it with no change to a library type. Of the 33 commits that touched the list, 13 moved only
+digests, usually 17 to 19 of 24 modules, a pure refactor among them. A signal that fires on every change gets
+regenerated unread, and adds a conflict-prone diff to most pull requests. A note that doesn't fail would be as
+unread, and a per-name signature is a larger design than the contract needs; the hard failure on a removed name is
+what holds it.
 
 **Impact.** The library landed additive: nothing moved onto it in the minor that added it, and each later change
 deleted its lines from a reach list that only shrank, until none reached in and the list became the plain rule. Only `/lib/` is contract, which the docs say plainly; the repo's checks hold the repo, and
