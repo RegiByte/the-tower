@@ -745,13 +745,32 @@ function closeDoc() {
   $('doc-body').innerHTML = ''
   delete $('doc-body').dataset.stats
   delete $('doc-body').dataset.logbook
-  clearInterval(statsPoll)
+  statsPolling.dispatch({ type: 'stop' })
   if (panelNow()?.kind === 'doc' || panelNow()?.kind === 'kept' || panelNow()?.kind === 'picture' || panelNow()?.kind === 'thread' || panelNow()?.kind === 'stats' || panelNow()?.kind === 'logbook') setPanel(undefined)
 }
 
-/** The Stats panel is read again every minute while it is open. */
+/**
+ * The Stats panel is read again every minute while it is open: `start` arms the timer, each `poll` reads and arms the
+ * next, `stop` cancels it.
+ */
 const STATS_POLL_MS = 60_000
-let statsPoll: ReturnType<typeof setInterval> | undefined
+type StatsPollEvent = { type: 'start' } | { type: 'poll' } | { type: 'stop' }
+type StatsPollEffect = StateEffect<null> | TimerEffect<StatsPollEvent> | { type: 'read' }
+
+const STATS_POLL: StatsPollEffect = { type: 'timer/start', id: 'poll', ms: STATS_POLL_MS, fire: { type: 'poll' } }
+const statsPollHandlers: Handlers<null, StatsPollEvent, StatsPollEffect> = {
+  start: () => [STATS_POLL],
+  poll: () => [{ type: 'read' }, STATS_POLL],
+  stop: () => [{ type: 'timer/cancel', id: 'poll' }],
+}
+const statsPolling = loop({
+  state: null,
+  handlers: statsPollHandlers,
+  execute: {
+    ...(timers<StatsPollEvent>() as Executors<TimerEffect<StatsPollEvent>, StatsPollEvent>),
+    read: () => void readStats(),
+  },
+})
 
 /** Every floor's stats in the reader where you stand: the overview first, each floor a tab. */
 function openStats() {
@@ -763,7 +782,7 @@ function openStats() {
   $('doc-body').dataset.stats = ''
   renderPanel()
   readStats()
-  statsPoll = setInterval(readStats, STATS_POLL_MS)
+  statsPolling.dispatch({ type: 'start' })
 }
 
 /** The Stats panel over your range: a read over another, held or in flight, is dropped. */
