@@ -1,0 +1,9 @@
+{
+  "provides": "quote",
+  "major": 1,
+  "names": [
+    "client.composer.js#MAX_QUOTE",
+    "client.composer.js#askPrompt",
+    "client.composer.js#mount"
+  ]
+}
