@@ -31,7 +31,7 @@ function derivedBeside(b: Board, archive: (project: string) => Card[]) {
 /**
  * The bridge's seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither.
  * `npm run seating:update` (`UPDATE_SEATING=1`) rewrites the file from what Tower 3D derives now, keeping its list of session fixtures; read the
- * diff before committing it, since the test no longer holds the seats it replaced.
+ * diff before committing it, since the test no longer holds the seats it replaced. A run where the derivation and the bridge disagree writes nothing.
  */
 const FROZEN = path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json')
 const UPDATE = Boolean(process.env.UPDATE_SEATING)
@@ -57,7 +57,12 @@ const fixtureView = (now: number) =>
 /** The derivation is the bridge's now, and the bridge's as frozen then (a card with no seat is `null` in the data). */
 function assertSeating(label: string, b: Board, archive: (project: string) => Card[]) {
   const { derived, bridge } = derivedBeside(b, archive)
-  assert.deepEqual(derived, bridge, label)
+  try {
+    assert.deepEqual(derived, bridge, label)
+  } catch (error) {
+    disagreed = true
+    throw error
+  }
   const settled = JSON.parse(JSON.stringify(derived))
   if (UPDATE) written[label] = settled
   else assert.deepEqual(settled, frozen[label], `${label}, against the frozen expectations`)
@@ -66,8 +71,9 @@ function assertSeating(label: string, b: Board, archive: (project: string) => Ca
 
 const ran: string[] = []
 const written: Record<string, unknown> = {}
+let disagreed = false
 test.after(() => {
-  if (UPDATE) return writeFileSync(FROZEN, JSON.stringify({ sessionFixtures, cases: written }, null, 1) + '\n')
+  if (UPDATE) return disagreed ? undefined :  writeFileSync(FROZEN, JSON.stringify({ sessionFixtures, cases: written }, null, 1) + '\n')
   assert.deepEqual(ran.toSorted(), Object.keys(frozen).toSorted(), 'every frozen case ran, and every case that ran is frozen')
 })
 
