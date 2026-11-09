@@ -100,7 +100,7 @@ test('a long-running worker keeps its desk at midnight, when the worker who came
 })
 
 test("a board built just before midnight, with its archive served just after, keeps the bridge's seat: the board's card counts once", () => {
-  const day = Date.UTC(2026, 9, 4)
+  const day = new Date(2026, 9, 4).getTime()
   const session = (id: string, hour: number, exitAfter?: number): SessionLog => ({
     header: { id, project: 'tower', cwd: '/hub', argv: ['claude'], startedAt: day + hour * 3_600_000, cols: 80, rows: 24 },
     events: exitAfter === undefined ? [] : [[exitAfter, 'x', { exitCode: 0 }]],
@@ -109,7 +109,7 @@ test("a board built just before midnight, with its archive served just after, ke
   const long = session('20261004-110000-bbbb', 11)
   const at = (now: number) =>
     viewOf(configFor([early, long]), { sessions: [early, long].map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set([long.header.id]), protocol: HOST_PROTOCOL }, now })
-  const midnight = day + DAY
+  const midnight = new Date(2026, 9, 5).getTime()
   const [floor] = board(at(midnight - 1000)).floors
   const history = historyFrom(floor.cards, archiveOf(allCards(at(midnight + 1000)), 'tower', midnight + 1000))
   assert.deepEqual(seatsOf(history, history).get(long.header.id), floor.cards.find((c) => c.id === long.header.id)!.seat)
