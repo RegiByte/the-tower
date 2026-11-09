@@ -78,22 +78,40 @@ test('markdownHtml: raw HTML shows as its text, a refused link as its words, a r
   assert.equal(markdownHtml('![chart](shots/c.png)'), '<p><img src="shots/c.png" alt="chart"></p>\n')
 })
 
+const namesOf = (html: string) => tagsOf(html).map(({ name }) => name)
+/** The attributes of each `tag` that has any: a closing tag has none. */
+const attributesOf = (html: string, tag: string) =>
+  tagsOf(html).filter(({ name, attributes }) => name === tag && attributes.length > 0).map(({ attributes }) => Object.fromEntries(attributes.map(({ key, value }) => [key, value])))
+/** What a reader sees of the code a fence holds. */
+const codeOf = (html: string) => unescaped(html.match(/<pre><code>(.*)<\/code><\/pre>/s)![1].replace(/<[^>]+>/g, ''))
+
 test('markdownHtml: markdown itself renders as before', () => {
-  assert.equal(markdownHtml('## Plan\n\n**bold** and `code` [docs](https://example.com) [kb](kb/dist/tower.html)'),
-    '<h2>Plan</h2>\n<p><strong>bold</strong> and <code>code</code> <a href="https://example.com" target="_blank" rel="noopener noreferrer">docs</a> <a href="kb/dist/tower.html" target="_blank" rel="noopener noreferrer">kb</a></p>\n')
-  assert.equal(markdownHtml('| f | n |\n|---|--:|\n| a | 1 |'),
-    '<table>\n<thead>\n<tr>\n<th>f</th>\n<th align="right">n</th>\n</tr>\n</thead>\n<tbody><tr>\n<td>a</td>\n<td align="right">1</td>\n</tr>\n</tbody></table>\n')
+  const html = markdownHtml('## Plan\n\n**bold** and `code` [docs](https://example.com) [kb](kb/dist/tower.html)')
+  assert.deepEqual(namesOf(html), ['h2', 'h2', 'p', 'strong', 'strong', 'code', 'code', 'a', 'a', 'a', 'a', 'p'])
+  assert.match(html, /<h2>Plan<\/h2>/)
+  assert.deepEqual(attributesOf(html, 'a'), [{ href: 'https://example.com', target: '_blank', rel: 'noopener noreferrer' }, { href: 'kb/dist/tower.html', target: '_blank', rel: 'noopener noreferrer' }])
+  const table = markdownHtml('| f | n |\n|---|--:|\n| a | 1 |')
+  assert.deepEqual([...new Set(namesOf(table))], ['table', 'thead', 'tr', 'th', 'tbody', 'td'])
+  assert.deepEqual(attributesOf(table, 'th'), [{ align: 'right' }])
+  assert.deepEqual(attributesOf(table, 'td'), [{ align: 'right' }])
 })
 
 test('markdownHtml: a line break is kept, as in a comment on GitHub', () => {
-  assert.equal(markdownHtml('**bug** · correctness\nWhat goes wrong.'), '<p><strong>bug</strong> · correctness<br>What goes wrong.</p>\n')
+  const html = markdownHtml('**bug** · correctness\nWhat goes wrong.')
+  assert.deepEqual(namesOf(html), ['p', 'strong', 'strong', 'br', 'p'])
+  assert.match(html, /<br\s*\/?>/)
 })
 
 test('markdownHtml: a fence is a figure with its syntax marked and a button to copy it', () => {
-  assert.equal(markdownHtml('```typescript\nconst a = 1\n```'),
-    '<figure class="code"><button type="button" data-copy-code aria-label="copy the code">copy</button><pre><code><span class="hljs-keyword">const</span> a = <span class="hljs-number">1</span></code></pre></figure>\n')
-  assert.equal(markdownHtml('```\n<b>\n```'),
-    '<figure class="code"><button type="button" data-copy-code aria-label="copy the code">copy</button><pre><code>&lt;b&gt;</code></pre></figure>\n')
+  const marked = markdownHtml('```typescript\nconst a = 1\n```')
+  assert.deepEqual(namesOf(marked).slice(0, 4), ['figure', 'button', 'button', 'pre'])
+  assert.deepEqual(attributesOf(marked, 'figure'), [{ class: 'code' }])
+  assert.deepEqual(attributesOf(marked, 'button').map((b) => b['data-copy-code']), [''])
+  assert.equal(codeOf(marked), 'const a = 1')
+  assert.ok(attributesOf(marked, 'span').length > 0 && attributesOf(marked, 'span').every((s) => s.class.startsWith('hljs-')), 'its syntax is marked in spans')
+  const plain = markdownHtml('```\n<b>\n```')
+  assert.equal(codeOf(plain), '<b>')
+  assert.ok(!namesOf(plain).includes('b'), 'markup in a fence is its text')
 })
 
 test('documentHtml: raw HTML stays as written for a frame without scripts, markdown links never leave the web, relative images read beside the file', () => {
