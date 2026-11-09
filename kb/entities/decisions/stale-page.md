@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "A stale page is offered a reload: the board says what code the tower serves, tower.js knows what the page loaded",
-  "summary": "Every /board message carries served: {id, version}, read once as the tower starts: id a hash over the checkout's src/, renderers/, extensions/ and package lock, version its git describe. /tower.js is served with the served it came from filled in, so tower.stale() is what the tower serves now while its id differs, and tower.onStale hears it change. The tower page offers a reload in a notice that never times out or takes focus, and in the palette while stale; it never reloads by itself.",
+  "summary": "Every /board message carries served: {id, version}, read once as the tower starts: id a hash over the checkout's src/, renderers/, extensions/ and package lock, version its git describe. /tower.js is served with the served it came from filled in, so tower.stale() is what the tower serves now while its id differs, and tower.onStale hears it change. The tower page and Tower 3D offer a reload in a notice that never times out or takes focus, the page also in the palette while stale; neither reloads by itself.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-11-03",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-09",
   "refs": [
     "hub/src/tower/served.ts#servedCode",
     "hub/src/tower/served.ts#servedVersion",
@@ -24,7 +24,7 @@
     "hub/renderers/page/index.html"
   ],
   "links": [
-    { "to": "renderer-api-contract", "verb": "follows", "carries": "served is an additive field of BoardMsg and tower.js, a minor (1.144)" },
+    { "to": "renderer-api-contract", "verb": "follows", "carries": "served is an additive field of BoardMsg and tower.js, a minor" },
     { "to": "renderer-is-disposable", "verb": "follows", "carries": "the signal is tower.js's, so any renderer can offer a reload its own way" },
     { "to": "logs-are-facts", "verb": "follows", "carries": "derived from the checkout's files as the tower starts, held in memory, never stored" },
     { "to": "press-feedback", "verb": "uses", "carries": "the notice stands in the toasts' stack, closable by its ×" },
@@ -33,7 +33,7 @@
 }
 ---
 **Problem.** When the tower restarts on new code (a release, `tower update`), an open page keeps running the JS it
-loaded; only its streams reconnect. Tower.app showed the old page until ⌘R. It isn't HTTP caching: renderer files and
+loaded; only its streams reconnect. It isn't HTTP caching: renderer files and
 pages are `no-store` and the shared modules are hashed. Nothing told a page that the code the tower serves had changed.
 
 **Why.** A page the user lives in for days drifts from the tower behind it: new board fields go unread, fixed bugs
@@ -57,7 +57,8 @@ progress.
   with Reload and a × ([`closableNoticer`](ref:hub/src/shared/toasts.ts#closableNoticer)). It never times out and
   never takes focus; × hides it until the id moves again. The palette lists "Reload: the tower was updated" while the
   page is stale ([`RELOAD_ENTRY`](ref:hub/src/shared/palette.ts#RELOAD_ENTRY), [[command-palette]]). The page shows
-  `tower.served.version` under its logo, a button that copies it. Tower 3D does nothing with it yet.
+  `tower.served.version` under its logo, a button that copies it. Tower 3D shows the same notice when it is not framed
+  ([`staleNotice`](ref:hub/renderers/tower3d/src/main.ts#staleNotice)); framed, the page framing it says so.
 
 **Alternatives considered.**
 - The package version or the latest tag as the id: a worker's sandbox or a checkout with uncommitted changes runs new
@@ -65,12 +66,12 @@ progress.
 - The id of the first board a page sees, kept by the page: a page loaded from the old tower whose first board comes from
   the new one would never know.
 - Hashing exactly what the tower serves (each module, each renderer file): the served set is lazy and spans the config's
-  renderers; the checkout's code is a cheap superset (about 50 ms at start), whose only cost is an offer after a change
+  renderers; the checkout's code is a cheap superset, read once at start, whose only cost is an offer after a change
   only the server or the host saw.
 - Watching the files while the tower runs: renderer files are read live, but the tower's own code changes only on a
   restart, which is the case the user hit; a renderer edited in place is reloaded by whoever edits it.
 - Reloading by itself when nothing unsaved is on screen: decided against, since no renderer can tell for certain.
 
-**Impact.** API 1.144: `served` on every board message, `tower.served`, `tower.stale()`, `tower.onStale`,
+**Impact.** `served` on every board message, `tower.served`, `tower.stale()`, `tower.onStale`,
 `closableNoticer` in `/toasts.js`, `RELOAD_ENTRY` and the `reload` pick in `/palette.js`. A renderer or extension the
 config roots outside the checkout is not in the id.
