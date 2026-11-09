@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-29",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-09",
   "refs": [
     "hub/extensions/autotidy/extension.json",
     "hub/extensions/autotidy/server.ts",
