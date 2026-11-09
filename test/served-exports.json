@@ -1291,7 +1291,7 @@
   "library": {
     "/lib/attend.js": {
       "runtime": "browser",
-      "digest": "8e1eaa0fe8d02e87",
+      "digest": "0460bc521dd90369",
       "values": {
         "attendNext": {
           "since": "1.151"
@@ -1323,7 +1323,7 @@
     },
     "/lib/board.js": {
       "runtime": "generic",
-      "digest": "214a69fae8cbf0f1",
+      "digest": "e3ae978a31aeba6f",
       "values": {
         "boardSubject": {
           "since": "1.151",
@@ -1583,7 +1583,7 @@
     },
     "/lib/brief.js": {
       "runtime": "browser",
-      "digest": "0a182215ac1b4acc",
+      "digest": "3962268e426c1a7d",
       "values": {
         "RESUMED_IDLE": {
           "since": "1.151",
@@ -1662,7 +1662,7 @@
     },
     "/lib/capabilities.js": {
       "runtime": "generic",
-      "digest": "89e189a058d0f173",
+      "digest": "aee433960944066f",
       "values": {
         "CAPABILITIES": {
           "since": "1.151",
@@ -1698,7 +1698,7 @@
     },
     "/lib/cards.js": {
       "runtime": "generic",
-      "digest": "5a8ed844b0b9746c",
+      "digest": "a589ab5e3ebe43f5",
       "values": {
         "ATTENTION_MEANS": {
           "since": "1.151"
@@ -2124,7 +2124,7 @@
     },
     "/lib/changes.js": {
       "runtime": "browser",
-      "digest": "cdca5a0db8388381",
+      "digest": "7fb313ed26bc9c93",
       "values": {
         "CHANGES_POLL_MS": {
           "since": "1.151"
@@ -2256,7 +2256,7 @@
     },
     "/lib/client.js": {
       "runtime": "browser",
-      "digest": "3b629e62c70c2424",
+      "digest": "4593b45616a82362",
       "values": {
         "clientOf": {
           "since": "1.160",
@@ -2332,7 +2332,7 @@
     },
     "/lib/extension.js": {
       "runtime": "server",
-      "digest": "ee6acac1cd178037",
+      "digest": "9dc30c191bd1bcb8",
       "values": {
         "apiError": {
           "since": "1.151"
@@ -2469,7 +2469,7 @@
     },
     "/lib/keys.js": {
       "runtime": "browser",
-      "digest": "59976168554440d3",
+      "digest": "1fd6472d3fe0bf95",
       "values": {
         "COMMANDS": {
           "since": "1.151",
@@ -2544,7 +2544,7 @@
     },
     "/lib/layout.js": {
       "runtime": "browser",
-      "digest": "0f41fd669eba2d95",
+      "digest": "c3b4c7277cef5ad6",
       "values": {
         "actionId": {
           "since": "1.151"
@@ -2831,7 +2831,7 @@
     },
     "/lib/palette.js": {
       "runtime": "browser",
-      "digest": "dabc5a81c9395338",
+      "digest": "9da59da8c769b71e",
       "values": {
         "paletteEntries": {
           "since": "1.151",
@@ -2866,7 +2866,7 @@
     },
     "/lib/settings.js": {
       "runtime": "browser",
-      "digest": "4491fc098c486d8d",
+      "digest": "dd6373781ac3a0f8",
       "values": {
         "alertsSection": {
           "since": "1.151",
@@ -2911,7 +2911,7 @@
     },
     "/lib/spawn.js": {
       "runtime": "browser",
-      "digest": "29ddf0093d6dcd0e",
+      "digest": "25b885ccd0ec7743",
       "values": {
         "cutLine": {
           "since": "1.151",
@@ -2957,7 +2957,7 @@
     },
     "/lib/stats.js": {
       "runtime": "generic",
-      "digest": "abc930c2d1606d34",
+      "digest": "3c04766de6249c4f",
       "values": {
         "STATS_ALL": {
           "since": "1.151"
@@ -2998,7 +2998,7 @@
     },
     "/lib/terminal.js": {
       "runtime": "browser",
-      "digest": "a6fdad5674eccc15",
+      "digest": "53435988759e1597",
       "values": {
         "SHELL_SCROLLBACK": {
           "since": "1.151",
@@ -3086,7 +3086,7 @@
     },
     "/lib/view.js": {
       "runtime": "browser",
-      "digest": "24f37eb55d4dbf7b",
+      "digest": "73e564b099394073",
       "values": {
         "GIST_ICON": {
           "since": "1.151"
@@ -3284,7 +3284,7 @@
     },
     "/lib/viewer.js": {
       "runtime": "browser",
-      "digest": "72f0e1f474744402",
+      "digest": "78b4984bf7685cad",
       "values": {
         "DISMISSED_KEY": {
           "since": "1.151"
@@ -3322,7 +3322,7 @@
     },
     "/lib/words.js": {
       "runtime": "generic",
-      "digest": "30d8eb2997ba253d",
+      "digest": "d26c90b4742dd190",
       "values": {
         "ago": {
           "since": "1.151"
