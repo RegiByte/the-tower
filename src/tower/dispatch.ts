@@ -29,7 +29,7 @@ import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Repl
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { uploadRefusal } from '../shared/uploads.ts'
-import { newSessionId, restoredPrompt, resumeRequest, spawnRequest, worktreeBrief, type Launch, type SpawnLaunch } from '../shared/launch.ts'
+import { hostSpawn, newSessionId, oldHostSpawn, restoredPrompt, resumeRequest, spawnRequest, worktreeBrief, type HostStart, type Launch, type SpawnLaunch } from '../shared/launch.ts'
 import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
 import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
@@ -38,11 +38,14 @@ import {
   ConfigError,
   configuredUser,
   editorArgv,
+  isRuntime,
   outsideProject,
   projectDirs,
   projectPlugins,
   projectPreferredCommand,
   resolveCommand,
+  RUNTIMES,
+  sessionCommand,
   sessionDirs,
   worktreeName,
   worktreePath,
@@ -54,7 +57,7 @@ import {
   type Runtime,
 } from '../shared/model.ts'
 import { projectCollectionsPath } from '../shared/paths.ts'
-import { promptPastes, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
+import { promptPastes, sessionKeys, type FromHost, type ToAnyHost } from '../shared/protocol.ts'
 import { REVIEWS } from '../shared/reviews.ts'
 import { STATUS_NAME } from '../shared/status-words.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
@@ -66,6 +69,9 @@ import { chainCalls, hookDeadline } from './chains.ts'
 import { UnsettledError, type ExtensionsResource } from './extensions.ts'
 import { PUBLISH_DEBOUNCE_MS, type PublisherResource } from './publisher.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
+
+/** The tower mod (`src/mod`), loaded by every session the tower starts: it posts Claude's events to the host. */
+const MOD_DIR = path.join(import.meta.dirname, '..', 'mod')
 
 /** How long a spawn waits for the host to write its session's header; the host opens the log as it answers. */
 const TRACK_TIMEOUT_MS = 5000
@@ -128,18 +134,8 @@ export const dispatch = defineResource({
       }
     }
 
-    /**
-     * A host older than `SPAWN_FACTS_PROTOCOL` reads past a spawn's `facts`: the session would start without them. A
-     * host older than `COMMAND_PROTOCOL` spreads `argv` as its old array shape and fails on the object one a `command`
-     * implies. A spawn answers once the system tracks its session, so whoever it answers reads the session by its id.
-     */
-    async function host(msg: ToHost): Promise<Answer> {
-      const refused =
-        msg.t === 'spawn'
-          ? (msg.facts?.length ? olderHost(SPAWN_FACTS_PROTOCOL, 'start a worker with its facts') : undefined) ??
-            (msg.command !== undefined ? olderHost(COMMAND_PROTOCOL, 'start a worker under a named command') : undefined)
-          : undefined
-      if (refused) return refused
+    /** A spawn answers once the system tracks its session, so whoever it answers reads the session by its id. */
+    async function host(msg: ToAnyHost): Promise<Answer> {
       const answer = await daemon(() => hostRequest(paths, msg))
       void system.refreshLive()
       if (msg.t === 'spawn' && answer.t === 'spawned') await system.tracked(msg.id, TRACK_TIMEOUT_MS)
@@ -176,6 +172,25 @@ export const dispatch = defineResource({
 
     /** The host protocol that first takes a named `command`. */
     const COMMAND_PROTOCOL = 4
+
+    /** The host protocol that first runs a spawn's whole `argv` and `env`, and takes no other spawn. */
+    const ARGV_PROTOCOL = 5
+
+    /**
+     * A session started in the shape the running host takes, its protocol read just before, so a host restarted since
+     * the last poll is asked in its own. A host older than `SPAWN_FACTS_PROTOCOL` reads past a spawn's `facts`: the
+     * session would start without them. A host older than `COMMAND_PROTOCOL` spreads `argv` as its old array shape and
+     * fails on the object one a `command` implies. With no host running, the spawn fails as any request does.
+     */
+    async function start(s: HostStart): Promise<Answer> {
+      await system.refreshLive()
+      const live = system.live()
+      if (!live || live.protocol >= ARGV_PROTOCOL) return host(hostSpawn(s, sessionCommand(readConfig(), s.runtime, s.command), MOD_DIR))
+      const refused =
+        (s.facts.length ? olderHost(SPAWN_FACTS_PROTOCOL, 'start a worker with its facts') : undefined) ??
+        (s.command !== undefined ? olderHost(COMMAND_PROTOCOL, 'start a worker under a named command') : undefined)
+      return refused ?? host(oldHostSpawn(s))
+    }
 
     /** Why the running host, older than protocol `needs`, can't do something, so a verb that needs it refuses before it does anything. */
     const olderHost = (needs: number, doing: string): ApiError | undefined => {
@@ -467,6 +482,7 @@ export const dispatch = defineResource({
         const kind = carriesOn(source, conversation) ? 'resume' : 'fork'
         const heir = kind === 'resume' ? newSessionId() : (await workerIds(config))()
         const runtime = source.header.runtime ?? 'claude'
+        if (!isRuntime(runtime)) return apiError('refused', `${source.header.id} ran runtime "${runtime}", which this tower doesn't run: it runs ${RUNTIMES.join(', ')}`)
         const chains = chainsOf(system.sessions())
         const worker = lineage(source, (s) => continues(s, chains))
         const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker), resolveCommand(config, source.header.command))
@@ -479,7 +495,7 @@ export const dispatch = defineResource({
           const restoring = gone ? await worktreeVerb(async () => ({ t: 'restored', restored: await restoreWorktree(project, projectId, links, name!, `${branchPrefix}${name}`, occupants()) })) : undefined
           if (restoring && 'code' in restoring) return restoring
           const restored = restoring?.restored
-          const answer = await host(
+          const answer = await start(
             resumeRequest({
               kind,
               runtime,
@@ -660,7 +676,7 @@ export const dispatch = defineResource({
         const worker = await newWorker(config, typed)
         if ('t' in worker) return worker
         const started = await newLaunch(config, projectId, { id: worker.id, name: worker.callsign, cwd, dirs: sessionDirs(project, cwd), worktree: await briefFor(project, worktreesConfig(config, projectId).links, cwd) }, launch, spawn)
-        return 't' in started ? started : host(spawnRequest(started))
+        return 't' in started ? started : start(spawnRequest(started))
       })
 
     /** Callsigns until one names a worktree, default branch and recorded name the floor doesn't have: of a hundred per name, few are taken. */
@@ -704,7 +720,7 @@ export const dispatch = defineResource({
           const started = await newLaunch(config, projectId, { id, name: callsign, cwd, dirs: sessionDirs(project, cwd), worktree: worktreeBrief(project, cwd, branch, linkedSources(project, links)) }, launch, spawn)
           if ('t' in started) return started
           const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
-          const answer = await host(spawnRequest(started))
+          const answer = await start(spawnRequest(started))
           if (answer.t === 'error') {
             await rollback(made.made)
             return apiError('worktree_failed', `The session didn't start in ${cwd}, so the cut was rolled back: ${(answer as ApiError).message}`)

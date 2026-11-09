@@ -9,19 +9,17 @@
 import { appendFileSync, createWriteStream, existsSync, mkdirSync, readFileSync, truncateSync, type WriteStream } from 'node:fs'
 import http from 'node:http'
 import net from 'node:net'
-import path from 'node:path'
 import * as pty from '@lydell/node-pty'
 import { endOnReadError } from '../shared/pty.ts'
-import { resolvedCommandName, sessionDirs, type ClaudeHookInput, type Config, type LogEvent, type ModEvent, type SessionHeader } from '../shared/model.ts'
+import { sessionDirs, type ClaudeHookInput, type Config, type LogEvent, type ModEvent, type SessionHeader } from '../shared/model.ts'
 import { configPath, sessionLogPath, systemPaths } from '../shared/paths.ts'
 import { checkSize, frame, HOST_PROTOCOL, jsonObject, onLines, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { firstLine, wholeLinesLength } from '../shared/log-file.ts'
 import { claimSocket } from '../shared/socket.ts'
-import { elapsed, hookFact, sessionArgv, sessionEnv } from './session.ts'
+import { checkSpawn, elapsed, hookFact, sessionEnv } from './session.ts'
 
 type LiveSession = { header: SessionHeader; proc: pty.IPty; log: WriteStream }
 
-const MOD_DIR = path.join(import.meta.dirname, '..', 'mod')
 /** What a log may hold unwritten before its session's output waits: a burst still lands at once, a stalled disk stops it. */
 const LOG_BUFFER_BYTES = 1 << 20
 
@@ -47,7 +45,9 @@ const checkFact = (fact: ModEvent) => {
  * The session's `facts` are logged after its header, before anything else: written in the same tick as the header,
  * ahead of the first output or hook.
  */
-function spawnSession({ id, project: projectId, cwd, args, command: requested, facts = [], cols, rows }: Extract<ToHost, { t: 'spawn' }>): string {
+function spawnSession(msg: Extract<ToHost, { t: 'spawn' }>): string {
+  checkSpawn(msg)
+  const { id, project: projectId, cwd, runtime, argv, env, command, facts = [], cols, rows } = msg
   const config: Config = JSON.parse(readFileSync(paths.config, 'utf8'))
   const project = config.projects[projectId]
   if (!project) throw new Error(`Unknown project "${projectId}". Projects: ${Object.keys(config.projects).join(', ')}`)
@@ -59,10 +59,7 @@ function spawnSession({ id, project: projectId, cwd, args, command: requested, f
   if (live.has(id) || existsSync(sessionLogPath(paths, id))) throw new Error(`Session "${id}" already exists`)
 
   const startedAt = Date.now()
-  // Resolved once, then reused for the argv and the header, so a resume's header always names the command this session actually ran.
-  const command = resolvedCommandName(config, requested)
-  const argv = sessionArgv(config, args, MOD_DIR, command)
-  const header: SessionHeader = { id, project: projectId, runtime: 'claude', cwd, argv, command, startedAt, cols, rows }
+  const header: SessionHeader = { id, project: projectId, runtime, cwd, argv, command, startedAt, cols, rows }
   const [file, ...rest] = argv
 
   const proc = pty.spawn(file, rest, {
@@ -70,7 +67,7 @@ function spawnSession({ id, project: projectId, cwd, args, command: requested, f
     cols,
     rows,
     cwd,
-    env: sessionEnv(process.env, config, id, paths.hooks),
+    env: sessionEnv(process.env, env, id, paths.hooks),
   })
   const log = createWriteStream(sessionLogPath(paths, id), { flags: 'wx', highWaterMark: LOG_BUFFER_BYTES })
   /** A session nobody can see is ended: its conversation stays resumable from Claude's transcript. */

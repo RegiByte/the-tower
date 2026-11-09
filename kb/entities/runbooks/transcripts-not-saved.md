@@ -4,7 +4,7 @@
   "name": "Transcripts not saved",
   "summary": "A Claude started with a parent Claude session's variables believes it is a child session and saves no transcript, so its conversations cannot be resumed; the scrub in env.ts is what prevents it.",
   "in": "host",
-  "reviewed": "2026-11-07",
+  "reviewed": "2026-11-09",
   "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/terms/main.ts#spawnShell", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/git.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/shared/model.ts#ClaudeHookInput"]
 }
 ---
@@ -30,6 +30,6 @@ whether or not Claude wrote its transcript. The session may also reach the paren
   through it; anything new that starts a child must too.
 
 **Fix.** Add the variable or prefix to the lists in `src/shared/env.ts` (leave other `CLAUDE_CODE_*` alone: they can be
-user config). The config's `env` is scrubbed with the parent's ([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)),
+user config). The env a spawn gives, the config's `env`, is scrubbed with the parent's ([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)),
 so it cannot set a marker again. Sessions get the scrub in the host, so the fix reaches them on a host restart, which
 ends every session ([[no-host]]). Conversations that were never written cannot be recovered.

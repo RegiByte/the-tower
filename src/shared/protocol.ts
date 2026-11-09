@@ -4,17 +4,17 @@ import type { ModEvent } from './model.ts'
  * The host protocol's version, sent in every `live` reply. A change to a message to or from the host bumps it, so a
  * client that outlived a host restart's code change can say the running host is older than itself.
  */
-export const HOST_PROTOCOL = 4
+export const HOST_PROTOCOL = 5
 
 /** Control messages to the host. Every request gets exactly one reply, in order. */
 export type ToHost =
   /**
-   * `cwd` is the project's hub or one of its repos; `args` follow the host's own Claude arguments. `facts`: `tower.*`
-   * facts logged right after the header, before any of the session's own events (protocol 3). `command`: the name of
-   * one of `argv`'s commands, when it names more than one (protocol 4); an older host spreads `argv` as an array and
-   * fails on the object shape, so a client sends `command` only once it knows the host is new enough.
+   * The host runs `argv` whole in `cwd`, the project's hub or one of its repos, with `env` over its own environment:
+   * clients compose both (protocol 5). `runtime` and `command` are labels the host copies to the session's header and
+   * never reads: what the session runs, and the name of the config's `argv` command it was composed from. `facts`:
+   * `tower.*` facts logged right after the header, before any of the session's own events.
    */
-  | { t: 'spawn'; id: string; project: string; cwd: string; args: string[]; command?: string; facts?: ModEvent[]; cols: number; rows: number }
+  | { t: 'spawn'; id: string; project: string; cwd: string; runtime: string; argv: string[]; env: Record<string, string>; command?: string; facts?: ModEvent[]; cols: number; rows: number }
   | { t: 'write'; id: string; data: string }
   | { t: 'resize'; id: string; cols: number; rows: number }
   | { t: 'kill'; id: string }
@@ -24,6 +24,16 @@ export type ToHost =
    */
   | { t: 'fact'; id: string; fact: ModEvent }
   | { t: 'live' }
+
+/**
+ * A spawn as a host older than protocol 5 takes it: `args` follow the config's `argv` and the mod's `--plugin-dir`,
+ * which that host adds. `facts` from protocol 3; `command`, a name of the config's `argv` the host resolves, from
+ * protocol 4: an older host spreads `argv` as an array and fails on the object shape.
+ */
+export type OldHostSpawn = { t: 'spawn'; id: string; project: string; cwd: string; args: string[]; command?: string; facts?: ModEvent[]; cols: number; rows: number }
+
+/** What a client sends a host: a host older than protocol 5 takes the old spawn. */
+export type ToAnyHost = ToHost | OldHostSpawn
 
 /** What a running host says of itself: the ids of its running sessions and the protocol it speaks. */
 export type HostLive = { ids: Set<string>; protocol: number }
