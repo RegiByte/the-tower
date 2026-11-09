@@ -70,15 +70,20 @@ export const TERM_GRACE_MS = 5000
 const GROUP_POLL_MS = 200
 
 /**
- * Ends a job's group: SIGTERM, then SIGKILL to whatever still runs in it after `TERM_GRACE_MS`. The group decides, not
- * its leader: a member that ignores TERM outlives a leader that ends on it. Answers how many members it found.
+ * Ends a job's group: SIGTERM, then SIGKILL to whatever still runs in it once `graceMs` has passed. The group decides,
+ * not its leader: a member that ignores TERM outlives a leader that ends on it. Answers how many members it found.
  */
-export const endGroup = async (pgid: number, startedAt: number): Promise<number> => {
-  const found = await jobGroup(pgid, startedAt)
-  if (!found.length) return 0
-  signalGroup(pgid, 'SIGTERM')
-  for (const deadline = Date.now() + TERM_GRACE_MS; Date.now() < deadline; await new Promise((resolve) => setTimeout(resolve, GROUP_POLL_MS)))
-    if (!(await jobGroup(pgid, startedAt)).length) return found.length
-  if ((await jobGroup(pgid, startedAt)).length) signalGroup(pgid, 'SIGKILL')
-  return found.length
-}
+export const endGroupWithin =
+  (graceMs: number) =>
+  async (pgid: number, startedAt: number): Promise<number> => {
+    const found = await jobGroup(pgid, startedAt)
+    if (!found.length) return 0
+    signalGroup(pgid, 'SIGTERM')
+    for (const deadline = Date.now() + graceMs; Date.now() < deadline; await new Promise((resolve) => setTimeout(resolve, GROUP_POLL_MS)))
+      if (!(await jobGroup(pgid, startedAt)).length) return found.length
+    if ((await jobGroup(pgid, startedAt)).length) signalGroup(pgid, 'SIGKILL')
+    return found.length
+  }
+
+/** Ends a job's group with `TERM_GRACE_MS` to end on SIGTERM. */
+export const endGroup = endGroupWithin(TERM_GRACE_MS)

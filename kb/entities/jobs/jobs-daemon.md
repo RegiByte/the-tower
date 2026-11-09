@@ -5,7 +5,7 @@
   "summary": "The detached Node process that runs each job, one command, to its end in a PTY nobody types into, streams its screen to viewers, and is the one writer of the jobs log.",
   "in": "jobs",
   "reviewed": "2026-11-09",
-  "refs": ["hub/src/jobs/main.ts#startJob", "hub/src/jobs/main.ts#cancelJob", "hub/src/jobs/main.ts#attach", "hub/src/jobs/main.ts#endLeftovers", "hub/src/jobs/main.ts#keep", "hub/src/jobs/main.ts#programFile", "hub/src/jobs/main.ts#jobEnd", "hub/src/jobs/groups.ts#jobGroup", "hub/src/jobs/groups.ts#endGroup", "hub/src/jobs/groups.ts#bootTime", "hub/src/shared/jobs.ts#ToJobs", "hub/src/shared/jobs.ts#JobFact", "hub/src/shared/jobs.ts#JobStream", "hub/src/shared/viewers.ts#joinViewer", "hub/src/bridge/jobs.ts#jobsOf", "hub/test/jobs-daemon.test.ts"],
+  "refs": ["hub/src/jobs/main.ts#startJob", "hub/src/jobs/main.ts#cancelJob", "hub/src/jobs/main.ts#attach", "hub/src/jobs/main.ts#endLeftovers", "hub/src/jobs/main.ts#keep", "hub/src/jobs/main.ts#programFile", "hub/src/jobs/main.ts#jobEnd", "hub/src/jobs/groups.ts#jobGroup", "hub/src/jobs/groups.ts#endGroup", "hub/src/jobs/groups.ts#endGroupWithin", "hub/src/jobs/groups.ts#bootTime", "hub/src/shared/jobs.ts#ToJobs", "hub/src/shared/jobs.ts#JobFact", "hub/src/shared/jobs.ts#JobStream", "hub/src/shared/viewers.ts#joinViewer", "hub/src/bridge/jobs.ts#jobsOf", "hub/test/jobs-daemon.test.ts"],
   "links": [
     { "to": "system-root", "verb": "writes", "carries": "jobs/YYYY-MM.jsonl in the streams' format: started {id, pid, argv, cwd, owner, label}, cancelled {id, by}, ended {id, exit, signal}" },
     { "to": "system-root", "verb": "reads", "carries": "every month of jobs/ on start, archived ones too: the jobs an earlier daemon left without an end" }
@@ -26,7 +26,7 @@ no `write`: nobody types into a job.
 - **Its end** is appended as `ended`, normalized from node-pty's pair ([`jobEnd`](ref:hub/src/jobs/main.ts#jobEnd)):
   a signal by name and `exit: null`, or the exit status and `signal: null`. Never a verdict. An append that fails is said in the daemon's log, and the job still ends for its viewers and its held list.
 - **Cancel** appends `cancelled {id, by}`, then sends the job's group SIGTERM and, after
-  [`TERM_GRACE_MS`](ref:hub/src/jobs/groups.ts#TERM_GRACE_MS), SIGKILL to what still runs in the group ([`cancelJob`](ref:hub/src/jobs/main.ts#cancelJob), [`endGroup`](ref:hub/src/jobs/groups.ts#endGroup)):
+  [`TERM_GRACE_MS`](ref:hub/src/jobs/groups.ts#TERM_GRACE_MS), SIGKILL to what still runs in the group ([`cancelJob`](ref:hub/src/jobs/main.ts#cancelJob), [`endGroup`](ref:hub/src/jobs/groups.ts#endGroup), which is [`endGroupWithin`](ref:hub/src/jobs/groups.ts#endGroupWithin) the grace):
   the group decides, not its leader, since a member that ignores TERM outlives a leader that ends on it. Its `ended`
   follows when the leader exits. A cancel or resize of a job that
   already ended is refused, `ended`. Stopping the daemon (`tower down jobs`) stops every running job the same way and
@@ -49,4 +49,4 @@ shell leading a group of its own ([`jobGroup`](ref:hub/src/jobs/groups.ts#jobGro
 ([`endGroup`](ref:hub/src/jobs/groups.ts#endGroup)). git clone removes its partial folder on TERM. This is an action,
 never a fact: such a job stays without an end, and reads as lost. A process that leaves the job's group (`setsid`, a
 server that daemonizes) is not followed. The [integration tests](ref:hub/test/jobs-daemon.test.ts) hold both
-halves, and a cancel's whole-group end, on whatever runs the tests, CI's Linux included.
+halves, and a cancel's whole-group end, on whatever runs the tests, CI's Linux included; the SIGKILL after a grace is held in-process against `endGroupWithin` with a short one.

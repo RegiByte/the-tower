@@ -13,7 +13,7 @@ import { connectJobs } from '../src/shared/client.ts'
 import { withoutParentSession } from '../src/shared/env.ts'
 import { systemPaths } from '../src/shared/paths.ts'
 import { answers } from '../src/shared/socket.ts'
-import { jobGroup } from '../src/jobs/groups.ts'
+import { endGroupWithin, jobGroup } from '../src/jobs/groups.ts'
 import { signalGroup } from '../src/signal-group.ts'
 
 const DAEMON = path.join(import.meta.dirname, '..', 'src', 'jobs', 'main.ts')
@@ -85,22 +85,35 @@ test('a job that ignores SIGHUP outlives a daemon killed outright, and the next 
   const first = await startDaemon(paths)
   const group = await startJob(paths, `trap '' HUP; sleep 300 & wait`, 2)
   await killed(first)
-  await new Promise((r) => setTimeout(r, 1000))
+  await new Promise((r) => setTimeout(r, 250))
   assert.ok(await alive(group), 'the job ignoring SIGHUP and its child still run once the daemon is gone')
   const next = await startDaemon(paths)
   await until(async () => !(await alive(group)), 10_000, 'the next daemon ends the group the job left')
   next.kill('SIGTERM')
 })
 
-test('a cancel ends the whole group: a member that ignores TERM and HUP is killed once the grace runs out', async () => {
+test('a cancel ends the whole group of a job', async () => {
   const paths = newRoot()
   const daemon = await startDaemon(paths)
-  const group = await startJob(paths, `(trap '' TERM HUP; exec sleep 300) & wait`, 2)
+  const group = await startJob(paths, 'sleep 300 & wait', 2)
   const jobs = await connectJobs(paths.jobsSocket)
   const listed = await jobs.request({ t: 'list' })
   const { id } = (listed as { jobs: { id: string; pid: number }[] }).jobs.find((j) => j.pid === group.pid)!
   assert.equal((await jobs.request({ t: 'cancel', id, by: 'test' })).t, 'ok')
   jobs.close()
-  await until(async () => !(await alive(group)), 10_000, "the job's group ends, the member ignoring TERM included")
+  await until(async () => !(await alive(group)), 10_000, "the job's group ends")
   daemon.kill('SIGTERM')
+})
+
+test('a member that ignores TERM and HUP is killed once the grace runs out', async () => {
+  const startedAt = Date.now()
+  const leader = spawn('sh', ['-c', `(trap '' TERM HUP; exec sleep 300) & wait`], { detached: true, stdio: 'ignore' })
+  const pid = leader.pid!
+  groups.push({ pid, startedAt })
+  await until(async () => (await jobGroup(pid, startedAt)).length === 2, 5000, 'two processes run in the group')
+  const graceMs = 200
+  const began = Date.now()
+  assert.equal(await endGroupWithin(graceMs)(pid, startedAt), 2)
+  assert.ok(Date.now() - began >= graceMs, 'the member ignoring TERM got its grace before SIGKILL')
+  await until(async () => !(await alive({ pid, startedAt })), 2000, 'the group ends, the member ignoring TERM included')
 })
