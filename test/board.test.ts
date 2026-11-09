@@ -622,10 +622,13 @@ test("a log that lost its header reads broken on the floor its directory is on, 
   assert.equal(b.floors.find((f) => f.id === 'tower')!.cards.length, 1)
 })
 
-test("a Stop the fold can't follow breaks its session there: its facts stop, the card reads broken and why, and it can still be killed, then resumed", () => {
-  const log = homed(fixture('stop-without-tasks'))
+const UNFOLLOWABLE = 'the fold threw on purpose'
+
+test("an event the fold can't follow breaks its session there: its facts stop, the card reads broken and why, and it can still be killed, then resumed", () => {
+  const recorded = homed(fixture('stop-without-tasks'))
+  const log = { ...recorded, events: recorded.events.map((e): SessionLog['events'][number] => (e[0] === 8.056 ? [8.056, 'h', { get hook_event_name(): string { throw new Error(UNFOLLOWABLE) } }] : e)) }
   const facts = factsOf(log)
-  assert.deepEqual(facts.broken, { message: "Cannot read properties of undefined (reading 'some')", at: 8.056, code: 'h' })
+  assert.deepEqual(facts.broken, { message: UNFOLLOWABLE, at: 8.056, code: 'h' })
   assert.equal(facts.state.status, 'working')
   assert.equal(facts.state.since, 0.061)
   assert.equal(facts.heardAt, 7.035)
@@ -636,9 +639,9 @@ test("a Stop the fold can't follow breaks its session there: its facts stop, the
   assert.equal(running.attention, 'broken')
   assert.equal(running.waiting, false)
   assert.equal(running.stuck, false)
-  assert.deepEqual(running.broken, { message: "Cannot read properties of undefined (reading 'some')", at: log.header.startedAt + 8056, code: 'h' })
+  assert.deepEqual(running.broken, { message: UNFOLLOWABLE, at: log.header.startedAt + 8056, code: 'h' })
   assert.equal(statusName(running), 'broken')
-  assert.match(gistLine(running), /^× log unreadable past a hook \(.+\): Cannot read properties of undefined \(reading 'some'\)$/)
+  assert.match(gistLine(running), /^× log unreadable past a hook \(.+\): the fold threw on purpose$/)
   assert.deepEqual(speechOf(running), [])
   assert.deepEqual(running.verbs, ['drive', 'submit', 'brief', 'kill', 'send-home'])
 

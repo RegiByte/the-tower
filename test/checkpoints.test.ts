@@ -128,6 +128,9 @@ test('the fold hash covers every module the fold imports, statically or dynamica
   rmSync(dir, { recursive: true })
 })
 
+/** A broken fact's message without the JSON parser's own account of the line, which is the runtime's wording. */
+const withoutParserDetail = (facts: Facts): Facts => ({ ...facts, broken: facts.broken && { ...facts.broken, message: facts.broken.message.replace(/(isn't JSON) \(.*\)$/, '$1') } })
+
 test('a line that isn\'t JSON, left by a host that died mid-write and ended by a let-go, breaks the fold there and the let-go is still folded', () => {
   const name = 'tool-turn'
   const file = path.join(freshCache(), `${name}.jsonl`)
@@ -135,10 +138,10 @@ test('a line that isn\'t JSON, left by a host that died mid-write and ended by a
   const cache = freshCache()
   const before = foldLog(cache, file)!
   writeFileSync(file, '[40.5,"h",{"hook_event_name":"Sto\n[41.25,"h",{"hook_event_name":"tower.letGo"}]\n', { flag: 'a' })
-  const message = 'a line that isn\'t JSON (Unterminated string in JSON at position 33 (line 1 column 34))'
+  const message = 'a line that isn\'t JSON'
   const expected = { ...factsOf(fixture(name)), broken: { message, at: 40.5, code: 'h' }, letGoAt: 41.25 }
-  assert.deepEqual(foldLog(cache, file)!.session.facts, expected, 'from the checkpoint before it')
-  assert.deepEqual(foldLog(freshCache(), file)!.session.facts, expected, 'from the start')
+  assert.deepEqual(withoutParserDetail(foldLog(cache, file)!.session.facts), expected, 'from the checkpoint before it')
+  assert.deepEqual(withoutParserDetail(foldLog(freshCache(), file)!.session.facts), expected, 'from the start')
   assert.equal(before.session.facts.broken, undefined)
 })
 
@@ -153,7 +156,7 @@ const headless = (first: string, name = 'tool-turn') => {
 }
 
 for (const [first, message] of [
-  ['{"id":"20261002', "its first line isn't JSON (Unterminated string in JSON at position 15 (line 1 column 16))"],
+  ['{"id":"20261002', "its first line isn't JSON"],
   ['null', "its first line isn't a session's header (null)"],
   ['{}', "its first line isn't a session's header ({})"],
   ['[0.1,"o","output"]', 'its first line isn\'t a session\'s header ([0.1,"o","output"])'],
@@ -163,7 +166,7 @@ for (const [first, message] of [
     const cwd = fixture('tool-turn').header.cwd
     const { session, offset } = foldLog(freshCache(), file)!
     assert.deepEqual(session.header, { id: LOST, project: '', cwd, argv: [], startedAt: LOST_AT, cols: 80, rows: 24 })
-    assert.deepEqual(session.facts, { ...initialFacts(session.header), broken: { message, at: 0, code: 'header' } })
+    assert.deepEqual(withoutParserDetail(session.facts), { ...initialFacts(session.header), broken: { message, at: 0, code: 'header' } })
     assert.equal(offset, statSync(file).size)
     assert.equal(readLog(file, screenEvents).log.header.id, LOST)
     assert.ok(readLog(file, screenEvents).log.events.length > 0)
