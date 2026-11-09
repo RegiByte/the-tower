@@ -4,7 +4,7 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "tower-core",
-  "reviewed": "2026-11-07",
+  "reviewed": "2026-11-09",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#restoreWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges", "hub/src/changed-files.ts#changedSince"]
 }
 ---
@@ -36,8 +36,7 @@ as old as the last fetch.
   that names nothing, a hook past the timeout) reads as [`UnreadTree`](ref:hub/src/bridge/worktrees.ts#UnreadTree) with
   what git said, its neighbours read as usual, and the next read of the repo asks it again, so a repair shows by
   itself. It carries no `dirty`, `unpushed` or `absorbed`: an empty status would read as clean, and a clean worktree
-  is one Tidy offers to remove. So the type makes every typed reader of those fields say what an unread one means,
-  and a stale one gets no confident 0: what a reader must go by is the state and `atRisk`. A worktree git lists as
+  is one Tidy offers to remove: a reader goes by the state and `atRisk`. A worktree git lists as
   `prunable` whose folder is still there, its `.git` file gone, is one too: only a missing folder is `lost`. Its state is `unread`: it offers no
   verb, Tidy doesn't list it, it has not landed, and every verb refuses it through
   [`worktreeIn`](ref:hub/src/worktrees.ts#worktreeIn), which `lost` alone outranks: `prune` and `recut` touch only the
@@ -52,7 +51,8 @@ as old as the last fetch.
 - **Tidy and discard.** [`tidyable`](ref:hub/src/worktrees.ts#tidyable) refuses a Tidy whose worktrees or branches
   no longer qualify after a fetch; Tidy then applies its list through the verbs above ([[tidy]]). Work that
   never landed goes only through [`discardable`](ref:hub/src/worktrees.ts#discardable), then
-  [`discard`](ref:hub/src/worktrees.ts#discard), the one call that forces ([[discard]]).
+  [`discard`](ref:hub/src/worktrees.ts#discard), the one verb that forces away a folder that still holds work
+  ([[discard]]).
 - **Changes.** [`changesIn`](ref:hub/src/changes.ts#changesIn) serves `/changes/<id>`: per repo of a session, the diff
   since the ref its work is counted from ([`againstFor`](ref:hub/src/worktrees.ts#againstFor)), untracked files
   included, with the commits since, narrowed by a scope. Git is read on every request, never kept ([[changes-view]]).
