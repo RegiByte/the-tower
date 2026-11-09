@@ -304,8 +304,8 @@ the board and drive the API:
 
 The tower page frames each one sandboxed, at an opaque origin, and relays the board and every API request over
 `postMessage`: the page includes `/tower.js` and uses it as a renderer would. `tower.framed` is true there, and
-`tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view, and (API
-1.104) `('go', { location })` takes it to a location ([Views](#views)), `('display', { subject, view? })` shows a
+`tower.ui('select', { id })`, `('home')` and `('shelf', { project, n })` move the tower page's own view, and
+`('go', { location })` takes it to a location ([Views](#views)), `('display', { subject, view? })` shows a
 subject, or its key, where its layout puts it. A renderer that hosts no views ignores those two. An `html` or
 `item` page runs on its own at `/run/<project>/<n>`, a `renderer` at `/r/<name>/`, both at the tower's origin.
 Framed, a `renderer` still reads every file below its root but the hidden ones (a path with a part starting with `.`, never served): the tower serves them with CORS, so it may `fetch` them
@@ -363,9 +363,9 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   renderer: one page, across every machine reading the tower, for what only one should do (play a sound, speak). The
   tower holds them in memory and never logs them. `tower.js` does all of it for a page, as `tower.viewer`.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
-  `/conversations/<id>` (each turn with Claude's `steps` since 1.133: its words, its tool calls and the messages it sent), `/conversations/<id>/<conversation>` (one
+  `/conversations/<id>` (each turn with Claude's `steps`: its words, its tool calls and the messages it sent), `/conversations/<id>/<conversation>` (one
   conversation, every turn) and `/conversations/<id>/tool/<call>` (one tool call: its input, its permission check, how
-  it ended; both 1.133), `/archive/<project>`, `/collection/<project>/<collection>/<item>`, the bundled extensions' reads
+  it ended), `/archive/<project>`, `/collection/<project>/<collection>/<item>`, the bundled extensions' reads
   (`/reviews/history/<project>`, `/quota/reads`, and `/policies/runs/<project>?policy&limit`, a policy's runs, newest
   first, each with its worker as it is now), `/landing?project&branch` (what
   landing changed on a branch: each commit landed as an edited copy, with `git range-diff`), `/origins`, `/patterns` (what users found doing with the tower, one story each, from the checkout's `docs/patterns/`), `/extensions` (the extensions the tower runs, none yet, and its resources as braided orders them: layers, start and halt order, dependents, and the graph as Mermaid text; the chain around each verb or hook, each hook's answerers, and the verbs the core's composites call). `/stats?from&to&bucket&project` (epoch ms, `bucket` `hour` or `day`) answers `Stats`
@@ -392,7 +392,7 @@ do. The tower makes a best effort to avoid majors.
 **View state** (marks, a remembered tab, a viewer's preference) goes in `tower.store`: `tower.store.set(key, value)`,
 `await tower.store.get(key)`. It lives in the viewer's browser under keys every page shares, the tower page
 included, so the files you mark viewed in one renderer are viewed in the next; `tower.store.on((key) => …)` hears each
-key the page sets, a page it relays included (API 1.108). `tower.remember` and `tower.recall`
+key the page sets, a page it relays included. `tower.remember` and `tower.recall`
 keep one value for the page alone.
 
 **The viewer's appearance** is `tower.prefs`: the scheme, the text, heading and code faces (any face installed on the
@@ -638,8 +638,9 @@ the library: removing one is a major.
 of every key newer than the manifest's `requires.tower` (`under-declared`), naming the keys and the version to raise
 it to. The declarations [`tower types`](#types-outside-the-checkout) writes carry `@since` on the ctx members, and on
 many of the library's names, a view's kit, the subjects and the board's fields; `tower api` lists each verb with its
-description, its `@since` in it where it has one. A version this document still names beside a thing is one the tower
-says nowhere else yet.
+description, its `@since` in it where it has one. Anything that imports [the library](#the-library) needs tower 1.151,
+the minor it arrived in, so this document names no version below that outside its samples and [Deprecated until
+2.0](#deprecated-until-20); a newer one it names beside a thing is one the tower says nowhere else yet.
 
 Server code reaches the tower's helpers by name, never by a path into its checkout, so a folder copied anywhere still
 loads: `import { mediaTypeOf } from '/lib/files.js'` imports [the library](#the-library), the same line a client writes
@@ -818,7 +819,7 @@ first: `command` (absent in single-command mode), `rateLimits`, `rateLimitsAt`, 
 the limit words in `/lib/cards.js` take one as they take the board. A reading naming a command `argv` no longer holds
 is no entry's. Set `command` from `ctx.commands`, and a reader of several accounts runs one at a time.
 
-**Reviewers** (API 1.95). The reviews extension hires a reviewer with `reviews/hire {project, of, by?, tell?}`: a spawn
+**Reviewers.** The reviews extension hires a reviewer with `reviews/hire {project, of, by?, tell?}`: a spawn
 in a fork of the author's checkout whose `x.reviews.of` is logged before it starts, and whose launch contributor puts
 it in the author's crew and out of the hiring limits (`tower.reports-to`, `tower.exempt`). A card reads it at
 `x.reviews.of` (`reviewerOf` in `/x/reviews/reviews.js`), its `crew` and its `exempt`. A reviewer known only by its first prompt `/tower:review <CALLSIGN>`, reads the same.
@@ -876,9 +877,9 @@ item)` and `boardSubject(board)`, in `/lib/board.js`), then, from `/lib/layout.j
 (what extensions offer on it, drawn after the `actions` a card, a floor or a conversation carries itself), `badgesOf`
 and `actionWords` for a label. To press one, `isCommand(action) ? runCommandWith(board, action, subject, kit) :
 runVerb(action)` (`runVerb` in `/lib/board.js`): a verb is called with its call, a command's module imported from
-`/x/<cap>/` and its export called with `{ tower, board, target, subject, args, kit }` (API 1.104): `kit` is what the
-renderer running it lends, `display`, `toast`, `notice`, `confirm`, `run` and `bus` (`CommandKit` in `/lib/view.js`;
-`notice` and `bus` API 1.128), so "Add to grid" is `kit.display(target, { view: 'grid/grid' })`. `notice(text, action?)` is a toast that
+`/x/<cap>/` and its export called with `{ tower, board, target, subject, args, kit }`: `kit` is what the
+renderer running it lends, `display`, `toast`, `notice`, `confirm`, `run` and `bus` (`CommandKit` in `/lib/view.js`),
+so "Add to grid" is `kit.display(target, { view: 'grid/grid' })`. `notice(text, action?)` is a toast that
 stays while what it tells goes on, standing above the toasts that leave until the command closes it: it answers
 `{ say(text), close() }`, and its action's button runs the action and leaves the notice for the command to close
 (narrate's memo with Hear, on a page that can't play sound yet; a control a notice can't hold, such as narrate's speed
@@ -888,7 +889,7 @@ A renderer whose regions hold no `commands` draws none: `heldActions(region.hold
 Tower 3D's desk does.
 A command's `keys` are its default chords: see [Views](#views), keys.
 
-`target` (API 1.98) is the subject, `{ kind, key, project?, value }`. The value is the card itself on a card (`id` its session), the floor on a floor, the board on
+`target` is the subject, `{ kind, key, project?, value }`. The value is the card itself on a card (`id` its session), the floor on a floor, the board on
 the board, `{ ...shown, card, project }` on a showing, `{ ...item, project, collection }` on an item, `{ ...collection,
 project }` on a collection, `{ ...entry, n, project }` on a shelf entry, `{ ...conversation, card, project }` on a
 conversation, and the entry on an own kind. A subject whose content is text or a file says where it is: an item and a
@@ -953,7 +954,7 @@ UnicodeGraphemesAddon.UnicodeGraphemesAddon }`. Elsewhere, load `/xterm.js`, `/a
 `/addon-unicode-graphemes.js` and `/xterm.css` first, or a copy of your own; without `WebLinksAddon`, only hyperlinks
 a program marks (OSC 8) are links, not the addresses it writes. Without `UnicodeGraphemesAddon`, xterm.js gives most
 emoji one cell where Claude Code gives them two, and an emoji-heavy screen draws misaligned: stray characters after an
-emoji until the next full redraw (API 1.127). The view turns on xterm.js's `allowProposedApi`, which the addon needs. A link opens in a new tab, if it is http(s) (API 1.122). Given
+emoji until the next full redraw. The view turns on xterm.js's `allowProposedApi`, which the addon needs. A link opens in a new tab, if it is http(s). Given
 `io.files`, the file paths written in the terminal are links too, read from its `cwd()` and opened with its `edit`
 (the tower page calls the `edit` verb, which opens the user's editor at the path's `:line`). `io`
 is what the view needs of your renderer: `watch(on)` streams the PTY's messages and answers a function that stops,
@@ -984,7 +985,7 @@ as `<cap>/<name>`:
 ```
 
 - `on`: the kinds it mounts on; a region offers it on those, and only at a `scale` in its `scales`. `item.*` is every
-  collection's item and `collection.<id>` one collection alone (API 1.108): the drafts editor is on `item.drafts` and on
+  collection's item and `collection.<id>` one collection alone: the drafts editor is on `item.drafts` and on
   `collection.drafts`, a new draft, and a collection's view draws a `+` for the view on it alone. `shows`: the kinds
   it is handed through `show` while mounted on one above them (a card, to the grid on its floor), never mounted on.
 - `accepts`: for a subject bearing a type (a shown file, an item), the media types it draws.
@@ -1021,7 +1022,7 @@ visible?(on), tab?(), options?(options), close() }` (`Mount` in `/lib/view.js`);
 stand now, drawn in place, and a view without it is mounted afresh when they change. `ctx` is `{ tower, board, subject, kit, state, options, scale?, args? }`:
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
 where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell); `args`, its
-location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
+location's (a shelf entry's file); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
 `shell/<id>` with the renderer's xterm, font, scheme and keymap, or on `job/<id>`, a job's screen, read only and at
 the job's size), `href(to)` (the hash of the renderer's page
 that displays `to`, a subject, or goes to `to`, a location, when a link takes the page there, for a link drawn in a
@@ -1034,7 +1035,7 @@ it; optional, called as `kit.showing?.(…)`), `location()` (where the renderer 
 `Location` its main view is at, read-only, for a view that marks what is open, such as a tray's row; the renderer
 calls `update` again as it changes; optional as `href` is), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
-presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
+presses, such as `item.head`; or, for a region holding views, the views the layout picks mounted in it, a
 tabs region's tabs among them, `options` by view id over the layout's; for a region of contributions,
 `options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out; it answers `{ update(subject), show?(subject),
 visible?(on), options?(options), close() }`, passing `show`, `visible` and new options on to the views it holds), `run(command, on?)` (a keymap
@@ -1044,24 +1045,24 @@ id of the worker it started, which the renderer awaits as it arrives, so `displa
 nothing once the form closed without one or the view closed first (the renderer then goes to the worker), or when
 `on` is of no floor on the board; a form already open is brought back, answering nothing; where `run('spawn', on)`
 goes to the worker, it stays; optional as `href` is), `display(subject, { view? })`,
-`go(location)` (API 1.108), `bus` (below), `toast(text, action?)`, `notice(text, action?)` (a toast standing
-until closed, API 1.128) and `confirm(text, verb)`. The renderer calls `update` on each
+`go(location)`, `bus` (below), `toast(text, action?)`, `notice(text, action?)` (a toast standing
+until closed) and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
 subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
 `:where([data-view="<id>"])` over `/design.css`'s tokens, brought in a `<style>` inside its host; it never imports
 another view; it keeps its state in `ctx.state`; it wires its own presses; and it calls verbs only on a press inside
 it. A view whose module doesn't load, lacks its export, throws or hasn't mounted in 10 s is one line where it would
 draw, and the page goes on. A view that keeps something in the viewer's record (a dismissal) sets it with
-`tower.store.set`, and every renderer that keeps that record hears it through `tower.store.on` (API 1.108).
+`tower.store.set`, and every renderer that keeps that record hears it through `tower.store.on`.
 
-**The core's views** are modules too, served at `/x/tower/<name>.js` (API 1.108): `tower/skyline` on the board,
-`tower/archive` on a floor, `tower/collection` on a collection, `tower/tray` on one at `row` (API 1.125) and
+**The core's views** are modules too, served at `/x/tower/<name>.js`: `tower/skyline` on the board,
+`tower/archive` on a floor, `tower/collection` on a collection, `tower/tray` on one at `row` and
 `tower/shelf` on a shelf entry, beside the drafts
 extension's `drafts/editor` and the policies extension's `policies/policies` on a floor. Each is an entry of `viewsOf(board)` in `/lib/layout.js`, the core's first,
 with its `module`, `export` and `needs`, and a renderer whose kit lends those hosts it as it hosts any extension's.
 
 
-**Trays** (API 1.125). The tower page draws a floor's collections in `floor.trays`, a row of trays under its workers:
+**Trays.** The tower page draws a floor's collections in `floor.trays`, a row of trays under its workers:
 a region whose subject is the collection (its id names where it sits, on the floor), at `row` scale, drawn once for
 each collection of an open floor. `tower/tray`, on `collection`, draws any collection: its count, unfolding to its
 newest items and a way to all of them in `tower/collection`. An extension draws its own collection's tray with a view
@@ -1103,10 +1104,10 @@ script framed at an opaque origin, in Chrome as in WebKit.
 its own `<dialog>` and look from `/design.css`, works in a frame, and `asking()` says whether it waits, so your keys
 stand back.
 
-**The worker view** (API 1.111). `tower/card` on a card draws its head and declares `card.panes`, its tabs, which it
+**The worker view.** `tower/card` on a card draws its head and declares `card.panes`, its tabs, which it
 asks the kit for as a region. A tabs region's tabs are (view, subject) pairs: the views on the card (`tower/terminal`,
 `tower/brief`, `tower/changes`, the reviews extension's `reviews/thread`, then any of yours on `card`, in the layout's
-`order`), then one per thing the worker showed, by the view its type picks (below; API 1.115), or by another view
+`order`), then one per thing the worker showed, by the view its type picks (below), or by another view
 that takes its type when the location's tab names one (Open Text on a markdown file).
 A tab mounts the first time it is opened and then stays mounted under the one shown, told `visible(false)`, so a
 view that reads only while seen (Changes' poll) stops there. A view on `card` has a tab where its `tab` export
@@ -1130,7 +1131,7 @@ worker's checkout is live and something is offered on lines, a view or a command
 what acts on them. A viewer kind, `lines`, `file`, `said` or `section`, is one a view, a command or a region may be on; a fold on one is
 refused, since the board never carries the subject to fold.
 
-**The composer region** (API 1.135). At the foot of a worker's Brief, under its latest turn, the tower page asks the
+**The composer region.** At the foot of a worker's Brief, under its latest turn, the tower page asks the
 kit for `card.composer`, a region holding one view on the card at `row` scale: what writes to the worker. A view
 `on: ["card"]` with `scales: ["row"]` is drawn there at its natural height, up to the smaller of 320px and 40% of the
 Brief, then scrolls inside; with none offered, or the layout hiding it (`layout["card.composer"].hidden`), the Brief
@@ -1171,7 +1172,7 @@ row per section, level with it as the document scrolls or resizes and never over
 labelled with its section's heading from the source and is a `section.acts` region, so a command `on: ["section"]`
 lands under every section (narrate's Listen reads that section alone, its From here that section and the rest) and
 `show(section)` scrolls the frame to it. `tower/shelf` draws an `md` entry's file the same way, its sections of the
-file, keyed `shelf:<project>/<n>/<file>`, API 1.128.
+file, keyed `shelf:<project>/<n>/<file>`.
 The gutter is hidden while nothing is offered on sections, and it holds contributions only: its rows are placed by
 sections it doesn't size, so a view's own height would run past the next one. A frame where nothing runs hears
 nothing: WebKit (Safari, Tower.app) calls no listener in a document that can't run scripts, even one the page added.
@@ -1185,7 +1186,7 @@ emptied, and a `<base>` or meta refresh removed, before it is drawn. The gutter 
 from the page, each animation frame while the view is seen. Keys pressed with the focus in a document frame reach
 the page's keymap in Chrome only: in WebKit a click outside the frame gives the page its keys back.
 
-**A worker in a view of yours** (API 1.112). Declare a region on `card` holding views at `cell` scale, one at a time,
+**A worker in a view of yours.** Declare a region on `card` holding views at `cell` scale, one at a time,
 as the grid declares `card.cell`, and ask the kit for it on a card: `kit.region(el, 'card.cell', card, { 'tower/card':
 { head } })`. The renderer mounts `tower/card` there at cell scale, its tabs a tabs region of their own (their open tab
 the cell's, not the location's), and its head unless `head` is false; at `cell` it draws no close, which would leave
@@ -1193,7 +1194,7 @@ your view for the skyline. `update` the handle with the card on each board and `
 chord acts on the worker whose cell holds the focus.
 
 At `cell` the worker's head is compact, and with `head` false it is one row: the lamp, the callsign, the tabs. Your
-view speaks to it through the rest of `tower/card`'s options (API 1.113):
+view speaks to it through the rest of `tower/card`'s options:
 
 - `acts`: `[{ id, label, tip?, icon? }]`, your own controls at the end of its head (`icon` a name of `ICON` in `/lib/view.js`,
   drawn in place of the label). A press dispatches a bubbling `act` event on the card's host, `detail.id` the act's.
@@ -1206,8 +1207,8 @@ Listen for the events on the element you gave the region, and hand the handle ne
 same shape as `kit.region`'s): the card draws them in place, keeping its tab, scroll and terminal.
 
 **Views by type.** A kept item and a thing a worker showed are drawn by the view that accepts their type
-(`value.type`, the media type of the file's name, `mediaTypeOf` in `/lib/files.js`), each on `item.*` (API 1.109),
-`shown` (API 1.115) and `file` (API 1.117): `tower/document` markdown (in a frame where nothing runs: raw HTML kept, images
+(`value.type`, the media type of the file's name, `mediaTypeOf` in `/lib/files.js`), each on `item.*`,
+`shown` and `file`: `tower/document` markdown (in a frame where nothing runs: raw HTML kept, images
 read beside the file, its sections taking commands beside it), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
 `video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is `text/plain`), and `tower/file`, which accepts
 nothing, the fallback that leaves a file to Finder and the editor. `tower/link`, on `shown` alone, takes
@@ -1256,7 +1257,7 @@ where in it, a link's fragment. Reading a location, the renderer hands the tab `
 `value` holding only `fragment` (`shownOf` in `/lib/layout.js`), so a view that shows a kind reads what it needs from the
 key. `hashOf` and `locationOf(hash, board)` in `/lib/layout.js` write and read it, and read the
 tower page's older hashes (`#<id>/changes`, `#shelf/<p>/<n>`, …) as the core views they name; `shortHashOf(location)`
-writes a location's older hash when it has one, as the tower page keeps doing (API 1.108).
+writes a location's older hash when it has one, as the tower page keeps doing.
 
 **Display** is the one navigation: `kit.display(subject, { view? })`, or `tower.ui('display', …)` from a framed page.
 `displayed` in `/lib/layout.js` walks the subject's chain (`parentOf`) outward to the nearest level whose main view shows
@@ -1289,7 +1290,7 @@ extension: a link may be a guard, so it is never passed over. Links in a cycle o
 each with a `cycle` problem. A link off on the input's floor is passed over. The core's verbs that do what other verbs
 do (Tidy, `worktree/discard`) call those verbs through the same dispatch, for the same caller, so a link
 on `tower/kill` sees Tidy's kills; Tidy skips and names an entry its verb refuses, a discard stops where it is refused.
-What a worker's `tower show`, `open`, `keep` and `home` of itself log goes through `tower/fact` (API 1.106), so a link
+What a worker's `tower show`, `open`, `keep` and `home` of itself log goes through `tower/fact`, so a link
 there sees each showing, kept item and leave, and may redact, copy or hold it; `keep` creates its item first through
 `tower/collection/create`, so a link that refuses the fact leaves the item kept and unannounced.
 `GET /extensions` lists each `chains` (outermost first), `answers`, `composites` and `launchers`.
@@ -1318,12 +1319,12 @@ so a renderer offering Tidy all lists what it applies by passing the entries, `a
 hook's schemas are listed at `/schema`, under `hooks`, a core hook's with how its answers combine (`combine`: `gate`,
 `merge`, `place` or `report`), whether a failed answer or none refuses the verb (`required`), what it means on a floor
 nobody answers on (`absent`, words: a `label` and a `hint`), the reply field its answers are named in (`field`) and
-the seconds each answer is waited for (`deadline`, API 1.110). Every hook has one: `tower/spawn.gate`'s is 10 s, every
+the seconds each answer is waited for (`deadline`). Every hook has one: `tower/spawn.gate`'s is 10 s, every
 other hook's, an extension's own included, 30 s. An answer still unsettled past it is a failed answer, as a throw is:
 a `hook` problem on its answerer, `{ok: false, code: 'internal'}` among the answers, and what it answers later is
 ignored.
 On a floor where no running extension that takes part answers a core hook with `absent` words, the core puts them
-there as a badge, `board.adds['floor:<project>'].badges` with `cap: 'tower'` (API 1.107): a floor where reviews is off
+there as a badge, `board.adds['floor:<project>'].badges` with `cap: 'tower'`: a floor where reviews is off
 reads "Discards refused" and "Nothing filed". A hook the core answers itself (`core`, its words) is never flagged.
 
 **The gate.** The core raises `tower/spawn.gate` on every spawn, resume and fork, once the launch
@@ -1345,7 +1346,7 @@ export default (ctx) => ({
 })
 ```
 
-**Flows** (API 1.100). Where can an extension take part in a core verb? `tower flows` lists every core verb with the
+**Flows.** Where can an extension take part in a core verb? `tower flows` lists every core verb with the
 stages open to extensions, and `tower flows <verb> [--floor <project>]` prints each of its stages in order, with who
 takes part there now: `open`, answered by extensions (a hook in `answers`, or for `launch` a launch contributor),
 `wrapped`, where the links of `around` run, at both edges of every verb, or `sealed`, the core's alone, each with

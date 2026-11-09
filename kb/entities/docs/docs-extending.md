@@ -22,7 +22,8 @@ and board fields that moved into bundled extensions ([`LEGACY`](ref:hub/src/shar
 else in the document names one.
 
 It names an API version only where a sample needs one (`/tower.js?v=`, `requires`), in that section, and beside a
-thing whose version the tower says nowhere else. For the rest it says once, under Extensions, where to ask: a manifest
+thing no older than the library (1.151, the floor of anything that imports it) whose version the tower says nowhere
+else. For the rest it says once, under Extensions, where to ask: a manifest
 key's and a core hook's `x-since` at `/schema`, the `under-declared` warning of `tower extensions check`, and the
 `@since` in the declarations `tower types` writes.
 
