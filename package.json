@@ -38,6 +38,7 @@
     "test:page-boot": "tsx scripts/page-boot.ts",
     "tool:contrast": "tsx scripts/contrast.ts",
     "tool:claude-check": "tsx scripts/claude-check.ts",
+    "seating:update": "UPDATE_SEATING=1 node --import tsx --import ./test/served-urls.ts --test test/seating.test.ts",
     "served:update": "UPDATE_SERVED=1 node --import tsx --import ./test/served-urls.ts --test test/served.test.ts",
     "schema:board": "tsx scripts/board-schema.ts",
     "tower3d:fixtures": "tsx --import ./src/lent-modules.ts scripts/tower3d-fixtures.ts",
