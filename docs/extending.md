@@ -59,7 +59,7 @@ the tower's origin, so it calls the API directly. `renderer` names the one `/` o
 - A name the core declares (`page`, `week`, `tower3d`) overrides that renderer's fields: `{ "tower3d": { "settings": … } }`
   keeps its root.
 
-A renderer says where it draws in `renderer.json` at its root (API 1.101), and `GET /renderers` serves what it
+A renderer says where it draws in `renderer.json` at its root, and `GET /renderers` serves what it
 declares beside its fields; a renderer with no file declares nothing. The tower page's is
 `renderers/page/renderer.json`:
 
@@ -75,7 +75,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 - `regions`: each place it draws for one subject kind, named `<kind>.<place>` (`item.*` is every collection's items),
   with what it `holds` (`verbs`, `commands`, `badges`, `lines`, `marks`, `tidy`, `asks`, `views`), and for one that
   holds views the room each gets (`scale`: `chip`, `row`, `cell`, `pane`) and whether it shows `one` or `tabs`, and
-  the forms it draws it in when it is full, its default first (`overflows`, API 1.138: [When a region is
+  the forms it draws it in when it is full, its default first (`overflows`: [When a region is
   full](#when-a-region-is-full)). Only `regions` is required. `tower extensions check` and the table under
   [Extensions](#extensions) are read from them.
 - `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `notice`, `confirm`, `href`,
@@ -84,17 +84,17 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
 - `layout`: its own default arrangement of its regions, by region id: `order` (view ids first, in this order; the
-  rest after), `hidden` (not offered there: views, and since API 1.138 actions and an extension's lines), `open` (the
-  tab a tabs region opens on), `options` (each view's own settings there), and since API 1.138 `pinned`, `unpinned`,
+  rest after), `hidden` (not offered there: views, actions and an extension's lines), `open` (the
+  tab a tabs region opens on), `options` (each view's own settings there), and `pinned`, `unpinned`,
   `overflow` and the budgets `lines`, `badges` and `actions` ([When a region is full](#when-a-region-is-full)). The
   config's `renderers.<name>.layout` lies over it, and the viewer's, kept in `tower.store` under `layoutKey(name)`
   (`layout.<name>`), over both: `layoutOf(declared, configured, stored)` in `/lib/layout.js` takes each field from the highest layer that sets it;
   `hidden` from all of them, less an id a higher layer names in its `order`, or pins where that pin stands; and
   `pinned` from all of them, the highest layer's first, less an id a higher layer names in `unpinned`. `GET /renderers` serves the
-  config's as `configLayout` (API 1.104), and what is wrong with it as `layoutProblems` (API 1.138). A region whose
+  config's as `configLayout`, and what is wrong with it as `layoutProblems`. A region whose
   config entry has a `fail` among them is drawn by its default: pass `usableConfigLayout(renderer)` as `configured`,
   the config's layout less each such region, never `configLayout` itself (`layoutKey` and `usableConfigLayout` in
-  `/lib/layout.js`, API 1.142).
+  `/lib/layout.js`).
 - `entry`: the page the file declares for, `index.html` unless set. Two renderers may share a root with different
   entries (Tower 3D's Lab is its `out/` with `lab.html`): only the one whose `entry` matches reads the file.
 
@@ -105,7 +105,7 @@ by the renderer that hosts views, through `/lib/layout.js`.
 ### When a region is full
 
 Extensions may add more to a region than fits it. A region draws a prefix of one ranked list in place and reaches
-the rest through its overflow form (API 1.138, decision `region-overflow`):
+the rest through its overflow form (decision `region-overflow`):
 
 - `menu`: what doesn't fit in the room goes behind a ⋯ control, measured.
 - `count`: a fixed number in place and "+n" for the rest, reached where the subject opens or in the palette. Offer it
@@ -124,7 +124,7 @@ The ranking is shared code in `/lib/layout.js`, so every renderer orders a regio
 - `actionId(action)` and `lineId(line)`: the one id space pins, hides and the viewer's seen name, a command's
   `<cap>/<command>`, a verb's qualified name, and for lines the extension's capability.
 - `heldActions(holds, actions)`, in `/lib/cards.js`: the actions a region holding `holds` draws, as `landing` places
-  them: commands where it holds `commands`, verbs where it holds `verbs` (API 1.142).
+  them: commands where it holds `commands`, verbs where it holds `verbs`.
 - `rankedActions(actions, entry)`: less the hidden, the pinned first in their order, then board order. Pass what you
   draw, after leaving out the commands (`<cap>/<name>`) the holder omits:
   ``rankedActions(heldActions(region.holds, addedActions(board, s)).filter((a) => !(isCommand(a) && omit.includes(`${a.cap}/${a.command}`))), entry)``.
@@ -346,17 +346,17 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
 
 - **Verbs**: `POST /<verb>` with a JSON body: `spawn`, `resume`, `submit`, `keys`, `kill`, `collection/create`,
   `tidy`, the config verbs (`config/add`, `config/append`, `config/set`, `config/remove`, with `GET /config`: one checked
-  edit each, `docs/config.md`; API 1.147) and the rest,
+  edit each, `docs/config.md`) and the rest,
   and the extensions' verbs by their names (`reviews/append`). Every POST carries the header `origin: http://127.0.0.1:<port>`; without it
   the tower answers 403, its guard against other web pages.
-- **Prompts** (API 1.134): `submit` types after whatever the worker's composer holds and is queued while Claude
+- **Prompts**: `submit` types after whatever the worker's composer holds and is queued while Claude
   works; it is refused (`not_at_prompt`) while the worker asks the user something or waits on one of Claude's
   screens, where the text would answer it. `submit/at-prompt` submits only while the worker sits at its prompt (idle,
   done, failed or watching) with nothing in its composer, which the card offers as its `prompt` verb. It refuses
   `not_plain` for text opening with `/` or `!` (Claude's composer runs it as a command or a shell line: the message names the
   worker's terminal), `not_at_prompt` or `composer_holds` as the call arrives, and `moved` when the worker moved while the text was typed:
   Enter is not pressed, and the text waits in the composer. A composer for people calls this one.
-- **Which page the user is at** (API 1.129): a page names itself and its renderer on its board stream,
+- **Which page the user is at**: a page names itself and its renderer on its board stream,
   `GET /board?viewer=<id>&renderer=<name>` (its own id, 8 to 64 letters, digits and dashes, new on every load), and
   calls `POST /viewer/active {viewer}` when it gains focus and as the user acts. The board's `viewers.active` is the
   viewer the user acted on last among those whose stream is open, and `viewers.last.<renderer>` the one of that
@@ -473,7 +473,8 @@ that loads it gets an error saying so, and a client takes its types with `import
 
 **Versioning.** The library has no version of its own: `API_VERSION` is it, and `requires.tower` or a renderer's
 `/tower.js?v=` covers it. `test/served-exports.json` lists each module's runtime, its names with the minor each arrived
-in. Adding a name is a minor. Removing, renaming or changing the meaning of
+in; outside a checkout, the declarations `tower types` writes carry `@since` on a name whose source says one. Adding a
+name is a minor. Removing, renaming or changing the meaning of
 one is a major, after a deprecation: the name stays as an alias marked `@deprecated`, with its replacement, until that
 major. A name marked `@provisional` has met one consumer: it may change in a minor, with a `CHANGELOG.md` line saying
 what to use, and is never removed without a replacement before a major. A second consumer promotes it, for good.
@@ -632,6 +633,14 @@ floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `sign
 calls, its stores, `raise` and `run`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
 the library: removing one is a major.
 
+**Which version a thing arrived in** is the tower's to say. Each manifest key carries the minor it arrived in as
+`x-since` at `GET /schema`, under `extension`, and each core hook under `hooks`. `tower extensions check <dir>` warns
+of every key newer than the manifest's `requires.tower` (`under-declared`), naming the keys and the version to raise
+it to. The declarations [`tower types`](#types-outside-the-checkout) writes carry `@since` on the ctx members, and on
+many of the library's names, a view's kit, the subjects and the board's fields; `tower api` lists each verb with its
+description, its `@since` in it where it has one. A version this document still names beside a thing is one the tower
+says nowhere else yet.
+
 Server code reaches the tower's helpers by name, never by a path into its checkout, so a folder copied anywhere still
 loads: `import { mediaTypeOf } from '/lib/files.js'` imports [the library](#the-library), the same line a client writes
 and the same source the tower runs (since 1.151). A module the library doesn't hold fails at import, listing the
@@ -668,7 +677,7 @@ isn't running, the name goes to the tower as a verb, which says why it can't ans
 such as `curl http://127.0.0.1:4317/<capability>/<path>` (the tower's address is the config's `port`, which `tower
 whoami` names).
 
-**Words** (API 1.153) type an extension's verbs and reads like commands, on the same terms for bundled extensions and
+**Words** type an extension's verbs and reads like commands, on the same terms for bundled extensions and
 yours. Every verb is a word by its name, with nothing to declare; a read is a word when its `cli` names one, and any
 read is reached by its path too (`tower x policies runs/app --policy nightly`). `facts/<fact>` is a writable fact's
 door, typed `--value …`, which is required: `--value ""` reaches the door as an empty string, which clears a fact that reads a blank as cleared. `null` stays at the API; a door that takes JSON types it `--value null`, and a scalar one has no typed form. What `tower x <cap> <name>` reaches is, in order: a word, a door or verb by its name, then the
@@ -720,7 +729,7 @@ Teach your words in your `guidance`, which is what workers read: use the flags, 
 `cli` and has no guidance gets the warning `cli`, at `guidance`: nobody learns a word that nothing names. For Claude
 sessions, a skill in [a plugin of its own](#an-extensions-claude-plugin) can carry the triggers.
 
-**A read that serves a file** (API 1.114) declares `"serves": "file"` and no `reply`: its handler answers `{ file }`, an
+**A read that serves a file** declares `"serves": "file"` and no `reply`: its handler answers `{ file }`, an
 absolute path, and the tower serves that file as it serves a file a worker showed, through the same path: by its media
 type, under the same sandbox headers, an html page with the frame keys appended, so a page served this way runs at an
 origin of its own and reaches nothing of the tower's. Which paths it serves is the handler's responsibility: resolve
@@ -738,9 +747,9 @@ and refuses a file that isn't text (an image, a video) as `invalid`: its bytes a
 A handler's second argument is its `ctx` with the `caller` (`{t, id?, via, within}`: the user, a worker, the tower, or
 the extension itself from its `start` and timers), and the calls it makes carry that caller one step deeper, its verb
 added to `within`; past 8 deep a call is refused. `ctx.cards()` is every card the system holds, the ones the board
-leaves out included, as the core builds them (API 1.107).
+leaves out included, as the core builds them.
 
-**Stores** (API 1.83) are declared in the manifest and named by the capability. `collections` join the floors the
+**Stores** are declared in the manifest and named by the capability. `collections` join the floors the
 extension is on, each named `<cap>` or `<cap>.<name>`; one marked `owned` declares five `doors` (`list`, `read`,
 `create`, `edit`, `delete`, each a verb or read of its own manifest, not deprecated, or a read of the core's such as
 `tower/board`, or `{ "none": "<why the domain has no such act>" }`), and the generic writes (`collection/*`, `tower
@@ -754,7 +763,7 @@ its lineage, all read-only. A `reduce`'s `step` gets the state frozen and return
 the fold before that fact, and an item whose `parse` throws is held with `parsed` undefined until it changes, each
 said in the tower's log.
 
-**Writable facts** (API 1.126) put a value on a card with no server code. A fact that declares `writable` has a door,
+**Writable facts** put a value on a card with no server code. A fact that declares `writable` has a door,
 `POST /<cap>/facts/<name> { session?, value }`, which logs the value as the fact on the session through the host, as
 `ctx.facts.append` does. `value` holds to the fact's schema, or is `null`; `writable` names who may write it: `user`,
 a caller with no `tower-session`, which names the `session`; `self`, a worker writing its own, which leaves `session`
@@ -767,7 +776,7 @@ a door is neither. A worker writes through it with `tower x <cap> facts/<name> -
 no `/`, so no verb takes a door's name; a read whose path matches `facts/<name>` of a writable fact is a `conflict`
 warning, reached by `GET` and never by `tower x`.
 
-**Guidance** (API 1.129) tells the workers when to use an extension and how. A manifest's `guidance` holds `brief`,
+**Guidance** tells the workers when to use an extension and how. A manifest's `guidance` holds `brief`,
 one line of at most 200 characters, and optionally `full`, markdown of at most 4000: when to use its doors, verbs and
 reads, when not to, and how, with the exact commands. `tower whoami` lists the brief of each running extension on the
 worker's floor, one line each, and `tower x <capability>` prints the full text before its doors, verbs and reads, so a
@@ -788,7 +797,7 @@ command that asks for the line.
 "folds": { "card": { "project": { "lines": { "from": "fact:line", "pick": "last" } } } }
 ```
 
-**Fact kinds** (API 1.90). A stream's fact code may declare a `kind` the core folds, its facts then holding to the
+**Fact kinds.** A stream's fact code may declare a `kind` the core folds, its facts then holding to the
 kind's schema as well as their own. The one kind is `tower/rate-limits`, a reading of the account's rate limits
 (`{ limits: [{kind, percentUsed, resetsAt?}], extraUsage?, runtime?, command? }`, Claude's when it names no `runtime`), in a
 system stream: the core folds every started extension's readings beside the sessions' turns' into the board's
@@ -796,12 +805,12 @@ system stream: the core folds every started extension's readings beside the sess
 `u` facts are readings naming their `command`, read by its `tick` slot for each command whose entry of `board.limits`
 has a `turnLimits`, the newest reading a turn of it took, older than its `every`. `ctx.runtime('claude')` says how the config starts a session by its default command
 (`argv`, `env`), `ctx.commands('claude')` lists every command the config names (`name?`, `argv`, `env`, in `argv`'s
-order, API 1.152), both refuse a runtime the tower doesn't know, and `ctx.run(argv, { …, env })` runs a command with
+order), both refuse a runtime the tower doesn't know, and `ctx.run(argv, { …, env })` runs a command with
 `env` set over the scrubbed one, so a reader runs Claude as the sessions do.
 
-**Limits per command** (API 1.152). Limits belong to an account, and an account is reached through an `argv` command.
+**Limits per command.** Limits belong to an account, and an account is reached through an `argv` command.
 A reading's `command` names the one whose account it read; one with no `command`, like every reading written before
-1.152, is the default command's, as the config says when it is read. A turn's reading is its session's command's, by
+readings named one, is the default command's, as the config says when it is read. A turn's reading is its session's command's, by
 the session's header. `board.limits` holds one entry per command in `argv`'s order, always, the default command's
 first: `command` (absent in single-command mode), `rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and
 `extraUsage`. The weekly budget and `/stats`' `budget`, `weekly` and `outside` are the default command's too.
@@ -812,12 +821,12 @@ is no entry's. Set `command` from `ctx.commands`, and a reader of several accoun
 **Reviewers** (API 1.95). The reviews extension hires a reviewer with `reviews/hire {project, of, by?, tell?}`: a spawn
 in a fork of the author's checkout whose `x.reviews.of` is logged before it starts, and whose launch contributor puts
 it in the author's crew and out of the hiring limits (`tower.reports-to`, `tower.exempt`). A card reads it at
-`x.reviews.of` (`reviewerOf` in `/x/reviews/reviews.js`, since 1.97), its `crew` and its `exempt`. A reviewer spawned before 1.95, known only by its first prompt `/tower:review <CALLSIGN>`, reads the same.
+`x.reviews.of` (`reviewerOf` in `/x/reviews/reviews.js`), its `crew` and its `exempt`. A reviewer known only by its first prompt `/tower:review <CALLSIGN>`, reads the same.
 `floor.git` says every dir of the floor is a git repo, so a checkout of it can be forked.
 
-**Folds and contributions** (API 1.84) put an extension on the board. A subject is anything the board shows that
+**Folds and contributions** put an extension on the board. A subject is anything the board shows that
 extensions add to and commands run on, keyed `card:<id>`, `floor:<project>`, `board`, `conversation:<id>`,
-`item.<collection>:<project>/<id>`, since API 1.98 `shown:<card>/<at>` (a thing a worker showed, `at` the epoch ms of
+`item.<collection>:<project>/<id>`, `shown:<card>/<at>` (a thing a worker showed, `at` the epoch ms of
 its `card.shown` entry), `collection:<project>/<collection>` and `shelf:<project>/<n>` (the `n`th of the floor's
 `shelf`), or `<cap>.<kind>:<instance>/<key>` for an extension's own kinds, which it declares in `subjects` (`"thread":
 { "in": "floor", "list": "threads" }`: the keyed entries of `floor.x.<cap>.threads`), keyed by the subject the entry
@@ -835,13 +844,13 @@ board), on floors where it is on, seeing
 only the parts of what it `requires` or `wants`. Its part lands at `subject.x.<cap>` (a card, a floor, the board, or
 an item of a collection it declares), checked by its schema; its actions (`{verb: '<cap>/<verb>', call}`, the verb
 qualified, or `{command, args?}`, the command bare: its own, `"command": "speak"`), badges (`{label, tone?, hint?, href?}`), tidy entries, lines and marks at `board.adds[<subject key>]`, each tagged
-with its `cap`; a mark (API 1.116, `marksOf(board, card)` in `/lib/layout.js`) is `{repo, path, line, to?, label, tone?,
+with its `cap`; a mark (`marksOf(board, card)` in `/lib/layout.js`) is `{repo, path, line, to?, label, tone?,
 hint?, display?}` on lines the card's worker changed, `repo` named as its Changes name it (the main checkout's folder),
 and the Changes draw it on those lines, saying its `hint` (the reviews extension marks the lines each note of the
 worker's thread is about, `n3`, "noted in n3"); `display`, a subject key a click on the mark would show, is drawn by no
-renderer yet; an action may carry `words` of its own (`{label, hint?, destructive?}`, API 1.98), over its verb's or
+renderer yet; an action may carry `words` of its own (`{label, hint?, destructive?}`), over its verb's or
 command's, so one command offered on several things says which; its asks (`{key, subject, title, hint?, since, until?,
-sound: 'wait' | 'offer', actions, opens?}`, `hint` more about it in words drawn on hover (API 1.132), `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
+sound: 'wait' | 'offer', actions, opens?}`, `hint` more about it in words drawn on hover, `subject` a core subject's key: a card, a conversation, a showing, a floor, a collection,
 a shelf entry, an item or the board; `opens`, where going to it leads, see below) in `board.asks`,
 keyed `<cap>:<key>`, which every renderer orders and rings beside the waits. A fold that throws or returns what its
 manifest doesn't declare costs its part on that subject, and its dependents' there, as a `threw` or `shape` problem;
@@ -852,14 +861,14 @@ has its `ctx.board`.
 its own modules and packages, and what it imports from the tower's `src/` loaded from the URL the tower serves it at,
 so it shares one instance with the page. An import of the library (`/lib/…`), of `/tower.js` or of an extension's client
 (`/x/…`) stays that URL, in a checkout or out of it, so a client outside the tower's folder imports them the same way. `/tower.js` run on a page that already has `window.tower` leaves it as it is. Each
-of `commands` is one of its modules' exports, with `words`, which may name its `icon` (API 1.130): one of the core's
+of `commands` is one of its modules' exports, with `words`, which may name its `icon`: one of the core's
 icons by name (`ICON` in `/lib/view.js`, `"play"`), or an SVG of its client folder by its path there (`"speaker.svg"`),
 which renderers draw as a mask in the ink of the control, so one glyph serves both palettes; a path to no file there
 refuses the extension. A region drawing commands as glyphs alone (the tower page's `shown.tab`, inside an open shown
 tab) takes the label and hint as the tip, and draws the label of one without an icon; `glyphOf(board, action)` in
 `/lib/layout.js` answers `{t: 'core', name}` or `{t: 'svg', href}`. Its `on` offers it on every subject of those kinds with
 no fold needed (`"on": ["item.drafts"]`, or `"item.*"` for every collection's items, or `"lines"`, lines picked in a
-worker's Changes, since API 1.116), whether the extension folds or not; one with no `on` is the palette's alone. Its `accepts` (API 1.98) narrows that to the subjects whose
+worker's Changes), whether the extension folds or not; one with no `on` is the palette's alone. Its `accepts` narrows that to the subjects whose
 `value.type` it lists: media types, `"text/markdown"`, or a top-level type's every subtype, `"image/*"`; a subject
 with no type is offered none of them. A renderer draws a subject's actions and badges with the library: name the
 subject (`cardSubject(card)`, `floorSubject(floor)`, `shownSubject(card, shown)`, `itemSubject(project, collection,
@@ -877,7 +886,7 @@ menu, is an element of the command's own). `bus` is the page's viewer subjects (
 section reads its document's other sections with `bus.under(target.value.of, 'section')`, and marks what it acts on.
 A renderer whose regions hold no `commands` draws none: `heldActions(region.holds, actions)` leaves them out, as
 Tower 3D's desk does.
-A command's `keys` (API 1.104) are its default chords: see [Views](#views), keys.
+A command's `keys` are its default chords: see [Views](#views), keys.
 
 `target` (API 1.98) is the subject, `{ kind, key, project?, value }`. The value is the card itself on a card (`id` its session), the floor on a floor, the board on
 the board, `{ ...shown, card, project }` on a showing, `{ ...item, project, collection }` on an item, `{ ...collection,
@@ -886,7 +895,7 @@ conversation, and the entry on an own kind. A subject whose content is text or a
 shown file carry `text`, the path `tower.text` reads it at (`collection/<project>/<collection>/<id>`,
 `shown/<session><target>`), and `type`, its media type by its file's extension (`text/markdown`, `image/png`,
 `application/octet-stream` when the tower doesn't know it). An address a worker showed, a url or a link, carries itself
-as its `body` and the type `text/uri-list` (API 1.115). `textOf(tower, target)` in `/lib/board.js` reads a subject's
+as its `body` and the type `text/uri-list`. `textOf(tower, target)` in `/lib/board.js` reads a subject's
 text: its `body` when a renderer hands the text itself, else what `text` reads; it throws on a subject that bears
 neither, so a command that reads text declares `accepts`.
 
@@ -921,7 +930,7 @@ An ask (`board.asks`) is listed with the waits by the tower page, under its floo
 and said, notified and rung there and in Tower 3D. The Week draws no contributions. A renderer of your own draws
 whatever it reads.
 
-**Where an ask leads** (API 1.156). Going to an ask opens its subject: a worker, else its floor. An ask answered in a
+**Where an ask leads.** Going to an ask opens its subject: a worker, else its floor. An ask answered in a
 view of its own says so with `opens: {view, subject?}`, a view by its id and the core subject's key to open it on,
 the board with none, any extension's view or the core's. Next-waiting and a click on its notification go there, and a
 viewer already on that view and subject is at the ask, so next-waiting moves past it. The page's ask row still opens
@@ -958,7 +967,7 @@ is not the renderer passes `keymap: () => board.keys` and `run: () => false`, wh
 
 ### Views
 
-A view (API 1.104) is a module that draws one subject into an element a renderer gives it, the core's and an
+A view is a module that draws one subject into an element a renderer gives it, the core's and an
 extension's alike: the tower page mounts one in its main pane at a location, so a reload, a link and Back keep it.
 [`examples/extensions/grid`](../examples/extensions/grid/) is one to copy. The manifest declares each by name, served
 as `<cap>/<name>`:
@@ -982,18 +991,17 @@ as `<cap>/<name>`:
 - `needs`: the kit members it can't draw without. `options`: the JSON Schema of its options in a region's layout,
   which `tower config check` holds the config's layout to.
 - `regions`: those it declares inside it, each in the manifest's `regions` by id. One id has one meaning: two
-  extensions declaring it with other fields are both refused. A region it declares may carry its default `layout`
-  (API 1.114): `order`, `hidden` and each view's `options`, as a renderer's layout writes them. Pins, the form and
+  extensions declaring it with other fields are both refused. A region it declares may carry its default `layout`:
+  `order`, `hidden` and each view's `options`, as a renderer's layout writes them. Pins, the form and
   budgets are the user's, and a manifest naming them is refused. It is the bottom layer, under the renderer's own
   (`renderer.json`), the config's and the viewer's, each field taken from the highest layer that sets it and
   `hidden` from all of them less a view a higher layer orders: `declaredLayout(board, declared)` in
   `/lib/layout.js` lays the defaults of every started extension under a renderer's own, for `layoutOf`. So the explorer's
   `file.open` draws code with its own view, and a user's config line takes it back. An extension lays out only its own
-  regions: the board carries no extension's layout of a region a renderer declares (`card.head`, `card.panes`; API
-  1.138), and `tower extensions check` and the board warn about it.
+  regions: the board carries no extension's layout of a region a renderer declares (`card.head`, `card.panes`), and `tower extensions check` and the board warn about it.
 - `keys`: default chords that display the subject in focus with it. On a view that is a worker's tab (`on` holds
-  `card`, `scales` holds `pane`), a chord that stays bound makes the tab a pane, with nothing else to declare (API
-  1.159): `panesOf(board)` in `/lib/keys.js` lists it, and the tower page keeps the tab fixed in the row, names its
+  `card`, `scales` holds `pane`), a chord that stays bound makes the tab a pane, with nothing else to declare:
+  `panesOf(board)` in `/lib/keys.js` lists it, and the tower page keeps the tab fixed in the row, names its
   chord in the tab's tip, lists it on the `?` sheet and in the palette, and opens it the way ⌃⇧1 opens the terminal,
   from a terminal too: on the worker in focus, else the main pane's, focus landing on the tab. With no worker on screen
   the chord does nothing, unless focus is on another subject the view is on. A view on a card that already had a chord
@@ -1001,7 +1009,7 @@ as `<cap>/<name>`:
   renderer that draws no views, such as Tower 3D, opens only the panes it knows by `name`, so the chord does nothing
   there.
 
-**An extension's settings reach its client on the board** (API 1.154), with no server code: `settingsOf(board, 'grid')`
+**An extension's settings reach its client on the board**, with no server code: `settingsOf(board, 'grid')`
 from `/lib/board.js` reads them as they stand, its schema's defaults filled in, and `floorSettingsOf(board, 'grid', floor)`
 reads them on one floor. A view hears a change in its `update`. They are `settings` and `floorSettings` on each entry of
 `board.extensions`, for any renderer or worker to read. Change one through the config verbs: `config/add` at
@@ -1010,33 +1018,33 @@ credential ([the config](config.md)): an integration that needs one keeps it in 
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
 visible?(on), tab?(), options?(options), close() }` (`Mount` in `/lib/view.js`); `options` takes its options as they
-stand now, drawn in place, and a view without it is mounted afresh when they change (API 1.113). `ctx` is `{ tower, board, subject, kit, state, options, scale?, args? }`:
+stand now, drawn in place, and a view without it is mounted afresh when they change. `ctx` is `{ tower, board, subject, kit, state, options, scale?, args? }`:
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
-where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell, API 1.112); `args`, its
+where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell); `args`, its
 location's (a shelf entry's file, API 1.108); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
 `shell/<id>` with the renderer's xterm, font, scheme and keymap, or on `job/<id>`, a job's screen, read only and at
-the job's size, API 1.150), `href(to)` (the hash of the renderer's page
+the job's size), `href(to)` (the hash of the renderer's page
 that displays `to`, a subject, or goes to `to`, a location, when a link takes the page there, for a link drawn in a
 frame where nothing runs, which can only navigate: for a subject, the location it is displayed at, which a reload
-reads again; API 1.121, and optional: no view needs it, and in a renderer that doesn't lend it `tower/document` and
+reads again; optional: no view needs it, and in a renderer that doesn't lend it `tower/document` and
 `tower/shelf` draw the links they would place, to another file, as refused, the rest of each view as before),
 `showing(subject)` (told by a view that shows a subject below its own, such as a file its tree opened: in a tab the
 location names, the location then names it in the pane's `shows`, so a reload, the history and a copied link land on
-it; API 1.124, and optional, called as `kit.showing?.(…)`), `location()` (where the renderer is now, the
+it; optional, called as `kit.showing?.(…)`), `location()` (where the renderer is now, the
 `Location` its main view is at, read-only, for a view that marks what is open, such as a tray's row; the renderer
-calls `update` again as it changes; API 1.125, and optional as `href` is), `region(host, id, subject, options?)` (one of the
+calls `update` again as it changes; optional as `href` is), `region(host, id, subject, options?)` (one of the
 renderer's regions inside the view, filled the renderer's way: what extensions add to the subject, run by its
 presses, such as `item.head`, API 1.108; or, for a region holding views, the views the layout picks mounted in it, a
-tabs region's tabs among them, `options` by view id over the layout's, API 1.111; for a region of contributions,
-`options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out, API 1.113; it answers `{ update(subject), show?(subject),
+tabs region's tabs among them, `options` by view id over the layout's; for a region of contributions,
+`options` is `{ omit }`, the commands (`<cap>/<name>`) it leaves out; it answers `{ update(subject), show?(subject),
 visible?(on), options?(options), close() }`, passing `show`, `visible` and new options on to the views it holds), `run(command, on?)` (a keymap
 command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), `spawn(on)` (the same form on the floor
 `on` is or is of, or on a draft, for a view that keeps its place, as the grid's New worker… does: it resolves with the
 id of the worker it started, which the renderer awaits as it arrives, so `display('card:<id>')` lands on it, or with
 nothing once the form closed without one or the view closed first (the renderer then goes to the worker), or when
 `on` is of no floor on the board; a form already open is brought back, answering nothing; where `run('spawn', on)`
-goes to the worker, it stays; API 1.146, and optional as `href` is), `display(subject, { view? })`,
-`go(location)` (API 1.108), `bus` (below, API 1.118), `toast(text, action?)`, `notice(text, action?)` (a toast standing
+goes to the worker, it stays; optional as `href` is), `display(subject, { view? })`,
+`go(location)` (API 1.108), `bus` (below), `toast(text, action?)`, `notice(text, action?)` (a toast standing
 until closed, API 1.128) and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its
 subject leaves the board. A view draws only inside its host, which carries `data-view="<id>"`, with styles scoped
@@ -1112,7 +1120,7 @@ badges, lines and actions each where `tower/card` places them, `card.panes`' tab
 (`views`). It keeps the last four workers left drawn and hidden, told `visible(false)`, so one is as it was left when
 gone back to.
 
-**Picked lines** (API 1.116). Lines picked in a worker's Changes are a `lines` subject (`linesSubject` in `/lib/board.js`:
+**Picked lines.** Lines picked in a worker's Changes are a `lines` subject (`linesSubject` in `/lib/board.js`:
 the card, the repo, the path, the range and the lines as they read, `quote`), which only the page that picked them
 holds. Under them the Changes ask the kit for `lines.acts`, a region holding commands and one view at `row` scale: a
 command `on: ["lines"]` runs on the lines, and a view `on: ["lines"]` is drawn there, as the reviews extension's
@@ -1131,7 +1139,7 @@ the call is `submit/at-prompt`, which says why it refused ([The API](#the-api)).
 `tower.store`, by card. Tower 3D draws no `card.composer`. [`examples/extensions/chat`](../examples/extensions/chat/) is one to copy: a
 text box that sends with the keymap's `submit` chord and says each refusal's message under it, keeping the text.
 
-**The bus** (API 1.118). What a view draws that the board never carries, and that a user can still point at, is a
+**The bus.** What a view draws that the board never carries, and that a user can still point at, is a
 viewer subject: a prompt or an answer in the Brief (`said`), a section of a markdown document (`section`), lines
 picked in Changes. A view publishes one on `kit.bus`, `{ publish(subject, of), clear(key), at(key), under(of, kind?),
 on(kind, fn) }`, under the key of the subject it is of: the renderer holds one bus per page, so four grid cells each
@@ -1140,7 +1148,7 @@ after the board, so a command pressed in a region on the subject, a chord presse
 `display(key)` all reach it; what a view published is cleared when it closes. `busOf()` in `/lib/layout.js` makes one for a
 renderer of your own.
 
-A mark (API 1.128) says what is happening to a viewer subject now, as one capability sees it: `bus.mark(key, cap,
+A mark says what is happening to a viewer subject now, as one capability sees it: `bus.mark(key, cap,
 { label })` puts it, `bus.mark(key, cap, undefined)` lifts it, and `bus.marks(key)` answers each capability's, `{
 label, cap }`. Marks are held by key, apart from the subjects, so a view that draws its subject again (a document
 opened anew) draws its marks too; `onMark(kind, fn)` tells `fn` the key as a mark on a key of that kind is put or
@@ -1150,8 +1158,8 @@ lifts it: narrate marks the section it reads `Listening`, moves it as it reads o
 the frame lit; other views draw no marks yet.
 
 - `said`: `saidSubject` in `/lib/board.js`, keyed `said:<session>:<conversation>:<startedAt>:<side>`, of its
-  conversation, carrying its words as `body` and the type `text/markdown`. `side` is `prompt`, `answer`, or (since
-  1.133) `step.<n>`: Claude's words between tool calls, or a message it sent, the `n`th of the turn's steps. The Brief asks the kit for `said.acts`
+  conversation, carrying its words as `body` and the type `text/markdown`. `side` is `prompt`, `answer`, or
+  `step.<n>`: Claude's words between tool calls, or a message it sent, the `n`th of the turn's steps. The Brief asks the kit for `said.acts`
   beside each copy button, where anything is offered on `said`, and takes `show(said)`, scrolling to it.
 - `section`: keyed `section:<of key>#<n>`, of the showing or item the document is (`value.of`), carrying `heading`,
   its markdown as `body` and the document's type. A document splits before each heading of the shallowest level that
@@ -1200,7 +1208,7 @@ same shape as `kit.region`'s): the card draws them in place, keeping its tab, sc
 **Views by type.** A kept item and a thing a worker showed are drawn by the view that accepts their type
 (`value.type`, the media type of the file's name, `mediaTypeOf` in `/lib/files.js`), each on `item.*` (API 1.109),
 `shown` (API 1.115) and `file` (API 1.117): `tower/document` markdown (in a frame where nothing runs: raw HTML kept, images
-read beside the file, its sections taking commands beside it, API 1.118), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
+read beside the file, its sections taking commands beside it), `tower/html` a page framed at an origin of its own, `tower/image` `image/*`, `tower/video`
 `video/*`, `tower/text` `text/*`, JSON and NDJSON as written (code is `text/plain`), and `tower/file`, which accepts
 nothing, the fallback that leaves a file to Finder and the editor. `tower/link`, on `shown` alone, takes
 `text/uri-list`, an address a worker showed: a url framed as it is, a link as a page whose one click opens it. An
@@ -1224,18 +1232,18 @@ the region's whole list since `order` also places its tabs:
 } } }
 ```
 
-A file in a worker's checkout is a viewer subject of its own (API 1.114), `file:<card>/<repo>/<path>`, made by
+A file in a worker's checkout is a viewer subject of its own, `file:<card>/<repo>/<path>`, made by
 `fileSubject({ card, project, repo, path, file, text, type })` in `/lib/board.js`, a child of its card: `repo` named as a
-review anchor names it (`repoName`), `file` its absolute path, optional (API 1.117; the Finder and editor buttons of a file left to them), `text` the read path its content is served at (an extension's read that serves
+review anchor names it (`repoName`), `file` its absolute path, optional (the Finder and editor buttons of a file left to them), `text` the read path its content is served at (an extension's read that serves
 a file, above) and `type` its media type. A view of yours that finds a file hands it to a region on `file` it
 declares, and the layout picks among the views on `file` the one that draws it. The core's views by type are on `file` too, so
 it is drawn like a showing; a view of an extension's for a type (the files example's `files/code`) takes over where the
-layout names it first. `fragment` (API 1.120) is where to open it, a heading's slug or an element's id, which
+layout names it first. `fragment` is where to open it, a heading's slug or an element's id, which
 `tower/document` scrolls to. A relative link in a markdown file of a checkout names another file of its repo:
 `linkedFile(from, href)` in `/lib/board.js` resolves it (undefined when it climbs out of the repo), and `tower/document`
 links it to the hash `kit.href` gives it. Display walks up to its card, whose tabs hand it to a view that `shows:
 ["file"]`, as the files example's explorer does to open it in its tree; the location names the file in its pane
-(`shows`, the link's fragment its arg), so the link is an address a reload or another tab reads again (API 1.124).
+(`shows`, the link's fragment its arg), so the link is an address a reload or another tab reads again.
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
 source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type.
@@ -1243,7 +1251,7 @@ source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view
 **Locations.** Where a renderer is, `{ view, subject?, pane?, args? }`, is written in its URL by one grammar,
 `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>[/<shows>[/<arg>…]]]]`, each key and arg one
 `encodeURIComponent` segment: `#v/grid/grid/floor%3Alab`. The pane, `{ view, subject?, shows?, args? }`, is the tab
-open; `shows` (API 1.124) is the key of a subject below the tab's that it shows, a file in a Files tab, and `args`
+open; `shows` is the key of a subject below the tab's that it shows, a file in a Files tab, and `args`
 where in it, a link's fragment. Reading a location, the renderer hands the tab `show(subject)` with that key and
 `value` holding only `fragment` (`shownOf` in `/lib/layout.js`), so a view that shows a kind reads what it needs from the
 key. `hashOf` and `locationOf(hash, board)` in `/lib/layout.js` write and read it, and read the
@@ -1269,7 +1277,7 @@ would fire with a keymap chord, a chord a renderer keeps, one the config set for
 extension's default is dropped (both, in the last case), each with a problem on its extension. From a framed page
 with scripts only a view's chord runs: a command's is code, and any script can claim a key.
 
-**Middleware and hooks** (API 1.85). `around` wraps verbs and hooks, by qualified name (`"tower/spawn": {}`,
+**Middleware and hooks.** `around` wraps verbs and hooks, by qualified name (`"tower/spawn": {}`,
 `"chime/ring": { "after": ["audit"] }`), each one the core's, its own, or of a capability it `requires` or `wants`; its
 code is `around[<name>](input, next, ctx)`, which calls `next` with the input to pass on or answers without calling
 it. Every call runs through the chain around its verb, whoever makes it: outermost first, each declared `before`
@@ -1284,7 +1292,7 @@ on `tower/kill` sees Tidy's kills; Tidy skips and names an entry its verb refuse
 What a worker's `tower show`, `open`, `keep` and `home` of itself log goes through `tower/fact` (API 1.106), so a link
 there sees each showing, kept item and leave, and may redact, copy or hold it; `keep` creates its item first through
 `tower/collection/create`, so a link that refuses the fact leaves the item kept and unannounced.
-`GET /extensions` lists each `chains` (outermost first), `answers`, `composites` and `launchers` (API 1.100).
+`GET /extensions` lists each `chains` (outermost first), `answers`, `composites` and `launchers`.
 
 `hooks` are points an extension raises inside its own verbs, each a `payload` and an `answer` schema and a `failure`
 (`refuses` or `reported`): `ctx.raise('<name>', payload)` answers each answerer's answer in fold order, each on its
@@ -1294,18 +1302,18 @@ function `answers[<name>](payload, ctx)`; one that throws or answers off the sch
 problem. The core raises `tower/discard.record` (`{project, name, author, tips}` → `{note?, item?}`, `refuses`) in
 `worktree/discard` before anything is removed: the answers are the floor's recovery record (each tip with its `branch`,
 `base`, `head`, `dirty` and `unpushed`; the reviews extension's note and filed thread among them, `item` naming where
-a record is kept, API 1.94), no answer at all refuses the discard as a failed one does, and the answers come back in
+a record is kept), no answer at all refuses the discard as a failed one does, and the answers come back in
 the reply's `x`, by capability. Once the worktrees are removed and the branches deleted, it raises
-`tower/discard.done` (`{project, name, author, tips, kept}` → `{note?, item?}`, `reported` in the reply's `done`;
-API 1.94), where the reviews extension files the thread. It
+`tower/discard.done` (`{project, name, author, tips, kept}` → `{note?, item?}`, `reported` in the reply's `done`),
+where the reviews extension files the thread. It
 raises `tower/tidy.apply` (`{project, keys}` → `{done, skipped}`, `reported`) in `tidy`, after the core's own parts, to
 each capability in the plan's `x` alone, with the keys of the floor's tidy entries it contributed
 (`board.adds['floor:<project>'].tidy`) that the plan carries: an entry no longer listed refuses the whole Tidy, and
 each answer, or why there is none, is the reply's `x.<cap>`. An entry is `{key, label, hint?, does?, kind?, checkout?}`: `does`
-says what applying it does in a row's words, `kind` (`{one, many}`) what it is in Tidy's line (`1 landed thread`;
-API 1.94), `checkout` the checkout it belongs to (a worktree's name, or `main`), which the core passes through unread
-and the autotidy extension reads to apply an entry once that checkout's workers went home (API 1.105); the reviews extension's landed threads are such entries. The floor's `tidy` call carries every entry as `plan.x`
-(API 1.88), so a renderer offering Tidy all lists what it applies by passing the entries, `addedTidyOf(board, floor)` from
+says what applying it does in a row's words, `kind` (`{one, many}`) what it is in Tidy's line (`1 landed thread`),
+`checkout` the checkout it belongs to (a worktree's name, or `main`), which the core passes through unread
+and the autotidy extension reads to apply an entry once that checkout's workers went home; the reviews extension's landed threads are such entries. The floor's `tidy` call carries every entry as `plan.x`,
+so a renderer offering Tidy all lists what it applies by passing the entries, `addedTidyOf(board, floor)` from
 `/lib/cards.js`, to `tidyLine`, `tidyRows` and `tidyAllAsk`: called without them, they word the core's rows alone. Each
 hook's schemas are listed at `/schema`, under `hooks`, a core hook's with how its answers combine (`combine`: `gate`,
 `merge`, `place` or `report`), whether a failed answer or none refuses the verb (`required`), what it means on a floor
@@ -1318,7 +1326,7 @@ On a floor where no running extension that takes part answers a core hook with `
 there as a badge, `board.adds['floor:<project>'].badges` with `cap: 'tower'` (API 1.107): a floor where reviews is off
 reads "Discards refused" and "Nothing filed". A hook the core answers itself (`core`, its words) is never flagged.
 
-**The gate** (API 1.107). The core raises `tower/spawn.gate` on every spawn, resume and fork, once the launch
+**The gate.** The core raises `tower/spawn.gate` on every spawn, resume and fork, once the launch
 contributors merged and before the crew edge, the worktree cut and the host, with `{project, kind: 'spawn' | 'resume'
 | 'fork', runtime, by?, hire, exempt, fields}` (`exempt`: what the contributors exempted it from; `fields`: its spawn
 fields by capability). An answer is `{}` to pass, or `{code: 'limited' | 'refused', message}` to refuse. The core
@@ -1345,13 +1353,13 @@ why. `/schema` serves them as `flows`, and `GET /extensions`' `chains`, `answers
 and `launchers` say who takes part. A stage marked `planned` is listed where it will be raised: nothing raises it yet,
 so no extension can answer it.
 
-**Slots, triggers and checks** (API 1.86). `slots.<name>: { "when": …, "scope"? }` fires `start`'s `slots.<name>({name,
+**Slots, triggers and checks.** `slots.<name>: { "when": …, "scope"? }` fires `start`'s `slots.<name>({name,
 at, project?}, ctx)` at each slot of its rule: `{ "cron": [...], "tz"? }`, crons in the subset the tower says in words,
 or `{ "every": "5m" }`, a period aligned to the UTC clock (`30s`, `5m`, `2h`). The tower's 30 s loop fires a slot once,
 the latest at or before now, while it is within 5 minutes; a `project`-scoped slot fires once per floor where the
 capability is on. A floor's or the board's fold that declares `"adds": ["slots"]` gives slots of its own, `slots:
 [{ key, when }]`, carried at `board.adds[<subject>].slots` and fired through `start`'s `slots['*']` with the slot's `key`
-and the floor (an extension that adds slots requires tower 1.85). Fired is kept in memory only: a slot missed while the tower was down stays missed, and one fired just
+and the floor. Fired is kept in memory only: a slot missed while the tower was down stays missed, and one fired just
 before a restart may fire again, so an extension that needs exactly once keeps its own facts. `triggers.board: {}`
 makes `start` return `board(prev, next)`, pure and synchronous, which answers the calls a board change asks for,
 `[{ verb, input }]`, made as the tower (`{t: 'tower', id: 'board', via: 'loop'}`) to what its `ctx.call` reaches. It is
@@ -1363,7 +1371,7 @@ one of its own reads taking no params, which says "tower down" while the tower i
 stdin?, env? })` runs a command the same way, killed at its timeout (60 s) and at halt. Its `stdin` arrives as a socket,
 which `tower`'s own words don't read: pass their text as a flag. Work that must outlive a restart of
 the tower or the extension (a clone, an install, a build) is a job: `ctx.jobs.start(argv, { cwd, env?, label })`
-answers `{ id }` and `ctx.jobs.cancel(id)` stops it (1.149). The jobs daemon runs it in a PTY nobody types into, so
+answers `{ id }` and `ctx.jobs.cancel(id)` stops it. The jobs daemon runs it in a PTY nobody types into, so
 `env` must stop prompts (`GIT_TERMINAL_PROMPT=0`); `env` is never logged, while `argv` is kept in the jobs log every
 renderer and worker reads, so a secret never goes in `argv`. The job is the capability's, even when a handler starts
 it for someone else. What it led to is the extension's to decide: read the ended jobs it owns on `board.jobs` (a
@@ -1390,7 +1398,7 @@ away from your own system, a checkout of the tower starts a throwaway one with `
 where it is: add the extension to the config there, and run `tower` against it with `npm run -s sandbox -- run tower
 extensions` (header of `scripts/sandbox.ts`).
 
-**Launch** (API 1.87) shapes the workers the tower starts. `spawn.fields` declares fields a spawn sets as `x.<cap>.<field>`
+**Launch** shapes the workers the tower starts. `spawn.fields` declares fields a spawn sets as `x.<cap>.<field>`
 (`{ "role": { "schema": {"type": "string"}, "words": {"label": "Role"}, "options": { "from": "floor.x.roles.options" } } }`):
 each value is parsed by its `schema` and logged in the new session's log as `tower.x.<cap>.<field>` before its PTY
 starts, so a card fold reads it from `own.facts`. Every renderer's spawn form draws a field unless its `form` is
