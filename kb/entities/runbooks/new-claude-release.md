@@ -4,14 +4,12 @@
   "name": "New Claude release",
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
-  "reviewed": "2026-11-07",
-  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/health.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.ts#due", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.read.ts#withoutKept", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
+  "reviewed": "2026-11-09",
+  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/health.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/test/seating.test.ts", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.ts#due", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.read.ts#withoutKept", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
-**Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own: mod events and their
-payloads, classic hook fields, the trust and sign-in screens, the short pastes `submit` sends, the peer
-registry, a transcript saved with the first prompt, and the fullscreen TUI the tower's `--settings` asks for (the list, with where each is read:
-[`CLAUDE_SURFACES`](ref:hub/src/shared/claude.ts#CLAUDE_SURFACES)). When one drifts, nothing crashes: the board
+**Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own, each listed with where it is read
+in [`CLAUDE_SURFACES`](ref:hub/src/shared/claude.ts#CLAUDE_SURFACES). When one drifts, nothing crashes: the board
 goes quietly wrong, with a worker stuck `working`, waits that never come, or a card that stays `booting`
 ([[stuck-booting]]).
 
@@ -32,7 +30,7 @@ What says a release is new to the tower:
 ([`claude-check.ts`](ref:hub/scripts/claude-check.ts#run)) records on the installed release every scenario in
 [`SCENARIOS`](ref:hub/scripts/claude-check.scenarios.ts#SCENARIOS), one per fixture of real Claude's and a few
 with none, and reports, by scenario and event, everything that reads differently from the release the baseline was
-taken on. It exits 0 when nothing does, 1 when there is something to read. About 30 Haiku sessions and six minutes.
+taken on. It exits 0 when nothing does, 1 when there is something to read.
 Before it reports, each scenario that stopped short, replays differently or misses a check of its own sessions is
 recorded again, up to `--retries` times (1 unless set), and only its last attempt is read, the report naming what each
 earlier one missed ([`scenarioDifferences`](ref:hub/scripts/claude-check.report.ts#scenarioDifferences)): Haiku's
@@ -59,7 +57,7 @@ without them reads exit 2 at every slot, a `check-failed` pass, and offers nothi
   the installed release, `?1049h` and `?1006h` in every session's output, and the resume chain.
 - **Held back.** The compaction scenarios run with `--debug-file`, whose `<mod>: <event> bypassed by
   cc-plugin-sec-default` lines say what Claude's built-in `sec-default` mod kept from the tower's inside a Team or
-  Enterprise organization, as it keeps `session.compact` since 2.1.299 ([[claude-code]]): such an event is read
+  Enterprise organization ([[claude-code]]): such an event is read
   from a classic hook, which still fires. A `sec-default@builtin not seated` line says the run was recorded outside
   one, where nothing is kept, and the report names that condition
   ([`unseatedBecause`](ref:hub/scripts/claude-check.read.ts#unseatedBecause)). On every run, each recording is also
@@ -79,9 +77,8 @@ keeps folder trust per repo root; each directory the same on every run (`<root>/
 remembers a trusted path, so it asks once and `~/.claude.json` stops gaining an entry per scenario per run, the
 replays leaving the trust screen out; the one scenario that needs the screen (`fresh`, `trust-dialog`) in a directory
 named for the run; the trust screen answered once its output goes quiet (down, then
-enter, as two writes); one writer of the config (two raced and dropped a `repos` entry), which `spawn` needs to list
-each directory; scenarios with the same Claude flags and environment run together, five at a time (at 21, `POST
-/keys` landed up to a minute late); and every step waiting on an event read from the session's log, never on a
+enter, as two writes); one writer of the config, which `spawn` needs to list each directory; scenarios with the same
+Claude flags and environment run together, a few at a time; and every step waiting on an event read from the session's log, never on a
 sleep or the board. Compaction takes `autoCompactEnabled` in the directory's `.claude/settings.local.json`,
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW=100k` and `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=54`; the sign-in screen takes
 `CLAUDE_CONFIG_DIR` at an empty directory.
@@ -97,7 +94,10 @@ sleep or the board. Compaction takes `autoCompactEnabled` in the directory's `.c
    that differs, is drift: fix the fold (`src/bridge/facts.ts`, `status.ts`, `conversation.ts`, `blocked.ts`)
    against the recording in `<root>/recordings/`, replace the fixture with it under the name the tests already
    use (its home path and host replaced, as every fixture's are), write its expectation by hand from what was
-   observed, `npm test`, then raise the range. A new key or event is read for whether the bridge should use it,
+   observed, `npm test`, then raise the range. A replaced fixture that
+   [`seating-frozen.json`](ref:hub/test/fixtures/seating-frozen.json) names fails the seats test, whose seats and
+   galleries were frozen from the old recording ([`seating.test.ts`](ref:hub/test/seating.test.ts)): its cases there
+   are updated in the same commit. A new key or event is read for whether the bridge should use it,
    then accepted.
 3. What stays human: reading the changelog entries the report marks, and provoking a change one names that no
    scenario covers (a targeted scenario, kept with the run's notes); replacing a fixture; the wheel over the tower
