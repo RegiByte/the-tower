@@ -51,11 +51,12 @@ whose waits ring for nobody is the one on screen while the window has the viewer
 and closed as the location leaves, but for the last four workers left, kept drawn and hidden;
 [`display`](ref:hub/renderers/page/page.js#display) places a subject through `/lib/layout.js` onto a view or one of the
 page's routes. A worker the page doesn't hold, opened by a link, a hash or a view, is looked up in the floors' archives
-first: the machine holds it as `looking` until the reads land, and any way the viewer goes meanwhile, but to that
-worker, cancels it ([`viewed`](ref:hub/renderers/page/page.js#viewed), [`lookedUp`](ref:hub/renderers/page/page.js#lookedUp)),
+first: the machine holds it as `looking` until the reads land, at the location asked for last, and any way the viewer
+goes meanwhile, the history's Back included, but to that worker, cancels it ([`viewed`](ref:hub/renderers/page/page.js#viewed), [`lookedUp`](ref:hub/renderers/page/page.js#lookedUp)),
 so a slow read never takes the viewer back. Found, the page goes to it; not found, the page stays where it is and a
 toast says the worker is gone. What the open view shows leaving what the page holds takes the page home, but for a
-worker, the view on it stays while it is looked up the same way ([`subjectLeft`](ref:hub/renderers/page/page.js#subjectLeft)):
+worker, the view on it stays while it is looked up the same way, after any worker the viewer asked for meanwhile
+([`subjectLeft`](ref:hub/renderers/page/page.js#subjectLeft)):
 one sent home that started before today, or whose day ended on screen, leaves the board for its archive with its
 Resume, and goes home only when no archive holds it or the read fails, which a toast says.
 
