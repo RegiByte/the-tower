@@ -224,7 +224,7 @@ a tip for good, and settings turn tips off or bring the dismissed ones back.
 The command palette (⌘K) finds them too: a capability that names a key is that command's hint there, and the rest show when what you type matches them. Capabilities are `CAPABILITIES` in `src/shared/capabilities.ts`. Patterns are markdown files in
 [patterns/](patterns/), one per story: a `# Title`, a one-paragraph summary, then the story, with invented first names
 and no real companies or numbers. A pull request adds one. Any renderer reads them, the capabilities from
-`/capabilities.js` and the patterns at `GET /patterns`.
+`/lib/capabilities.js` and the patterns at `GET /patterns`.
 
 ## Your own renderer
 
