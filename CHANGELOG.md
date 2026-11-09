@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.108.0
+
+A new example extension, and hires that fail at start no longer hold up the worker that hired them. Nothing to
+restart beyond the tower (`tower update` does it). API 1.165, unchanged.
+
+- **Tab line, reminded (`examples/extensions/tabline-remind`).** Tab line with its workers reminded to keep their
+  line. It provides the `tabline` capability, so it takes tab line's place with the same line, the same
+  `tower x tabline` and the lines already written; turn tab line off or remove it, since both are refused while both
+  provide `tabline`. Its `remind` setting (a floor's own value wins): `start`, the default, puts in the brief of every
+  worker started, resumed or forked how to set its line and the line it carries over; `prompt` also reminds Claude
+  workers at each prompt, through a hook in its plugin. Its workers keep their line when they go idle. Tab line itself
+  is unchanged, the manifest-only example. Thanks, Glauco.
+- **A hire that exits at start passes its hirer's turn at once.** A hired worker that exited before it was counted
+  held its hirer, and every hire queued behind it on the same callsign, until the hire wait timed out. The wait now
+  also ends once the hire's log holds its exit.
+- **For contributors:** `test/served-exports.json` no longer carries library digests, which moved on nearly any
+  shared-type edit; removing a served or library name without an API major still fails. Many tests now assert the
+  structure they are about instead of exact prose or whole entries, and the midnight test crosses a local midnight
+  again.
+
 ## v1.107.0
 
 The host now runs the whole command the tower gives it, and the page stops pulling you back to a worker you moved away
