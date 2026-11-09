@@ -41,7 +41,8 @@ board, and you stay on the grid. It shows where the tower lends that form to vie
 | ![The Add worker menu](shots/add-light.png) | ![The Add worker menu](shots/add-dark.png) |
 
 **A cell whose worker went home** says it is no longer on the board and offers **Pick a worker**: the same list of the
-floor's workers on duty that are in no cell, and the one picked takes that cell's place, the others keeping theirs.
+floor's workers on duty that are in no cell, then **New worker…**: the one picked, or started, takes that cell's place,
+the others keeping theirs.
 
 | Light | Dark |
 | --- | --- |

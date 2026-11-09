@@ -142,10 +142,10 @@ export async function mount(host, { tower, board, subject, kit, state }) {
   let paintedFill = ''
 
   /** New worker…, on each floor the grid holds where a worker can start now (none while the host is down), when the renderer lends `kit.spawn`. */
-  const newRowsHtml = () =>
+  const newRowsHtml = (attrs = '') =>
     (kit.spawn ? floorsOf(now, key) : [])
       .filter((f) => can(f, 'spawn'))
-      .map((f) => `<button data-grid-new="${esc(f.id)}">${ICON.plus}${key === 'board' ? `New worker on ${esc(f.name)}…` : 'New worker…'}</button>`)
+      .map((f) => `<button data-grid-new="${esc(f.id)}" ${attrs}>${ICON.plus}${key === 'board' ? `New worker on ${esc(f.name)}…` : 'New worker…'}</button>`)
       .join('')
 
   /** The floor's workers on duty and in no cell, each a button carrying `attr`, by its lamp, callsign and status, or a note that there are none. */
@@ -159,7 +159,7 @@ export async function mount(host, { tower, board, subject, kit, state }) {
   const addMenuHtml = () => `<h3>Add a worker on duty</h3>${freeWorkersHtml('data-grid-add')}${newRowsHtml()}`
 
   /** The menu of workers to put in a gone-home cell. */
-  const replaceMenuHtml = () => `<h3>Put a worker in this cell</h3>${freeWorkersHtml('data-grid-fill')}`
+  const replaceMenuHtml = () => `<h3>Put a worker in this cell</h3>${freeWorkersHtml('data-grid-fill')}${newRowsHtml('data-grid-fill-new')}`
 
   /** What the worker in a cell is told: the heads toggle, the grid's controls, the floor's workers on duty to pick from, and no "Add to grid". */
   const optionsOf = (id) => ({
@@ -238,15 +238,27 @@ export async function mount(host, { tower, board, subject, kit, state }) {
     draw()
   }
 
-  /** The tower's new-worker form on the floor `project`: the worker it starts takes a new cell. @param {string} project */
-  async function startOn(project) {
-    menu.hidePopover()
+  /** The tower's new-worker form on the floor `project`: the id of the worker it starts, drawn as starting until the board carries it. @param {string} project */
+  async function spawnOn(project) {
     const f = now.floors.find((f) => f.id === project)
     if (!f) return
     const id = await kit.spawn(floorSubject(f))
-    if (!id) return
-    starting.add(id)
-    join(id)
+    if (id) starting.add(id)
+    return id
+  }
+
+  /** The worker started on `project` takes a new cell. @param {string} project */
+  async function startOn(project) {
+    menu.hidePopover()
+    const id = await spawnOn(project)
+    if (id) join(id)
+  }
+
+  /** The worker started on `project` takes the place of the gone-home cell `gone`. @param {string} gone @param {string} project */
+  async function startIn(gone, project) {
+    filler.hidePopover()
+    const id = await spawnOn(project)
+    if (id) fill(gone, id)
   }
 
   /** The worker `to` takes the cell of `from`: one already in a cell swaps places with it. */
@@ -270,14 +282,17 @@ export async function mount(host, { tower, board, subject, kit, state }) {
     if (opener) {
       filling = opener.closest('[data-cell]').dataset.cell
       const at = opener.getBoundingClientRect()
-      Object.assign(filler.style, { top: `${at.bottom + 4}px`, left: `${at.left}px` })
-      return filler.showPopover()
+      filler.showPopover()
+      const left = Math.max(8, Math.min(at.left, document.documentElement.clientWidth - filler.offsetWidth - 8))
+      return Object.assign(filler.style, { top: `${at.bottom + 4}px`, left: `${left}px` })
     }
     const filled = e.target.closest('[data-grid-fill]')
     if (filled) return (filler.hidePopover(), fill(filling, filled.dataset.gridFill))
     if (e.target.closest('[data-grid-drop]')) return drop(e.target.closest('[data-cell]').dataset.cell)
     const added = e.target.closest('[data-grid-add]')
     if (added) return (menu.hidePopover(), join(added.dataset.gridAdd))
+    const freshHere = e.target.closest('[data-grid-fill-new]')
+    if (freshHere) return void startIn(filling, freshHere.dataset.gridNew)
     const fresh = e.target.closest('[data-grid-new]')
     if (fresh) return void startOn(fresh.dataset.gridNew)
     if (e.target.closest('[data-grid-flash]')) return void stepFlash()
