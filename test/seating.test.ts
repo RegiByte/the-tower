@@ -28,10 +28,11 @@ function derivedBeside(b: Board, archive: (project: string) => Card[]) {
   }
 }
 
-const sessionLogs = readdirSync(path.join(import.meta.dirname, 'fixtures'))
-  .filter((file) => file.endsWith('.jsonl'))
-  .map((file) => fixture(file.slice(0, -'.jsonl'.length)))
-  .filter((log) => log.header.id !== undefined)
+/** The bridge's seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither. */
+const { sessionFixtures, cases: frozen }: { sessionFixtures: string[]; cases: Record<string, ReturnType<typeof derivedBeside>['bridge']> } = JSON.parse(
+  readFileSync(path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json'), 'utf8'),
+)
+const sessionLogs = sessionFixtures.map((name) => fixture(name))
 
 const configFor = (logs: SessionLog[]): Config => ({
   argv: ['claude'],
@@ -47,13 +48,23 @@ const fixtureView = (now: number) =>
     now,
   })
 
+/** The derivation is the bridge's now, and the bridge's as frozen then (a card with no seat is `null` in the data). */
+function assertSeating(label: string, b: Board, archive: (project: string) => Card[]) {
+  const { derived, bridge } = derivedBeside(b, archive)
+  assert.deepEqual(derived, bridge, label)
+  assert.deepEqual(JSON.parse(JSON.stringify(derived)), frozen[label], `${label}, against the frozen expectations`)
+  ran.push(label)
+}
+
+const ran: string[] = []
+test.after(() => assert.deepEqual(ran.toSorted(), Object.keys(frozen).toSorted(), 'every frozen case ran, and every case that ran is frozen'))
+
 test("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every session fixture", () => {
   const latest = Math.max(...sessionLogs.map((l) => l.header.startedAt))
   for (const now of [0, latest + 2 * DAY]) {
     const view = fixtureView(now)
     const cards = allCards(view)
-    const { derived, bridge } = derivedBeside(board(view), (project) => archiveOf(cards, project, now))
-    assert.deepEqual(derived, bridge, `at ${new Date(now).toISOString()}`)
+    assertSeating(now === 0 ? 'sessions at the epoch' : 'sessions two days after the latest', board(view), (project) => archiveOf(cards, project, now))
   }
 })
 
@@ -61,8 +72,7 @@ test("Tower 3D's seats and galleries, derived from each floor's board and archiv
   for (const file of readdirSync(FIXTURES_DIR)) {
     const { boards }: FixtureFile = JSON.parse(readFileSync(path.join(FIXTURES_DIR, file), 'utf8'))
     for (const [i, { board: b, archive }] of boards.entries()) {
-      const { derived, bridge } = derivedBeside(b, (project) => archive.filter((c) => c.project === project))
-      assert.deepEqual(derived, bridge, `${file}, board ${i}`)
+      assertSeating(`${file}, board ${i}`, b, (project) => archive.filter((c) => c.project === project))
     }
   }
 })

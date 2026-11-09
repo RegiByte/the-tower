@@ -1,0 +1,2355 @@
+{
+ "sessionFixtures": [
+  "api-error",
+  "background-shell",
+  "clear",
+  "compact-auto-outside-org",
+  "compact-auto",
+  "compact-manual-outside-org",
+  "compact-manual",
+  "compact-subagent",
+  "compact-thrashing",
+  "composer-typed",
+  "escaped-prompt",
+  "host-stopped-done",
+  "host-stopped-mid-turn",
+  "interrupt-says",
+  "interrupts",
+  "limits-command-home",
+  "limits-command-work",
+  "lineage-fork",
+  "lineage-heir",
+  "lineage-root",
+  "login-screen",
+  "loop-cron",
+  "loop-wakeup",
+  "monitor",
+  "peer-receiver",
+  "peer-sender",
+  "permission-answered",
+  "permission-denied",
+  "question-dialogs",
+  "resume-source",
+  "resumed",
+  "shown",
+  "step-answers",
+  "stop-without-tasks",
+  "subagent-background",
+  "subagent-fork",
+  "subagent-resume",
+  "subagent-stopped",
+  "task-stopped",
+  "tool-error",
+  "tool-turn",
+  "trust-dialog"
+ ],
+ "cases": {
+  "sessions at the epoch": {
+   "seats": [
+    [
+     "20261002-023241-7cf0",
+     null
+    ],
+    [
+     "20261004-200619-3a54",
+     null
+    ],
+    [
+     "20261002-023909-f6dc",
+     null
+    ],
+    [
+     "20261006-231252-8b08",
+     null
+    ],
+    [
+     "20261006-223109-0995",
+     null
+    ],
+    [
+     "20261006-231450-1578",
+     null
+    ],
+    [
+     "20261006-231451-b815",
+     null
+    ],
+    [
+     "20261006-231359-d6ef",
+     null
+    ],
+    [
+     "20261006-220620-90fb",
+     null
+    ],
+    [
+     "20261006-222935-d1d4",
+     null
+    ],
+    [
+     "20261006-223206-b336",
+     null
+    ],
+    [
+     "20261010-004021-789c",
+     null
+    ],
+    [
+     "20261010-004236-7d2d",
+     null
+    ],
+    [
+     "20261006-231912-eb5b",
+     null
+    ],
+    [
+     "20261006-223041-d8ad",
+     null
+    ],
+    [
+     "20261003-160316-84c9",
+     null
+    ],
+    [
+     "20261003-115109-5e68",
+     null
+    ],
+    [
+     "20261003-115149-aee9",
+     null
+    ],
+    [
+     "20261006-123250-524d",
+     null
+    ],
+    [
+     "20261014-221147-1fb5",
+     null
+    ],
+    [
+     "20261006-123453-4967",
+     null
+    ],
+    [
+     "20261014-221434-e692",
+     null
+    ],
+    [
+     "20261009-224645-c4da",
+     null
+    ],
+    [
+     "20261009-224645-4080",
+     null
+    ],
+    [
+     "20261002-024020-385b",
+     null
+    ],
+    [
+     "20261106-002225-e267",
+     null
+    ],
+    [
+     "20261106-002225-a408",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261005-110842-785c",
+     null
+    ],
+    [
+     "20261005-110840-b008",
+     null
+    ],
+    [
+     "20261005-110819-2deb",
+     null
+    ],
+    [
+     "20261009-002322-5e3f",
+     null
+    ],
+    [
+     "20261009-002405-0153",
+     null
+    ],
+    [
+     "20261004-210927-2c96",
+     null
+    ],
+    [
+     "20261008-225126-1812",
+     null
+    ],
+    [
+     "20261015-123527-8f26",
+     null
+    ],
+    [
+     "20261015-123015-4859",
+     null
+    ],
+    [
+     "20261101-130439-d3bc",
+     null
+    ],
+    [
+     "20261101-124959-a9a8",
+     null
+    ],
+    [
+     "20261107-181538-dcf9",
+     null
+    ],
+    [
+     "20261006-215249-21dd",
+     null
+    ],
+    [
+     "20261006-215201-f54e",
+     null
+    ],
+    [
+     "20261014-162948-bb6d",
+     null
+    ]
+   ],
+   "galleries": [
+    [],
+    [],
+    [],
+    [
+     {
+      "worker": {
+       "id": "20261005-110840-b008",
+       "callsign": "MORIARTY-05"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/tmp/mc-sandbox/lab/reports/lineage.html",
+       "title": "Lineage report",
+       "at": 1791198506945,
+       "session": "20261005-110819-2deb"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/private/tmp/mc-sandbox/lab/findings.md",
+       "at": 1791148305209,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/private/tmp/mc-sandbox/lab/plan.md",
+       "title": "Plan, again",
+       "at": 1791148177674,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://claude.ai/code/artifact/abc",
+       "title": "The artifact",
+       "at": 1791148177430,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "url",
+       "target": "https://example.com",
+       "at": 1791148177190,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/private/tmp/mc-sandbox/lab/report/index.html",
+       "title": "Bench report",
+       "at": 1791148176651,
+       "session": "20261004-210927-2c96"
+      }
+     }
+    ],
+    [],
+    [],
+    [],
+    []
+   ]
+  },
+  "sessions two days after the latest": {
+   "seats": [
+    [
+     "20261106-002225-a408",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [],
+    [],
+    [],
+    [
+     {
+      "worker": {
+       "id": "20261005-110840-b008",
+       "callsign": "MORIARTY-05"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/tmp/mc-sandbox/lab/reports/lineage.html",
+       "title": "Lineage report",
+       "at": 1791198506945,
+       "session": "20261005-110819-2deb"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/private/tmp/mc-sandbox/lab/findings.md",
+       "at": 1791148305209,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/private/tmp/mc-sandbox/lab/plan.md",
+       "title": "Plan, again",
+       "at": 1791148177674,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://claude.ai/code/artifact/abc",
+       "title": "The artifact",
+       "at": 1791148177430,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "url",
+       "target": "https://example.com",
+       "at": 1791148177190,
+       "session": "20261004-210927-2c96"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-210927-2c96",
+       "callsign": "KRATOS-57"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/private/tmp/mc-sandbox/lab/report/index.html",
+       "title": "Bench report",
+       "at": 1791148176651,
+       "session": "20261004-210927-2c96"
+      }
+     }
+    ],
+    [],
+    [],
+    [],
+    []
+   ]
+  },
+  "attention.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-opsx",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090007-opsx",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090014-opsx",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090021-opsx",
+     {
+      "n": 7
+     }
+    ],
+    [
+     "20261004-090028-opsx",
+     {
+      "n": 8
+     }
+    ],
+    [
+     "20261004-090035-opsx",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-opsx",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090049-opsx",
+     {
+      "n": 6
+     }
+    ],
+    [
+     "20261004-090056-opsx",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "breakroom.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-arca",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-arca",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-arca",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090021-arca",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-arca",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090035-arca",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-arca",
+     {
+      "n": 6
+     }
+    ],
+    [
+     "20261004-090049-arca",
+     {
+      "n": 7
+     }
+    ],
+    [
+     "20261004-090056-arca",
+     {
+      "n": 8
+     }
+    ],
+    [
+     "20261004-090000-quie",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-quie",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090014-quie",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-quie",
+     {
+      "beside": "20261004-090014-quie"
+     }
+    ]
+   ],
+   "galleries": [
+    [],
+    []
+   ]
+  },
+  "busy.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-alph",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090007-alph",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090014-alph",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-alph",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090028-alph",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090035-alph",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-alph",
+     null
+    ],
+    [
+     "20261004-090000-beta",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090007-beta",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090014-beta",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-beta",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-beta",
+     null
+    ],
+    [
+     "20261004-090000-gamm",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-gamm",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-gamm",
+     null
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791125100000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/timezones.html",
+       "title": "Where the clocks disagree",
+       "at": 1791124800000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failing-tests.md",
+       "at": 1791124200000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "url",
+       "target": "http://localhost:5173/",
+       "title": "The ingestion dashboard",
+       "at": 1791123000000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/notes/pipeline.md",
+       "at": 1791121800000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/coverage.html",
+       "at": 1791120000000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://github.com/example/alpha/pull/42",
+       "title": "PR #42: pure stages",
+       "at": 1791119700000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/diagrams/stages.svg",
+       "title": "The stages, drawn",
+       "at": 1791119280000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/refactor.md",
+       "title": "Refactor plan",
+       "at": 1791118920000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/first-look.md",
+       "title": "First look at the pipeline",
+       "at": 1791118860000,
+       "session": "20261004-090042-alph"
+      }
+     }
+    ],
+    [
+     {
+      "worker": {
+       "id": "20261004-090021-beta",
+       "callsign": "DIOGENES-95"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://example.com/flamegraphs/board-build",
+       "title": "Flame graph of the board build",
+       "at": 1791125760000,
+       "session": "20261004-090021-beta"
+      }
+     }
+    ],
+    []
+   ]
+  },
+  "busy.json, board 1": {
+   "seats": [
+    [
+     "20261004-090000-alph",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090007-alph",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090014-alph",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-alph",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090028-alph",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090035-alph",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-alph",
+     null
+    ],
+    [
+     "20261004-090000-beta",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090007-beta",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090014-beta",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-beta",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-beta",
+     null
+    ],
+    [
+     "20261004-090000-gamm",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-gamm",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-gamm",
+     null
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090021-alph",
+       "callsign": "RAPUNZEL-46"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/retry.webm",
+       "title": "The retry, recorded",
+       "at": 1791126000000,
+       "session": "20261004-090021-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090021-alph",
+       "callsign": "RAPUNZEL-46"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/retry-budget.md",
+       "title": "Retry budget: what I found",
+       "at": 1791125940000,
+       "session": "20261004-090021-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791125100000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/timezones.html",
+       "title": "Where the clocks disagree",
+       "at": 1791124800000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failing-tests.md",
+       "at": 1791124200000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "url",
+       "target": "http://localhost:5173/",
+       "title": "The ingestion dashboard",
+       "at": 1791123000000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/notes/pipeline.md",
+       "at": 1791121800000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/coverage.html",
+       "at": 1791120000000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://github.com/example/alpha/pull/42",
+       "title": "PR #42: pure stages",
+       "at": 1791119700000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/diagrams/stages.svg",
+       "title": "The stages, drawn",
+       "at": 1791119280000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/refactor.md",
+       "title": "Refactor plan",
+       "at": 1791118920000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/first-look.md",
+       "title": "First look at the pipeline",
+       "at": 1791118860000,
+       "session": "20261004-090042-alph"
+      }
+     }
+    ],
+    [
+     {
+      "worker": {
+       "id": "20261004-090021-beta",
+       "callsign": "DIOGENES-95"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://example.com/flamegraphs/board-build",
+       "title": "Flame graph of the board build",
+       "at": 1791125760000,
+       "session": "20261004-090021-beta"
+      }
+     }
+    ],
+    []
+   ]
+  },
+  "busy.json, board 2": {
+   "seats": [
+    [
+     "20261004-090000-alph",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090007-alph",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090014-alph",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-alph",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090028-alph",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090035-alph",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-alph",
+     null
+    ],
+    [
+     "20261004-090000-beta",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090007-beta",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090014-beta",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-beta",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-beta",
+     null
+    ],
+    [
+     "20261004-090000-gamm",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-gamm",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-gamm",
+     null
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090021-alph",
+       "callsign": "RAPUNZEL-46"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/retry.webm",
+       "title": "The retry, recorded",
+       "at": 1791126000000,
+       "session": "20261004-090021-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090021-alph",
+       "callsign": "RAPUNZEL-46"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/retry-budget.md",
+       "title": "Retry budget: what I found",
+       "at": 1791125940000,
+       "session": "20261004-090021-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791125100000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/timezones.html",
+       "title": "Where the clocks disagree",
+       "at": 1791124800000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failing-tests.md",
+       "at": 1791124200000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "url",
+       "target": "http://localhost:5173/",
+       "title": "The ingestion dashboard",
+       "at": 1791123000000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/notes/pipeline.md",
+       "at": 1791121800000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/coverage.html",
+       "at": 1791120000000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://github.com/example/alpha/pull/42",
+       "title": "PR #42: pure stages",
+       "at": 1791119700000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/diagrams/stages.svg",
+       "title": "The stages, drawn",
+       "at": 1791119280000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/refactor.md",
+       "title": "Refactor plan",
+       "at": 1791118920000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/first-look.md",
+       "title": "First look at the pipeline",
+       "at": 1791118860000,
+       "session": "20261004-090042-alph"
+      }
+     }
+    ],
+    [
+     {
+      "worker": {
+       "id": "20261004-090021-beta",
+       "callsign": "DIOGENES-95"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://example.com/flamegraphs/board-build",
+       "title": "Flame graph of the board build",
+       "at": 1791125760000,
+       "session": "20261004-090021-beta"
+      }
+     }
+    ],
+    []
+   ]
+  },
+  "crews.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-crew",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-crew",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-crew",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090021-crew",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-crew",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090035-crew",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-crew",
+     null
+    ],
+    [
+     "20261004-090049-crew",
+     {
+      "beside": "20261004-090007-crew"
+     }
+    ],
+    [
+     "20261004-090056-crew",
+     {
+      "n": 6
+     }
+    ],
+    [
+     "20261004-090063-crew",
+     {
+      "n": 7
+     }
+    ],
+    [
+     "20261004-090070-crew",
+     {
+      "n": 8
+     }
+    ],
+    [
+     "20261004-090077-crew",
+     {
+      "n": 9
+     }
+    ],
+    [
+     "20261004-090084-crew",
+     {
+      "n": 10
+     }
+    ],
+    [
+     "20261004-090091-crew",
+     {
+      "n": 11
+     }
+    ],
+    [
+     "20261004-090098-crew",
+     {
+      "n": 12
+     }
+    ],
+    [
+     "20261004-090105-crew",
+     {
+      "n": 13
+     }
+    ],
+    [
+     "20261004-090112-crew",
+     {
+      "n": 14
+     }
+    ],
+    [
+     "20261004-090000-pair",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-pair",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090014-pair",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090021-pair",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090028-pair",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090035-pair",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-pair",
+     {
+      "n": 6
+     }
+    ],
+    [
+     "20261004-090049-pair",
+     {
+      "n": 8
+     }
+    ],
+    [
+     "20261004-090056-pair",
+     {
+      "n": 7
+     }
+    ],
+    [
+     "20261004-090063-pair",
+     {
+      "n": 9
+     }
+    ],
+    [
+     "20261004-090070-pair",
+     {
+      "n": 10
+     }
+    ]
+   ],
+   "galleries": [
+    [],
+    []
+   ]
+  },
+  "empty.json, board 0": {
+   "seats": [],
+   "galleries": [
+    [],
+    []
+   ]
+  },
+  "growing.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-grow",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-grow",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-grow",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090021-grow",
+     {
+      "n": 3
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "growing.json, board 1": {
+   "seats": [
+    [
+     "20261004-090000-grow",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-grow",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-grow",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090021-grow",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-grow",
+     {
+      "n": 4
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "growing.json, board 2": {
+   "seats": [
+    [
+     "20261004-090000-grow",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-grow",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-grow",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090021-grow",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-grow",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090035-grow",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-grow",
+     {
+      "n": 6
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "growing.json, board 3": {
+   "seats": [
+    [
+     "20261004-090000-grow",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-grow",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-grow",
+     null
+    ],
+    [
+     "20261004-090021-grow",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-grow",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090035-grow",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-grow",
+     {
+      "n": 6
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "growing.json, board 4": {
+   "seats": [
+    [
+     "20261004-090000-grow",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-grow",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-grow",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090028-grow",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090035-grow",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090042-grow",
+     {
+      "n": 5
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "logbook.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-logs",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090007-logs",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-logs",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090021-logs",
+     {
+      "n": 3
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "night.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-alph",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090007-alph",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090014-alph",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-alph",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090028-alph",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090035-alph",
+     {
+      "n": 5
+     }
+    ],
+    [
+     "20261004-090042-alph",
+     null
+    ],
+    [
+     "20261004-090000-beta",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090007-beta",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090014-beta",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-beta",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090028-beta",
+     null
+    ],
+    [
+     "20261004-090000-gamm",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-gamm",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090014-gamm",
+     null
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791152100000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/timezones.html",
+       "title": "Where the clocks disagree",
+       "at": 1791151800000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090014-alph",
+       "callsign": "FIXER-48"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/failing-tests.md",
+       "at": 1791151200000,
+       "session": "20261004-090014-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "url",
+       "target": "http://localhost:5173/",
+       "title": "The ingestion dashboard",
+       "at": 1791150000000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090028-alph",
+       "callsign": "HUGO-76"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/notes/pipeline.md",
+       "at": 1791148800000,
+       "session": "20261004-090028-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/reports/coverage.html",
+       "at": 1791147000000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://github.com/example/alpha/pull/42",
+       "title": "PR #42: pure stages",
+       "at": 1791146700000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/diagrams/stages.svg",
+       "title": "The stages, drawn",
+       "at": 1791146280000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/refactor.md",
+       "title": "Refactor plan",
+       "at": 1791145920000,
+       "session": "20261004-090042-alph"
+      }
+     },
+     {
+      "worker": {
+       "id": "20261004-090042-alph",
+       "callsign": "MAGELLAN-36"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/alpha/plans/first-look.md",
+       "title": "First look at the pipeline",
+       "at": 1791145860000,
+       "session": "20261004-090042-alph"
+      }
+     }
+    ],
+    [
+     {
+      "worker": {
+       "id": "20261004-090021-beta",
+       "callsign": "DIOGENES-95"
+      },
+      "shown": {
+       "kind": "link",
+       "target": "https://example.com/flamegraphs/board-build",
+       "title": "Flame graph of the board build",
+       "at": 1791152760000,
+       "session": "20261004-090021-beta"
+      }
+     }
+    ],
+    []
+   ]
+  },
+  "party.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-p1xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-p1xx",
+     null
+    ],
+    [
+     "20261004-090014-p1xx",
+     null
+    ],
+    [
+     "20261004-090021-p1xx",
+     null
+    ],
+    [
+     "20261004-090028-p1xx",
+     null
+    ],
+    [
+     "20261004-090035-p1xx",
+     null
+    ],
+    [
+     "20261004-090042-p1xx",
+     null
+    ],
+    [
+     "20261004-090000-p2xx",
+     null
+    ],
+    [
+     "20261004-090007-p2xx",
+     null
+    ],
+    [
+     "20261004-090014-p2xx",
+     null
+    ],
+    [
+     "20261004-090021-p2xx",
+     null
+    ],
+    [
+     "20261004-090028-p2xx",
+     null
+    ],
+    [
+     "20261004-090000-p3xx",
+     null
+    ],
+    [
+     "20261004-090007-p3xx",
+     null
+    ],
+    [
+     "20261004-090014-p3xx",
+     null
+    ],
+    [
+     "20261004-090021-p3xx",
+     null
+    ],
+    [
+     "20261004-090000-p4xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-p4xx",
+     null
+    ],
+    [
+     "20261004-090014-p4xx",
+     null
+    ],
+    [
+     "20261004-090021-p4xx",
+     null
+    ],
+    [
+     "20261004-090000-p5xx",
+     null
+    ],
+    [
+     "20261004-090007-p5xx",
+     null
+    ],
+    [
+     "20261004-090014-p5xx",
+     null
+    ],
+    [
+     "20261004-090000-p6xx",
+     null
+    ],
+    [
+     "20261004-090007-p6xx",
+     null
+    ],
+    [
+     "20261004-090000-p7xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-p7xx",
+     null
+    ],
+    [
+     "20261004-090014-p7xx",
+     null
+    ],
+    [
+     "20261004-090000-p8xx",
+     null
+    ],
+    [
+     "20261004-090000-p9xx",
+     null
+    ],
+    [
+     "20261004-090007-p9xx",
+     null
+    ]
+   ],
+   "galleries": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ]
+  },
+  "review.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-labx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-labx",
+     {
+      "beside": "20261004-090000-labx"
+     }
+    ],
+    [
+     "20261004-090014-labx",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-labx",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090028-labx",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "review.json, board 1": {
+   "seats": [
+    [
+     "20261004-090000-labx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-labx",
+     null
+    ],
+    [
+     "20261004-090014-labx",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-labx",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090028-labx",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "review.json, board 2": {
+   "seats": [
+    [
+     "20261004-090000-labx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090007-labx",
+     {
+      "beside": "20261004-090000-labx"
+     }
+    ],
+    [
+     "20261004-090014-labx",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-labx",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090028-labx",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "tall.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-f1xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f2xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f3xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f4xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f5xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f6xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f7xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f8xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f9xx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f10x",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f11x",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090000-f12x",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ]
+  },
+  "tidy.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-opsx",
+     null
+    ],
+    [
+     "20261004-090007-opsx",
+     {
+      "n": 0
+     }
+    ],
+    [
+     "20261004-090014-opsx",
+     {
+      "n": 1
+     }
+    ],
+    [
+     "20261004-090021-opsx",
+     {
+      "n": 6
+     }
+    ],
+    [
+     "20261004-090028-opsx",
+     {
+      "n": 2
+     }
+    ],
+    [
+     "20261004-090035-opsx",
+     {
+      "n": 3
+     }
+    ],
+    [
+     "20261004-090042-opsx",
+     {
+      "n": 4
+     }
+    ],
+    [
+     "20261004-090049-opsx",
+     {
+      "n": 5
+     }
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  }
+ }
+}
