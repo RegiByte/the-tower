@@ -119,7 +119,8 @@ permission goes in the header and in each frame that needs it
 [`relayedFrameHtml`](ref:hub/renderers/tower3d/src/ui.ts#relayedFrameHtml)). Files are sent whole, with no
 Range answers, so WebKit refuses one as a media element's `src` (`NotSupportedError`): a page plays audio by fetching it
 into a Blob URL, as the narrate example does. An html one gets `<script src="/frame-keys.js">` appended,
-which sends its keys, and nothing else, to the tower framing it ([[keymap]]). So are collection items
+which sends its keys, and nothing else, to the tower framing it ([[keymap]]), and `<script src="/frame-picks.js">`
+before it, which sends its selection ([[passage-picks]]). So are collection items
 (`/collection/<project>/<collection>/<item>`), and [`inCollection`](ref:hub/src/tower/dispatch.ts#inCollection)
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
 showed (`/shown/<id>/<path>`) is served the same way, and only while that session's log shows it ([[agent-show]]). `/submit` types a prompt
