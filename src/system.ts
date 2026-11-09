@@ -68,7 +68,7 @@ const isCommand = (value: unknown): value is string[] => Array.isArray(value) &&
 export const validArgv = (value: unknown): boolean => isCommand(value) || (isObject(value) && Object.keys(value).length > 0 && Object.values(value).every(isCommand))
 
 /** What `config` lacks of the keys every read of it stands on, `undefined` when it has them. */
-const configLack = (config: Config): string | undefined => {
+export const configLack = (config: Config): string | undefined => {
   if (!isObject(config)) return 'it holds no JSON object'
   if (!validArgv(config.argv)) return 'argv must name the command sessions start with, such as ["claude"]'
   if (!isObject(config.projects)) return 'projects must be an object of floors, each with name, hub and repos'

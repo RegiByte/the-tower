@@ -3,7 +3,6 @@
  * root, read and driven over HTTP. No host or terms daemon runs: the one session is a log written into the root, which
  * is all the session reads need.
  */
-import { setTimeout as sleep } from 'node:timers/promises'
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -23,7 +22,6 @@ import type { FloorPart } from '../extensions/reviews/threads.ts'
 import { BUNDLED, type Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import type { Card } from '../src/bridge/board.ts'
-import { PUBLISH_DEBOUNCE_MS } from '../src/tower/publisher.ts'
 import { CORE_VIEWS_DIR, MODULES, sourceUrl, libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
 import type { Library } from './library.ts'
 import { bundledClient } from '../src/extensions.ts'
@@ -1297,45 +1295,28 @@ const handEdit = (change: (config: Record<string, any>) => void) => {
   writeFileSync(CONFIG, JSON.stringify(config))
 }
 
-test('server: a config gone, unreadable or short of what every read stands on is a config error on the board, and the tower stays up', async () => {
+test('server: a config short of what every read stands on, not JSON, gone or unreadable is a config error on the board naming what is wrong, and the tower stays up', async () => {
   const good = readFileSync(CONFIG, 'utf8')
-  const untaken = async () => {
-    await sleep(3 * PUBLISH_DEBOUNCE_MS)
-    for (const _ of [1, 2]) {
-      assert.equal(((await firstEvent('/board')) as { error?: { code: string } }).error?.code, 'config')
-      await sleep(3 * PUBLISH_DEBOUNCE_MS)
-    }
-  }
+  const said = (words: string) =>
+    settled(
+      async () => (firstEvent('/board') as Promise<BoardMsg>),
+      (msg) => 'error' in msg && msg.error.code === 'config' && msg.error.message.includes(words),
+    )
   try {
-    writeFileSync(CONFIG, '{}')
-    await untaken()
-    writeFileSync(CONFIG, JSON.stringify({ argv: { claude: [] }, projects: {} }))
-    await untaken()
     writeFileSync(CONFIG, JSON.stringify({ argv: ['x'], projects: { lab: { name: 'lab' } } }))
-    await untaken()
-    writeFileSync(CONFIG, JSON.stringify({ argv: ['x'], projects: { lab: { name: 'lab', hub: '/tmp', repos: [5] } } }))
-    await untaken()
+    await said(`${CONFIG}: projects.lab.hub must be the path of a directory`)
+    writeFileSync(CONFIG, '{ not json')
+    await said(`${CONFIG} is not valid JSON`)
     rmSync(CONFIG)
-    await untaken()
+    await said(`${CONFIG} is gone`)
     mkdirSync(CONFIG)
-    await untaken()
+    await said(`${CONFIG} can't be read`)
   } finally {
     rmSync(CONFIG, { recursive: true, force: true })
     writeFileSync(CONFIG, good)
   }
   await boardWhere((b) => b.floors.length > 0)
-})
-
-test('server: a config that is not JSON is said on the board with a lost-header log in the system, and the tower stays up', async () => {
-  const good = readFileSync(CONFIG, 'utf8')
-  writeFileSync(CONFIG, '{ not json')
-  try {
-    await sleep(3 * PUBLISH_DEBOUNCE_MS)
-    assert.ok(((await firstEvent('/board')) as { error?: unknown }).error)
-  } finally {
-    writeFileSync(CONFIG, good)
-  }
-  await boardWhere((b) => b.floors.length > 0)
+  assert.equal(tower.exitCode, null)
 })
 
 /**
