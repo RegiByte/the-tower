@@ -3,9 +3,7 @@
  * checks on its shape, reach, runtimes and direction (`test/library.test.ts`).
  */
 import { execFileSync } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
-import os from 'node:os'
+import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { LIBRARY, libraryUrls, MODULES, urlSource, urlVendor } from '../src/tower/served.ts'
 
@@ -18,7 +16,7 @@ export type Runtime = (typeof RUNTIMES)[number]
 
 /** A name's place in the contract. `stability` only while provisional; `deprecated` only on an alias that goes at the next major. */
 export type LibraryName = { since: string; stability?: 'provisional'; deprecated?: { since: string; use: string } }
-export type LibraryModule = { runtime: Runtime; digest: string; values: Record<string, LibraryName>; types: Record<string, LibraryName> }
+export type LibraryModule = { runtime: Runtime; values: Record<string, LibraryName>; types: Record<string, LibraryName> }
 export type Library = Record<string, LibraryModule>
 
 /** What a library file names, by kind, and each line it may not hold. */
@@ -94,45 +92,14 @@ export function typecheck(config: string): { errors: string; files: string[] } {
 
 export const checkRuntime = (runtime: Runtime) => typecheck(runtimeConfig(runtime))
 
-const DECLARED_IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']/g
-
-/** A digest of the declaration text a library module reaches: each file once, by its path under `src/`. */
-function digestOf(root: string, url: string): string {
-  const reached = new Map<string, string>()
-  for (let queue = [path.join(root, 'lib', `${path.basename(url, '.js')}.d.ts`)]; queue.length; ) {
-    const file = queue.pop()!
-    if (reached.has(file)) continue
-    const text = readFileSync(file, 'utf8')
-    reached.set(file, text)
-    for (const [, specifier] of text.matchAll(DECLARED_IMPORT)) {
-      if (specifier!.startsWith('.')) queue.push(path.resolve(path.dirname(file), specifier!.replace(/\.ts$/, '.d.ts')))
-    }
-  }
-  const hash = createHash('sha256')
-  for (const [file, text] of [...reached].sort(([a], [b]) => (a < b ? -1 : 1))) hash.update(`${path.relative(root, file)}\0${text}\0`)
-  return hash.digest('hex').slice(0, 16)
-}
-
-/** The digest of each library module's declarations, emitted once for all of them. */
-export function declarationDigests(): Map<string, string> {
-  const out = mkdtempSync(path.join(os.tmpdir(), 'tower-declarations-'))
-  try {
-    execFileSync(TSC, ['-p', path.join(REPO, 'test', 'runtimes', 'declarations.json'), '--outDir', out], { cwd: REPO, encoding: 'utf8' })
-    return new Map(libraryUrls().map((url) => [url, digestOf(out, url)]))
-  } finally {
-    rmSync(out, { recursive: true })
-  }
-}
-
 /** The library as it stands now, each name with the `since` `listed` gives it, a new one with `since`. */
 export function libraryNow(listed: Library, since: string): Library {
-  const digests = declarationDigests()
   const stamped = (names: Shape['values'], kept: Record<string, LibraryName> | undefined) =>
     Object.fromEntries([...names].sort(([a], [b]) => (a < b ? -1 : 1)).map(([name, mark]) => [name, { since: kept?.[name]?.since ?? since, ...mark }]))
   return Object.fromEntries(
     [...libraryShapes()].map(([url, { values, types }]) => [
       url,
-      { runtime: runtimeOf(url), digest: digests.get(url)!, values: stamped(values, listed[url]?.values), types: stamped(types, listed[url]?.types) },
+      { runtime: runtimeOf(url), values: stamped(values, listed[url]?.values), types: stamped(types, listed[url]?.types) },
     ]),
   )
 }

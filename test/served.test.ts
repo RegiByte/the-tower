@@ -17,8 +17,7 @@ import { libraryNow, type Library } from './library.ts'
 /**
  * Holds what the tower serves to `test/served-exports.json`, and what extensions build on beside it: a removal without a
  * major, or any other difference from the list, fails. `npm run served:update` (`UPDATE_SERVED=1`) rewrites the list from what is served now, a new
- * library name stamped with this minor, a known one keeping its `since`; commit it. A library module's digest moving means a type it reaches changed: the
- * pull request says whether that is a minor or a major.
+ * library name stamped with this minor, a known one keeping its `since`; commit it.
  */
 
 /** What renderers may build on, by URL, as of the API major it was written at. */
