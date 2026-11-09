@@ -40,6 +40,7 @@
         }
       ],
       "crop": "[data-view=\"drafts/editor\"]",
+      "pad": 0,
       "open": "#$WORKER_1"
     },
     {
