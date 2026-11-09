@@ -381,9 +381,13 @@ export const dispatch = defineResource({
     const counted = (by: string, id: string) =>
       system.session(id) !== undefined && (system.session(by)?.facts.hired.includes(id) ?? false) && (system.live()?.ids.has(id) ?? false)
 
+    /** A session has ended once its log holds its exit; one not live yet has not. */
+    const exited = (id: string) => system.session(id)?.facts.exitedFrom !== undefined
+
     /**
      * A session `by` hires, in its hirer's turn, weighed by its gate (`gate`), then logged in the hirer's log. A hire that
-     * can't be logged is killed, so every hire that runs is counted.
+     * can't be logged is killed, so every hire that runs is counted. The turn passes once the hire is counted, or once it
+     * exited, since a worker that ended never runs to be counted.
      */
     const hired = (projectId: string, by: string, spawning: () => Answer | Promise<Answer>) =>
       fromWorker(by, () =>
@@ -401,7 +405,7 @@ export const dispatch = defineResource({
               return { ...(logged as ApiError), message: `Session ${id} started but its hire couldn't be logged, so it was killed (it can be resumed): ${(logged as ApiError).message}` }
             }
             await system.refreshLive()
-            await system.until(() => counted(by, id), TRACK_TIMEOUT_MS)
+            await system.until(() => counted(by, id) || exited(id), TRACK_TIMEOUT_MS)
             return answer
           })
         }),
