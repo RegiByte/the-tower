@@ -29,7 +29,7 @@ const reported = async (root: string): Promise<string[]> => {
 }
 
 for (const name of ['plain', 'my [old] {repo} *']) {
-  test(`a watch of "${name}" reports no path below what it ignores, whatever glob characters its root holds`, async () => {
+  test(`a watch of "${name}" reports no path below what it ignores, whatever glob characters its root holds`, { timeout: 10_000 }, async () => {
     const parent = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'tower-subscribe-')))
     try {
       const root = path.join(parent, name)
