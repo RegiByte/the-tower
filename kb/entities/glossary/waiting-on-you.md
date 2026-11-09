@@ -4,7 +4,7 @@
   "name": "Waiting on you",
   "summary": "A session held by a screen (blocked) or a question (needs_input), or holding an answer or failure that nobody has typed into the session since it arrived, unless the answer is a hire's to its running hirer's prompt; on the board, one wait per such session, in the order to go to them.",
   "in": "tower",
-  "reviewed": "2026-11-07",
+  "reviewed": "2026-11-09",
   "refs": ["hub/src/bridge/status.ts#waitsOnSomeone", "hub/src/bridge/life.ts#attentionOf", "hub/src/bridge/board.ts#waitingOrder", "hub/src/shared/waits.ts#transitions", "hub/src/shared/waits.ts#nextWait", "hub/src/shared/waits.ts#heededWaits"]
 }
 ---
@@ -32,5 +32,5 @@ same events:
 - Dismissing (✕) a wait takes it out of the viewer's way until the worker waits again
   ([`heededWaits`](ref:hub/src/shared/waits.ts#heededWaits)): counts, N, rings, notifications, Tower 3D's lamps and
   edge arrows. It is the viewer's, never a fact: its keys live in `tower.store` (`waits.dismissed`), shared by their
-  renderers in one browser. So does the ring setting (`waits.ring`: once, remind every 30 s, off), with a sound for a
-  question (a screen, a tool, a failure) apart from one for an answer (`SOUNDS`, a score each renderer plays).
+  renderers in one browser. So does the ring setting (`waits.ring`: once, remind every `REMIND_MS`, off), with a sound for a
+  question (a screen, a tool, a failure) apart from one for an answer ([`SOUNDS`](ref:hub/src/shared/rings.ts#SOUNDS), a score each renderer plays).

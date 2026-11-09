@@ -6,12 +6,12 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-07",
-  "reviewed": "2026-11-07",
+  "reviewed": "2026-11-09",
   "refs": ["hub/scripts/sandbox.ts#makeFloorClone", "hub/scripts/sandbox.ts#followCheckout", "hub/scripts/sandbox.ts#mendFloorClone", "hub/scripts/sandbox.ts#checkFloorClone", "hub/scripts/sandbox.ts#floorDamage", "hub/extensions/autotidy/server.ts#start", "hub/src/worktrees.ts#tidyable"]
 }
 ---
 **Problem.** The sandbox's `tower` floor had the checkout itself as hub, and a worktree shares its refs with the real
-repository. A real Tidy on that floor, run as a check, deleted four real branches. The sandbox's promise that nothing
+repository. A real Tidy on that floor, run as a check, deleted real branches. The sandbox's promise that nothing
 reaches the real system held for the tower's files and sockets, not for git, and autotidy could reach the same path.
 
 **Why.** A floor's verbs act on the dirs its config names ([[tidy]], [[autotidy]]). Changing what the floor names
@@ -28,8 +28,8 @@ removes the whole class at once, every verb and every future one, with nothing i
   checkout's HEAD, on a branch or detached. So the floor looks like a real one, a main checkout on `main` level with
   its upstream, and a cut starts from the code under test. The floor shows commits only. Every other branch and tag
   is as of the clone. `branch.<br>.towerBase` isn't cloned, so the floor starts with nothing for Tidy to list.
-- [`mendFloorClone`](ref:hub/scripts/sandbox.ts#mendFloorClone) runs on every `up`. macOS's `tmp_cleaner` deletes
-  files under `/tmp` idle for three days and then empty folders, so a clone left alone breaks a piece at a time, in no
+- [`mendFloorClone`](ref:hub/scripts/sandbox.ts#mendFloorClone) runs on every `up`. macOS deletes idle files under
+  `/tmp` and then empty folders, so a clone left alone breaks a piece at a time, in no
   predictable way. [`floorDamage`](ref:hub/scripts/sandbox.ts#floorDamage) asks git: `fsck --connectivity-only --no-reflogs`
   on the origin and the hub, since a walk of a reflog fails on a sound repository when a branch is deleted as it runs,
   and that the hub has its origin. A damaged clone is re-made, and `up` says so, since the
@@ -37,12 +37,13 @@ removes the whole class at once, every verb and every future one, with nothing i
   a failure to follow, such as a stale lock or `main` checked out in a cut, stops `up` with git's message: it costs
   a running sandbox nothing, and `down` and `up` are the way out when git's message isn't enough.
 - `up` refuses a root inside a git repository: a hub whose `.git` went would read as the repository around it.
-- `up` always writes the hub into an existing config, whose other keys it leaves alone, so an older root moves off the
-  checkout at its next `up`. Until then it is as dangerous as it was: [`checkFloorClone`](ref:hub/scripts/sandbox.ts#checkFloorClone)
+- `up` writes the `tower` floor's hub into an existing config, whose other keys it leaves alone
+  ([`prepareConfig`](ref:hub/scripts/sandbox.ts#prepareConfig)), so an older root moves off the checkout at its next
+  `up`. Until then it is as dangerous as it was: [`checkFloorClone`](ref:hub/scripts/sandbox.ts#checkFloorClone)
   has `sandbox run` and `env` refuse it, and refuse a damaged or missing clone, naming `up` as the fix.
-- `down` removes the clone and its origin once all four daemons stopped: it is derived, and `up` makes it again.
-  Leftover roots then weigh what they did. A hub's objects are hardlinks (`--local`), so a clone costs its tree, about
-  30 MB, and keeps packs alive that the repository drops while the clone exists. `--shared` would be lighter still and
+- `down` removes the clone and its origin once every daemon stopped: it is derived, and `up` makes it again.
+  Leftover roots then weigh what they did. A hub's objects are hardlinks (`--local`), so a clone costs its tree and
+  keeps packs alive that the repository drops while the clone exists. `--shared` would be lighter still and
   break when the repository collects its objects.
 
 **Alternatives considered.**
@@ -60,5 +61,4 @@ removes the whole class at once, every verb and every future one, with nothing i
 
 **Impact.** A sandbox's `tower` floor can be cut, tidied and discarded on, like `lab`. It no longer shows uncommitted
 work, its git has no GitHub remote (the origins link and `gh`-based extensions such as pr-status have nothing to read
-there), it has no `node_modules`, and its cuts don't outlive `down`. Sandboxes up before this change stay on the
-checkout until their next `up`.
+there), it has no `node_modules`, and its cuts don't outlive `down`.
