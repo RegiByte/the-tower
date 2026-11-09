@@ -12,6 +12,31 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.107.0
+
+The host now runs the whole command the tower gives it, and the page stops pulling you back to a worker you moved away
+from. Restart the tower with this release (`tower down tower`, then `tower up tower`); `tower update` does that for
+you, and rebuilds Tower 3D. **Restart the host when it suits you** (`tower down host`, then `tower up host`): it ends
+every running session, so pick a quiet moment. Until then your current host keeps working as before, and the page says
+it is outdated. API 1.165, unchanged.
+
+- **The host runs a spawn as the tower composed it (host protocol 5).** The tower now builds each session's whole
+  command, its environment and its runtime, and the host runs exactly that. The host no longer reads `argv`, `env` or
+  the plugin directory from the config, so it knows no Claude flags at all. Every environment still passes through the
+  parent-session scrub in the host. A tower talking to an older host sends the old shape, so nothing breaks before you
+  restart it. A client that writes the host's control socket directly must send `runtime`, `argv` and `env` once its
+  host speaks protocol 5; the host refuses the old shape and says to restart the tower.
+- **The page drops a lookup you moved away from.** Opening a link to an archived worker reads the archives first. If you
+  click elsewhere, press Back, or open another tab of the same worker while that read is on its way, the page now stays
+  where you went instead of jumping to the archived worker when the read lands. A link naming a worker no archive holds
+  leaves you where you are, puts back the address, and says so in a toast.
+- **Grid: a worker picker on gone-home cells.** A cell whose worker went home offers **Pick a worker** (and **New
+  worker…**). The worker you pick takes that cell's place, and the rest of the grid keeps its order. Grid 2.5.
+- **For contributors:** Tower 3D's stats poll runs as a machine on the shared `loop` and timers. `CheckResult`,
+  `Outcome` and `RunStart` moved from `policies-legacy.ts` to `src/shared/api.ts`. `test/seating.test.ts` also checks
+  against recorded expectations, so it keeps its reference once the bridge stops computing seats. The drafts
+  extension's pictures are retaken.
+
 ## v1.106.0
 
 Tower 3D seats its workers itself, and archive reads got faster. Restart the tower with this release (`tower down
