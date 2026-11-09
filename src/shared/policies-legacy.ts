@@ -8,22 +8,10 @@
  */
 import type { Board, Card } from '../bridge/board.ts'
 import type { OfferAction, OfferCalls, PolicyAction, PolicyCalls } from '../bridge/verbs.ts'
+import type { CheckResult, Outcome, RunStart } from './api.ts'
 import { listed, nextSlot, onTimeSlot, slotWords, type CronWhen } from './slots.ts'
 
 export const POLICIES = 'policies'
-
-/**
- * A check's run at a slot: its exit code (0, there is work; 1, none; absent when it timed out or never started, `error`
- * saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr
- * when it failed (at most 500).
- */
-export type CheckResult = { exit: number; ms: number; out?: string; stderr?: string } | { error: string; ms: number; stderr?: string }
-
-/** Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed. */
-export type Outcome = 'offered' | 'no-work' | 'held' | 'check-failed'
-
-/** How a run started: on its own at its slot, an offer accepted, or by hand with no slot. */
-export type RunStart = 'auto' | 'offer' | 'hand'
 
 /** Where a run's worker starts and on what model: four of the spawn verb's fields. */
 export type Hire = { cwd?: string; cut?: { name?: string; branch?: string; base?: string; from?: string }; model?: string; effort?: string }

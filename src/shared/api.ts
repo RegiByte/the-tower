@@ -5,7 +5,6 @@
  */
 import { z } from 'zod'
 import { AUTHOR, RUNTIMES, WORKTREE_NAME } from './model.ts'
-import type { CheckResult, Outcome, RunStart } from './policies-legacy.ts'
 import type { Words } from './extensions.ts'
 import type { Restored } from './launch.ts'
 
@@ -142,6 +141,19 @@ export function spawnProblems(fields: unknown): { path: string; message: string 
 
 /** A policy's item id in its project's `policies` collection. */
 const policy = z.string().regex(ITEM_ID).describe("The policy: its item's id in the project's `policies` collection.")
+
+/**
+ * A check's run at a slot: its exit code (0, there is work; 1, none; absent when it timed out or never started, `error`
+ * saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr
+ * when it failed (at most 500).
+ */
+export type CheckResult = { exit: number; ms: number; out?: string; stderr?: string } | { error: string; ms: number; stderr?: string }
+
+/** Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed. */
+export type Outcome = 'offered' | 'no-work' | 'held' | 'check-failed'
+
+/** How a run started: on its own at its slot, an offer accepted, or by hand with no slot. */
+export type RunStart = 'auto' | 'offer' | 'hand'
 
 /** What a policy's check did at a slot (decision `policies`). */
 const checkMs = z.int().nonnegative()
