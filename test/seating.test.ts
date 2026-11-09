@@ -47,13 +47,22 @@ const fixtureView = (now: number) =>
     now,
   })
 
+/** What the bridge gave each case when this was recorded, so the derivation is proven without the bridge once it is gone. */
+const frozen: Record<string, ReturnType<typeof derivedBeside>['bridge']> = JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json'), 'utf8'))
+
+/** The derivation is the bridge's now, and the bridge's as frozen then (a card with no seat is `null` in the data). */
+function assertSeating(label: string, b: Board, archive: (project: string) => Card[]) {
+  const { derived, bridge } = derivedBeside(b, archive)
+  assert.deepEqual(derived, bridge, label)
+  assert.deepEqual(JSON.parse(JSON.stringify(derived)), frozen[label], `${label}, against the frozen expectations`)
+}
+
 test("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every session fixture", () => {
   const latest = Math.max(...sessionLogs.map((l) => l.header.startedAt))
   for (const now of [0, latest + 2 * DAY]) {
     const view = fixtureView(now)
     const cards = allCards(view)
-    const { derived, bridge } = derivedBeside(board(view), (project) => archiveOf(cards, project, now))
-    assert.deepEqual(derived, bridge, `at ${new Date(now).toISOString()}`)
+    assertSeating(now === 0 ? 'sessions at the epoch' : 'sessions two days after the latest', board(view), (project) => archiveOf(cards, project, now))
   }
 })
 
@@ -61,8 +70,7 @@ test("Tower 3D's seats and galleries, derived from each floor's board and archiv
   for (const file of readdirSync(FIXTURES_DIR)) {
     const { boards }: FixtureFile = JSON.parse(readFileSync(path.join(FIXTURES_DIR, file), 'utf8'))
     for (const [i, { board: b, archive }] of boards.entries()) {
-      const { derived, bridge } = derivedBeside(b, (project) => archive.filter((c) => c.project === project))
-      assert.deepEqual(derived, bridge, `${file}, board ${i}`)
+      assertSeating(`${file}, board ${i}`, b, (project) => archive.filter((c) => c.project === project))
     }
   }
 })
