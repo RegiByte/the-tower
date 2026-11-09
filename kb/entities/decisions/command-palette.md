@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-21",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-09",
   "refs": ["hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#addedEntries", "hub/src/shared/adds.ts#unboundCommands", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/palette.ts#WEIGHTS", "hub/src/shared/palette.ts#matchScore", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/renderers/page/palette.js#palette", "hub/renderers/page/page.js#doPick", "hub/renderers/page/page.js#runAddedAt", "hub/test/palette.test.ts"]
 }
 ---
@@ -28,7 +28,7 @@ same palette, and only the drawing is a renderer's.
   each with its chords; and "Open <label>" for the views the renderer offers where the viewer stands, its `opens`,
   grouped by where each opens ([[ui-model]]))
   and **learn** (capabilities that name no command; one entry for the patterns users are discovering). While the page
-  runs code the tower no longer serves (the context's `stale`, since 1.144), "Reload: the tower was updated" heads the
+  runs code the tower no longer serves (the context's `stale`), "Reload: the tower was updated" heads the
   catalog ([[stale-page]]).
   Each entry's `does` is a tagged message the renderer runs; an extension's is `added`, its subject's key and the
   action, which a renderer that can't import modules leaves out when it is a command. The palette reads no layout,
@@ -38,8 +38,8 @@ same palette, and only the drawing is a renderer's.
 - No arguments, no forms: an entry runs something ready or opens the UI that exists for it (the new-worker form, a
   draft, a confirm). A pick goes through the same handler as its button or key, so destructive verbs ask through the
   same confirm and the palette can't drift from the buttons. A verb a keymap command does runs as that command and
-  shows its chords, listed once; `submit`, `kill` and `cut` are left out (typed in the terminal, ended by
-  `send-home` per [[crews]], chosen in the new-worker form).
+  shows its chords, listed once; `submit` and `prompt`, `kill`, `review` and `cut` are left out (typed in the terminal,
+  ended by `send-home` per [[crews]], hired by the reviews extension's action, chosen in the new-worker form).
 - No word soup: a capability that names a command is that command's hint, not a row; on a typed query Learn entries
   show only when it matches them, capped; patterns are one entry that opens a sheet of `GET /patterns`.
 - The empty query is the whole catalog: a curious user wants to scroll through everything they can do before they
