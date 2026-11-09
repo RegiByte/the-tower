@@ -2,6 +2,11 @@
  * The renderer API end to end: the tower server (`src/tower/server.ts`) booted as its own process on a throwaway system
  * root, read and driven over HTTP. No host or terms daemon runs: the one session is a log written into the root, which
  * is all the session reads need.
+ *
+ * Every test shares the one tower and its root, and they run in file order, each reading what the earlier ones left:
+ * pulse's beats are counted from the first beat on lab, the workers earlier tests hired stay on lab under its
+ * `hiring` limit, and a note appended to a desk thread moves the numbers of the notes after it. A test moved, cut or
+ * added can shift what a later one reads.
  */
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync, type ChildProcess } from 'node:child_process'
