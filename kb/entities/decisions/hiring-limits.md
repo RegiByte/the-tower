@@ -41,7 +41,8 @@ the easy path stops them, as long as it is named for what it is.
 - *One at a time.* Claude runs a worker's Bash calls in parallel, so hires that each read the board first would all
   pass. The tower takes a hirer's hires in turn, by its callsign
   ([`inTurn`](ref:hub/src/tower/dispatch.ts#inTurn)), each holding the turn until the system counts it (its log tracked,
-  the hirer's log naming it, the host running it), so the next is weighed against it. Nothing is stored for it: the
+  the hirer's log naming it, the host running it), so the next is weighed against it, or until its log holds its exit:
+  a worker that ended at start is never counted, and its hirer's next hire need not wait out the timeout for it. Nothing is stored for it: the
   turn waits on what the logs already say.
 - *Reviews are never refused.* A self-review must stay possible at any depth: the system enables workflows, it
   doesn't enforce them. The reviews extension's launch contributor exempts every reviewer `reviews/hire` starts (below),
