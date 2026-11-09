@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { allCards, archiveOf, board, type Board, type Card } from '../src/bridge/board.ts'
@@ -28,9 +28,15 @@ function derivedBeside(b: Board, archive: (project: string) => Card[]) {
   }
 }
 
-/** The bridge's seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither. */
+/**
+ * The bridge's seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither.
+ * `npm run seating:update` (`UPDATE_SEATING=1`) rewrites the file from what Tower 3D derives now, keeping its list of session fixtures; read the
+ * diff before committing it, since the test no longer holds the seats it replaced.
+ */
+const FROZEN = path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json')
+const UPDATE = Boolean(process.env.UPDATE_SEATING)
 const { sessionFixtures, cases: frozen }: { sessionFixtures: string[]; cases: Record<string, ReturnType<typeof derivedBeside>['bridge']> } = JSON.parse(
-  readFileSync(path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json'), 'utf8'),
+  readFileSync(FROZEN, 'utf8'),
 )
 const sessionLogs = sessionFixtures.map((name) => fixture(name))
 
@@ -52,12 +58,18 @@ const fixtureView = (now: number) =>
 function assertSeating(label: string, b: Board, archive: (project: string) => Card[]) {
   const { derived, bridge } = derivedBeside(b, archive)
   assert.deepEqual(derived, bridge, label)
-  assert.deepEqual(JSON.parse(JSON.stringify(derived)), frozen[label], `${label}, against the frozen expectations`)
+  const settled = JSON.parse(JSON.stringify(derived))
+  if (UPDATE) written[label] = settled
+  else assert.deepEqual(settled, frozen[label], `${label}, against the frozen expectations`)
   ran.push(label)
 }
 
 const ran: string[] = []
-test.after(() => assert.deepEqual(ran.toSorted(), Object.keys(frozen).toSorted(), 'every frozen case ran, and every case that ran is frozen'))
+const written: Record<string, unknown> = {}
+test.after(() => {
+  if (UPDATE) return writeFileSync(FROZEN, JSON.stringify({ sessionFixtures, cases: written }, null, 1) + '\n')
+  assert.deepEqual(ran.toSorted(), Object.keys(frozen).toSorted(), 'every frozen case ran, and every case that ran is frozen')
+})
 
 test("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every session fixture", () => {
   const latest = Math.max(...sessionLogs.map((l) => l.header.startedAt))
