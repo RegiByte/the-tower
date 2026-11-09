@@ -93,6 +93,30 @@
       ]
     },
     {
+      "name": "gone",
+      "open": "#v/grid/grid/floor%3Alab",
+      "size": "1280x800",
+      "steps": [
+        {
+          "until": ".grid-cell:nth-child(3) .bar-info .call"
+        },
+        {
+          "eval": "(() => { const ids = [...document.querySelectorAll('.grid-cell')].map((c) => c.dataset.cell); ids[3] = 'SPENT-00'; localStorage.setItem(Object.keys(localStorage).find((k) => k.startsWith('tower-store:') && k.includes('grid') && k.endsWith('cells.floor:lab')) ?? 'tower-store:view.grid/grid.cells.floor:lab', JSON.stringify(ids)); location.reload() })()"
+        },
+        {
+          "click": "[data-grid-fill-open]",
+          "text": "Pick a worker"
+        },
+        {
+          "until": ".grid-add:popover-open [data-grid-fill]"
+        }
+      ],
+      "crop": [
+        ".grid-cell:last-child",
+        ".grid-add:popover-open"
+      ]
+    },
+    {
       "name": "headless",
       "open": "#v/grid/grid/floor%3Alab",
       "size": "1280x560",
