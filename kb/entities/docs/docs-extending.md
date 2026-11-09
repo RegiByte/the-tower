@@ -21,6 +21,11 @@ What is deprecated until 2.0 is told once, in one section near its end: each ser
 and board fields that moved into bundled extensions ([`LEGACY`](ref:hub/src/shared/extensions.ts#LEGACY)). Nothing
 else in the document names one.
 
+It names an API version only where a sample needs one (`/tower.js?v=`, `requires`), in that section, and beside a
+thing whose version the tower says nowhere else. For the rest it says once, under Extensions, where to ask: a manifest
+key's and a core hook's `x-since` at `/schema`, the `under-declared` warning of `tower extensions check`, and the
+`@since` in the declarations `tower types` writes.
+
 It also holds the standard every extension's `README.md` keeps (a title line and what it adds, a picture per surface
 it reaches, and the other headings only where they say something true and recommended), whose pictures [`tool:extension-shots`](ref:hub/scripts/extension-shots.ts) takes from a throwaway sandbox
 by the scenes in the extension's own `shots.json`, into its own `shots/`.
