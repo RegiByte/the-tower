@@ -15,11 +15,11 @@ import { withoutParentSession } from './shared/env.ts'
 import { platform } from './platform.ts'
 import type { SystemPaths } from './shared/model.ts'
 import { answers } from './shared/socket.ts'
-import { promptPastes, SUBMIT_KEY, type FromHost, type HostLive, type ToHost } from './shared/protocol.ts'
+import { promptPastes, SUBMIT_KEY, type FromHost, type HostLive, type ToAnyHost } from './shared/protocol.ts'
 import type { FromJobs, HeldJob, ToJobs } from './shared/jobs.ts'
 import type { FromTerms, Shell, ToTerms } from './shared/terms.ts'
 
-export const hostRequest = async (paths: SystemPaths, msg: ToHost): Promise<FromHost> => {
+export const hostRequest = async (paths: SystemPaths, msg: ToAnyHost): Promise<FromHost> => {
   const host = await connectHost(paths.control)
   const reply = await host.request(msg)
   host.close()

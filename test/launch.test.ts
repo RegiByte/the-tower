@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf, type Session } from '../src/bridge/facts.ts'
 import { coreFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Merged } from '../src/bridge/launch.ts'
-import { CORE_FLAGS, EVERY_PART, resumeRequest } from '../src/shared/launch.ts'
-import type { LogEvent, SessionHeader } from '../src/shared/model.ts'
+import { CORE_FLAGS, EVERY_PART, hostSpawn, oldHostSpawn, resumeRequest, type HostStart } from '../src/shared/launch.ts'
+import { sessionCommand, type Config, type LogEvent, type SessionHeader } from '../src/shared/model.ts'
 import { UnsettledError, within } from '../src/tower/extensions.ts'
 
 const TAKEN = { flags: takenFlags('claude', ['claude', '--dangerously-skip-permissions', '--verbose=1']), env: takenEnv({ HTTPS_PROXY: 'http://proxy' }) }
@@ -83,6 +83,18 @@ test("a launch contributor is bound as start is: one that hasn't settled in time
   await assert.rejects(within('launch', 5, slow, (value) => (late = value)), (err) => err instanceof UnsettledError && err.message === "launch didn't settle within 0.005 s" && err.ms === 5)
   await slow
   assert.equal(late, 'parts')
+})
+
+test('hostSpawn: the legacy argv always, a named command when given, the first when not or when stale, then the mod and the args; its env and name on the spawn', () => {
+  const start: HostStart = { id: 'id', project: 'p', cwd: '/c', runtime: 'claude', args: ['--x'], facts: [] }
+  const spawn = (config: Config, name?: string) => hostSpawn(start, sessionCommand(config, 'claude', name), '/mods')
+  const legacy = { argv: ['claude'], env: { A: '1' }, projects: {} } as Config
+  assert.deepEqual(spawn(legacy), { t: 'spawn', id: 'id', project: 'p', cwd: '/c', runtime: 'claude', argv: ['claude', '--plugin-dir', '/mods', '--x'], env: { A: '1' }, cols: 120, rows: 40 })
+  const multi = { argv: { a: ['claude'], b: ['claude-mom'] }, projects: {} } as Config
+  assert.deepEqual([spawn(multi, 'b').argv, spawn(multi, 'b').command], [['claude-mom', '--plugin-dir', '/mods', '--x'], 'b'])
+  assert.deepEqual([spawn(multi, 'missing').argv, spawn(multi, 'missing').command], [['claude', '--plugin-dir', '/mods', '--x'], 'a'])
+  assert.deepEqual([spawn(multi).argv, spawn(multi).command, spawn(multi).env], [['claude', '--plugin-dir', '/mods', '--x'], 'a', {}])
+  assert.deepEqual(oldHostSpawn({ ...start, command: 'b' }), { t: 'spawn', id: 'id', project: 'p', cwd: '/c', args: ['--x'], command: 'b', cols: 120, rows: 40 })
 })
 
 test('resumeRequest: carries the command it is given straight through to the host request', () => {

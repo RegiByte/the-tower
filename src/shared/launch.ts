@@ -1,5 +1,5 @@
-import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project, type Runtime } from './model.ts'
-import type { ToHost } from './protocol.ts'
+import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project, type Runtime, type SessionCommand } from './model.ts'
+import type { OldHostSpawn, ToHost } from './protocol.ts'
 
 /** What a new session is asked for. Whatever is left out is Claude's own default. */
 export type Launch = { model?: string; effort?: string; prompt?: string; command?: string }
@@ -223,23 +223,56 @@ const startArgs = (s: Start): string[] => [
   ...briefArgs(s.user, s.worktree, s.contributed.systemPrompt),
 ]
 
-type HostSpawn = Extract<ToHost, { t: 'spawn' }>
+/**
+ * A session composed for the host, before it is said in the shape the running host takes (`hostSpawn`,
+ * `oldHostSpawn`). `args` are Claude's own, after the command and the mod; `command` names one of the config's `argv`.
+ */
+export type HostStart = { id: string; project: string; cwd: string; runtime: Runtime; args: string[]; command?: string; facts: ModEvent[] }
 
-const hostSpawn = (s: Start, args: string[], command: string | undefined): HostSpawn => ({
-  t: 'spawn',
+const hostStart = (s: Start, args: string[], command: string | undefined): HostStart => ({
   id: s.id,
   project: s.project,
   cwd: s.cwd,
+  runtime: s.runtime,
   args,
   ...(command !== undefined && { command }),
-  ...(s.facts.length && { facts: s.facts }),
+  facts: s.facts,
+})
+
+export const spawnRequest = (s: SpawnLaunch): HostStart =>
+  hostStart(s, [...startArgs(s), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })], s.launch.command)
+
+export const resumeRequest = (s: ResumeLaunch): HostStart => hostStart(s, [...startArgs(s), ...resumeArgs(s.conversation, s.prompt)], s.command)
+
+/**
+ * `start` as a whole command line: `command`'s argv, the tower mod (`modDir`), which posts Claude's events to the host
+ * and is read by each Claude as it starts, then its own args, which can end with `-- <prompt>`. The header names the
+ * command by the name it resolved to.
+ */
+export const hostSpawn = ({ id, project, cwd, runtime, args, facts }: HostStart, command: SessionCommand, modDir: string): Extract<ToHost, { t: 'spawn' }> => ({
+  t: 'spawn',
+  id,
+  project,
+  cwd,
+  runtime,
+  argv: [...command.argv, '--plugin-dir', modDir, ...args],
+  env: command.env,
+  ...(command.name !== undefined && { command: command.name }),
+  ...(facts.length && { facts }),
   ...SPAWN_SIZE,
 })
 
-export const spawnRequest = (s: SpawnLaunch): HostSpawn =>
-  hostSpawn(s, [...startArgs(s), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })], s.launch.command)
-
-export const resumeRequest = (s: ResumeLaunch): HostSpawn => hostSpawn(s, [...startArgs(s), ...resumeArgs(s.conversation, s.prompt)], s.command)
+/** `start` as a host older than protocol 5 takes it: that host adds the command and the mod, and resolves `command` itself. */
+export const oldHostSpawn = ({ id, project, cwd, args, command, facts }: HostStart): OldHostSpawn => ({
+  t: 'spawn',
+  id,
+  project,
+  cwd,
+  args,
+  ...(command !== undefined && { command }),
+  ...(facts.length && { facts }),
+  ...SPAWN_SIZE,
+})
 
 /** A flag's name: `--model` of `--model` and of `--model=opus`. */
 export const flagName = (arg: string): string => arg.split('=')[0]
@@ -252,7 +285,7 @@ export const EVERY_PART: Start = {
 
 /**
  * The flags the core composes, by runtime, read from what it composes: a contributor may pass none of them. `--` ends
- * the flags before a prompt. The host's own `--plugin-dir` is one of them.
+ * the flags before a prompt. `--plugin-dir`, which also loads the tower mod (`hostSpawn`), is one of them.
  */
 export const CORE_FLAGS: Record<Runtime, string[]> = {
   claude: [

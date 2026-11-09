@@ -4,7 +4,7 @@
   "name": "No host answering",
   "summary": "Nothing answers on control.sock: the board shows the host down, running sessions turn lost, and every session verb fails as unavailable until a host is started.",
   "in": "host",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-09",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/client.ts#connectHost", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#bringUp", "hub/src/machine.ts#bringDown", "hub/src/shared/socket.ts#claimSocket", "hub/src/bridge/status.ts#withLiveness", "hub/src/tower/dispatch.ts#daemon"]
 }
 ---
@@ -20,7 +20,9 @@
 
 **Host outdated.** A host that answers with another protocol than its clients (`board.hostOutdated`) is up and
 works; it runs code older than the tower's, so the renderers say `host outdated`, and a verb that needs what it lacks
-refuses, naming the restart (a `fact` below protocol 2, a spawn's facts below 3). It updates when restarted
+refuses, naming the restart (a `fact` below protocol 2, a spawn's facts below 3); a host below protocol 5 is sent
+the spawn shape it takes, so it keeps starting sessions. A host newer than the tower (restarted after a pull the
+tower wasn't) refuses the tower's spawns, naming the tower's restart. It updates when restarted
 (`tower down`, then `tower up`), which ends every session: they stay resumable.
 
 **Where to look first.** The system root, the directory holding `config.json` (`TOWER_CONFIG` overrides

@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-09-29",
-  "reviewed": "2026-11-07",
+  "reviewed": "2026-11-09",
   "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/env.ts#withoutTerminal", "hub/src/terms/main.ts", "hub/src/jobs/main.ts#startJob", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/git.ts", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/update.ts#update"]
 }
 ---
@@ -23,7 +23,7 @@ session would make its shells (and itself) that session's to reap. `TOWER_CONFIG
 
 The daemons `tower up` starts are scrubbed ([`startDetached`](ref:hub/src/machine.ts#startDetached)), so what they
 run inherits a clean environment. What starts a session or runs the user's commands scrubs again, for a daemon started
-by hand: the host's sessions, after the config's `env` is merged in, so a config cannot set a marker again
+by hand: the host's sessions, after the env the spawn gives (the config's `env`, composed by the tower) is merged in, so neither a config nor a client can set a marker again
 ([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)); the terms daemon's shells; the jobs daemon's jobs, before the
 caller's `env` is set over it ([`startJob`](ref:hub/src/jobs/main.ts#startJob)); git
 ([`git.ts`](ref:hub/src/git.ts)); the quota extension's Claude (through `ctx.run`); the policies extension's checks (through `ctx.run`); and `tower update`'s npm. One-shot reads (`ps`, `lsof`,
