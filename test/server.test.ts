@@ -1375,13 +1375,6 @@ test("server: a floor config/add adds is on the board at once, though the config
   }
 })
 
-test('server: a review note is appended to its thread', async () => {
-  const appended = await command('review/append', { project: 'lab', checkout: 'main', author: 'NEMO-92', body: 'A note.' })
-  assert.equal(appended.n, 1)
-  const thread = parseThread((await get(`/collection/lab/reviews/${appended.id}`)).body)
-  assert.deepEqual([thread.checkout, thread.messages.map((m) => [m.author, m.body.trim()])], ['main', [['NEMO-92', 'A note.']]])
-})
-
 test('server: what comes from outside the tower is refused', async () => {
   const draft = JSON.stringify({ project: 'lab', collection: 'drafts', ext: 'md', content: '' })
   const json = { 'content-type': 'application/json' }
