@@ -636,11 +636,13 @@ the library: removing one is a major.
 **Which version a thing arrived in** is the tower's to say. Each manifest key carries the minor it arrived in as
 `x-since` at `GET /schema`, under `extension`, and each core hook under `hooks`. `tower extensions check <dir>` warns
 of every key newer than the manifest's `requires.tower` (`under-declared`), naming the keys and the version to raise
-it to. The declarations [`tower types`](#types-outside-the-checkout) writes carry `@since` on the ctx members, and on
-many of the library's names, a view's kit, the subjects and the board's fields; `tower api` lists each verb with its
+it to. The declarations [`tower types`](#types-outside-the-checkout) writes say it in the comment of each ctx
+member, and of many of the library's names, a view's kit, the subjects and the board's fields, as `@since` or as
+"since" in a type's description; `tower api` lists each verb with its
 description, its `@since` in it where it has one. Anything that imports [the library](#the-library) needs tower 1.151,
 the minor it arrived in, so this document names no version below that outside its samples and [Deprecated until
-2.0](#deprecated-until-20); a newer one it names beside a thing is one the tower says nowhere else yet.
+2.0](#deprecated-until-20); a newer one it names beside a thing tells you to raise
+`requires.tower`, or is one the tower says nowhere else yet.
 
 Server code reaches the tower's helpers by name, never by a path into its checkout, so a folder copied anywhere still
 loads: `import { mediaTypeOf } from '/lib/files.js'` imports [the library](#the-library), the same line a client writes
