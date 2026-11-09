@@ -63,6 +63,8 @@ worker that made it.
   included, since a sandboxed frame can only be dropped, not paused. Since API 1.98 a showing is a subject, `shown:<card>/<at>`,
   a file's carrying its read path and media type, an address itself as its body and `text/uri-list` ([[extensions]],
   since 1.115): what extensions add to it is drawn beside the tabs while it is open.
+- Text picked in a shown markdown file is a `passage` of the showing, and the bundled `quote` extension types a
+  prompt about it into the worker that showed it ([[passage-picks]], since API 1.170).
 - Tower 3D draws the latest on a second monitor on the worker's desk and opens every showing as a tab of the desk
   panel ([[tower3d]]); each floor's gallery hangs its latest showings, off-duty workers' included ([[shared-wall]]).
 
