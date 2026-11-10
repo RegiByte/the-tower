@@ -57,6 +57,9 @@ const STYLE = `@keyframes beacon { 0%, 60%, 100% { opacity: .2; } 70%, 85% { opa
   & .w { display: block; width: 18.4cqi; height: 12.2cqi; padding: 0; border: 0; border-radius: var(--radius-s); background: var(--enamel-2); }
   & .w.lit { background: var(--c); cursor: pointer; }
   & .w.lit.needs { animation: blink 1.1s steps(2, jump-none) infinite; }
+  /* Waits that flash (\`waits: 'flash'\` in tower.prefs): every window that waits on the viewer blinks as a need's does,
+     and so does its building's beacon, in step. */
+  :root[data-waits='flash'] & .w.lit.calls, :root[data-waits='flash'] & .building .mast.alarm.calls::after { animation: blink 1.1s steps(2, jump-none) infinite; }
   & .w.past { background: color-mix(in oklab, var(--c) 30%, var(--enamel-2)); cursor: pointer; }
   & .w.past:hover, & .w.lit:hover { outline: 2px solid var(--panel); }
   & .street { height: 26px; background: var(--enamel); border-top: 3px solid var(--enamel-2); }
@@ -68,16 +71,17 @@ const signHtml = (n: number, name: string) =>
 
 const byStart = (a: Card, b: Card) => a.startedAt - b.startedAt
 
-const windowHtml = (c: Card) => {
+/** A worker's window, marked `calls` while it waits on the viewer, who hasn't dismissed it. @param heeded the ids of those workers */
+const windowHtml = (c: Card, heeded: Set<string>) => {
   const title = `${c.callsign} · ${statusName(c)}${gistLine(c) ? ' · ' + gistLine(c) : ''}`
-  return `<button class="w ${c.onDuty ? 'lit' : 'past'} ${c.attention}" data-card="${esc(c.id)}" aria-label="${esc(title)}" data-tip="${esc(title)}"></button>`
+  return `<button class="w ${c.onDuty ? 'lit' : 'past'} ${c.attention}${heeded.has(c.id) ? ' calls' : ''}" data-card="${esc(c.id)}" aria-label="${esc(title)}" data-tip="${esc(title)}"></button>`
 }
 
-const buildingHtml = (f: Floor, i: number) => {
+const buildingHtml = (f: Floor, i: number, heeded: Set<string>) => {
   const shown = [...f.cards].sort(byStart).slice(-BUILDING_WINDOWS)
   const dark = '<div class="w"></div>'.repeat(Math.max(0, BUILDING_MIN_WINDOWS - shown.length) + ((4 - (Math.max(shown.length, BUILDING_MIN_WINDOWS) % 4)) % 4))
-  return `<div class="building" style="${paintOf(f.color)}">${signHtml(i + 1, f.name)}<div class="mast ${loudest(f.cards.filter((c) => c.waiting)) ?? ''} ${f.cards.some((c) => c.waiting) ? 'alarm' : ''}"></div>
-    <div class="body">${shown.map(windowHtml).join('')}${dark}</div></div>`
+  return `<div class="building" style="${paintOf(f.color)}">${signHtml(i + 1, f.name)}<div class="mast ${loudest(f.cards.filter((c) => c.waiting)) ?? ''} ${f.cards.some((c) => c.waiting) ? 'alarm' : ''} ${f.cards.some((c) => heeded.has(c.id)) ? 'calls' : ''}"></div>
+    <div class="body">${shown.map((c) => windowHtml(c, heeded)).join('')}${dark}</div></div>`
 }
 
 /** No worker has ever run on any floor: none on the board and none archived. */
@@ -134,7 +138,8 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
 
   const draw = () => {
     paintOnce(hello, firstRun(board) ? welcomeHtml() : helloHtml())
-    paintOnce(city, `<div class="city">${board.floors.map(buildingHtml).join('')}</div><div class="street"></div>`)
+    const heeded = new Set(heededWaits(board, { dismissed }).map((w) => w.id))
+    paintOnce(city, `<div class="city">${board.floors.map((f, i) => buildingHtml(f, i, heeded)).join('')}</div><div class="street"></div>`)
     paintSky()
   }
 
