@@ -203,8 +203,9 @@ function seedDesk() {
  * a hidden file below its root, a policy, and a session that showed the page and ended.
  */
 function seed(port: number) {
-  for (const dir of [path.join(HUB, 'report'), RENDERER, path.join(ROOT, 'sessions'), path.join(ROOT, 'collections', 'lab', 'policies'), path.join(ROOT, 'collections', 'lab', 'roles')]) mkdirSync(dir, { recursive: true })
+  for (const dir of [path.join(HUB, 'report'), RENDERER, path.join(ROOT, 'sessions'), path.join(ROOT, 'collections', 'lab', 'policies'), path.join(ROOT, 'collections', 'lab', 'roles'), path.join(ROOT, 'collections', 'lab', 'roles.notes')]) mkdirSync(dir, { recursive: true })
   writeFileSync(path.join(ROOT, 'collections', 'lab', 'roles', 'builder.md'), BUILDER)
+  writeFileSync(path.join(ROOT, 'collections', 'lab', 'roles.notes', 'note.md'), '# A note\n')
   writeFileSync(SHOWN, '<!doctype html><title>report</title>')
   writeFileSync(path.join(HUB, 'report', '.secret'), 'hidden')
   writeFileSync(path.join(HUB, 'report', 'chart.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]))
@@ -1235,6 +1236,8 @@ test("server: a spawn's extension field is logged as a fact before the worker's 
   const before = await lab()
   assert.deepEqual(before.floors.find((f) => f.id === 'lab')!.x?.roles, { options: [{ value: 'builder.md', label: 'Builder' }] })
   assert.deepEqual(before.extensions.find((e) => e.id === 'roles')!.spawn, { fields: [{ name: 'role', words: { label: 'Role', hint: 'What this worker is for' }, options: 'floor.x.roles.options' }] })
+
+  assert.equal((await get('/collection/lab/roles.notes/note.md')).body, '# A note\n', 'a collection named <provides>.<name> reads its items')
 
   const { id } = await command('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
   const [header, first, ...rest] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8'), (log) => log.includes('"x"'))).trim().split('\n').map((line) => JSON.parse(line))

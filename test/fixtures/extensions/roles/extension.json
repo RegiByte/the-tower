@@ -6,7 +6,10 @@
   "requires": { "tower": "1.85" },
   "server": "server.ts",
   "settings": { "type": "object", "additionalProperties": false, "properties": { "default": { "type": "string" } } },
-  "collections": { "roles": { "label": "Roles", "description": "One markdown file per role: a `# Name`, then what a worker in that role does." } },
+  "collections": {
+    "roles": { "label": "Roles", "description": "One markdown file per role: a `# Name`, then what a worker in that role does." },
+    "roles.notes": { "label": "Role notes", "description": "Notes about the roles, under a dotted name as an extension's further collections are." }
+  },
   "spawn": {
     "launch": true,
     "fields": {
