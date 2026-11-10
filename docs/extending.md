@@ -399,8 +399,8 @@ keep one value for the page alone.
 viewer's computer, by name), the terminal's font size, motion, contrast, whether waits flash and text size. `tower.js` keeps
 it in the viewer's browser, shared by every tab and every page of theirs, and puts it on your page's root before it
 paints: `data-scheme`, `data-motion`, `data-contrast`, `data-waits` (since 1.168: `flash` when the viewer wants what waits
-on them to flash, which the tower page's sidebar and skyline do), the `--ui`, `--display` and `--mono` stacks, and `--scale`, the
-root's font size as a factor of the browser's, which every rem size follows. A page that
+on them to flash, as the tower page's sidebar and skyline and Tower 3D's lamps do), the `--ui`, `--display` and
+`--mono` stacks, and `--scale`, the root's font size as a factor of the browser's, which every rem size follows. A page that
 links `/design.css` and draws with its variables follows it with no code. Read it with `tower.prefs.get()`, hear
 changes with `tower.prefs.on(fn)`, change it with `tower.prefs.set({ mono: 'Fira Code' })`. A document you draw in a
 frame without scripts takes it as `<html ${tower.prefs.attributes()}>`. A terminal takes its face and size from it with

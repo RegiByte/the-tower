@@ -2048,15 +2048,17 @@ const PULSE_S = Math.PI / 4
 
 /**
  * Whatever waits on you lights in its loudest attention's colour: its floor's lamp, its tile on the wall, the beacon on
- * the roof. Only what needs you pulses; with reduced motion it pulses once when someone new starts waiting, then holds,
- * and the idle beacon holds.
+ * the roof. Only what needs you pulses, or everything waiting on you when the viewer has waits flash (`waits: 'flash'`
+ * in `tower.prefs`); with reduced motion it pulses once when someone new starts waiting, then holds, and the idle beacon
+ * holds.
  */
 function tickLamps({ t }: Frame) {
   const board = s.board!
   const heeded = heededWaits(board, heed()).map((w) => findCard(board, w.id)!)
   const still = reducedMotion()
   const pulse = still && t - s.waitedAt / 1000 > PULSE_S ? 1 : 0.55 + Math.abs(Math.sin(t * 4)) * 0.45
-  const glow = (cards: Card[]) => (loudest(cards) === 'needs' ? pulse : 1)
+  const flash = tower.prefs.get().waits === 'flash'
+  const glow = (cards: Card[]) => (flash || loudest(cards) === 'needs' ? pulse : 1)
   for (const level of s.plan.levels) {
     if (level.kind !== 'floor') continue
     const waits = heeded.filter((c) => level.desks.some((d) => d.card.id === c.id))
