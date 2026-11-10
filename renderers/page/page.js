@@ -1442,6 +1442,7 @@ const spawning = wireSpawn(/** @type {HTMLDialogElement} */ ($('spawn')), {
   },
   dismissed: () => answering()?.resolve(undefined),
   toast,
+  upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
 })
 
 /** @param {string} project @param {{ d: Draft, text: string }} [sent] */

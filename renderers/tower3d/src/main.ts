@@ -2916,6 +2916,7 @@ const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
     if (note) void sent(note)
   },
   toast,
+  upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
 })
 spawn.addEventListener('close', showPaused)
 
