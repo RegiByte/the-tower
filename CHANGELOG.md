@@ -12,6 +12,14 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.110.1
+
+A fix. Nothing to restart beyond the tower (`tower update` does it).
+
+- **An extension's collection reads its items.** A collection an extension declares under a dotted name, such as the
+  roles example's `roles.prompts`, listed its items but couldn't open one ("Nothing at …"), and its titles showed as
+  "…". The collection read route now takes the dot. Collections without one were never affected.
+
 ## v1.110.0
 
 Waits can flash, a viewer setting contributed by Yuri Galindo (#544). Nothing to restart beyond the tower
