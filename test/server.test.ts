@@ -1297,7 +1297,7 @@ test("server: a launch contributor sees a worker's hire as one, its hirer as by,
   }
 })
 
-test("server: a launch contributor's fields fill the spawn fields it left unset, logged as the spawn's are; a field the spawn set keeps its value, and one the extension doesn't declare refuses the spawn", async () => {
+test("server: a launch contributor's fields fill the spawn fields it left unset, logged as the spawn's are; a field the spawn set keeps its value, and one the extension doesn't declare refuses a spawn carrying its fields and is dropped from one carrying none", async () => {
   const server = readFileSync(path.join(ROLES, 'server.ts'), 'utf8')
   const from = "return role ? { systemPrompt: [await collections.read(project, 'roles', role)] } : {}"
   assert.ok(server.includes(from), `the roles fixture no longer holds: ${from}`)
@@ -1314,10 +1314,19 @@ test("server: a launch contributor's fields fill the spawn fields it left unset,
     const set = await command('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
     assert.deepEqual(roleFacts(set.id), ['builder.md'])
 
+    await returning('{ role: 42 }')
+    const unread = await command('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
+    assert.deepEqual(roleFacts(unread.id), ['builder.md'], "a value for a field the spawn set is left unread, off its schema or not")
+
     await returning("{ mood: 'calm' }")
     const undeclared = await post('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
     assert.equal(errorCode(undeclared), 'internal')
     assert.match(JSON.parse(undeclared.body).message, /^roles's launch contributor returned a part claude can't place: x\.roles\.mood: roles declares no spawn field mood/)
+    const dropped = await command('spawn', { project: 'lab' })
+    assert.deepEqual(roleFacts(dropped.id), [], 'a spawn carrying none of its fields starts without the parts')
+    const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
+    const problems = read.extensions.find((e) => e.id === 'roles')!.problems.filter((p) => p.lane === 'launch')
+    assert.ok(problems.some((p) => p.code === 'shape' && p.message.includes('x.roles.mood: roles declares no spawn field mood')), JSON.stringify(problems))
   } finally {
     writeFileSync(path.join(ROLES, 'server.ts'), server)
     await command('extension/restart', { id: 'roles' })

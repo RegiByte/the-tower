@@ -51,15 +51,19 @@ export const parsedFields = (cap: string, declared: Map<string, CompiledField>, 
   return { ok: true, values: parsed }
 }
 
-/** Placed parts with a spawn's `fields` parsed by `cap`'s declared fields: a field it doesn't declare, or a value off its schema, can't be placed. */
+/**
+ * Placed parts with a spawn's `fields` kept to those the spawn left unset (`set`: the values it gave `cap`'s fields),
+ * each parsed by `cap`'s declared field: a field it doesn't declare, or a value off its schema, can't be placed.
+ */
 export const withFields = (
   kind: SpawnLaunch['kind'] | ResumeLaunch['kind'],
   cap: string,
   declared: Map<string, CompiledField>,
+  set: Record<string, unknown> | undefined,
   placed: ReturnType<typeof placeable>,
 ): ReturnType<typeof placeable> => {
   if (!placed.ok || !placed.parts.fields || kind !== 'spawn') return placed
-  const fields = parsedFields(cap, declared, placed.parts.fields)
+  const fields = parsedFields(cap, declared, Object.fromEntries(Object.entries(placed.parts.fields).filter(([name]) => !(set && name in set))))
   return fields.ok ? { ok: true, parts: { ...placed.parts, fields: fields.values } } : fields
 }
 
@@ -86,7 +90,7 @@ export type ReportsTo = { callsign: string; by: string }
 
 /**
  * What every contributor added, merged: what the runtime places, and a spawn's defaults, exemptions, crew edge and
- * `fields`, each contributor's values for its own spawn fields, by capability.
+ * `fields`, each contributor's values for its own spawn fields the spawn left unset, by capability.
  */
 export type Merged = {
   t: 'merged'
@@ -148,7 +152,7 @@ export const mergeParts = (kind: SpawnLaunch['kind'] | ResumeLaunch['kind'], run
     Object.assign(merged.defaults, parts.defaults)
     merged.exempt.push(...[...new Set(parts.exempt)].map((from) => ({ from, by: cap })))
     if (parts.reportsTo !== undefined) merged.reportsTo = { callsign: parts.reportsTo, by: cap }
-    if (parts.fields) merged.fields.set(cap, parts.fields)
+    if (parts.fields && Object.keys(parts.fields).length) merged.fields.set(cap, parts.fields)
   }
   return merged
 }
@@ -164,15 +168,6 @@ export const coreFacts = (merged: Merged, reportsTo: string | undefined): ModEve
  * before anything the session does, so no early exit can come between the spawn and its fact.
  */
 export const promptedFacts = (prompt: string | undefined, by: string | undefined): ModEvent[] => (prompt && by ? [{ hook_event_name: PROMPTED_BY, by }] : [])
-
-/** The values contributors gave for fields the spawn left unset, by capability: a field the spawn set keeps its value. */
-export const filledFields = (spawn: Map<string, Record<string, unknown>>, contributed: Map<string, Record<string, unknown>>): Map<string, Record<string, unknown>> =>
-  new Map(
-    [...contributed].flatMap(([cap, values]) => {
-      const unset = Object.entries(values).filter(([name]) => !(spawn.get(cap) && name in spawn.get(cap)!))
-      return unset.length ? [[cap, Object.fromEntries(unset)] as const] : []
-    }),
-  )
 
 /** A spawn's field values, by capability, as the facts the host logs: `tower.x.<cap>.<field>`. */
 export const fieldFacts = (x: Record<string, Record<string, unknown>>): ModEvent[] =>
