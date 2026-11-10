@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.110.0
+
+Waits can flash, a viewer setting contributed by Yuri Galindo (#544). Nothing to restart beyond the tower
+(`tower update` does it). API 1.168.
+
+- **Settings › Accessibility › Waits: Colour or Flash.** With Flash, every worker waiting on you that you haven't
+  dismissed flashes until you answer or dismiss it: its sidebar row's outline and its lamp, a folded floor's count, the
+  "waiting on you" chip and the rail; its window and its building's beacon on the skyline; its lamps in Tower 3D. When
+  any are scrolled out of the sidebar's sight, an arrow at its top or foot counts them, in the loudest colour among
+  them, and pressing it scrolls the nearest into view. Every flash blinks in step. Reduced motion flashes each once.
+  Colour, the default, is unchanged.
+- **For renderers:** the setting is `waits: '' | 'flash'` in `tower.prefs`, on every page's root as `data-waits`.
+
 ## v1.109.0
 
 Worker roles, as a new example extension, and two launch additions any extension can use. Nothing to restart beyond
