@@ -17,7 +17,7 @@ import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
 import { hireSettled } from './hires.ts'
 import type { Status } from '../bridge/status.ts'
-import { coreFacts, fieldFacts, filledFields, forkFacts, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
+import { coreFacts, fieldFacts, forkFacts, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
@@ -589,7 +589,7 @@ export const dispatch = defineResource({
       for (const { id, cap, fields: declared, launch } of launchers) {
         let failed: { code: 'threw' | 'shape'; message: string }
         try {
-          const placed = withFields(kind, cap, declared, placeable(await launch({ kind, runtime, ...at, ...(fields.has(cap) && { fields: fields.get(cap) }), facts: factsOf(cap) })))
+          const placed = withFields(kind, cap, declared, fields.get(cap), placeable(await launch({ kind, runtime, ...at, ...(fields.has(cap) && { fields: fields.get(cap) }), facts: factsOf(cap) })))
           if (placed.ok) {
             contributions.push({ cap, parts: placed.parts })
             continue
@@ -621,8 +621,7 @@ export const dispatch = defineResource({
       const merged = await contribute('spawn', runtime, { hire: spawn.hire, ...(spawn.by && { by: spawn.by }), project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, spawnCommand(config, projectId, launch)))
       if (merged.t === 'error') return merged
       const exempt = legacyReviewer(merged, spawn.prompt)?.exempt ?? merged.exempt
-      const filled = filledFields(spawn.fields, merged.fields)
-      const fields = Object.fromEntries([...new Set([...spawn.fields.keys(), ...filled.keys()])].map((cap) => [cap, { ...filled.get(cap), ...spawn.fields.get(cap) }]))
+      const fields = Object.fromEntries([...new Set([...spawn.fields.keys(), ...merged.fields.keys()])].map((cap) => [cap, { ...merged.fields.get(cap), ...spawn.fields.get(cap) }]))
       const gated = await gate({ project: projectId, kind: 'spawn', runtime, ...(spawn.by && { by: spawn.by }), hire: spawn.hire, exempt, fields }, spawn.within)
       if (gated) return gated
       const lead = merged.reportsTo && workerNamed(cardsNow().filter((c) => !c.continuedBy), merged.reportsTo.callsign)
@@ -636,7 +635,7 @@ export const dispatch = defineResource({
         kept: projectCollectionsPath(paths, projectId),
         plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
         contributed: merged.contributed,
-        facts: [...spawn.facts, ...fieldFacts(Object.fromEntries(filled)), ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by)],
+        facts: [...spawn.facts, ...fieldFacts(Object.fromEntries(merged.fields)), ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by)],
         launch: launchWithDefaults(config, projectId, launch, merged.defaults),
       }
     }
