@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-10",
   "refs": ["hub/src/shared/protocol.ts#sessionKeys", "hub/src/tower/dispatch.ts#HANDLERS", "hub/src/attach.ts"]
 }
 ---
