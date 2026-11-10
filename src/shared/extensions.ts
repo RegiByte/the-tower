@@ -475,7 +475,9 @@ export type LaunchRequest = {
  * `prompt`: after the first prompt. `env`: through the parent-session scrub. `defaults`: a model or effort, when the
  * spawn leaves it out. `args`: a runtime's own flags, each `--flag` or `--flag=value`, placed before the core's.
  * `exempt`: out of the floor's hiring limits, logged as `tower.exempt`. `reportsTo`: the callsign of the worker whose
- * crew it joins, logged as `tower.reports-to`. `prompt`, `defaults`, `exempt` and `reportsTo` are a spawn's only.
+ * crew it joins, logged as `tower.reports-to`. `fields`: values for the contributor's own spawn fields the spawn left
+ * unset, each parsed by its field's schema and logged as the spawn's are (`tower.x.<cap>.<field>`). `prompt`,
+ * `defaults`, `exempt`, `reportsTo` and `fields` are a spawn's only.
  */
 export type LaunchParts = {
   systemPrompt?: string[]
@@ -489,6 +491,8 @@ export type LaunchParts = {
   args?: Partial<Record<Runtime, string[]>>
   exempt?: 'hiring'[]
   reportsTo?: string
+  /** @since 1.167 */
+  fields?: Record<string, unknown>
 }
 
 /** What a launch contributor reads with: the floor's settings, the reads it may make, and its own collections. */

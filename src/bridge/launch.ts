@@ -10,6 +10,7 @@ import { withoutParentSession } from '../shared/env.ts'
 import { CORE_FLAGS, flagName, type Contributed, type ResumeLaunch, type SpawnLaunch } from '../shared/launch.ts'
 import { RUNTIMES, type ModEvent, type Runtime } from '../shared/model.ts'
 import { EXEMPT, PROMPTED_BY, REPORTS_TO, type Session } from './facts.ts'
+import type { CompiledField } from './extensions.ts'
 import { extensionFactName } from './stores.ts'
 
 /** A runtime's flag as a contributor passes it: `--flag` or `--flag=value`, so no value is ever read as a positional. */
@@ -25,12 +26,41 @@ const Parts = z.strictObject({
     .optional(),
   exempt: z.array(z.literal('hiring')).optional(),
   reportsTo: z.string().min(1).optional(),
+  fields: z.record(z.string(), z.unknown()).optional(),
 }) satisfies z.ZodType<LaunchParts>
 
 /** What a contributor returned, as parts the runtime places, or why it can't place them. */
 export const placeable = (returned: unknown): { ok: true; parts: LaunchParts } | { ok: false; why: string } => {
   const parsed = Parts.safeParse(returned ?? {})
   return parsed.success ? { ok: true, parts: parsed.data } : { ok: false, why: z.prettifyError(parsed.error) }
+}
+
+/**
+ * `values` for `cap`'s spawn fields, each parsed by its field's schema, or why one can't be: a field `cap` doesn't
+ * declare, or a value off its schema, named as `x.<cap>.<field>`.
+ */
+export const parsedFields = (cap: string, declared: Map<string, CompiledField>, values: Record<string, unknown>): { ok: true; values: Record<string, unknown> } | { ok: false; why: string } => {
+  const parsed: Record<string, unknown> = {}
+  for (const [name, value] of Object.entries(values)) {
+    const field = declared.get(name)
+    if (!field) return { ok: false, why: `x.${cap}.${name}: ${cap} declares no spawn field ${name}` }
+    const ok = field.schema.safeParse(value)
+    if (!ok.success) return { ok: false, why: `x.${cap}.${name}: ${z.prettifyError(ok.error)}` }
+    parsed[name] = ok.data
+  }
+  return { ok: true, values: parsed }
+}
+
+/** Placed parts with a spawn's `fields` parsed by `cap`'s declared fields: a field it doesn't declare, or a value off its schema, can't be placed. */
+export const withFields = (
+  kind: SpawnLaunch['kind'] | ResumeLaunch['kind'],
+  cap: string,
+  declared: Map<string, CompiledField>,
+  placed: ReturnType<typeof placeable>,
+): ReturnType<typeof placeable> => {
+  if (!placed.ok || !placed.parts.fields || kind !== 'spawn') return placed
+  const fields = parsedFields(cap, declared, placed.parts.fields)
+  return fields.ok ? { ok: true, parts: { ...placed.parts, fields: fields.values } } : fields
 }
 
 /** One contributor's parts, by the capability that gave them. */
@@ -54,15 +84,28 @@ export const takenEnv = (env: Record<string, string> | undefined): Taken[] => Ob
 /** A crew edge as a contributor gives it: the callsign the new worker reports to. */
 export type ReportsTo = { callsign: string; by: string }
 
-/** What every contributor added, merged: what the runtime places, and a spawn's defaults, exemptions and crew edge. */
-export type Merged = { t: 'merged'; contributed: Contributed; defaults: { model?: string; effort?: string }; exempt: { from: 'hiring'; by: string }[]; reportsTo?: ReportsTo }
+/**
+ * What every contributor added, merged: what the runtime places, and a spawn's defaults, exemptions, crew edge and
+ * `fields`, each contributor's values for its own spawn fields, by capability.
+ */
+export type Merged = {
+  t: 'merged'
+  contributed: Contributed
+  defaults: { model?: string; effort?: string }
+  exempt: { from: 'hiring'; by: string }[]
+  reportsTo?: ReportsTo
+  fields: Map<string, Record<string, unknown>>
+}
 
 /** Two contributors on one name, or one on a name the core or the config passes: `caps`, the contributors named. */
 export type Conflict = { t: 'conflict'; message: string; caps: string[] }
 
-/** The parts of a spawn only: a resume or fork keeps its transcript's prompt and model, and its worker's crew and limits. */
-const spawnOnly = ({ prompt, defaults, exempt, reportsTo, ...rest }: LaunchParts, kind: SpawnLaunch['kind'] | ResumeLaunch['kind']): LaunchParts =>
-  kind === 'spawn' ? { ...rest, prompt, defaults, exempt, reportsTo } : rest
+/**
+ * The parts of a spawn only: a resume or fork keeps its transcript's prompt and model, its worker's crew and limits, and
+ * the field facts its lineage holds.
+ */
+const spawnOnly = ({ prompt, defaults, exempt, reportsTo, fields, ...rest }: LaunchParts, kind: SpawnLaunch['kind'] | ResumeLaunch['kind']): LaunchParts =>
+  kind === 'spawn' ? { ...rest, prompt, defaults, exempt, reportsTo, fields } : rest
 
 /** The first name two contributors both give: `seen` holds who gave each so far. */
 const twice = (seen: Map<string, string>, cap: string, names: string[]): [string, string] | undefined => {
@@ -76,7 +119,7 @@ const twice = (seen: Map<string, string>, cap: string, names: string[]): [string
 
 /** Contributions merged in fold order for a launch of `kind` on `runtime`, or the first conflict among them. */
 export const mergeParts = (kind: SpawnLaunch['kind'] | ResumeLaunch['kind'], runtime: Runtime, contributions: Contribution[], taken: TakenParts): Merged | Conflict => {
-  const merged: Merged = { t: 'merged', contributed: { systemPrompt: [], prompt: [], env: {}, args: [] }, defaults: {}, exempt: [] }
+  const merged: Merged = { t: 'merged', contributed: { systemPrompt: [], prompt: [], env: {}, args: [] }, defaults: {}, exempt: [], fields: new Map() }
   const flags = new Map<string, string>()
   const envs = new Map<string, string>()
   const defaults = new Map<string, string>()
@@ -105,6 +148,7 @@ export const mergeParts = (kind: SpawnLaunch['kind'] | ResumeLaunch['kind'], run
     Object.assign(merged.defaults, parts.defaults)
     merged.exempt.push(...[...new Set(parts.exempt)].map((from) => ({ from, by: cap })))
     if (parts.reportsTo !== undefined) merged.reportsTo = { callsign: parts.reportsTo, by: cap }
+    if (parts.fields) merged.fields.set(cap, parts.fields)
   }
   return merged
 }
@@ -120,6 +164,15 @@ export const coreFacts = (merged: Merged, reportsTo: string | undefined): ModEve
  * before anything the session does, so no early exit can come between the spawn and its fact.
  */
 export const promptedFacts = (prompt: string | undefined, by: string | undefined): ModEvent[] => (prompt && by ? [{ hook_event_name: PROMPTED_BY, by }] : [])
+
+/** The values contributors gave for fields the spawn left unset, by capability: a field the spawn set keeps its value. */
+export const filledFields = (spawn: Map<string, Record<string, unknown>>, contributed: Map<string, Record<string, unknown>>): Map<string, Record<string, unknown>> =>
+  new Map(
+    [...contributed].flatMap(([cap, values]) => {
+      const unset = Object.entries(values).filter(([name]) => !(spawn.get(cap) && name in spawn.get(cap)!))
+      return unset.length ? [[cap, Object.fromEntries(unset)] as const] : []
+    }),
+  )
 
 /** A spawn's field values, by capability, as the facts the host logs: `tower.x.<cap>.<field>`. */
 export const fieldFacts = (x: Record<string, Record<string, unknown>>): ModEvent[] =>

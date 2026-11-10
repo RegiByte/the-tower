@@ -1421,9 +1421,13 @@ source's). `ctx` reads only: the floor's `settings`, `read`, and its
 collections' `list` and `read`. It returns parts the session's runtime places: `systemPrompt` (after the tower's
 brief), `prompt` (after the first prompt), `env` (in Claude's settings, without a parent session's markers: those settings are part of the session's argv, which
 its log's header keeps for good, so contributed env is no place for secrets),
-`defaults` (`model`, `effort`, used only when the spawn leaves one out), `args.claude` (Claude's own flags, each
-`--flag` or `--flag=value`, placed before the tower's), `exempt: ['hiring']` and `reportsTo` (a callsign); `prompt`,
-`defaults`, `exempt` and `reportsTo` count on a spawn only. A flag the tower passes (`--name`, `--settings`,
+`defaults` (`model`, `effort`, used only when the spawn leaves one out), `fields` (values for its own spawn fields the
+spawn left unset, since 1.167: each parsed by its field's schema and logged as a spawn's field is, `tower.x.<cap>.<field>`
+before the session starts, so its folds, its gate answer and every later launch of the lineage read it as a fact; a
+field the spawn set keeps the spawn's value, and one the extension doesn't declare, or a value off its schema, is a part
+the runtime can't place), `args.claude` (Claude's own flags, each `--flag` or `--flag=value`, placed before the
+tower's), `exempt: ['hiring']` and `reportsTo` (a callsign); `prompt`, `defaults`, `fields`, `exempt` and `reportsTo`
+count on a spawn only. A flag the tower passes (`--name`, `--settings`,
 `--add-dir`, `--plugin-dir`, `--append-system-prompt`, `--model`, `--effort`, `--resume`, `--`) or the config's `argv`
 command the session runs passes, an env key the config's `env` sets, and a flag, env key, `defaults` member or `reportsTo` two extensions both
 give, refuses the launch, naming both. A contributor that throws, doesn't settle within 10 s, or returns what the runtime can't place refuses a spawn that
