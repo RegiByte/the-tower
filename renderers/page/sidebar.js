@@ -451,7 +451,7 @@ export async function sidebar(deps) {
     const duty = f.cards.filter(onDuty)
     const tone = loudest(duty)
     /** @param {string} cls @param {number} n @param {string} words */
-    const count = (cls, n, words) => `<span class="chip ${cls}" data-tip="${esc(words)}"><span class="lamp"></span><b>${n}</b><span class="sr-only"> ${esc(words)}</span></span>`
+    const count = (cls, n, words) => `<span class="chip ${cls}" data-tip="${esc(words)}" data-n="${n}"><span class="lamp"></span><b>${n}</b><span class="sr-only"> ${esc(words)}</span></span>`
     return `<span class="summary">${[
       waits.length && count(`waits some calls ${loudest(waits)}`, waits.length, WAITING_NAME),
       offers && count('offered some', offers, 'offered or asked'),
