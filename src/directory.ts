@@ -26,7 +26,7 @@ import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 // `reviewerOf` is the core's deprecated copy of the reviews client's: `tower agent` and `tower agents` say it.
-import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnDefaults, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
@@ -528,13 +528,14 @@ const keepContent = async (file: string | undefined): Promise<{ ext: string; con
 const HIRE_USAGE = `${usageLine('hire')}, the prompt on stdin when no item names it`
 const HIRE_FIELDS = ['model', 'effort', 'callsign', 'name', 'base'] as const
 
-type HireArgs = { item?: string; floor?: string; fields: Partial<Pick<SpawnForm, (typeof HIRE_FIELDS)[number]>> }
+/** `fields`: the spawn form's entries a hire sets, named as the form names them, an extension's `x.<cap>.<field>` included. */
+type HireArgs = { item?: string; floor?: string; fields: [string, string][] }
 
 const hireArgs = (args: string[]): HireArgs => {
-  const hire: HireArgs = { fields: {} }
+  const hire: HireArgs = { fields: [] }
   for (let i = 0; i < args.length; i++) {
-    const field = HIRE_FIELDS.find((f) => f === args[i])
-    if (field && args[i + 1]) hire.fields[field] = args[++i]
+    const field = HIRE_FIELDS.some((f) => f === args[i]) || args[i].startsWith('x.')
+    if (field && args[i + 1]) hire.fields.push([args[i], args[++i]])
     else if (args[i] === 'floor' && args[i + 1]) hire.floor = args[++i]
     else if (!hire.item) hire.item = args[i]
     else throw new CliError(`"${args[i]}" is a second item. ${HIRE_USAGE}`)
@@ -882,7 +883,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const named = hire.item ? itemNamed(own, hire.item) : undefined
     const prompt = named ? await readItem(own, named.collection.id, named.item.id) : await readStdin()
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
-    const form = { ...spawnDefaults(floor, prompt), ...hire.fields }
+    const form = spawnForm(floor, [['prompt', prompt], ...hire.fields])
     const [[verbName, body], given] = spawnCall(floor, form)
     const reply = await ask<Replies['spawn']>(verbName, { ...body, ...given, by: me, hire: true })
     if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. A review, \`tower x reviews review\`, is never limited.`)

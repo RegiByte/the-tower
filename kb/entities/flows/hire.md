@@ -4,9 +4,9 @@
   "name": "Hire",
   "summary": "A worker starts another on a prompt with tower hire: a spawn marked as its hire, which the tower weighs against the floor's hiring limits, starts, and logs as a fact in the hirer's log, one hire of a hirer at a time; the board turns the fact into the new card's hiredBy.",
   "in": "tower",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-10",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
-  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/hires.ts#hireSettled", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf", "hub/src/tower/dispatch.ts#newLaunch"]
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/hires.ts#hireSettled", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/spawn-form.ts#spawnForm", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf", "hub/src/tower/dispatch.ts#newLaunch"]
 }
 ---
 ```mermaid
@@ -17,7 +17,7 @@ sequenceDiagram
   participant H as [[host-daemon]]
   participant R as [[system-root]]
   participant F as [[log-reductions]]
-  W->>M: tower hire [tag|id] [floor|model|effort|name|base ...] (prompt on stdin or a kept item)
+  W->>M: tower hire [tag|id] [floor|model|effort|name|base|x.cap.field ...] (prompt on stdin or a kept item)
   M->>T: GET /board
   M->>T: POST /spawn (spawnCall of the defaults and the given fields, by: hirer, hire: true)
   T->>T: in the hirer's turn, once the floor's launch contributors ran: tower/spawn.gate, the core first (hireRefusal of every card, the spawn's floor, the hirer's card, unless one exempted it), then extensions
@@ -40,7 +40,10 @@ sequenceDiagram
   log holds its exit.
 - **What is hired.** The same form the user's quick hire sends, everything left to its default
   ([`spawnDefaults`](ref:hub/src/shared/spawn-form.ts#spawnDefaults), [`spawnCall`](ref:hub/src/shared/spawn-form.ts#spawnCall)):
-  a new worktree when the floor cuts by default, else the hub. The prompt is stdin or a kept item's text; an empty
+  a new worktree when the floor cuts by default, else the hub. The fields given are the form's entries, gathered by
+  [`spawnForm`](ref:hub/src/shared/spawn-form.ts#spawnForm), an extension's `x.<cap>.<field> <value>` among them,
+  parsed by its schema on the tower as a form's is. The floor's launch contributors see the spawn with `hire: true` and
+  the hirer as `by` ([[extensions]]). The prompt is stdin or a kept item's text; an empty
   one is refused.
 - **On another floor.** `floor <id>` ([`hireFloor`](ref:hub/src/directory.ts#hireFloor)) hires on that floor, with
   that floor's defaults, as the caller's hire; a kept item is still read from the hirer's floor, and an unknown id is

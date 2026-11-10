@@ -101,8 +101,8 @@ export const CLI_VERBS = {
   },
   hire: {
     of: 'worker',
-    usage: 'hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>]',
-    help: "start a worker on this floor, or the floor named, on a prompt: the text of an item of this floor's collections, or stdin; refused past the hiring floor's `hiring` limits. `callsign` names the worker, `name` its new worktree",
+    usage: 'hire [<tag|id>] [floor <id>] [model <m>] [effort <e>] [callsign <C>] [name <n>] [base origin/<b>] [x.<cap>.<field> <value>...]',
+    help: "start a worker on this floor, or the floor named, on a prompt: the text of an item of this floor's collections, or stdin; refused past the hiring floor's `hiring` limits. `callsign` names the worker, `name` its new worktree, `x.<cap>.<field>` an extension's spawn field, its value a string parsed by the field's schema as a spawn form's is",
   },
   home: {
     of: 'worker',
