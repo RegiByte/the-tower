@@ -1297,6 +1297,33 @@ test("server: a launch contributor sees a worker's hire as one, its hirer as by,
   }
 })
 
+test("server: a launch contributor's fields fill the spawn fields it left unset, logged as the spawn's are; a field the spawn set keeps its value, and one the extension doesn't declare refuses the spawn", async () => {
+  const server = readFileSync(path.join(ROLES, 'server.ts'), 'utf8')
+  const from = "return role ? { systemPrompt: [await collections.read(project, 'roles', role)] } : {}"
+  assert.ok(server.includes(from), `the roles fixture no longer holds: ${from}`)
+  const returning = async (fields: string) => {
+    writeFileSync(path.join(ROLES, 'server.ts'), server.replace(from, `return { fields: ${fields}, ...(role ? { systemPrompt: [await collections.read(project, 'roles', role)] } : {}) }`))
+    assert.deepEqual(await command('extension/restart', { id: 'roles' }), { t: 'restarted', state: 'started' })
+  }
+  const roleFacts = (id: string) =>
+    readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8').trim().split('\n').map((line) => JSON.parse(line)).filter((e) => e[1] === 'h' && e[2].hook_event_name === 'tower.x.roles.role').map((e) => e[2].value)
+  try {
+    await returning("{ role: 'filled.md' }")
+    const filled = await command('spawn', { project: 'lab' })
+    assert.deepEqual(roleFacts(filled.id), ['filled.md'])
+    const set = await command('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
+    assert.deepEqual(roleFacts(set.id), ['builder.md'])
+
+    await returning("{ mood: 'calm' }")
+    const undeclared = await post('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
+    assert.equal(errorCode(undeclared), 'internal')
+    assert.match(JSON.parse(undeclared.body).message, /^roles's launch contributor returned a part claude can't place: x\.roles\.mood: roles declares no spawn field mood/)
+  } finally {
+    writeFileSync(path.join(ROLES, 'server.ts'), server)
+    await command('extension/restart', { id: 'roles' })
+  }
+})
+
 test('server: a collection item is created, written, read back and deleted', async () => {
   const item = { project: 'lab', collection: 'drafts' }
   const created = await command('collection/create', { ...item, name: 'A Draft', ext: 'md', content: '# A draft\n' })

@@ -34,9 +34,9 @@ test('parts merge in fold order: text concatenated, flags kept in order, env scr
   ])
 })
 
-test("a resume or a fork takes no prompt, defaults, exemption or crew edge: those are a spawn's", () => {
-  const m = merged(mergeParts('fork', 'claude', [{ cap: 'roles', parts: { systemPrompt: ['a builder'], prompt: ['p'], defaults: { model: 'opus' }, exempt: ['hiring'], reportsTo: 'ODIN-07' } }], TAKEN))
-  assert.deepEqual(m, { t: 'merged', contributed: { systemPrompt: ['a builder'], prompt: [], env: {}, args: [] }, defaults: {}, exempt: [] })
+test("a resume or a fork takes no prompt, defaults, exemption, crew edge or fields: those are a spawn's", () => {
+  const m = merged(mergeParts('fork', 'claude', [{ cap: 'roles', parts: { systemPrompt: ['a builder'], prompt: ['p'], defaults: { model: 'opus' }, exempt: ['hiring'], reportsTo: 'ODIN-07', fields: { role: 'worker' } } }], TAKEN))
+  assert.deepEqual(m, { t: 'merged', contributed: { systemPrompt: ['a builder'], prompt: [], env: {}, args: [] }, defaults: {}, exempt: [], fields: new Map() })
 })
 
 test('a flag, env key, defaults member or crew edge given twice refuses, naming both; so does a flag the core or the config passes, and an env key the config sets', () => {

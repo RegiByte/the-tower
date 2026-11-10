@@ -9,7 +9,7 @@
 import { buildTopology, defineResource, reconcileSystem, toMermaid, topologicalSort, type Resource, type StartedResource, type StartedSystem, type SystemConfig } from 'braided'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
-import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, settingsOn, withProblem, withRendererLayouts, type Accepted, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
+import { mismatchOf, NO_EXTENSIONS, PROBLEMS_SHOWN, registry, resolve, settingsOn, withProblem, withRendererLayouts, type Accepted, type CompiledField, type Outcome, type Registry, type Resolved } from '../bridge/extensions.ts'
 import type { Folder, FoldProblem, OwnAt, SubjectDecl } from '../bridge/folds.ts'
 import { discover, newestIn } from '../extensions.ts'
 import { importFresh } from '../fresh-imports.ts'
@@ -88,7 +88,7 @@ export type Instance = {
 }
 
 /** An extension's launch contributor on a floor it is on, as a launch calls it. */
-export type Launcher = { id: string; cap: string; launch(request: LaunchRequest): Promise<unknown> }
+export type Launcher = { id: string; cap: string; fields: Map<string, CompiledField>; launch(request: LaunchRequest): Promise<unknown> }
 
 /** A capability as a call finds it: provided by nobody, provided and not running, being started or restarted, or running. */
 export type Live = { t: 'none' } | { t: 'down'; why: string } | { t: 'moving'; why: 'starting' | 'restarting' } | { t: 'up'; a: Accepted; instance: Instance }
@@ -207,7 +207,7 @@ export const extensions = defineResource({
       /** The running extensions' launch contributors on a floor where each is on, in resolved order. */
       launchers: (project: string): Launcher[] =>
         running().flatMap(({ a, instance }) =>
-          instance.launch && !a.off.includes(project) ? [{ id: a.id, cap: a.provides, launch: instance.launch }] : [],
+          instance.launch && !a.off.includes(project) ? [{ id: a.id, cap: a.provides, fields: a.fields, launch: instance.launch }] : [],
         ),
       /** The plugin folders the running extensions on a floor teach a session of `runtime` with, in resolved order. */
       plugins: (project: string, runtime: Runtime): string[] =>
