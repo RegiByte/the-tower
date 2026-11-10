@@ -448,13 +448,19 @@ export type Caller = {
 
 /**
  * What a launch contributor is asked about: a spawn, a resume, or a fork (a resume as a new worker). `runtime`: the
- * session's. `model`, `effort`: what a spawn asked for. `fields`: the spawn's values of the extension's own fields.
+ * session's. `hire`: whether a spawn is a worker's hire; `by`: the session of the worker that asked for it, a hire's
+ * hirer. A resume or fork is never a hire and has no `by`, as `tower/spawn.gate` weighs it. `model`, `effort`: what a spawn asked for. `fields`: the
+ * spawn's values of the extension's own fields.
  * `facts`: the extension's facts over the worker's lineage, a spawn's being the ones about to be logged, a fork's the
  * copies of its source's.
  */
 export type LaunchRequest = {
   kind: 'spawn' | 'resume' | 'fork'
   runtime: Runtime
+  /** @since 1.166 */
+  hire: boolean
+  /** @since 1.166 */
+  by?: string
   project: string
   /** Where the session runs: on a cut, the worktree it is cut into, which may not exist yet. */
   cwd: string
