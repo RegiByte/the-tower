@@ -1260,11 +1260,17 @@ test("server: a spawn's extension field is logged as a fact before the worker's 
 
 test("server: a launch contributor sees a worker's hire as one, its hirer as by, and the user's spawn as none; tower hire's x.<cap>.<field> reaches the contributor's fields", async () => {
   const server = readFileSync(path.join(ROLES, 'server.ts'), 'utf8')
+  const swap = (text: string, from: string, to: string) => {
+    assert.ok(text.includes(from), `the roles fixture no longer holds: ${from}`)
+    return text.replace(from, to)
+  }
   writeFileSync(
     path.join(ROLES, 'server.ts'),
-    server
-      .replace('launch: async ({ project, fields, facts }', 'launch: async ({ project, fields, facts, hire, by }')
-      .replace("return role ? { systemPrompt: [await collections.read(project, 'roles', role)] } : {}", "return { systemPrompt: [`hire ${hire} by ${by}`, ...(role ? [await collections.read(project, 'roles', role)] : [])] }"),
+    swap(
+      swap(server, 'launch: async ({ project, fields, facts }', 'launch: async ({ project, fields, facts, hire, by }'),
+      "return role ? { systemPrompt: [await collections.read(project, 'roles', role)] } : {}",
+      "return { systemPrompt: [`hire ${hire} by ${by}`, ...(role ? [await collections.read(project, 'roles', role)] : [])] }",
+    ),
   )
   assert.deepEqual(await command('extension/restart', { id: 'roles' }), { t: 'restarted', state: 'started' })
   const brief = (id: string) => {
