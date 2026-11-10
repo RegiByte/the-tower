@@ -22,6 +22,9 @@ each one as `tower extensions check` does, so every example here works with the 
 - [`pr-status`](pr-status/): badges on a worker's card naming its branch's pull request, where it stands and its review
   and checks, asked of GitHub in one batched `gh` query as a turn ends and on a backed-off clock, kept in a stream only
   when it changes.
+- [`roles`](roles/): a worker's role, its default model and effort, its prompt from a collection of the floor's and
+  whether it hires or is consulted: a spawn field, a launch contributor that fills the field on a hire naming none, a
+  `tower/spawn.gate` answer and a read for who to consult.
 
 How extensions work: [docs/extending.md](../../docs/extending.md#extensions). What an extension's README holds, and how
 its pictures are taken: [An extension's README](../../docs/extending.md#an-extensions-readme).
