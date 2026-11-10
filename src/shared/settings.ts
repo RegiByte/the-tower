@@ -113,7 +113,7 @@ export type PrefChoice = { value: string | number; label: string; means: string;
 
 /** A setting of `tower.prefs`, drawn by its kind: a segmented choice, a face by name, a size in px. */
 export type PrefSetting =
-  | { kind: 'choice'; key: 'scheme' | 'motion' | 'contrast' | 'scale'; label?: string; choices: PrefChoice[] }
+  | { kind: 'choice'; key: 'scheme' | 'motion' | 'contrast' | 'waits' | 'scale'; label?: string; choices: PrefChoice[] }
   | { kind: 'face'; key: 'ui' | 'display' | 'mono'; label: string; means: string; shipped: string; suggestions: string[] }
   | { kind: 'size'; key: 'termSize'; label: string; means: string; min: number; max: number }
 
@@ -151,6 +151,10 @@ export const PREF_SECTIONS: PrefSection[] = [
       { kind: 'choice', key: 'contrast', label: 'Contrast', choices: [
         { value: '', label: 'System', means: 'contrast follows this computer’s increase contrast setting' },
         { value: 'more', label: 'More', means: 'muted text closer to ink, and stronger lines' },
+      ] },
+      { kind: 'choice', key: 'waits', label: 'Waits', choices: [
+        { value: '', label: 'Colour', means: 'a worker waiting on you is coloured in the sidebar, its lamp blinking when it needs you' },
+        { value: 'flash', label: 'Flash', means: 'a worker waiting on you flashes in the sidebar until you answer or dismiss it, and an arrow at the sidebar’s edge points to one scrolled out of sight. Motion set to Reduce flashes it once' },
       ] },
       { kind: 'choice', key: 'scale', label: 'Text size', choices: PREF_CHOICES.scale.map((value) => ({ value, label: `${value}%`,
         means: `every panel’s text at ${value}% of this browser’s text size; terminals keep the Terminal size` })) },

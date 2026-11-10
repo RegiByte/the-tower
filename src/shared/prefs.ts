@@ -11,6 +11,8 @@
  *   termSize   px                         a terminal's font when its viewer drives it, and the most a watched one grows to
  *   motion     '' | 'reduce' | 'full'     `data-motion` on the root: reduce or full override the system's setting
  *   contrast   '' | 'more'                `data-contrast` on the root: more strengthens muted text and lines
+ *   waits      '' | 'flash'               `data-waits` on the root: flash makes what waits on the viewer flash, and points
+ *                                         to one scrolled out of sight (the tower page's sidebar)
  *   scale      % of the browser's text    `--scale` on the root: every size of text the type scale draws (design.ts `size`)
  *
  * The tower serves this module as `/prefs.js`.
@@ -19,6 +21,7 @@ import type { SchemeChoice } from './shelf-page.ts'
 
 export type Motion = '' | 'reduce' | 'full'
 export type Contrast = '' | 'more'
+export type Waits = '' | 'flash'
 
 export type Prefs = {
   scheme: SchemeChoice
@@ -28,13 +31,14 @@ export type Prefs = {
   termSize: number
   motion: Motion
   contrast: Contrast
+  waits: Waits
   scale: number
 }
 
-export const PREFS_DEFAULT: Prefs = { scheme: '', ui: '', display: '', mono: '', termSize: 13, motion: '', contrast: '', scale: 100 }
+export const PREFS_DEFAULT: Prefs = { scheme: '', ui: '', display: '', mono: '', termSize: 13, motion: '', contrast: '', waits: '', scale: 100 }
 
 /** The values each choice may take. tower.js keeps a record to them as it takes one in, from storage, a frame or `set`. */
-export const PREF_CHOICES = { scheme: ['', 'light', 'dark'], motion: ['', 'reduce', 'full'], contrast: ['', 'more'], scale: [90, 100, 125, 150] }
+export const PREF_CHOICES = { scheme: ['', 'light', 'dark'], motion: ['', 'reduce', 'full'], contrast: ['', 'more'], waits: ['', 'flash'], scale: [90, 100, 125, 150] }
 
 /** The range of `termSize` a viewer may pick, in px. */
 export const TERM_SIZES = { min: 9, max: 24 }

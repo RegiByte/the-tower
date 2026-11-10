@@ -112,10 +112,13 @@ export async function sidebar(deps) {
     return overflowOf(/** @type {Region & { overflows: Overflow[] }} */ (region), entry) === 'count' ? rowCounted(c, entry) : rowWrapped(c, entry)
   }
 
+  /** Whether the worker waits on this viewer, who hasn't dismissed it: its row and lamp are marked `calls`, which flash when the viewer asks (`waits` in `tower.prefs`). @param {Card} c */
+  const callsYou = (c) => c.waiting && heededWaits(board(), heed()).some((w) => w.id === c.id)
+
   /** @param {Card} c @param {Card} [over] */
   const sessionHtml = (c, over) => {
     const adds = rowAdds(c)
-    return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
+    return `<div class="sess ${lampOf(c)} ${c.waiting ? 'waits' : ''} ${callsYou(c) ? 'calls' : ''} ${c.id === selected() ? 'sel' : ''} ${onDuty(c) ? '' : 'gone'}" data-id="${c.id}" data-hold="${c.id}">
     <div class="top"><span class="lamp"></span><a class="call" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''}${adds.by}>${callsign(c.id)}</a><span class="st${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}">${statusWord(c)}${c.stuck || c.stranded ? `<span class="sr-only">: ${esc(statusTitle(c))}</span>` : ''}</span><span class="ago" translate="no" data-since="${c.enteredAt}"></span></div>
     ${c.worktree ? `<div class="branch" data-tip="worktree ${esc(c.worktree.name)}: ${esc(c.cwd)}">${withIcons(esc([branchLine(c), pairLineOf(c.hiredBy && c.hiredBy.callsign === over?.callsign ? { ...c, hiredBy: undefined } : c, undefined)].filter(Boolean).join(' · ')))}</div>` : ''}
     ${adds.lines}
@@ -450,7 +453,7 @@ export async function sidebar(deps) {
     /** @param {string} cls @param {number} n @param {string} words */
     const count = (cls, n, words) => `<span class="chip ${cls}" data-tip="${esc(words)}"><span class="lamp"></span><b>${n}</b><span class="sr-only"> ${esc(words)}</span></span>`
     return `<span class="summary">${[
-      waits.length && count(`waits some ${loudest(waits)}`, waits.length, WAITING_NAME),
+      waits.length && count(`waits some calls ${loudest(waits)}`, waits.length, WAITING_NAME),
       offers && count('offered some', offers, 'offered or asked'),
       duty.length && count(/** @type {Attention} */ (tone), duty.length, `${noun(duty.length, 'worker')} on duty, the loudest: ${ATTENTION_NAME[/** @type {Attention} */ (tone)]}`),
     ].filter(Boolean).join('')}</span>`
@@ -596,7 +599,7 @@ export async function sidebar(deps) {
   ${waiting ? `<span class="count" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
   ${dutyOrderIn(board(), viewer().crewsOrder).map((c) => {
       const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
-      return `<a class="lamp ${lampOf(c)} ${c.id === selected() ? 'sel' : ''}" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`
+      return `<a class="lamp ${lampOf(c)} ${callsYou(c) ? 'calls' : ''} ${c.id === selected() ? 'sel' : ''}" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`
     }).join('')}`
 
   /** The header's buttons name the chords of the commands they share, as the config binds them. */

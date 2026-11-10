@@ -139,6 +139,19 @@ body:has(.crew-group.dragged) .tower-tip { visibility: hidden; }
   border-left: 4px solid var(--c); cursor: pointer; transition: border-color .15s ease-out, box-shadow .15s ease-out; }
 .sess:hover { box-shadow: var(--shadow); }
 .sess.waits.needs { border-color: var(--c); background: color-mix(in oklab, var(--c) 8%, var(--panel)); }
+/* Waits that flash (`waits: 'flash'` in tower.prefs): what waits on the viewer, and isn't dismissed, is marked `calls`:
+   its outline flashes in its attention's colour and its lamp blinks with it, at a need's pace, as does the lamp of
+   every count of waits; reduced motion flashes it once. An arrow at the sidebar's edge (calls.js) blinks, pointing to those scrolled out of sight. */
+:root[data-waits='flash'] .sess.calls { border-color: var(--c); box-shadow: 0 0 0 2px var(--c); animation: call 1.1s steps(2, jump-none) infinite; }
+@keyframes call { 50% { border-color: var(--line); border-left-color: var(--c); box-shadow: none; } }
+:root[data-waits='flash'] :is(.calls .lamp, .lamp.calls, .chip.waits.some .lamp) { animation: blink 1.1s steps(2, jump-none) infinite; }
+.edge-call { position: fixed; z-index: 16; translate: -50% 0; display: inline-flex; align-items: center; gap: var(--sp-2xs); min-height: var(--control); padding: 0 var(--sp-m);
+  border: 0; border-radius: var(--radius-pill); background: var(--c); color: var(--on); font-weight: 800; cursor: pointer; }
+:root[data-waits='flash'] .edge-call { animation: blink 1.1s steps(2, jump-none) infinite; }
+.edge-call .icon { width: var(--icon-m); height: var(--icon-m); }
+.edge-call.up .icon { rotate: 180deg; }
+/* Hidden, an arrow keeps blinking unseen, so it shows again in step rather than starting its blink over. */
+.edge-call[hidden] { display: inline-flex; visibility: hidden; }
 :is(.sess.sel, .pane-tab.on, .tab.open, .tray.on, .side-views button.on) { color: var(--ink); border-color: var(--ink); box-shadow: var(--selected); }
 .floors .sess.sel { border-left-color: var(--c); }
 .sess .top { display: flex; align-items: center; gap: var(--sp-m); }
