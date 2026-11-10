@@ -4,6 +4,7 @@ import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, formFields, spa
 import { commandOf } from './keymap.ts'
 import { tagOf } from './tags.ts'
 import { loop, type Handlers, type Loop, type StateEffect } from './loop.ts'
+import { base64Of, uploadRefusal } from './uploads.ts'
 
 /**
  * The new-worker dialog as a machine, every renderer's: `spawnHandlers` its steps, `wireSpawn` the dialog element it
@@ -93,7 +94,8 @@ export type SpawnDrafts<I, K extends KeptDraft> = {
  * drafts client and its collection calls, a page without `drafts` keeping no drafts, as a floor with drafts off (@since 1.89); `held`: the draft the form was opened on as the renderer holds it now, for
  * keeping a prompt in it; `kept`: a draft a prompt was kept in; `shown`: the dialog has just opened, before its prompt
  * takes focus; `started`: a worker started from the form, on the draft it was opened on, which the renderer deletes;
- * `dismissed`: the dialog closed without starting one (@since 1.146).
+ * `dismissed`: the dialog closed without starting one (@since 1.146); `upload`: given, a file dropped or pasted on the
+ * prompt is copied where Claude can read it, its bytes base64, and its path answered (`upload`, the verb) (@since 1.169).
  */
 export type SpawnIo<D, I, K extends KeptDraft> = {
   board(): Board
@@ -107,13 +109,15 @@ export type SpawnIo<D, I, K extends KeptDraft> = {
   started(id: string, on: D | undefined): void
   dismissed?(): void
   toast(text: string): void
+  upload?(name: string, data: string): Promise<string>
 }
 
 /**
  * Runs the new-worker dialog in `dialog`, opened by dispatching `open`. The form's summary, branch placeholder and callsign's
  * refusal follow its fields; Start (or the `submit` key) starts a worker once the form is valid, and Cancel or Esc
  * closes it, except while Start waits on the tower. The dialog closes from its buttons, never by a form submit: a
- * shelf page runs sandboxed without `allow-forms`.
+ * shelf page runs sandboxed without `allow-forms`. Files dropped or pasted on the prompt land in it as their paths, as
+ * on a terminal, when the renderer gives `upload`: a screenshot dragged in reaches Claude as its file.
  */
 export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, io: SpawnIo<D, I, K>): Loop<Spawning<D>, SpawnEvent<D>> {
   const floorOf = (project: string) => io.board().floors.find((f) => f.id === project)
@@ -144,6 +148,29 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     if (!kept) return
     io.kept(kept)
     io.toast(`${from ? 'Your edits were kept in the draft' : 'Your prompt was kept as a draft'}: ${drafts.titleOf(kept.text)} (${tagOf(kept.id!)})`)
+  }
+  /**
+   * Files given to the prompt, uploaded one by one, their paths typed at the caret a space apart and from the text
+   * around them. Refused whole, said in a toast, when one is over the tower's bound.
+   */
+  async function typePaths(upload: NonNullable<SpawnIo<D, I, K>['upload']>, files: File[]) {
+    const refusal = files.map((file) => uploadRefusal(file.name, file.size)).find(Boolean)
+    if (refusal) throw new Error(refusal)
+    const paths = []
+    for (const file of files) paths.push(await upload(file.name, await base64Of(file)))
+    if (machine.state().t !== 'editing') return
+    const area = prompt()
+    const { selectionStart: at, selectionEnd: end, value } = area
+    const before = at && !/\s/.test(value[at - 1]) ? ' ' : ''
+    const after = end < value.length && !/\s/.test(value[end]) ? ' ' : ''
+    area.focus()
+    area.setRangeText(`${before}${paths.join(' ')}${after}`, at, end, 'end')
+    sync()
+  }
+  const takeFiles = (e: Event, list: FileList | undefined) => {
+    if (!io.upload || !list?.length || machine.state().t !== 'editing') return
+    e.preventDefault()
+    typePaths(io.upload, [...list]).catch((err: Error) => io.toast(err.message))
   }
   const machine = loop({
     state: spawnClosed<D>(),
@@ -178,6 +205,17 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     },
   })
   dialog.addEventListener('input', sync)
+  /** Files dropped anywhere on the dialog go to the prompt, so a drop that misses it never opens the file in place of the page. */
+  dialog.addEventListener('dragover', (e) => {
+    if (!io.upload || !e.dataTransfer?.types.includes('Files') || machine.state().t !== 'editing') return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  })
+  dialog.addEventListener('drop', (e) => takeFiles(e, e.dataTransfer?.files))
+  /** A paste on the prompt with text in it is the text's (a sheet's or a document's copy carries a picture of itself too): the textarea's. */
+  dialog.addEventListener('paste', (e) => {
+    if ((e.target as Element).matches('[name=prompt]') && !e.clipboardData?.types.includes('text/plain')) takeFiles(e, e.clipboardData?.files)
+  })
   dialog.addEventListener('click', (e) => {
     const close = (e.target as Element).closest<HTMLElement>('[data-close]')
     if (close?.dataset.close === 'cancel') return machine.dispatch({ type: 'cancel' })

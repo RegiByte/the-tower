@@ -9,7 +9,7 @@ import type { ScreenMsg, TerminalMsg } from './shelf-page.ts'
 import { fitSize, loadTerminalFont, reportWheel, type TermFont } from './terminal.ts'
 import type { ShellStream } from './terms.ts'
 import { terminalKeymap } from './termkeys.ts'
-import { uploadRefusal } from './uploads.ts'
+import { base64Of, uploadRefusal } from './uploads.ts'
 
 /**
  * A terminal a viewer has open on a PTY, every renderer's: `termHandlers` its steps, `mountTermView` the xterm.js view
@@ -248,15 +248,6 @@ export type TermViewHandle = {
   rescheme(): void
   close(): void
 }
-
-/** A file's bytes, base64. */
-const base64Of = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve((reader.result as string).slice((reader.result as string).indexOf(',') + 1))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
 
 /**
  * Keeps a key xterm typed on keypress out of its input textarea. xterm sends capitals (to type them right with Caps Lock
