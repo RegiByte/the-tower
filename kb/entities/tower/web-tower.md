@@ -4,7 +4,7 @@
   "name": "Tower page",
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-10",
   "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/policies-panel.ts#policiesHtml", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft"]
 }
 ---
@@ -33,7 +33,8 @@ running subagents hang under it as satellites ([`satellitesOf`](ref:hub/src/shar
 rate limits fold into one chip naming the tightest limit ([[probes]]). A floor folds to its sign, which then carries
 its waits on you, its offers and its workers lamped by their loudest attention
 ([`loudest`](ref:hub/src/shared/status-words.ts#loudest)); which floors a viewer folded is view state in
-`tower.store`, and a floor never chosen is open while a worker on it needs you. Every collection a floor declares has
+`tower.store`, and a floor never chosen is open while a worker on it needs you. A viewer who has waits flash sees
+what waits on them flash, with an arrow at the sidebar's edge to those scrolled out of sight ([[viewer-prefs]]). Every collection a floor declares has
 a tray under its workers ([[collection-trays]]). Drafts are the drafts extension's ([[collections]], [[corkboard]]):
 a draft starts a worker through the page's new-worker dialog or is submitted to a running one; a view starts a worker
 through the same dialog with `kit.spawn` and stays where it is. A floor's policy offers sit above its workers as its
