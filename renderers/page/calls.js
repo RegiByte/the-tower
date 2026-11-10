@@ -18,8 +18,8 @@ const attentionOf = (el) => WAIT_ATTENTIONS.find((a) => el.classList.contains(a)
  * While the viewer has waits flash (`waits: 'flash'` in `tower.prefs`), an arrow at the sidebar's top edge when
  * something that waits on them (`.calls`: a worker's row, a folded floor's count, a lamp of the rail) is scrolled
  * above sight, and one at its foot when below, each counting them in the loudest of their attentions. Pressing one
- * scrolls the nearest of them into the middle. The top edge is under what sticks there (a floor's sign, which the
- * scroller's `scroll-padding-top` leaves room for), so a row hidden under it counts as above. The sidebar scrolls in
+ * scrolls the nearest of them into the middle. The top edge is under the floor's sign stuck there, if one is, so a row
+ * hidden under it counts as above; what the stuck sign itself carries is in sight. The sidebar scrolls in
  * its floors, or whole on a narrow or short window, or as the rail while folded: the one scrolling now is the one drawn
  * whose overflow scrolls.
  * @param {HTMLElement} side
@@ -41,6 +41,16 @@ export function watchCalls(side) {
   const scroller = () => /** @type {HTMLElement[]} */ ([side.querySelector('.rail'), side.querySelector('.floors'), side].filter(Boolean))
     .find((el) => el.getClientRects().length > 0 && /auto|scroll/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1)
 
+  /**
+   * The floor's sign stuck at the scroller's top, if one is: one at its sticky `top` from the scroller's padding edge,
+   * pushed up by nothing.
+   * @param {HTMLElement} el @returns {Element | undefined}
+   */
+  const stuckSign = (el) => {
+    const edge = el.getBoundingClientRect().top + el.clientTop + parseFloat(getComputedStyle(el).paddingTop)
+    return [...el.querySelectorAll('.floor > .sign')].find((sign) => Math.abs(sign.getBoundingClientRect().top - edge - parseFloat(getComputedStyle(sign).top)) < 1)
+  }
+
   /** @param {'up' | 'down'} way @param {Element[]} out @param {DOMRect} box */
   const draw = (way, out, box) => {
     const b = arrows[way]
@@ -54,7 +64,8 @@ export function watchCalls(side) {
     if (b.innerHTML !== html) b.innerHTML = html
     b.setAttribute('aria-label', words)
     b.dataset.tip = words
-    b.style.left = `${box.left + box.width / 2}px`
+    const half = b.offsetWidth / 2 + 4
+    b.style.left = `${Math.min(Math.max(box.left + box.width / 2, half), innerWidth - half)}px`
     b.style.top = way === 'up' ? `${box.top + 6}px` : ''
     b.style.bottom = way === 'down' ? `${innerHeight - box.bottom + 6}px` : ''
   }
@@ -64,11 +75,12 @@ export function watchCalls(side) {
     const el = scroller()
     if (!el) return draw('up', [], new DOMRect()), draw('down', [], new DOMRect())
     const whole = el.getBoundingClientRect()
-    const box = new DOMRect(whole.x, whole.y + (parseFloat(getComputedStyle(el).scrollPaddingTop) || 0), whole.width, whole.height)
-    box.height -= box.y - whole.y
+    const sign = stuckSign(el)
+    const top = sign ? sign.getBoundingClientRect().bottom : whole.top
+    const box = new DOMRect(whole.x, top, whole.width, whole.bottom - top)
     const marked = [...el.querySelectorAll('.calls')].filter((m) => m.getClientRects().length > 0)
     const rects = marked.map((m) => m.getBoundingClientRect())
-    draw('up', marked.filter((_, i) => rects[i].bottom <= box.top + 4), box)
+    draw('up', marked.filter((m, i) => rects[i].bottom <= (sign?.contains(m) ? whole.top : top) + 4), box)
     draw('down', marked.filter((_, i) => rects[i].top >= box.bottom - 4), box)
   }
 
