@@ -154,7 +154,7 @@ export const PREF_SECTIONS: PrefSection[] = [
       ] },
       { kind: 'choice', key: 'waits', label: 'Waits', choices: [
         { value: '', label: 'Colour', means: 'a worker waiting on you is coloured in the sidebar, its lamp blinking when it needs you' },
-        { value: 'flash', label: 'Flash', means: 'a worker waiting on you flashes in the sidebar and on the skyline until you answer or dismiss it, and an arrow at the sidebar’s edge points to one scrolled out of sight. Motion set to Reduce flashes it once' },
+        { value: 'flash', label: 'Flash', means: 'a worker waiting on you flashes in the sidebar and on the skyline until you answer or dismiss it, an arrow at the sidebar’s edge points to one scrolled out of sight, and Tower 3D pulses its lamps as for one that needs you. Motion set to Reduce flashes it once' },
       ] },
       { kind: 'choice', key: 'scale', label: 'Text size', choices: PREF_CHOICES.scale.map((value) => ({ value, label: `${value}%`,
         means: `every panel’s text at ${value}% of this browser’s text size; terminals keep the Terminal size` })) },

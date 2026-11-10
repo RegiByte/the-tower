@@ -36,7 +36,7 @@
     "hub/src/shared/shelf-page.ts",
     "hub/src/shared/changes-panel.ts#scopeHtml",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
-    "hub/renderers/page/calls.js#watchCalls", "hub/src/views/skyline.ts#mount",
+    "hub/renderers/page/calls.js#watchCalls", "hub/src/views/skyline.ts#mount", "hub/renderers/tower3d/src/main.ts#tickLamps",
     "hub/src/shared/term-view.ts",
     "hub/renderers/tower3d/src/ui.ts#hudHtml",
     "hub/renderers/tower3d/src/main.ts#paintSettings"
@@ -98,7 +98,9 @@ they are written once in shared code and a next renderer gets them by importing 
   the rail), pulses it in its attention's colour, and stands an arrow at the sidebar's edge counting those scrolled
   out of sight, which scrolls to the nearest ([`watchCalls`](ref:hub/renderers/page/calls.js#watchCalls)). Every
   flash starts on one beat, wherever it is drawn, so they all blink together. The skyline blinks their windows and their
-  building's beacon ([`mount`](ref:hub/src/views/skyline.ts#mount)). Reduced motion flashes them once, as every animation.
+  building's beacon ([`mount`](ref:hub/src/views/skyline.ts#mount)); Tower 3D pulses a floor's lamp, its wall tile
+  and the roof's beacon for every such wait, as for a need ([`tickLamps`](ref:hub/renderers/tower3d/src/main.ts#tickLamps)).
+  Reduced motion flashes them once, as every animation.
 - *Motion and contrast* live in `/design.css` ([`reduced`](ref:hub/src/shared/design.ts#reduced),
   [`designCss`](ref:hub/src/shared/design.ts#designCss)): the root's choice overrides the system's. Tower 3D's camera
   reads [`reducedMotion`](ref:hub/src/shared/prefs.ts#reducedMotion); the text it paints on canvas in the world keeps
