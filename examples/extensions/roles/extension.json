@@ -1,0 +1,108 @@
+{
+  "id": "roles",
+  "version": "1.0",
+  "title": "Roles",
+  "description": "A worker's role: a default model and effort, a prompt joining its system prompt, and flags the tower reads (whether it hires, whether it is consulted). A hire naming no role can take a default one.",
+  "requires": { "tower": "1.167" },
+  "server": "server.ts",
+  "settings": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "roles": {
+        "type": "object",
+        "default": {},
+        "description": "The roles a worker can take, by name. A floor's value replaces the system's whole.",
+        "propertyNames": { "pattern": "^[a-z][a-z0-9-]*$" },
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": { "type": "string", "description": "The model a worker in this role starts with, when its spawn names none." },
+            "effort": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"], "description": "The effort it starts with, when its spawn names none." },
+            "hires": { "type": "boolean", "default": true, "description": "Whether a worker in this role may hire: false refuses its `tower hire`." },
+            "consultable": { "type": "boolean", "default": false, "description": "Whether `tower x roles advisor` lists workers in this role." }
+          }
+        }
+      },
+      "hireDefault": {
+        "type": "string",
+        "description": "The role of a hire that names none, logged on it as if it had named it. Left out, such a hire takes no role and launches as it would without this extension."
+      }
+    }
+  },
+  "collections": {
+    "roles.prompts": {
+      "label": "Role prompts",
+      "description": "One markdown file per role, named by it (`advisor.md`): what a worker in that role does. It joins the system prompt of every worker in the role."
+    }
+  },
+  "spawn": {
+    "launch": true,
+    "fields": {
+      "role": {
+        "schema": { "type": "string" },
+        "words": { "label": "Role", "hint": "What this worker is for: its default model, effort and prompt" },
+        "options": { "from": "floor.x.roles.options" }
+      }
+    }
+  },
+  "answers": { "tower/spawn.gate": {} },
+  "reads": {
+    "advisor/<project>": {
+      "scope": "project",
+      "description": "The workers on duty on the floor whose role is consultable, oldest first, each with its callsign and the name it is messaged as.",
+      "reply": {
+        "type": "object",
+        "required": ["advisors", "said"],
+        "properties": {
+          "advisors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["session", "callsign", "role"],
+              "properties": {
+                "session": { "type": "string" },
+                "callsign": { "type": "string" },
+                "role": { "type": "string" },
+                "peer": { "type": "string", "description": "The name other Claude sessions message it by, while its Claude runs." }
+              }
+            }
+          },
+          "said": { "type": "string" }
+        }
+      },
+      "cli": { "word": "advisor", "print": "said" }
+    }
+  },
+  "folds": {
+    "floor": {
+      "x": {
+        "type": "object",
+        "required": ["options"],
+        "properties": {
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["value", "label"],
+              "properties": { "value": { "type": "string" }, "label": { "type": "string" }, "hint": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "card": {
+      "x": {
+        "type": "object",
+        "required": ["role"],
+        "properties": { "role": { "type": "string" } }
+      },
+      "adds": ["badges"]
+    }
+  },
+  "guidance": {
+    "brief": "Name a role on each hire (`tower hire x.roles.role <name>`); `tower x roles advisor` says who to consult.",
+    "full": "A role gives a worker its default model and effort and a prompt of what it is for. Name the role on every hire: `tower hire x.roles.role worker <<'EOF'` … `EOF`, the brief on stdin, or `reviewer`, or any role the floor's settings list (the spawn form's Role lists them). A model or effort named on the hire wins over the role's. A hire naming no role takes the floor's default role when it has one.\n\nA worker whose role doesn't hire is refused at `tower hire`, with the reason: bring the work to whoever hires instead.\n\nTo consult an advisor, when your role says you may: `tower x roles advisor` lists the advisors on duty on your floor now, oldest first, with the name to message each by. Ask it each time rather than remembering one: advisors are replaced during the day."
+  }
+}
