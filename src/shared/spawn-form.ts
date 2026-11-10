@@ -92,13 +92,16 @@ export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
 /** The name an extension's field has in the form. */
 const fieldName = (cap: string, name: string) => `x.${cap}.${name}`
 
-/** The form's values from its fields' entries (`new FormData(form)`), the defaults under them; `x.<cap>.<field>` gathered in `x`. */
+/**
+ * The form's values from its fields' entries (`new FormData(form)`), the defaults under them; `x.<cap>.<field>` gathered
+ * in `x`. A capability holds no dot and a field name may, so the capability ends at the first dot after `x.`.
+ */
 export const spawnForm = (f: Floor, entries: Iterable<[string, unknown]>): SpawnForm => {
   const all = [...entries].map(([k, v]): [string, string] => [k, String(v)])
   const x: SpawnForm['x'] = {}
   for (const [key, value] of all.filter(([k]) => k.startsWith('x.'))) {
-    const [, cap, name] = key.split('.')
-    x[cap] = { ...x[cap], [name]: value }
+    const [cap, ...name] = key.slice(2).split('.')
+    x[cap] = { ...x[cap], [name.join('.')]: value }
   }
   return { ...spawnDefaults(f), ...Object.fromEntries(all.filter(([k]) => !k.startsWith('x.'))), x }
 }
