@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-10",
   "refs": ["hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launch.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/spawn-form.ts#spawnCall"]
 }
 ---
@@ -34,7 +34,8 @@ name belongs to which callsign, floor or task.
   shelf and collections and the config's path; `tower agents [--all]` and `tower agent <CALLSIGN>` read the running
   tower's `/board` and `/conversations/<id>` through the [[renderer-api]]. The directory folds no logs.
 - `tower hire` sends what a quick hire in a renderer sends, built by the same
-  [`spawnCall`](ref:hub/src/shared/spawn-form.ts#spawnCall) over the floor's offered calls, on a prompt from stdin or from
+  [`spawnForm`](ref:hub/src/shared/spawn-form.ts#spawnForm) and [`spawnCall`](ref:hub/src/shared/spawn-form.ts#spawnCall)
+  over the floor's offered calls, an extension's spawn fields given as `x.<cap>.<field> <value>`, on a prompt from stdin or from
   any item of the floor's collections by its tag: the core reads an item's text and never what a draft means
   ([[collections]]). `floor <id>` sends it to another floor's calls, when the user asks for work there ([[hire]]).
 - Its skill (`skills/handbook`) teaches the tower, the command, and how to reach out, and pre-approves `Bash(tower *)`.
