@@ -1410,9 +1410,12 @@ part, which its floor fold's `x` declares as an array. A capability nobody provi
 doesn't declare is `invalid`.
 
 `spawn.launch: true` means `start` returns `launch(request, ctx)`, called for every spawn, resume and fork on a floor
-where the extension is on, in dependency order. `request` is `{kind: 'spawn' | 'resume' | 'fork', runtime, project,
-cwd, model?, effort?, fields?, facts}`: `fields` its own field values on a spawn, `facts` its facts over the worker's
-lineage (a fork carries copies of its source's). `ctx` reads only: the floor's `settings`, `read`, and its
+where the extension is on, in dependency order. `request` is `{kind: 'spawn' | 'resume' | 'fork', runtime, hire, by?,
+project, cwd, model?, effort?, fields?, facts}`: `hire` whether a spawn is a worker's hire (`tower hire`, or a spawn
+sent with `hire`), `by` the session of the worker that asked for it, a hire's hirer, the same two its
+`tower/spawn.gate` weighs: the user's own spawn has `hire: false` and no `by`, and so does every resume and fork;
+`fields` its own field values on a spawn, `facts` its facts over the worker's lineage (a fork carries copies of its
+source's). `ctx` reads only: the floor's `settings`, `read`, and its
 collections' `list` and `read`. It returns parts the session's runtime places: `systemPrompt` (after the tower's
 brief), `prompt` (after the first prompt), `env` (in Claude's settings, without a parent session's markers: those settings are part of the session's argv, which
 its log's header keeps for good, so contributed env is no place for secrets),

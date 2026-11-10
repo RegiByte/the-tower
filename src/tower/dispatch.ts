@@ -483,7 +483,7 @@ export const dispatch = defineResource({
         if (!isRuntime(runtime)) return apiError('refused', `${source.header.id} ran runtime "${runtime}", which this tower doesn't run: it runs ${RUNTIMES.join(', ')}`)
         const chains = chainsOf(system.sessions())
         const worker = lineage(source, (s) => continues(s, chains))
-        const merged = await contribute(kind, runtime, { project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker), resolveCommand(config, source.header.command))
+        const merged = await contribute(kind, runtime, { hire: false, project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker), resolveCommand(config, source.header.command))
         if (merged.t === 'error') return merged
         const gated = await gate({ project: projectId, kind, runtime, hire: false, exempt: merged.exempt, fields: {} }, within)
         if (gated) return gated
@@ -579,7 +579,7 @@ export const dispatch = defineResource({
     const contribute = async (
       kind: LaunchRequest['kind'],
       runtime: Runtime,
-      at: Pick<LaunchRequest, 'project' | 'cwd' | 'model' | 'effort'>,
+      at: Pick<LaunchRequest, 'hire' | 'by' | 'project' | 'cwd' | 'model' | 'effort'>,
       fields: Map<string, Record<string, unknown>>,
       factsOf: (cap: string) => SessionFact[],
       command: string[],
@@ -618,7 +618,7 @@ export const dispatch = defineResource({
       const runtime: Runtime = 'claude'
       const now = Date.now()
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
-      const merged = await contribute('spawn', runtime, { project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, spawnCommand(config, projectId, launch)))
+      const merged = await contribute('spawn', runtime, { hire: spawn.hire, ...(spawn.by && { by: spawn.by }), project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, spawnCommand(config, projectId, launch)))
       if (merged.t === 'error') return merged
       const exempt = legacyReviewer(merged, spawn.prompt)?.exempt ?? merged.exempt
       const gated = await gate({ project: projectId, kind: 'spawn', runtime, ...(spawn.by && { by: spawn.by }), hire: spawn.hire, exempt, fields: Object.fromEntries(spawn.fields) }, spawn.within)
