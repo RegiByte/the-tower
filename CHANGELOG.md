@@ -12,6 +12,30 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.109.0
+
+Worker roles, as a new example extension, and two launch additions any extension can use. Nothing to restart beyond
+the tower (`tower update` does it). API 1.167.
+
+- **Roles (`examples/extensions/roles`).** Give each worker a role: a default model and effort, a prompt of what it is
+  for, and flags the tower reads. Pick a role in the new-worker form, or hire with `tower hire x.roles.role <name>`.
+  A model or effort named on the spawn still wins. With `hireDefault` set, a hire that names no role takes that role
+  and its model, so hires no longer inherit whatever `/model` last set; without it, hires launch as before. A worker
+  whose role sets `hires: false` is refused at `tower hire`, with the reason. `tower x roles advisor` lists the workers
+  on duty whose role is `consultable`, so workers ask whom to consult instead of remembering a name. The role is logged
+  on the worker, so it holds through resumes. Prompts live in the floor's `roles.prompts` collection, and the folder
+  ships starting ones for a coordinator, a worker, a reviewer and an advisor. **config**: add it by path with your
+  roles (its README).
+- **Launch contributors know a hire from your own spawn.** Their request now carries `hire` and `by` (the hirer's
+  session), the same two the spawn gate gets. Resumes and forks carry `hire: false`.
+- **Launch contributors can fill their own spawn fields.** `launch` may return `fields`: values for its own declared
+  fields the spawn left unset, logged on the worker as if the spawn had set them. A field the spawn set wins.
+- **`tower hire x.<cap>.<field> <value>`** sets an extension's spawn field, as the new-worker form does.
+- **Fixed:** a spawn form field whose name holds a dot (`x.cap.a.b`) set the field `a`; it now sets `a.b`.
+- **For contributors:** `docs/extending.md` teaches the `/lib/` library throughout, tells the deprecated modules once,
+  and names a version only where the tower says it nowhere else. `npm run seating:update` regenerates the seating
+  golden file, and the page boot test counts what the page sends instead of sleeping.
+
 ## v1.108.0
 
 A new example extension, and hires that fail at start no longer hold up the worker that hired them. Nothing to
