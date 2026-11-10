@@ -99,7 +99,11 @@ resumed.
 - **The field**, `spawn.fields.role`, its choices from a floor fold of the settings, logged as `tower.x.roles.role`.
 - **`launch`** gives the role's model and effort as `defaults` and its prompt file as `systemPrompt`. On a hire naming
   no role, it returns `fields: { role: hireDefault }`, which the tower logs as the spawn's own field. A role the
-  settings don't list refuses the spawn, naming the roles there are.
+  settings don't list refuses a spawn that named it, naming the roles there are. On a hire that named none, a
+  `hireDefault` the floor's `roles` doesn't list (a typo, or a floor's `roles` that dropped it) can't refuse: the hire
+  starts unroled, on your `/model`, with a `launch` problem on the extension. So the floor carries a badge,
+  `No role "<name>"`, for as long as its `hireDefault` names no role it lists. A resume whose logged role was later
+  removed from the settings starts the same way, without its role's prompt.
 - **The gate**, an answer to `tower/spawn.gate`, refuses a hire whose hirer's role sets `hires: false`. It reads flags,
   never names. It is guidance, not a wall: the gate fails open while roles is down, and a worker's plain `tower spawn`
   carries no hirer, so it isn't weighed.

@@ -42,6 +42,12 @@ export const defaultsOf = (role: Role): LaunchParts['defaults'] => {
 /** A role's hint in the spawn form's choices: its model and effort, and its flags when set. */
 const hintOf = (role: Role) => [role.model, role.effort, role.hires === false && "doesn't hire", role.consultable && 'consulted'].filter(Boolean).join(' · ')
 
+/** A floor's badge when its `hireDefault` names no role it lists: such a hire's launch throws, and it starts unroled. */
+export const misnamedDefault = (settings: Settings) =>
+  settings.hireDefault !== undefined && !(settings.hireDefault in settings.roles)
+    ? [{ label: `No role "${settings.hireDefault}"`, tone: 'broken' as const, hint: `roles's hireDefault names no role this floor lists: hires naming no role start without one. Roles: ${Object.keys(settings.roles).join(', ') || 'none'}` }]
+    : []
+
 const optionsOf = (settings: Settings) =>
   Object.entries(settings.roles).map(([name, role]) => ({ value: name, label: name, ...(hintOf(role) && { hint: hintOf(role) }) }))
 
@@ -63,7 +69,7 @@ const start: Start = (ctx) => {
 
   return {
     folds: {
-      floor: (_floor: Floor, { settings }: FoldCtx) => ({ x: { options: optionsOf(settings as Settings) } }),
+      floor: (_floor: Floor, { settings }: FoldCtx) => ({ x: { options: optionsOf(settings as Settings) }, badges: misnamedDefault(settings as Settings) }),
       card: (_card: Card, { own }: FoldCtx) => {
         const role = roleOf(own.facts ?? [])
         return role ? { x: { role }, badges: [{ label: role, tone: 'quiet', hint: 'Its role' }] } : {}
