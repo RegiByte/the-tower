@@ -1407,7 +1407,9 @@ each value is parsed by its `schema` and logged in the new session's log as `tow
 starts, so a card fold reads it from `own.facts`. Every renderer's spawn form draws a field unless its `form` is
 `false`, its choices (`{value, label, hint?}`) read from the path `options.from` names in the extension's own floor
 part, which its floor fold's `x` declares as an array. A capability nobody provides, off on the floor, or a field it
-doesn't declare is `invalid`.
+doesn't declare is `invalid`. A worker sets one on its hire with `tower hire … x.<cap>.<field> <value>`, gathered as
+the form's fields are; a command line's value is a string, so a field set there takes a string schema, and one that
+doesn't refuses it as `invalid`.
 
 `spawn.launch: true` means `start` returns `launch(request, ctx)`, called for every spawn, resume and fork on a floor
 where the extension is on, in dependency order. `request` is `{kind: 'spawn' | 'resume' | 'fork', runtime, hire, by?,

@@ -305,7 +305,8 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   A spawn's `x.<cap>.<field>` is parsed by the field's schema
   ([`spawnFields`](ref:hub/src/tower/dispatch.ts#spawnFields): a capability nobody provides, off on the floor, or a
   field it doesn't declare is `invalid`, one that doesn't run `unavailable`) and logged as `tower.x.<cap>.<field>` in
-  the host's spawn, before the PTY starts. `spawn.launch` means `start` returns `launch`, called for every spawn,
+  the host's spawn, before the PTY starts; `tower hire` sets one as `x.<cap>.<field> <value>`, gathered by the form's
+  own [`spawnForm`](ref:hub/src/shared/spawn-form.ts#spawnForm), its value a string. `spawn.launch` means `start` returns `launch`, called for every spawn,
   resume and fork on floors where it is on, in resolved order, with its
   [`LaunchRequest`](ref:hub/src/shared/extensions.ts#LaunchRequest) (`hire` and `by` as the spawn's gate weighs them:
   a resume or fork is no hire and has no `by`) and `LaunchCtx` (the floor's settings, reads, its
