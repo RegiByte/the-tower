@@ -20,6 +20,7 @@ import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClas
 import { regions } from './regions.js'
 import { dialogs } from './dialogs.js'
 import { sidebar } from './sidebar.js'
+import { watchCalls } from './calls.js'
 import { shells } from './shells.js'
 import { tipStrip } from './tip.js'
 import { screen } from './screen.js'
@@ -397,6 +398,7 @@ function noticeShown(all) {
 }
 
 const { wireCrewGrips, toggleSection, toggleCrewFold, forgetFold, toggleFloor, floorHtml, boardSignHtml, paintLimits, railHtml, paintKeys, closeDrawer, toggleSide } = await sidebar({ render, selected, callsign, heldWhy, heldHtml, letGoHtml, unresumableHtml, board, pageNow, floorOf, paint, viewer, keepViewer, findCard, at, trayRowsHtml: (f) => trayRowsHtml(f), heed, withKeys, opensHtml: (subject) => opensHtml(subject), holdsOf: (region) => placing().regions.find((r) => r.id === region)?.holds ?? [], regionLayout: (region) => { const p = placing(); return { region: p.regions.find((r) => r.id === region), entry: p.layout[region] } } })
+watchCalls(/** @type {HTMLElement} */ (document.querySelector('.side')))
 wireCrewGrips($('floors'))
 
 

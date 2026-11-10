@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "A viewer's settings: one appearance record, one popover, one tooltip",
-  "summary": "Scheme, the text, heading and code faces (any installed face, by name), the terminal's size, motion, contrast and text size are one record, tower.prefs, that tower.js keeps in the viewer's browser, puts on every page's root before it paints, syncs across tabs and relays to framed pages; one settings popover draws it, the ring and the alerts from shared pure views, and one shared tooltip shows any data-tip's text on focus and on a resting hover, through which every renderer explains its controls.",
+  "summary": "Scheme, the text, heading and code faces (any installed face, by name), the terminal's size, motion, contrast, whether waits flash and text size are one record, tower.prefs, that tower.js keeps in the viewer's browser, puts on every page's root before it paints, syncs across tabs and relays to framed pages; one settings popover draws it, the ring and the alerts from shared pure views, and one shared tooltip shows any data-tip's text on focus and on a resting hover, through which every renderer explains its controls.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-10",
   "refs": [
     "hub/src/shared/prefs.ts",
     "hub/src/shared/prefs.ts#PREFS_DEFAULT",
@@ -36,6 +36,7 @@
     "hub/src/shared/shelf-page.ts",
     "hub/src/shared/changes-panel.ts#scopeHtml",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
+    "hub/renderers/page/calls.js#watchCalls",
     "hub/src/shared/term-view.ts",
     "hub/renderers/tower3d/src/ui.ts#hudHtml",
     "hub/renderers/tower3d/src/main.ts#paintSettings"
@@ -92,6 +93,11 @@ they are written once in shared code and a next renderer gets them by importing 
   and rows (the PTY has one size); a watching one fits the PTY at a size up to `termSize`
   ([`fitSize`](ref:hub/src/shared/terminal.ts#fitSize)), from cells measured in the face itself
   ([`cellOf`](ref:hub/src/shared/terminal.ts#cellOf)).
+- *Waits that flash* (`waits: 'flash'`, `data-waits` on the root) are for a viewer who reads past colour alone: the
+  tower page marks what waits on them and isn't dismissed `calls` (a worker's row, a folded floor's count, a lamp of
+  the rail), pulses it in its attention's colour, and stands an arrow at the sidebar's edge counting those scrolled
+  out of sight, which scrolls to the nearest ([`watchCalls`](ref:hub/renderers/page/calls.js#watchCalls)). Every
+  flash starts on one beat, wherever it is drawn, so they all blink together. Reduced motion flashes them once, as every animation.
 - *Motion and contrast* live in `/design.css` ([`reduced`](ref:hub/src/shared/design.ts#reduced),
   [`designCss`](ref:hub/src/shared/design.ts#designCss)): the root's choice overrides the system's. Tower 3D's camera
   reads [`reducedMotion`](ref:hub/src/shared/prefs.ts#reducedMotion); the text it paints on canvas in the world keeps
