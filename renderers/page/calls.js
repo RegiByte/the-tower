@@ -14,6 +14,12 @@ const FLASHES = ['call', 'blink']
 /** @param {Element} el @returns {Attention | undefined} */
 const attentionOf = (el) => WAIT_ATTENTIONS.find((a) => el.classList.contains(a))
 
+/** How many waits a marked element stands for: a folded floor's count says its number in `data-n`, a row or a lamp is one. @param {Element} el */
+const waitsIn = (el) => Number(/** @type {HTMLElement} */ (el).dataset.n ?? 1)
+
+/** Whether a change to the sidebar can move what is marked: not a clock's text (`data-since`), rewritten every tick. @param {MutationRecord} r */
+const moves = (r) => !(r.type === 'childList' && r.target instanceof Element && r.target.matches('[data-since]'))
+
 /**
  * While the viewer has waits flash (`waits: 'flash'` in `tower.prefs`), an arrow at the sidebar's top edge when
  * something that waits on them (`.calls`: a worker's row, a folded floor's count, a lamp of the rail) is scrolled
@@ -57,10 +63,11 @@ export function watchCalls(side) {
     nearest[way] = way === 'up' ? out.at(-1) : out[0]
     b.hidden = !out.length
     if (!out.length) return
+    const n = out.reduce((sum, el) => sum + waitsIn(el), 0)
     const tone = loudest(out.map((el) => /** @type {any} */ ({ attention: attentionOf(el) }))) ?? 'ready'
-    const words = `${plural(out.length, 'wait')} on you ${way === 'up' ? 'above' : 'below'}: scroll to the nearest`
+    const words = `${plural(n, 'wait')} on you ${way === 'up' ? 'above' : 'below'}: scroll to the nearest`
     b.className = `edge-call ${way} ${tone}`
-    const html = `${ICON.caret}<b>${out.length}</b>`
+    const html = `${ICON.caret}<b>${n}</b>`
     if (b.innerHTML !== html) b.innerHTML = html
     b.setAttribute('aria-label', words)
     b.dataset.tip = words
@@ -102,7 +109,7 @@ export function watchCalls(side) {
 
   /** @param {Event} e */
   const scrolled = (e) => { if (e.target === side || side.contains(/** @type {Node} */ (e.target))) schedule() }
-  const changes = new MutationObserver(schedule)
+  const changes = new MutationObserver((records) => records.some(moves) && schedule())
   const sizes = new ResizeObserver(schedule)
   for (const way of /** @type {const} */ (['up', 'down'])) {
     arrows[way].addEventListener('click', () => nearest[way]?.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' }))
@@ -123,6 +130,8 @@ export function watchCalls(side) {
       schedule()
       return
     }
+    cancelAnimationFrame(frame)
+    frame = 0
     document.removeEventListener('scroll', scrolled, { capture: true })
     document.removeEventListener('animationstart', inStep)
     changes.disconnect()
