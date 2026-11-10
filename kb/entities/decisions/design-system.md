@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-10",
   "refs": ["hub/src/shared/design.ts", "hub/src/shared/design.ts#size", "hub/src/shared/design.ts#space", "hub/src/shared/design.ts#controls", "hub/src/shared/design.ts#iconSize", "hub/src/shared/icons.ts#ICON", "hub/src/shared/icons.ts#withIcons", "hub/src/shared/design.ts#fonts", "hub/src/shared/design.ts#terminalTheme", "hub/src/shared/design.ts#designCss", "hub/src/shared/design.ts#skyAt", "hub/src/shared/design.ts#documentCss", "hub/src/bridge/board.ts", "hub/src/tower/http.ts#design", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/tower/tower.js", "hub/renderers/tower3d/src/outside.ts", "hub/renderers/tower3d/src/cards.ts#WORLD", "hub/renderers/tower3d/src/ui.ts", "hub/renderers/tower3d/src/toon.ts#loadFaces", "hub/src/shared/design.ts#projectTones", "hub/renderers/tower3d/src/sign.ts#paintSign", "hub/renderers/tower3d/src/palette.ts#floorPalette", "hub/scripts/contrast.ts"]
 }
 ---
@@ -33,9 +33,9 @@ terminal that is a block of the ink colour.
   nobody has read yet ([[waiting-on-you]]), working is booting or at work, broken is failed or lost. Renderers colour
   by it and never derive it; the status word keeps the exact state, its words in `STATUS_NAME` and `ATTENTION_NAME`
   of `/cards.js`. Red is kept for what needs a hand: only a card that needs you washes, an answer ready is a calm
-  green, something new is `accent`, a problem that waits on no one is `brokenText`. Only needs blinks; a `watching`
-  lamp breathes ([[watching-status]]). Reduced motion and more contrast (the viewer's or the system's) are honoured
-  by `design.css` ([[viewer-prefs]]).
+  green, something new is `accent`, a problem that waits on no one is `brokenText`. Only needs blinks, unless the viewer
+  has waits flash ([[viewer-prefs]]); a `watching` lamp breathes ([[watching-status]]). Reduced motion and more
+  contrast (the viewer's or the system's) are honoured by `design.css` ([[viewer-prefs]]).
 - **Two schemes, one set of roles.** `palettes.light` (a soft parchment) and `palettes.dark` fill the same roles,
   `ink` for text and `enamel` for dark surfaces, so components never name a scheme. How the viewer's choice reaches
   pages, terminals and framed shelf pages is [[viewer-prefs]].

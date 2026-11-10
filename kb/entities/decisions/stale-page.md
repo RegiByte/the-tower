@@ -6,7 +6,7 @@
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-11-03",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-10",
   "refs": [
     "hub/src/tower/served.ts#servedCode",
     "hub/src/tower/served.ts#servedVersion",
