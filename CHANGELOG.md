@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.111.0
+
+Files dropped on the new-worker dialog, contributed by Glauco Neves (#550). Nothing to restart beyond the tower
+(`tower update` does it). API 1.169.
+
+- **A screenshot dragged onto the New worker dialog lands in its First prompt.** As on a terminal, each file dropped
+  anywhere on the dialog, or pasted on the prompt without plain text (a copied screenshot), is uploaded and its path
+  typed at the caret, so Claude reads it as the file. A drop that misses the prompt no longer opens the file in place
+  of the page. Files over 20 MB are refused in a toast. The tower page and Tower 3D both take it.
+
 ## v1.110.1
 
 A fix. Nothing to restart beyond the tower (`tower update` does it).
