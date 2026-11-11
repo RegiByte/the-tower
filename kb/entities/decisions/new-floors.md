@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-04",
-  "reviewed": "2026-11-10",
+  "reviewed": "2026-11-11",
   "refs": [
     "hub/extensions/floors/extension.json",
     "hub/extensions/floors/server.ts",
