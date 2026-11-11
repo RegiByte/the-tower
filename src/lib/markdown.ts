@@ -7,5 +7,7 @@ export {
   markdownHtml,
   /** @provisional */ relativeHref,
   /** @provisional */ safeHref,
+  /** @provisional */ sectionLabels,
+  /** @provisional */ sectionsHtml,
   /** @provisional */ sectionsOf,
 } from '../shared/markdown.ts'

@@ -132,13 +132,14 @@ const UNDRAWN = new Set(['space', 'def'])
 /**
  * Each section of a markdown file served at `url` as html for a frame without scripts, as `documentHtml` draws the
  * whole, in `sectionsOf`'s order. Every section reads the document's link definitions, so a reference link resolves
- * wherever its definition is. An HTML block left open across a section's end is closed there. @since 1.118. Each
- * top-level block's html follows a comment naming the source lines it was written on (`sourceMark`), so what is
- * picked in the drawn document can say where it is in the file. @since 1.170
+ * wherever its definition is. An HTML block left open across a section's end is closed there. Each section's html is
+ * what draws it: anything else it holds is unspecified and may change in any version, so don't parse it. @since 1.118
  */
 export function sectionsHtml(text: string, url: string): string[] {
   const lexed = documents.lexer(text)
   documents.walkTokens(lexed, (t) => void (t.type === 'image' && (t.href = imagePath(t.href, url) ?? t.href)))
+  // Each top-level block's html follows a comment naming the source lines it was written on (`sourceMark`), so what
+  // is picked in the drawn document can say where it is in the file (`linesPicked`).
   const lines = linesOf(lexed)
   const marked = (t: Token) => (UNDRAWN.has(t.type) ? '' : sourceMark(lines.get(t)!))
   return split(lexed).map(({ tokens }) => tokens.map((t) => marked(t) + documents.parser(Object.assign([t], { links: lexed.links }))).join(''))

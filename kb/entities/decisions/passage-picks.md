@@ -67,7 +67,9 @@ sentence the user picked.
   top-level block's html, counted from the tokens' `raw`. The view walks the frame's comments against the picked
   range, and [`linesPicked`](ref:hub/src/shared/source-lines.ts#linesPicked) takes the last mark before the start and the
   last one up to the end. A comment changes nothing a reader sees, and a block whose html leaves an element open (a
-  `<details>`) still draws as before. The lines are block-level: the quote pins down the words.
+  `<details>`) still draws as before. The lines are block-level: the quote pins down the words. The marks are the
+  core's own: `sectionsHtml` is in the library ([[library]]), and its contract is html that draws the sections, the
+  rest unspecified, so the mark's shape can change in any version and `linesPicked` and `SOURCE_MARK` stay internal.
 - *The selection is read, not heard.* Nothing in a document frame calls a listener in WebKit ([[markdown-safe]]), so
   there is no `mouseup` or `selectionchange`. On each animation frame while the document is seen, the view reads the
   frame's selection from the page (`allow-same-origin`). It tells the machine a signature of

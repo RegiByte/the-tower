@@ -17,6 +17,7 @@ export type {
   /** @provisional */ TermMode,
   /** @provisional */ TermView,
   TermViewHandle,
+  TermViewIo,
 } from '../shared/term-view.ts'
 export type {
   /** @provisional */ TermFont,

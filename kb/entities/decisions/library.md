@@ -28,8 +28,12 @@ contract if authors can find everything they need on it.
   preloads cover it). [`lent-modules.ts`](ref:hub/src/lent-modules.ts) maps the prefix to the source in node, and
   tsconfig paths do it for bundlers.
 - **Membership is use.** A name is in the library when some extension, example, renderer, core view or Tower.app uses
-  it. A name that has met one consumer is marked `@provisional`: it may change in a minor until a second consumer
-  promotes it.
+  it, or when an author needs it to use what the library already holds: the type of a library function's argument
+  (`TermViewIo`, `mountTermView`'s `io`), the kit for a renderer that lends none (`NO_KIT`), the splitting and naming
+  a view needs to publish the `section` subjects `tower/document` publishes (`sectionsHtml`, `sectionLabels`, beside
+  `sectionsOf`). A name that has met one consumer is marked `@provisional`: it may change in a minor until a second
+  consumer promotes it. A name whose output carries something for the core alone says that part is unspecified:
+  `sectionsHtml`'s html draws the sections, and the source marks in it are not contract.
 - **A core view is a client.** `src/views/` imports the library by URL, and reaches `src/shared` by path for what only
   the views use, until a second consumer asks. A sibling renderer can mount a core view, so a view's drawing is no
   contract: what enters the library is what a renderer needs to draw for itself, the subjects and the href checks

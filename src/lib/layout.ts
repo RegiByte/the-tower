@@ -24,6 +24,7 @@ export {
   /** @provisional */ overflowOf,
 } from '../shared/regions.ts'
 export {
+  /** @provisional */ NO_KIT,
   /** @provisional */ runCommandWith,
 } from '../shared/run-command.ts'
 export {

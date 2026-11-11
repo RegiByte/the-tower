@@ -2539,6 +2539,10 @@
     "/lib/layout.js": {
       "runtime": "browser",
       "values": {
+        "NO_KIT": {
+          "since": "1.171",
+          "stability": "provisional"
+        },
         "actionId": {
           "since": "1.151"
         },
@@ -2813,6 +2817,14 @@
           "since": "1.155",
           "stability": "provisional"
         },
+        "sectionLabels": {
+          "since": "1.171",
+          "stability": "provisional"
+        },
+        "sectionsHtml": {
+          "since": "1.171",
+          "stability": "provisional"
+        },
         "sectionsOf": {
           "since": "1.155",
           "stability": "provisional"
@@ -3027,6 +3039,9 @@
         },
         "TermViewHandle": {
           "since": "1.151"
+        },
+        "TermViewIo": {
+          "since": "1.171"
         }
       }
     },
