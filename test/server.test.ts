@@ -1806,6 +1806,29 @@ test("server: the active viewer is the one the user acted on last among those wh
   await boardWhere((b) => b.viewers.active === undefined)
 })
 
+test("server: each viewer's selected worker is on the board while its board stream is open, none left out, held in memory alone", async () => {
+  const [mini, laptop] = ['viewer-mini-02', 'viewer-laptop-02']
+  const closeMini = await holdBoard(mini, 'page')
+  const closeLaptop = await holdBoard(laptop, 'page')
+  try {
+    await command('viewer/selected', { viewer: mini, id: 'worker-a' })
+    await command('viewer/selected', { viewer: laptop, id: 'worker-b' })
+    await command('viewer/active', { viewer: laptop })
+    await boardWhere((b) => b.viewers.last?.page === laptop && b.viewers.selected?.[mini] === 'worker-a' && b.viewers.selected?.[laptop] === 'worker-b')
+    await command('viewer/selected', { viewer: laptop, id: null })
+    await boardWhere((b) => b.viewers.selected !== undefined && !(laptop in b.viewers.selected) && b.viewers.selected[mini] === 'worker-a')
+    closeMini()
+    await boardWhere((b) => b.viewers.selected === undefined && b.viewers.last?.page === laptop)
+    assert.equal(errorCode(await post('viewer/selected', { viewer: 'viewer-gone-02', id: 'worker-a' })), 'not_found')
+    assert.equal(errorCode(await post('viewer/selected', { viewer: laptop, id: '' })), 'invalid')
+    assert.equal(errorCode(await post('viewer/selected', { viewer: laptop })), 'invalid')
+  } finally {
+    closeMini()
+    closeLaptop()
+  }
+  await boardWhere((b) => b.viewers.active === undefined && b.viewers.selected === undefined)
+})
+
 test('server: a prompt is refused where it would answer a question, and at-prompt refuses a busy worker or a composer holding text, before typing anything', async () => {
   const log = (id: string, events: unknown[]) => {
     const header = { id, project: 'bare', cwd: BARE, argv: ['claude'], startedAt: Date.now() - 60_000, cols: 80, rows: 24 }

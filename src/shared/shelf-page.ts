@@ -244,6 +244,12 @@ export type Tower = {
    * framed shelf page, which is its framing page's. @since 1.129
    */
   viewer: string | undefined
+  /**
+   * Say the worker this page has selected, its session id, or null for none (`viewer/selected`): the board's
+   * `viewers.selected[<viewer>]` while this page's board stream is open, said again whenever the board doesn't carry
+   * it, as after a tower restart. Nothing in a framed shelf page. @since 1.172
+   */
+  select(id: string | null): void
   /** What the tower served this page's `/tower.js` from: the code this page runs and its version. @since 1.144 */
   served: Served
   /**

@@ -13,7 +13,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '1.171'
+export const API_VERSION = '1.172'
 
 const id = z.string().min(1)
 
@@ -247,6 +247,17 @@ export const VERBS = {
       .object({ viewer: z.string().regex(VIEWER_ID, 'a viewer id: 8 to 64 letters, digits and dashes').describe('The viewer its board stream named, `GET /board?viewer=<id>`.') })
       .describe(
         "Say the user acted on this viewer (a page's tab): it becomes the board's `viewers.active` while its board stream stays open and no other viewer acts after it. Held in the tower's memory, never logged. A renderer calls it when it gains focus and as the user acts, at most every few seconds. @since 1.129",
+      ),
+    reply: ok,
+  },
+  'viewer/selected': {
+    input: z
+      .object({
+        viewer: z.string().regex(VIEWER_ID, 'a viewer id: 8 to 64 letters, digits and dashes').describe('The viewer its board stream named, `GET /board?viewer=<id>`.'),
+        id: id.nullable().describe('The session id of the worker the page has selected, null for none.'),
+      })
+      .describe(
+        "Say which worker this viewer (a page's tab) has selected, or none: the board's `viewers.selected[<viewer>]` while its board stream stays open. Held in the tower's memory, never logged; a page says it again when the board doesn't carry it, as after a tower restart. `tower.select` does it for a page. @since 1.172",
       ),
     reply: ok,
   },

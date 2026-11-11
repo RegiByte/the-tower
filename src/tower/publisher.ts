@@ -75,8 +75,10 @@ export const publisher = defineResource({
     const streamsOf = new Map<http.ServerResponse, { viewer: string; renderer?: string }>()
     /** When the user last acted on each viewer whose board stream is open (`viewer/active`): the tower's memory alone. */
     const actedAt = new Map<string, number>()
+    /** The worker each viewer whose board stream is open has selected, by viewer, as it last said (`viewer/selected`). */
+    const selectedBy = new Map<string, string>()
 
-    /** The viewers as the board says them: the one the user acted on last, and each renderer's. */
+    /** The viewers as the board says them: the one the user acted on last, each renderer's, and what each has selected. */
     const viewersNow = (): Viewers => {
       const rendererOf = new Map([...streamsOf.values()].map((s) => [s.viewer, s.renderer]))
       const latest = [...actedAt].sort((a, b) => b[1] - a[1]).map(([viewer]) => viewer)
@@ -85,7 +87,7 @@ export const publisher = defineResource({
         const renderer = rendererOf.get(viewer)
         if (renderer !== undefined && !(renderer in last)) last[renderer] = viewer
       }
-      return { ...(latest.length && { active: latest[0] }), ...(Object.keys(last).length && { last }) }
+      return { ...(latest.length && { active: latest[0] }), ...(Object.keys(last).length && { last }), ...(selectedBy.size && { selected: Object.fromEntries(selectedBy) }) }
     }
 
     /** Runs `change` on the viewers, publishing the board when what it says of them moved. */
@@ -95,10 +97,21 @@ export const publisher = defineResource({
       if (JSON.stringify(viewersNow()) !== was) schedulePublish()
     }
 
+    /** Whether a board stream open now belongs to `viewer`: the viewer verbs take only those. */
+    const streaming = (viewer: string) => [...streamsOf.values()].some((s) => s.viewer === viewer)
+    const notStreaming = (viewer: string) => apiError('not_found', `No open board stream belongs to viewer ${viewer}: open GET /board?viewer=${viewer} first`)
+
     /** The user acted on `viewer`: it is active from now until another acts after it or its last stream closes. */
     const viewerActive = (viewer: string): { t: 'ok' } | ApiError => {
-      if (![...streamsOf.values()].some((s) => s.viewer === viewer)) return apiError('not_found', `No open board stream belongs to viewer ${viewer}: open GET /board?viewer=${viewer} first`)
+      if (!streaming(viewer)) return notStreaming(viewer)
       changingViewers(() => actedAt.set(viewer, Date.now()))
+      return { t: 'ok' }
+    }
+
+    /** `viewer` has selected the worker `id`, or none: so until it says otherwise or its last stream closes. */
+    const viewerSelected = (viewer: string, id: string | null): { t: 'ok' } | ApiError => {
+      if (!streaming(viewer)) return notStreaming(viewer)
+      changingViewers(() => (id === null ? selectedBy.delete(viewer) : selectedBy.set(viewer, id)))
       return { t: 'ok' }
     }
 
@@ -106,8 +119,8 @@ export const publisher = defineResource({
     const viewerGone = (res: http.ServerResponse) => {
       const viewer = streamsOf.get(res)?.viewer
       streamsOf.delete(res)
-      if (viewer === undefined || [...streamsOf.values()].some((s) => s.viewer === viewer)) return
-      changingViewers(() => actedAt.delete(viewer))
+      if (viewer === undefined || streaming(viewer)) return
+      changingViewers(() => (actedAt.delete(viewer), selectedBy.delete(viewer)))
     }
 
     const viewOf = (): SystemView => viewAt(readConfig())
@@ -305,7 +318,7 @@ export const publisher = defineResource({
       return () => void boardListeners.delete(listener)
     }
 
-    return { board: boardOf, everyCard, archivedCards, streamBoard, onBoard, viewerActive, stop }
+    return { board: boardOf, everyCard, archivedCards, streamBoard, onBoard, viewerActive, viewerSelected, stop }
   },
   halt: ({ stop }) => stop(),
 })

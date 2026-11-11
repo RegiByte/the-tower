@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The active viewer: the page the user acted on last, said by the pages, held in the tower's memory",
-  "summary": "A renderer page names itself and its renderer on its board stream (GET /board?viewer=<id>&renderer=<name>) and calls viewer/active when the user acts on it; the board's viewers.active is the viewer acted on last among those whose stream is open, viewers.last the same per renderer, so one page across every machine reading the tower does what only one should, such as speaking. The tower holds it in memory, never logs it, and forgets a viewer when its last stream closes.",
+  "summary": "A renderer page names itself and its renderer on its board stream (GET /board?viewer=<id>&renderer=<name>) and calls viewer/active when the user acts on it; the board's viewers.active is the viewer acted on last among those whose stream is open, viewers.last the same per renderer, so one page across every machine reading the tower does what only one should, such as speaking. A page also says the worker it has selected (viewer/selected, tower.select), the board's viewers.selected by viewer, so another renderer can act on the worker the user is on. The tower holds it all in memory, never logs it, and forgets a viewer when its last stream closes.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-31",
@@ -10,6 +10,8 @@
   "refs": [
     "hub/src/shared/api.ts#VIEWER_ID",
     "hub/src/tower/publisher.ts#viewerActive",
+    "hub/src/tower/publisher.ts#viewerSelected",
+    "hub/src/tower/tower.js#saySelected",
     "hub/src/tower/publisher.ts#viewerGone",
     "hub/src/tower/publisher.ts#viewersNow",
     "hub/src/bridge/board.ts#Viewers",
@@ -50,6 +52,16 @@ for each renderer, so what one renderer's page alone does (narration's memos, dr
 that renderer's page used last even while the user is in a tab of another. The board is published again only when
 those move. When a viewer's last stream closes ([`viewerGone`](ref:hub/src/tower/publisher.ts#viewerGone)) it is
 forgotten, and the one noted before it, if still open, takes its place.
+
+A page also says which worker it has selected, so another renderer can act on the worker the user is on (a voice page
+told "tell it to…" sends to that worker without its name):
+[`viewer/selected`](ref:hub/src/tower/publisher.ts#viewerSelected) `{viewer, id}`, a session id or `null` for none,
+on the same terms as `viewer/active` (`not_found` without an open stream). The board's `viewers.selected` maps each
+viewer to its worker, a viewer with none left out, and loses a viewer with its last stream. It is a separate verb, not
+a field on `viewer/active`: acting on a page and what the page is on change apart (a worker opened from a link, the
+page in the background). `tower.js` keeps the page's selection (`tower.select`) and
+[says it again](ref:hub/src/tower/tower.js#saySelected) on any board that doesn't carry it, so a tower restart or a
+dropped stream heals on its own.
 
 **Alternatives considered.** A bundled `presence` extension holding the same verb and folding the board field: the
 same shape behind one more manifest, while every renderer still has to call it, and the question is about pages, not

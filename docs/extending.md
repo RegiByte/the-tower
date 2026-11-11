@@ -365,6 +365,12 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   viewer the user acted on last among those whose stream is open, and `viewers.last.<renderer>` the one of that
   renderer: one page, across every machine reading the tower, for what only one should do (play a sound, speak). The
   tower holds them in memory and never logs them. `tower.js` does all of it for a page, as `tower.viewer`.
+- **Which worker a page has selected** (1.172): a page says it with `tower.select(id)`, its session id or `null` for
+  none (`POST /viewer/selected {viewer, id}`; `tower.js` says it again whenever the board doesn't carry it, as after a
+  tower restart). The board's `viewers.selected` maps each viewer to the worker it has selected, a viewer with none
+  left out, and forgets a viewer when its board stream closes. The tower page says the worker its main pane is on, so
+  the worker the user has selected there is `board.viewers.selected?.[board.viewers.last?.page]`: undefined when
+  nothing is selected or no tower page is open, and with two open, the one the user acted on last.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
   `/conversations/<id>` (each turn with Claude's `steps`: its words, its tool calls and the messages it sent), `/conversations/<id>/<conversation>` (one
   conversation, every turn) and `/conversations/<id>/tool/<call>` (one tool call: its input, its permission check, how

@@ -371,9 +371,10 @@ export type Wait = { id: string; key: string; reason: WaitReason; since: number;
 
 /**
  * The renderer pages reading the board (`Board.viewers`): `active`, the viewer the user acted on last; `last`, by
- * renderer, the viewer of it the user acted on last, for what one renderer's page alone does (@since 1.129).
+ * renderer, the viewer of it the user acted on last, for what one renderer's page alone does (@since 1.129);
+ * `selected`, by viewer, the session id of the worker it has selected, absent for a viewer with none (@since 1.172).
  */
-export type Viewers = { active?: string; last?: Record<string, string> }
+export type Viewers = { active?: string; last?: Record<string, string>; selected?: Record<string, string> }
 
 /** One `argv` command's account limits, an entry of `board.limits`. @since 1.152 */
 export type CommandLimits = {
@@ -441,7 +442,9 @@ export type Board = {
   /**
    * The renderer pages reading the board, as the tower last heard from them: `active`, the viewer the user acted on
    * last among those whose board stream is open (`viewer/active`), none while no open one has said so; `last`, the same
-   * for each renderer whose pages named it on their stream. @since 1.129
+   * for each renderer whose pages named it on their stream. @since 1.129. `selected`, by viewer, the worker each has
+   * selected (`viewer/selected`), a viewer with none left out: the tower page's selected worker is
+   * `selected[last.page]`. @since 1.172
    */
   viewers: Viewers
   /**

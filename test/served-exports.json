@@ -27,6 +27,7 @@
       "run",
       "scheme",
       "schemeChoice",
+      "select",
       "served.id",
       "served.version",
       "shellKeys",

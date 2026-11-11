@@ -5324,10 +5324,16 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "selected": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false,
-      "description": "The renderer pages reading the board (`Board.viewers`): `active`, the viewer the user acted on last; `last`, by renderer, the viewer of it the user acted on last, for what one renderer's page alone does (@since 1.129)."
+      "description": "The renderer pages reading the board (`Board.viewers`): `active`, the viewer the user acted on last; `last`, by renderer, the viewer of it the user acted on last, for what one renderer's page alone does (@since 1.129); `selected`, by viewer, the session id of the worker it has selected, absent for a viewer with none (@since 1.172)."
     },
     "Adds": {
       "type": "object",
