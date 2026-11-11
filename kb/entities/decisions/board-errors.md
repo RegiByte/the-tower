@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-10",
+  "reviewed": "2026-11-11",
   "refs": [
     "hub/src/system.ts#takenConfig",
     "hub/src/system.ts#configLack",

@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-03",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-11",
   "refs": ["hub/package.json", "hub/renderers/tower3d/tsconfig.json", "hub/renderers/tower3d/src/api.ts", "hub/renderers/tower3d/src/cards.ts", "hub/renderers/tower3d/src/clients.ts", "hub/renderers/tower3d/src/files.ts#bytesOf", "hub/src/tower/http.ts#ANY_ORIGIN", "hub/src/tower/served.ts#importMap", "hub/src/tower/served.ts#withImportMap", "hub/scripts/served-modules.ts#answerModule", "hub/scripts/tower3d-boot.ts"]
 }
 ---
