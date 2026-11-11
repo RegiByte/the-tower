@@ -12,6 +12,13 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.113.1
+
+A fix, contributed by Carlos Bonetti (#557). Nothing to restart beyond the tower (`tower update` does it).
+
+- **Picking text no longer moves the focus into the quote prompt,** so Cmd+C copies the passage you picked. Click
+  into the prompt to ask; Enter, Esc and Send work as before.
+
 ## v1.113.0
 
 Four library additions and a passage fix. Nothing to restart beyond the tower (`tower update` does it). API 1.171.
