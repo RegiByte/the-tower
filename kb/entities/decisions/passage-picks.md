@@ -78,7 +78,10 @@ sentence the user picked.
   selection unchanged for [`SETTLE_MS`](ref:hub/src/shared/picks.ts#SETTLE_MS) is picked. Since there is no
   `mouseup`, that delay is what separates a drag from a finished pick. The pick is held until it is let go: by
   `drop` (the box is `done`, or a press lands outside it on the page), or by the selection collapsing (a click in the
-  document). Focus moving to the box leaves the frame's selection as it was. A held pick that a new selection grows
+  document). A pick moves no focus: nothing in the box takes it as it opens or as the board redraws it, so the
+  focus and the selection stay where the user left them and the passage can be copied (Cmd+C) as it is. The user
+  clicks into the box to act, as into Claude's own prompt, and focus moving there leaves the frame's selection as it
+  was. A held pick that a new selection grows
   out of (keys extending it) puts the box aside until the new one settles.
 - *Nothing of the renderer's goes in the frame.* The passage is lit by the CSS Custom Highlight API, registered on
   the frame's window from the page (`::highlight(tower-passage)`), so the document's DOM is untouched. The frame's
@@ -90,7 +93,8 @@ sentence the user picked.
   composer does under picked lines.
 - *Acting on a passage is an extension's.* The bundled `quote` extension's
   [`composer`](ref:hub/extensions/quote/client/composer.ts#mount) types a prompt into the worker that showed the
-  document, through the core's `submit` (queued while it works), prose quoted as a blockquote and code in a fence
+  document, through the core's `submit` (queued while it works), from a prompt the user clicks into (it takes the
+  focus on no pick, so it never stands between the user and copying the passage), prose quoted as a blockquote and code in a fence
   named by the file's extension, as
   [`askPrompt`](ref:hub/extensions/quote/client/composer.ts#askPrompt) writes it: the file and its lines, the
   passage quoted, then the user's words. It says why it takes no prompt instead of offering one when the worker
@@ -113,7 +117,7 @@ sentence the user picked.
   the frame elsewhere before its own load ends (`location.replace`, a meta refresh) hands the token to where it sent
   it; that is the page's own choice, as its words are its word. And a new selection
   only while the frame holds the focus, as a pick made by hand does: otherwise a script selecting on a timer would
-  open the box, whose composer takes the keyboard, while the user typed elsewhere. A new selection heard without the
+  open the box over what the user was doing elsewhere. A new selection heard without the
   focus lets go of the one heard before, so a pick still settling when the user clicks away doesn't open. The pick held is followed as it
   moves or ends wherever the focus is, so the box keeps up with the page's scroll. The passage has no lines,
   and nothing marks it as the page's: the `quote` composer draws the same box as for any passage, the words left

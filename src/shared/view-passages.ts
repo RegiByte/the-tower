@@ -121,8 +121,8 @@ export function frameSource(frame: HTMLIFrameElement, where: Where): PickSource 
  * reports must carry (`picks`): a page that sends the frame elsewhere before its own load ends hands that to the
  * document it sent it to, as its own choice. Any later load (a link followed, a script sending the frame elsewhere, a
  * reload) ends it: what the frame holds then may be any site's, and it never has the token. A new selection is heard
- * only while the frame holds the focus, as a pick made by hand does, so a page's script can't open the box and take
- * the keyboard while the user is elsewhere; one heard without it lets go of what was heard, so a pick still settling
+ * only while the frame holds the focus, as a pick made by hand does, so a page's script can't open the box over
+ * what the user is doing elsewhere; one heard without it lets go of what was heard, so a pick still settling
  * when the user clicks away doesn't open. The one held is followed as it moves or ends wherever the focus is. The words are the page's word: a
  * script in it could report others than those selected. The page's own selection shows the pick; letting it go sends
  * `unpick`.

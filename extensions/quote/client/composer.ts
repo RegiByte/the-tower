@@ -68,7 +68,6 @@ const drafts = new Map<string, string>()
 export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   let board = first
   let passage = subject.value as Passage
-  let key = subject.key
   const cardOf = (): Card | undefined => board.floors.flatMap((f) => f.cards).find((c) => c.id === passage.card)
 
   host.innerHTML = `<style>${STYLE}</style><div class="body"></div>`
@@ -89,8 +88,9 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   /**
    * The box: the prompt, its placeholder naming who it goes to and its title where the passage is, or why there is
    * none. The passage is lit in the file, or selected in the page, so it isn't drawn again here, whoever read it.
-   * Drawn again on every board, it takes the focus only as the prompt is made: a board moving it back from Cancel
-   * would let an Enter meant there send.
+   * It never takes the focus, neither as it is made nor on a new pick or a board: a pick leaves the focus and the
+   * selection where they are, so the passage can be copied, and the user clicks into the prompt to ask, as in Claude's
+   * own prompt.
    */
   function draw() {
     const card = cardOf()
@@ -110,7 +110,6 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
         if (id === 'submit' || sendsAlone(e)) return (e.preventDefault(), void send())
         if (id === 'cancel-pick') (e.preventDefault(), cancel())
       })
-      text.focus()
     }
     const text = body.querySelector<HTMLTextAreaElement>('[data-ask-text]')!
     text.placeholder = `Ask ${card!.callsign} about this passage (⏎ sends it, Esc cancels)`
@@ -144,10 +143,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     update(next, now) {
       board = next
       passage = now.value as Passage
-      const picked = now.key !== key
-      key = now.key
       draw()
-      if (picked) body.querySelector<HTMLTextAreaElement>('[data-ask-text]')?.focus()
     },
     close() {},
   }
