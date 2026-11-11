@@ -319,8 +319,8 @@ Every page the tower frames forwards the tower's global keys (⌘K, Escape, the 
 `/tower.js` sends them, and the tower appends `/frame-keys.js`, which sends keys and nothing else, to every html file
 it serves sandboxed. It appends `/frame-picks.js` too, which sends the page's selection as `{ t: 'pick' }` (API 1.170)
 and clears it on `{ t: 'unpick' }`: `tower/html` takes it as a `passage` only from a frame showing a worker's file,
-only with the token it gives the document that frame loaded first (`{ t: 'picks', token }`, which a document
-navigated to never gets), and a new selection only while the frame holds the focus. A key one of the page's handlers took stays in the page, as does typing in a field: a page that
+only with the token it gives the document that frame holds at its first load (`{ t: 'picks', token }`, which
+a document navigated to after it never gets), and a new selection only while the frame holds the focus. A key one of the page's handlers took stays in the page, as does typing in a field: a page that
 handles a key (Escape closing its own dialog) calls `preventDefault` to keep it. A renderer that frames pages hears
 them as `{ t: 'key' }` messages and runs a global command (`frameCommandOf`, `/lib/keys.js`) only for one from the frame
 holding focus; a remote `url` page forwards nothing. What a forwarded key opens (the palette, a dialog) takes focus

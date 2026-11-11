@@ -117,11 +117,13 @@ export function frameSource(frame: HTMLIFrameElement, where: Where): PickSource 
 
 /**
  * The selection of a page that runs its own scripts, as `/frame-picks.js` reports it from inside: heard only from
- * `frame`'s window, and only from the document it loaded first, which alone is given the token its reports must carry
- * (`picks`). Any later load (a link followed, a script sending the frame elsewhere, a reload) ends it: what the frame
- * holds then may be any site's, and it never has the token. A new selection is heard only while the frame holds the
- * focus, as a pick made by hand does, so a page's script can't open the box and take the keyboard while the user is
- * elsewhere; the one held is followed as it moves or ends wherever the focus is. The words are the page's word: a
+ * `frame`'s window, and only from the document the frame holds at its first load, which alone is given the token its
+ * reports must carry (`picks`): a page that sends the frame elsewhere before its own load ends hands that to the
+ * document it sent it to, as its own choice. Any later load (a link followed, a script sending the frame elsewhere, a
+ * reload) ends it: what the frame holds then may be any site's, and it never has the token. A new selection is heard
+ * only while the frame holds the focus, as a pick made by hand does, so a page's script can't open the box and take
+ * the keyboard while the user is elsewhere; one heard without it lets go of what was heard, so a pick still settling
+ * when the user clicks away doesn't open. The one held is followed as it moves or ends wherever the focus is. The words are the page's word: a
  * script in it could report others than those selected. The page's own selection shows the pick; letting it go sends
  * `unpick`.
  */
@@ -140,7 +142,7 @@ export function reportedSource(frame: HTMLIFrameElement): PickSource {
     const msg = e.data as FromPage | undefined
     if (e.source !== frame.contentWindow || loads !== 1 || msg?.t !== 'pick' || msg.token !== token) return
     if (msg.sig === undefined) return void (report = undefined)
-    if (msg.sig === report?.sig || focused()) report = msg
+    report = msg.sig === report?.sig || focused() ? msg : undefined
   }
   frame.addEventListener('load', loaded)
   addEventListener('message', heard)

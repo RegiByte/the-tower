@@ -194,8 +194,8 @@ export type FromPage =
   /**
    * The page's selection, sent by `/frame-picks.js` on each change: `sig` its ends, `quote` its words, and `rect`
    * where it is in the frame; none of them when there is none. `token` is the one `picks` gave the page. The page's
-   * word: the tower takes it only from a frame showing a worker's file, with the token only the document it loaded
-   * first was given, and a new selection only while the frame holds the focus. @since 1.170
+   * word: the tower takes it only from a frame showing a worker's file, with the token only the document the frame
+   * held at its first load was given, and a new selection only while the frame holds the focus. @since 1.170
    */
   | { t: 'pick'; token: string; sig?: string; quote?: string; rect?: { top: number; bottom: number; left: number } }
 
@@ -220,8 +220,8 @@ export type ToPage =
   /** Clear the page's selection: what was picked in it is let go. Heard by `/frame-picks.js`. @since 1.170 */
   | { t: 'unpick' }
   /**
-   * The token the page's `pick`s carry, sent once to the document a frame showing a worker's file loaded first; a
-   * document the frame navigates to is never given one. Heard by `/frame-picks.js`, which says the selection again. @since 1.170
+   * The token the page's `pick`s carry, sent once to the document a frame showing a worker's file holds at its first
+   * load; a document the frame navigates to after it is never given one. Heard by `/frame-picks.js`, which says the selection again. @since 1.170
    */
   | { t: 'picks'; token: string }
 
