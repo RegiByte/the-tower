@@ -36,8 +36,10 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
       at.kit,
       at.subject,
       frameSource(frame, (_, range) => {
-        const [start, end] = [offsetIn(pre, range.startContainer, range.startOffset), offsetIn(pre, range.endContainer, range.endOffset)]
-        return { quote: range.toString().replace(/^\n+|\s+$/g, ''), ...textLines(text, start, end) }
+        const [from, to] = [offsetIn(pre, range.startContainer, range.startOffset), offsetIn(pre, range.endContainer, range.endOffset)]
+        const picked = text.slice(from, to)
+        const [start, end] = [from + (picked.length - picked.replace(/^\n+/, '').length), to - (picked.length - picked.replace(/\s+$/, '').length)]
+        return { quote: text.slice(start, end), ...textLines(text, start, end) }
       }),
     )
     if (!seen) picks.visible(false)
