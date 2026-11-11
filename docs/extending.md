@@ -370,7 +370,10 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   tower restart). The board's `viewers.selected` maps each viewer to the worker it has selected, a viewer with none
   left out, and forgets a viewer when its board stream closes. The tower page says the worker its main pane is on, so
   the worker the user has selected there is `board.viewers.selected?.[board.viewers.last?.page]`: undefined when
-  nothing is selected or no tower page is open, and with two open, the one the user acted on last.
+  nothing is selected or no tower page is open, and with two open, the one the user acted on last. It is undefined
+  too while no tower page has been acted on since the tower started (`last` comes from `viewer/active` alone, and
+  after a restart only the page with focus says it): a consumer that wants an answer then can take the one entry of
+  `viewers.selected` when it holds exactly one, which today is a tower page's, since no other renderer says a selection.
 - **Reads**: `GET /board` (SSE: `{v, board}`, again on every change), `/renderers`, `/stats`, `/changes/<id>` (`?scope=all`, the default, `uncommitted` or a commit),
   `/conversations/<id>` (each turn with Claude's `steps`: its words, its tool calls and the messages it sent), `/conversations/<id>/<conversation>` (one
   conversation, every turn) and `/conversations/<id>/tool/<call>` (one tool call: its input, its permission check, how

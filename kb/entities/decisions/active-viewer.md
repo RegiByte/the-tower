@@ -65,6 +65,9 @@ page in the background). `tower.js` keeps the page's selection (`tower.select`) 
 dropped stream heals on its own. The tower page says the worker its main pane is on from
 [`viewed`](ref:hub/renderers/page/page.js#viewed), the one way its view changes; the worker the user has selected
 there is `selected[last.page]`, none when no tower page is open, and with two open, the one the user acted on last.
+It is none too while no tower page has been acted on since the tower started, since `last` comes from `viewer/active`
+alone; `selected` is keyed by viewer, not renderer, so what a consumer does then is its own (the docs suggest the one
+entry when there is exactly one). A selection made while a `viewer/selected` is on its way is said once it settles.
 
 **Alternatives considered.** A bundled `presence` extension holding the same verb and folding the board field: the
 same shape behind one more manifest, while every renderer still has to call it, and the question is about pages, not
