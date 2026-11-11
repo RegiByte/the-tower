@@ -1,15 +1,15 @@
 /**
  * frame-picks.js: a framed page's selection, sent to the tower framing it, so text picked in a shown html page can be
  * a passage (decision `passage-picks`). The tower appends it to every html file it serves sandboxed, after the page.
- * It calls no verb and holds no token. What it sends is the page's word, since any script in the page can send the
- * same: the tower takes it only from a frame it drew a worker's shown file in, and only while that frame holds the
- * document it loaded.
+ * It calls no verb. What it sends is the page's word, since any script in the page can send the same: the tower takes
+ * it only from a frame it drew a worker's shown file in, with the token it gives the document that frame loaded first
+ * (`{t: 'picks', token}`, kept from the first one heard and sent with every pick), and a new selection only while the
+ * frame holds the focus. Until the token comes, nothing is sent.
  *
  * Each change of the selection, and each scroll or resize while one stands, sends `{t: 'pick'}`: with `sig`, the
  * selection's ends, `quote` its words and `rect` where it is in the frame; without, when it is collapsed or holds only
- * white space. The page's `load` sends it once more: the tower hears picks only once the frame has loaded, and a
- * selection made while the page still loads would otherwise go unheard until it changes. `{t: 'unpick'}` from the
- * framing page clears it.
+ * white space. The token's arrival sends it once more: the tower gives it once the frame has loaded, and a selection
+ * made before would otherwise go unheard until it changes. `{t: 'unpick'}` from the framing page clears it.
  */
 ;(() => {
   const SENDING = Symbol.for('tower.frame-picks')
@@ -22,16 +22,19 @@
   /** @param {Node} node */
   const id = (node) => ids.get(node) ?? (ids.set(node, ++last), last)
 
+  /** The token the framing page gave, which every pick carries; none until it comes. @type {string | undefined} */
+  let token
   /** Whether the last message sent named a selection. */
   let sent = false
   let queued = false
 
   const send = () => {
     queued = false
+    if (token === undefined) return
     const selection = getSelection()
     const words = selection && !selection.isCollapsed && selection.rangeCount ? selection.toString() : ''
     if (!selection || !words.trim()) {
-      if (sent) window.parent.postMessage({ t: 'pick' }, '*')
+      if (sent) window.parent.postMessage({ t: 'pick', token }, '*')
       sent = false
       return
     }
@@ -40,6 +43,7 @@
     window.parent.postMessage(
       {
         t: 'pick',
+        token,
         sig: `${id(/** @type {Node} */ (selection.anchorNode))}:${selection.anchorOffset}:${id(/** @type {Node} */ (selection.focusNode))}:${selection.focusOffset}`,
         quote: words.replace(/^\n+|\s+$/g, ''),
         rect: { top: r.top, bottom: r.bottom, left: r.left },
@@ -55,10 +59,11 @@
   }
 
   document.addEventListener('selectionchange', queue)
-  addEventListener('load', queue)
   addEventListener('scroll', () => sent && queue(), true)
   addEventListener('resize', () => sent && queue())
   addEventListener('message', (e) => {
-    if (e.source === window.parent && e.data?.t === 'unpick') getSelection()?.removeAllRanges()
+    if (e.source !== window.parent) return
+    if (e.data?.t === 'unpick') getSelection()?.removeAllRanges()
+    if (e.data?.t === 'picks' && token === undefined && typeof e.data.token === 'string') ((token = e.data.token), queue())
   })
 })()

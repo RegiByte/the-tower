@@ -192,11 +192,12 @@ export type FromPage =
    */
   | { t: 'key'; key: string; code: string; mods: ('Alt' | 'Ctrl' | 'Meta' | 'Shift')[]; editable: boolean }
   /**
-   * The page's selection, sent by `/frame-picks.js` with no token on each change: `sig` its ends, `quote` its words,
-   * and `rect` where it is in the frame; none of them when there is none. The page's
-   * word: the tower takes it only from a frame showing a worker's file, while it holds the document it loaded. @since 1.170
+   * The page's selection, sent by `/frame-picks.js` on each change: `sig` its ends, `quote` its words, and `rect`
+   * where it is in the frame; none of them when there is none. `token` is the one `picks` gave the page. The page's
+   * word: the tower takes it only from a frame showing a worker's file, with the token only the document it loaded
+   * first was given, and a new selection only while the frame holds the focus. @since 1.170
    */
-  | { t: 'pick'; sig?: string; quote?: string; rect?: { top: number; bottom: number; left: number } }
+  | { t: 'pick'; token: string; sig?: string; quote?: string; rect?: { top: number; bottom: number; left: number } }
 
 export type ToPage =
   /**
@@ -218,6 +219,11 @@ export type ToPage =
   | { t: 'prefs'; prefs: Prefs }
   /** Clear the page's selection: what was picked in it is let go. Heard by `/frame-picks.js`. @since 1.170 */
   | { t: 'unpick' }
+  /**
+   * The token the page's `pick`s carry, sent once to the document a frame showing a worker's file loaded first; a
+   * document the frame navigates to is never given one. Heard by `/frame-picks.js`, which says the selection again. @since 1.170
+   */
+  | { t: 'picks'; token: string }
 
 /** The verbs a framed page moves its framing page's own view with; `go` and `display` (since 1.104) where the framing renderer hosts views. */
 export type RelayedUi = { [V in 'select' | 'home' | 'shelf']: (fields: Extract<TowerVerb, { verb: V }>) => void } & {
