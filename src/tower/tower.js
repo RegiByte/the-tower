@@ -347,16 +347,20 @@
     let selection = null
     /** Whether a `viewer/selected` is on its way: the board says the answer, so one at a time is enough. */
     let selecting = false
-    /** Says this page's selection unless the board already carries it: a board after a tower restart has forgotten it. */
+    /**
+     * Says this page's selection unless the board already carries it: a board after a tower restart has forgotten it.
+     * A selection made while a call is on its way is said once it settles, since the board it waits for may come first.
+     */
     const saySelected = () => {
       const board = latest?.board
       if (selecting || !board || (board.viewers.selected?.[viewer] ?? null) === selection) return
       selecting = true
-      call('viewer/selected', { viewer, id: selection })
+      const said = selection
+      call('viewer/selected', { viewer, id: said })
         .catch((/** @type {Failure} */ err) => {
           if (err.code !== 'not_found') throw err
         })
-        .finally(() => (selecting = false))
+        .finally(() => ((selecting = false), selection !== said && saySelected()))
     }
     /** The renderer this page is, which its board stream names: a renderer is served at `/r/<name>/`. */
     const renderer = kind === 'r' ? `&renderer=${encodeURIComponent(name)}` : ''
