@@ -12,6 +12,7 @@
     "hub/src/tower/publisher.ts#viewerActive",
     "hub/src/tower/publisher.ts#viewerSelected",
     "hub/src/tower/tower.js#saySelected",
+    "hub/renderers/page/page.js#viewed",
     "hub/src/tower/publisher.ts#viewerGone",
     "hub/src/tower/publisher.ts#viewersNow",
     "hub/src/bridge/board.ts#Viewers",
@@ -61,7 +62,9 @@ viewer to its worker, a viewer with none left out, and loses a viewer with its l
 a field on `viewer/active`: acting on a page and what the page is on change apart (a worker opened from a link, the
 page in the background). `tower.js` keeps the page's selection (`tower.select`) and
 [says it again](ref:hub/src/tower/tower.js#saySelected) on any board that doesn't carry it, so a tower restart or a
-dropped stream heals on its own.
+dropped stream heals on its own. The tower page says the worker its main pane is on from
+[`viewed`](ref:hub/renderers/page/page.js#viewed), the one way its view changes; the worker the user has selected
+there is `selected[last.page]`, none when no tower page is open, and with two open, the one the user acted on last.
 
 **Alternatives considered.** A bundled `presence` extension holding the same verb and folding the board field: the
 same shape behind one more manifest, while every renderer still has to call it, and the question is about pages, not
