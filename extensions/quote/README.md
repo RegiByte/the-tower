@@ -45,7 +45,7 @@ Nothing: they draw no `passage.acts` region.
 
 ## How it works
 
-The core draws the file, reads the frame's selection and turns a settled pick into a `passage` subject: `/picks.js`,
+The core draws the file, reads the frame's selection and turns a settled pick into a `passage` subject: `src/shared/picks.ts`,
 `src/shared/view-passages.ts`, and where a pick is in each view (`view-sections.ts` with the source-line marks of
 `sectionsHtml`, `src/views/text.ts`, and `/frame-picks.js` for an html page). This extension is one view on that
 subject, `quote/composer`, at `row` scale. Another extension can act on passages too, with a command or a view

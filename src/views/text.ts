@@ -1,5 +1,5 @@
 import { esc } from '/lib/words.js'
-import { textLines } from '../shared/picks.ts'
+import { textLines } from '../shared/source-lines.ts'
 import { bodyText, type Body, type Drawn, frameDoc, typeView } from '../shared/view-item.ts'
 import { frameSource, offsetIn, PASSAGE_RULES, pickPassages, type Picks } from '../shared/view-passages.ts'
 

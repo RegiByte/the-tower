@@ -1,7 +1,8 @@
 import { loop, timers } from './loop.ts'
 import { PICK_HANDLERS, PICK_START, type PickEffect, type PickEvent, type PickState } from './picks.ts'
 import type { FromPage, ToPage } from './shelf-page.ts'
-import { passageSubject, type Passage, type Subject } from './subjects.ts'
+import { passageSubject, type Passage } from './passage.ts'
+import type { Subject } from './subjects.ts'
 import type { Kit, RegionHandle } from './views.ts'
 
 /**
@@ -9,7 +10,7 @@ import type { Kit, RegionHandle } from './views.ts'
  * that frames one: `tower/document`'s sections, `tower/text`'s file and `tower/html`'s page. What is picked comes from
  * a `PickSource`: the frame's own selection, read from the page in a frame where nothing runs (`frameSource`), or the
  * page's report of it, sent by `/frame-picks.js` from a page that runs its own scripts (`reportedSource`). Each
- * animation frame while the view is seen, the source is read and `/picks.js` told what it read; what acts on the pick
+ * animation frame while the view is seen, the source is read and the pick machine (`picks.ts`) told what it read; what acts on the pick
  * held (`passage.acts`) is drawn in a box over the frame, in the page's own document: under the passage, or over it
  * where there is no room below.
  */
@@ -65,7 +66,7 @@ const nodeIds = new WeakMap<Node, number>()
 let lastNodeId = 0
 const nodeId = (node: Node) => nodeIds.get(node) ?? (nodeIds.set(node, ++lastNodeId), lastNodeId)
 
-/** A selection's signature, as `/picks.js` is told it: its ends; none while it is collapsed or outside the body. */
+/** A selection's signature, as the pick machine (`picks.ts`) is told it: its ends; none while it is collapsed or outside the body. */
 function selectionSig(doc: Document): string | undefined {
   const selection = doc.getSelection()
   if (!selection?.rangeCount || selection.isCollapsed || !doc.body.contains(selection.getRangeAt(0).commonAncestorContainer)) return undefined

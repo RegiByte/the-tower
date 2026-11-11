@@ -7,10 +7,9 @@
  * until it is let go: `drop` (what acts on it is done, or a click lands outside it), the selection collapsing (a click
  * in the document; focus leaving the frame for the box keeps a selection as it was), or a new pick settling. While a
  * selection grown from the held one is moving (a key extending it), what acts on the held pick is put aside
- * (`moving`), so it stands nowhere it is being picked. Served as `/picks.js`. @since 1.170
+ * (`moving`), so it stands nowhere it is being picked. @since 1.170
  */
 import type { StateEffect, TimerEffect } from './loop.ts'
-import type { SourceLines } from './markdown.ts'
 
 /** How long a selection stays as it is before it is a pick: there is no `mouseup` to say a drag ended. */
 export const SETTLE_MS = 350
@@ -46,12 +45,3 @@ export const PICK_HANDLERS = {
   drop: (s: PickState): PickEffect[] => (s.t === 'none' ? [] : [state({ t: 'none' }), unsettle, { type: 'drop' }]),
 }
 
-/**
- * The lines of `text` a pick from character `start` to `end` spans, from 1: a pick that ends just past a line's break
- * ends on that line, not on the next. For a file drawn as written, whose drawn text is its source. @since 1.170
- */
-export function textLines(text: string, start: number, end: number): SourceLines {
-  const lineAt = (offset: number) => text.slice(0, offset).split('\n').length
-  const last = end > start && text[end - 1] === '\n' ? end - 1 : end
-  return { from: lineAt(start), to: lineAt(last) }
-}
