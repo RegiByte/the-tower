@@ -103,13 +103,16 @@ sentence the user picked.
   tower sends `{t: 'unpick'}` to let it go. Since any script in the page can send the same, the words are the page's
   word, and four things bound what it can do. Only [`tower/html`](ref:hub/src/views/html.ts#mount) listens, and only
   for a showing of a file: an address a worker showed is `tower/link`'s, framed from its own server, with no tower
-  script in it. It hears only its own frame's window. Only the document the frame loaded first: on the frame's first
-  `load` the tower sends it a random token (`{t: 'picks', token}`), which every pick must carry, and a second `load`
+  script in it. It hears only its own frame's window. Only the document the frame holds at its first load: on the
+  frame's first `load` the tower sends it a random token (`{t: 'picks', token}`), which every pick must carry, and a second `load`
   (a link followed, a script sending the frame elsewhere, a reload) ends it, failing closed. The token closes the
   window before that `load`, when a document navigated to could already post: it never had the token, and every
-  document in a sandboxed frame has the same opaque origin, so its origin can't tell them apart. And a new selection
+  document in a sandboxed frame has the same opaque origin, so its origin can't tell them apart. A page that sends
+  the frame elsewhere before its own load ends (`location.replace`, a meta refresh) hands the token to where it sent
+  it; that is the page's own choice, as its words are its word. And a new selection
   only while the frame holds the focus, as a pick made by hand does: otherwise a script selecting on a timer would
-  open the box, whose composer takes the keyboard, while the user typed elsewhere. The pick held is followed as it
+  open the box, whose composer takes the keyboard, while the user typed elsewhere. A new selection heard without the
+  focus lets go of the one heard before, so a pick still settling when the user clicks away doesn't open. The pick held is followed as it
   moves or ends wherever the focus is, so the box keeps up with the page's scroll. The passage has no lines,
   and nothing marks it as the page's: the `quote` composer draws the same box as for any passage, the words left
   unshown, so a page's script could report other words than those selected and they would go with the prompt unseen.

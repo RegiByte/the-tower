@@ -2,7 +2,7 @@
  * frame-picks.js: a framed page's selection, sent to the tower framing it, so text picked in a shown html page can be
  * a passage (decision `passage-picks`). The tower appends it to every html file it serves sandboxed, after the page.
  * It calls no verb. What it sends is the page's word, since any script in the page can send the same: the tower takes
- * it only from a frame it drew a worker's shown file in, with the token it gives the document that frame loaded first
+ * it only from a frame it drew a worker's shown file in, with the token it gives the document that frame holds at its first load
  * (`{t: 'picks', token}`, kept from the first one heard and sent with every pick), and a new selection only while the
  * frame holds the focus. Until the token comes, nothing is sent.
  *
