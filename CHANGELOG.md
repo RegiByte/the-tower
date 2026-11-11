@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.112.0
+
+Quote to worker, contributed by Carlos Bonetti (#440, landed as #552). Nothing to restart beyond the tower
+(`tower update` does it). API 1.170.
+
+- **Ask a worker about a passage of a file it showed.** Select text in a markdown, text, code or html file a worker
+  showed, type a prompt in the box that opens beside the selection, and press Enter: the worker gets the prompt with
+  the passage quoted and its place in the file named (file and lines; code in a fence named by its extension). The
+  box sends through the same queue as the composer, so a busy worker gets it when it is free. It comes from the new
+  bundled `quote` extension; any extension can act on a passage with a command or a view on the `passage` subject.
+  The tower page draws it; Tower 3D and The Week don't yet.
+
 ## v1.111.0
 
 Files dropped on the new-worker dialog, contributed by Glauco Neves (#550). Nothing to restart beyond the tower
