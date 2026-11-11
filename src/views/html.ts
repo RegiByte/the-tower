@@ -5,8 +5,8 @@ import { PASSAGE_RULES, pickPassages, reportedSource } from '../shared/view-pass
 /**
  * `tower/html`, the html view: the page framed where it runs at an origin of its own, with no API. A page a worker
  * showed, served by the tower with `/frame-picks.js` appended, reports what is picked in it, and the pick is a
- * `passage` of the showing (`reportedSource`), heard only while the frame holds that page: once it navigates
- * anywhere else, nothing it says is a pick. A kept item's page reports to no one.
+ * `passage` of the showing (`reportedSource`), heard only from that page, by the token it alone is given: once it
+ * navigates anywhere else, nothing it says is a pick. A kept item's page reports to no one.
  */
 
 const RULES = `& .html-split { position: relative; flex: 1; min-width: 0; display: flex; }

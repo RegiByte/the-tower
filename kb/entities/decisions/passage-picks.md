@@ -99,19 +99,23 @@ sentence the user picked.
   A shown html page runs at an origin of its own (`allow-scripts`, no `allow-same-origin`), so the page can't read
   its frame. The tower appends [`/frame-picks.js`](ref:hub/src/tower/frame-picks.js) to every html file it serves
   sandboxed, beside `/frame-keys.js`: it hears the page's own `selectionchange`, scroll and resize, and sends
-  `{t: 'pick', sig, quote, rect}`, or `{t: 'pick'}` for none; the
+  `{t: 'pick', token, sig, quote, rect}`, or `{t: 'pick', token}` for none; the
   tower sends `{t: 'unpick'}` to let it go. Since any script in the page can send the same, the words are the page's
-  word, and three things bound what it can do. Only [`tower/html`](ref:hub/src/views/html.ts#mount) listens, and only
+  word, and four things bound what it can do. Only [`tower/html`](ref:hub/src/views/html.ts#mount) listens, and only
   for a showing of a file: an address a worker showed is `tower/link`'s, framed from its own server, with no tower
-  script in it. It hears only its own frame's window. And only while the frame holds the document it loaded first:
-  every navigation fires `load` on the frame in the page's document, cross-origin included, so a second `load` (a
-  link followed, a script sending the frame elsewhere, a reload) ends it, failing closed, since every document in a
-  sandboxed frame has the same opaque origin and its origin can't tell them apart. The passage has no lines,
+  script in it. It hears only its own frame's window. Only the document the frame loaded first: on the frame's first
+  `load` the tower sends it a random token (`{t: 'picks', token}`), which every pick must carry, and a second `load`
+  (a link followed, a script sending the frame elsewhere, a reload) ends it, failing closed. The token closes the
+  window before that `load`, when a document navigated to could already post: it never had the token, and every
+  document in a sandboxed frame has the same opaque origin, so its origin can't tell them apart. And a new selection
+  only while the frame holds the focus, as a pick made by hand does: otherwise a script selecting on a timer would
+  open the box, whose composer takes the keyboard, while the user typed elsewhere. The pick held is followed as it
+  moves or ends wherever the focus is, so the box keeps up with the page's scroll. The passage has no lines,
   and nothing marks it as the page's: the `quote` composer draws the same box as for any passage, the words left
   unshown, so a page's script could report other words than those selected and they would go with the prompt unseen.
   The user chose one box for every file over showing a page's words, and a field nothing read was dropped with it.
-  Since the tower hears a page only once its frame has loaded, the page says its selection again on its own `load`:
-  one made while it still loaded is heard then.
+  Since the token comes only once the frame has loaded, the page says its selection again when it arrives: one made
+  while it still loaded is heard then.
 - `tool:webkit` took a `--drag` ([`webkit.ts`](ref:hub/scripts/webkit.ts)), real AppKit mouse events, to check a
   selection in WebKit, where it matters.
 
