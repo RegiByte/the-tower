@@ -143,7 +143,8 @@ function tick() {
  * and offers N visited this round (`Heed` in cards.ts), and the workers it started that the board doesn't carry yet
  * (`started`), which it waits for as they arrive, and the viewer's own layout of this renderer's regions as `tower.store`
  * keeps it (`layout`). The view and the rings follow one selection because every handler that sets `view` does it
- * through `viewed`, which tells attention. A worker the page doesn't hold is looked up in the floors' archives before
+ * through `viewed`, which tells attention and says the selection to the tower (`tower.select`, the board's
+ * `viewers.selected`). A worker the page doesn't hold is looked up in the floors' archives before
  * the page goes to it (`looking`, the location it was asked for): any way the viewer goes meanwhile, but to that worker,
  * cancels it, so a read that lands late takes nobody anywhere.
  * @typedef {{ board: Board | undefined, error: BoardError | undefined, lostAt: number | undefined, viewer: Viewer, layout: Layout | undefined, view: MainView, attending: Attending, visited: ReadonlySet<string>, started: ReadonlySet<string>, looking: Looking | undefined }} PageState
@@ -154,7 +155,7 @@ function tick() {
  *   | { type: 'look-up' } & Looking | { type: 'subject-left' } & Looking | { type: 'looked-up', id: string, found: boolean }} PageEvent
  * @typedef {Exclude<AttendEffect, StateEffect<Attending>> | ViewerKept | StateEffect<PageState> | TimerEffect<PageEvent>
  *   | { type: 'leave', view: MainView } | { type: 'enter', view: MainView } | { type: 'hash', hash: string } | { type: 'draw' }
- *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string } | { type: 'look-up', id: string }} PageEffect
+ *   | { type: 'attend-to', to: Attended } | { type: 'toast', message: string } | { type: 'look-up', id: string } | { type: 'select', id: string | null }} PageEffect
  */
 
 /** The workers started here that `b` doesn't carry yet. @param {ReadonlySet<string>} started @param {Board} b */
@@ -194,11 +195,11 @@ const moved = (s, view) => viewed(s, view, [{ type: 'leave', view: s.view }, { t
 
 /**
  * The one way a handler sets `view`: a worker being looked up is let go unless `view` is on it, attention hears of the
- * worker the view is on, then `effects` follow.
+ * worker the view is on and the tower is told it is the one selected, then `effects` follow.
  * @param {PageState} s @param {MainView} view @param {PageEffect[]} effects @returns {PageEffect[]}
  */
 const viewed = (s, view, effects) =>
-  chain({ ...s, view, looking: cardIdOf(view) === s.looking?.id ? s.looking : undefined }, [(s) => attend(s, { type: 'watch', at: cardIdOf(s.view) }), () => effects])
+  chain({ ...s, view, looking: cardIdOf(view) === s.looking?.id ? s.looking : undefined }, [(s) => attend(s, { type: 'watch', at: cardIdOf(s.view) }), () => [{ type: 'select', id: cardIdOf(view) ?? null }, ...effects]])
 
 /** Goes to `view`: the view open is left, unless `view` is the same place. @param {PageState} s @param {MainView} view @returns {PageEffect[]} */
 const went = (s, view) => (sameRoom(s.view, view) ? viewed(s, view, [{ type: 'hash', hash: hashOf(view, s.board ?? BLANK) }, { type: 'draw' }]) : moved(s, view))
@@ -285,6 +286,7 @@ const page = loop({
       /** @type {(v: MainView) => void} */ (ENTER[v.t])(v)
     },
     hash: ({ hash }) => location.hash !== hash && history.replaceState(null, '', hash || location.pathname),
+    select: ({ id }) => tower.select(id),
     draw: () => render(),
     'look-up': ({ id }) => void lookUp(id).then((c) => page.dispatch({ type: 'looked-up', id, found: c !== undefined })),
   },
