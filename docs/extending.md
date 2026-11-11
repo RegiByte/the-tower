@@ -885,7 +885,8 @@ and `actionWords` for a label. To press one, `isCommand(action) ? runCommandWith
 runVerb(action)` (`runVerb` in `/lib/board.js`): a verb is called with its call, a command's module imported from
 `/x/<cap>/` and its export called with `{ tower, board, target, subject, args, kit }`: `kit` is what the
 renderer running it lends, `display`, `toast`, `notice`, `confirm`, `run` and `bus` (`CommandKit` in `/lib/view.js`),
-so "Add to grid" is `kit.display(target, { view: 'grid/grid' })`. `notice(text, action?)` is a toast that
+so "Add to grid" is `kit.display(target, { view: 'grid/grid' })`. A renderer that lends nothing passes `NO_KIT`
+(`/lib/layout.js`), whose every member fails, naming itself. `notice(text, action?)` is a toast that
 stays while what it tells goes on, standing above the toasts that leave until the command closes it: it answers
 `{ say(text), close() }`, and its action's button runs the action and leaves the notice for the command to close
 (narrate's memo with Hear, on a page that can't play sound yet; a control a notice can't hold, such as narrate's speed
@@ -964,7 +965,7 @@ emoji one cell where Claude Code gives them two, and an emoji-heavy screen draws
 emoji until the next full redraw. The view turns on xterm.js's `allowProposedApi`, which the addon needs. A link opens in a new tab, if it is http(s). Given
 `io.files`, the file paths written in the terminal are links too, read from its `cwd()` and opened with its `edit`
 (the tower page calls the `edit` verb, which opens the user's editor at the path's `:line`). `io`
-is what the view needs of your renderer: `watch(on)` streams the PTY's messages and answers a function that stops,
+(`TermViewIo` in `/lib/terminal.js`) is what the view needs of your renderer: `watch(on)` streams the PTY's messages and answers a function that stops,
 `resize(size)` and `send(data)` reach the PTY, `claude` says whether it is Claude's terminal (its wheel then goes to
 Claude as wheel reports), `scrollback`, `font()` and `scheme()` give its look, `mode(m)` hears how it holds the PTY
 (owning its size, watching, or exited), `end(msg)` its exit or stream error, and `error(err)` a failure of the view's own; `upload` and
@@ -1169,18 +1170,20 @@ the frame lit; other views draw no marks yet.
   conversation, carrying its words as `body` and the type `text/markdown`. `side` is `prompt`, `answer`, or
   `step.<n>`: Claude's words between tool calls, or a message it sent, the `n`th of the turn's steps. The Brief asks the kit for `said.acts`
   beside each copy button, where anything is offered on `said`, and takes `show(said)`, scrolling to it.
-- `section`: keyed `section:<of key>#<n>`, of the showing or item the document is (`value.of`), carrying `heading`,
+- `section`: `sectionSubject` in `/lib/board.js`, keyed `section:<of key>#<n>`, of the showing or item the document is (`value.of`), carrying `heading`,
   its markdown as `body` and the document's type. A document splits before each heading of the shallowest level that
   occurs more than once (a document under one `#` title splits at its `##`s), the text before the first such heading
-  section 0 (left out when it is blank), and each section is named once ("Notes", "Notes · 2").
+  section 0 (left out when it is blank), and each section is named once ("Notes", "Notes · 2"). `/lib/markdown.js`
+  splits a document so: `sectionsOf(text)` its sections, `sectionsHtml(text, url)` each one's html to frame without
+  scripts, and `sectionLabels(sections)` each one's name. Anything in that html besides what draws the section is
+  unspecified and may change in any version: don't parse it.
 - `passage` (API 1.170): `passageSubject(passage)` in `/lib/board.js`, keyed `passage:<of key>#<from>-<to>:<hash>`,
   text picked in a markdown document drawn by sections or a text file drawn as written (`tower/text`: plain text,
   source code, JSON), of the showing or item it is in (`value.of`). Its `Passage` carries `quote` (the words as the
   frame draws them, also its `body`, typed `text/plain`), and `from` and `to` (its source lines: in a markdown
   document those of the blocks it starts and ends in, in a text file exactly its own), and for a showing of a
   file `card` and `file`, the worker that showed it and the file's real path.
-  `sectionsHtml` writes a comment `<!--src:<from>-<to>-->` before each top-level block, which draws nothing, and a
-  pick's lines are read from the marks before it and in it. When a passage settles, `tower/document`,
+  The core's views read a pick's lines from what they drew; how is theirs, not part of the API. When a passage settles, `tower/document`,
   `tower/shelf` and `tower/text` ask the kit for `passage.acts`: commands and one view at `row` scale, drawn in a box over the frame,
   under the passage or over it where there is no room below. A view there that dispatches a bubbling `done` lets the
   pick go, and so do a click outside the box and a click in the document. The bundled `quote` extension's
