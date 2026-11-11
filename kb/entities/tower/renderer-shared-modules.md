@@ -11,7 +11,7 @@
 The library ([[library]]) is what code outside the core builds on; these modules are deprecated since 1.151 and go at 2.0.
 
 [`MODULES`](ref:hub/src/tower/served.ts#MODULES) maps each URL (`/cards.js`, `/panels.js`, `/brief.js`,
-`/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/capabilities.js`, `/verb-words.js`, `/palette.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/loop.js`, `/picks.js`, `/reads.js`, `/term-view.js`, `/attend.js`, `/viewer.js`, `/spawn.js`, `/media.js`, `/repos.js` and `/design.js`, [[design-system]]) to a file of `src/shared`. The URL answers a re-export of
+`/items.js`, `/icons.js`, `/termkeys.js`, `/keymap.js`, `/terminal.js`, `/prefs.js`, `/settings.js`, `/tips.js`, `/capabilities.js`, `/verb-words.js`, `/palette.js`, `/markdown.js`, `/press.js`, `/toasts.js`, `/loop.js`, `/reads.js`, `/term-view.js`, `/attend.js`, `/viewer.js`, `/spawn.js`, `/media.js`, `/repos.js` and `/design.js`, [[design-system]]) to a file of `src/shared`. The URL answers a re-export of
 that file ([`servedModule`](ref:hub/src/tower/served.ts#servedModule), `export * from '/shared/cards.js'`), and every
 source file below `src/` a page reaches is served once at a URL of its own
 ([`sourceUrl`](ref:hub/src/tower/served.ts#sourceUrl): `/shared/<file>.js`, `/src/<path>.js`, a core view at

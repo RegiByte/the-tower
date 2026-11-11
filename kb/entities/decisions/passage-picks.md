@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Text picked in a shown document is a passage subject, read from the page and acted on over the frame",
-  "summary": "A selection in a markdown document drawn by sections, a text file drawn as written (a showing, a kept item, a shelf file), or a shown html page that reports it through /frame-picks.js, becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (/picks.js) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled quote extension's composer types a prompt about it into the worker that showed the document.",
+  "summary": "A selection in a markdown document drawn by sections, a text file drawn as written (a showing, a kept item, a shelf file), or a shown html page that reports it through /frame-picks.js, becomes a passage subject once it stops changing: the page reads the frame's selection on each animation frame, since nothing in the frame is heard, and a shared machine (src/shared/picks.ts) says when it settles. The passage carries its words, its sections and its source lines (read from comments sectionsHtml writes before each block), is lit by a CSS highlight, and the page draws what acts on it (passage.acts) in a box over the frame. The bundled quote extension's composer types a prompt about it into the worker that showed the document.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
@@ -12,10 +12,12 @@
     "hub/src/shared/picks.ts#PICK_HANDLERS",
     "hub/src/shared/picks.ts#SETTLE_MS",
     "hub/src/shared/markdown.ts#sectionsHtml",
-    "hub/src/shared/markdown.ts#SOURCE_MARK",
-    "hub/src/shared/markdown.ts#linesPicked",
-    "hub/src/shared/subjects.ts#Passage",
-    "hub/src/shared/subjects.ts#passageSubject",
+    "hub/src/shared/source-lines.ts#sourceMark",
+    "hub/src/shared/source-lines.ts#SOURCE_MARK",
+    "hub/src/shared/source-lines.ts#linesPicked",
+    "hub/src/shared/passage.ts#Passage",
+    "hub/src/shared/passage.ts#passageSubject",
+    "hub/src/lib/board.ts",
     "hub/src/shared/subjects.ts#parentOf",
     "hub/src/shared/view-sections.ts#drawSections",
     "hub/src/shared/view-passages.ts#pickPassages",
@@ -24,7 +26,7 @@
     "hub/src/views/html.ts#mount",
     "hub/src/shared/view-passages.ts#reportedSource",
     "hub/src/tower/frame-picks.js",
-    "hub/src/shared/picks.ts#textLines",
+    "hub/src/shared/source-lines.ts#textLines",
     "hub/src/shared/extensions.ts#RESERVED",
     "hub/renderers/page/renderer.json",
     "hub/extensions/quote/extension.json",
@@ -35,7 +37,7 @@
   "links": [
     { "to": "markdown-safe", "verb": "follows", "carries": "nothing of the renderer's in the frame, nothing heard there" },
     { "to": "agent-show", "verb": "extends", "carries": "a showing's passages" },
-    { "to": "machines", "verb": "follows", "carries": "/picks.js" },
+    { "to": "machines", "verb": "follows", "carries": "the pick machine (src/shared/picks.ts)" },
     { "to": "ui-model", "verb": "extends", "carries": "the passage viewer subject and the passage.acts region" },
     { "to": "extensions", "verb": "uses", "carries": "the quote extension's composer view" }
   ]
@@ -47,9 +49,9 @@ which file and where. The section commands in the gutter ([[markdown-safe]]) act
 sentence the user picked.
 
 **Decision.**
-- *A passage is a viewer subject* ([`passageSubject`](ref:hub/src/shared/subjects.ts#passageSubject), API 1.170),
+- *A passage is a viewer subject* ([`passageSubject`](ref:hub/src/shared/passage.ts#passageSubject) in `/lib/board.js`, API 1.170),
   like `lines` picked in a worker's Changes: never on the board, a child of the showing or item the document is
-  ([`parentOf`](ref:hub/src/shared/subjects.ts#parentOf)). Its [`Passage`](ref:hub/src/shared/subjects.ts#Passage)
+  ([`parentOf`](ref:hub/src/shared/subjects.ts#parentOf)). Its [`Passage`](ref:hub/src/shared/passage.ts#Passage)
   holds the quote as the document draws it (also its `body`, typed `text/plain`, so anything that reads a subject's
   text reads it) and its source lines, nothing more: no heading nor sections, since the quote and the lines place it
   in any file, and nothing that acts on a passage read them. For a showing of a file it also holds the worker's card and the file's real path.
@@ -59,18 +61,18 @@ sentence the user picked.
   `tower/shelf` (by `drawSections`) say block lines; [`tower/text`](ref:hub/src/views/text.ts#mount),
   which draws plain text, source code and JSON as written, says exact lines: its frame's text is the file's, so the
   characters before each end of the range ([`offsetIn`](ref:hub/src/shared/view-passages.ts#offsetIn)) give the lines
-  ([`textLines`](ref:hub/src/shared/picks.ts#textLines)), and the quote keeps its indentation.
+  ([`textLines`](ref:hub/src/shared/source-lines.ts#textLines)), and the quote keeps its indentation.
 - *Source lines are data the document carries.* [`sectionsHtml`](ref:hub/src/shared/markdown.ts#sectionsHtml)
-  writes a comment `src:<from>-<to>` ([`SOURCE_MARK`](ref:hub/src/shared/markdown.ts#SOURCE_MARK)) before each
+  writes a comment `src:<from>-<to>` ([`sourceMark`](ref:hub/src/shared/source-lines.ts#sourceMark)) before each
   top-level block's html, counted from the tokens' `raw`. The view walks the frame's comments against the picked
-  range, and [`linesPicked`](ref:hub/src/shared/markdown.ts#linesPicked) takes the last mark before the start and the
+  range, and [`linesPicked`](ref:hub/src/shared/source-lines.ts#linesPicked) takes the last mark before the start and the
   last one up to the end. A comment changes nothing a reader sees, and a block whose html leaves an element open (a
   `<details>`) still draws as before. The lines are block-level: the quote pins down the words.
 - *The selection is read, not heard.* Nothing in a document frame calls a listener in WebKit ([[markdown-safe]]), so
   there is no `mouseup` or `selectionchange`. On each animation frame while the document is seen, the view reads the
   frame's selection from the page (`allow-same-origin`). It tells the machine a signature of
   the selection's ends, or none while it is collapsed or holds only white space.
-- *When a selection is a pick is a shared machine* ([`/picks.js`](ref:hub/src/shared/picks.ts), [[machines]]). A
+- *When a selection is a pick is a shared machine* ([`picks.ts`](ref:hub/src/shared/picks.ts), [[machines]]). A
   selection unchanged for [`SETTLE_MS`](ref:hub/src/shared/picks.ts#SETTLE_MS) is picked. Since there is no
   `mouseup`, that delay is what separates a drag from a finished pick. The pick is held until it is let go: by
   `drop` (the box is `done`, or a press lands outside it on the page), or by the selection collapsing (a click in the
@@ -122,6 +124,11 @@ sentence the user picked.
   be undone exactly.
 - *Placing the box in the gutter.* The gutter is 168px wide, too narrow for a prompt, and its rows are placed by
   sections.
+- *Serving the pick machine as `/picks.js`, and the source marks from `/markdown.js`.* The root modules are
+  deprecated and 2.0 removes them, and nothing outside the core needs either: the core's views import
+  [`picks.ts`](ref:hub/src/shared/picks.ts) and [`source-lines.ts`](ref:hub/src/shared/source-lines.ts) by source,
+  and the subject is published only in the library's `/lib/board.js`, kept apart from `subjects.ts`, which `/cards.js`
+  re-exports.
 - *Preset prompts (Explain, Rewrite) beside the text box.* The user asked for one prompt of their own.
 - *Collecting notes on passages into a review thread.* That fits reviewing a long document in one go, and the
   reviews extension could add a view `on: ["passage"]` for it. A direct prompt came first.

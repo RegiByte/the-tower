@@ -1176,10 +1176,10 @@ the frame lit; other views draw no marks yet.
   text picked in a markdown document drawn by sections or a text file drawn as written (`tower/text`: plain text,
   source code, JSON), of the showing or item it is in (`value.of`). Its `Passage` carries `quote` (the words as the
   frame draws them, also its `body`, typed `text/plain`), and `from` and `to` (its source lines: in a markdown
-  document those of the blocks it starts and ends in, in a text file exactly its own, `textLines` of `/picks.js`), and for a showing of a
+  document those of the blocks it starts and ends in, in a text file exactly its own), and for a showing of a
   file `card` and `file`, the worker that showed it and the file's real path.
-  `sectionsHtml` writes a comment `<!--src:<from>-<to>-->` (`SOURCE_MARK`) before each top-level block, and
-  `linesPicked` reads a pick's lines from the marks before it and in it. When a passage settles, `tower/document`,
+  `sectionsHtml` writes a comment `<!--src:<from>-<to>-->` before each top-level block, which draws nothing, and a
+  pick's lines are read from the marks before it and in it. When a passage settles, `tower/document`,
   `tower/shelf` and `tower/text` ask the kit for `passage.acts`: commands and one view at `row` scale, drawn in a box over the frame,
   under the passage or over it where there is no room below. A view there that dispatches a bubbling `done` lets the
   pick go, and so do a click outside the box and a click in the document. The bundled `quote` extension's
@@ -1202,7 +1202,7 @@ relative link in a showing or a kept item among them. The frame is sandboxed `al
 for the links to the page, and what in a document could hold one of its own (a nested frame, an object, an embed) is
 emptied, and a `<base>` or meta refresh removed, before it is drawn. The gutter follows the frame's scroll position
 from the page, each animation frame while the view is seen, and the frame's selection is read from the page too
-(`/picks.js` says when it has stopped changing long enough to be a pick, since nothing is heard in the frame); the
+(a shared machine says when it has stopped changing long enough to be a pick, since nothing is heard in the frame); the
 passage picked is lit by a highlight (`::highlight(tower-passage)`, the frame's `::selection` the same color), not by an element written into the document. Keys pressed with the focus in a document frame reach
 the page's keymap in Chrome only: in WebKit a click outside the frame gives the page its keys back.
 

@@ -1435,6 +1435,9 @@
           "since": "1.151",
           "stability": "provisional"
         },
+        "passageSubject": {
+          "since": "1.170"
+        },
         "projectOfKey": {
           "since": "1.151",
           "stability": "provisional"
@@ -1549,6 +1552,9 @@
         },
         "Lines": {
           "since": "1.151"
+        },
+        "Passage": {
+          "since": "1.170"
         },
         "RateLimit": {
           "since": "1.151"
