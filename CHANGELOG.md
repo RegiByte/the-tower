@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.113.0
+
+Four library additions and a passage fix. Nothing to restart beyond the tower (`tower update` does it). API 1.171.
+
+- **The library publishes four more names** an author needed and only the core could reach: `NO_KIT`
+  (`/lib/layout.js`), `TermViewIo` (`/lib/terminal.js`), and `sectionsHtml` and `sectionLabels` (`/lib/markdown.js`)
+  beside `sectionsOf`, so a document view of an extension's own splits and publishes sections as `tower/document`
+  does. What `sectionsHtml` writes beyond the html that draws the sections is unspecified: don't parse it.
+- **A pick in a shown html page no longer takes the keyboard back** when you click elsewhere before it settles
+  (#554).
+
 ## v1.112.0
 
 Quote to worker, contributed by Carlos Bonetti (#440, landed as #552). Nothing to restart beyond the tower
