@@ -119,7 +119,7 @@ type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; 
 
 export const dispatch = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:extensions'],
-  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, viewerActive }, 'core:extensions': holder }: Deps) => {
+  start: ({ 'core:config': { paths, read: readConfig }, 'core:system': system, 'core:publisher': { board: boardOf, everyCard, viewerActive, viewerSelected }, 'core:extensions': holder }: Deps) => {
 
 
     /** The branches a verb kept, each with why, when it kept any. */
@@ -980,6 +980,7 @@ export const dispatch = defineResource({
       kill: ({ id, by }) => kill(id, by),
       'let-go': ({ id }) => letGo(id),
       'viewer/active': ({ viewer }) => viewerActive(viewer),
+      'viewer/selected': ({ viewer, id }) => viewerSelected(viewer, id),
       fact: logFact,
       'probe/run': legacy('probe/run'),
       'extension/restart': async ({ id }) => {
