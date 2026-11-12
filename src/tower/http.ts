@@ -147,6 +147,18 @@ import { lastFrames, screenMirrors } from './screens.ts'
 import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, FRAME_PICKS, hashedUrl, importMap, moduleGraph, moduleScripts, MODULES, SERVER_ONLY, servedModule, serverOnlyModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withImportMap, withPreloads } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
+/**
+ * The bytes a `Range` header asks of a body this long: one range, inclusive, or `unsatisfiable` when it starts past
+ * the end. A header that isn't a single byte range is ignored, as HTTP allows, and the whole body is sent.
+ */
+const byteRange = (header: string | undefined, size: number): { start: number; end: number } | 'unsatisfiable' | undefined => {
+  const [, first, last] = header?.match(/^bytes=(\d*)-(\d*)$/) ?? []
+  if (first === undefined || (!first && !last) || (first && last && Number(last) < Number(first))) return undefined
+  const start = first ? Number(first) : Math.max(0, size - Number(last))
+  const end = first && last ? Math.min(Number(last), size - 1) : size - 1
+  return start >= size ? 'unsatisfiable' : { start, end }
+}
+
 /** What a page run on its own shows in place of itself when it can't be served: a reader of it is in a browser tab. */
 const problemPage = (title: string, detail: string, fix: string): string => `<!doctype html>
 <html lang="en">
@@ -752,9 +764,14 @@ export const httpServer = defineResource({
 
     const serveBytes = (res: http.ServerResponse, file: string, headers: http.OutgoingHttpHeaders, read: (file: string) => Buffer | string) => {
       if (!statSync(file, { throwIfNoEntry: false })?.isFile()) return fail(res, 'not_found', `"${file}" is not a file`)
-      res
-        .writeHead(200, { 'content-type': FILE_TYPES[path.extname(file)] ?? UNKNOWN_TYPE, ...FRESH, ...headers })
-        .end(read(file))
+      const content = read(file)
+      const body = typeof content === 'string' ? Buffer.from(content) : content
+      const head = { 'content-type': FILE_TYPES[path.extname(file)] ?? UNKNOWN_TYPE, 'accept-ranges': 'bytes', ...FRESH, ...headers }
+      const range = byteRange(res.req.headers.range, body.length)
+      if (range === undefined) return res.writeHead(200, { ...head, 'content-length': body.length }).end(body)
+      if (range === 'unsatisfiable') return res.writeHead(416, { ...head, 'content-range': `bytes */${body.length}` }).end()
+      const slice = body.subarray(range.start, range.end + 1)
+      res.writeHead(206, { ...head, 'content-range': `bytes ${range.start}-${range.end}/${body.length}`, 'content-length': slice.length }).end(slice)
     }
 
     /** The mux's verbs, which hold this server's connections: every other verb is the dispatch's. */
