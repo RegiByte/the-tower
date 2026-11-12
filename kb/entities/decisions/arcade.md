@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-11",
+  "reviewed": "2026-11-12",
   "refs": [
     "hub/renderers/tower3d/src/games.ts",
     "hub/renderers/tower3d/src/layout.ts#arcadeFor",
