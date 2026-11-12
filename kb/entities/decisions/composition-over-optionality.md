@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-30",
-  "reviewed": "2026-11-11",
+  "reviewed": "2026-11-12",
   "refs": [
     "hub/PRINCIPLES.md",
     "hub/src/shared/env.ts#withoutParentSession",

@@ -4,7 +4,7 @@
   "name": "Host daemon",
   "summary": "The detached Node process that spawns Claude sessions in PTYs, relays control requests, and appends output, input, hooks and exits to each session's log.",
   "in": "host",
-  "reviewed": "2026-11-11",
+  "reviewed": "2026-11-12",
   "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/main.ts#appendFact", "hub/src/host/main.ts#checkFact", "hub/src/host/session.ts#checkSpawn", "hub/src/host/session.ts#sessionEnv", "hub/src/shared/launch.ts#hostSpawn", "hub/src/shared/launch.ts#oldHostSpawn", "hub/src/tower/dispatch.ts#start", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize", "hub/src/host/main.ts#LOG_BUFFER_BYTES", "hub/src/host/session.ts#hookFact"],
   "links": [
     { "to": "claude-code", "verb": "triggers", "carries": "a PTY running the spawn's whole argv (the tower composes config argv + --plugin-dir for the tower mod + its args), with the cwd checked by sessionDirs, the spawn's env over the host's, scrubbed, plus TOWER_SESSION_ID and TOWER_HOOKS_SOCKET" },
