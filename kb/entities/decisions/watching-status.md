@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-12",
   "refs": [
     "hub/src/bridge/status.ts#nextState",
     "hub/src/bridge/status.ts#waitsOnSomeone",
@@ -20,8 +20,8 @@
 }
 ---
 **Problem.** A worker that babysits something (a deploy checked every few minutes, a background subagent, a
-`Monitor` on a log) read idle → working → done → working → done…: each wake ended in `done`, which waits on you and
-rings, though the worker had not finished and needed nothing.
+`Monitor` on a log) ends a turn at every wake. Were each to end in `done`, it would wait on you and ring at every
+wake, though the worker hasn't finished and needs nothing.
 
 **Why.** `done` means only you can move it on. A worker that set something to wake it is still on its task.
 
