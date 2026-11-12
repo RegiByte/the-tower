@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-11-08",
-  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
+  "reviewed": "2026-11-12",
+  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#infoPlist", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
 }
 ---
 **Problem.** The tower lives in a browser tab, one among many: no Dock icon or window of its own, and it is gone with
@@ -20,9 +20,8 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
 - **A thin Swift shell** in `apps/macos/Sources`: one WKWebView on the tower's address. It loads the routes a tab
   loads, at the tower's own origin, so the server's checks on a `POST`'s origin pass unchanged. Whatever a renderer
   does in a tab it does in the window; the app adds only what a browser gives a page and a WKWebView doesn't:
-  `alert`/`confirm`/`prompt` as sheets, and links that leave the tower (`_blank`, `window.open`, `tower open`, an
-  origin's page) opening in the default browser, a window opened with no address and given one after (xterm's
-  links) too; and pointer lock (Tower 3D's mouse-look), for the window's page and its frames
+  `alert`/`confirm`/`prompt` as sheets, links that leave the tower opening in the default browser (a window opened
+  with no address and given one after included), and pointer lock for Tower 3D's mouse-look
   ([`webViewDidRequestPointerLock`](ref:hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock)), granted
   through a private delegate method, the one way an embedder can. Frames inside the page (shelf pages at origins of
   their own) go where the page sends them.
@@ -34,34 +33,33 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   every Claude and shell under it, and takes an ad hoc signed build whose binary changed for a new app, which would
   ask again in its name after each rebuild. Started from a terminal, they stay the terminal's.
 - **Keys** ([`TowerWebView`](ref:hub/apps/macos/Sources/App.swift#TowerWebView)): ⌘Q, ⌘W, ⌘H and ⌘M are the app's;
-  every other key goes to the page first, so the keymap ([[keymap]]) works as in a tab and a key it doesn't take
-  reaches the menus (⌘R reloads, ⌘0/⌘+/⌘− zoom, ⌥⌘I the Web Inspector). A key nothing takes beeps, as in any AppKit
-  window, so a renderer takes every key it acts on (`preventDefault`). The View menu's Renderer lists the renderers
+  every other key goes to the page first, so the keymap ([[keymap]]) works as in a tab, and a key the page doesn't
+  take reaches the menus. A renderer takes every key it acts on (`preventDefault`). The View menu lists the renderers
   `GET /renderers` says are built ([[renderers-in-config]]).
 - **Who waits on you, outside the window** ([`Attention`](ref:hub/apps/macos/Sources/Attention.swift#Attention)): a
   page of the app's own that never shows, loaded at the tower's origin, reads the board through `/tower.js` and words
-  it with the library's `/lib/cards.js`, `/lib/board.js` and `/lib/viewer.js` as the tower page does ([[attention-list]]): the waits less those dismissed in any renderer
+  it with the library's `/lib/cards.js`, `/lib/board.js` and `/lib/viewer.js` as the tower page does
+  ([[attention-list]]): the waits less those dismissed in any renderer
   ([`heededWaits`](ref:hub/src/shared/waits.ts#heededWaits) over `tower.store`, re-read when another page dismisses
-  one), each as `<callsign> · <status>` over `<project>: <gist>`, and the waits that began and ended since the last
-  board ([`transitions`](ref:hub/src/shared/waits.ts#transitions)). The native side only draws them: the count on the
-  Dock badge and in the menu bar, whose menu lists each wait in the order to go to them; a notification (no sound:
-  the page rings its own) per wait that begins, unless the user is at that worker's session in the window, and one Dock
-  bounce for them while the app isn't active; a notification taken back when its wait ends. A click on either opens the session at `/#<id>`. Words and
-  dismissals stay in the shared modules, so the app and every renderer agree. A web view in no window is suspended by
-  WebKit, so this one runs with suspension off, and the window's page, once hidden, is throttled as a background tab
-  is, not stopped. When the tower stops answering, the page starts over once it answers again, on the modules it
-  serves then: a restarted tower may speak a new API version, which the old page's `/tower.js` would refuse on every
-  board.
+  one), and the waits that began and ended since the last board
+  ([`transitions`](ref:hub/src/shared/waits.ts#transitions)). The native side only draws them: the count on the Dock
+  badge and in the menu bar, whose menu lists each wait in the order to go to them; a notification without sound (the
+  page rings its own) per wait that begins, unless the user is at that worker's session in the window, and a Dock
+  bounce while the app isn't active; a notification taken back when its wait ends. A click on either opens the session
+  at `/#<id>`. Words and dismissals stay in the shared modules, so the app and every renderer agree. A web view in no
+  window is suspended by WebKit, so this one runs with suspension off, and the window's page, once hidden, is
+  throttled as a background tab is, not stopped. When the tower stops answering, the page starts over once it answers
+  again, on the modules it serves then: a restarted tower may speak a new API version, which the old page's
+  `/tower.js` would refuse.
 - **A window, not a session.** Closing it hides it, so the page keeps its connection and state; quitting leaves the
   tower and every session running, as closing a tab does.
-- **`tower app`** ([`openApp`](ref:hub/src/app.ts#openApp)) compiles the sources with `xcrun swiftc` when they are newer
-  than the build, writes the checkout and the config into the bundle's `Info.plist` (so the app needs no setting),
-  signs it ad hoc for this machine, and opens it. Its icon is `apps/macos/icon.svg`, rendered into the bundle's
-  icon set when it or `src/app.ts` changed ([`renderIcon`](ref:hub/src/app.ts#renderIcon)): full bleed for macOS 26,
-  which masks an app icon into its own shape, and put on Apple's rounded grid first for an earlier macOS, which draws
-  an icon as it is. One app per system: the default config's
-  is `Tower.app`, another's is named after its system root, each with a bundle id of its own. All of it under the
-  git-ignored `apps/macos/out/`.
+- **`tower app`** ([`openApp`](ref:hub/src/app.ts#openApp)) compiles the sources with `xcrun swiftc` when they are
+  newer than the build, writes the config into the bundle's `Info.plist` ([`infoPlist`](ref:hub/src/app.ts#infoPlist)),
+  so the app needs no setting, signs it ad hoc for this machine, and opens it. Its icon is `apps/macos/icon.svg`,
+  rendered into the bundle ([`renderIcon`](ref:hub/src/app.ts#renderIcon)) full bleed where macOS masks an app icon
+  into its own shape, and on Apple's rounded grid where it draws an icon as it is. One app per system: the default
+  config's is `Tower.app`, another's is named after its system root, each with a bundle id hashed from the checkout
+  and the config. All of it under the git-ignored `apps/macos/out/`.
 
 **Alternatives considered.**
 
@@ -76,6 +74,6 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   app's name, again after each rebuild, and the app would control processes it is only one way to show.
 
 **Impact.** Nothing changes for a user who doesn't run `tower app`: the browser stays the default, `tower doctor`
-doesn't ask for Swift, and the core gains no dependency. In the window
-`Notification.permission` stays `default`, so the tower page's own notifications stay off there and the app's are the
-only ones; it asks macOS to notify on first launch. Opening the app starts nothing: with the system down, the window waits for `tower up`.
+doesn't ask for Swift, and the core gains no dependency. In the window `Notification.permission` stays `default`, so
+the tower page's own notifications stay off there and the app's are the only ones; the app asks macOS for permission
+to notify when it launches.

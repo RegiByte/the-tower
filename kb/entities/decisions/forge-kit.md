@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "The forge's props in Tower 3D: a pack of the kit, bound by material name",
-  "summary": "The forge, a kit of real-size low-poly props made for the tower (CC0), is vendored whole from its dist/ into renderers/tower3d/forge and measured into the office's kit as one more pack, forge, under one norm: its GLBs are read beside KayKit's glTFs, each primitive bound by its material's name to a surface (the palette atlas, glass tinted by it, the decal sheet), and drawn one batch per pack, theme and surface. The 4096² decal sheet goes in the kit only when a prop the office places shows a decal.",
+  "summary": "The forge, a kit of real-size low-poly props made for the tower (CC0), is vendored whole from its dist/ into renderers/tower3d/forge and measured into the office's kit as one more pack, forge, under one norm: its GLBs are read beside KayKit's glTFs, each primitive bound by its material's name to a surface (the palette atlas, glass tinted by it, the decal sheet), and drawn one batch per pack, theme and surface. The decal sheet goes in the kit only when a prop the office places shows a decal.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-20",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-12",
   "refs": [
     "hub/scripts/tower3d-kit.ts#vendorForge",
     "hub/scripts/tower3d-kit.ts#checkBinding",
@@ -32,10 +32,10 @@
   ]
 }
 ---
-**Problem.** KayKit's props are drawn two to three times real size and normed down per pack, and the bundle has no
-office props of its own (mugs, plates, pen cups made for a restaurant or a room). The forge (a repository of its own)
-makes props for the tower at real size. Its `dist/` is a contract of its own: GLBs that carry no images, three
-materials bound by name, and textures shared by every prop (a palette atlas with an emissive map, a decal sheet).
+**Problem.** KayKit's props are drawn larger than real size and normed down per pack, and the bundle has no office
+props of its own (mugs, plates, pen cups made for a restaurant or a room). The forge (a repository of its own) makes
+props for the tower at real size. Its `dist/` is a contract of its own: GLBs that carry no images, three materials
+bound by name, and textures shared by every prop (a palette atlas with an emissive map, a decal sheet).
 
 **Why.** One measured path for every model the office places ([[office-kaykit]]): the forge's props come in as
 scene items like KayKit's, so the prefab editor places them ([[prefab-editor]]), `tool:kaykit check` checks them, and
@@ -50,35 +50,33 @@ placed prop shows a decal.
   [`FORGE_BINDING`](ref:hub/renderers/kaykit/src/catalog.ts#FORGE_BINDING). Ask the forge before changing either:
   `dist/` is a cross-repo API.
 - A pack: `forge` joins KayKit's packs in `PACKS`, with ids `forge/<forge id>` (`forge/kitchen/coffee_mug_01`), in
-  the forge's metres (+Y up, facing +Z). One norm scales it ([`NORMS`](ref:hub/renderers/kaykit/src/catalog.ts#NORMS)):
-  ×1.25, temporary, because the workers and the room packs are drawn chunkier than real and at ×1 a mug is a speck in
-  a worker's hand. It goes back to ×1 as more of the office (the desks, then the workers) comes from the forge; the
-  forge's sources stay real size. A prop's category is read from its vendored sidecar's `category`, so a new forge
-  prop needs no tower code: the forge files props by room and the catalog by what a thing is, so
+  the forge's metres (+Y up, facing +Z). One norm scales it ([`NORMS`](ref:hub/renderers/kaykit/src/catalog.ts#NORMS)),
+  larger than real for now, since the workers and the room packs are drawn chunkier than real; the forge's sources
+  stay real size. A prop's category is read from its vendored sidecar's `category`, so a new forge prop needs no
+  tower code: the forge files props by room and the catalog by what a thing is, so
   [`FORGE_CATEGORIES`](ref:hub/renderers/kaykit/src/rules.ts#FORGE_CATEGORIES) maps each room to the category most of
   its props are, and [`forgeCategory`](ref:hub/renderers/kaykit/src/rules.ts#forgeCategory) fails naming a room the
-  table lacks. The table stands in until the forge declares each prop's kind on its sidecar. The forge's `moves` are
-  not read.
-- Measured on the playground's path: [`readGltf`](ref:hub/renderers/kaykit/src/measure.ts#readGltf) reads a `.glb`'s
-  chunks or a `.gltf`'s files, and every primitive is bound to a
-  [`Surface`](ref:hub/renderers/kaykit/src/meshes.ts#Surface): a KayKit material is `atlas` when it has a texture and
-  `glass` when not; a forge material by name ([`FORGE_SURFACES`](ref:hub/renderers/kaykit/src/measure.ts#FORGE_SURFACES)).
+  table lacks. The forge's `moves` are not read.
+- Measured on the playground's path: [`readGltf`](ref:hub/renderers/kaykit/src/measure.ts#readGltf) reads a `.glb` or
+  a `.gltf`, and every primitive is bound to a [`Surface`](ref:hub/renderers/kaykit/src/meshes.ts#Surface): a KayKit
+  material is `atlas` when it has a texture and `glass` when not; a forge material by name
+  ([`FORGE_SURFACES`](ref:hub/renderers/kaykit/src/measure.ts#FORGE_SURFACES)).
   [`measureKit`](ref:hub/renderers/kaykit/src/measure.ts#measureKit) measures KayKit's folder and the forge's into one
   catalog and one packed buffer; [`measureForge`](ref:hub/renderers/kaykit/src/measure.ts#measureForge) reads only the
   props asked for (the office's, or all of them for the playground).
 - Textures: a pack's [`PackInfo`](ref:hub/renderers/kaykit/src/catalog.ts#PackInfo) has `atlases`, which a theme picks
   among, and `maps`, sampled as they are. The forge's palette is its `base` atlas, so themes' hue swaps reach it; its
-  `emissive` is a map, and [`glowTexture`](ref:hub/renderers/kaykit/src/atlas.ts#glowTexture) takes a pack's emissive
-  map over the `GLOW` regions KayKit's packs need. [`forgeTextures`](ref:hub/renderers/kaykit/src/measure.ts#forgeTextures)
-  adds `decals` only when a measured prop's `decals` is non-empty, and
-  [`mapTexture`](ref:hub/renderers/kaykit/src/atlas.ts#mapTexture) makes a map's texture only when a batch draws it.
+  `emissive` is a map, which [`glowTexture`](ref:hub/renderers/kaykit/src/atlas.ts#glowTexture) takes over the `GLOW`
+  regions KayKit's packs need. [`forgeTextures`](ref:hub/renderers/kaykit/src/measure.ts#forgeTextures) adds `decals`
+  only when a measured prop shows a decal, and [`mapTexture`](ref:hub/renderers/kaykit/src/atlas.ts#mapTexture) makes
+  a map's texture only when a batch draws it.
 - Drawn in material batches keyed by pack, theme and surface ([`keyOf`](ref:hub/renderers/tower3d/src/kit.ts#keyOf)),
   KayKit's untextured glass one batch for every KayKit pack. [`lookMaterial`](ref:hub/renderers/tower3d/src/kit.ts#lookMaterial)
   makes each through Tower 3D's own toon path, so the forge looks native: decals are alpha-cut and marked
   [`shadowless`](ref:hub/renderers/tower3d/src/toon.ts#shadowless), so the lit rig casts no shadow from a decal lifted
-  just off its part. The playground's [`material`](ref:hub/renderers/kaykit/src/draw.ts#material) does the same with
-  its own ramp.
-- The desks' dressing ([[desk-dressing]]) places the forge's mug, plate, bowl, pizza slice, pen cup and desk plant
+  just off its part. The playground's [`material`](ref:hub/renderers/kaykit/src/draw.ts#material) binds the same
+  surfaces with its own ramp.
+- The desks' dressing ([[desk-dressing]]) places forge props
   ([desk_dress](ref:hub/renderers/kaykit/scenes/prefabs/desk_dress.json)).
 
 **Alternatives considered.**

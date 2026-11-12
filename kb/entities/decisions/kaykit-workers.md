@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-12",
   "refs": [
     "hub/renderers/tower3d/src/life.ts#moveTo",
     "hub/scripts/tower3d-characters.ts",
@@ -103,10 +103,11 @@ time keeps `?stepped` frames identical ([[tower3d-door]]).
 - Posed by clips. [`loadCast`](ref:hub/renderers/tower3d/src/rig.ts#loadCast) derives `Type` and cuts every clip to
   its arms or the rest, so an upper-body clip plays over a seated one. A worker is a copy of the bones and a mixer;
   [`pose`](ref:hub/renderers/tower3d/src/rig.ts#pose) sets it every frame from layers that are a function of sim time
-  and the card, on the levels drawn only ([[tower3d-levels]]). [`poseDesk`](ref:hub/renderers/tower3d/src/desk.ts#poseDesk)
+  and the card, on the levels drawn only ([[tower3d-levels]]). [`poseRigs`](ref:hub/renderers/tower3d/src/desk.ts#poseRigs)
   (the card picks the layers, [`seatedPose`](ref:hub/renderers/tower3d/src/desk.ts#seatedPose)),
   [`walkPose`](ref:hub/renderers/tower3d/src/life.ts#walkPose) and [`poseGuest`](ref:hub/renderers/tower3d/src/party.ts#poseGuest)
-  pick them. A layer played `once` starts from a moment on the board (a failure's `enteredAt`, a new subagent), so
+  pick them; [`poseDesk`](ref:hub/renderers/tower3d/src/desk.ts#poseDesk) moves the seated body itself (its turn, a
+  hop, where it sits) on every level. A layer played `once` starts from a moment on the board (a failure's `enteredAt`, a new subagent), so
   frames stay a function of the clock and the board.
 - Sitting. KayKit's sit clips carry the body straight back onto a seat behind it, so a worker walks to stand in front
   of its chair, from the side its way comes from, and sits back while the chair comes in under it and the body is lifted

@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-17",
-  "reviewed": "2026-11-08",
+  "reviewed": "2026-11-12",
   "refs": [
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/renderers/tower3d/src/meetings.ts#meetingKit",
@@ -44,9 +44,9 @@
   ]
 }
 ---
-**Problem.** A coordinator and its hires sat scattered at desks wherever the seat replay put them; nothing in the
-office said they worked together. A big enough crew should gather in a meeting room instead, emergent from what the
-board says, not scripted.
+**Problem.** At desks wherever the seat replay puts them, a coordinator and its hires are scattered, and nothing in
+the office says they work together. A big enough crew gathers in a meeting room instead, emergent from what the board
+says, not scripted.
 
 **Why in Tower 3D, not the bridge.** The meeting room is Tower 3D's spatial metaphor, so its rule is Tower 3D's code.
 It can be a pure function of one board: the board keeps today's sent-home cards with `hiredBy`, `reportsTo` and
@@ -64,8 +64,8 @@ It can be a pure function of one board: the board keeps today's sent-home cards 
   first; with none free it waits at its desks for one to free. A crew never changes room while gathered.
 - *Places.* Replayed from the members' comings and goings since the crew took the room: the lead takes `head`, each
   member the first free `seat_<n>`, then `counter_<n>`, then `stand_<n>`, and one finding none stays at its desk. A
-  reviewer takes a free seat next to its author's, else stands behind its author's chair
-  ([`placeNamed`](ref:hub/renderers/tower3d/src/meetings.ts#placeNamed)). A member going home frees its place and nobody
+  reviewer takes a free seat next to its author's, else stands behind its author's chair, else (someone already
+  stands there) the first free place ([`placeNamed`](ref:hub/renderers/tower3d/src/meetings.ts#placeNamed)). A member going home frees its place and nobody
   else moves. A member on a break keeps its place ([[break-room]]).
 - *The table grows with the crew.* The long table has a state per size; a meeting draws the smallest that seats the
   most it has held at once, up to its room's `seats`, and an empty room its largest
