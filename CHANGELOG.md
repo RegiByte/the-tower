@@ -12,6 +12,13 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.113.2
+
+A fix. Nothing to restart beyond the tower (`tower update` does it).
+
+- **Videos a worker shows now play in Tower.app and Safari.** Files the tower serves say their length and answer
+  byte ranges, which WebKit needs before it plays a video or a sound; before, they played only in Chrome (#560).
+
 ## v1.113.1
 
 A fix, contributed by Carlos Bonetti (#557). Nothing to restart beyond the tower (`tower update` does it).
