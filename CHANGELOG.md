@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.114.0
+
+The selected worker on the board, contributed by Glauco Neves (#559). Nothing to restart beyond the tower
+(`tower update` does it). API 1.172.
+
+- **Another renderer can act on the worker you have open in the tower page.** A page says which worker it has
+  selected with `tower.select(id)` (`POST /viewer/selected`), and the board's `viewers.selected` maps each open page
+  to its worker, held in the tower's memory and never logged. The tower page says the worker its main pane is on, so
+  `board.viewers.selected[board.viewers.last.page]` is the worker the user is on: a voice page can send "tell it
+  to…" there without being given a callsign. `docs/extending.md` has the details, including the case right after a
+  tower restart.
+
 ## v1.113.2
 
 A fix. Nothing to restart beyond the tower (`tower update` does it).
