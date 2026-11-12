@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-11",
+  "reviewed": "2026-11-12",
   "refs": ["hub/src/directory.ts#shownOf", "hub/src/tower/dispatch.ts#logFact", "hub/src/shared/api.ts#VERBS", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/view-item.ts#typeView", "hub/src/views/link.ts#mount", "hub/src/shared/subjects.ts#shownSubject", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
 }
 ---
@@ -20,7 +20,7 @@ worker that made it.
 - The command calls the tower's `fact` verb, `{name: 'show', value: {kind, target, title?}}`, as the session
   (`tower-session`); the tower appends `{hook_event_name: 'tower.show', kind, target, title?}` to the session's own
   log through the host's `fact` ([[let-go]]), the event a [[tower-mod]] event would be ([[hook-events]]). Through the
-  dispatch since API 1.106, it is wrapped and listed like every verb ([[extensions]]): an `around` link on
+  dispatch, it is wrapped and listed like every verb ([[extensions]]): an `around` link on
   `tower/fact` sees every showing. The tower must be up; the tower page need not be open. Only a running worker logs
   a fact, and only about itself.
 - `kind` takes the shelf's words: `file` (drawn in place), `url` (framed in place), `link` (opened in a browser
@@ -52,19 +52,17 @@ worker that made it.
   linked in from elsewhere still load.
 - The tower page adds a tab per showing beside the worker's other tabs, opening a new one when you are on that
   worker and notifying when you are not. Each tab is drawn by the view its type picks, the same views by type as a
-  kept item's ([[ui-model]], since API 1.115): markdown renders, its sections taking commands in a gutter beside it
-  (since 1.118), an image fits the pane, text is drawn as written, a
+  kept item's ([[ui-model]]): markdown renders, its sections taking commands in a gutter beside it, an image fits the pane, text is drawn as written, a
   page is framed as served, a file the tower draws nothing of is left to Finder and the editor, and an address is
   `tower/link`'s: a `url` framed, a `link` one Open ↗, since a browser opens no tab by itself. A user's view for a
   type takes those showings over through the layout. × closes a showing for this viewer
   (kept in the browser); a new showing of it comes back. A showing left for another tab stays drawn, hidden, so it
-  is as it was left when its tab is picked again: its scroll, a video's place, a page's own state (the eight shown
+  is as it was left when its tab is picked again: its scroll, a video's place, a page's own state (the ones shown
   last, in this browser tab). A hidden video is paused; a hidden page keeps running, its timers, requests and sound
-  included, since a sandboxed frame can only be dropped, not paused. Since API 1.98 a showing is a subject, `shown:<card>/<at>`,
-  a file's carrying its read path and media type, an address itself as its body and `text/uri-list` ([[extensions]],
-  since 1.115): what extensions add to it is drawn beside the tabs while it is open.
+  included, since a sandboxed frame can only be dropped, not paused. A showing is a subject, `shown:<card>/<at>`,
+  a file's carrying its read path and media type, an address itself as its body and `text/uri-list` ([[extensions]]): what extensions add to it is drawn beside the tabs while it is open.
 - Text picked in a shown markdown file is a `passage` of the showing, and the bundled `quote` extension types a
-  prompt about it into the worker that showed it ([[passage-picks]], since API 1.170).
+  prompt about it into the worker that showed it ([[passage-picks]]).
 - Tower 3D draws the latest on a second monitor on the worker's desk and opens every showing as a tab of the desk
   panel ([[tower3d]]); each floor's gallery hangs its latest showings, off-duty workers' included ([[shared-wall]]).
 
