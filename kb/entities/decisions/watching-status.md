@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-12",
+  "reviewed": "2026-11-13",
   "refs": [
     "hub/src/bridge/status.ts#nextState",
     "hub/src/bridge/status.ts#waitsOnSomeone",
@@ -38,8 +38,9 @@ wake runs a turn and ends in its own `Stop`, which decides again, so the status 
 | `/loop` self-paced, `ScheduleWakeup` (`loop-wakeup`) | `session_crons`, a one-shot cron | `scheduled-trigger` |
 
 A subagent's tool hooks carry `agent_id` and never move the main loop, so its tool calls leave the session watching;
-its compactions raise `PreCompact` and `SessionStart` with none, which leave a watching session watching, and a manual
-`/compact` typed while it watches goes back to watching when it ends ([[log-reductions]]).
+its compactions raise `PreCompact` and `SessionStart`, carrying `agent_id` since Claude 2.1.323 and none before, which
+leave a watching session watching, and a manual `/compact` typed while it watches goes back to watching when it ends
+([[log-reductions]]).
 `watching` is live and takes prompts (`submit`); it never waits on you, so nothing rings. Its attention is `quiet`;
 renderers mark it apart from that: a lamp that breathes (`lampOf` adds the `watching` class, the design system's CSS
 animates it), and in Tower 3D the desk lamp lit beside a mug, the worker leaning back.
