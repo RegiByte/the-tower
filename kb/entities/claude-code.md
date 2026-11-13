@@ -32,6 +32,6 @@ Inside a Team or Enterprise organization, or on a machine with managed settings,
 none. A subagent's compaction raises the same `PreCompact` and `SessionStart` (`source: compact`) as the main loop's,
 under the main session's `session_id`. Before 2.1.323 it carries no `agent_id` (`compact-subagent`), and nothing
 tells the two apart; since then it carries `agent_id` and `agent_type`, and the fold leaves it out
-([`compactionAfter`](ref:hub/src/bridge/status.ts#compactionAfter)). A turn
+([`compactionAfter`](ref:hub/src/bridge/status.ts#compactionAfter); `compact-subagent-overlap`). A turn
 that ends in error when automatic compaction thrashes raises no `PreCompact` and no `Stop`; the mod's `turn.complete`
 still arrives, with `reason: error` (`compact-thrashing`).
