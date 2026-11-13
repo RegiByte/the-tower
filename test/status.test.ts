@@ -92,6 +92,19 @@ test("a manual /compact while watching a subagent goes back to watching, here wh
   ])
 })
 
+test("a subagent's compaction that ends during a manual /compact, carrying agent_id, leaves the main loop's to end it", () => {
+  assert.deepEqual(timeline(fixture('compact-subagent-overlap')), [
+    ['idle', 0.304],
+    ['working', 0.776],
+    ['watching', 4.539],
+    ['working', 8.266],
+    ['watching', 18.328],
+    ['working', 39.058],
+    ['done', 42.023],
+    ['exited', 42.853],
+  ])
+})
+
 test('the autocompact breaker ends the turn in error with no PreCompact or Stop: it fails', () => {
   assert.deepEqual(timeline(fixture('compact-thrashing')), [
     ['blocked', 0.533],
