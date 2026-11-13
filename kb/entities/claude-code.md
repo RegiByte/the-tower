@@ -4,7 +4,7 @@
   "name": "Claude Code",
   "summary": "The Claude Code TUI, run in a real PTY per session, with its classic hooks and mods API.",
   "in": "tower",
-  "reviewed": "2026-11-12",
+  "reviewed": "2026-11-13",
   "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/bridge/status.ts#isCompactionStart", "hub/test/fixtures/"],
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "classic hook input JSON (SessionStart, UserPromptSubmit, PreToolUse, Stop, ...), declared by the tower mod, via curl POST /hooks/<id> on hooks.sock" },
@@ -30,6 +30,8 @@ Inside a Team or Enterprise organization, or on a machine with managed settings,
 `SessionStart` ([`isCompactionStart`](ref:hub/src/bridge/status.ts#isCompactionStart); fixtures `compact-auto`,
 `compact-manual`, and their `-outside-org` twins that raise `session.compact` too). One a plugin triggers may raise
 none. A subagent's compaction raises the same `PreCompact` and `SessionStart` (`source: compact`) as the main loop's,
-under the main session's `session_id`, with no `agent_id` (`compact-subagent`): nothing tells the two apart. A turn
+under the main session's `session_id`. Before 2.1.323 it carries no `agent_id` (`compact-subagent`), and nothing
+tells the two apart; since then it carries `agent_id` and `agent_type`, and the fold leaves it out
+([`compactionAfter`](ref:hub/src/bridge/status.ts#compactionAfter)). A turn
 that ends in error when automatic compaction thrashes raises no `PreCompact` and no `Stop`; the mod's `turn.complete`
 still arrives, with `reason: error` (`compact-thrashing`).

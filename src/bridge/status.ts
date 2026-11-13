@@ -111,13 +111,15 @@ const MANUAL_FROM_WATCHING: Compaction = { trigger: 'manual', resumes: 'watching
 
 /**
  * A compaction ends with its `SessionStart`, or, when it gives up, with the main loop's next step of the turn. A
- * subagent's compaction raises the same `PreCompact` and `SessionStart` as the main loop's, with no `agent_id`: an
- * automatic start during a manual `/compact` can only be a subagent's, and keeps the manual compaction.
+ * subagent's compaction raises the same `PreCompact` and `SessionStart` as the main loop's, carrying `agent_id` since
+ * Claude 2.1.323, and is left out. Before it they carry none: an automatic start during a manual `/compact` can only
+ * be a subagent's, and keeps the manual compaction.
  */
 const compactionAfter = ({ status, compaction }: SessionState, event: LogEvent): Compaction | undefined => {
   if (event[1] === 'x') return undefined
   if (event[1] !== 'h') return compaction
   const hook = event[2]
+  if (hook.agent_id !== undefined) return compaction
   if (isCompactionStart(hook)) {
     if (compaction?.trigger === 'manual') return compaction
     if (triggerOf(hook) === 'auto') return AUTO
