@@ -163,7 +163,7 @@ Requirements:
 
 - macOS, or Linux under WSL 2 on Windows (keep the checkout in the Linux filesystem, `~/…`, not under `/mnt/c`)
 - Node 24 or later
-- Claude Code 2.1.292 or later, signed in (tested up to 2.1.312; `tower doctor` and the board say when yours is
+- Claude Code 2.1.292 or later, signed in (tested up to 2.1.323; `tower doctor` and the board say when yours is
   outside that range)
 - `git` 2.38 or later, `curl` and `lsof` (Xcode's command line tools on a Mac; `apt` under WSL)
 - Optional: VS Code's `code` on the PATH, or another editor set in the config, to open projects and files from the
