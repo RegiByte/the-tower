@@ -81,7 +81,7 @@ export type Card = {
    * its folder in every repo of the project (`checkoutGone`).
    */
   worktree?: { name: string; branch?: string; from?: string; gone: boolean }
-  /** The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none. */
+  /** The worker that hired this one (`tower hire`, or an extension's verb that hires); a worker started any other way has none. */
   hiredBy?: HiredBy
   /**
    * The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability
@@ -682,8 +682,7 @@ const absentAdds = (config: Config, stores: ExtensionStores[]): Record<string, A
   )
 
 /**
- * Each card with where its checkout's work stands (`checkoutState`), `review` offered only while it goes on. Who is in a
- * worktree is folded from the cards on duty and the shells, as the board's floors fold it.
+ * Each card with where its checkout's work stands (`checkoutState`). Who is in a worktree is folded from the cards on duty and the shells, as the board's floors fold it.
  */
 const withCheckouts = (config: Config, cards: Unplaced[], shells: Shell[] | undefined, repos: Map<string, RepoRead>, stores: ExtensionStores[]): Card[] => {
   const occupants = occupantsOf(cards, shells)

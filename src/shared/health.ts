@@ -22,7 +22,7 @@ export const HOST_MEANS: Record<HostState, string> = {
 }
 
 /** The daemons a verb needs running: the host holds every session's terminal, the terms daemon every shell. */
-const NEEDS = { spawn: 'host', cut: 'host', resume: 'host', 'carry-on': 'host', review: 'host', 'let-go': 'host', shell: 'terms' } as const
+const NEEDS = { spawn: 'host', cut: 'host', resume: 'host', 'carry-on': 'host', 'let-go': 'host', shell: 'terms' } as const
 export type DaemonVerb = keyof typeof NEEDS
 const DOWN = { host: 'the host is down: tower up starts it', terms: 'the terms daemon is down: tower up starts it' } as const
 
