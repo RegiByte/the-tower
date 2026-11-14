@@ -141,7 +141,7 @@ function openRepo(alias, spec, host) {
   catch { return { ...base, problem: `${upstream} not found in ${dir}: run git -C ${dir} fetch origin ${spec.branch}` }; }
   if (own) {
     try { git("merge-base", "--is-ancestor", upstream, "HEAD"); }
-    catch { return { ...base, problem: `HEAD of ${dir} does not contain ${upstream}: verify reads the repo at HEAD and a HEAD without ${upstream} would check an older tree than the one described: rebase on it (git rebase ${upstream}) or check out ${spec.branch} and pull, then verify` }; }
+    catch { return { ...base, problem: `HEAD of ${dir} does not contain ${upstream}, so verify would check an older tree than the kb describes: rebase on it (git rebase ${upstream}), or check out ${spec.branch} and pull, then verify` }; }
   }
 
   const fetchHeads = [git("rev-parse", "--git-path", "FETCH_HEAD"), path.join(git("rev-parse", "--git-common-dir").trim(), "FETCH_HEAD")]
