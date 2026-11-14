@@ -20,7 +20,7 @@ Nothing in it is deprecated: what 2.0 removed is told by `docs/migrating-to-2.md
 
 It names an API version only where a sample needs one (`/tower.js?v=2.0`, `requires`), and beside a thing whose
 version the tower says nowhere else. Every manifest requires 2.0 or later, so a 1.x version it names beside a thing is
-in every tower that loads it, which it says once, under Extensions. For the rest it says once, under Extensions, where to ask: a manifest
+in every tower that loads it. It says that once, under Extensions, together with where to ask for the rest: a manifest
 key's and a core hook's `x-since` at `/schema`, the `under-declared` warning of `tower extensions check`, and the
 `@since` in the declarations `tower types` writes.
 
