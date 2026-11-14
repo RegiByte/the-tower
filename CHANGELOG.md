@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v1.114.1
+
+A fix, and the last 1.x release: main now works toward 2.0, and fixes to 1.x go on the `v1` branch. Nothing to
+restart beyond the tower (`tower update` does it).
+
+- **A worker no longer shows as working after a manual `/compact` that a subagent's compaction overlapped.** Since
+  Claude 2.1.323 a subagent's compaction says which agent it belongs to; the tower now leaves it out of the main
+  loop's compaction, so the worker goes back to watching when its own compaction ends. Tested on Claude 2.1.323.
+
 ## v1.114.0
 
 The selected worker on the board, contributed by Glauco Neves (#559). Nothing to restart beyond the tower
