@@ -22,6 +22,7 @@ Run from the project root (`<skill-dir>` is this skill's folder):
 node <skill-dir>/tool/kb.mjs tree [id]   print the entity tree (id, type, name, summary)
 node <skill-dir>/tool/kb.mjs verify      report repo freshness, errors and warnings
 node <skill-dir>/tool/kb.mjs verify --since <rev>   the same, with only the suspects commits in <rev>..HEAD caused
+node <skill-dir>/tool/kb.mjs review <id>...   set each entity's reviewed to today (refuses an unknown id before writing any)
 node <skill-dir>/tool/kb.mjs render      build kb/dist/<project-id>.html (refuses on errors)
 node <skill-dir>/tool/kb.mjs diagrams    parse every diagram the page draws with its mermaid, in headless Chrome
 ```
@@ -220,7 +221,7 @@ missing files or anchors, bad `kb-list` or `kb-lineage` queries.
 
 **Warnings**:
 - *suspect*: a ref's file changed on the described branch after the entity's `reviewed` date.
-  Re-read the change, fix the claims if needed, then set `reviewed` to today. A commit that also
+  Re-read the change, fix the claims if needed, then set `reviewed` to today (`kb.mjs review <id>`). A commit that also
   changed the entity's own file counts as reviewed with it (the repo holding `kb/` only). Suspects are
   ranked, never dropped: first those whose commits changed what the entity reads (the lines of an
   anchored symbol, or a file read whole), then those whose file changed only outside its anchors. A

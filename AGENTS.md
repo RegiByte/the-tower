@@ -47,9 +47,10 @@ State lives in the system root, `~/.tower/` (`system-root`): `config.json` (ever
 ## Knowledge base
 
 `kb/` is the project's working theory: systems, flows, decisions and terms, each backed by refs into the code (schema:
-`.claude/skills/kb/SCHEMA.md`). Before changing a part, read its entity: `node .claude/skills/kb/tool/kb.mjs tree`,
-then `kb/entities/**/<id>.md`. A change that alters what an entity claims updates it in the same commit, sets its
-`reviewed`, and re-renders (`kb.mjs render`). `/kb verify` for a full check; `/kb build` to document something new.
+`.claude/skills/kb/SCHEMA.md`). Before changing a part, read its entity: `node .claude/skills/kb/tool/kb.mjs tree <id>`
+(an id from the Map above; plain `tree` prints all 68 KB), then `kb/entities/**/<id>.md`. `verify` reads committed HEAD:
+commit first. A change that alters what an entity claims updates it in the same commit, sets its `reviewed`, and
+re-renders (`kb.mjs render`). `/kb verify` for a full check; `/kb build` to document something new.
 
 ## Code
 
@@ -92,7 +93,7 @@ CI (`.github/workflows/ci.yml`) runs these; run the same before pushing, and lea
 - `npm run typecheck`, `npm test`, `npm run tower3d`, `npm run test:tower3d-boot`, `npm run test:page-boot`, and
   `xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift` if `apps/macos` changed.
 - `node .claude/skills/kb/tool/kb.mjs verify`, and `verify --since origin/main` lists the suspects your commits
-  caused: clear each by checking the entity's claims and setting its `reviewed`.
+  caused: clear each by checking the entity's claims, then `kb.mjs review <id>...` sets its `reviewed`.
 - A served module's exports change: `npm run served:update`. A board shape change: `npm run schema:board`. An API
   addition moves `API_VERSION`'s minor (`src/shared/api.ts`); a removal or rename is a major, and the PR says what
   renderers use instead.

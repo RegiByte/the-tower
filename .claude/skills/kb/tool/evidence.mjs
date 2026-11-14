@@ -141,7 +141,7 @@ function openRepo(alias, spec, host) {
   catch { return { ...base, problem: `${upstream} not found in ${dir}: run git -C ${dir} fetch origin ${spec.branch}` }; }
   if (own) {
     try { git("merge-base", "--is-ancestor", upstream, "HEAD"); }
-    catch { return { ...base, problem: `HEAD of ${dir} does not contain ${upstream}: rebase on it (or check out ${spec.branch} and pull) before verifying` }; }
+    catch { return { ...base, problem: `HEAD of ${dir} does not contain ${upstream}: verify reads the repo at HEAD and a HEAD without ${upstream} would check an older tree than the one described: rebase on it (git rebase ${upstream}) or check out ${spec.branch} and pull, then verify` }; }
   }
 
   const fetchHeads = [git("rev-parse", "--git-path", "FETCH_HEAD"), path.join(git("rev-parse", "--git-common-dir").trim(), "FETCH_HEAD")]
@@ -192,7 +192,10 @@ function resolveRef(ref, repo) {
     return { url: githubUrl(repo.spec, "blob", ref.path, loc), checked: false };
   }
   const kind = repo.kind(ref.path);
-  if (!kind) return { problem: `${ref.text}: ${ref.path} does not exist on ${repo.rev}` };
+  if (!kind) {
+    const fix = repo.own ? `; verify reads committed HEAD, so a file you haven't committed yet is not there: commit first (a work-in-progress commit is fine)` : "";
+    return { problem: `${ref.text}: ${ref.path} does not exist on ${repo.rev}${fix}` };
+  }
   if (kind === "tree") {
     return ref.anchor
       ? { problem: `${ref.text}: a directory cannot have an anchor` }
