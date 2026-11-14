@@ -51,7 +51,7 @@ import { closeTerm, mountTerm } from './term.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
-import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, movesHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { addedCommandOf, commandOf, COMMANDS, keymapSheetHtml, panesOf, type Keys } from '/lib/keys.js'
 import { MOVE_KEYS, move, releaseKeys, takeTurn, type Turn } from './input.ts'
 import { random } from './random.ts'
@@ -533,7 +533,7 @@ function renderPanel() {
     keepShownTabs($('desk-tabs').parentElement!, c.id)
     $('desk-activity').innerHTML = activityHtml(c)
     $('desk-activity').dataset.tip = gistLine(c)
-    $('desk-moves').innerHTML = movesHtml(board, c, heed(), s.viewer.crewsOrder)
+    $('desk-dismiss').innerHTML = deskDismissHtml(board, c, heed())
     $('desk-details').innerHTML = detailsHtml(board, c)
     $('desk-ask').innerHTML = askHtml(c)
     show('desk-ask', c.status === 'needs_input' || c.status === 'blocked')
@@ -543,7 +543,7 @@ function renderPanel() {
     const sh = board.shells.find((sh) => sh.id === id)
     if (!sh) return unfocus()
     show('desk-ask', false)
-    for (const el of ['desk-tabs', 'desk-activity', 'desk-moves', 'desk-details']) $(el).innerHTML = ''
+    for (const el of ['desk-tabs', 'desk-activity', 'desk-dismiss', 'desk-details']) $(el).innerHTML = ''
     $('desk-head').innerHTML = shellHeadHtml(sh, board.floors.find((f) => f.id === sh.project))
   }
   if (panel.kind === 'floor') {
@@ -2426,11 +2426,8 @@ function openOut(e: MouseEvent) {
 
 /** The details open over the top of the screen, clear of the head that opened them. */
 $('desk-details').addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && ($('desk-details').style.top = `${$('desk-body').getBoundingClientRect().top + 6}px`))
-$('desk-moves').addEventListener('click', (e) => {
-  const el = e.target as HTMLElement
-  const m = el.closest<HTMLElement>('[data-move]')?.dataset.move as Move | undefined
-  const dismissed = el.closest<HTMLElement>('[data-dismiss]')?.dataset.dismiss
-  if (m) goMove(m)
+$('desk-dismiss').addEventListener('click', (e) => {
+  const dismissed = (e.target as HTMLElement).closest<HTMLElement>('[data-dismiss]')?.dataset.dismiss
   if (dismissed) dismissWait(dismissed)
 })
 $('desk-tabs').addEventListener('click', (e) => {

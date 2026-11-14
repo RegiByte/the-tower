@@ -12,8 +12,7 @@ import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } fr
 import type { Board, Brief, Card, Floor, GalleryShowing, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { verbLabel } from '/lib/cards.js'
-import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, untestedFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, neighboursIn, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
-import { MOVE_COMMAND, chordLabel, keysLabel } from '/lib/keys.js'
+import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, untestedFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { waitingAt, type Level, type Plan } from './layout.ts'
 import { noteTitle } from './notes.ts'
@@ -363,18 +362,10 @@ export function detailsHtml(board: Board, c: Card) {
   return `<h3>${esc(c.callsign)}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
 }
 
-const MOVE_TITLE: Record<Move, string> = { prev: 'previous on duty', next: 'next on duty', waiting: 'next waiting on you' }
-
-/** The workers each move key goes to from `c` through the floors' crews in your `order`, named before you go, and a close for `c`'s own wait while you heed it. */
-export function movesHtml(board: Board, c: Card, heed: Heed, order: readonly string[]) {
-  const to = neighboursIn(board, order, c.id, heed)
+/** The close for `c`'s own wait while you heed it, at the end of its desk's tab row. */
+export function deskDismissHtml(board: Board, c: Card, heed: Heed) {
   const wait = heededWaits(board, heed).find((w) => w.id === c.id)
-  const dismiss = wait ? `<button class="icon-btn dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">${ICON.close}</button>` : ''
-  return dismiss + (['prev', 'next', 'waiting'] as const).map((m) => {
-    const card = to[m]
-    if (!card || card.id === c.id) return ''
-    return `<button class="move ${m}" data-move="${m}" aria-label="${MOVE_TITLE[m]}: ${esc(card.callsign)}, ${statusName(card)}" data-tip="${MOVE_TITLE[m]}${keysLabel(board.keys, MOVE_COMMAND[m]) && ` (${keysLabel(board.keys, MOVE_COMMAND[m])})`}"><small>${board.keys[MOVE_COMMAND[m]].length ? chordLabel(board.keys[MOVE_COMMAND[m]][0]) : ''}</small><span class="lamp ${lampOf(card)}"></span><span class="call">${esc(card.callsign)}</span></button>`
-  }).join('')
+  return wait ? `<button class="icon-btn dismiss" data-dismiss="${esc(wait.key)}" aria-label="${DISMISS_TITLE}" data-tip="${DISMISS_TITLE}">${ICON.close}</button>` : ''
 }
 
 /**
