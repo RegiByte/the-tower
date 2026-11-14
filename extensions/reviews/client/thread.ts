@@ -1,6 +1,5 @@
 import { type Board, type Card, type Floor, type Subject, linesSubject, noLongerOffered, offeredCall, runVerb, sendTarget } from '/lib/board.js'
 import { CHANGES_POLL_MS } from '/lib/changes.js'
-import type { Replies, Verbs } from '/lib/extension.js'
 import { commandOf } from '/lib/keys.js'
 import { heldHandlers, loop, noReads, reading, valueOf } from '/lib/machine.js'
 import { type Mount, type Tab, drawPanel, fileCall, panelsCss, pressing } from '/lib/view.js'
@@ -8,7 +7,7 @@ import { plural } from '/lib/words.js'
 import { anchorOf } from './anchors.ts'
 import type { FloorThread, NoteCall } from '../threads.ts'
 import { type ThreadPlace, cardReviews, cardThread, floorThread, floorThreadsOf, heldThread, readThread, resolveAction, reviewsHtml, threadCheckout, threadFailure, threadViewAt, threadWant } from './panel.ts'
-import { THE_USER, sendText, unseenBy, type AnchorStates, type ReviewThread } from './reviews.ts'
+import { THE_USER, sendText, unseenBy, type AnchorStates, type AppendInput, type Appended, type ReviewThread } from './reviews.ts'
 
 /**
  * `reviews/thread`: a worker's checkout's review thread in its tabs; `reviews/checkout-thread`: a checkout's thread
@@ -101,7 +100,7 @@ const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): 
     drawPanel(el, reviewsHtml(view), { 'note-text': noteDrafts.get(draftKey(at)) ?? '' })
   }
 
-  const note = ([verb, input]: NoteCall, fields: Partial<Verbs['review/append']>) => tower.call(verb as never, { ...input, ...fields } as never) as Promise<Replies['review/append']>
+  const note = ([verb, input]: NoteCall, fields: Partial<AppendInput>) => tower.call(verb as never, { ...input, ...fields } as never) as Promise<Appended>
   const told = <T,>(request: Promise<T>) => request.catch((err: Error) => void kit.toast(err.message))
 
   async function addWritten(button: HTMLElement) {

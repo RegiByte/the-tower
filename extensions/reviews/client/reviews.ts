@@ -17,9 +17,7 @@
  *
  * Each message is a heading (author, local time, number, the message it answers), then its anchors, each a
  * `repo:path:lines` followed by the lines as they were, then its body. Nothing else is stored: what a worker hasn't
- * seen is worked out from who wrote what. The reviews extension's client, served at `/x/reviews/reviews.js` (and at
- * `/reviews.js` through `LEGACY` until 2.0), holding the live copy of what the core's legacy layer keeps of it in
- * `src/shared/reviews.ts` until 2.0.
+ * seen is worked out from who wrote what. The reviews extension's client, served at `/x/reviews/reviews.js`.
  */
 import type { Card } from '/lib/board.js'
 import type { RepoChanges } from '/lib/changes.js'
@@ -36,29 +34,16 @@ export type Quote = { lang: string; lines: string[] }
 /** `repo` is named as the Changes pane names it: the main checkout's folder. `from`–`to` count the file's lines from 1. */
 export type Anchor = { repo: string; path: string; from: number; to: number; quote?: Quote }
 
+/** What `reviews/append` takes: who writes on which checkout's thread, the message it answers, the lines it is about and its words. */
+export type AppendInput = { project: string; checkout: string; author: string; re?: number; anchors: Anchor[]; body: string }
+
+/** What `reviews/append` answers: the thread's item and the message's number. */
+export type Appended = { t: 'appended'; id: string; n: number; modifiedAt: number }
+
 /** `at`: local time as written, `YYYY-MM-DD HH:MM`. `re`: the number of the message it answers. */
 export type Message = { author: string; at: string; n: number; re?: number; anchors: Anchor[]; body: string }
 
 export type ReviewThread = { checkout: string; messages: Message[] }
-
-/**
- * The mod's skill a reviewer starts with, on the callsign of the worker whose work it reviews.
- * @deprecated since 1.95: a reviewer is hired with `reviews/hire`, and is known by its card's `x.reviews.of`. Goes at 2.0.
- */
-export const REVIEW_SKILL = '/tower:review'
-
-/**
- * A reviewer's first prompt. With `tell`, the reviewer submits a pointer to its notes into the author when done.
- * @deprecated since 1.95: hire a reviewer with `reviews/hire`. Goes at 2.0.
- */
-export const reviewPrompt = (callsign: string, tell: boolean) => `${REVIEW_SKILL} ${callsign}${tell ? ' tell' : ''}`
-
-/**
- * The callsign a reviewer's first prompt names; `undefined` for any other prompt.
- * @deprecated since 1.95: read the card's `x.reviews.of` (`reviewerOf`). Goes at 2.0.
- */
-export const reviewedIn = (prompt: string | undefined): string | undefined =>
-  prompt?.startsWith(`${REVIEW_SKILL} `) ? /^[A-Z][A-Z0-9]*-\d+\b/.exec(prompt.slice(REVIEW_SKILL.length).trim())?.[0] : undefined
 
 /** A thread's file name in the collection. */
 export const threadId = (checkout: string) => `${checkout}.md`

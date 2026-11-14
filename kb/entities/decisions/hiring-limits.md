@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/bridge/legacy.ts#legacyReviewer", "hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/hires.ts#hireSettled", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/crews.ts#exemptFromHiring", "hub/src/bridge/facts.ts#EXEMPT", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLineOf", "hub/src/shared/worker-details.ts#hirerName"]
+  "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/hires.ts#hireSettled", "hub/src/shared/api.ts#VERBS", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/crews.ts#exemptFromHiring", "hub/src/bridge/facts.ts#EXEMPT", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/board.ts#hirersOf", "hub/src/bridge/facts.ts", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/shared/worker-details.ts#pairLineOf", "hub/src/shared/worker-details.ts#hirerName"]
 }
 ---
 **Problem.** `tower hire` made starting a worker one command for every worker ([[agent-directory]]), and a hired
@@ -47,10 +47,8 @@ the easy path stops them, as long as it is named for what it is.
   turn waits on what the logs already say.
 - *Reviews are never refused.* A self-review must stay possible at any depth: the system enables workflows, it
   doesn't enforce them. The reviews extension's launch contributor exempts every reviewer `reviews/hire` starts (below),
-  and the hire still logs `tower.hire`, so the pair is attributed. A hire whose prompt starts a reviewer the way they
-  started before 1.95 (`/tower:review <CALLSIGN>`, with no exemption or crew edge given) is not weighed either, read
-  through `LEGACY` ([`legacyReviewer`](ref:hub/src/bridge/legacy.ts#legacyReviewer)) as the board reads such a worker:
-  exempt by reviews.
+  and the hire still logs `tower.hire`, so the pair is attributed. The exemption is the contributor's alone: a hire
+  whose prompt merely names a review is weighed like any other.
 - *Exempt by an extension.* A launch contributor may return `exempt: ['hiring']` on a spawn ([[extensions]]). A hire is
   weighed at the gate, after its contributors have run and before anything is made: on a cut, they run on the path the worktree
   will have, so a refused hire cuts nothing, as before. One they exempt is not weighed. Each exemption is logged in the new worker's log as `tower.exempt

@@ -34,7 +34,6 @@ test("views: the tower page's short forms name their core views, a showing by it
     ['#w1', { view: 'tower/card', subject: 'card:w1' }],
     ['#w1/changes', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/changes' } }],
     ['#w1/screen', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/terminal' } }],
-    ['#w1/reviews', { view: 'tower/card', subject: 'card:w1', pane: { view: 'reviews/thread' } }],
     ['#w1/shown%3Aa.md', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/document', subject: 'shown:w1/200' } }],
     ['#shelf/p/2/docs%2Fa.md', { view: 'tower/shelf', subject: 'shelf:p/2', args: ['docs/a.md'] }],
     ['#shelf/p/2', { view: 'tower/shelf', subject: 'shelf:p/2' }],

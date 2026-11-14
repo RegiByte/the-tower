@@ -313,14 +313,6 @@
             "$ref": "#/definitions/FloorBranch"
           }
         },
-        "threads": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FloorThread"
-          },
-          "description": "The review thread of each checkout that has one, their calls naming `review/append`.",
-          "deprecated": "since 1.93: the reviews extension's `x.reviews.threads`, copied here until 2.0."
-        },
         "main": {
           "$ref": "#/definitions/MainCheckouts",
           "description": "Its main checkouts as git reads them, once every dir of it is read: what a checkout's state is read from (`src/bridge/checkouts.ts`)."
@@ -438,7 +430,6 @@
         "id",
         "name",
         "repos",
-        "threads",
         "tidy",
         "verbs",
         "worktrees"
@@ -487,25 +478,20 @@
           "additionalProperties": false,
           "description": "The worktree its cwd is, by name, the branch checked out there (none on a detached HEAD, or before git is read) and, for a fork, the checkout it was forked from; `gone` once git, read since the session started, no longer lists it with its folder in every repo of the project (`checkoutGone`)."
         },
-        "reviews": {
-          "type": "string",
-          "description": "The callsign of the worker whose work this one reviews: the reviews extension's `x.reviews.of`, or for a reviewer spawned before reviews logged its facts, its first prompt (`legacyReviewer`).",
-          "deprecated": "since 1.95: read `x.reviews.of`. Goes at 2.0."
-        },
         "hiredBy": {
           "$ref": "#/definitions/HiredBy",
           "description": "The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none."
         },
         "crew": {
           "$ref": "#/definitions/CrewEdge",
-          "description": "The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability that did; a reviewer spawned before reviews logged its facts is in its author's, by reviews, as the board names the author now (`legacyCrew`)."
+          "description": "The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability that did."
         },
         "exempt": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Exemption"
           },
-          "description": "What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability; a reviewer spawned before reviews logged its facts is exempt from hiring by reviews (`legacyReviewer`)."
+          "description": "What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability."
         },
         "reportsTo": {
           "type": "string",
@@ -518,16 +504,6 @@
         "checkoutState": {
           "$ref": "#/definitions/CheckoutState",
           "description": "Where the work in its checkout stands: what its Changes are."
-        },
-        "threadState": {
-          "$ref": "#/definitions/CheckoutState",
-          "description": "Where the work its review thread is about stands (`threadCheckoutOf`: a reviewer's is its author's), with the thread Tidy filed once it landed. The card offers `note` while it is live.",
-          "deprecated": "since 1.93: the reviews extension's `x.reviews.threadState`, copied here until 2.0."
-        },
-        "unseen": {
-          "type": "number",
-          "description": "The messages of the review thread about its work (`threadCheckoutOf`: a reviewer's is its author's) it hasn't seen (after its own last one); none without a thread, or once `threadState` is no longer live.",
-          "deprecated": "since 1.93: the reviews extension's `x.reviews.unseen`, copied here until 2.0."
         },
         "status": {
           "$ref": "#/definitions/Status"
@@ -1466,14 +1442,12 @@
         "carry-on",
         "goto",
         "brief",
-        "review",
         "reap",
         "kill",
         "let-go",
-        "send-home",
-        "note"
+        "send-home"
       ],
-      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works; `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so; `note` adds a note to the review thread about its work (`NoteVerb`)."
+      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works; `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the session that resumed the conversation; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so."
     },
     "CardCalls": {
       "type": "object",
@@ -1530,21 +1504,6 @@
             {
               "type": "string",
               "const": "resume"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "review": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "spawn"
             },
             {
               "type": "object",
@@ -1615,25 +1574,10 @@
             ],
             "maxItems": 2
           }
-        },
-        "note": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "review/append"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
         }
       },
       "additionalProperties": false,
-      "description": "`note` takes the author and what the note says."
+      "description": "`send-home` is a kill per running worker, the deepest first."
     },
     "CardAction": {
       "anyOf": [
@@ -1797,35 +1741,6 @@
           "properties": {
             "verb": {
               "type": "string",
-              "const": "review"
-            },
-            "call": {
-              "type": "array",
-              "minItems": 2,
-              "items": [
-                {
-                  "type": "string",
-                  "const": "spawn"
-                },
-                {
-                  "type": "object",
-                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                }
-              ],
-              "maxItems": 2
-            }
-          },
-          "required": [
-            "verb",
-            "call"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "verb": {
-              "type": "string",
               "const": "reap"
             },
             "call": {
@@ -1932,35 +1847,6 @@
                 ],
                 "maxItems": 2
               }
-            }
-          },
-          "required": [
-            "verb",
-            "call"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "verb": {
-              "type": "string",
-              "const": "note"
-            },
-            "call": {
-              "type": "array",
-              "minItems": 2,
-              "items": [
-                {
-                  "type": "string",
-                  "const": "review/append"
-                },
-                {
-                  "type": "object",
-                  "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-                }
-              ],
-              "maxItems": 2
             }
           },
           "required": [
@@ -2714,134 +2600,6 @@
       ],
       "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
     },
-    "FloorThread": {
-      "type": "object",
-      "properties": {
-        "checkout": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "tag": {
-          "type": "string"
-        },
-        "messages": {
-          "type": "number"
-        },
-        "last": {
-          "type": "object",
-          "properties": {
-            "author": {
-              "type": "string"
-            },
-            "at": {
-              "type": "string"
-            },
-            "n": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "author",
-            "at",
-            "n"
-          ],
-          "additionalProperties": false
-        },
-        "landed": {
-          "type": "boolean"
-        },
-        "state": {
-          "$ref": "#/definitions/CheckoutState",
-          "description": "Where its checkout's work stands: a note is offered only while it is live."
-        },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NoteVerb"
-          }
-        },
-        "calls": {
-          "$ref": "#/definitions/NoteCalls"
-        },
-        "actions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NoteAction"
-          }
-        }
-      },
-      "required": [
-        "checkout",
-        "id",
-        "tag",
-        "messages",
-        "landed",
-        "state",
-        "verbs",
-        "calls",
-        "actions"
-      ],
-      "additionalProperties": false,
-      "description": "A checkout's thread as `floor.threads` holds it: `messages` it holds and the `last` one, `landed` once Tidy files it, where its work stands, and `note` while it is live."
-    },
-    "NoteVerb": {
-      "type": "string",
-      "const": "note",
-      "description": "`note` adds a note to a checkout's review thread, offered while its work goes on (`CheckoutState` live): a note on work that landed, or whose worktree is gone, reaches nobody. The API still takes one there."
-    },
-    "NoteCalls": {
-      "type": "object",
-      "properties": {
-        "note": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "review/append"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "additionalProperties": false
-    },
-    "NoteAction": {
-      "type": "object",
-      "properties": {
-        "verb": {
-          "type": "string",
-          "const": "note"
-        },
-        "call": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "review/append"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "required": [
-        "verb",
-        "call"
-      ],
-      "additionalProperties": false,
-      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
-    },
     "MainCheckouts": {
       "type": "object",
       "properties": {
@@ -2920,13 +2678,6 @@
             "type": "string"
           }
         },
-        "threads": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "deprecated": "since 1.94: the reviews extension's tidy entries, by key, copied here until 2.0."
-        },
         "prune": {
           "type": "array",
           "items": {
@@ -2949,7 +2700,6 @@
       "required": [
         "worktrees",
         "branches",
-        "threads",
         "prune",
         "logs",
         "streams"

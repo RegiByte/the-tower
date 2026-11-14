@@ -31,7 +31,6 @@
  *   GET  /conversations/<id>/<conversation>  one of the session's saved conversations with every one of its turns
  *   GET  /conversations/<id>/tool/<call>  one tool call of the session: its input as logged, its permission check, how it ended
  *   GET  /archive/<project>  the project's cards the board leaves out, newest first (src/bridge/board.ts `onBoard`)
- *   GET  /reviews/<project>  the reviews extension's reviews/history/<project>, through LEGACY until 2.0
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
  *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now, `?scope=all|uncommitted|<commit>` (src/changes.ts)
  *   GET  /stats?from&to&bucket&project   stats over every session's log and what landed on each project's default
@@ -51,7 +50,6 @@
  *   GET  /drafts.js     deprecated: `/x/drafts/drafts.js`, served there with a `Deprecation` header (`LEGACY`)
  *   GET  /cards.js      what renderers say about a worker (src/shared/cards.ts)
  *   GET  /icons.js      the icons renderers draw for the same things (src/shared/icons.ts)
- *   GET  /reviews.js    the review threads' format (src/shared/reviews.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /views.js      views, the layout, locations and display: what a renderer hosting views reads (src/shared/views.ts)
@@ -80,7 +78,6 @@
  *        | /collection/restore {project, collection, id, content} | /collection/delete {project, collection, id}
  *   POST /config/add {key, value} | /config/append {key, value} | /config/set {key, value, was} | /config/remove {key, was}
  *        one edit of the config file, `was` the value read at the key, checked, the file written whole and read again (src/config-edit.ts)
- *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
  *   POST /reap {id}     end what the session left running;  /reap/process {id, pid}  one of those processes
  *   POST /open {dir}    open a project directory in a new window of the user's editor
  *   POST /reveal {path} | /edit {path, line?}   show a path the system names in Finder, or open it in the user's editor
@@ -97,7 +94,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { z } from 'zod'
-import { LEGACY_READS, legacyNamed } from '../bridge/legacy.ts'
+import { legacyNamed } from '../bridge/legacy.ts'
 import { accountsOf } from '../bridge/rate-limits.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import { withLiveness } from '../bridge/status.ts'
@@ -382,20 +379,6 @@ export const httpServer = defineResource({
         if (!(err instanceof WorktreeError)) throw err
         return failed(err.code, err.message)
       }
-    }
-
-    /**
-     * A core read that moved into an extension (`LEGACY`): its params and query as the new read takes them, read through
-     * the dispatch, and the reply as the old one answered, deprecated.
-     */
-    async function legacyRead(old: string, { params, query, caller }: Asked<Record<string, unknown>>): Promise<ReadReply> {
-      const { request, reply } = LEGACY_READS[old]
-      const { now, since } = legacyNamed('read', old)!
-      const mapped = request(params, query)
-      if (isApiError(mapped)) return json(mapped)
-      const { cap, name } = qualifiedOf(now)!
-      const answer = await dispatch.read(cap, name, mapped.params, mapped.query, caller)
-      return { t: 'json', body: isApiError(answer) ? answer : reply(answer, boardOf()), headers: deprecation({ since, use: now }) }
     }
 
     async function statsRead(query: z.output<typeof QUERIES.stats>): Promise<ReadReply> {
@@ -772,7 +755,7 @@ export const httpServer = defineResource({
 
     /**
      * The largest command body read: an `upload` of the largest file it takes, base64, with room to spare. The other
-     * large requests are a `collection/write` of a self-contained html item and a `review/append` carrying a diff.
+     * large requests are a `collection/write` of a self-contained html item and a `reviews/append` carrying a diff.
      */
     const MAX_BODY = Math.ceil((UPLOAD_LIMIT * 4) / 3) + 1_000_000
 
@@ -984,7 +967,6 @@ export const httpServer = defineResource({
       apiRead('conversations/<id>', { path: /^\/conversations\/(?<id>[\w-]+)$/, answer: ({ params }) => conversations(params.id!) }),
       apiRead('conversations/<id>/<conversation>', { path: /^\/conversations\/(?<id>[\w-]+)\/(?<conversation>[\w-]+)$/, answer: ({ params }) => conversation(params.id!, params.conversation!) }),
       apiRead('conversations/<id>/tool/<call>', { path: /^\/conversations\/(?<id>[\w-]+)\/tool\/(?<call>[\w-]+)$/, answer: ({ params }) => toolCall(params.id!, params.call!) }),
-      apiRead('reviews/<project>', { path: /^\/reviews\/(?<project>[\w-]+)$/, answer: (asked) => legacyRead('reviews/<project>', { ...asked, query: {} }) }),
       apiRead('changes/<id>', { path: /^\/changes\/(?<id>[\w-]+)$/, answer: ({ params, query }) => changes(params.id!, query) }),
       plain('stream', { path: /^\/screen\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamScreen(params.id!, req, res) }),
       plain('stream', { path: /^\/shell\/(?<id>[\w-]+)$/, serve: ({ req, res, params }) => streamPty(shellStream, params.id!, req, res) }),

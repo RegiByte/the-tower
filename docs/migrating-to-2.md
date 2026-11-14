@@ -63,6 +63,42 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   extension still reads `p` facts for its own status. A reading of your own extension's is folded as before, as long
   as its fact code declares `"kind": "tower/rate-limits"`.
 
+- **The core's copy of review threads is gone.** Review threads have been the bundled reviews extension since 1.93;
+  2.0 drops the core's copy of them. A tower with reviews on draws and writes threads as before. Find each old name
+  and change it to the extension's:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `card.reviews` | `card.x.reviews.of`, or `reviewerOf` of `/x/reviews/reviews.js` |
+  | `card.threadState` | `card.x.reviews.threadState` |
+  | `card.unseen` | `card.x.reviews.unseen` |
+  | `card.checkoutState.filed` | `card.x.reviews.filed` (`card.checkoutState` says only where the checkout's work stands) |
+  | `card.verbs`, `calls` and `actions` offering `note` | `card.x.reviews.note`, a call to `reviews/append` |
+  | `card.verbs`, `calls` and `actions` offering `review` | the action `reviews/hire` in `board.adds['card:<id>']` |
+  | `floor.threads` | `floor.x.reviews.threads` |
+  | `floor.tidy.threads`, and `plan.threads` in a `tidy` call | `board.adds['floor:<project>'].tidy` entries with `cap: 'reviews'`, applied as `plan.x.reviews` |
+  | the `tidy` reply's `threads` | its `x.reviews.done` |
+  | the `worktree/discard` reply's `thread` | its `done.reviews.item` |
+  | the verb `review/append` | `reviews/append` (`tower x reviews note`) |
+  | the read `GET /reviews/<project>` | `GET /reviews/history/<project>` |
+  | the module `/reviews.js` | `/x/reviews/reviews.js` |
+  | `reviewerOf`, `threadCheckoutOf`, `pairLine` and `whereLine` of `/cards.js` | `reviewerOf` and `threadCheckoutOf` of `/x/reviews/reviews.js`; `pairLineOf` and `whereLineOf` of `/lib/cards.js` |
+  | the reviews panel and anchors of `/panels.js` (`reviewsHtml`, `cardThread`, `readThread`, `pickAnchor`, `changesHtml` and their kin) | the extension's views `reviews/thread`, `reviews/checkout-thread` and `reviews/composer` |
+  | `REVIEW_SKILL`, `reviewPrompt` and `reviewedIn` of `/x/reviews/reviews.js` | hire with `reviews/hire`; read a reviewer by `x.reviews.of` |
+  | the mod's `tower:review` skill | `reviews:review`, which `reviews/hire` starts |
+  | the keymap command `pane-reviews` | the view `reviews/thread`'s chord (see [Config](#config)) |
+
+  - **A reviewer is only what its facts say.** A worker spawned before 1.95 on the prompt `/tower:review <CALLSIGN>`,
+    which logged no reviewer facts, no longer reads as that callsign's reviewer: it has no `x.reviews.of`, sits in no
+    crew by reviews, is not exempt from hiring, and its thread is its own checkout's. Its notes stay on the thread it
+    wrote them on.
+
+  - **The CLI says a reviewer by its crew.** `tower agents` and `tower agent` no longer print `reviews <CALLSIGN>`; a
+    reviewer's line reads `in <CALLSIGN>'s crew, by reviews`. Change scripts that grep the old words.
+
+  - **The page's `#<id>/reviews` link opens the worker's card,** without its thread tab: write
+    `#v/tower/card/card%3A<id>;reviews/thread`.
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form
@@ -100,5 +136,7 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   `tower config check` fails it at `probes`, naming the line to write, such as
   `"extensions": { "quota": {"off":true,"settings":{"every":"1h"}} }`. Move `off` to `extensions.quota.off` and
   `every` to `extensions.quota.settings.every`, then remove `probes`.
+- **`keys.pane-reviews` is refused.** The config is not taken, and `tower config check` names the line to write:
+  `"reviews/thread": <its value>` under `keys`, the chord of the reviews extension's thread view.
 
 ## Tower.app

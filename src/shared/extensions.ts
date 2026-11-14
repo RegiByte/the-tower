@@ -54,9 +54,6 @@ const JOBS = '1.149'
 /** The minor extension words arrived in: `cli` on verbs and reads, the `cli` problem. */
 const WORDS = '1.153'
 
-/** The minor reviewers moved to the reviews extension's launch in: the `of` fact, its crew edge and exemption. */
-const REVIEWERS_MOVED = '1.95'
-
 /** The minor a worker's showings came to be drawn by the views by type, their interim view retired. */
 const SHOWN_BY_TYPE = '1.115'
 
@@ -94,16 +91,14 @@ const GATE = '1.107'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
- * `read` the core's route without its slash (`review/append`, `reviews/<project>`) and its new qualified name
- * (`reviews/append`);
- * `module` a served URL; `stream` a folder under `streams/` and the stream's name (`quota.reads`), whose facts stay in
- * the old folder for good; `board` a field by its subject (`board.<field>`, `floor.<field>`, `card.<field>`) and where the
- * part it is copied from sits now (`card.x.reviews.of`); `action` a card verb by `card.<verb>` and the extension verb whose
- * action on the card it is copied from (`reviews/hire`); `view` a core view retired and what draws its subjects now
- * (`tower/shown`, by the views by type), its id in a layout read as theirs (`VIEW_ALIASES` in `/views.js`). What a
- * verb's, a read's, a field's or an action's move does beyond the name is in `src/bridge/legacy.ts`, keyed by `old`.
+ * `read` the core's route without its slash and its new qualified name; `module` a served URL; `stream` a folder under
+ * `streams/` and the stream's name (`quota.reads`), whose facts stay in the old folder for good; `board` a field by its
+ * subject (`board.<field>`, `floor.<field>`, `card.<field>`) and where the part it is copied from sits now; `view` a
+ * core view retired and what draws its subjects now (`tower/shown`, by the views by type), its id in a layout read as
+ * theirs (`VIEW_ALIASES` in `/views.js`). What a verb's, a read's or a field's move does beyond the name is in
+ * `src/bridge/legacy.ts`, keyed by `old`.
  */
-export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board' | 'action' | 'view'; old: string; now: string; since: string }
+export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board' | 'view'; old: string; now: string; since: string }
 
 /**
  * The built-ins' old names, each with what it is now: a fixed list, added to only as a built-in moves into a bundled
@@ -113,19 +108,6 @@ export const LEGACY: readonly LegacyEntry[] = [
   { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: KINDS },
   { kind: 'stream', old: 'runs', now: 'policies.runs', since: POLICIES_MOVED },
   { kind: 'stream', old: 'approvals', now: 'policies.approvals', since: POLICIES_MOVED },
-  { kind: 'verb', old: 'review/append', now: 'reviews/append', since: REVIEWS_MOVED },
-  { kind: 'read', old: 'reviews/<project>', now: 'reviews/history/<project>', since: REVIEWS_MOVED },
-  { kind: 'module', old: '/reviews.js', now: '/x/reviews/reviews.js', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'floor.threads', now: 'floor.x.reviews.threads', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.threadState', now: 'card.x.reviews.threadState', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.unseen', now: 'card.x.reviews.unseen', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.checkoutState.filed', now: 'card.x.reviews.filed', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.verbs.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.calls.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'card.actions.note', now: 'card.x.reviews.note', since: REVIEWS_MOVED },
-  { kind: 'board', old: 'floor.tidy.threads', now: "board.adds['floor:<project>'].tidy", since: REVIEWS_HOOKS },
-  { kind: 'board', old: 'card.reviews', now: 'card.x.reviews.of', since: REVIEWERS_MOVED },
-  { kind: 'action', old: 'card.review', now: 'reviews/hire', since: REVIEWERS_MOVED },
   { kind: 'view', old: 'tower/shown', now: 'the views by type on shown', since: SHOWN_BY_TYPE },
 ]
 

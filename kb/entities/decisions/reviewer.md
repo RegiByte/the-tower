@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A reviewer is a worker hired in a fork of the author's checkout",
-  "summary": "Any worker's card offers Review, the reviews extension's `reviews/hire`: a spawn in a new worktree forked from a snapshot of the author's checkout (uncommitted work included), started on the mod's `review` skill; the reviewer reads the author's goal and diff, runs checks in its own copy, leaves one note per finding on the author's thread, and stops after one round. The pair is logged at its spawn: its `of` field, and the crew edge and hiring exemption reviews' launch contributor gives; a reviewer spawned before 1.95 is read from its first prompt through LEGACY.",
+  "summary": "Any worker's card offers Review, the reviews extension's `reviews/hire`: a spawn in a new worktree forked from a snapshot of the author's checkout (uncommitted work included), started on the extension's `reviews:review` skill; the reviewer reads the author's goal and diff, runs checks in its own copy, leaves one note per finding on the author's thread, and stops after one round. The pair is logged at its spawn: its `of` field, and the crew edge and hiring exemption reviews' launch contributor gives; a worker that logged none of them is no reviewer, whatever its prompt.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
@@ -17,13 +17,9 @@
     "hub/extensions/reviews/server.ts#ofCard",
     "hub/extensions/reviews/extension.json",
     "hub/src/bridge/board.ts#withReports",
-    "hub/src/bridge/legacy.ts#legacyReviewer",
-    "hub/src/bridge/legacy.ts#legacyCrew",
-    "hub/src/bridge/legacy.ts#LEGACY_ACTIONS",
     "hub/extensions/reviews/client/reviews.ts#reviewerOf",
-    "hub/src/shared/launch.ts#launchOf",
     "hub/src/shared/worker-details.ts#pairLineOf",
-    "hub/src/mod/skills/review/SKILL.md",
+    "hub/extensions/reviews/plugin/skills/review/SKILL.md",
     "hub/src/directory.ts",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/acts.ts#KEY",
@@ -36,7 +32,7 @@
   "links": [
     { "to": "review-threads", "verb": "writes", "carries": "one note per finding and a closing verdict, on the author's checkout" },
     { "to": "tower-cuts-worktrees", "verb": "uses", "carries": "a fork: a cut from a snapshot of a checkout" },
-    { "to": "extensions", "verb": "uses", "carries": "the reviews extension's `reviews/hire`, its `of` spawn field and launch contributor, and the card verb `review` kept by LEGACY" },
+    { "to": "extensions", "verb": "uses", "carries": "the reviews extension's `reviews/hire`, its `of` spawn field and launch contributor" },
     { "to": "agents-have-every-capability", "verb": "follows", "carries": "any worker can hire a reviewer, its own included" }
   ]
 }
@@ -69,12 +65,9 @@ and how its findings reach the author.
   work that landed has nothing left to review), unless it is itself a reviewer
   ([`unreviewable`](ref:hub/extensions/reviews/server.ts#unreviewable)). `reviews/hire {project, of, by?, tell?}` refuses
   with the same reason, else spawns `{cut: {from: <author's checkout>}, prompt: '/reviews:review <CALLSIGN> [tell]',
-  x: {reviews: {of: <CALLSIGN>}}}`, a hire when `by` is given. Workers run it as `tower x reviews review <CALLSIGN> [--tell]`, a verb of its own over the same function, its caller the hirer. The skill is the extension's, `reviews:review` in its Claude plugin; `/tower:review` stays beside it until 2.0, for the `LEGACY` card verb and typed by hand, with no model trigger and a body that points at the new one.
-  Until 2.0 each card the action is on also carries the card verb `review` with its old call,
-  `['spawn', {project, cut: {from: checkout}, prompt: '/tower:review <CALLSIGN>'}]`, copied by `LEGACY`
-  ([`LEGACY_ACTIONS`](ref:hub/src/bridge/legacy.ts#LEGACY_ACTIONS)) for renderers of before 1.95; the shipped ones draw
-  the action and leave the copy out.
-- *The skill* (`src/mod/skills/review/SKILL.md`): read the goal (`tower agent`), the thread so far, and the diff
+  x: {reviews: {of: <CALLSIGN>}}}`, a hire when `by` is given. Workers run it as `tower x reviews review <CALLSIGN> [--tell]`, a verb of its own over the same function, its caller the hirer. The skill is the extension's, `reviews:review` in its Claude plugin; the core's card has no `review` verb and the
+  mod ships no review skill.
+- *The skill* (`extensions/reviews/plugin/skills/review/SKILL.md`): read the goal (`tower agent`), the thread so far, and the diff
   (`git diff <towerBase>...HEAD` in the fork, the same change the author's Changes pane shows); run the project's
   checks if cheap; review against the goal and the project's stated rules (those its CLAUDE.md or AGENTS.md name,
   the tower's own [[principles]]), a breach a finding naming the rule; prove what it can with a test committed in the fork. It never edits the
@@ -100,22 +93,16 @@ and how its findings reach the author.
 - *The pair is logged.* The reviewer's `of` fact (`tower.x.reviews.of`) names its author at its spawn, and the crew edge
   by reviews names the same callsign (a fork carries the fact and no edge). That edge is the card's `x.reviews.of`
   ([`ofCard`](ref:hub/extensions/reviews/server.ts#ofCard),
-  read by [`reviewerOf`](ref:hub/extensions/reviews/client/reviews.ts#reviewerOf), the reviews client's), copied back to `card.reviews` until 2.0; the
-  crew edge gives `card.crew` and `card.reportsTo`, and the fork's git record gives `card.worktree.from`. The card
+  read by [`reviewerOf`](ref:hub/extensions/reviews/client/reviews.ts#reviewerOf), the reviews client's); the core's card has no
+  field of its own for it. The crew edge gives `card.crew` and `card.reportsTo`, and the fork's git record gives `card.worktree.from`. The card
   fold adds the badge "reviews MARCO-87", which the tower page and Tower 3D's desk panel draw among the card's badges; Tower 3D draws
   [`pairLineOf`](ref:hub/src/shared/worker-details.ts#pairLineOf) ("reviews MARCO-87"), given the callsign
-  `reviewerOf` reads, on the desk's name tag, as `tower agent` does in its line. The words `tower whoami` and the card say include "exempt from hiring limits by
+  `reviewerOf` reads, on the desk's name tag. `tower agents` and `tower agent` say the crew edge, "in MARCO-87's crew, by
+  reviews" ([`withReports`](ref:hub/src/bridge/board.ts#withReports) gives the card's `reportsTo` from it). The words `tower whoami` and the card say include "exempt from hiring limits by
   reviews".
-- *Reviewers of before 1.95.* Every reviewer spawned before the facts existed is known only by its first prompt. A
-  session that logged neither `tower.exempt` nor `tower.reports-to`, whose launch prompt
-  ([`launchOf`](ref:hub/src/shared/launch.ts#launchOf)) starts `/tower:review <CALLSIGN>`, reads through one
-  `LEGACY` row ([`legacyReviewer`](ref:hub/src/bridge/legacy.ts#legacyReviewer)) as reviewing that callsign and exempt
-  from hiring by reviews, and is put in its author's crew as the board names the author by callsign now
-  ([`legacyCrew`](ref:hub/src/bridge/legacy.ts#legacyCrew), in [`withReports`](ref:hub/src/bridge/board.ts#withReports)),
-  exactly as the prompt was read before; a hire whose prompt starts so is not weighed against the limits either.
-  It is the only place in the core that reads the prompt, and goes at 2.0. With its author off the board such a reviewer, any launch logging no facts whose prompt reads so,
-  has no edge, so reviews reads it as a plain worker, while the old `card.reviews` still names its author: accepted, since
-  2.0 does the same to every one of them.
+- *Known by its facts alone.* A worker whose launch logged no `tower.x.reviews.of`, `tower.exempt` or
+  `tower.reports-to` reads as a plain worker, whatever its first prompt says: no `x.reviews.of`, no crew edge by
+  reviews, no hiring exemption. The core never reads a prompt to find a reviewer.
 - *In Tower 3D the reviewer sits beside its author* at the author's desk, on a notebook whose lid shows its
   terminal ([`makeVisitor`](ref:hub/renderers/tower3d/src/desk.ts#makeVisitor)), all where the desk dressing's slots
   place them ([[desk-dressing]]): its chair at `reviewer`, turned as that slot is, its notebook at `reviewer_notebook`, its subagents standing
@@ -139,13 +126,9 @@ and how its findings reach the author.
   request each.
 - *Tower 3D: the reviewer at its own desk, with a clipboard or a ribbon naming the author.* Reads as two workers
   who happen to share a word.
+- *Gate Review on `floor.bases`*: a fork needs no base on origin, so floors of local repos would lose it; `floor.git`
+  says what the fork needs.
 
 **Impact.** API: `spawn.cut.from`; `reviews/hire` and `floor.git` (1.95). Git: branch records `towerFork` and
 `towerFrom`; a fork's exposure counts only commits beyond its snapshot. Board: `card.x.reviews.of`, `card.crew`,
-`card.exempt`, `card.worktree.from`, the Review action; `card.reviews` and the card verb `review` kept by `LEGACY`
-until 2.0. The reviews extension's plugin: the `review` and `threads` skills. Its words `review` and `send`.
-
-**Alternatives considered (1.95, the move).** *Resolve a pre-1.95 reviewer's author to the session its callsign named
-when it spawned*: truer when a callsign is reused, but eight archived reviewers would change crews; the board keeps
-reading them as it always did. *Gate Review on `floor.bases`*: a fork needs no base on origin, so floors of local
-repos would lose it; `floor.git` says what the fork needs.
+`card.exempt`, `card.worktree.from`, the Review action. The reviews extension's plugin: the `review` and `threads` skills. Its words `review` and `send`.

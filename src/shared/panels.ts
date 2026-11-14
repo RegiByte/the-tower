@@ -1,11 +1,9 @@
 /**
- * The Changes, Reviews and Stats panels every renderer draws: pure views from plain data to html, the logic of
- * picking lines and finding an anchor's, and one stylesheet (`panelsCss`, beside `markdownCss`: a note's words are
- * markdown). A renderer keeps the state (what it read, folds, the pick, text being written), passes it in as a view
- * model, puts the html in an element with `drawPanel` and wires the attributes below. The tower serves it as
- * `/panels.js`, bundled with the modules it gathers: `changes-reads.ts`, `changes-lines.ts` and `changes-panel.ts`,
- * `anchors-legacy.ts` (deprecated since 1.116, review notes' anchors and the note box, now the reviews extension's),
- * `reviews-panel.ts`, `stats-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts` and `panels-css.ts`.
+ * The Changes and Stats panels every renderer draws: pure views from plain data to html, the logic of
+ * picking lines, and one stylesheet (`panelsCss`). A renderer keeps the state (what it read, folds, the pick, text being
+ * written), passes it in as a view model, puts the html in an element with `drawPanel` and wires the attributes below.
+ * The tower serves it as `/panels.js`, bundled with the modules it gathers: `changes-reads.ts`, `changes-lines.ts` and
+ * `changes-panel.ts`, `stats-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts` and `panels-css.ts`.
  *
  * The protocol a renderer wires, by the attribute on the element clicked (`closest`):
  *
@@ -29,24 +27,6 @@
  *                              `spanned`); also where an anchor scrolls to
  *   data-pick-acts             under the picked lines (`markedChangesHtml`): the element the renderer puts what acts on them
  *                              in, the `lines.acts` region on their `lines` subject (`pickedLines`)
- *   data-pick-text             the deprecated `changesHtml`'s note under the picked lines (a textarea): ⌘⏎ adds, Esc cancels
- *   data-pick-add              the deprecated `changesHtml`'s: add the note on the picked lines (`pickAnchor`) through `review/append`
- *   data-pick-cancel           the deprecated `changesHtml`'s: drop the pick
- *
- *   Reviews
- *   data-thread-read           read the thread again, after a read that failed
- *   data-note="<n>"            a note, by number
- *   data-to-note="<n>"         the note this one answers: scroll to it
- *   data-anchor="<n>|<i>"      anchor `i` of note `n`: show its lines in Changes (`anchorSpot`)
- *   data-reply="<n>"           answer note `n` from the composer
- *   data-reply-clear           the composer's note answers none
- *   data-resolve="<n>"         mark note `n` resolved: run the panel's `resolveAction` (/x/reviews/panel.js)
- *   data-note-text             the composer (a textarea): ⌘⏎ adds
- *   data-note-add              add the composer's note through `review/append`
- *   data-send                  submit `sendText` into the send target
- *   data-send-pick             the send target's picker (a select): its value is the worker's id
- *   data-copy="<text>"         copy the text (the thread's tag)
- *   data-copy-code             copy a fence's code in a note (`/markdown.js`)
  *
  *   Files, wherever a panel names one (`fileButtonsHtml`, `fileSpansHtml`), and any renderer's own (`fileCall` gives the call)
  *   data-reveal="<path>"       show the file or folder in Finder through `reveal`
@@ -72,11 +52,6 @@ export {
   CHANGES_TREE_KEY, DIFF_LAYOUTS, DIFF_LAYOUT_KEY, DIFF_LAYOUT_LABEL, DIFF_LAYOUT_MEANS, markedChangesHtml, markedLines, keepingFileTop, keepingViewedFileTop,
   type MarkedChangesView,
 } from './changes-panel.ts'
-export { pickAnchor, anchorWhere, notedLines, anchorSpot, anchorOf, changesHtml, type ChangesView } from './anchors-legacy.ts'
-export {
-  threadItemFiles, threadFiles, cardThread, floorThread, threadSlot, threadWant, heldThread, threadFailure, readThread, threadViewOf, reviewsHtml,
-  type ThreadView, type ThreadFiles, type ThreadPlace, type ThreadAt, type ThreadViewer,
-} from './reviews-panel.ts'
 export { STATS_ALL, statsQuery, usd, hours, duration, statsHtml, type StatsProject, type StatsView } from './stats-panel.ts'
 export { failedHtml } from './panel-html.ts'
 export { drawPanel, keepingFocus, keepShownTabs, type TextBox } from './panel-kit.ts'

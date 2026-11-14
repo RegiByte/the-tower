@@ -2,7 +2,6 @@ import type { Card, CardSubagent, Floor, HiredBy } from '../bridge/board.ts'
 import { base, commandName, modelName, tokenCount } from './format.ts'
 import { current, UNRESUMABLE_TITLE } from './status-words.ts'
 import { subagentEnd, subagentTokens } from './subagents.ts'
-import { reviewerOf } from './checkouts.ts'
 import { RECUT_ON_RESUME } from './verb-words.ts'
 
 /**
@@ -40,12 +39,6 @@ export const pairLineOf = (c: Card, reviews: string | undefined) =>
 /** Where a worker works, short: its floor, then its branch in a worktree or its folder off the hub, and `pairLineOf`. @since 1.97 */
 export const whereLineOf = (c: Card, f: Floor | undefined, reviews: string | undefined) =>
   [f?.name ?? c.project, c.worktree ? branchLine(c) : c.cwd === f?.hub ? '' : base(c.cwd), pairLineOf(c, reviews)].filter(Boolean).join(' · ')
-
-/** `pairLineOf`, whose work it reviews read from its card's `x.reviews.of`. @deprecated since 1.97: `pairLineOf` with `reviewerOf` of `/x/reviews/reviews.js`; goes at 2.0. */
-export const pairLine = (c: Card) => pairLineOf(c, reviewerOf(c))
-
-/** `whereLineOf`, whose work it reviews read from its card's `x.reviews.of`. @deprecated since 1.97: `whereLineOf` with `reviewerOf` of `/x/reviews/reviews.js`; goes at 2.0. */
-export const whereLine = (c: Card, f: Floor | undefined) => whereLineOf(c, f, reviewerOf(c))
 
 /**
  * The session a worker's conversation came from, as label and value, its start in `when`'s words: its own earlier
