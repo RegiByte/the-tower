@@ -9,7 +9,6 @@ import type { StreamFact } from './streams.ts'
 import { capabilityOf, streamFolder, type Manifest } from '../shared/extensions.ts'
 import { commandNames, type Config, type SessionHeader } from '../shared/model.ts'
 import type { RateLimitsReading } from '../shared/rate-limits.ts'
-import { LEGACY_READINGS } from './legacy.ts'
 
 /**
  * Extra usage: credits spent past the plan's limits, up to a monthly limit, in `currency` units, as read `at` (epoch
@@ -136,8 +135,7 @@ export const commandLimits = ({ command, sessions, streams }: Account<{ facts: P
 export type ReadingStream = { folder: string; reading: (code: string, fact: unknown) => RateLimitsReading | undefined }
 
 /**
- * Every system stream of `manifests` that holds readings, once per folder: one whose fact codes declare the kind, and
- * one whose folder an old stream kept, its old codes read as `LEGACY_READINGS` says. Read from what the manifests
+ * Every system stream of `manifests` whose fact codes declare the kind, once per folder. Read from what the manifests
  * declare, whatever runs: stored facts are folded the same while their extension is off or failed.
  */
 export const readingStreams = (manifests: Manifest[]): ReadingStream[] => {
@@ -147,9 +145,8 @@ export const readingStreams = (manifests: Manifest[]): ReadingStream[] => {
       if (stream.scope !== 'system') continue
       const folder = streamFolder(`${capabilityOf(manifest)}.${name}`)
       const kinded = new Set(Object.entries(stream.facts).flatMap(([code, f]) => (f.kind === 'tower/rate-limits' ? [code] : [])))
-      const legacy = LEGACY_READINGS[folder] ?? {}
-      if (found.has(folder) || (!kinded.size && !Object.keys(legacy).length)) continue
-      found.set(folder, { folder, reading: (code, fact) => (kinded.has(code) ? (fact as RateLimitsReading) : legacy[code]?.(fact)) })
+      if (found.has(folder) || !kinded.size) continue
+      found.set(folder, { folder, reading: (code, fact) => (kinded.has(code) ? (fact as RateLimitsReading) : undefined) })
     }
   }
   return [...found.values()]

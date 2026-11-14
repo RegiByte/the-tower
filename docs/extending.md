@@ -1602,7 +1602,6 @@ modules beside it:
 | `/media.js`, `/repos.js` | `/lib/files.js` |
 | `/design.js` | `/lib/design.js` |
 | `/termkeys.js` | nothing: `mountTermView` of `/lib/terminal.js` takes your keymap |
-| `/drafts.js` | `/x/drafts/drafts.js` |
 | `/policies.js` | `/x/policies/policies.js` |
 | `/reviews.js` | `/x/reviews/reviews.js` |
 | `tower:<name>.js`, in an extension's server code | `/lib/<module>.js`, the line a client writes |
@@ -1616,8 +1615,6 @@ it, with RFC 9745's `Deprecation` and a `Link` to itself.
 
 | Deprecated | Use | Since |
 |---|---|---|
-| `POST /probe/run` | `POST /quota/read-now` | 1.90 |
-| `GET /probe/<name>` | `GET /quota/reads`, and the board's `x.quota` | 1.90 |
 | `POST /policy/run`, `/policy/pass`, `/policy/approve` | `POST /policies/run`, `/policies/pass`, `/policies/approve` | 1.91 |
 | `GET /runs/<project>` | `GET /policies/runs/<project>` | 1.91 |
 | `POST /review/append` | `POST /reviews/append` | 1.93 |
@@ -1629,7 +1626,6 @@ fields appear only under `x`. A renderer that draws extensions' actions draws th
 
 | Deprecated | Use |
 |---|---|
-| `board.probes` | `board.x.quota` |
 | `board.rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits`, `extraUsage` at the top level | `defaultLimits(board)` of `/lib/board.js`, or the command's entry of `board.limits` |
 | `floor.policies`, `board.offers`, `card.run` | `floor.x.policies.policies`, `floor.x.policies.offers`, `card.x.policies.run` |
 | `floor.threads`, `card.threadState`, `card.unseen`, `card.checkoutState.filed` | `floor.x.reviews.threads`, and `threadState`, `unseen` and `filed` of `card.x.reviews` |

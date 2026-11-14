@@ -94,10 +94,10 @@ const GATE = '1.107'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
- * `read` the core's route without its slash (`probe/run`, `probe/<name>`) and its new qualified name (`quota/read-now`);
+ * `read` the core's route without its slash (`policy/run`, `runs/<project>`) and its new qualified name (`policies/run`);
  * `module` a served URL; `stream` a folder under `streams/` and the stream's name (`quota.reads`), whose facts stay in
- * the old folder for good; `board` a field by its subject (`board.probes`, `floor.policies`, `card.run`) and where the
- * part it is copied from sits now (`board.x.quota`); `action` a card verb by `card.<verb>` and the extension verb whose
+ * the old folder for good; `board` a field by its subject (`floor.policies`, `card.run`) and where the part it is
+ * copied from sits now (`floor.x.policies.policies`); `action` a card verb by `card.<verb>` and the extension verb whose
  * action on the card it is copied from (`reviews/hire`); `view` a core view retired and what draws its subjects now
  * (`tower/shown`, by the views by type), its id in a layout read as theirs (`VIEW_ALIASES` in `/views.js`). What a
  * verb's, a read's, a field's or an action's move does beyond the name is in `src/bridge/legacy.ts`, keyed by `old`.
@@ -109,11 +109,7 @@ export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board
  * extension or a core view retires, never after 2.0. 2.0 removes every entry but the streams', whose folders hold what was written.
  */
 export const LEGACY: readonly LegacyEntry[] = [
-  { kind: 'module', old: '/drafts.js', now: '/x/drafts/drafts.js', since: '1.90' },
-  { kind: 'verb', old: 'probe/run', now: 'quota/read-now', since: KINDS },
-  { kind: 'read', old: 'probe/<name>', now: 'quota/reads', since: KINDS },
   { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: KINDS },
-  { kind: 'board', old: 'board.probes', now: 'board.x.quota', since: KINDS },
   { kind: 'verb', old: 'policy/run', now: 'policies/run', since: POLICIES_MOVED },
   { kind: 'verb', old: 'policy/pass', now: 'policies/pass', since: POLICIES_MOVED },
   { kind: 'verb', old: 'policy/approve', now: 'policies/approve', since: POLICIES_MOVED },

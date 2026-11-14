@@ -164,87 +164,6 @@
           "description": "The newest reading a turn of the default command's sessions took, beside the account's: what a probe of its limits waits on while turns read them.",
           "deprecated": "since 1.152: `defaultLimits(board)`; this copy goes at 2.0."
         },
-        "probes": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "verbs": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/ProbeVerb"
-                }
-              },
-              "calls": {
-                "$ref": "#/definitions/ProbeCalls"
-              },
-              "actions": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/ProbeAction"
-                }
-              },
-              "name": {
-                "type": "string"
-              },
-              "reads": {
-                "type": "string",
-                "const": "claude.usage",
-                "description": "The probes the core ran before 1.90: their readers, a closed set."
-              },
-              "every": {
-                "type": "number",
-                "description": "How often it reads while nothing else holds it, ms."
-              },
-              "state": {
-                "$ref": "#/definitions/ProbeState"
-              },
-              "lastAt": {
-                "type": "number",
-                "description": "When it last read, answered or not."
-              },
-              "error": {
-                "type": "string",
-                "description": "Why its last read has no answer."
-              },
-              "answeredAt": {
-                "type": "number",
-                "description": "When a read last answered."
-              },
-              "failsInRow": {
-                "type": "number"
-              },
-              "wait": {
-                "type": "number",
-                "description": "How long it waits after its last read, ms: `every`, longer while backing off or unavailable."
-              },
-              "nextAt": {
-                "type": "number",
-                "description": "When it reads next: a moment past (0 before its first read) means at the tower's next tick."
-              },
-              "held": {
-                "type": "boolean",
-                "description": "`nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after."
-              }
-            },
-            "required": [
-              "actions",
-              "calls",
-              "every",
-              "failsInRow",
-              "held",
-              "name",
-              "nextAt",
-              "reads",
-              "state",
-              "verbs",
-              "wait"
-            ]
-          },
-          "description": "The quota probe, the quota extension's part (`x.quota`) as it stood at 1.89, with `run`, a read now (`probe/run`): none while the extension doesn't run.",
-          "deprecated": "since 1.90: read `x.quota`, and call `quota/read-now`."
-        },
         "extraUsage": {
           "$ref": "#/definitions/ExtraUsage",
           "description": "The default command's extra usage, as the probes' newest answer that had it said.",
@@ -382,7 +301,6 @@
         "archiveAt",
         "limits",
         "rateLimits",
-        "probes",
         "extensions",
         "viewers",
         "adds",
@@ -4524,73 +4442,6 @@
       ],
       "additionalProperties": false,
       "description": "Extra usage: credits spent past the plan's limits, up to a monthly limit, in `currency` units, as read `at` (epoch ms). `reached`: the monthly limit is spent."
-    },
-    "ProbeVerb": {
-      "type": "string",
-      "const": "run",
-      "description": "A probe offers `run`, a read now, unless it is off: the tower refuses it while a read is in flight or within the floor."
-    },
-    "ProbeCalls": {
-      "type": "object",
-      "properties": {
-        "run": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "probe/run"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProbeAction": {
-      "type": "object",
-      "properties": {
-        "verb": {
-          "type": "string",
-          "const": "run"
-        },
-        "call": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "probe/run"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "required": [
-        "verb",
-        "call"
-      ],
-      "additionalProperties": false,
-      "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
-    },
-    "ProbeState": {
-      "type": "string",
-      "enum": [
-        "new",
-        "ok",
-        "failing",
-        "backoff",
-        "unavailable"
-      ],
-      "description": "A probe's state as `board.probes` says it; the field holds none while the quota extension doesn't run, `off` among it."
     },
     "ExtensionView": {
       "type": "object",

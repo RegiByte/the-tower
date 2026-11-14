@@ -35,8 +35,6 @@
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
  *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now, `?scope=all|uncommitted|<commit>` (src/changes.ts)
  *   GET  /runs/<project>?policy&limit  a policy's runs, newest first, each with its worker as it is now (src/bridge/policies.ts)
- *   GET  /probe/<name>?last  deprecated: the quota probe's status as board.probes shows it and its latest reads, through
- *                            quota/reads (LEGACY, src/bridge/legacy.ts)
  *   GET  /stats?from&to&bucket&project   stats over every session's log and what landed on each project's default
  *                                        branches, read from git now (src/bridge/stats.ts), the query by its schema
  *   GET  /shell/<id>    SSE: a snapshot of the shell's screen, then its output, from the terms daemon
@@ -87,7 +85,6 @@
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
  *   POST /policy/run {project, policy, start, slot?, by?, check?} | /policy/pass {project, policy, slot, outcome, check?}
  *        | /policy/approve {project, policy, hash, by?}   a policy's facts in its project's streams (decision `policies`)
- *   POST /probe/run {name}   deprecated: the quota probe read now, through quota/read-now (LEGACY, src/bridge/legacy.ts)
  *   POST /reap {id}     end what the session left running;  /reap/process {id, pid}  one of those processes
  *   POST /open {dir}    open a project directory in a new window of the user's editor
  *   POST /reveal {path} | /edit {path, line?}   show a path the system names in Finder, or open it in the user's editor
@@ -1000,7 +997,6 @@ export const httpServer = defineResource({
       apiRead('stats', { path: /^\/stats$/, answer: ({ query }) => statsRead(query) }),
       apiRead('landing', { path: /^\/landing$/, answer: ({ query }) => landingRead(query) }),
       apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, answer: (asked) => legacyRead('runs/<project>', asked) }),
-      apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, answer: (asked) => legacyRead('probe/<name>', asked) }),
       apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w.-]+)\/(?<item>[^/]+)$/, answer: ({ params }) => collectionItem(params.project!, params.collection!, params.item!) }),
       apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), undefined) }),
       apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), params.file) }),

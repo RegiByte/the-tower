@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/checkouts.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
+  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/checkouts.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) depends on rules over its status, its
@@ -44,8 +44,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 - A floor's worktrees and kept branches ([`worktreeVerbs`](ref:hub/src/bridge/verbs.ts#worktreeVerbs),
   [`branchOffers`](ref:hub/src/bridge/verbs.ts#branchOffers)) by the states the fold decides ([[tower-cuts-worktrees]],
   [[discard]], [[absorbed]], [[carried]]); a card's leftover processes
-  ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)) `reap` always; each probe
-  ([`probeOffers`](ref:hub/src/bridge/verbs.ts#probeOffers)) `run` unless it is off ([[probes]]); a policy `run` while
+  ([`resourceOffers`](ref:hub/src/bridge/verbs.ts#resourceOffers)) `reap` always; a policy `run` while
   it may run by hand and `approve` until its hash is approved, an open offer `accept` ([[policies]]).
 - Each verb that is a request of the renderer API comes with its call, the pair one of the thing's `actions`
   ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers) and its siblings, [`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)),

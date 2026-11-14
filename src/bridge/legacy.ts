@@ -1,12 +1,10 @@
 /**
  * What `LEGACY`'s moves do beyond a name, keyed by the old name: an old verb's input as the new one takes it and the
- * new reply as the old one answered; an old read's params and query, and its reply; an old board field's value, copied
- * from the part it moved to as it stood at the move, so a renderer reading the old field reads what it always did; and
- * an old stream code's facts as the readings the core folds. Everything here goes at 2.0 but the streams'.
+ * new reply as the old one answered; an old read's params and query, and its reply; and an old board field's value, copied
+ * from the part it moved to as it stood at the move, so a renderer reading the old field reads what it always did.
  */
-import { apiError, type ApiError, type Replies } from '../shared/api.ts'
+import type { ApiError } from '../shared/api.ts'
 import { legacyOf, type LegacyEntry } from '../shared/extensions.ts'
-import { usageReading, type RateLimitsReading } from '../shared/rate-limits.ts'
 import { POLICIES, type CardRun, type Offer, type OfferFields, type PolicyFields, type PolicyView } from '../shared/policies-legacy.ts'
 import { REVIEWS, reviewedIn, reviewPrompt } from '../shared/reviews.ts'
 import type { VerbAction } from '../shared/extensions.ts'
@@ -14,7 +12,7 @@ import type { FloorThread, ReviewsCardPart, ReviewsFloorPart } from '../shared/r
 import type { Board, Card, Floor } from './board.ts'
 import type { CrewEdge, Exemption } from './facts.ts'
 import { checkoutsOn, landedByRecord, type CheckoutState } from './checkouts.ts'
-import { noteActions, offered, probeOffers, type CardAction, type NoteCalls, type NoteVerb, type ProbeAction, type ProbeCalls, type ProbeVerb } from './verbs.ts'
+import { noteActions, offered, type CardAction, type NoteCalls, type NoteVerb } from './verbs.ts'
 
 /** An old verb: its input as the new one takes it, or why it can't be; the new verb's reply as the old one answered. */
 export type LegacyVerb = { input(old: unknown): unknown; reply(now: unknown): unknown }
@@ -31,44 +29,6 @@ export type LegacyField = (subject: unknown, board: Board) => unknown
 /** An old card verb's action, from its card and the extension's action on the card it moved to. */
 export type LegacyAction = (card: Card, now: VerbAction) => CardAction
 
-/** An old stream code's fact as a reading of a kind the core folds, or `undefined` when it is none (a failed read). */
-export type LegacyReading = (fact: unknown) => RateLimitsReading | undefined
-
-/** The probes the core ran before 1.90: their readers, a closed set. */
-type Reader = 'claude.usage'
-
-/** A probe's state as `board.probes` says it; the field holds none while the quota extension doesn't run, `off` among it. */
-export type ProbeState = 'new' | 'ok' | 'failing' | 'backoff' | 'unavailable'
-
-/** A probe as `board.probes` shows it, as it stood at 1.89. Times in epoch ms. */
-export type ProbeStatus = {
-  name: string
-  reads: Reader
-  /** How often it reads while nothing else holds it, ms. */
-  every: number
-  state: ProbeState
-  /** When it last read, answered or not. */
-  lastAt?: number
-  /** Why its last read has no answer. */
-  error?: string
-  /** When a read last answered. */
-  answeredAt?: number
-  failsInRow: number
-  /** How long it waits after its last read, ms: `every`, longer while backing off or unavailable. */
-  wait: number
-  /** When it reads next: a moment past (0 before its first read) means at the tower's next tick. */
-  nextAt: number
-  /** `nextAt` is set by what the sessions read: a session's turn read every limit it reads, and it reads no sooner than `every` after. */
-  held: boolean
-}
-
-/** A read as `GET /probe/<name>` answers it. */
-export type ProbeRead = { reads: Reader; ms: number } & ({ ok: true; answer: unknown } | { ok: false; error: string })
-
-/** `GET /probe/<name>`: a probe's status and its latest reads, newest first. */
-export type ProbeView = { status: Board['probes'][number]; reads: ({ at: number } & ProbeRead)[] }
-
-const QUOTA_ONLY = (name: string | undefined) => apiError('not_found', `No probe "${name}": the tower runs quota, the quota extension's (tower x quota)`)
 
 /** An old verb whose input and reply are the new one's. */
 const same: LegacyVerb = { input: (old) => old, reply: (now) => now }
@@ -78,13 +38,6 @@ export const LEGACY_VERBS: Record<string, LegacyVerb> = {
   'policy/pass': same,
   'policy/approve': same,
   'review/append': same,
-  'probe/run': {
-    input: (old) => ((old as { name: string }).name === 'quota' ? {} : QUOTA_ONLY((old as { name: string }).name)),
-    reply: (now) => {
-      const { command: _, commands: __, said: ___, ...read } = now as Omit<Replies['probe/run'], 't'> & { command?: string; commands: unknown; said: string }
-      return { t: 'probed', ...read }
-    },
-  },
 }
 
 export const LEGACY_READS: Record<string, LegacyRead> = {
@@ -93,19 +46,7 @@ export const LEGACY_READS: Record<string, LegacyRead> = {
     request: ({ project }, { policy, limit }) => ({ params: { project: project! }, query: { policy: String(policy), limit: String(limit) } }),
     reply: (now) => now,
   },
-  'probe/<name>': {
-    request: ({ name }, { last }) => (name === 'quota' ? { params: {}, query: { last: String(last) } } : QUOTA_ONLY(name)),
-    reply: (now, board) => {
-      const status = board.probes.find((p) => p.name === 'quota')
-      if (!status) return apiError('unavailable', 'The quota extension folds no status now: tower extensions says why')
-      const reads = (now as { reads: ({ at: number; ms: number } & ({ ok: true; answer: unknown } | { ok: false; error: string }))[] }).reads
-      return { status, reads: reads.map((read) => ({ ...read, reads: 'claude.usage' })) } satisfies ProbeView
-    },
-  },
 }
-
-/** The quota extension's part, as `board.x.quota` holds it. */
-type QuotaPart = Omit<ProbeStatus, 'name' | 'reads'> & { commands?: unknown }
 
 /** A call as the policies extension's part names it: its verb, and its input. */
 type MovedCall = [verb: string, input: unknown]
@@ -174,13 +115,6 @@ export const LEGACY_FIELDS: Record<string, LegacyField> = {
   'card.calls.note': (card) => ({ ...(card as Card).calls, ...cardNote(card as Card).calls }),
   'card.actions.note': (card) => beforeSendHome((card as Card).actions, cardNote(card as Card).actions, (a) => a.verb),
   'card.reviews': (card) => ((card as Card).x?.reviews as { of?: string } | undefined)?.of ?? (card as Card).reviews,
-  'board.probes': (board) => {
-    const part = (board as Board).x?.quota as QuotaPart | undefined
-    if (!part) return []
-    const { commands: _, ...quota } = part
-    const offers: { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] } = probeOffers('quota', false)
-    return [{ name: 'quota', reads: 'claude.usage', ...quota, ...offers }]
-  },
 }
 
 export const LEGACY_ACTIONS: Record<string, LegacyAction> = {
@@ -200,18 +134,6 @@ const withOldActions = (card: Card, board: Board): Card => {
   const at = card.actions.findIndex((a) => CLOSING.has(a.verb))
   const actions = at === -1 ? [...card.actions, ...moved] : [...card.actions.slice(0, at), ...moved, ...card.actions.slice(at)]
   return { ...card, ...offered(actions) }
-}
-
-/** By an old stream's folder, then code: what the core folds of its facts. */
-export const LEGACY_READINGS: Record<string, Record<string, LegacyReading>> = {
-  'probe.quota': {
-    p: (fact) => {
-      const read = fact as ProbeRead
-      if (!read.ok) return undefined
-      const { unavailable: _, ...reading } = usageReading(read.answer)
-      return reading
-    },
-  },
 }
 
 /** What a spawn logged about its hire: its exemptions (`tower.exempt`) and its crew edge (`tower.reports-to`). */

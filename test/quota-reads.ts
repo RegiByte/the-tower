@@ -1,12 +1,16 @@
-import { LEGACY_READINGS, type ProbeRead } from '../src/bridge/legacy.ts'
+import { usageReading } from '../extensions/quota/usage.ts'
 import { limitFacts, NO_LIMITS, type LimitFacts } from '../src/bridge/rate-limits.ts'
+import type { RateLimitsReading } from '../src/shared/rate-limits.ts'
 
-/** A read of the quota probe's stream as the core's probe wrote it before 1.90, at its moment. */
+/** A read of the quota probe, answered or not, as its stream's `p` facts hold one. */
+export type ProbeRead = { reads: 'claude.usage'; ms: number } & ({ ok: true; answer: unknown } | { ok: false; error: string })
+
+/** A read at its moment. */
 export type ProbeReading = [at: number, read: ProbeRead]
 
-/** Reads of the old format folded as the core folds the quota stream's folder, `probe.quota`. */
+/** Each answered read folded as the core folds the reading the quota extension appends of its answer, a `u` fact. */
 export const quotaLimits = (readings: ProbeReading[]): LimitFacts =>
   limitFacts(
-    readings.map(([at, read]) => [at, 'p', read]),
-    (code, fact) => LEGACY_READINGS['probe.quota'][code]?.(fact),
+    readings.flatMap(([at, read]) => (read.ok ? [[at, 'u', usageReading(read.answer)] as const] : [])),
+    (_, fact) => fact as RateLimitsReading,
   )[0] ?? NO_LIMITS

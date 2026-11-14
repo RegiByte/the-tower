@@ -24,7 +24,6 @@
     "hub/src/bridge/rate-limits.ts#accountsOf",
     "hub/src/bridge/rate-limits.ts#commandLimits",
     "hub/src/bridge/rate-limits.ts#streamLimitsStep",
-    "hub/src/bridge/legacy.ts#LEGACY_READINGS",
     "hub/src/system.ts#probesGone",
     "hub/src/bridge/rate-limits.ts#readingStreams",
     "hub/extensions/quota/client/quota.ts#quotaOf",
@@ -41,7 +40,7 @@
     { "to": "stats", "verb": "feeds", "carries": "seven_day readings from probe reads" },
     { "to": "env-scrub", "verb": "follows", "carries": "the probe's claude runs with the command's env, the parent session scrubbed" },
     { "to": "log-retention", "verb": "follows", "carries": "a stream's closed months, archived by Tidy" },
-    { "to": "extensions", "verb": "follows", "carries": "a bundled extension, its old names answered through LEGACY" }
+    { "to": "extensions", "verb": "follows", "carries": "a bundled extension, its stream in the folder the core wrote" }
   ]
 }
 ---
@@ -53,8 +52,8 @@ desktop app, a phone) or when the user is away: the moment standing work would n
 `get_usage` control request with `/usage`'s data and spends no API time on it (`test/fixtures/probe-usage.out`).
 Facts go in a log ([[logs-are-facts]]); what they mean is folded.
 
-**How.** The probe is the bundled extension `quota` ([[extensions]]), which keeps the stream folder and old names of
-the core code it replaced.
+**How.** The probe is the bundled extension `quota` ([[extensions]]), which keeps the stream folder of the core code
+it replaced.
 - *Settings.* `extensions.quota.settings.every` (default `10m`, a minute at least) and `extensions.quota.off`
   ([`extension.json`](ref:hub/extensions/quota/extension.json)). The old spelling, `probes.quota.*`, is refused since
   2.0: the tower says so on the board and `tower config check` fails it, each naming the line to write
@@ -76,16 +75,16 @@ the core code it replaced.
   leaves the next to read. `quota/read-now` reads one `command`, or every command but those within the floor.
 - *A stream, one writer.* Its stream `reads` lives in `streams/system/probe.quota/`, the folder the core wrote
   (`LEGACY`): `u` an answered read, of the core's kind `tower/rate-limits`; `f` a read with no answer; `p` a read as
-  the core wrote it, never written again. A read names its `command` where `argv` names them; the extension folds by
+  the core wrote it before 1.90, never written again: the extension's status still folds it, the core's limits no
+  longer do. A read names its `command` where `argv` names them; the extension folds by
   that name ([`stepByCommand`](ref:hub/extensions/quota/status.ts#stepByCommand)), and what names none is the default
   command's, derived when read ([`withReads`](ref:hub/extensions/quota/status.ts#withReads)). Skipped reads are not
   logged; each read stands alone, so a broken line costs that read only.
 - *Folded beside the sessions.* A stream fact declaring `tower/rate-limits`
   ([`RateLimitsReading`](ref:hub/src/shared/rate-limits.ts#RateLimitsReading)) in a system stream of any resolved
   manifest is folded by the core ([`readingStreams`](ref:hub/src/bridge/rate-limits.ts#readingStreams),
-  [`limitsStep`](ref:hub/src/bridge/rate-limits.ts#limitsStep)), and an old `p` through
-  [`LEGACY_READINGS`](ref:hub/src/bridge/legacy.ts#LEGACY_READINGS), so turning the probe off stops new reads and
-  keeps every past one. Each `argv` command is an account ([`accountsOf`](ref:hub/src/bridge/rate-limits.ts#accountsOf)):
+  [`limitsStep`](ref:hub/src/bridge/rate-limits.ts#limitsStep)), so turning the probe off stops new reads and keeps
+  every past one. Each `argv` command is an account ([`accountsOf`](ref:hub/src/bridge/rate-limits.ts#accountsOf)):
   a turn's reading is its session header's command's, a stream's its `command`'s, kept apart within the stream
   ([`streamLimitsStep`](ref:hub/src/bridge/rate-limits.ts#streamLimitsStep)), and what names none the default
   command's, so old readings need no migration; what names a command `argv` no longer holds is no account's.
@@ -102,13 +101,14 @@ the core code it replaced.
   `tower x quota probes`) and the doctor's check `reading` answer from the same folds
   ([`commandLimitsLine`](ref:hub/extensions/quota/status.ts#commandLimitsLine)), and `quota/read-now` reads through the
   path a tick takes.
-- *Old names.* `POST /probe/run`, `GET /probe/<name>`, `board.probes`, the board's top-level copies of the default
-  command's limits and those in `/cards.js` ([`src/shared/limits.ts`](ref:hub/src/shared/limits.ts#probeLine)) answer
-  through the extension, deprecated (`LEGACY`).
+- *Old names, gone at 2.0.* `POST /probe/run`, `GET /probe/<name>`, `board.probes`, the probe words in `/cards.js`
+  and the core's reading of old `p` facts: the extension's names are the one way in. The board's top-level copies of
+  the default command's limits stay deprecated until 2.0's removal of them.
 - *Closed months archived* by Tidy like any stream's ([[log-retention]]).
 
 **Alternatives considered.** A kind whose facts are Claude's raw answer: the core would parse each runtime's answer
-for good; a reading of `RateLimit[]` keeps the core runtime-neutral, and only the old `p` code is parsed by it.
+for good; a reading of `RateLimit[]` keeps the core runtime-neutral. Folding old `p` facts in the core for good: 2.0 dropped
+it once no installation the maintainer could check held one, so an older `p` reading no longer sets the limits.
 Rewriting the old folder into the new codes: a rollback would find nothing. A timer in the host: it must stay small,
 its changes kill sessions, and it knows no Claude flags ([[host-owns-ptys]]). A mod hook: runs only while a session
 runs, the gap itself. A daemon of its own, cron or launchd: another process to supervise, blind to the board.

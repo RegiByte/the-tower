@@ -4,14 +4,12 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { commandLimitsLine, due, NO_COMMAND_READS, NO_READS, readOf, statusOf, step, stepByCommand, withReads, type Reads, type ReadsByCommand } from '../extensions/quota/status.ts'
 import { usageAnswer } from '../extensions/quota/usage.ts'
-import { LEGACY_FIELDS, LEGACY_READS, type ProbeRead } from '../src/bridge/legacy.ts'
-import type { Board } from '../src/bridge/board.ts'
 import type { RateLimit } from '../src/bridge/facts.ts'
 import { accountLimits, NO_LIMITS as NO_STREAM } from '../src/bridge/rate-limits.ts'
 import { oldStreams } from '../src/bridge/retention.ts'
 import { streamFacts, type StreamFact } from '../src/bridge/streams.ts'
 import { weeklyBudget } from '../src/bridge/stats.ts'
-import { quotaLimits, type ProbeReading } from './quota-reads.ts'
+import { quotaLimits, type ProbeRead, type ProbeReading } from './quota-reads.ts'
 
 const text = (name: string) => readFileSync(path.join(import.meta.dirname, 'fixtures', name), 'utf8')
 
@@ -158,21 +156,6 @@ test('a read the quota extension writes folds as one the core wrote: u and f bes
   const now = foldReads([[NOW, 'u', { ms: 1, answer, limits: [{ kind: 'five_hour', percentUsed: 11 }, { kind: 'seven_day', percentUsed: 89 }, { kind: 'seven_day_fable', percentUsed: 0 }], unavailable: false }], [NOW + MIN, 'f', { ms: 1, error: 'x' }]])
   assert.deepEqual(now, old)
   assert.deepEqual(readOf([NOW, 'f', { ms: 1, error: 'x' }]), readOf([NOW, 'p', { reads: 'claude.usage', ms: 1, ok: false, error: 'x' }]))
-})
-
-test("LEGACY copies the quota part back to board.probes as 1.89 had it, and GET /probe/quota answers its old shape", () => {
-  const facts = stream('probe-quota.jsonl')
-  const x = statusOf(EVERY, foldReads(facts), NO_LIMITS)
-  const [probe] = LEGACY_FIELDS['board.probes']({ x: { quota: x } }, {} as Board) as Board['probes']
-  assert.deepEqual(Object.keys(probe).slice(0, 4), ['name', 'reads', 'every', 'state'])
-  assert.deepEqual([probe.name, probe.reads, probe.state, probe.calls], ['quota', 'claude.usage', 'backoff', { run: ['probe/run', { name: 'quota' }] }])
-  assert.deepEqual(LEGACY_FIELDS['board.probes']({}, {} as Board), [], 'none while the extension does not run')
-  const { request, reply } = LEGACY_READS['probe/<name>']
-  assert.deepEqual(request({ name: 'quota' }, { last: 2 }), { params: {}, query: { last: '2' } })
-  assert.equal((request({ name: 'mine' }, { last: 2 }) as { code: string }).code, 'not_found')
-  const reads = facts.slice(-2).reverse().map((f) => readOf(f)!)
-  const view = reply({ reads }, { probes: [probe] } as Board) as { reads: ProbeRead[] }
-  assert.deepEqual(view.reads.map((r) => [r.reads, r.ok]), [['claude.usage', false], ['claude.usage', false]])
 })
 
 test("Tidy archives a stream's month once it closed more than retention.days ago, never the month still written", () => {

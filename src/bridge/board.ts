@@ -12,7 +12,7 @@ import { shellActivity, type Shell } from '../shared/terms.ts'
 import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { chainsOf, continuations, lineage, namer, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
 import type { CardRun, Offer, PolicyView } from '../shared/policies-legacy.ts'
-import { legacyCrew, legacyReviewer, type ProbeStatus } from './legacy.ts'
+import { legacyCrew, legacyReviewer } from './legacy.ts'
 import { accountsOf, commandLimits, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
@@ -33,9 +33,6 @@ import {
   sendHomeActions,
   type CardAction,
   type CardCalls,
-  type ProbeAction,
-  type ProbeCalls,
-  type ProbeVerb,
   type CardVerb,
   type ConversationAction,
   type ConversationCalls,
@@ -429,12 +426,6 @@ export type Board = {
    * @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0.
    */
   turnLimits?: { at: number; limits: RateLimit[] }
-  /**
-   * The quota probe, the quota extension's part (`x.quota`) as it stood at 1.89, with `run`, a read now
-   * (`probe/run`): none while the extension doesn't run.
-   * @deprecated since 1.90: read `x.quota`, and call `quota/read-now`.
-   */
-  probes: (ProbeStatus & { verbs: ProbeVerb[]; calls: ProbeCalls; actions: ProbeAction[] })[]
   /** The default command's extra usage, as the probes' newest answer that had it said. @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0. */
   extraUsage?: ExtraUsage
   /** Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`). */
@@ -980,7 +971,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     limits,
     ...defaults,
-    probes: [],
     extensions,
     adds: absentAdds(config, stores),
     asks: [],

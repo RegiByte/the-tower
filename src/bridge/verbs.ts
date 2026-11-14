@@ -143,16 +143,6 @@ export type OfferVerb = 'accept'
 export type OfferCalls = { accept: Call<'policy/run'> }
 export type OfferAction = Action<OfferVerb, OfferCalls>
 
-/** A probe offers `run`, a read now, unless it is off: the tower refuses it while a read is in flight or within the floor. */
-export type ProbeVerb = 'run'
-export type ProbeCalls = { run?: Call<'probe/run'> }
-export type ProbeAction = Action<ProbeVerb, ProbeCalls>
-
-export const probeOffers = (name: string, off: boolean): Offers<ProbeVerb, ProbeCalls> => {
-  const verbs: ProbeVerb[] = off ? [] : ['run']
-  return actionsOf(verbs, { run: (): Call<'probe/run'> => ['probe/run', { name }] })
-}
-
 export const conversationOffers = (session: string, conversation: string, live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): Offers<ConversationVerb, ConversationCalls> => {
   const verbs = conversationVerbs(live, resumable, resumedBy)
   return actionsOf(verbs, { resume: (): Call<'resume'> => ['resume', { id: session, conversation }] })
