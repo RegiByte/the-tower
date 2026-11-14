@@ -203,6 +203,7 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   | `floorLimits(board, { command })` | `floorLimits(board, { runtimes })`, a floor as the board has it |
   | `TermViewIo.claude` (`mountTermView`'s `io`) | `wheelReports`: true for a session's terminal, false for a shell's |
   | `briefHtml({ briefs, … })` | `briefHtml({ briefs, agent, … })`, `agent` being `board.runtimes[card.runtime].label`, which signs the answers |
+  | `saidWhat(briefs, key)`, `saidOf(briefs)` | `saidWhat(briefs, key, agent)`, `saidOf(briefs, agent)`: a step's words are named by the runtime's label, `"Claude Code's words"` |
 
 - **The Brief's answers are `.bubble.agent`.** The class `.bubble.claude` on an answer is `.bubble.agent`. A user theme
   or a renderer's stylesheet that targets `.brief-view .bubble.claude` targets `.brief-view .bubble.agent` instead.

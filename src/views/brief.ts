@@ -81,7 +81,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     const opened = same ? openTools(body) : new Set<string>()
     regions.forEach((r) => r.close())
     for (const s of said.values()) kit.bus.clear(s.key)
-    said = new Map(saidOf(threads).map(({ key, text, what: _, ...s }) => [key, saidSubject({ ...s, card: card.id, project: card.project, body: text })]))
+    said = new Map(saidOf(threads, board.runtimes[card.runtime].label).map(({ key, text, what: _, ...s }) => [key, saidSubject({ ...s, card: card.id, project: card.project, body: text })]))
     for (const s of said.values()) kit.bus.publish(s, at.key)
     saidActs = actsOn(board)
     const acts = (key: string) => (saidActs ? `<span data-said-acts="${esc(key)}"></span>` : '')
@@ -134,7 +134,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     const target = e.target as Element
     if (target.closest('[data-region]') && host.contains(target.closest('[data-region]'))) return
     const said = target.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
-    if (said && threads) return copy(saidText(threads, said)!, saidWhat(threads, said)!)
+    if (said && threads) return copy(saidText(threads, said)!, saidWhat(threads, said, board.runtimes[card.runtime].label)!)
     const earlier = target.closest<HTMLElement>('[data-brief-earlier]')?.dataset.briefEarlier
     if (earlier) return void readWhole(earlier)
     const code = target.closest<HTMLElement>('[data-copy-code]')
