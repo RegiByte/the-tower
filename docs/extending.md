@@ -816,7 +816,7 @@ command that asks for the line.
 kind's schema as well as their own. The one kind is `tower/rate-limits`, a reading of the account's rate limits
 (`{ limits: [{kind, percentUsed, resetsAt?}], extraUsage?, runtime?, command? }`, Claude's when it names no `runtime`), in a
 system stream: the core folds every started extension's readings beside the sessions' turns' into the board's
-`limits`, `rateLimits`, `extraUsage`, the weekly budget and `/stats`. The bundled quota probe (`extensions/quota`) is one: its
+`limits`, the weekly budget and `/stats`. The bundled quota probe (`extensions/quota`) is one: its
 `u` facts are readings naming their `command`, read by its `tick` slot for each command whose entry of `board.limits`
 has a `turnLimits`, the newest reading a turn of it took, older than its `every`. `ctx.runtime('claude')` says how the config starts a session by its default command
 (`argv`, `env`), `ctx.commands('claude')` lists every command the config names (`name?`, `argv`, `env`, in `argv`'s
@@ -830,7 +830,7 @@ the session's header. `board.limits` holds one entry per command in `argv`'s ord
 first: `command` (absent in single-command mode), `rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and
 `extraUsage`. The weekly budget and `/stats`' `budget`, `weekly` and `outside` are the default command's too.
 `/lib/board.js` finds an entry, `limitsOf(board, command)` and `defaultLimits(board)`, and
-the limit words in `/lib/cards.js` take one as they take the board. A reading naming a command `argv` no longer holds
+the limit words in `/lib/cards.js` take one. A reading naming a command `argv` no longer holds
 is no entry's. Set `command` from `ctx.commands`, and a reader of several accounts runs one at a time.
 
 **Reviewers.** The reviews extension hires a reviewer with `reviews/hire {project, of, by?, tell?}`: a spawn
@@ -1623,7 +1623,6 @@ fields appear only under `x`. A renderer that draws extensions' actions draws th
 
 | Deprecated | Use |
 |---|---|
-| `board.rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits`, `extraUsage` at the top level | `defaultLimits(board)` of `/lib/board.js`, or the command's entry of `board.limits` |
 | `floor.threads`, `card.threadState`, `card.unseen`, `card.checkoutState.filed` | `floor.x.reviews.threads`, and `threadState`, `unseen` and `filed` of `card.x.reviews` |
 | the card's `note` verb, call and action | `card.x.reviews.note` |
 | `floor.tidy.threads` | the reviews extension's entries of `board.adds['floor:<project>'].tidy` |

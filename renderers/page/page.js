@@ -64,7 +64,7 @@ document.head.append(Object.assign(document.createElement('style'), { textConten
 watchTips(document)
 
 /** The board drawn until the first arrives: one with nothing on it. */
-const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], asks: [], adds: {}, limits: [{ rateLimits: [] }], rateLimits: [], extensions: [], viewers: {}, hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false, jobs: [], jobsUp: false }))
+const BLANK = /** @type {Board} */ (/** @type {unknown} */ ({ user: { name: 'user' }, keys: DEFAULT_KEYS, floors: [], waiting: [], asks: [], adds: {}, limits: [{ rateLimits: [] }], extensions: [], viewers: {}, hostUp: false, hostOutdated: false, claudeUntested: [], shells: [], termsUp: false, jobs: [], jobsUp: false }))
 /** The floor a worker on the board is on. @param {string} id @returns {string | undefined} */
 const projectOfCard = (id) => board().floors.find((f) => f.cards.some((c) => c.id === id))?.id
 /** The board drawn, as the page's machine holds it. */

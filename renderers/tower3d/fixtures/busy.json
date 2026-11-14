@@ -2356,19 +2356,6 @@
             "rateLimitsAt": 1791125820000
           }
         ],
-        "rateLimits": [
-          {
-            "kind": "five_hour",
-            "percentUsed": 64,
-            "resetsAt": "2026-10-04T16:30:00.000Z"
-          },
-          {
-            "kind": "seven_day",
-            "percentUsed": 27,
-            "resetsAt": "2026-10-07T15:00:00.000Z"
-          }
-        ],
-        "rateLimitsAt": 1791125820000,
         "x": {
           "quota": {
             "every": 600000,
@@ -4963,19 +4950,6 @@
             "rateLimitsAt": 1791125820000
           }
         ],
-        "rateLimits": [
-          {
-            "kind": "five_hour",
-            "percentUsed": 64,
-            "resetsAt": "2026-10-04T16:30:00.000Z"
-          },
-          {
-            "kind": "seven_day",
-            "percentUsed": 27,
-            "resetsAt": "2026-10-07T15:00:00.000Z"
-          }
-        ],
-        "rateLimitsAt": 1791125820000,
         "x": {
           "quota": {
             "every": 600000,
@@ -7554,19 +7528,6 @@
             "rateLimitsAt": 1791125820000
           }
         ],
-        "rateLimits": [
-          {
-            "kind": "five_hour",
-            "percentUsed": 64,
-            "resetsAt": "2026-10-04T16:30:00.000Z"
-          },
-          {
-            "kind": "seven_day",
-            "percentUsed": 27,
-            "resetsAt": "2026-10-07T15:00:00.000Z"
-          }
-        ],
-        "rateLimitsAt": 1791125820000,
         "x": {
           "quota": {
             "every": 600000,

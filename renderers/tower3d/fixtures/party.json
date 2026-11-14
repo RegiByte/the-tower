@@ -3954,27 +3954,6 @@
             }
           }
         ],
-        "rateLimits": [
-          {
-            "kind": "five_hour",
-            "percentUsed": 40,
-            "resetsAt": "2026-10-04T15:20:00.000Z"
-          },
-          {
-            "kind": "seven_day",
-            "percentUsed": 71,
-            "resetsAt": "2026-10-08T03:00:00.000Z"
-          }
-        ],
-        "rateLimitsAt": 1791123600000,
-        "extraUsage": {
-          "at": 1791125760000,
-          "enabled": true,
-          "used": 37,
-          "limit": 50,
-          "currency": "USD",
-          "reached": false
-        },
         "x": {
           "quota": {
             "every": 600000,

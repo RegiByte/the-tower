@@ -394,24 +394,6 @@ export type Board = {
   archiveAt: number
   /** One entry per `argv` command, in its order, the default command's first; the only one in single-command mode. @since 1.152 */
   limits: CommandLimits[]
-  /** The default command's rate limits. @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0. */
-  rateLimits: RateLimit[]
-  /**
-   * When the default command's rate limits were read (epoch ms): a session's turn reads them, and the quota probe
-   * while no turn does, so they age only while neither reads.
-   * @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0.
-   */
-  rateLimitsAt?: number
-  /** Whose reading the default command's rate limits are: a session's turn, or a probe's read. @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0. */
-  rateLimitsFrom?: LimitsFrom
-  /**
-   * The newest reading a turn of the default command's sessions took, beside the account's: what a probe of its
-   * limits waits on while turns read them. @since 1.90
-   * @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0.
-   */
-  turnLimits?: { at: number; limits: RateLimit[] }
-  /** The default command's extra usage, as the probes' newest answer that had it said. @deprecated since 1.152: `defaultLimits(board)`; this copy goes at 2.0. */
-  extraUsage?: ExtraUsage
   /** Every extension the tower found, bundled first, then by id, as it stands: started, or why not (decision `extensions`). */
   extensions: ExtensionView[]
   /**
@@ -904,7 +886,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
   const occupants = occupantsOf(cards, shells)
   const accounts = accountsOf(config, sessions, readings)
   const limits = accounts.map(commandLimits)
-  const { command: _, ...defaults } = limits[0]
   const systemStreams = oldStreams(streams.filter((m) => m.file.startsWith('system/') || m.file.startsWith('jobs/')), config.retention?.days, now)
   return {
     user: { name: userName(config) },
@@ -952,7 +933,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     waiting: waitingOrder(cards),
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     limits,
-    ...defaults,
     extensions,
     adds: absentAdds(config, stores),
     asks: [],

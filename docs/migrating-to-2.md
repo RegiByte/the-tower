@@ -53,6 +53,11 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   | the module `/drafts.js` | `/x/drafts/drafts.js` |
 
   A removed route answers `not_found`; a removed board field is absent.
+- **`board.limits` is the one shape for rate limits.** The top-level copies of the default command's limits are gone:
+  `board.rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and `extraUsage`. Read the same fields from
+  `defaultLimits(board)` of `/lib/board.js`, or from a command's entry with `limitsOf(board, command)`. The limit
+  words of `/lib/cards.js` (`extraUsageLine`, `extraUsageAmounts`, `limitsFromTitle`) take an entry of
+  `board.limits`, no longer the board.
 - **Quota readings written before 1.90 no longer set the limits.** The core folded the `p` facts the old core probe
   wrote into `probe.quota/` beside the readings of kind `tower/rate-limits`; it now folds only the latter. The quota
   extension still reads `p` facts for its own status. A reading of your own extension's is folded as before, as long

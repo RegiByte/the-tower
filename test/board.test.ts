@@ -96,7 +96,7 @@ test('steps logged without their text say nothing', () => {
 test('the latest rate-limit reading of any session stands for the account', () => {
   const sessions = ['api-error', 'interrupts'].map(fixture).map((log) => ({ header: log.header, facts: factsOf(log) }))
   const latest = sessions.map((s) => s.facts.rateLimits!).sort((a, b) => b.at - a.at)[0]
-  assert.deepEqual(board(viewOf(CONFIG, { sessions, host: hostWith() })).rateLimits, latest.limits)
+  assert.deepEqual(board(viewOf(CONFIG, { sessions, host: hostWith() })).limits[0].rateLimits, latest.limits)
 })
 
 test('a session without a logged exit is lost once the host stops running it', () => {

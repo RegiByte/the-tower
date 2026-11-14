@@ -1003,7 +1003,6 @@
             "rateLimits": []
           }
         ],
-        "rateLimits": [],
         "extensions": [
           {
             "id": "reviews",
@@ -2191,7 +2190,6 @@
             "rateLimits": []
           }
         ],
-        "rateLimits": [],
         "extensions": [
           {
             "id": "reviews",
@@ -3379,7 +3377,6 @@
             "rateLimits": []
           }
         ],
-        "rateLimits": [],
         "extensions": [
           {
             "id": "reviews",

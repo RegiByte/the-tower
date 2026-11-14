@@ -33,13 +33,14 @@ test("two sessions under two named commands fold into two entries, each its own 
   ])
 })
 
-test('the board holds an entry per command in argv order, the top-level fields the default command\'s copies', () => {
+test('the board holds an entry per command in argv order, the default command\'s first', () => {
   const b = board(viewOf(TWO, { sessions }))
   assert.deepEqual(b.limits.map((l) => l.command), ['work', 'home'])
-  assert.deepEqual([b.rateLimits, b.rateLimitsAt, b.rateLimitsFrom, b.turnLimits], [WORK_LIMITS, atOf(work), 'session', { at: atOf(work), limits: WORK_LIMITS }])
+  const { rateLimits, rateLimitsAt, rateLimitsFrom, turnLimits } = defaultLimits(b)
+  assert.deepEqual([rateLimits, rateLimitsAt, rateLimitsFrom, turnLimits], [WORK_LIMITS, atOf(work), 'session', { at: atOf(work), limits: WORK_LIMITS }])
   const swapped = board(viewOf({ ...TWO, argv: { home: ['claude-home'], work: ['claude'] } }, { sessions }))
   assert.deepEqual(swapped.limits.map((l) => l.command), ['home', 'work'])
-  assert.deepEqual(swapped.rateLimits, HOME_LIMITS, 'the default is whichever argv writes first')
+  assert.deepEqual(defaultLimits(swapped).rateLimits, HOME_LIMITS, 'the default is whichever argv writes first')
 })
 
 test('a command with no reading has its entry, empty', () => {
@@ -81,9 +82,8 @@ test("a limit only the other source reads is carried within one command, never a
 test("a single-command system's one entry holds every reading, named or not, and names no command", () => {
   const b = board(viewOf(ONE, { sessions }))
   const newest = atOf(work) > atOf(home) ? work : home
-  const { rateLimits, rateLimitsAt, rateLimitsFrom, turnLimits, extraUsage } = b
-  assert.deepEqual(b.limits, [{ rateLimits, rateLimitsAt, rateLimitsFrom, turnLimits, ...(extraUsage && { extraUsage }) }])
-  assert.deepEqual(rateLimits, newest.facts.rateLimits!.limits)
+  assert.equal(b.limits.length, 1)
+  assert.deepEqual(b.limits[0].rateLimits, newest.facts.rateLimits!.limits)
   assert.equal('command' in b.limits[0], false)
 })
 
