@@ -35,7 +35,7 @@ contract if authors can find everything they need on it.
   (`RegionOptions`, `Kit.region`'s), or when it is a field of a kept type whose value every view or extension
   author handles in their own code (`Scale`, each view's `ctx.scale`). A type only a host or renderer author builds
   in place is not: it is spelled through its holder (`HostDeps['fills']`, not `Fills`). A name that has met one consumer is marked `@provisional`: it may change in a minor until a second
-  consumer promotes it. A name whose output carries something for the core alone says that part is unspecified:
+  consumer promotes it; a member can be provisional in a stable type (`Loop`'s `until`). A name whose output carries something for the core alone says that part is unspecified:
   `sectionsHtml`'s html draws the sections, and the source marks in it are not contract.
 - **A core view is a client.** `src/views/` imports the library by URL, and reaches `src/shared` by path for what only
   the views use, until a second consumer asks. A sibling renderer can mount a core view, so a view's drawing is no
