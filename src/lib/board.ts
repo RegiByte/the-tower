@@ -58,11 +58,11 @@ export {
   linesSubject,
   /** @provisional */ linkedFile,
   /** @provisional */ parentOf,
-  /** @provisional */ projectOfKey,
+  projectOfKey,
   /** @provisional */ saidSubject,
   /** @provisional */ sectionSubject,
   /** @provisional */ shownSubject,
-  /** @provisional */ subjectAt,
+  subjectAt,
   textOf,
 } from '../shared/subjects.ts'
 export type {

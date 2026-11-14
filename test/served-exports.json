@@ -667,8 +667,7 @@
           "since": "2.0"
         },
         "projectOfKey": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "runVerb": {
           "since": "2.0"
@@ -698,8 +697,7 @@
           "stability": "provisional"
         },
         "subjectAt": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "textOf": {
           "since": "2.0"
@@ -1008,12 +1006,10 @@
           "since": "2.0"
         },
         "archiveWant": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "archivedCard": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "archivesMoved": {
           "since": "2.0",
@@ -1024,8 +1020,7 @@
           "stability": "provisional"
         },
         "attentionOrder": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "boardErrorTitle": {
           "since": "2.0"
@@ -1079,8 +1074,7 @@
           "since": "2.0"
         },
         "heededAsks": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "heededWaits": {
           "since": "2.0"
@@ -1092,8 +1086,7 @@
           "since": "2.0"
         },
         "isAsk": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "keptBranchLines": {
           "since": "2.0"
@@ -1137,8 +1130,7 @@
           "since": "2.0"
         },
         "nextAttended": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "onDisk": {
           "since": "2.0"
@@ -1301,8 +1293,7 @@
       },
       "types": {
         "ArchiveReads": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "Attended": {
           "since": "2.0",
@@ -1425,16 +1416,13 @@
       "runtime": "browser",
       "values": {
         "ask": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "asking": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "closableNoticer": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "closeOnBackdrop": {
           "since": "2.0",
@@ -1459,8 +1447,7 @@
       },
       "types": {
         "Notice": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         }
       }
     },
@@ -1468,8 +1455,7 @@
       "runtime": "browser",
       "values": {
         "clientOf": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         }
       },
       "types": {
@@ -1674,8 +1660,7 @@
       "runtime": "browser",
       "values": {
         "COMMANDS": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "DEFAULT_KEYS": {
           "since": "2.0"
@@ -1688,8 +1673,7 @@
           "stability": "provisional"
         },
         "addedCommandOf": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "chordLabel": {
           "since": "2.0"
@@ -1722,8 +1706,7 @@
           "stability": "provisional"
         },
         "panesOf": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         }
       },
       "types": {
@@ -1964,8 +1947,7 @@
           "since": "2.0"
         },
         "Loop": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "ReadEffect": {
           "since": "2.0",
@@ -2357,8 +2339,7 @@
           "stability": "provisional"
         },
         "keyedTip": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "mountKeptTray": {
           "since": "2.0"
@@ -2392,8 +2373,7 @@
           "since": "2.0"
         },
         "viewHost": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "withIcons": {
           "since": "2.0"
@@ -2408,12 +2388,10 @@
           "since": "2.0"
         },
         "HostDeps": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "Hosted": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "Kit": {
           "since": "2.0"
@@ -2434,8 +2412,7 @@
           "stability": "provisional"
         },
         "Placed": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "Placing": {
           "since": "2.0",
@@ -2452,16 +2429,13 @@
           "since": "2.0"
         },
         "TabWords": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "View": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "ViewHost": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         }
       }
     },
@@ -2482,8 +2456,7 @@
           "since": "2.0"
         },
         "reducedMotion": {
-          "since": "2.0",
-          "stability": "provisional"
+          "since": "2.0"
         },
         "sawAll": {
           "since": "2.0"

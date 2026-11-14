@@ -1,7 +1,7 @@
 /** The library's `/lib/chrome.js`: toasts, tooltips and the confirm dialog. */
 export {
-  /** @provisional */ ask,
-  /** @provisional */ asking,
+  ask,
+  asking,
   /** @provisional */ closeOnBackdrop,
 } from '../shared/ask.ts'
 export {
@@ -9,11 +9,11 @@ export {
   watchTips,
 } from '../shared/tips.ts'
 export {
-  /** @provisional */ closableNoticer,
+  closableNoticer,
   /** @provisional */ noticer,
   toaster,
   toastsCss,
 } from '../shared/toasts.ts'
 export type {
-  /** @provisional */ Notice,
+  Notice,
 } from '../shared/toasts.ts'
