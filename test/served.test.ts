@@ -6,9 +6,8 @@ import { test } from 'node:test'
 import vm from 'node:vm'
 import { API_VERSION, HOOKS } from '../src/shared/api.ts'
 import { designCss } from '../src/shared/design.ts'
-import { bundledClient, clientSource } from '../src/extensions.ts'
-import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, legacyOf, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
-import { bundled, bundledFile, clientModule, MODULES, towerClient } from '../src/tower/served.ts'
+import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
+import { bundled, clientModule, MODULES, towerClient } from '../src/tower/served.ts'
 import { FACT_KINDS } from '../src/shared/rate-limits.ts'
 import { CLI_REGIONS, type Region } from '../src/shared/regions.ts'
 import { declaredAt } from '../src/renderers.ts'
@@ -88,10 +87,6 @@ function servedNow(): Record<string, string[]> {
     ],
   }
   for (const url of Object.keys(MODULES)) served[url] = bundled(url).exports
-  for (const { old, now } of legacyOf('module')) {
-    const { cap, file } = /^\/x\/(?<cap>[^/]+)\/(?<file>.+)$/.exec(now)!.groups!
-    served[old] = bundledFile(clientSource(bundledClient(cap!)!, file!)!).exports
-  }
   return Object.fromEntries(Object.entries(served).map(([url, names]) => [url, [...names].sort()]))
 }
 

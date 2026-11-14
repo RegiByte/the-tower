@@ -90,20 +90,14 @@ export const ICONS = '1.130'
 const GATE = '1.107'
 
 /**
- * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
- * `read` the core's route without its slash and its new qualified name; `module` a served URL; `stream` a folder under
- * `streams/` and the stream's name (`quota.reads`), whose facts stay in the old folder for good; `board` a field by its
- * subject (`board.<field>`, `floor.<field>`, `card.<field>`) and where the part it is copied from sits now; `view` a
- * core view retired and what draws its subjects now (`tower/shown`, by the views by type), its id in a layout read as
- * theirs (`VIEW_ALIASES` in `/views.js`). What a verb's, a read's or a field's move does beyond the name is in
- * `src/bridge/legacy.ts`, keyed by `old`.
+ * One of the built-ins' old names and what it is `now`, since the minor it moved in: `stream` a folder under
+ * `streams/` and the stream's name (`quota.reads`), whose facts stay in the old folder for good; `view` a core view
+ * retired and what draws its subjects now (`tower/shown`, by the views by type), its id in a layout read as theirs
+ * (`VIEW_ALIASES` in `/views.js`).
  */
-export type LegacyEntry = { kind: 'module' | 'verb' | 'read' | 'stream' | 'board' | 'view'; old: string; now: string; since: string }
+export type LegacyEntry = { kind: 'stream' | 'view'; old: string; now: string; since: string }
 
-/**
- * The built-ins' old names, each with what it is now: a fixed list, added to only as a built-in moves into a bundled
- * extension or a core view retires, never after 2.0. 2.0 removes every entry but the streams', whose folders hold what was written.
- */
+/** The built-ins' old names that outlive 2.0, each with what it is now: the moved streams, whose folders hold what was written, and the retired view. */
 export const LEGACY: readonly LegacyEntry[] = [
   { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: KINDS },
   { kind: 'stream', old: 'runs', now: 'policies.runs', since: POLICIES_MOVED },

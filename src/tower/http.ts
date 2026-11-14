@@ -47,7 +47,6 @@
  *   GET  /shown/<id>/<path>   a file the session showed (its absolute path), or what a page it showed pulls in: anything
  *                             beside or below an html file, an image beside or below a markdown one, none of it hidden
  *   GET  /design.css    the design tokens as variables, and the faces;  GET /design.js  the design module (src/shared/design.ts)
- *   GET  /drafts.js     deprecated: `/x/drafts/drafts.js`, served there with a `Deprecation` header (`LEGACY`)
  *   GET  /cards.js      what renderers say about a worker (src/shared/cards.ts)
  *   GET  /icons.js      the icons renderers draw for the same things (src/shared/icons.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
@@ -94,7 +93,6 @@ import { existsSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import { z } from 'zod'
-import { legacyNamed } from '../bridge/legacy.ts'
 import { accountsOf } from '../bridge/rate-limits.ts'
 import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
 import { withLiveness } from '../bridge/status.ts'
@@ -117,7 +115,7 @@ import { attachJob, attachShell } from '../shared/client.ts'
 import { jobsNow } from '../bridge/jobs.ts'
 import type { JobStream } from '../shared/jobs.ts'
 import { designCss, fonts } from '../shared/design.ts'
-import { legacyOf, MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated, type LegacyEntry } from '../shared/extensions.ts'
+import { MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated } from '../shared/extensions.ts'
 import { bundledClient, clientSource } from '../extensions.ts'
 import { placedOn } from '../bridge/board.ts'
 import { briefConfig, callsignsOf, ConfigError, outsideProject, projectDirs, sessionDirs, shelfItem, towerHosts, type Config, type Project, type Renderer, type SessionLog, type ShelfEntry } from '../shared/model.ts'
@@ -656,7 +654,7 @@ export const httpServer = defineResource({
      * A file of the client folder of the extension providing `cap`: the running one's, else the bundled one's, so a
      * renderer built on a bundled client keeps loading while that extension is off. A `.ts` source is served bundled.
      */
-    async function clientFile(res: http.ServerResponse, cap: string, file: string, headers: http.OutgoingHttpHeaders) {
+    async function clientFile(res: http.ServerResponse, cap: string, file: string) {
       if (cap === 'tower') return coreViewFile(res, file)
       const dir = clientDirOf(cap)
       if (!dir) return fail(res, 'not_found', `No running extension provides ${cap} with a client folder`)
@@ -664,9 +662,9 @@ export const httpServer = defineResource({
       if (!source) return fail(res, 'not_found', `${cap}'s client serves no "${file}"`)
       if (path.extname(source) === '.ts') {
         const text = await clientModule(source)
-        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN, ...headers }).end(text)
+        return res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(text)
       }
-      serveFile(res, source, { ...ANY_ORIGIN, ...headers })
+      serveFile(res, source, ANY_ORIGIN)
     }
 
     /** A module of the core's views (`CORE_VIEWS`, `/views.js`), served from `src/views/` as a client is. */
@@ -675,12 +673,6 @@ export const httpServer = defineResource({
       if (!source) return fail(res, 'not_found', `The core serves no view module "${file}"`)
       const text = await clientModule(source)
       res.writeHead(200, { 'content-type': 'text/javascript', ...FRESH, ...ANY_ORIGIN }).end(text)
-    }
-
-    /** A served module from before it moved into its bundled extension: what it is now, said deprecated (RFC 9745), with a `Link` to it. */
-    function legacyModule(res: http.ServerResponse, { now }: LegacyEntry) {
-      const { cap, file } = /^\/x\/(?<cap>[^/]+)\/(?<file>.+)$/.exec(now)!.groups!
-      return clientFile(res, cap!, file!, { deprecation: '@0', link: `<${now}>; rel="successor-version"` })
     }
 
     /** Every renderer, and the one `/` opens. */
@@ -866,8 +858,6 @@ export const httpServer = defineResource({
         return send(res, await (MUX[route] as (input: unknown) => Answer | Promise<Answer>)(input.data))
       }
       if (!core) deprecate(res, dispatch.deprecationOf(q!.cap, q!.name))
-      const moved = core ? legacyNamed('verb', route) : undefined
-      if (moved) deprecate(res, { since: moved.since, use: moved.now })
       send(res, await dispatch.call(core ? `tower/${route}` : route, body.json, callerOf(req)))
     }
 
@@ -979,7 +969,7 @@ export const httpServer = defineResource({
       apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), params.file) }),
       plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
       plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
-      plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ res, params }) => clientFile(res, params.cap!, params.file!, {}) }),
+      plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ res, params }) => clientFile(res, params.cap!, params.file!) }),
       apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, answer: ({ params }) => shownFile(params.id!, params.path!) }),
     ] as const satisfies readonly Read[]
 
@@ -1149,8 +1139,6 @@ export const httpServer = defineResource({
       if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return revalidated(req, res, 'text/javascript', towerClient(servedNow))
       if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(req, res, url)
       if (req.method === 'GET' && /^\/(lib|shared|src|vendor)\//.test(url)) return served(req, res, url.split('?')[0])
-      const legacy = legacyOf('module').find((e) => e.old === url)
-      if (req.method === 'GET' && legacy) return legacyModule(res, legacy)
       const [pathname, search] = url.split('?')
       if (req.method === 'GET') return route(req, res, pathname, search === undefined ? '' : `?${search}`)
       if (req.method === 'POST') return command(req, res, pathname.slice(1))

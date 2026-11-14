@@ -41,8 +41,7 @@ board and the archive.
 - [`GET /archive/<project>`](ref:hub/src/tower/http.ts#archive) serves
   [`archiveOf`](ref:hub/src/bridge/board.ts#archiveOf) over `allCards` (`Card[]`, newest first, the same card
   shape), typed in `Reads` and as `tower.archive`. Its cards are folded as the board's are
-  ([`archivedCards`](ref:hub/src/tower/publisher.ts#archivedCards): each running extension's card folds, then
-  `LEGACY`'s copies), so an archived card carries `x` and the old fields too ([[extensions]]). Reads arriving
+  ([`archivedCards`](ref:hub/src/tower/publisher.ts#archivedCards): each running extension's card folds), so an archived card carries `x` too ([[extensions]]). Reads arriving
   together share one build of every card and the core's board, the last one a board or a read made, while its key
   holds (`changes` reported, the config's text, the viewers, the day) for at most `ARCHIVE_SHARE_MS` (1 s): each read
   folds its own floor on it, served as a read at the instant the build was made
