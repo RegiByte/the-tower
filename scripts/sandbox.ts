@@ -215,7 +215,7 @@ async function prepareConfig(port: number | undefined) {
   /** A config written when this floor's hub was the checkout itself, whose git is the real repository's. */
   if (config.projects.tower) config.projects.tower.hub = FLOOR_HUB
   /** A sandbox's quota probe would read the real account: it is turned on by hand to try it. */
-  if (config.probes === undefined) config.extensions = { quota: { off: true }, ...config.extensions }
+  config.extensions = { quota: { off: true }, ...config.extensions }
   writeFileSync(CONFIG, JSON.stringify(config, null, 2))
 }
 

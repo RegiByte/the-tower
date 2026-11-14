@@ -83,7 +83,6 @@ header also resumes under `argv`'s first, not its floor's preferred one.
 | `brief.pairs` | How many of a conversation's last turns a worker's brief shows, each a prompt with Claude's latest answer to it. A project's own wins. | 2 |
 | `port` | The loopback port the tower serves on, `http://127.0.0.1:<port>`: the user's page and the API. A whole number from 1 to 65535. The tower reads it when it starts: after a change, `tower down tower`, then `tower up tower`. | 4317 |
 | `hosts` | Names the tower answers to beside `127.0.0.1` and `localhost`, such as `["mini.localhost"]`: the page opens at `http://<name>:<port>`, or at the bare name behind a proxy on port 80 or 443. Browsers send every `*.localhost` name to the machine itself, so those need nothing else; another name needs its own DNS record or `/etc/hosts` line. Lower case host names, no port or scheme. A POST must carry the Origin of the name it was sent to. Read on every request: an edit holds at once. | none |
-| `probes` | Deprecated since 1.90, honoured until 2.0: `probes.quota.off` and `probes.quota.every`, the quota probe's old spelling, read as `extensions.quota.off` and `extensions.quota.settings.every` (see [The quota probe](#the-quota-probe)). Either set beside its new spelling is an error; any other probe or field is read by nothing. | none |
 | `retention.days` | How long after its worker ended a session's log stays plain before Tidy offers to archive it (gzip it in place), and after its month closed a stream's month file (an extension's system stream, such as the quota probe's reads, or a floor's policy runs and approvals). | never |
 | `keys` | Chords that replace the keymap's defaults, by command id: see [Keys](#keys). | the defaults |
 | `extensions` | The extensions the tower runs beside the bundled ones, and the bundled ones' overrides, by id: see [Extensions](#extensions). | the bundled ones |
@@ -187,8 +186,8 @@ stands (its last read, why it failed, when it reads next) is the board's `x.quot
 command's in `commands`, drawn under the limits in both renderers (Tower 3D draws the default command's), in `tower x quota probes` and in `tower doctor` (its check, `quota/reading`); its latest reads are at
 `GET /quota/reads`. A press of "read now" in either renderer, `tower x quota read-now` or
 `POST /quota/read-now` reads at once, each command at most once a minute: `{ "command": "work" }` reads one, and left
-out it reads every command in turn. The old spelling, `"probes": { "quota": { "off": true } }`,
-is honoured until 2.0, and `tower config check` warns with the line to write instead.
+out it reads every command in turn. The old spelling, `"probes": { "quota": { "off": true } }`, is refused since
+2.0: the tower says so on the board, and `tower config check` names the line to write instead.
 
 ### Autotidy
 

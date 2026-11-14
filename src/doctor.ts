@@ -9,7 +9,6 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { daemons, startedPid, type Daemon, type Holder } from './machine.ts'
 import { resolve, type Accepted } from './bridge/extensions.ts'
-import { respelled } from './bridge/legacy.ts'
 import { discover } from './extensions.ts'
 import { runProcess } from './run.ts'
 import { API_VERSION, isApiError, type ApiError } from './shared/api.ts'
@@ -256,8 +255,7 @@ const checkFailure = async (a: Accepted, check: Check, tower: Daemon): Promise<s
  * fails nothing.
  */
 const checkVerdicts = async (config: Config, tower: Daemon, answering: boolean): Promise<Verdict[]> => {
-  const now = respelled(config).config
-  const resolved = resolve(discover(now), now, API_VERSION)
+  const resolved = resolve(discover(config), config, API_VERSION)
   const checks = resolved.order.flatMap((id) => {
     const a = resolved.accepted.get(id)!
     return Object.entries(a.manifest.checks ?? {}).map(([name, check]) => ({ a, name, check }))

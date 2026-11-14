@@ -25,7 +25,7 @@
     "hub/src/bridge/rate-limits.ts#commandLimits",
     "hub/src/bridge/rate-limits.ts#streamLimitsStep",
     "hub/src/bridge/legacy.ts#LEGACY_READINGS",
-    "hub/src/bridge/legacy.ts#respelled",
+    "hub/src/system.ts#probesGone",
     "hub/src/bridge/rate-limits.ts#readingStreams",
     "hub/extensions/quota/client/quota.ts#quotaOf",
     "hub/extensions/quota/client/quota.ts#probeLine",
@@ -56,9 +56,9 @@ Facts go in a log ([[logs-are-facts]]); what they mean is folded.
 **How.** The probe is the bundled extension `quota` ([[extensions]]), which keeps the stream folder and old names of
 the core code it replaced.
 - *Settings.* `extensions.quota.settings.every` (default `10m`, a minute at least) and `extensions.quota.off`
-  ([`extension.json`](ref:hub/extensions/quota/extension.json)). The old spelling, `probes.quota.*`, is read by one
-  pure function at config-read time ([`respelled`](ref:hub/src/bridge/legacy.ts#respelled)); both spellings of a
-  field is a config error. The sandbox turns the extension off, so a throwaway system never reads the real account.
+  ([`extension.json`](ref:hub/extensions/quota/extension.json)). The old spelling, `probes.quota.*`, is refused since
+  2.0: the tower says so on the board and `tower config check` fails it, each naming the line to write
+  ([`probesGone`](ref:hub/src/system.ts#probesGone)). The sandbox turns the extension off, so a throwaway system never reads the real account.
 - *The reader.* Each command of `ctx.commands('claude')` in turn, run as a session of it runs (through any wrapper),
   in print mode with stream-json input and nothing loaded or saved ([`USAGE_ARGS`](ref:hub/extensions/quota/usage.ts#USAGE_ARGS)),
   through `ctx.run` from the temp dir with the command's env ([[env-scrub]]), sent one line, the `get_usage` control

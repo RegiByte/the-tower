@@ -67,9 +67,22 @@ const isCommand = (value: unknown): value is string[] => Array.isArray(value) &&
 /** Either the legacy array shape, or a non-empty object of named, non-empty commands. */
 export const validArgv = (value: unknown): boolean => isCommand(value) || (isObject(value) && Object.keys(value).length > 0 && Object.values(value).every(isCommand))
 
+/**
+ * `probes`, the quota probe's spelling before it moved into the quota extension, read by nothing since 2.0: what to
+ * write instead, its `off` and `every` carried over.
+ */
+export const probesGone = (probes: unknown): string => {
+  const quota = isObject(probes) && isObject(probes.quota) ? probes.quota : {}
+  const entry = { ...(quota.off !== undefined && { off: quota.off }), ...(quota.every !== undefined && { settings: { every: quota.every } }) }
+  return Object.keys(entry).length
+    ? `probes is the quota extension's old spelling, read by nothing since 2.0: write "extensions": { "quota": ${JSON.stringify(entry)} } and remove probes`
+    : "probes is the quota extension's old spelling, read by nothing since 2.0: remove it"
+}
+
 /** What `config` lacks of the keys every read of it stands on, `undefined` when it has them. */
 export const configLack = (config: Config): string | undefined => {
   if (!isObject(config)) return 'it holds no JSON object'
+  if ('probes' in config) return probesGone(config.probes)
   if (!validArgv(config.argv)) return 'argv must name the command sessions start with, such as ["claude"]'
   if (!isObject(config.projects)) return 'projects must be an object of floors, each with name, hub and repos'
   for (const [id, project] of Object.entries(config.projects)) {
