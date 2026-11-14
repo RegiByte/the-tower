@@ -891,7 +891,7 @@ item)` and `boardSubject(board)`, in `/lib/board.js`), then, from `/lib/layout.j
 (what extensions offer on it, drawn after the `actions` a card, a floor or a conversation carries itself), `badgesOf`
 and `actionWords` for a label. To press one, `isCommand(action) ? runCommandWith(board, action, subject, kit) :
 runVerb(action)` (`runVerb` in `/lib/board.js`): a verb is called with its call, a command's module imported from
-`/x/<cap>/` and its export called with `{ tower, board, target, subject, args, kit }`: `kit` is what the
+`/x/<cap>/` and its export called with `{ tower, board, target, args, kit }`: `kit` is what the
 renderer running it lends, `display`, `toast`, `notice`, `confirm`, `run` and `bus` (`CommandKit` in `/lib/view.js`),
 so "Add to grid" is `kit.display(target, { view: 'grid/grid' })`. A renderer that lends nothing passes `NO_KIT`
 (`/lib/layout.js`), whose every member fails, naming itself. `notice(text, action?)` is a toast that
@@ -1620,7 +1620,6 @@ fields appear only under `x`. A renderer that draws extensions' actions draws th
 
 | Deprecated | Use |
 |---|---|
-| `subject` in what a command is called with | `target`, whose `value` it is |
 | `tower/shown` in a layout (retired at 1.115) | the views by type: naming it in `order` leaves showings to their type's pick, and in `hidden` hides each view that draws them now |
 
 A stream keeps its old folder for good: the quota stream's facts stay in `probe.quota/`.
