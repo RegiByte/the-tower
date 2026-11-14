@@ -1,8 +1,8 @@
 # Migrating to 2.0
 
 2.0 removes what 1.x kept for compatibility: old shapes, old names and old ways in, each of which had a replacement
-in 1.x. It adds nothing to the API. This guide lists every change that can break something of yours, by who it
-reaches, each with what to do instead.
+in 1.x. It adds only the names that replace removed ones, and `card.runtime`, the runtime a worker runs on. This guide
+lists every change that can break something of yours, by who it reaches, each with what to do instead.
 
 It is written so that Claude can apply it. Point a Claude session at this file and at your extension, renderer, fork
 or config, and ask it to bring them to 2.0: each entry says what to find and what to change it to, and the tower's
@@ -10,7 +10,7 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 
 - **You run a tower:** read [Everyone who runs a tower](#everyone-who-runs-a-tower). Its first list is the order to
   do things in.
-- **You wrote an extension, a renderer, a shelf page or a theme:** read that section too, then
+- **You wrote or copied an extension, a renderer, a shelf page or a theme:** read that section too, then
   [Extension and renderer authors](#extension-and-renderer-authors). [Every name, 1.x to 2.0](#every-name-1x-to-20)
   says where each name you import went.
 - **You keep a fork:** read [Forks](#forks) as well.
@@ -96,7 +96,7 @@ Do these in order when you update:
   `every` to `extensions.quota.settings.every`, then remove `probes`.
 - **`keys.pane-reviews` is refused.** The config is not taken, and `tower config check` names the line to write:
   `"reviews/thread": <its value>` under `keys`, the chord of the reviews extension's thread view.
-- **A layout naming `tower/shown` no longer means the views that draw showings.** The view was retired at 1.115;
+- **A layout naming `tower/shown` no longer means the views that draw showings.** The view was retired at API 1.115;
   1.x read it in a layout's `order` as leaving showings to their type's pick and in `hidden` as hiding each view
   that draws them. 2.0 reads it as any other id no view has: nothing. Remove it from `order`, and in `hidden` name
   the views by type you meant (`tower/document`, `tower/link`, `tower/text` and their kin, listed in
@@ -132,7 +132,7 @@ Do these in order when you update:
 
 ### Links and bookmarks
 
-- **Old links to a floor's page open the skyline.** The tower page's hashes before 1.104, `#shelf/<p>/<n>`,
+- **Old links to a floor's page open the skyline.** The tower page's hashes before API 1.104, `#shelf/<p>/<n>`,
   `#draft/<p>[/<id>]`, `#archive/<p>`, `#policies/<p>` and `#kept/<p>/<c>[/<id>]`, are no longer read: a bookmark
   or a link in a note that uses one opens the default view. Open the page again and copy its address, which is the
   current form, `#v/<view>/<subject>`. A worker's link, `#<id>` with or without its tab, still opens the worker.
@@ -141,7 +141,7 @@ Do these in order when you update:
 
 ### Review threads
 
-- **A reviewer is only what its facts say.** A worker spawned before 1.95 on the prompt `/tower:review <CALLSIGN>`,
+- **A reviewer is only what its facts say.** A worker spawned before API 1.95 on the prompt `/tower:review <CALLSIGN>`,
   which logged no reviewer facts, no longer reads as that callsign's reviewer: it has no `x.reviews.of`, sits in no
   crew by reviews, is not exempt from hiring, and its thread is its own checkout's. Its notes stay on the thread it
   wrote them on.
@@ -159,6 +159,10 @@ Do these in order when you update:
 
 ### The version and the manifest
 
+- **A renderer or extension copied out of the checkout is a 1.x copy.** The tower page, Tower 3D, a bundled extension
+  or an example you copied and changed still imports and declares what 1.x did. Copy it again from the 2.0 checkout
+  and reapply your changes to the new copy, as [A copy of one that ships](extending.md#a-copy-of-one-that-ships) says
+  for every release you take; or port your copy by the rest of this section, as any extension or renderer of yours.
 - **`requires.tower` is `"2.0"`.** A manifest that requires a 1.x tower is refused as `too-old` before any other key
   is read, and the tower says so on the board and in `tower extensions check`. Set `"requires": { "tower": "2.0" }`,
   then make the changes the rest of this section lists. Every name in the library now says it arrived in 2.0.
@@ -271,9 +275,9 @@ Do these in order when you update:
 - **`board.limits` is the one shape for rate limits.** The top-level copies of the default command's limits are gone:
   `board.rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and `extraUsage`. Read the same fields from
   `defaultLimits(board)` of `/lib/board.js`, or from a command's entry with `limitsOf(board, command)`. The limit
-  words of `/lib/cards.js` (`extraUsageLine`, `extraUsageAmounts`, `limitsFromTitle`) take an entry of
-  `board.limits`, no longer the board.
-- **Quota readings written before 1.90 no longer set the limits.** The core folded the `p` facts the old core probe
+  words of `/lib/cards.js` (`extraUsageLine`, `extraUsageAmounts`, `limitsFromTitle`) are unchanged for callers: their
+  parameter types name `CommandLimits` where they named `Board`, and the values passed are the same.
+- **Quota readings written before API 1.90 no longer set the limits.** The core folded the `p` facts the old core probe
   wrote into `probe.quota/` beside the readings of kind `tower/rate-limits`; it now folds only the latter. The quota
   extension still reads `p` facts for its own status. A reading of your own extension's is folded as before, as long
   as its fact code declares `"kind": "tower/rate-limits"`.
@@ -290,9 +294,9 @@ Do these in order when you update:
   way, over the board's cards and the floor's archive (`GET /archive/<project>`): `seatsOf` and `buildingSeats` in
   `renderers/tower3d/src/seating.ts`, `galleryOf` in `renderers/tower3d/src/showings.ts`, each short enough to copy.
   The type `GalleryShowing` is no longer in `/lib/board.js`: it is `{ worker: SessionRef; shown: CardShown }`.
-- **An own kind's contributions are only at its key by the subject it was found in.** Since 1.98 an entry of an
+- **An own kind's contributions are only at its key by the subject it was found in.** Since API 1.98 an entry of an
   extension's own subject kind is keyed `<cap>.<kind>:<instance>/<key>`, and `board.adds` copied its contributions to
-  the key before 1.98, `<cap>.<kind>:<key>`. 2.0 drops the copy: read `board.adds` at the subject's `key`
+  the key before API 1.98, `<cap>.<kind>:<key>`. 2.0 drops the copy: read `board.adds` at the subject's `key`
   (`subjectAt`, or the `key` of the subject your view or command is handed).
 
 ### What the bundled extensions own
@@ -301,7 +305,7 @@ The core kept copies of what moved into the bundled extensions in 1.x; 2.0 drops
 nothing of it is on the board or answers, as in 1.x. A removed route answers `not_found`; a removed board field is
 absent.
 
-- **Policies** have been the bundled policies extension since 1.91. Find each old name and change it to the
+- **Policies** have been the bundled policies extension since API 1.91. Find each old name and change it to the
   extension's:
 
   | 1.x | 2.0 |
@@ -328,7 +332,7 @@ absent.
   | `board.probes` | `board.x.quota`, and `quotaOf`, `probeLine` and `probeTitle` of `/x/quota/quota.js` |
   | `quotaOf`, `PROBE_STATE_NAME`, `PROBE_ATTENTION`, `probeLine`, `probeTitle`, `probedLine` of `/cards.js` | the same names of `/x/quota/quota.js` |
   | the module `/drafts.js` | `/x/drafts/drafts.js` |
-- **Review threads** have been the bundled reviews extension since 1.93. A tower with reviews on draws and writes
+- **Review threads** have been the bundled reviews extension since API 1.93. A tower with reviews on draws and writes
   threads as before. Find each old name and change it to the extension's:
 
   | 1.x | 2.0 |
