@@ -27,10 +27,11 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   which the locked page hears the mouse only while a button is held; and find in the page
   ([`FindBar`](ref:hub/apps/macos/Sources/Find.swift#FindBar)). Edit › Find… (⌘F) opens a bar above the page over
   WebKit's own find, which searches the page and the frames inside it (shelf pages included) and wraps around; ⌘G and
-  ⇧⌘G, or Enter and ⇧Enter in the bar, find the next and previous match, and Esc or Done closes it. While the bar is
-  open, the page takes focus back only from a click into it
-  ([`TowerWindow`](ref:hub/apps/macos/Sources/App.swift#TowerWindow)): its scripts and WebKit can't take it from the
-  field while the user types. WebKit says only whether there is a match, so the bar says "Not found" and counts nothing;
+  ⇧⌘G, or Enter and ⇧Enter in the bar, find the next and previous match, and Esc or Done closes it. While the
+  field has focus, the page's scripts and WebKit can't take it from the user typing
+  ([`TowerWindow`](ref:hub/apps/macos/Sources/App.swift#TowerWindow)); a click into the page, framed or not, hands
+  the page focus at the mouse-down, since WebKit asks for it only after the page has handled the click, and ⌘F gives
+  it back to the field. WebKit says only whether there is a match, so the bar says "Not found" and counts nothing;
   text a renderer draws to a canvas is out of its reach. Frames inside the page (shelf pages at origins of their own) go where the page sends them.
 - **A view of a running system, never its starter** ([`start`](ref:hub/apps/macos/Sources/App.swift#start)): the
   app reads the config's `port` ([`Tower`](ref:hub/apps/macos/Sources/Tower.swift#Tower)) and opens the tower once it
