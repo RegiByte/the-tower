@@ -2357,19 +2357,6 @@
             "rateLimitsAt": 1791152820000
           }
         ],
-        "rateLimits": [
-          {
-            "kind": "five_hour",
-            "percentUsed": 64,
-            "resetsAt": "2026-10-05T00:00:00.000Z"
-          },
-          {
-            "kind": "seven_day",
-            "percentUsed": 27,
-            "resetsAt": "2026-10-07T22:30:00.000Z"
-          }
-        ],
-        "rateLimitsAt": 1791152820000,
         "x": {
           "quota": {
             "every": 600000,

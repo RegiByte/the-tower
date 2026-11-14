@@ -274,7 +274,6 @@
             "rateLimits": []
           }
         ],
-        "rateLimits": [],
         "extensions": [
           {
             "id": "reviews",
