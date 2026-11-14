@@ -8,8 +8,7 @@ import { base64Of, uploadRefusal } from './uploads.ts'
 
 /**
  * The new-worker dialog as a machine, every renderer's: `spawnHandlers` its steps, `wireSpawn` the dialog element it
- * runs in. A prompt it closes on without starting a worker is kept as a draft; one a worker started on never is. The
- * tower serves this module as `/spawn.js`.
+ * runs in. A prompt it closes on without starting a worker is kept as a draft; one a worker started on never is.
  */
 
 /**

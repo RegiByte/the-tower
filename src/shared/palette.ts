@@ -1,8 +1,7 @@
 /**
  * The command palette as data every renderer draws alike: `paletteEntries` lists what a viewer can go to, do or learn
  * from where they stand, `rankPalette` orders them for what they typed. An entry's `does` is a tagged message the
- * renderer runs through the same handlers as its buttons and keys; nothing here runs anything. The tower serves this
- * module as `/palette.js`.
+ * renderer runs through the same handlers as its buttons and keys; nothing here runs anything.
  */
 import type { Board, Card, Floor, FloorItem } from '../bridge/board.ts'
 import type { CardVerb, ConversationVerb, FloorVerb, ResourceVerb } from '../bridge/verbs.ts'
@@ -33,7 +32,7 @@ export type AddedPick = { t: 'added'; subject: string; action: Added<Action> }
  * somewhere, the patterns sheet, or a capability shown. A renderer that can't import modules leaves out the entries
  * whose action is a command (`isCommand`).
  */
-/** A view displaying the subject `subject` names, by its id (`/views.js`). @since 1.104 */
+/** A view displaying the subject `subject` names, by its id (`views.ts`). @since 1.104 */
 export type OpenPick = { t: 'open'; subject: string; view: string }
 
 /** Reloading the page, which runs code the tower no longer serves (`tower.stale()`). @since 1.144 */
@@ -76,7 +75,7 @@ export type PaletteContext = {
   heed: { dismissed: Heed['dismissed'] }
   draftsOf?: (f: Floor) => { items: FloorItem[] } | undefined
   draftTitle: (project: string, item: FloorItem) => string
-  /** The views the renderer offers to open where the viewer stands (`openable` in `/views.js`); none without it. @since 1.104 */
+  /** The views the renderer offers to open where the viewer stands (`openable` in `views.ts`); none without it. @since 1.104 */
   opens?: readonly Openable[]
   /** Whether the page runs code the tower no longer serves (`tower.stale()`): the palette offers to reload it. @since 1.144 */
   stale?: boolean

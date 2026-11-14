@@ -1,6 +1,6 @@
 /**
  * The Changes panel: what changed in a worker's repos, each file's diff highlighted, unified or split, the changed files
- * as a tree, lines marked, and a place under picked lines for what acts on them. Bundled into `/panels.js`.
+ * as a tree, lines marked, and a place under picked lines for what acts on them. Gathered by `panels.ts`.
  */
 import type { CheckoutState } from '../bridge/checkouts.ts'
 import type { DiffFile, Hunk, RepoChanges } from './repo-changes.ts'

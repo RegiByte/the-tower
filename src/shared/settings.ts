@@ -1,7 +1,7 @@
 /**
  * The settings every renderer offers in one small popover: pure views from a viewer's settings to html, and one
  * stylesheet (`settingsCss`). Each setting stays where it lives: the ring in `tower.store` under `RING_KEY`, how the
- * brief draws prompts and answers under `BRIEF_MARKDOWN_KEY` (`/brief.js`), the viewer's appearance with tower.js (`tower.prefs`), notifications with the browser. A renderer composes the
+ * brief draws prompts and answers under `BRIEF_MARKDOWN_KEY` (`brief.ts`), the viewer's appearance with tower.js (`tower.prefs`), notifications with the browser. A renderer composes the
  * sections it offers with `settingsHtml`, draws it in a `popover` element of class `settings-pop` (`placeOnOpen` of
  * tips.ts stands it by its button) and wires, by the attribute on the element clicked:
  *
@@ -9,15 +9,15 @@
  *   data-ring-choice="<ring>"    how often a wait rings (`RINGS`), kept under `RING_KEY`
  *   data-sound-play="<sound>"    play a sound of `SOUNDS` the way the renderer rings
  *   data-brief-markdown="<m>"    prompts and answers rendered or raw (`BRIEF_MARKDOWNS`), kept under `BRIEF_MARKDOWN_KEY`
- *   data-changes-files="<f>"     Changes' file tree shown or hidden beside the diffs, kept under `CHANGES_TREE_KEY` (`/panels.js`)
- *   data-tips="<on|off>"         whether tips show, kept under `VIEWER_KEYS.tips` (`/viewer.js`)
+ *   data-changes-files="<f>"     Changes' file tree shown or hidden beside the diffs, kept under `CHANGES_TREE_KEY` (`panels.ts`)
+ *   data-tips="<on|off>"         whether tips show, kept under `VIEWER_KEYS.tips` (`viewer.ts`)
  *   data-tips-again              the tips dismissed for good shown again
  *
  * The appearance is data: `PREF_SECTIONS` describes each setting of `tower.prefs`, `prefSections` draws them, and
  * `wirePrefs(popover, tower.prefs.set)` wires every one, so a setting added here reaches every renderer with no wiring
  * of its own. A renderer draws the popover again when `tower.prefs.on` says the record changed.
  *
- * Every control carries its `data-tip`. The tower serves this module as `/settings.js`.
+ * Every control carries its `data-tip`.
  */
 import type { SchemeChoice } from './shelf-page.ts'
 import { BRIEF_MARKDOWNS, BRIEF_MARKDOWN_LABEL, BRIEF_MARKDOWN_MEANS } from './brief.ts'
@@ -80,12 +80,6 @@ export const soundSection = (ring: Ring) =>
     `<div class="seg" role="group" aria-label="ring">${RINGS.map((r) => choice('data-ring-choice', r, RING_LABEL[r], RING_MEANS[r], r === ring)).join('')}</div>` +
     `<div class="row plays">${(['question', 'done', 'offer'] as Sound[]).map((s) =>
       `<button data-sound-play="${s}" data-tip="${esc(SOUND_MEANS[s])}">${ICON.play}${SOUND_LABEL[s]}</button>`).join('')}</div>`)
-
-/** @deprecated `prefSections` draws the scheme beside the rest of the viewer's appearance, wired by `wirePrefs`. */
-export const themeSection = (scheme: SchemeChoice) =>
-  section('Theme', 'colours of every panel',
-    `<div class="seg" role="group" aria-label="theme">${SCHEME_CHOICES.map((c) =>
-      choice('data-scheme-choice', c, `${SCHEME_ICON[c]}${SCHEME_LABEL[c]}`, SCHEME_MEANS[c], c === scheme)).join('')}</div>`)
 
 /** How the brief draws prompts and answers: markdown rendered, or as written. */
 export const markdownSection = (markdown: BriefMarkdown) =>

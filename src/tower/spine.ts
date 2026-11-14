@@ -63,7 +63,6 @@ export const slots = defineResource({
   start: ({ 'core:config': { read }, 'core:publisher': { board }, 'core:extensions': holder }: SlotsDeps) => runSlots([extensionSlots(holder, read, board)]),
   halt: ({ stop }) => stop(),
 })
-export type SlotsResource = StartedResource<typeof slots>
 
 /** The tower's system: the core's resources by name. */
 export const tower = () => ({

@@ -56,7 +56,7 @@ export const pastCount = (f: Floor) => f.cards.filter((c) => !c.onDuty).length +
 export const archiveKey = (board: Board, f: Floor) => `${board.archiveAt}/${f.archived}`
 
 /**
- * The floors' archives a viewer reads, as held reads (`/reads.js`): a slot per floor, named by its project, read at the
+ * The floors' archives a viewer reads, as held reads (`reads.ts`): a slot per floor, named by its project, read at the
  * floor's `archiveKey`. A renderer runs them on a loop of its own with `heldHandlers`, reading each with
  * `tower.archive`.
  */

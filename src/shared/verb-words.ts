@@ -4,7 +4,7 @@
  * by its subject and its name, `<subject>/<verb>` (`card/send-home`, `worktree/recut`): one name means different
  * things on different subjects. `api` is the renderer API's verb its call makes, whose description and input schema in
  * `VERBS` (`/schema`, `tower api`) are its agent facet; moves within a renderer have none. `command` is the keymap
- * command (`/keymap.js`) that does the same for the selected worker. The tower serves this module as `/verb-words.js`.
+ * command (`keymap.ts`) that does the same for the selected worker.
  */
 import type { Card } from '../bridge/board.ts'
 import type { BranchVerb, CardVerb, ConversationVerb, FloorVerb, ResourceVerb, WorktreeVerb } from '../bridge/verbs.ts'

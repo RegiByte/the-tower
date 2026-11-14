@@ -2,7 +2,7 @@
  * The keymap: every command a renderer runs from the keyboard, as data, with the chords that run it. The defaults live
  * here; the config's `keys` overrides them by command id (`docs/config.md`), and the board carries the result as
  * `board.keys`. A renderer maps each id it knows to what it does, matches keydowns with `commandOf`, and names chords
- * with `keysLabel` and `keyshortcuts`. The tower serves this module as `/keymap.js`.
+ * with `keysLabel` and `keyshortcuts`.
  *
  * A chord is modifiers (`Alt`, `Ctrl`, `Meta`, `Shift`) joined by `+`, then one key: a letter or digit (`J`, `1`),
  * matched by the physical key so ⌥'s composed characters on a Mac don't matter; a `KeyboardEvent.code` (`ArrowUp`,

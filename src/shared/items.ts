@@ -8,8 +8,8 @@ import { itemTitles, titled, titleIn } from './titles.ts'
 /**
  * Any collection's items as a renderer lists and reads them: one tray of rows per collection (title, tag, who kept it,
  * how long ago it changed), and an item read as what its type is. What opening or acting on an item means stays the
- * renderer's: a drafts row may open an editor, a games row a cabinet. The tower serves this module as `/items.js`;
- * nothing in the core imports it.
+ * renderer's: a drafts row may open an editor, a games row a cabinet. Nothing in the core
+ * imports it.
  */
 
 type Floor = { id: string; collections: FloorCollection[] }

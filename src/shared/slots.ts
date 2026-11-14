@@ -2,7 +2,7 @@
  * Slots: the moments a rule names, the core's time trigger (decision `extensions`). A rule (`When`) is crons in the
  * subset the tower can say in words, read in a zone, or a period aligned to the UTC clock. Policies' headers and
  * extensions' manifests both name their slots with one; the tower's 30 s loop fires each slot due, on time within
- * `ON_TIME_MS`. What every renderer and the CLI say about a rule and its slots, pure. Served as `/slots.js`.
+ * `ON_TIME_MS`. What every renderer and the CLI say about a rule and its slots, pure.
  */
 import { Cron } from 'croner'
 

@@ -5,7 +5,7 @@ import type { Handlers, StateEffect } from './loop.ts'
  * and holds what it last read until the next read lands. A read is numbered as it starts, so one overtaken by a later
  * read of its slot lands on nothing. A failure is shown only while nothing is held; over a held value it is a toast.
  * The steps are pure, over `Reads`, for a renderer's own machines to compose; `heldHandlers` is the machine of plain
- * held reads on `/loop.js`. The tower serves this module as `/reads.js`.
+ * held reads on `loop.ts`.
  */
 
 /** A value a slot held, at the key it was read at. */

@@ -14,8 +14,6 @@
  *   waits      '' | 'flash'               `data-waits` on the root: flash makes what waits on the viewer flash, and points
  *                                         to one scrolled out of sight (the tower page's sidebar and skyline, Tower 3D's lamps)
  *   scale      % of the browser's text    `--scale` on the root: every size of text the type scale draws (design.ts `size`)
- *
- * The tower serves this module as `/prefs.js`.
  */
 import type { SchemeChoice } from './shelf-page.ts'
 

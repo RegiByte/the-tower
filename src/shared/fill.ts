@@ -1,7 +1,6 @@
 /**
  * How many of a region's ranked items fit in place (decision `region-overflow`): a region draws a prefix of its ranked
  * list and tucks the rest behind its menu, so the answer is a count. Pure, so every renderer that measures shares it.
- * The tower serves it in `/views.js`.
  */
 
 /** The width `count` of `widths` take drawn in place, the menu control's `menu` added while any is left out. */

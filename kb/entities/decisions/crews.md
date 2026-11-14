@@ -19,11 +19,9 @@
     "hub/src/shared/crews.ts#crewOf",
     "hub/src/shared/crews.ts#crewsOf",
     "hub/src/shared/crews.ts#crewTree",
-    "hub/src/shared/crews.ts#awayHiresOf",
     "hub/src/shared/crews.ts#goneHome",
     "hub/src/shared/crews.ts#crewFold",
     "hub/src/shared/crews.ts#workerNamed",
-    "hub/src/shared/crews.ts#dutyOrder",
     "hub/src/shared/crews.ts#crewTreeIn",
     "hub/src/shared/crews.ts#dutyOrderIn",
     "hub/src/shared/crews.ts#orderMoving",
@@ -73,13 +71,13 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by first start: the
   first session of its lineage, so a resumed worker keeps its place among its peers), `crewOf` (everyone under it, each
   before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads a crew, by first start,
-  everyone under it follows at its depth, on duty or not). `dutyOrder`, the order the move keys step through,
+  everyone under it follows at its depth, on duty or not). `dutyOrderIn`, the order the move keys step through,
   walks the same tree.
 - *The viewer's order.* A viewer may put a floor's crews in the order they want to check them: `Viewer.crewsOrder`,
   kept in `tower.store` under `crews.order` for every renderer of theirs, lists crews' heads by worker key
   (`workerKeyOf`, the first session of the lineage, so a resume keeps the place). `crewTreeIn`, `dutyOrderIn` and
   `neighboursIn` take it: the heads it names come first in its order, the rest after by first start, so a new worker
-  joins at the end; `crewTree`, `dutyOrder` and `neighbours` are them with no order. Only heads are ordered: a crew's
+  joins at the end; `crewTree` and `neighbours` are them with no order. Only heads are ordered: a crew's
   members stay in the order they were hired, since that is the tree. `orderMoving` writes a move (a head before another
   head of its floor, or to its end) as the whole floor's heads in their new order, dropping keys of workers no longer on
   the board. The order is view state, not intent: the config and the logs never hold it, and `tower agents` lists by
@@ -108,8 +106,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   acts on once the turn ends ([[leave]]). A crew can span floors (a hire on another floor, [[hire]]): `reportsTo` and
   `send-home` are derived over every floor's cards and `crewTree` runs per floor, so the hire heads a crew on its own
   floor, its card saying "hired by X (floor)", while `tower agents` links it under its hirer in one line,
-  `└ KBKEEPER-86 · working · on lab`. The board carries what the link needs (`reportsTo`, `hiredBy.project`), and
-  [`awayHiresOf`](ref:hub/src/shared/crews.ts#awayHiresOf) is the shared fold of a worker's hires on other floors. The
+  `└ KBKEEPER-86 · working · on lab`. The board carries what the link needs (`reportsTo`, `hiredBy.project`). The
   tower page's [sidebar](ref:hub/renderers/page/sidebar.js#sidebar) draws each such hire still on duty as a link row in its hirer's crew, painted in its floor's colour, that opens the hire's card on its floor. Tower 3D draws
   no link. Tower 3D sends a worker home with its crew and draws no crew tree on duty; its crews gather in meeting rooms instead ([[whereabouts]]).
 - *The archive by crew.* [`pastCrews`](ref:hub/src/shared/past.ts#pastCrews) groups `pastOf`'s cards (the board's

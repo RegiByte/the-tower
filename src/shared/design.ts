@@ -1,6 +1,6 @@
 /**
  * The tower's visual language as data: one source for every renderer. The tower serves it as `/design.css`
- * (variables and fonts) and as the module `/design.js`; Tower 3D bundles it.
+ * (variables and fonts), and the library as `/lib/design.js`.
  *
  * Paper and ink for chrome; colour is attention. Each scheme fills the same roles: `ink` is text, `enamel` the dark
  * surfaces (terminals, buildings) in both. Text comes in three tiers, `ink`, `muted` and `faint`, each at least 4.5:1
@@ -120,9 +120,6 @@ export const palettes = {
 }
 
 export type Scheme = keyof typeof palettes
-
-/** Text set on an attention colour in the light scheme, as a word. @deprecated read `palettes[scheme].on<Attention>`. */
-export const onAttention = { needs: 'white', ready: 'enamel', working: 'enamel', quiet: 'enamel', broken: 'white' } as const
 
 /**
  * A project's colour from config (picked for dark backgrounds) made readable on paper: `band` is the colour itself,
@@ -329,7 +326,7 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--line); pad
  * Only a needs lamp blinks, and a `watching` one breathes; with reduced motion (`reduced`), every animation runs once.
  * A button's states, whatever the renderer's own look: pressed (`:active`) it sinks a pixel, held (`disabled` or
  * `aria-disabled`, which keeps it focusable) it fades, and busy (`aria-busy`, while what it asks is in flight:
- * `pressing` in `/press.js`) a bar sweeps along its foot in its text colour, which stays at full contrast.
+ * `pressing` in `press.ts`) a bar sweeps along its foot in its text colour, which stays at full contrast.
  * An `.icon` (icons.ts) sits on the text beside it; an `.icon-btn` is a control that is only an icon, every close
  * included: at least `--control` square, quiet until hovered, busy as a button is. A `.glyph` is an extension's SVG
  * (`--glyph: url(…)`) drawn as a mask in the ink around it, so it follows the palette as the core's icons do.

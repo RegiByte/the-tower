@@ -26,7 +26,7 @@ import { esc, modelName, when } from '/lib/words.js'
  * With no head, the cell's one row holds the lamp, the callsign, the tabs and the acts.
  */
 
-/** A control of the view holding a card, at the end of the card's head: an `icon` from `/icons.js` draws in place of its label. */
+/** A control of the view holding a card, at the end of the card's head: an `icon` from `icons.ts` draws in place of its label. */
 export type CardAct = { id: string; label: string; tip?: string; icon?: keyof typeof ICON }
 
 /** The callsign as a menu of other workers, by card id, each with a `note` beside it; `label` heads the menu. */

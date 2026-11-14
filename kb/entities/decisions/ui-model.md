@@ -95,7 +95,7 @@ and a framed document's section are the same thing.
   ([[region-overflow]]); a region holding one view picks it again on every update, mounting it again when the pick
   changes. A command on a viewer subject runs on the subject its region was drawn on. A command is lent the part with
   no host ([`CommandKit`](ref:hub/src/shared/views.ts#CommandKit)) through
-  [`runCommandWith`](ref:hub/src/shared/run-command.ts#runCommandWith); `runCommand` keeps its signature with
+  [`runCommandWith`](ref:hub/src/shared/run-command.ts#runCommandWith); a renderer that lends no kit passes
   [`NO_KIT`](ref:hub/src/shared/run-command.ts#NO_KIT).
 - *Spawning from a view*: `run('spawn', subject)` opens the renderer's new-worker form on a floor, or on a draft, and
   goes to the worker it starts. `kit.spawn(on)` opens the same form for a view that keeps its place (the grid's New

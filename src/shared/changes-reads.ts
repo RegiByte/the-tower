@@ -1,6 +1,6 @@
 /**
  * A worker's Changes as a viewer reads them: what they compare (`ChangesScope`), where its viewed marks are kept, and
- * the machine that reads them again as the worker works. Bundled into `/panels.js`.
+ * the machine that reads them again as the worker works. Gathered by `panels.ts`.
  */
 import type { RepoChanges } from './repo-changes.ts'
 import type { Card } from '../bridge/board.ts'
@@ -85,7 +85,7 @@ const marked = (h: Held<ChangesRead>, dir: string, marks: Record<string, string>
   return h.last ? { ...h, last: { ...h.last, value: mark(h.last.value) } } : h
 }
 
-/** The machine of a viewer's Changes, on `/loop.js`: a renderer runs it with its executors and `timers()`. */
+/** The machine of a viewer's Changes, on `loop.ts`: a renderer runs it with its executors and `timers()`. */
 export const changesHandlers: Handlers<ChangesReads, ChangesEvent, ChangesEffect> = {
   follow: (s, { card }) => {
     const was = s.following

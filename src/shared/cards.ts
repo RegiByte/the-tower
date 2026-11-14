@@ -1,6 +1,6 @@
 /**
  * Cards in words: what every renderer says about a worker, so they all say the same. Each draws the words its own
- * way. Each concern is a module beside this one; the tower serves them gathered here, bundled as `/cards.js`.
+ * way. Each concern is a module beside this one, gathered here.
  */
 
 export { tagOf } from './tags.ts'

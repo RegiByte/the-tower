@@ -1,6 +1,6 @@
 /**
  * The lines of a worker's Changes: each file's rows, unified and side by side, which files are viewed, lines picked,
- * and where lines named by repo, path and number stand among them. Bundled into `/panels.js`.
+ * and where lines named by repo, path and number stand among them. Gathered by `panels.ts`.
  */
 import type { DiffFile, Hunk, RepoChanges } from './repo-changes.ts'
 import { langOf, repoName } from './repos.ts'

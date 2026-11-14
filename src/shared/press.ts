@@ -1,6 +1,6 @@
 /**
  * Controls that ask the tower something, as every renderer draws them: a control is found again in html drawn anew by
- * its identity, and stays busy while what it asks is in flight. The tower serves this module as `/press.js`.
+ * its identity, and stays busy while what it asks is in flight.
  */
 
 /** What finds a control again in html drawn anew: its first attribute that names what it does. */

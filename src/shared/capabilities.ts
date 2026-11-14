@@ -1,10 +1,9 @@
 /**
  * What the tower lets a user do, as data every renderer reads alike: capabilities, one line each, and patterns, short
  * stories of what users found doing with the tower that no feature is named for. A capability may name a keymap command
- * (`/keymap.js`) that tries it, whose chords a renderer names from `board.keys`, never from the text, or a verb a floor
+ * (`keymap.ts`) that tries it, whose chords a renderer names from `board.keys`, never from the text, or a verb a floor
  * offers in its `actions`. Patterns are markdown files in the checkout's `docs/patterns/`, read at `GET /patterns`, each
  * parsed by `parsePattern`. A renderer shows them as tips: `tipsOf` lays them out, `tipAt` picks the one showing now.
- * The tower serves this module as `/capabilities.js`.
  */
 import type { FloorVerb } from '../bridge/verbs.ts'
 import type { CommandId } from './keymap.ts'

@@ -2,13 +2,11 @@
  * What a viewer keeps in `tower.store` that every renderer of theirs reads alike, as one record: the waits and offers
  * they dismissed, how often a wait rings, how the brief draws prompts and answers, how Changes draws a diff and whether
  * it shows its file tree, the gone-home crews they unfolded and the order they put crews in, the Stats panel's range, whether tips show and those
- * dismissed for good (`/capabilities.js`), and the actions they have seen. `readViewer(tower.store.get)`
+ * dismissed for good (`capabilities.ts`), and the actions they have seen. `readViewer(tower.store.get)`
  * reads it whole, each field under its key in `VIEWER_KEYS` and `VIEWER_DEFAULT`'s where nothing of its kind is kept; a
  * renderer writes a field with `tower.store.set(VIEWER_KEYS[field], value)`. `tower.store` has no change event: a
  * renderer reads the record again on every board, and when a page it frames writes to the store, to pick up what another
  * renderer of theirs chose.
- *
- * The tower serves this module as `/viewer.js`.
  */
 import type { Ring } from './rings.ts'
 

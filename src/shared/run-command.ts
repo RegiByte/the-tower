@@ -1,7 +1,7 @@
 import type { Board } from '../bridge/board.ts'
 import { commandOf, towerOf } from './added-commands.ts'
-import { commandUrl, isCommand, runVerb } from './adds.ts'
-import type { Action, Added, CommandAction } from './extensions.ts'
+import { commandUrl } from './adds.ts'
+import type { Added, CommandAction } from './extensions.ts'
 import { importServed } from './import-served.ts'
 import type { Subject } from './subjects.ts'
 import { unlent } from './unlent.ts'
@@ -31,9 +31,3 @@ export const NO_KIT: CommandKit = {
   bus: { publish: unlent('bus'), clear: unlent('bus'), at: unlent('bus'), under: unlent('bus'), on: unlent('bus'), mark: unlent('bus'), marks: unlent('bus'), onMark: unlent('bus') },
 }
 
-/** Runs a client command on `subject` in a renderer that lends it no kit (`runCommandWith`). */
-export const runCommand = (board: Board, action: Added<CommandAction>, subject: Subject): Promise<unknown> => runCommandWith(board, action, subject, NO_KIT)
-
-/** Runs an action an extension added: its verb called with its call, or its command run on `subject`. */
-export const runAdded = (board: Board, action: Added<Action>, subject: Subject): Promise<unknown> =>
-  isCommand(action) ? runCommand(board, action, subject) : runVerb(action)

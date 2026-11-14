@@ -117,4 +117,4 @@ every other key, and reach every renderer the way `user.name` does.
 
 **Impact.** `keymap.ts` and `board.keys` are part of the renderer API, and the `?` sheet can't drift from the
 bindings. Every page the tower frames forwards its global keys with nothing to add; a page that handles a key calls
-`preventDefault` to keep it. A remote `url` frame is the gap: nothing is injected there, and it is not heard. `MOVE_KEYS` and `moveOfKey` in `cards.ts` are deprecated in their favour until the API's next major.
+`preventDefault` to keep it. A remote `url` frame is the gap: nothing is injected there, and it is not heard.

@@ -1,6 +1,6 @@
 /**
  * The Stats panel: spend, work, waits and what landed over a range, a tab per scope, and the units it says them in.
- * Bundled into `/panels.js`.
+ * Gathered by `panels.ts`.
  */
 import { bucketStart, type ScopeStats, type Spread, type Stats, type StatsQuery } from '../bridge/stats.ts'
 import { esc, plural, tokenCount as tokens } from './format.ts'

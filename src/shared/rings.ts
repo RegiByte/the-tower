@@ -1,5 +1,4 @@
 import type { Wait } from '../bridge/board.ts'
-import { VIEWER_KEYS } from './viewer.ts'
 import { type Attended, isAbout, isAsk } from './waits.ts'
 
 /** How a wait or an offer rings: how often, and each sound as a score. */
@@ -7,12 +6,7 @@ import { type Attended, isAbout, isAsk } from './waits.ts'
 /** How often a viewer wants a wait rung: once as it begins, again every `REMIND_MS` while it waits unwatched, or never. */
 export type Ring = 'once' | 'remind' | 'off'
 export const RINGS: Ring[] = ['once', 'remind', 'off']
-export const RING_KEY = VIEWER_KEYS.ring
 export const REMIND_MS = 30_000
-/** @deprecated The settings popover names each ring: `RING_LABEL` and `RING_MEANS` of /settings.js. */
-export const RING_NAME: Record<Ring, string> = { once: 'ring once', remind: 'remind every 30s', off: 'silent' }
-/** @deprecated Rings are set in the settings popover, behind the shared `ICON.settings`: `soundSection` of /settings.js. */
-export const RING_MARK: Record<Ring, string> = { once: '🔔', remind: '🔔↻', off: '🔕' }
 
 /**
  * A question to answer (a screen, a tool, a failure to look at) rings apart from an answer to read, and both apart
@@ -27,9 +21,6 @@ export const SOUNDS: Record<Sound, { notes: number[]; wave: 'sine' | 'triangle';
   done: { notes: [659.25, 987.77], wave: 'sine', step: 0.14 },
   offer: { notes: [523.25, 659.25, 783.99], wave: 'sine', step: 0.16 },
 }
-
-/** The wait to ring for among `waits`: the first one not of the worker being watched. */
-export const ringing = (waits: Wait[], watched: string | undefined) => waits.find((w) => w.id !== watched)
 
 /**
  * The sound to ring among `attended` (in `attentionOrder`): the first not about the worker being watched. An ask rings

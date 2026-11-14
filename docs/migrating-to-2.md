@@ -194,7 +194,7 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 
   | 1.x | 2.0 |
   | --- | --- |
-  | `claudeUntestedHtml(board)`, `claudeUntestedLine(board)` | `untestedHtml(board)`, `untestedLine(board)`: one span or phrase per runtime with untested releases, `"Claude Code 2.1.330 untested"` |
+  | `claudeUntestedHtml(board)`, `claudeUntestedLine(board)` | `untestedHtml(board)`: one span per runtime with untested releases, `"Claude Code 2.1.330 untested"` |
   | `claudeFlagHtml(card)` | `untestedFlagHtml(card, board)` |
   | `CLAUDE_UNTESTED` | `untestedTitle(board.runtimes[id])` |
   | `detailsOf(card)` | `detailsOf(card, board.runtimes)`: the runtime's row is labelled by its `label` |

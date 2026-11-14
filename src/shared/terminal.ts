@@ -1,7 +1,7 @@
 /**
  * A browser terminal's type, the same in every renderer: the face and size it draws in, from the viewer's appearance
  * (`tower.prefs`), and the size a watched terminal draws at to fit the PTY's cells in its box. Cells are measured in
- * the face itself, so any monospace face fits. The tower serves this module as `/terminal.js`.
+ * the face itself, so any monospace face fits.
  *
  * The PTY has one size, set by whoever drives it: a driving terminal draws at `size` and fits the PTY to its box, so a
  * bigger font gives the session fewer columns and rows. A watched terminal follows the PTY at `fitSize`, at most `size`.

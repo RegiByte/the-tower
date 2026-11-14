@@ -20,7 +20,7 @@ import { base64Of, uploadRefusal } from './uploads.ts'
  * does: focus, a reload, a pane or font change, a press elsewhere in the page, the pointer passing over, a wheel, and
  * what xterm.js answers the program on its own. A pane or font change fits the PTY again only while this viewer holds
  * it, and only the holder's terminal speaks to the PTY but for a wheel, a focus report and the user's text.
- * The tower serves this module as `/term-view.js`.
+ *
  */
 
 export type Size = { cols: number; rows: number }

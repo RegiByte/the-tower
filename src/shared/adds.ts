@@ -35,13 +35,6 @@ export const unboundCommands = (board: Board): Added<CommandAction>[] =>
 /** What extensions offer on `subject`: their folds' actions, in fold order, then the commands offered on its kind. */
 export const addedActions = (board: Board, subject: Subject): Added<Action>[] => [...(board.adds[subject.key]?.actions ?? []), ...offeredCommands(board, subject)]
 
-/** The actions the core offers on `subject`: a card's, a floor's or a conversation's; none on the rest. */
-const coreActions = (subject: Subject): { verb: string }[] =>
-  ['card', 'floor', 'conversation'].includes(subject.kind) ? (subject.value as { actions: { verb: string }[] }).actions : []
-
-/** Everything offered on `subject`: the core's actions, then what extensions add. */
-export const actionsOf = (board: Board, subject: Subject): ({ verb: string } | Added<Action>)[] => [...coreActions(subject), ...addedActions(board, subject)]
-
 /**
  * The badges extensions show beside `subject`: on a card, each exemption a launch contributor gave its worker, so no
  * limit is lifted unseen; then what folds add, most severe first (`rankedBadges`). Every region draws them in this order.
@@ -137,7 +130,7 @@ export const actionWords = (board: Board, action: Added<Action>): Words => {
 /** Where a client command's module is served. */
 export const commandUrl = (cap: string, module: string) => `/x/${cap}/${module}`
 
-/** A command's glyph: one of the core's icons by name (`/icons.js`), or an SVG its extension serves at `href`. @since 1.130 */
+/** A command's glyph: one of the core's icons by name (`icons.ts`), or an SVG its extension serves at `href`. @since 1.130 */
 export type Glyph = { t: 'core'; name: keyof typeof ICON } | { t: 'svg'; href: string }
 
 /** The glyph an action's words name: a command's, while its extension runs; none for a verb, or a command that names none. */
