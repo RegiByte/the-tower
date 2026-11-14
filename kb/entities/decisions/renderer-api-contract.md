@@ -57,7 +57,7 @@ went wrong, and know which changes can break it.
   message alike. An addition an older renderer reads past (a board field, a verb, a read, a stream) moves the minor; a
   rename, a removal or a changed meaning moves the major, and CHANGELOG.md says why. `tower.js` reads a board from a
   tower of its own major at its own minor or newer. A renderer kept apart from the tower pins the version it was
-  written against in its script URL (`/tower.js?v=1.3`), and the script refuses to load into a tower of another major
+  written against in its script URL (`/tower.js?v=2.0`), and the script refuses to load into a tower of another major
   or an older minor; a page that names none moves with the tower. `tower.version` is the full version. A new
   reserved first segment ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)) is an addition too: a user's
   extension of that name is refused until renamed, the refusal and the changelog saying so (`config`, 1.147).

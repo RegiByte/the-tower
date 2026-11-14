@@ -183,7 +183,7 @@ Start from a page that includes `/tower.js`:
 <!doctype html>
 <link rel="stylesheet" href="/design.css">
 <ul id="floors"></ul>
-<script src="/tower.js?v=1.151"></script>
+<script src="/tower.js?v=2.0"></script>
 <script type="module">
 import { statusName } from '/lib/cards.js'
 tower.subscribe((board) => {
@@ -204,7 +204,7 @@ with its `call` when it is a request of the API: `tower.run(card.actions.find((a
 `callOf(card, 'resume')` and `can(card, 'resume')` of `/lib/board.js`. `/tower.js` documents its every member in its header
 (`curl http://127.0.0.1:4317/tower.js | head -60`).
 
-**Pin the version you wrote against.** `/tower.js?v=1.151` (the minor the library arrived in) refuses to load into a tower of another major or an older
+**Pin the version you wrote against.** `/tower.js?v=2.0` refuses to load into a tower of another major or an older
 minor: `window.tower` is never defined and the console says which versions met, in place of a page drawing a board
 it misreads. A page that names no version
 moves with the tower: right for the renderers in the checkout, wrong for yours. `tower.version` is the tower's full
