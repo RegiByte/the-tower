@@ -33,9 +33,10 @@ const askLine = (title, was) =>
   })
 
 /** Names the worker's tab: an empty line clears it. */
-export async function set({ tower, board, subject }) {
-  const line = await askLine(`A line for ${subject.callsign} (empty clears it)`, lineOf(board, subject.id))
+export async function set({ tower, board, target }) {
+  const card = target.value
+  const line = await askLine(`A line for ${card.callsign} (empty clears it)`, lineOf(board, card.id))
   if (line === null) return
-  const reply = await tower.call('tabline/facts/line', { session: subject.id, value: line.trim() || null })
+  const reply = await tower.call('tabline/facts/line', { session: card.id, value: line.trim() || null })
   if (reply?.t === 'error') throw new Error(reply.message)
 }

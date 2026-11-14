@@ -145,6 +145,17 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   the key before 1.98, `<cap>.<kind>:<key>`. 2.0 drops the copy: read `board.adds` at the subject's `key`
   (`subjectAt`, or the `key` of the subject your view or command is handed).
 
+- **A client command is called without `subject`.** Its export was called with `{ tower, board, subject, target,
+  args, kit }`, `subject` being the subject's value; 2.0 calls it with `{ tower, board, target, args, kit }`. Read the
+  value from `target.value`:
+
+  ```js
+  // 1.x
+  export async function set({ tower, subject }) { await tower.call('tabline/facts/line', { session: subject.id, … }) }
+  // 2.0
+  export async function set({ tower, target }) { await tower.call('tabline/facts/line', { session: target.value.id, … }) }
+  ```
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form

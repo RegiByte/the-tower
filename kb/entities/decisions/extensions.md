@@ -210,8 +210,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   or an SVG of its client folder, a missing one refusing the extension as it loads,
   [`iconProblems`](ref:hub/src/bridge/extensions.ts#iconProblems)), and
   [`runCommand`](ref:hub/src/shared/run-command.ts#runCommand), which imports the module and calls its export with
-  `{tower, board, subject, target, args}` and the kit the renderer lends (`subject` the subject's value until 2.0,
-  `target` the subject itself). Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
+  `{tower, board, target, args}` and the kit the renderer lends (`target` the subject: its `value`, `key`, `kind`). Asks join the attention order beside the waits ([[attention-list]]); `tower whoami`
   prints a card's lines. Where the tower page draws each contribution is its own
   ([`added.js`](ref:hub/renderers/page/added.js), [[command-palette]]); Tower 3D and the CLI leave commands out.
 - **Middleware.** A manifest's `around` wraps verbs and hooks by qualified name, each the core's, its own, or of a
