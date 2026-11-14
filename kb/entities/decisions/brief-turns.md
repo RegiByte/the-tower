@@ -141,8 +141,7 @@ renderer can draw the brief alike, inline.
   start past every turn the whole holds, turns having come between, is it read whole again
   ([`withWholesRead`](ref:hub/src/shared/brief.ts#withWholesRead), the one read step both renderers share); one that
   fails to read is let go and said, and the brief is drawn as read. So a worker at work, its
-  latest turn moving with each tool call and message, keeps it whole and what the viewer expanded in it open. The
-  earlier `keptWholes` stays in the library for renderers that use it. A
+  latest turn moving with each tool call and message, keeps it whole and what the viewer expanded in it open. A
   tool call opened while it runs is drawn as last read until it is read again. A
   brief shown is read again whenever its card's status, tool, conversations or their additions move
   ([`briefKey`](ref:hub/src/shared/brief.ts#briefKey)), in the page's Brief and Tower 3D's logbook alike. A message to a subagent is its `SendMessage` call, its

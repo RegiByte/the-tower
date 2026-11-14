@@ -169,26 +169,6 @@ const conversationKey = (b: Brief) => `${b.session.id}:${b.id}`
 /** A brief with the conversation `whole` read whole in place of its last turns. @since 1.133 */
 export const withWhole = (briefs: Brief[], whole: Brief): Brief[] => briefs.map((b) => (conversationKey(b) === conversationKey(whole) ? whole : b))
 
-const turnMark = (turn: Turn | undefined) => turn && `${turn.startedAt} ${turn.answeredAt} ${turn.steps.length}`
-
-/**
- * Whether a conversation read whole still holds what a later brief gives of it: its latest turn is the same, unmoved.
- * One that moved is read again, or let go. @since 1.133
- */
-const wholeHolds = (briefs: Brief[], whole: Brief): boolean => {
-  const now = briefs.find((b) => conversationKey(b) === conversationKey(whole))
-  return now !== undefined && turnMark(now.turns.at(-1)) === turnMark(whole.turns.at(-1))
-}
-
-/**
- * A brief as read again, with the conversations read whole before in place of their last turns, those that still hold
- * (`wholeHolds`): the brief to draw, and the wholes to keep for the next read. @since 1.161
- */
-export const keptWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[]; wholes: Brief[] } => {
-  const kept = wholes.filter((whole) => wholeHolds(read, whole))
-  return { briefs: kept.reduce(withWhole, read), wholes: kept }
-}
-
 /**
  * A conversation read whole joined to a later read of its last turns: its turns before them, then them. A turn once
  * past never changes, so the join is the conversation whole as of the later read. `undefined` when the last turns
@@ -206,7 +186,7 @@ const joined = (last: Brief, whole: Brief): Brief | undefined => {
  * and draw in place (`withWhole`). A conversation the read no longer holds is let go. A worker at work so keeps a
  * conversation read whole as it calls tools and messages arrive, with no read of its own. @since 1.163
  */
-export const joinedWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[]; wholes: Brief[]; behind: Brief[] } =>
+const joinedWholes = (read: Brief[], wholes: Brief[]): { briefs: Brief[]; wholes: Brief[]; behind: Brief[] } =>
   wholes.reduce<{ briefs: Brief[]; wholes: Brief[]; behind: Brief[] }>((acc, whole) => {
     const last = acc.briefs.find((b) => conversationKey(b) === conversationKey(whole))
     if (!last) return acc

@@ -1,4 +1,4 @@
-import type { Board, CommandLimits, Floor } from '../bridge/board.ts'
+import type { Board, CommandLimits } from '../bridge/board.ts'
 
 /** Each `argv` command's limits on the board, an account's. */
 
@@ -13,6 +13,3 @@ export const limitsOf = (board: Limits, command: string): CommandLimits | undefi
 
 /** The default command's limits: the only ones in single-command mode. */
 export const defaultLimits = (board: Limits): CommandLimits => entryOf(board, undefined)!
-
-/** A floor's own limits: its Claude `command`'s, or the default command's on a floor that names none. */
-export const floorLimits = (board: Limits, floor: Pick<Floor, 'runtimes'>): CommandLimits => entryOf(board, floor.runtimes.claude.command)!

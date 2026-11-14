@@ -31,7 +31,10 @@ contract if authors can find everything they need on it.
   it, or when an author needs it to use what the library already holds: the type of a library function's argument
   (`TermViewIo`, `mountTermView`'s `io`), the kit for a renderer that lends none (`NO_KIT`), the splitting and naming
   a view needs to publish the `section` subjects `tower/document` publishes (`sectionsHtml`, `sectionLabels`, beside
-  `sectionsOf`). A name that has met one consumer is marked `@provisional`: it may change in a minor until a second
+  `sectionsOf`). A type is in it when a kept function's signature names it, a method of a kept type included
+  (`RegionOptions`, `Kit.region`'s), or when it is a field of a kept type whose value every view or extension
+  author handles in their own code (`Scale`, each view's `ctx.scale`). A type only a host or renderer author builds
+  in place is not: it is spelled through its holder (`HostDeps['fills']`, not `Fills`). A name that has met one consumer is marked `@provisional`: it may change in a minor until a second
   consumer promotes it. A name whose output carries something for the core alone says that part is unspecified:
   `sectionsHtml`'s html draws the sections, and the source marks in it are not contract.
 - **A core view is a client.** `src/views/` imports the library by URL, and reaches `src/shared` by path for what only
@@ -55,8 +58,8 @@ contract if authors can find everything they need on it.
   declarations; reach, nothing in `extensions/`, `examples/`, `renderers/` and `apps/` importing the core by path, nor through
   its old served modules or a core view's URL; runtimes; direction, nothing in `src/` importing the library by path, and only a core
   view by URL.
-- **The old way out.** The 28 served modules answer with `Deprecation` and a `Link` to the library's docs until 2.0
-  removes them. A page's import map names their files' hashed URLs, so only an unmapped client sees the header.
+- **The old way out is closed.** The 28 modules served before the library answer `not_found` since 2.0;
+  `docs/migrating-to-2.md` maps each, and every 1.x name the library no longer exports, to what replaces it.
 - **Types outside the checkout.** `tower types <dir>` ([`writeTypes`](ref:hub/src/types.ts#writeTypes)) writes the
   declarations the checkout's TypeScript emits for the library and the bundled clients (`tsconfig.types.json`, comments
   kept so `@deprecated` reaches editors) into `<dir>/.tower/types/`, with a tsconfig to extend that maps `/lib/*.js`,

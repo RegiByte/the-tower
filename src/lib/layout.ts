@@ -4,7 +4,6 @@ export {
   actionWords,
   addedActions,
   badgesOf,
-  /** @provisional */ commandUrl,
   /** @provisional */ exemptionsOf,
   /** @provisional */ glyphOf,
   /** @provisional */ headRanked,

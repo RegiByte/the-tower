@@ -2,7 +2,6 @@
 export {
   /** @provisional */ addedCommandOf,
   chordLabel,
-  /** @provisional */ chordsOf,
   commandOf,
   /** @provisional */ COMMANDS,
   DEFAULT_KEYS,

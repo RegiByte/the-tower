@@ -608,9 +608,6 @@
         "findCard": {
           "since": "2.0"
         },
-        "floorLimits": {
-          "since": "2.0"
-        },
         "floorSettingsOf": {
           "since": "2.0"
         },
@@ -830,12 +827,6 @@
           "since": "2.0"
         },
         "expandedSaid": {
-          "since": "2.0"
-        },
-        "joinedWholes": {
-          "since": "2.0"
-        },
-        "keptWholes": {
           "since": "2.0"
         },
         "openFolds": {
@@ -1146,10 +1137,6 @@
           "since": "2.0"
         },
         "nextAttended": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
-        "nextWait": {
           "since": "2.0",
           "stability": "provisional"
         },
@@ -1628,9 +1615,6 @@
         "Replies": {
           "since": "2.0"
         },
-        "RouteInput": {
-          "since": "2.0"
-        },
         "RunResult": {
           "since": "2.0"
         },
@@ -1710,10 +1694,6 @@
         "chordLabel": {
           "since": "2.0"
         },
-        "chordsOf": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
         "commandOf": {
           "since": "2.0"
         },
@@ -1780,10 +1760,6 @@
           "since": "2.0"
         },
         "busOf": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
-        "commandUrl": {
           "since": "2.0",
           "stability": "provisional"
         },
@@ -2030,10 +2006,6 @@
           "since": "2.0"
         },
         "relativeHref": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
-        "safeHref": {
           "since": "2.0",
           "stability": "provisional"
         },
@@ -2431,14 +2403,6 @@
         "CommandKit": {
           "since": "2.0"
         },
-        "Fill": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
-        "Fills": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
         "HostDeps": {
           "since": "2.0",
           "stability": "provisional"
@@ -2449,10 +2413,6 @@
         },
         "Kit": {
           "since": "2.0"
-        },
-        "Lent": {
-          "since": "2.0",
-          "stability": "provisional"
         },
         "Location": {
           "since": "2.0",

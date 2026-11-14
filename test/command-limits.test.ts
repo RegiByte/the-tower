@@ -4,7 +4,7 @@ import { board, type Board } from '../src/bridge/board.ts'
 import { factsOf } from '../src/bridge/facts.ts'
 import { accountsOf, commandLimits, limitFacts, type LimitFacts } from '../src/bridge/rate-limits.ts'
 import { today, weeklyBudget } from '../src/bridge/stats.ts'
-import { defaultLimits, floorLimits, limitsOf } from '../src/shared/command-limits.ts'
+import { defaultLimits, limitsOf } from '../src/shared/command-limits.ts'
 import { runtimeCommands, type Config, type Runtime } from '../src/shared/model.ts'
 import type { RateLimitsReading } from '../src/shared/rate-limits.ts'
 import { fixture } from './replay.ts'
@@ -94,17 +94,14 @@ test('the weekly budget is the default command\'s', () => {
   assert.deepEqual(b.today, today(sessions, weeklyBudget([work], [], now), now))
 })
 
-test('limitsOf, defaultLimits and floorLimits find an entry; a floor that names none has the default', () => {
+test('limitsOf and defaultLimits find an entry', () => {
   const entry = (command?: string) => ({ ...(command && { command }), rateLimits: [] })
   const two = { limits: [entry('work'), entry('home')] } as Pick<Board, 'limits'>
   assert.equal(limitsOf(two, 'home'), two.limits[1])
   assert.equal(limitsOf(two, 'gone'), undefined)
   assert.equal(defaultLimits(two), two.limits[0])
-  assert.equal(floorLimits(two, { runtimes: { claude: { command: 'home' } } }), two.limits[1])
-  assert.equal(floorLimits(two, { runtimes: { claude: {} } }), two.limits[0])
   const one = { limits: [entry()] } as Pick<Board, 'limits'>
   assert.equal(defaultLimits(one), one.limits[0])
-  assert.equal(floorLimits(one, { runtimes: { claude: {} } }), one.limits[0])
 })
 
 test('runtimeCommands: every command in order with the env, none named for the single array, an unknown runtime refused', () => {
