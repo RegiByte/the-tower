@@ -24,11 +24,11 @@ final class TowerWebView: WKWebView {
 final class TowerWindow: NSWindow {
   static let clicks: Set<NSEvent.EventType> = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
   weak var page: NSView?
-  var findOpen = false
+  weak var findBar: NSView?
 
   @discardableResult
   override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
-    if findOpen, let page, (responder as? NSView)?.isDescendant(of: page) == true,
+    if findBar?.isHidden == false, let page, (responder as? NSView)?.isDescendant(of: page) == true,
       !TowerWindow.clicks.contains(NSApp.currentEvent?.type ?? .applicationDefined)
     {
       return false
@@ -77,6 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     content.spacing = 0
     window.contentView = content
     window.page = web
+    window.findBar = findBar
     window.delegate = self
     window.center()
     window.setFrameAutosaveName("Tower")
@@ -181,7 +182,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
   @objc func showFind() {
     findBar.isHidden = false
-    window.findOpen = true
     window.makeFirstResponder(findBar.field)
     findBar.field.selectText(nil)
   }
@@ -197,7 +197,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
   func hideFind() {
     findBar.isHidden = true
-    window.findOpen = false
     window.makeFirstResponder(web)
   }
 
