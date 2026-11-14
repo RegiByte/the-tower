@@ -22,6 +22,9 @@
     "hub/src/shared/changes-panel.ts#keepingViewedFileTop",
     "hub/src/shared/file-acts.ts#fileCall",
     "hub/src/shared/panels-css.ts#panelsCss",
+    "hub/extensions/reviews/client/panel-css.ts#reviewsPanelCss",
+    "hub/extensions/policies/client/panel-css.ts#policiesPanelCss",
+    "hub/src/shared/highlight.ts#highlightCss",
     "hub/src/shared/changes-panel.ts#rowCode",
     "hub/src/shared/panel-html.ts#failedHtml",
     "hub/src/shared/highlight.ts#highlightLines",
@@ -83,8 +86,13 @@ are the same view in every renderer; only where they sit, their state and a few 
   lines, and a range over a gap would claim lines its quote doesn't hold. The drag is DOM wiring, shared as
   [`watchPickDrag`](ref:hub/src/shared/changes-lines.ts#watchPickDrag); the renderer keeps the pick and a `picking` flag,
   and what acts on the lines (the note box) waits for the drop.
-- *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels-css.ts#panelsCss)), scoped under the views' own roots. Each
-  renderer adds it as a `<style>` and sizes the element the panel is drawn in. It also lays out a worker's tab row,
+- *One stylesheet* ([`panelsCss`](ref:hub/src/shared/panels-css.ts#panelsCss)), scoped under the core views' own roots
+  (`.changes-panel`, `.stats-panel`). Each renderer adds it as a `<style>` and sizes the element the panel is drawn in.
+  An extension's panel keeps its own look beside it: the Reviews panel's
+  ([`reviewsPanelCss`](ref:hub/extensions/reviews/client/panel-css.ts#reviewsPanelCss), its quotes coloured by
+  [`highlightCss`](ref:hub/src/shared/highlight.ts#highlightCss) under its own root) and the Policies panel's
+  ([`policiesPanelCss`](ref:hub/extensions/policies/client/panel-css.ts#policiesPanelCss)), so replacing either
+  extension takes its look with it. It also lays out a worker's tab row,
   its showings kept in place across redraws by [`keepShownTabs`](ref:hub/src/shared/panel-kit.ts#keepShownTabs).
 - *A read that failed says so.* Each view takes `failed`, drawn while nothing is read:
   [`failedHtml`](ref:hub/src/shared/panel-html.ts#failedHtml) names what couldn't be read and why, with Read again. A
