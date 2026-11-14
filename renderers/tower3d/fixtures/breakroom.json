@@ -139,7 +139,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-arca",
@@ -896,7 +895,6 @@
                 }
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -950,7 +948,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-quie",
@@ -1304,7 +1301,6 @@
                 }
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",

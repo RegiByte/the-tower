@@ -170,7 +170,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-opsx",
@@ -918,7 +917,6 @@
                 "reportsTo": "20261004-090035-opsx"
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",

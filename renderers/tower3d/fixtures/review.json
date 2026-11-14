@@ -139,7 +139,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-labx",
@@ -643,7 +642,6 @@
                 }
               }
             ],
-            "policies": [],
             "x": {
               "reviews": {
                 "threads": [
@@ -1104,7 +1102,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-labx",
@@ -1608,7 +1605,6 @@
                 }
               }
             ],
-            "policies": [],
             "x": {
               "reviews": {
                 "threads": [
@@ -2069,7 +2065,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-labx",
@@ -2573,7 +2568,6 @@
                 }
               }
             ],
-            "policies": [],
             "x": {
               "reviews": {
                 "threads": [

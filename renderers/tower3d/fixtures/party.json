@@ -111,7 +111,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p1xx",
@@ -611,7 +610,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -665,7 +663,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p2xx",
@@ -1023,7 +1020,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -1077,7 +1073,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p3xx",
@@ -1364,7 +1359,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -1418,7 +1412,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p4xx",
@@ -1705,7 +1698,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -1759,7 +1751,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p5xx",
@@ -1975,7 +1966,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2029,7 +2019,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p6xx",
@@ -2174,7 +2163,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2228,7 +2216,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p7xx",
@@ -2444,7 +2431,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2498,7 +2484,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p8xx",
@@ -2572,7 +2557,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2626,7 +2610,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-p9xx",
@@ -2771,7 +2754,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",

@@ -111,7 +111,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-grow",
@@ -416,7 +415,6 @@
                 "reportsTo": "20261004-090000-grow"
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -691,7 +689,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-grow",
@@ -1073,7 +1070,6 @@
                 "reportsTo": "20261004-090000-grow"
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -1348,7 +1344,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-grow",
@@ -1884,7 +1879,6 @@
                 "reportsTo": "20261004-090000-grow"
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2159,7 +2153,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-grow",
@@ -2696,7 +2689,6 @@
                 "reportsTo": "20261004-090000-grow"
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2971,7 +2963,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-grow",
@@ -3430,7 +3421,6 @@
                 "reportsTo": "20261004-090000-grow"
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
