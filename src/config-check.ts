@@ -7,7 +7,6 @@
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { guidanceOf, manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
-import { respelled, type Respelled } from './bridge/legacy.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
 import { declaredOf, defaultRenderer, layoutProblems, layoutReachOf, renderersOf } from './renderers.ts'
@@ -42,7 +41,7 @@ import {
   type Renderer,
 } from './shared/model.ts'
 import { keysProblems } from './shared/keymap.ts'
-import { isObject, readConfig, validArgv } from './system.ts'
+import { isObject, probesGone, readConfig, validArgv } from './system.ts'
 
 export type ConfigProblem = { level: 'fail' | 'warn'; key: string; problem: string }
 
@@ -76,30 +75,9 @@ const unknownKeys = (at: string, value: Record<string, unknown>, known: readonly
 /** The unknown keys of the object at `at`, when it is one. */
 const unknownKeysAt = (at: string, value: unknown, known: readonly string[]): ConfigProblem[] => (isObject(value) ? unknownKeys(`${at}.`, value, known) : [])
 
-/** The unknown keys of each object in a set of them by name, such as `probes.quota`. */
+/** The unknown keys of each object in a set of them by name, such as `renderers.<name>`. */
 const unknownKeysEach = (at: string, value: unknown, known: readonly string[]): ConfigProblem[] =>
   isObject(value) ? Object.entries(value).flatMap(([name, each]) => unknownKeysAt(`${at}.${name}`, each, known)) : []
-
-/**
- * `probes`, the quota probe's old spelling: each field the tower honours warned with the line to write instead, one set
- * beside its new spelling a failure, and any other probe or field a failure, since nothing reads it.
- */
-const probesProblems = (probes: unknown, { old, both }: Respelled): ConfigProblem[] => {
-  if (probes === undefined) return []
-  if (!isObject(probes)) return [fail('probes', 'is the old spelling of the quota extension\'s settings: write "extensions": { "quota": { … } }')]
-  const quota = probes.quota
-  return [
-    ...old.map(({ key, use }): ConfigProblem => ({ level: 'warn', key, problem: `the old spelling, honoured until 2.0: write ${use}` })),
-    ...both.map(({ key, now }) => fail(key, `${now} is set too: the tower takes neither; keep ${now} and remove ${key}`)),
-    ...(quota !== undefined && !isObject(quota) ? [fail('probes.quota', 'takes an object: off and every, the old spelling of extensions.quota')] : []),
-    ...Object.keys(isObject(quota) ? quota : {})
-      .filter((key) => key !== 'off' && key !== 'every')
-      .map((key) => fail(`probes.quota.${key}`, 'nothing reads it: the quota probe is the quota extension, which takes off and settings.every')),
-    ...Object.keys(probes)
-      .filter((name) => name !== 'quota')
-      .map((name) => fail(`probes.${name}`, 'nothing reads it: the tower runs no probe of its own, and the quota probe is the quota extension (extensions.quota)')),
-  ]
-}
 
 /** A shelf entry reads its `label`, its kind's key and, for `md`, its `order`. */
 const shelfKeys = (entry: Record<string, unknown>): string[] => ['label', ...SHELF_KINDS.filter((kind) => kind in entry), ...('md' in entry ? ['order'] : [])]
@@ -298,10 +276,8 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
 }
 
 /** Every problem of a config read from its file, each at the key it is at. */
-export const configProblems = (read: Config): ConfigProblem[] => {
-  if (!isObject(read)) return [fail('(the file)', 'holds no JSON object')]
-  const spelled = respelled(read)
-  const config = spelled.config
+export const configProblems = (config: Config): ConfigProblem[] => {
+  if (!isObject(config)) return [fail('(the file)', 'holds no JSON object')]
   const renderers = (() => {
     try {
       return renderersOf(config)
@@ -314,7 +290,8 @@ export const configProblems = (read: Config): ConfigProblem[] => {
   const found = discover(isObject(config.extensions) ? config : { ...config, extensions: undefined })
   const extensions: Extensions = { found, resolved: resolve(found, { ...config, projects: Object.fromEntries(projects) }, API_VERSION) }
   return [
-    ...unknownKeys('', config, CONFIG_KEYS),
+    ...unknownKeys('', config, CONFIG_KEYS).filter((p) => p.key !== 'probes'),
+    ...('probes' in config ? [fail('probes', probesGone(config.probes))] : []),
     ...(validArgv(config.argv) ? [] : [fail('argv', 'takes the command sessions start with (["claude"]), or several named ones ({"claude": ["claude"], "mom": ["claude-mom"]})')]),
     ...(config.env === undefined || (isObject(config.env) && Object.values(config.env).every((v) => typeof v === 'string')) ? [] : [fail('env', 'takes an object of strings, {} for none')]),
     ...(projects.length ? [] : [fail('projects', 'names no project: add one, or `tower init` on a fresh system')]),
@@ -339,7 +316,6 @@ export const configProblems = (read: Config): ConfigProblem[] => {
     ...counts('hiring', config.hiring, HIRING_KEYS),
     ...counts('brief', config.brief, BRIEF_KEYS),
     ...counts('retention', config.retention, RETENTION_KEYS),
-    ...probesProblems(config.probes, spelled),
     ...directories('plugins', config.plugins, 'absolute plugin directories'),
     ...(config.keys === undefined ? [] : keysProblems(config.keys, addedIds(extensions.resolved)).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
     ...extensionEntries(config, extensions),

@@ -254,10 +254,9 @@ function writeConfig(port: number) {
     argv: ['bash', '-c', 'printf "a worker\\r\\n"', 'worker'],
     port,
     hosts: ['lab.localhost'],
-    probes: { quota: { every: '1h' } },
     retention: { days: 1 },
     renderers: { plain: { root: RENDERER } },
-    extensions: { pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES }, tabline: { path: TABLINE }, typed: { path: TYPED }, handoff: { path: HANDOFF } },
+    extensions: { quota: { settings: { every: '1h' } }, pulse: { path: PULSE, settings: { every: 3_600_000 } }, chime: { path: CHIME }, tally: { path: TALLY }, roles: { path: ROLES }, tabline: { path: TABLINE }, typed: { path: TYPED }, handoff: { path: HANDOFF } },
     projects: {
       lab: { name: 'lab', hub: HUB, repos: [], shelf: [{ label: 'Report', html: 'report/index.html' }], hiring: { live: 0 } },
       desk: { name: 'desk', hub: DESK, repos: [], capabilities: { handoff: { off: true } } },
@@ -584,7 +583,7 @@ const cli = (session: string, ...args: string[]) =>
 test("server: the quota probe, moved into its extension, answers its old names through LEGACY, its old folder folded as before", async () => {
   const { board } = (await firstEvent('/board')) as Extract<BoardMsg, { board: unknown }>
   const status = board.x?.quota as { every: number; lastAt: number }
-  assert.equal(status.every, 3_600_000, 'probes.quota.every, the old spelling, is read as extensions.quota.settings.every')
+  assert.equal(status.every, 3_600_000, 'extensions.quota.settings.every')
   assert.deepEqual([board.probes.length, board.probes[0].name, board.probes[0].every, board.probes[0].calls], [1, 'quota', 3_600_000, { run: ['probe/run', { name: 'quota' }] }])
   assert.equal(board.rateLimits.find((l) => l.kind === 'seven_day')?.percentUsed, 89, "the old folder's readings are the account's limits")
   const view = await get('/probe/quota?last=3')
