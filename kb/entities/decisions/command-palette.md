@@ -38,8 +38,8 @@ same palette, and only the drawing is a renderer's.
 - No arguments, no forms: an entry runs something ready or opens the UI that exists for it (the new-worker form, a
   draft, a confirm). A pick goes through the same handler as its button or key, so destructive verbs ask through the
   same confirm and the palette can't drift from the buttons. A verb a keymap command does runs as that command and
-  shows its chords, listed once; `submit` and `prompt`, `kill`, `review` and `cut` are left out (typed in the terminal,
-  ended by `send-home` per [[crews]], hired by the reviews extension's action, chosen in the new-worker form).
+  shows its chords, listed once; `submit` and `prompt`, `kill` and `cut` are left out (typed in the terminal, ended by
+  `send-home` per [[crews]], chosen in the new-worker form).
 - No word soup: a capability that names a command is that command's hint, not a row; on a typed query Learn entries
   show only when it matches them, capped; patterns are one entry that opens a sheet of `GET /patterns`.
 - The empty query is the whole catalog: a curious user wants to scroll through everything they can do before they
