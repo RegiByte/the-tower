@@ -8,7 +8,7 @@ import { z } from 'zod'
 import type { Accepted, CompiledRead, CompiledVerb } from '../bridge/extensions.ts'
 import { offOn } from '../bridge/stores.ts'
 import { thrownWords } from '../shared/thrown.ts'
-import { apiError, isApiError, type ApiError } from '../shared/api.ts'
+import { apiError, isApiError, refusal, type ApiError } from '../shared/api.ts'
 import { matchRead, paramsOf, type Caller, type Deprecated, type ProblemLane, type Writer } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'
 import type { ExtensionsResource, Instance } from './extensions.ts'
@@ -80,7 +80,7 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     if ('t' in compiled) return compiled
     const { a, instance } = compiled
     const parsed = compiled.input.safeParse(input)
-    if (!parsed.success) return apiError('invalid', z.prettifyError(parsed.error))
+    if (!parsed.success) return apiError('invalid', refusal(compiled.input, parsed.error))
     const refused = compiled.spec.scope === 'project' ? floorRefusal(readConfig(), a, (parsed.data as { project: string }).project) : undefined
     return refused ?? answered(a, 'verb', name, compiled.reply, () => instance.verb(name, parsed.data, caller))
   }
@@ -95,7 +95,7 @@ export const extensionCalls = (holder: ExtensionsResource, readConfig: () => Con
     const missing = paramsOf(name).filter((param) => !params[param])
     if (missing.length) return apiError('invalid', `${cap}/${name} takes ${missing.map((p) => `<${p}>`).join(', ')}`)
     const parsed = compiled.query ? compiled.query.safeParse(query) : { success: true as const, data: {} }
-    if (!parsed.success) return apiError('invalid', z.prettifyError(parsed.error))
+    if (!parsed.success) return apiError('invalid', refusal(compiled.query!, parsed.error))
     const project = params.project ?? (parsed.data as { project?: string }).project
     const refused = compiled.spec.scope === 'project' ? floorRefusal(readConfig(), a, project!) : undefined
     return refused ?? answered(a, 'read', name, compiled.reply, () => instance.read(name, { params, query: parsed.data }, caller))

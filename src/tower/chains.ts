@@ -9,7 +9,7 @@
 import { z } from 'zod'
 import { offOn } from '../bridge/stores.ts'
 import { thrownWords } from '../shared/thrown.ts'
-import { apiError, HOOK_DEADLINE, HOOKS, isApiError, type ApiError, type HookName } from '../shared/api.ts'
+import { apiError, HOOK_DEADLINE, HOOKS, isApiError, refusal, type ApiError, type HookName } from '../shared/api.ts'
 import { qualifiedOf, tooDeep, type Answered, type Caller } from '../shared/extensions.ts'
 import type { Config } from '../shared/model.ts'
 import type { ExtensionsResource } from './extensions.ts'
@@ -66,7 +66,7 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config,
     const caps = holder.registry().chains[target] ?? []
     if (!caps.length) return { reply: await inner(input) }
     const parsed = schemas.input.safeParse(input)
-    if (!parsed.success) return { reply: apiError('invalid', z.prettifyError(parsed.error)) }
+    if (!parsed.success) return { reply: apiError('invalid', refusal(schemas.input, parsed.error)) }
     let refusedBy: string | undefined
     const step = async (i: number, value: unknown): Promise<unknown> => {
       if (i === caps.length) return inner(value)
@@ -85,7 +85,7 @@ export const chainCalls = (holder: ExtensionsResource, readConfig: () => Config,
       let passedOn: unknown
       const next = async (value: unknown) => {
         const checked = schemas.input.safeParse(value)
-        passedOn = checked.success ? await step(i + 1, checked.data) : failed('invalid', `passed on an input ${target} doesn't take: ${z.prettifyError(checked.error)}`)
+        passedOn = checked.success ? await step(i + 1, checked.data) : failed('invalid', `passed on an input ${target} doesn't take: ${refusal(schemas.input, checked.error)}`)
         return passedOn
       }
       let reply: unknown
