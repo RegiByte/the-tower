@@ -96,7 +96,7 @@ const GATE = '1.107'
  * One of the built-ins' old names and what it is `now`, since the minor it moved in, by what applies it: `verb` and
  * `read` the core's route without its slash (`probe/run`, `probe/<name>`) and its new qualified name (`quota/read-now`);
  * `module` a served URL; `stream` a folder under `streams/` and the stream's name (`quota.reads`), whose facts stay in
- * the old folder for good; `board` a field by its subject (`board.probes`, `floor.policies`, `card.run`) and where the
+ * the old folder for good; `board` a field by its subject (`board.<field>`, `floor.<field>`, `card.<field>`) and where the
  * part it is copied from sits now (`board.x.quota`); `action` a card verb by `card.<verb>` and the extension verb whose
  * action on the card it is copied from (`reviews/hire`); `view` a core view retired and what draws its subjects now
  * (`tower/shown`, by the views by type), its id in a layout read as theirs (`VIEW_ALIASES` in `/views.js`). What a
