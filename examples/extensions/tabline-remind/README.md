@@ -86,7 +86,7 @@ newest value over the worker's lineage. `provides: "tabline"` keeps every outwar
 
 [`server.ts`](server.ts) is a launch contributor (`spawn.launch`): for each worker started, resumed or forked it reads
 the floor's `remind` and the worker's line facts over its lineage, and gives the brief's part and, for `prompt`, the env
-key `TOWER_TABLINE_REMIND=prompt`. `plugins.claude` is its Claude plugin: one `UserPromptSubmit` hook that prints
+key `TOWER_TABLINE_REMIND=prompt`. `runtimes.claude.plugins` names its Claude plugin: one `UserPromptSubmit` hook that prints
 `remind.md`, which Claude adds to the prompt, only when that key says `prompt`.
 
 ## Make it yours

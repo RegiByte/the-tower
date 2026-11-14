@@ -26,7 +26,7 @@ lowercased it names the worktree a worker is cut into, and a reviewer's first pr
 review note headings are read back by that shape. An empty list, a name of another shape or a name given twice is a
 `ConfigError` ([[board-errors]]). [`callsigns`](ref:hub/src/shared/callsign.ts#callsigns) makes the naming function
 for a list, and [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) the config's; the bridge, the CLI, the
-tower's spawns and `tower whoami`/`hire`/`review` all name through it, and renderers read `card.callsign` from the
+tower's spawns and `tower whoami`/`hire` all name through it, and renderers read `card.callsign` from the
 board, never deriving one.
 
 A callsign can instead be typed as a worker starts, once, and never changed after: `NAME-NN` (any number of digits),

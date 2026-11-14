@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The board carries the floor's present; the archive is a read",
-  "summary": "Accepted: the pushed board keeps only the cards a renderer needs to draw the present (on duty, waiting, leaving something running, or started today), with what renderers derive from history (seats, the gallery, callsigns of referenced sessions) computed in the bridge onto it; every other card is served by a read that changes rarely.",
+  "summary": "Accepted: the pushed board keeps only the cards a renderer needs to draw the present (on duty, waiting, leaving something running, or started today), with what is derived from history (callsigns of referenced sessions, crews, Tidy's plan) computed in the bridge over every card, and what one renderer alone draws from history (Tower 3D's seats and gallery) derived by that renderer; every other card is served by a read that changes rarely.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
@@ -57,7 +57,7 @@ board and the archive.
   failed) and waits for those reads to land or fail ([`archive`](ref:hub/renderers/page/archive.js#archive), the
   loop's `until`). Tower 3D reads every floor's archive for its filing cabinets and its archive panel ([[logbook]]; a fixture board serves its own), and
   a gallery picture is looked up in the gallery it derives, its card optional (`archived` on hover when the board lacks it).
-- `tower agent`, `review`, `home` and `send` take a worker on duty by callsign from the board, else read every floor's
+- `tower agent`, `home` and `let-go` take a worker on duty by callsign from the board, else read every floor's
   archive; `tower hire` reads them for the hire depth, which walks `hiredBy` to sessions the board may leave out.
 - A past worker that can't be resumed where it ran says why in both past lists (`unresumable`, [[resume]]), in place
   of its ↻.
