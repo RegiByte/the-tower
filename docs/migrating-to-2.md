@@ -16,6 +16,8 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   sessions; each one stays resumable.
 - **The old CLI words are gone.** See [The CLI](#the-cli).
 - **A config still spelling `probes` is refused.** See [Config](#config).
+- **Every config must be rewritten: `argv` and the plugins and commands moved under `runtimes`.** A 1.x config is
+  refused until it is, on the board and by `tower config check`. See [Config](#config).
 
 ## Extension and renderer authors
 
@@ -156,6 +158,55 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   export async function set({ tower, target }) { await tower.call('tabline/facts/line', { session: target.value.id, … }) }
   ```
 
+- **A manifest's `plugins` moved under `runtimes`.** `"plugins": { "claude": "<folder>" }` is refused, naming the new
+  key, and the extension does not start, so its sessions would load no plugin anyway. Write the same folder under
+  `runtimes`:
+
+  ```jsonc
+  // 1.x
+  "plugins": { "claude": "plugin" }
+  // 2.0
+  "runtimes": { "claude": { "plugins": "plugin" } }
+  ```
+
+- **The board's Claude-named fields are per runtime.** Every card says the runtime it runs, `card.runtime`, a string
+  (`'claude'` for every session today, and for a log from before runtimes were logged). The board's
+  `runtimes[<id>]` describes each runtime the tower knows. Draw a runtime from its entry, by the card's id, never by
+  comparing the id to a literal:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `card.claude` | `card.runtimeRelease` |
+  | `card.claudeUntested` | `card.runtimeUntested` |
+  | `board.claudeDefaults` | `board.runtimes.claude.defaults` (`board.runtimes[card.runtime].defaults`) |
+  | `board.claudeUntested` | `board.runtimes.claude.untested` |
+  | `board.commands` | `board.runtimes.claude.commands` |
+  | `floor.command` | `floor.runtimes.claude.command` |
+  | `floor.plugins` | gone: the raw project config is not on the board. Read `projects.<id>.runtimes.claude.plugins` from `GET /config` |
+  | the words "claude" or "Claude Code" | `board.runtimes[card.runtime].label` |
+  | the tested range in `CLAUDE_UNTESTED` | `board.runtimes[id].tested`, `{ lowest, highest }` |
+
+  A board entry is `{ label, defaults, untested, tested, commands? }`; a floor's is `{ command? }`. The type
+  `ClaudeDefaults` of `/lib/board.js` is `RuntimeDefaults`, and the new entries are the types `BoardRuntime` and
+  `FloorRuntime`.
+
+- **The library's Claude-named words are neutral.** Find each and change it:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `claudeUntestedHtml(board)`, `claudeUntestedLine(board)` | `untestedHtml(board)`, `untestedLine(board)`: one span or phrase per runtime with untested releases, `"Claude Code 2.1.330 untested"` |
+  | `claudeFlagHtml(card)` | `untestedFlagHtml(card, board)` |
+  | `CLAUDE_UNTESTED` | `untestedTitle(board.runtimes[id])` |
+  | `detailsOf(card)` | `detailsOf(card, board.runtimes)`: the runtime's row is labelled by its `label` |
+  | `spawnFormHtml(floor, { sign, draft, defaults, fields, commands })` | `spawnFormHtml(floor, { sign, draft, runtime, fields })`, `runtime` being `board.runtimes.claude` |
+  | `spawnSummaryHtml(floor, form, defaults, fields)` | `spawnSummaryHtml(floor, form, runtime, fields)` |
+  | `floorLimits(board, { command })` | `floorLimits(board, { runtimes })`, a floor as the board has it |
+  | `TermViewIo.claude` (`mountTermView`'s `io`) | `wheelReports`: true for a session's terminal, false for a shell's |
+  | `briefHtml({ briefs, … })` | `briefHtml({ briefs, agent, … })`, `agent` being `board.runtimes[card.runtime].label`, which signs the answers |
+
+- **The Brief's answers are `.bubble.agent`.** The class `.bubble.claude` on an answer is `.bubble.agent`. A user theme
+  or a renderer's stylesheet that targets `.brief-view .bubble.claude` targets `.brief-view .bubble.agent` instead.
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form
@@ -193,6 +244,63 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   `tower config check` fails it at `probes`, naming the line to write, such as
   `"extensions": { "quota": {"off":true,"settings":{"every":"1h"}} }`. Move `off` to `extensions.quota.off` and
   `every` to `extensions.quota.settings.every`, then remove `probes`.
+- **`argv`, `plugins` and a project's `plugins` and `command` moved under `runtimes`.** What serves a runtime's own
+  harness is keyed by the runtime, `runtimes.<id>`, the same at the top level and in each project; the tower runs one
+  runtime, `claude`. `env` stays at the top level. A config holding any moved key at its old place is refused: the
+  board says so, naming the first, and `tower config check` fails each one at its old path, naming the new one, such
+  as `argv moved to runtimes.claude.argv in 2.0`. Move each value unchanged, then remove the old key:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `argv` | `runtimes.claude.argv` (still required) |
+  | `plugins` | `runtimes.claude.plugins` |
+  | `projects.<id>.plugins` | `projects.<id>.runtimes.claude.plugins` |
+  | `projects.<id>.command` | `projects.<id>.runtimes.claude.command` |
+
+  A 1.x config:
+
+  ```json
+  {
+    "argv": { "claude": ["claude"], "mom": ["claude-mom"] },
+    "env": { "EXAMPLE": "1" },
+    "plugins": ["/abs/path/to/my-workflow"],
+    "projects": {
+      "my-app": {
+        "name": "my-app",
+        "hub": "/abs/path/to/my-app",
+        "repos": [],
+        "plugins": ["/abs/path/to/app-plugin"],
+        "command": "mom"
+      }
+    }
+  }
+  ```
+
+  The same config in 2.0:
+
+  ```json
+  {
+    "runtimes": {
+      "claude": {
+        "argv": { "claude": ["claude"], "mom": ["claude-mom"] },
+        "plugins": ["/abs/path/to/my-workflow"]
+      }
+    },
+    "env": { "EXAMPLE": "1" },
+    "projects": {
+      "my-app": {
+        "name": "my-app",
+        "hub": "/abs/path/to/my-app",
+        "repos": [],
+        "runtimes": { "claude": { "plugins": ["/abs/path/to/app-plugin"], "command": "mom" } }
+      }
+    }
+  }
+  ```
+
+  A plain `"argv": ["claude"]` becomes `"runtimes": { "claude": { "argv": ["claude"] } }`. A key under `runtimes` that
+  names no runtime the tower knows is a failure in `tower config check`. `tower config check` passing is the sign the
+  rewrite is complete.
 - **`keys.pane-reviews` is refused.** The config is not taken, and `tower config check` names the line to write:
   `"reviews/thread": <its value>` under `keys`, the chord of the reviews extension's thread view.
 
