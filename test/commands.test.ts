@@ -5,12 +5,12 @@ import { commandNames, projectPreferredCommand, resolveCommand, type Config } fr
 
 const config = ({ argv = ['claude'], ...over }: { argv?: unknown } & Record<string, unknown>): Config => ({ runtimes: { claude: { argv } }, projects: {}, ...over }) as Config
 
-test('commandNames: undefined for the legacy array shape, every key in source order for the object shape', () => {
+test('commandNames: undefined for the array shape, every key in source order for the object shape', () => {
   assert.equal(commandNames(config({ argv: ['claude'] }), 'claude'), undefined)
   assert.deepEqual(commandNames(config({ argv: { mom: ['claude-mom'], main: ['claude'] } }), 'claude'), ['mom', 'main'])
 })
 
-test('resolveCommand: the legacy array always, a named key when it exists, the first key otherwise', () => {
+test('resolveCommand: the array shape always, a named key when it exists, the first key otherwise', () => {
   assert.deepEqual(resolveCommand(config({ argv: ['claude'] }), 'claude', 'anything'), ['claude'])
   const multi = config({ argv: { a: ['claude'], b: ['claude-mom'] } })
   assert.deepEqual(resolveCommand(multi, 'claude', 'b'), ['claude-mom'])
@@ -27,7 +27,7 @@ test("projectPreferredCommand: undefined in single-command mode, the project's c
   assert.equal(projectPreferredCommand(multi, 'q', 'claude'), 'a')
 })
 
-test('configProblems: the legacy array argv is still accepted; the object shape is too; anything else fails', () => {
+test('configProblems: the array shape of argv is accepted; the object shape is too; anything else fails', () => {
   assert.deepEqual(configProblems(config({ argv: ['claude'] })).filter((p) => p.key === 'runtimes.claude.argv'), [])
   assert.deepEqual(configProblems(config({ argv: { a: ['claude'] } })).filter((p) => p.key === 'runtimes.claude.argv'), [])
   assert.equal(configProblems(config({ argv: {} })).some((p) => p.key === 'runtimes.claude.argv'), true)

@@ -85,11 +85,11 @@ test("a launch contributor is bound as start is: one that hasn't settled in time
   assert.equal(late, 'parts')
 })
 
-test('hostSpawn: the legacy argv always, a named command when given, the first when not or when stale, then the mod and the args; its env and name on the spawn', () => {
+test('hostSpawn: the argv of the array shape always, a named command when given, the first when not or when stale, then the mod and the args; its env and name on the spawn', () => {
   const start: HostStart = { id: 'id', project: 'p', cwd: '/c', runtime: 'claude', args: ['--x'], facts: [] }
   const spawn = (config: Config, name?: string) => hostSpawn(start, sessionCommand(config, 'claude', name), '/mods')
-  const legacy = { runtimes: { claude: { argv: ['claude'] } }, env: { A: '1' }, projects: {} } as Config
-  assert.deepEqual(spawn(legacy), { t: 'spawn', id: 'id', project: 'p', cwd: '/c', runtime: 'claude', argv: ['claude', '--plugin-dir', '/mods', '--x'], env: { A: '1' }, cols: 120, rows: 40 })
+  const arrayShape = { runtimes: { claude: { argv: ['claude'] } }, env: { A: '1' }, projects: {} } as Config
+  assert.deepEqual(spawn(arrayShape), { t: 'spawn', id: 'id', project: 'p', cwd: '/c', runtime: 'claude', argv: ['claude', '--plugin-dir', '/mods', '--x'], env: { A: '1' }, cols: 120, rows: 40 })
   const multi = { runtimes: { claude: { argv: { a: ['claude'], b: ['claude-mom'] } } }, projects: {} } as Config
   assert.deepEqual([spawn(multi, 'b').argv, spawn(multi, 'b').command], [['claude-mom', '--plugin-dir', '/mods', '--x'], 'b'])
   assert.deepEqual([spawn(multi, 'missing').argv, spawn(multi, 'missing').command], [['claude', '--plugin-dir', '/mods', '--x'], 'a'])
