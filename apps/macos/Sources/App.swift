@@ -48,6 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1440, height: 900), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
     window.title = "Tower"
     window.tabbingMode = .disallowed
+    // Under pointer lock a window that doesn't accept mouse-moved events hands the page the mouse's travel only while a
+    // button is held: Tower 3D's mouse-look turns only on a drag.
+    window.acceptsMouseMovedEvents = true
     window.contentView = web
     window.delegate = self
     window.center()
