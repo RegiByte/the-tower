@@ -1,6 +1,6 @@
 {
   "provides": "reviews",
-  "major": 1,
+  "major": 2,
   "names": [
     "verbs.append",
     "verbs.resolve",
@@ -19,6 +19,7 @@
     "client.anchors.js#linesAnchor",
     "client.anchors.js#threadMarks",
     "client.composer.js#mount",
+    "client.panel-css.js#reviewsPanelCss",
     "client.panel.js#cardReviews",
     "client.panel.js#cardThread",
     "client.panel.js#floorThread",

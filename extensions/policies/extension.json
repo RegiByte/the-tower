@@ -1,6 +1,6 @@
 {
   "id": "policies",
-  "version": "1.0",
+  "version": "2.0",
   "title": "Policies",
   "description": "Standing work the tower starts at its slots: a markdown file with a json header and the prose a run starts on.",
   "requires": {
