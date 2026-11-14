@@ -21,7 +21,7 @@ import { callerHeaders, type Replies } from './shared/api.ts'
 import type { Flow, OpenStage, Stage } from './shared/flows.ts'
 import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import { capabilityOf, FACT_DOOR, type Deprecated, type ExtensionView } from './shared/extensions.ts'
-import { helpLines, jsonArgument, jsonDeprecatedLine, missingLine, parseWord, printedOf, readUrl, unknownWordLines, usageOf, wordNamed, type Word } from './shared/cli-words.ts'
+import { helpLines, jsonArgument, jsonRefusal, missingLine, parseWord, printedOf, readUrl, unknownWordLines, usageOf, wordNamed, type Word } from './shared/cli-words.ts'
 import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
@@ -781,9 +781,8 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     }
     const json = jsonArgument(word, args)
     if (json) {
-      console.error(jsonDeprecatedLine(cap, word, json.body))
-      await runWord(cap, word, await withCallerFloor(word, json.body))
-      return
+      const { message, fix } = jsonRefusal(cap, word, json.body)
+      throw new CliError(message, fix)
     }
     const parsed = parseWord(cap, word, args)
     if (parsed.t === 'bad') throw new CliError(parsed.message, parsed.fix)
