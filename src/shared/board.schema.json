@@ -117,50 +117,6 @@
           },
           "description": "One entry per `argv` command, in its order, the default command's first; the only one in single-command mode."
         },
-        "rateLimits": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/RateLimit"
-          },
-          "description": "The default command's rate limits.",
-          "deprecated": "since 1.152: `defaultLimits(board)`; this copy goes at 2.0."
-        },
-        "rateLimitsAt": {
-          "type": "number",
-          "description": "When the default command's rate limits were read (epoch ms): a session's turn reads them, and the quota probe while no turn does, so they age only while neither reads.",
-          "deprecated": "since 1.152: `defaultLimits(board)`; this copy goes at 2.0."
-        },
-        "rateLimitsFrom": {
-          "$ref": "#/definitions/LimitsFrom",
-          "description": "Whose reading the default command's rate limits are: a session's turn, or a probe's read.",
-          "deprecated": "since 1.152: `defaultLimits(board)`; this copy goes at 2.0."
-        },
-        "turnLimits": {
-          "type": "object",
-          "properties": {
-            "at": {
-              "type": "number"
-            },
-            "limits": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/RateLimit"
-              }
-            }
-          },
-          "required": [
-            "at",
-            "limits"
-          ],
-          "additionalProperties": false,
-          "description": "The newest reading a turn of the default command's sessions took, beside the account's: what a probe of its limits waits on while turns read them.",
-          "deprecated": "since 1.152: `defaultLimits(board)`; this copy goes at 2.0."
-        },
-        "extraUsage": {
-          "$ref": "#/definitions/ExtraUsage",
-          "description": "The default command's extra usage, as the probes' newest answer that had it said.",
-          "deprecated": "since 1.152: `defaultLimits(board)`; this copy goes at 2.0."
-        },
         "extensions": {
           "type": "array",
           "items": {
@@ -291,7 +247,6 @@
         "waiting",
         "archiveAt",
         "limits",
-        "rateLimits",
         "extensions",
         "viewers",
         "adds",

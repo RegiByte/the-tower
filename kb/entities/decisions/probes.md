@@ -101,9 +101,9 @@ it replaced.
   `tower x quota probes`) and the doctor's check `reading` answer from the same folds
   ([`commandLimitsLine`](ref:hub/extensions/quota/status.ts#commandLimitsLine)), and `quota/read-now` reads through the
   path a tick takes.
-- *Old names, gone at 2.0.* `POST /probe/run`, `GET /probe/<name>`, `board.probes`, the probe words in `/cards.js`
-  and the core's reading of old `p` facts: the extension's names are the one way in. The board's top-level copies of
-  the default command's limits stay deprecated until 2.0's removal of them.
+- *Old names, gone at 2.0.* `POST /probe/run`, `GET /probe/<name>`, `board.probes`, the board's top-level copies of
+  the default command's limits, the probe words in `/cards.js` and the core's reading of old `p` facts: the
+  extension's names, `board.limits` and `defaultLimits` are the one way in.
 - *Closed months archived* by Tidy like any stream's ([[log-retention]]).
 
 **Alternatives considered.** A kind whose facts are Claude's raw answer: the core would parse each runtime's answer
