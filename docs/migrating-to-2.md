@@ -240,6 +240,12 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   The library was chosen name by name, so it holds fewer names than these modules served. A name you import that no
   library module exports has no replacement: copy it from the `v1` branch into your own code. `GET /schema` and
   `tower types <dir>` list what the library holds.
+- **`tower.schemeChoice()` and `tower.chooseScheme(c)` are gone.** The colour scheme is one field of the viewer's
+  appearance: read it with `tower.prefs.get().scheme` and set it with `tower.prefs.set({ scheme })`. A shelf page
+  that posts its own `{ t: 'tower', verb: 'scheme', scheme }` to the page framing it posts
+  `{ t: 'tower', verb: 'prefs', prefs: { scheme } }` instead; the old verb is ignored. A framed page that ran its own
+  relay and listened for `{ t: 'scheme' }` listens for `{ t: 'prefs', prefs }`: only a `url` entry's frame still gets
+  the scheme alone.
 - **Server code imports the library, not `tower:`.** An extension's server module that imports
   `tower:<name>.js` fails to load: node is told the tower doesn't lend it, and the error lists the library's
   modules. Import `/lib/<module>.js` instead, the same line a client writes, by the table above.

@@ -150,8 +150,6 @@ export type TowerVerb =
   | { verb: 'display'; subject: Subject | string; view?: string }
   /** Some of the viewer's appearance, kept by the tower page for every page of theirs and sent back as `prefs`. */
   | { verb: 'prefs'; prefs: Partial<Prefs> }
-  /** @deprecated `{ verb: 'prefs', prefs: { scheme } }` */
-  | { verb: 'scheme'; scheme: SchemeChoice }
 
 /** The shelf entry a page was opened from: the `n`th entry of `project`'s shelf. */
 export type ShelfSelf = { project: string; n: number }
@@ -198,8 +196,8 @@ export type ToPage =
   /** One message of a watched stream. */
   | { t: 'event'; id: number; data: ScreenMsg | ShellStream }
   /**
-   * The viewer's colour scheme choice, `''` to follow the system: sent after `hello`, then whenever it changes. A `url`
-   * entry's frame gets it too, on each load and change, and nothing else.
+   * The viewer's colour scheme choice, `''` to follow the system: sent to a `url` entry's frame alone, on each load and
+   * change, and nothing else. A relayed page gets `prefs`.
    */
   | { t: 'scheme'; scheme: SchemeChoice }
   /** The viewer's whole appearance (`tower.prefs`): sent after `hello`, then whenever it changes. */
@@ -279,8 +277,4 @@ export type Tower = {
   prefs: { get(): Prefs; set(patch: Partial<Prefs>): void; on(fn: (prefs: Prefs) => void): () => void; attributes(): string }
   scheme(): Scheme
   onScheme(fn: (scheme: Scheme) => void): () => void
-  /** @deprecated `prefs.get().scheme` */
-  schemeChoice(): SchemeChoice
-  /** @deprecated `prefs.set({ scheme })` */
-  chooseScheme(choice: SchemeChoice): void
 }
