@@ -218,7 +218,7 @@ shipped renderers do), and stop any clock you draw from it. A framed page gets t
 
 **Draw what can't run, and why.** The board leaves out `spawn`, `cut` and `shell` while the daemon they need is down;
 `whyNot(board, verb)` in `/lib/cards.js` says why in a sentence (`undefined` while it runs), for a control drawn inert
-with that tip in place of one that vanishes. It answers `resume`, `carry-on`, `review` and `let-go` too, which the board still offers.
+with that tip in place of one that vanishes. It answers `resume`, `carry-on` and `let-go` too, which the board offers on a card.
 
 ### A copy of one that ships
 
@@ -1552,7 +1552,7 @@ brings its own with [`runtimes.claude.plugins`](#an-extensions-claude-plugin). T
 
 `tower` is on the PATH of every session the tower runs (`npm link` puts it on yours). The user's verbs start and stop
 the system and drive sessions (`up`, `down`, `spawn`, `submit`, `kill`, `ls`…); the workers' verbs read the board and
-act on it (`whoami`, `agents`, `show`, `keep`, `hire`, `note`, `api`…), and `tower x` calls the extensions' doors,
+act on it (`whoami`, `agents`, `show`, `keep`, `hire`, `home`, `api`…), and `tower x` calls the extensions' doors,
 verbs and reads. It
 is a client of the same API: what it does, a script does with curl, and it claims its caller in headers
 (`tower-client: cli`, and a worker's `tower-session`), which a request without them is the user's. `tower` alone, or an unknown verb, lists every verb.

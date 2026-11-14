@@ -682,7 +682,8 @@ const absentAdds = (config: Config, stores: ExtensionStores[]): Record<string, A
   )
 
 /**
- * Each card with where its checkout's work stands (`checkoutState`). Who is in a worktree is folded from the cards on duty and the shells, as the board's floors fold it.
+ * Each card with where its checkout's work stands (`checkoutState`). Who is in a worktree is folded from the cards on
+ * duty and the shells, as the board's floors fold it.
  */
 const withCheckouts = (config: Config, cards: Unplaced[], shells: Shell[] | undefined, repos: Map<string, RepoRead>, stores: ExtensionStores[]): Card[] => {
   const occupants = occupantsOf(cards, shells)
