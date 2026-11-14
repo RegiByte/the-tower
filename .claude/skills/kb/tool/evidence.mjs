@@ -40,13 +40,15 @@ const COMMENT_LINE = /^\s*(?:#|\/\/|\/\*|\*|;|--)/;
 const indentOf = (line) => line.match(/^\s*/)[0].length;
 const keyColumn = (line) => line.match(/^[\s{[]*/)[0].length;
 
+const SQL_RE = /\.sql$/i;
+
 // An anchor's definition line (0-based), with what opens a sibling definition and the column it is compared at.
-// A name is found in its own case first, so ICON is `const ICON` past an earlier `const icon`; in any case only
-// where it has no definition in its own (SQL names).
+// A name matches in its own case, so ICON is `const ICON` and never `const icon`. In a SQL file, whose names are
+// case-insensitive, it is found in its own case first and in any case only where it has no definition in its own.
 function findDefinition(lines, anchor, file) {
   const candidates = LISP_RE.test(file)
     ? lispDefinitions(anchor)
-    : ["", "i"].map((flags) => ({ re: definitionRe(escapeRe(anchor), flags), opens: ANY_DEFINITION, column: indentOf }));
+    : (SQL_RE.test(file) ? ["", "i"] : [""]).map((flags) => ({ re: definitionRe(escapeRe(anchor), flags), opens: ANY_DEFINITION, column: indentOf }));
   for (const c of candidates) {
     const index = lines.findIndex((l) => c.re.test(l));
     if (index >= 0) return { index, opens: c.opens, column: c.column };
