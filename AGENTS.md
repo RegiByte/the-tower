@@ -72,7 +72,8 @@ re-renders (`kb.mjs render`). `/kb verify` for a full check; `/kb build` to docu
 
 ## Checking a renderer
 
-On the sandbox, never on the real system and never by stubbing browser input (recipe: `scripts/sandbox.ts`, which also says how to act as a worker there).
+On the sandbox, never on the real system and never by stubbing browser input (recipe: `scripts/sandbox.ts`, which
+also says how to act as a worker there).
 
 - `npm run sandbox -- up` starts your own throwaway system (`/tmp/tower-<callsign>` on a free port) and prints how to
   reach it; `down` stops it.

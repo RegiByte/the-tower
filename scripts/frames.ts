@@ -13,10 +13,11 @@
  *                                                 prints the PNGs to look at
  *   npm run tool:frames -- list                   the recordings kept
  *
- * The sandbox it reads is the one this checkout's own `up` started (a worker's is `/tmp/tower-<callsign>`): with none, it
- * throws `no sandbox at …` before doing anything. TOWER_FRAMES defaults to /tmp/tower-frames. Use it for refactors (nothing should change) and to show what a visual change
- * changed (the differing stages and their PNGs). Fixture boards never change after the first, so a change to what
- * happens between boards (desks arriving, leaving) needs a live sandbox run too.
+ * The sandbox it reads is the one this checkout's own `up` started (a worker's is `/tmp/tower-<callsign>`): with none,
+ * it throws `no sandbox at …` before doing anything. TOWER_FRAMES defaults to /tmp/tower-frames. Use it for refactors
+ * (nothing should change) and to show what a visual change changed (the differing stages and their PNGs). Fixture
+ * boards never change after the first, so a change to what happens between boards (desks arriving, leaving) needs a
+ * live sandbox run too.
  */
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
