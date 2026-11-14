@@ -3,6 +3,7 @@
  * the tower reads set back to git's defaults (`PINNED`), and is stopped past a timeout, so a hook or an fsmonitor that
  * hangs fails one verb with its name instead of holding every verb queued behind it.
  */
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { spawn } from 'node:child_process'
 import { endInput } from './child-input.ts'
 import { withoutParentSession } from './shared/env.ts'
@@ -64,22 +65,28 @@ const spawnGit = (dir: string, args: string[], timeout: number, env: NodeJS.Proc
     if (input !== undefined) endInput(child.stdin!, input)
   })
 
-/** At most `n` tasks run at once; the rest start in the order they came, each as a running one settles and hands it its place. */
+/**
+ * At most `n` tasks run at once; the rest start in the order they came, each as a running one settles and hands it its
+ * place, those queued `ahead` before those `queued`.
+ */
 const limited = (n: number) => {
   let running = 0
-  const waiting: (() => void)[] = []
-  return async <T>(task: () => Promise<T>): Promise<T> => {
-    if (running === n) await new Promise<void>((start) => waiting.push(start))
+  const waiting = { ahead: [] as (() => void)[], queued: [] as (() => void)[] }
+  const take = (line: (() => void)[]) => async <T>(task: () => Promise<T>): Promise<T> => {
+    if (running === n) await new Promise<void>((start) => line.push(start))
     else running++
     try {
       return await task()
     } finally {
-      const next = waiting.shift()
+      const next = waiting.ahead.shift() ?? waiting.queued.shift()
       if (next) next()
       else running--
     }
   }
+  return { ahead: take(waiting.ahead), queued: take(waiting.queued) }
 }
+
+type Lane = keyof ReturnType<typeof limited>
 
 const inTurn = limited(GIT_CONCURRENCY)
 
@@ -88,12 +95,21 @@ const REPO_CONCURRENCY = 6
 
 const repoTurns = new Map<string, ReturnType<typeof limited>>()
 
+const lanes = new AsyncLocalStorage<Lane>()
+
+/**
+ * `task`, every git call it starts taking the next free place before any call started outside `ahead`: a read whose
+ * few calls something waits on, such as the refs a cut is offered from, never queues behind thousands of statuses.
+ */
+export const ahead = <T>(task: () => Promise<T>): Promise<T> => lanes.run('ahead', task)
+
 /** A call's turn among its repo's, then among every repo's: one waiting on its repo holds no place of the others'. */
 const turnIn = <T>(dir: string, task: () => Promise<T>): Promise<T> => {
   const repo = dir.split(`/${WORKTREES_DIR}/`)[0]
   const inRepo = repoTurns.get(repo) ?? limited(REPO_CONCURRENCY)
   repoTurns.set(repo, inRepo)
-  return inRepo(() => inTurn(task))
+  const lane = lanes.getStore() ?? 'queued'
+  return inRepo[lane](() => inTurn[lane](task))
 }
 
 /** A call's timeout counts from its start, not from when it was queued. */

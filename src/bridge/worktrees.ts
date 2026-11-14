@@ -160,16 +160,31 @@ export type TreeRead = ReadTree | UnreadTree
  */
 export type BranchRead = Omit<Exposure, 'dirty'> & Cut & { branch: string; head: string; base: string; tree?: string }
 
+/** A project dir that is no git repository. */
+type NoRepo = { dir: string; at: number; git: false }
+
+/**
+ * A repo's refs, read before its checkouts: `at` as in `RepoRead`; `bases`: origin's branches as `origin/<x>`, its
+ * default first, empty without an origin; `originHead`: that default, when the clone recorded it (`origin/HEAD`).
+ */
+type RepoRefs = { dir: string; at: number; git: true; bases: string[]; originHead: string | undefined }
+
+/** What a project dir's first few git calls say: whether it is a repo, and its origin's branches. What a cut is offered from. */
+export type RefsRead = NoRepo | RepoRefs
+
 /**
  * What one project dir's git says, read without fetching: remote refs are as of the last fetch. `at`: when the facts
  * worktrees are judged by (the worktree list, the records, the refs) began to be read, epoch ms; a partial read that
- * keeps the last facts keeps their date, so it says nothing of what was made after. `bases`: origin's branches as
- * `origin/<x>`, its default first, empty without an origin. `originHead`: that default, when the clone recorded it
- * (`origin/HEAD`). `main`: the main checkout's own work.
+ * keeps the last facts keeps their date, so it says nothing of what was made after. `main`: the main checkout's own
+ * work.
  */
-export type RepoRead =
-  | { dir: string; at: number; git: false }
-  | { dir: string; at: number; git: true; bases: string[]; originHead: string | undefined; main: MainRead; trees: TreeRead[]; kept: BranchRead[] }
+export type RepoRead = NoRepo | (RepoRefs & { main: MainRead; trees: TreeRead[]; kept: BranchRead[] })
+
+/**
+ * A project dir not yet read in full: its refs once they are read (`RefsRead`), and what git said when its last read
+ * failed, which is tried again.
+ */
+export type FirstRead = { refs?: RefsRead; failed?: string }
 
 /**
  * The main checkout's unlanded work: `dirty` files (tracked or not), and commits `ahead` of its upstream (none without
@@ -241,7 +256,7 @@ const stateOf = (repos: FloorWorktreeRepo[], sessions: string[]): WorktreeState 
   return 'removable'
 }
 
-const gitReads = (reads: RepoRead[]) => reads.filter((r): r is Extract<RepoRead, { git: true }> => r.git)
+const gitReads = <R extends RefsRead>(reads: R[]) => reads.filter((r): r is Extract<R, { git: true }> => r.git)
 
 /** One entry per name, across the project's repos, in name order. */
 export const floorWorktrees = (project: string, reads: RepoRead[], occupants: Occupant[], recordsDiscards: boolean): FloorWorktree[] => {
@@ -268,16 +283,16 @@ export const floorBranches = (project: string, reads: RepoRead[]): FloorBranch[]
 }
 
 /** Whether a cut can start in every dir of the project: each is a git repo with an origin, whichever default branch it has. */
-export const cuttable = (reads: RepoRead[]): boolean => reads.length > 0 && gitReads(reads).length === reads.length && gitReads(reads).every((r) => r.bases.length > 0)
+export const cuttable = (reads: RefsRead[]): boolean => reads.length > 0 && gitReads(reads).length === reads.length && gitReads(reads).every((r) => r.bases.length > 0)
 
 /** Origin's default branch when every repo of the project has the same one recorded: where a cut naming no base starts each. */
-export const sharedDefault = (reads: RepoRead[]): string | undefined => {
+export const sharedDefault = (reads: RefsRead[]): string | undefined => {
   const heads = new Set(reads.map((r) => (r.git ? r.originHead : undefined)))
   return heads.size === 1 ? [...heads][0] : undefined
 }
 
 /** The bases a cut can name for every repo at once: origin's branches every repo of the project has, in the hub's order. Empty when their defaults differ and no other branch is shared. */
-export const commonBases = (reads: RepoRead[]): string[] => {
+export const commonBases = (reads: RefsRead[]): string[] => {
   const repos = gitReads(reads)
   if (repos.length !== reads.length || !repos.length) return []
   return repos[0].bases.filter((base) => repos.every((r) => r.bases.includes(base)))
@@ -290,6 +305,22 @@ export const projectReads = (dirs: string[], repos: Map<string, RepoRead>): Repo
   const reads = dirs.map((dir) => repos.get(dir))
   return reads.every((r) => r !== undefined) ? (reads as RepoRead[]) : undefined
 }
+
+/**
+ * The project's dirs' refs, in the order given: each dir's full read, else its refs read on their own (`firsts`);
+ * `undefined` until every one has either.
+ */
+export const projectRefs = (dirs: string[], repos: Map<string, RepoRead>, firsts: Map<string, FirstRead>): RefsRead[] | undefined => {
+  const refs = dirs.map((dir) => repos.get(dir) ?? firsts.get(dir)?.refs)
+  return refs.every((r) => r !== undefined) ? (refs as RefsRead[]) : undefined
+}
+
+/** The project's dirs not yet read in full, in the order given, each with what git said when its last read failed. */
+export const projectReading = (dirs: string[], repos: Map<string, RepoRead>, firsts: Map<string, FirstRead>): { dir: string; failed?: string }[] =>
+  dirs.filter((dir) => !repos.has(dir)).map((dir) => {
+    const failed = firsts.get(dir)?.failed
+    return failed === undefined ? { dir } : { dir, failed }
+  })
 
 /**
  * The project's reads as they speak for a session started at `startedAt`: `undefined` while any of them is dated

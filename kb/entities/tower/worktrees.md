@@ -5,7 +5,7 @@
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "tower-core",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#restoreWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges", "hub/src/changed-files.ts#changedSince"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#rereadRefs", "hub/src/worktrees.ts#rereadCheckouts", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#restoreWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges", "hub/src/changed-files.ts#changedSince"]
 }
 ---
 `src/worktrees.ts` is the only code that changes the tower's worktrees and branches. The tower server calls it; what
@@ -26,8 +26,12 @@ as old as the last fetch.
 - **Read.** [`readRepo`](ref:hub/src/worktrees.ts#readRepo) reads a repo's worktrees and kept branches without
   fetching, every part afresh, as every verb does after its fetch; [`rereadRepo`](ref:hub/src/worktrees.ts#rereadRepo)
   reads again only the parts a change made stale (the repo's own facts, a checkout's status, a branch's reflog) and
-  keeps the rest from its last parts, as the board's reads do on a thread of their own (`src/repo-reader.ts`, started
-  by [[live-system]]). Both remember what never changes for a commit: whether it is [[absorbed]] or [[carried]], what
+  keeps the rest from its last parts. It is two reads composed: [`rereadRefs`](ref:hub/src/worktrees.ts#rereadRefs),
+  where the repo's git lives and its own facts, origin's branches among them, a few calls; then
+  [`rereadCheckouts`](ref:hub/src/worktrees.ts#rereadCheckouts), every checkout and kept branch judged on those facts.
+  The board's reads ask the two apart on a thread of their own (`src/repo-reader.ts`, started by [[live-system]]), the
+  refs' git calls ahead of every checkouts read's ([`ahead`](ref:hub/src/git.ts#ahead)), so a floor offers a cut
+  before its checkouts are read. Both remember what never changes for a commit: whether it is [[absorbed]] or [[carried]], what
   is unpushed, and where a head left its base. Each checkout's read carries `changed`, the files its Changes count
   ([`changedSince`](ref:hub/src/changed-files.ts#changedSince), [[changes-view]]), counted again only when its status is
   read again or where it left its base moved.

@@ -134,6 +134,7 @@ export const publisher = defineResource({
       heldJobs: system.heldJobs(),
       items: system.items(),
       repos: system.repos(),
+      firstReads: system.firstReads(),
       logFiles: system.logs(),
       readings: extensions.readings(),
       streams: system.streamMonths(),

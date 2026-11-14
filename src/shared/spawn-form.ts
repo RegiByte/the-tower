@@ -62,6 +62,19 @@ export const formFields = (board: Board, f: Floor): FormField[] =>
 export const MODELS = ['fable', 'opus', 'sonnet', 'haiku']
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 
+/**
+ * Why `f` offers no cut, `undefined` while it does: the host is down, a dir's first read failed (what git said), its
+ * git is still being read, or a dir is no git repo or has no origin.
+ */
+export const cutWhy = (f: Floor): string | undefined => {
+  if (can(f, 'cut')) return undefined
+  if (!can(f, 'spawn')) return 'the host is down'
+  const failed = f.reading?.find((r) => r.failed !== undefined)
+  if (failed) return `git couldn't read ${base(failed.dir)}: ${failed.failed}`
+  if (f.reading) return 'its git is still being read'
+  return f.git ? 'a directory has no origin' : 'a directory is not a git repo'
+}
+
 /** Where a worker starts unless told: its own worktree when the floor cuts by default and can cut now, else the hub. */
 export const defaultWhere = (f: Floor): Where => (f.cutByDefault && can(f, 'cut') ? 'new' : 'main')
 
@@ -202,7 +215,6 @@ export function spawnFormHtml(f: Floor, { sign, draft, runtime, fields = [] }: {
   const worktrees = joinable(f)
   const repos = [f.hub, ...f.repos]
   const isDefault = (w: Where) => (w === v.where ? 'default' : '')
-  const cutWhy = can(f, 'spawn') ? 'a directory is not a git repo with an origin' : 'the host is down'
   return `<form class="spawn-form"${f.color ? ` style="--p:${esc(f.color)}"` : ''}>
   <header>${sign}<h2>New worker</h2>${draft ? `<span class="draft">on the draft <b>${esc(draft)}</b>, deleted once it starts</span>` : ''}</header>
   <div class="cols">
@@ -210,7 +222,7 @@ export function spawnFormHtml(f: Floor, { sign, draft, runtime, fields = [] }: {
       <textarea name="prompt" spellcheck="false" placeholder="What should it work on? Left empty, ${esc(label)} boots to an idle prompt.">${esc(v.prompt)}</textarea></label>
     <div class="setup">
       <fieldset class="where"><legend>${labelHtml('Where')}</legend>
-        ${choiceHtml('new', 'New worktree', `its own branch, in ${esc(repos.map(base).join(' + '))}`, { checked: v.where === 'new', disabled: !can(f, 'cut'), aside: can(f, 'cut') ? isDefault('new') : esc(cutWhy) })}
+        ${choiceHtml('new', 'New worktree', `its own branch, in ${esc(repos.map(base).join(' + '))}`, { checked: v.where === 'new', disabled: !can(f, 'cut'), aside: esc(cutWhy(f) ?? isDefault('new')) })}
         ${choiceHtml('worktree', 'Existing worktree', worktrees.length ? `join one of ${worktrees.length} on this floor` : 'none on this floor', { disabled: !worktrees.length })}
         ${choiceHtml('main', 'Main checkout', 'shared with you and every worker there', { checked: v.where === 'main', aside: isDefault('main') })}
       </fieldset>

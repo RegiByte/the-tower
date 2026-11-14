@@ -5,7 +5,7 @@
   "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, the jobs log and the jobs daemon's jobs, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
   "in": "bridge",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo", "hub/src/bridge/worktrees.ts#readsSince"],
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo", "hub/src/bridge/worktrees.ts#readsSince", "hub/src/worktrees.ts#rereadRefs", "hub/src/worktrees.ts#rereadCheckouts", "hub/src/git.ts#ahead", "hub/src/bridge/worktrees.ts#projectRefs", "hub/src/bridge/worktrees.ts#projectReading"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
     { "to": "system-root", "verb": "reads", "carries": "streams/*/<folder>/YYYY-MM.jsonl, each stream an extension folds stepped on once a write settles" },
@@ -18,7 +18,7 @@
     { "to": "claude-code", "verb": "reads", "carries": "~/.claude/sessions/<pid>.json, each running Claude's registration (pid, peer name), every 5 s while observed" },
     { "to": "log-reductions", "verb": "uses", "carries": "factsAfter as the fold step for each event" },
     { "to": "system-root", "verb": "reads", "carries": "config.json, for the project dirs whose git it reads; its directory watched for the config changing" },
-    { "to": "worktrees", "verb": "uses", "carries": "rereadRepo, each project dir's git read again for the parts a change made stale, while observed" }
+    { "to": "worktrees", "verb": "uses", "carries": "rereadRefs then rereadCheckouts, each project dir's git read again for the parts a change made stale, while observed" }
   ]
 }
 ---
@@ -76,6 +76,17 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   another dir's reads land meanwhile, and what the slow dir is asked waits for it. A caller waits for the read carrying
   its own ask, at most the one in flight and then that, so a repo that keeps being asked can't hold it. One repo, its worktrees included, holds
   at most six of git's eight places, so a hung one with many worktrees leaves the others some.
+- **Refs first.** A read is two asks of the reader: the dir's refs ([`rereadRefs`](ref:hub/src/worktrees.ts#rereadRefs):
+  its layout and own facts, origin's branches among them), then its checkouts judged on them
+  ([`rereadCheckouts`](ref:hub/src/worktrees.ts#rereadCheckouts)). The refs' git calls run
+  [`ahead`](ref:hub/src/git.ts#ahead): each takes the next free place before any checkouts call queued, in the repo's
+  six and in git's eight, so they never wait behind the statuses of other dirs, only for one running call to end. While
+  a dir has never been read in full, its refs are kept on their own (`firstReads`), with what git said when its last
+  read failed, and a floor offers `cut`, its `bases` and `defaultBase` from them
+  ([`projectRefs`](ref:hub/src/bridge/worktrees.ts#projectRefs)), listing the dirs still read in its `reading`
+  ([`projectReading`](ref:hub/src/bridge/worktrees.ts#projectReading)). On a sandbox floor of 100 racy worktrees,
+  `cut` came with the first board (3 s, the first board's wait) instead of after the whole read (7 s); with 9 dirs, a
+  refs read asked while every checkout is read took about 1 s instead of 14 s.
 - **Watched.** While observed, each dir's tree is watched recursively ([`subscribe`](ref:hub/src/subscribe.ts#subscribe)),
   and its git's common dir when that lies outside it, the objects and the fsmonitor daemon's cookies left out. Each
   changed path is mapped to the parts of the repo's read it makes stale
@@ -103,8 +114,8 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   worktree git hasn't been read with yet is not one that was removed. Until then the card says nothing is gone, as
   before the first read. While the board is observed, git is read only as its changes settle, and a session's log is
   folded at once, so without this a new session's card could show its new worktree gone. A floor shows no worktrees
-  until every dir of it was read once ([`projectReads`](ref:hub/src/bridge/worktrees.ts#projectReads)), so a dir landing
-  before its neighbour never makes a worktree spanning both look removable.
+  until every dir of it was read once in full ([`projectReads`](ref:hub/src/bridge/worktrees.ts#projectReads)), so a
+  dir landing before its neighbour never makes a worktree spanning both look removable.
 - **Fresh for verbs.** A worktree verb and `refreshRepos` read every part afresh: every destructive verb decides from
   a read made after its fetch, never from the board's ([[tower-cuts-worktrees]]).
 - **Platforms.** Every recursive watch is a `@parcel/watcher` subscription behind
@@ -120,7 +131,7 @@ One read runs at a time, a read asked during one running once more after it, wit
 
 **Failures.** No poll or watch callback can end the tower ([`logged.ts`](ref:hub/src/logged.ts)): a read that fails
 keeps its last read (an unparseable config keeps every repo's) and says why in the tower's log, a repo's read once
-until its reason changes or a read succeeds. One checkout's failure is not the repo's: it costs that checkout alone, on the board ([[worktrees]]). A log's tail whose
+until its reason changes or a read succeeds; a dir never read in full says it on its floor's `reading` too. One checkout's failure is not the repo's: it costs that checkout alone, on the board ([[worktrees]]). A log's tail whose
 watcher fails says so and that session's facts stop there; a failed watch of the sessions directory, the collections,
 the streams or the config's directory, or its root removed, ends the tower
 ([`watchedOrExit`](ref:hub/src/logged.ts#watchedOrExit), [`exitUnwatched`](ref:hub/src/logged.ts#exitUnwatched)), since

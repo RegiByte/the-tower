@@ -13,6 +13,7 @@ export const viewOf = (config: Config, over: Partial<SystemView> = {}): SystemVi
   heldJobs: [],
   items: [],
   repos: new Map(),
+  firstReads: new Map(),
   logFiles: new Map(),
   readings: [],
   streams: [],
