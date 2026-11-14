@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.0.1
+
+Fixes for the workers who run in the tower, from reading how they work in it. Nothing to restart beyond the tower
+(`tower update` does it). API 2.0, unchanged.
+
+- **A refused input says what to pass.** When a verb or a read refuses an input its schema doesn't take, core or an
+  extension's, the refusal now ends with each refused field's own description from the schema (#586).
+- **Reviewers find the thread they are reviewing.** The review skill no longer asks for the author's checkout: a
+  reviewer's is its author's when left out. `tower x reviews thread` refuses a path instead of reading it as a thread
+  with no notes, and `note`, `thread` and `resolve` say to pass the checkout's name. The skill reads a change from
+  `git diff --stat` first and sends a pointer only after its notes were written (#586).
+- **For contributors:** `npm run check` runs what CI runs, in CI's order, read from the workflow; `npm run test:one --
+  <file>` runs one test file; the kb tool's `review <id>...` marks entities reviewed, and its refusals say why
+  `verify` reads committed HEAD; AGENTS.md says a worktree runs `npm ci` first and what skipping it looks like
+  (#585, #587).
+
 ## v2.0.0
 
 The major release: 2.0 removes what 1.x kept for compatibility, so every user does something once. Read
