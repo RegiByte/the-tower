@@ -166,7 +166,7 @@ const workerOffers = (board: Board, scene: Scene, c: Card, drive: string): Offer
   const rest: Offer[] = [
     ...(can(c, 'brief') ? [{ verb: 'brief' as const, label: 'logbook' }] : []),
     ...threadOffer(board, c),
-    ...(reviewAction(board, c) ? [holding(board, scene, 'review', { verb: 'review', label: 'hire a reviewer' })] : []),
+    ...(reviewAction(board, c) ? [holding(board, scene, 'spawn', { verb: 'review', label: 'hire a reviewer' })] : []),
     ...(can(c, 'reap') ? [{ verb: 'reap' as const, label: `reap ${c.resources.length} leftover${c.resources.length === 1 ? '' : 's'}` }] : []),
     ...(can(c, 'send-home') ? [{ verb: 'kill' as const, label: homeLabel(board, c) }] : []),
     ...(can(c, 'let-go') ? [holding(board, scene, 'let-go', { verb: 'let-go', label: 'let go' })] : []),
