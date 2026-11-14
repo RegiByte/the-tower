@@ -129,48 +129,6 @@ export const CLI_VERBS = {
 
 export type VerbName = keyof typeof CLI_VERBS
 
-/**
- * An old core word kept until 2.0: `now`, the word it is under `tower x`, and `args`, its arguments rewritten into that
- * word's. Each alias says it is one on stderr, once per call.
- */
-export type Alias = { now: string; args: (words: string[]) => string[] }
-
-const NOTE_NUMBER = /^n?\d+$/
-
-/** `tower note`'s old grammar as reviews' words: `on <checkout>`, `re n<k>`, `resolve n<k> …` and anchors, in any order. */
-const noteWords = (words: string[]): string[] => {
-  const flags: string[] = []
-  const resolves: string[] = []
-  let resolving = false
-  for (let i = 0; i < words.length; i++) {
-    if (words[i] === '--help' || words[i] === '-h') return ['note', '--help']
-    if (words[i] === 'on' && words[i + 1]) flags.push('--on', words[++i])
-    else if (words[i] === 're' && NOTE_NUMBER.test(words[i + 1] ?? '')) flags.push('--re', words[++i])
-    else if (words[i] === 'resolve') {
-      resolving = true
-      while (NOTE_NUMBER.test(words[i + 1] ?? '')) resolves.push(words[++i])
-    } else flags.push('--at', words[i])
-  }
-  return resolving ? ['resolve', ...resolves, ...flags] : ['note', ...flags]
-}
-
-/** The old core words that moved under `tower x`. */
-export const ALIASES: Record<string, Alias> = {
-  policies: { now: 'policies', args: ([sub, ...rest]) => (sub === undefined ? ['list'] : sub === 'run' ? ['run-now', ...rest] : sub === 'approve' ? ['approve-now', ...rest] : [sub, ...rest]) },
-  runs: { now: 'policies runs', args: (words) => words },
-  probes: { now: 'quota', args: (words) => (words[0] === 'run' ? ['read-now', ...words.slice(2)] : ['probes', ...words]) },
-  note: { now: 'reviews', args: noteWords },
-  thread: { now: 'reviews thread', args: (words) => words },
-  send: { now: 'reviews send', args: (words) => words },
-  review: { now: 'reviews review', args: (words) => words.map((w) => (w === 'tell' ? '--tell' : w)) },
-}
-
-/** The words an alias stands for, after `tower x`, and what it says about itself: the command as typed and as it runs, so the line can be typed. */
-export const aliased = (alias: Alias, name: string, words: string[]): { args: string[]; line: string } => {
-  const args = [...alias.now.split(' '), ...alias.args(words)]
-  return { args, line: `${['tower', name, ...words].join(' ')} is ${['tower x', ...args].join(' ')}; the old word goes at 2.0` }
-}
-
 /** The verbs that are `of`'s: each dispatcher's handlers are keyed by them. */
 export type VerbOf<Of extends CliVerb['of']> = { [K in VerbName]: (typeof CLI_VERBS)[K]['of'] extends Of ? K : never }[VerbName]
 

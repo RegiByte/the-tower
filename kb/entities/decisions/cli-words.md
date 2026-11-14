@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
-  "reviewed": "2026-11-11",
-  "refs": ["hub/src/shared/cli-words.ts#wordsOf", "hub/src/shared/cli-words.ts#parseWord", "hub/src/shared/cli-words.ts#missingLine", "hub/src/shared/cli-words.ts#jsonDeprecatedLine", "hub/src/shared/extensions.ts#Manifest", "hub/src/bridge/extensions.ts#cliProblems", "hub/src/bridge/extensions.ts#contractNames", "hub/src/directory.ts#runWord", "hub/src/directory.ts#withCallerFloor", "hub/src/directory.ts#textOnStdin", "hub/src/cli-verbs.ts#ALIASES", "hub/src/cli-verbs.ts#movedLine", "hub/test/cli-words.test.ts"]
+  "reviewed": "2026-11-14",
+  "refs": ["hub/src/shared/cli-words.ts#wordsOf", "hub/src/shared/cli-words.ts#parseWord", "hub/src/shared/cli-words.ts#missingLine", "hub/src/shared/cli-words.ts#jsonRefusal", "hub/src/shared/extensions.ts#Manifest", "hub/src/bridge/extensions.ts#cliProblems", "hub/src/bridge/extensions.ts#contractNames", "hub/src/directory.ts#runWord", "hub/src/directory.ts#withCallerFloor", "hub/src/directory.ts#textOnStdin", "hub/src/cli-verbs.ts#movedLine", "hub/test/cli-words.test.ts"]
 }
 ---
 **Problem.** `tower x` took one JSON argument. A worker had to write a whole object by hand to do what a core word does
@@ -44,18 +44,19 @@ with a core word by construction, so there is nothing to reserve.
   missing input names it with an example, a wrong value names its type, and an unknown word or flag names the nearest.
 - **A door's `--value` is required.** A bare door word is the missing-flag error, so it clears nothing by accident.
   `--value ""` reaches the door as an empty string, and clearing is that value on purpose, for a fact that reads a blank
-  as cleared. `null` stays at the API; a null in a JSON argument on a string door is typed `--value ""`, on a door that
-  takes JSON `--value null`, and on any other door has no typed form, so a door that needs one offers a verb.
+  as cleared. `null` stays at the API, and a door that needs one from the command offers a verb.
 - **A word's shape is its verb's.** A word wanting friendlier input is a verb of its own over the same function, never
   a mode on one verb. A word's name and shape are `contract.json` names, so a replacement must offer them.
-- **The JSON argument goes at 2.0.** Until then it works, is filled the same way, and says what to type instead,
-  rendered from the JSON it was given. `ALIASES` holds the old core words as they move: `policies`, `runs` and
-  `probes`, each saying on stderr the command it runs, so the line can be typed.
+- **A JSON argument is refused.** One argument that parses as JSON exits non-zero and runs nothing
+  ([`jsonRefusal`](ref:hub/src/shared/cli-words.ts#jsonRefusal)), naming the typed line it would have been, rendered
+  from the JSON given (a null on a string door as `--value ""`, on a door that takes JSON as `--value null`), or the
+  word's `--help` when flags can't say it.
 - **A moved word is an error that names its fix, never an alias.** An unknown top-level word that is a capability's
   name or an extension's word exits non-zero, runs nothing and names every form it has under `tower x`, read from
-  `GET /extensions` with no table, an owner not running with its state. It already teaches words that never had an
-  alias (`tower limits`), and takes over the `ALIASES` words when their table goes at 2.0. It matches exactly and
-  echoes none of the arguments, since an old word's grammar may not be its new one's.
+  `GET /extensions` with no table, an owner not running with its state: the seven core words that once named bundled
+  extensions (`policies`, `runs`, `probes`, `note`, `thread`, `send`, `review`) and words that never were core
+  (`tower limits`) alike. It matches exactly and echoes none of the arguments, since an old word's grammar may not be
+  its new one's.
 - **Words want guidance.** An extension with a `cli` and no guidance gets the warning `cli`, since a word nothing names
   reaches nobody; one with no `cli` doesn't, as a verb is a word whether or not a worker is meant to type it.
 

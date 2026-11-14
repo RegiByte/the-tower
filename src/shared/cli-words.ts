@@ -279,8 +279,8 @@ export const parseWord = (cap: string, word: Word, args: string[]): Parsed => {
 }
 
 /**
- * The input of a deprecated JSON argument, as `tower x <cap> <verb> '<json>'` gave it: one argument that parses, and
- * for a word that takes positional arguments only an object, which no name it could be given looks like.
+ * The input of a JSON argument, which `jsonRefusal` refuses, as `tower x <cap> <verb> '<json>'` gave it: one argument
+ * that parses, and for a word that takes positional arguments only an object, which no name it could be given looks like.
  */
 export const jsonArgument = (word: Word, args: string[]): { body: unknown } | undefined => {
   if (args.length !== 1 || args[0].startsWith('--') || (word.positional.length && !args[0].startsWith('{'))) return undefined
@@ -308,16 +308,16 @@ const isTypable = (word: Word, body: unknown): body is Record<string, unknown> =
     return field.many ? Array.isArray(value) && value.every((v) => typesAs(field.takes, v)) : typesAs(field.takes, value)
   })
 
-const JSON_GOES = 'A JSON argument to tower x is deprecated and goes at 2.0.'
+const JSON_REFUSED = 'tower x takes flags, not a JSON argument'
 
 /**
- * What a deprecated JSON argument says on stderr: that it goes, and what to type instead, or where to read how when
- * flags can't say that input. A null on a string door is typed as the blank value that clears it on purpose, on a door
- * that takes JSON as `null`, and on any other door it has no typed form.
+ * What a JSON argument is refused with: what to type instead, or where to read how when flags can't say that input. A
+ * null on a string door is typed as the blank value that clears it on purpose, on a door that takes JSON as `null`,
+ * and on any other door it has no typed form.
  */
-export const jsonDeprecatedLine = (cap: string, word: Word, body: unknown): string => {
-  if (word.kind === 'door' && isRecord(body) && body.value === null && !['string', 'json'].includes(word.fields[0].takes)) return `${JSON_GOES} A null has no typed form on ${typedName(word)}: a door that needs one should offer a verb.`
-  return `${JSON_GOES} Type instead: ${isTypable(word, body) ? typedLine(cap, word, body) : `tower x ${cap} ${typedName(word)} --help`}`
+export const jsonRefusal = (cap: string, word: Word, body: unknown): { message: string; fix: string } => {
+  if (word.kind === 'door' && isRecord(body) && body.value === null && !['string', 'json'].includes(word.fields[0].takes)) return { message: `${JSON_REFUSED}, and a null has no typed form on ${typedName(word)}`, fix: 'a door that needs one should offer a verb' }
+  return { message: JSON_REFUSED, fix: isTypable(word, body) ? `type ${typedLine(cap, word, body)}` : `\`tower x ${cap} ${typedName(word)} --help\` lists its flags` }
 }
 
 /** The first required field nothing gave, as what to say and an example, which leaves out the floor a worker's word fills; none when the input is whole. */

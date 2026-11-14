@@ -646,7 +646,7 @@ test('server: an extension typed as a command gets its input as written, its cal
   assert.equal(typed(undefined, ['lines']).stdout, 'one\ntwo\n')
 })
 
-test('server: an error in a word says what to do next and exits non-zero, and a JSON argument still works, saying so', async () => {
+test('server: an error in a word says what to do next and exits non-zero, and a JSON argument is refused, naming the typed form', async () => {
   const failed = (session: string, args: string[], input?: string) => {
     const { status, stderr, stdout } = typed(session, args, input)
     assert.equal(status, 1, stdout)
@@ -656,10 +656,7 @@ test('server: an error in a word says what to do next and exits non-zero, and a 
   assert.equal(failed(SESSION, ['coutn']), 'tower: typed has no word "coutn"\n  → Did you mean count? `tower x typed` lists its words\n')
   assert.equal(failed('gone', ['note'], 'Body.'), 'tower: The tower has no session "gone"\n  → --project <id> names the floor\n')
 
-  const raw = typed(SESSION, ['note', '{"body": "b"}'])
-  assert.match(raw.stderr, /^A JSON argument to tower x is deprecated and goes at 2\.0\. Type instead: tower x typed note /)
-  assert.match(raw.stdout, /"project":"lab"/)
-  assert.match(failed(SESSION, ['tags', '{"tag": "x"}']), /^A JSON argument .*tower x typed tags --help\ntower: The tower refused typed\/tags: /)
+  assert.equal(failed(SESSION, ['note', '{"body": "b"}']), "tower: tower x takes flags, not a JSON argument\n  → type tower x typed note <<'EOF' … EOF\n")
 })
 
 test("server: a door word reaches its door for the caller's session, a blank as an empty string", async () => {
@@ -1499,7 +1496,7 @@ test('server: no hidden file is served below a shown page or a renderer', async 
 })
 
 
-test('server: review threads written before the reviews extension read the same: threads, landed, filed, unseen, history and tower thread', async () => {
+test('server: review threads written before the reviews extension read the same: threads, landed, filed, unseen, history and tower x reviews thread', async () => {
   const board = await settled(
     async () => {
       const msg = (await firstEvent('/board')) as BoardMsg
@@ -1562,7 +1559,7 @@ test('server: review threads written before the reviews extension read the same:
   })
 
   const threads = path.join(ROOT, 'collections', 'desk', 'reviews')
-  const authorRead = cli(DESK_SESSIONS.author, 'thread')
+  const authorRead = cli(DESK_SESSIONS.author, 'x', 'reviews', 'thread')
   assert.ok(authorRead.startsWith(`${DESK_THREADS['odin-1.md']}\n`), authorRead)
   assert.ok(authorRead.includes(`(${threads}/odin-1.md) New to you since your last note: n3, n4.\n`), authorRead)
   const threadSaid = async (session: string, query: string) => JSON.parse((await request(`/reviews/thread/desk${query}`, { headers: callerHeaders(session) })).body).said as string

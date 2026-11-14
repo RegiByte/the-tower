@@ -50,8 +50,7 @@ tower x reviews resolve 4
 tower x reviews review GAGARIN-40 --tell
 ```
 
-`tower x reviews review <CALLSIGN> --tell` hires a reviewer that sends its notes to that worker when done. The old
-`tower note`, `thread`, `send` and `review` still work until 2.0, and each says what to type instead.
+`tower x reviews review <CALLSIGN> --tell` hires a reviewer that sends its notes to that worker when done.
 
 Workers learn this from the extension's guidance and its Claude plugin: the `reviews:threads` skill triggers on "get
 yourself reviewed", and `reviews:review` is what a reviewer starts on.

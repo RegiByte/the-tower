@@ -2,12 +2,13 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
-import { ALIASES, aliased, movedLine, type WordOwner } from '../src/cli-verbs.ts'
-import { helpLines, jsonArgument, jsonDeprecatedLine, missingLine, nearest, parseWord, printedOf, readUrl, typedLine, unknownWordLines, usageOf, wordNamed, wordsOf, type Word } from '../src/shared/cli-words.ts'
+import { movedLine, type WordOwner } from '../src/cli-verbs.ts'
+import { helpLines, jsonArgument, jsonRefusal, missingLine, nearest, parseWord, printedOf, readUrl, typedLine, unknownWordLines, usageOf, wordNamed, wordsOf, type Word } from '../src/shared/cli-words.ts'
 import { Manifest } from '../src/shared/extensions.ts'
 
 const manifest = Manifest.parse(JSON.parse(readFileSync(path.join(import.meta.dirname, 'fixtures', 'extensions', 'typed', 'extension.json'), 'utf8')))
 const WORDS = wordsOf(manifest)
+const REFUSED = 'tower x takes flags, not a JSON argument'
 const word = (name: string): Word => wordNamed(WORDS, name)!
 const input = (name: string, ...args: string[]) => {
   const parsed = parseWord('typed', word(name), args)
@@ -102,25 +103,25 @@ test("usage comes from cli.usage, else from the fields; help lists each flag", (
   assert.deepEqual(helpLines('typed', word('note')).slice(1, 3), ["  --project  a string, your floor's when left out", '  --body  a string, or text on stdin, required'])
 })
 
-test('a JSON argument is still read, and says what to type instead', () => {
+test('a JSON argument is refused, naming what to type instead', () => {
   assert.deepEqual(jsonArgument(word('count'), ['{"times": 3}']), { body: { times: 3 } })
   assert.deepEqual(jsonArgument(word('send'), ['{"to": "X"}']), { body: { to: 'X' } })
   assert.equal(jsonArgument(word('send'), ['HOLMES-42']), undefined)
   assert.equal(jsonArgument(word('count'), ['--times', '3']), undefined)
   assert.deepEqual(jsonArgument(wordNamed(WORDS, 'plain/42')!, ['{"limit": "3"}']), { body: { limit: '3' } })
-  assert.equal(jsonDeprecatedLine('typed', word('count'), { times: 3 }), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x typed count --times 3')
-  assert.equal(jsonDeprecatedLine('typed', word('note'), { body: 'b', at: ['a:b:1', 'a:c d:2'], re: 3 }), "A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x typed note --re 3 --at a:b:1 --at 'a:c d:2' <<'EOF' … EOF")
+  assert.deepEqual(jsonRefusal('typed', word('count'), { times: 3 }), { message: REFUSED, fix: 'type tower x typed count --times 3' })
+  assert.deepEqual(jsonRefusal('typed', word('note'), { body: 'b', at: ['a:b:1', 'a:c d:2'], re: 3 }), { message: REFUSED, fix: "type tower x typed note --re 3 --at a:b:1 --at 'a:c d:2' <<'EOF' … EOF" })
   assert.equal(typedLine('typed', word('review'), { of: 'ODIN-7', tell: true }), 'tower x typed review ODIN-7 --tell')
   assert.equal(typedLine('typed', word('shape'), { box: { w: 1 } }), `tower x typed shape --box '{"w":1}'`)
-  const help = (name: string) => `A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x typed ${name} --help`
-  assert.equal(jsonDeprecatedLine('typed', word('count'), [1]), help('count'))
-  assert.equal(jsonDeprecatedLine('typed', word('tags'), { tag: 'x' }), help('tags'))
-  assert.equal(jsonDeprecatedLine('typed', word('tags'), { tag: null }), help('tags'))
-  assert.equal(jsonDeprecatedLine('typed', word('tags'), { n: ['x'] }), help('tags'))
-  assert.equal(jsonDeprecatedLine('typed', word('resolve'), { notes: 3 }), help('resolve'))
-  assert.equal(jsonDeprecatedLine('typed', word('count'), { times: 3, other: 1 }), help('count'))
-  assert.equal(jsonDeprecatedLine('typed', word('echo'), { text: null }), help('echo'))
-  assert.equal(jsonDeprecatedLine('typed', word('echo'), { text: 3 }), help('echo'))
+  const help = (name: string) => ({ message: REFUSED, fix: `\`tower x typed ${name} --help\` lists its flags` })
+  assert.deepEqual(jsonRefusal('typed', word('count'), [1]), help('count'))
+  assert.deepEqual(jsonRefusal('typed', word('tags'), { tag: 'x' }), help('tags'))
+  assert.deepEqual(jsonRefusal('typed', word('tags'), { tag: null }), help('tags'))
+  assert.deepEqual(jsonRefusal('typed', word('tags'), { n: ['x'] }), help('tags'))
+  assert.deepEqual(jsonRefusal('typed', word('resolve'), { notes: 3 }), help('resolve'))
+  assert.deepEqual(jsonRefusal('typed', word('count'), { times: 3, other: 1 }), help('count'))
+  assert.deepEqual(jsonRefusal('typed', word('echo'), { text: null }), help('echo'))
+  assert.deepEqual(jsonRefusal('typed', word('echo'), { text: 3 }), help('echo'))
 })
 
 test('a door needs --value, a blank reaches it as an empty string, and a null is typed only on a string door', () => {
@@ -133,12 +134,12 @@ test('a door needs --value, a blank reaches it as an empty string, and a null is
   assert.deepEqual(parseWord('tabline', door, ['--value', 'null']), { t: 'input', input: { value: 'null' } })
   assert.deepEqual(jsonArgument(door, ['{"value": null}']), { body: { value: null } })
   assert.equal(usageOf(door), 'facts/line --value <value> [--session <session>]')
-  assert.equal(jsonDeprecatedLine('tabline', door, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value ""')
-  assert.equal(jsonDeprecatedLine('tabline', door, { value: 'on it' }), "A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value 'on it'")
+  assert.deepEqual(jsonRefusal('tabline', door, { value: null }), { message: REFUSED, fix: 'type tower x tabline facts/line --value ""' })
+  assert.deepEqual(jsonRefusal('tabline', door, { value: 'on it' }), { message: REFUSED, fix: "type tower x tabline facts/line --value 'on it'" })
   const counter: Word = { ...door, fields: [{ ...door.fields[0], takes: 'integer' }, door.fields[1]] }
-  assert.equal(jsonDeprecatedLine('tabline', counter, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. A null has no typed form on facts/line: a door that needs one should offer a verb.')
+  assert.deepEqual(jsonRefusal('tabline', counter, { value: null }), { message: `${REFUSED}, and a null has no typed form on facts/line`, fix: 'a door that needs one should offer a verb' })
   const shaped: Word = { ...door, fields: [{ ...door.fields[0], takes: 'json' }, door.fields[1]] }
-  assert.equal(jsonDeprecatedLine('tabline', shaped, { value: null }), 'A JSON argument to tower x is deprecated and goes at 2.0. Type instead: tower x tabline facts/line --value null')
+  assert.deepEqual(jsonRefusal('tabline', shaped, { value: null }), { message: REFUSED, fix: 'type tower x tabline facts/line --value null' })
   assert.deepEqual(parseWord('tabline', shaped, ['--value', 'null']), { t: 'input', input: { value: null } })
 })
 
@@ -146,26 +147,6 @@ test('printing names a string or lines, and a field the reply left out prints no
   assert.equal(printedOf({ said: 'hi' }, 'said'), 'hi')
   assert.equal(printedOf({ lines: ['a', 'b'] }, 'lines'), 'a\nb')
   assert.equal(printedOf({}, 'said'), undefined)
-})
-
-test("reviews' old words rewrite into its words, the note's grammar into flags", () => {
-  const typed = (name: string, ...words: string[]) => aliased(ALIASES[name], name, words).args.join(' ')
-  assert.equal(typed('note'), 'reviews note')
-  assert.equal(typed('note', 're', 'n3'), 'reviews note --re n3')
-  assert.equal(typed('note', 'on', 'odin-1', 're', '3', 'lab:src/a.ts:1-9', 'lab:b.ts:2'), 'reviews note --on odin-1 --re 3 --at lab:src/a.ts:1-9 --at lab:b.ts:2')
-  assert.equal(typed('note', 'resolve', 'n3', 'n4'), 'reviews resolve n3 n4')
-  assert.equal(typed('note', 'on', 'odin-1', 'resolve', 'n3'), 'reviews resolve n3 --on odin-1')
-  assert.equal(typed('note', 're', 'n3', 'on', 'odin-1'), 'reviews note --re n3 --on odin-1')
-  assert.equal(typed('note', 'lab:a.ts:1', 're', 'n3'), 'reviews note --at lab:a.ts:1 --re n3')
-  assert.equal(typed('note', 'resolve', 'n3', 'on', 'odin-1'), 'reviews resolve n3 --on odin-1')
-  assert.equal(typed('note', '--help'), 'reviews note --help')
-  assert.equal(typed('thread', 'odin-1'), 'reviews thread odin-1')
-  assert.equal(typed('send', 'ODIN-1'), 'reviews send ODIN-1')
-  assert.equal(typed('review', 'ODIN-1', 'tell'), 'reviews review ODIN-1 --tell')
-})
-
-test('an old word rewrites into its word under tower x and says so', () => {
-  assert.deepEqual(aliased({ now: 'reviews note', args: (words) => words.map((w) => w.replace(/^n/, '--re=')) }, 'note', ['n3']), { args: ['reviews', 'note', '--re=3'], line: 'tower note n3 is tower x reviews note --re=3; the old word goes at 2.0' })
 })
 
 test('a capability or its word typed at the top names its form under tower x, a stopped owner with its state', () => {
@@ -178,15 +159,4 @@ test('a capability or its word typed at the top names its form under tower x, a 
   assert.deepEqual(movedLine('quota', [owner('quota', [], 'off')]), { message: '"quota" is under tower x: tower x quota (quota: off)', fix: '`tower extensions` lists each extension and its state' })
   assert.deepEqual(movedLine('say', owners), { message: '"say" is under tower x: tower x narrate say (narrate: failed to start)', fix: '`tower extensions` lists each extension and its state' })
   assert.equal(movedLine('x-typo', owners), undefined)
-})
-
-test("policies' and quota's old words each reach the word that replaced them", () => {
-  const typed = (name: string, ...words: string[]) => aliased(ALIASES[name], name, words).args.join(' ')
-  assert.equal(typed('policies'), 'policies list')
-  assert.equal(typed('policies', 'run', 'warm-lily'), 'policies run-now warm-lily')
-  assert.equal(typed('policies', 'approve', 'warm-lily'), 'policies approve-now warm-lily')
-  assert.equal(typed('runs', 'warm-lily', '--limit', '3'), 'policies runs warm-lily --limit 3')
-  assert.equal(typed('probes'), 'quota probes')
-  assert.equal(typed('probes', 'run', 'quota'), 'quota read-now')
-  assert.equal(aliased(ALIASES.policies, 'policies', ['run', 'warm-lily']).line, 'tower policies run warm-lily is tower x policies run-now warm-lily; the old word goes at 2.0')
 })

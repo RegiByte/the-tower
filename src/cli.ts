@@ -8,7 +8,7 @@ import { parseArgs } from 'node:util'
 import { openApp } from './app.ts'
 import { attach } from './attach.ts'
 import { CliError, reported } from './cli-error.ts'
-import { ALIASES, aliased, helpLines, movedLine, unknownLine, usageLine, verbNamed, type Run, type VerbName, type VerbOf } from './cli-verbs.ts'
+import { helpLines, movedLine, unknownLine, usageLine, verbNamed, type Run, type VerbName, type VerbOf } from './cli-verbs.ts'
 import { WORKER_RUNS, wordOwners } from './directory.ts'
 import { checkConfigFile, CONFIG_DOCS, problemLines } from './config-check.ts'
 import { doctor, verdictLines } from './doctor.ts'
@@ -223,12 +223,6 @@ const isHelp = (word: string | undefined) => word === '--help' || word === '-h'
 const main = async ([name, ...args]: string[]): Promise<void> => {
   if (name === undefined || isHelp(name)) {
     console.log(helpLines().join('\n'))
-    return
-  }
-  if (Object.hasOwn(ALIASES, name)) {
-    const { args: typed, line } = aliased(ALIASES[name], name, args)
-    console.error(line)
-    await RUNS.x(typed)
     return
   }
   const verb = verbNamed(name)

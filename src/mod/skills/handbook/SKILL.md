@@ -34,7 +34,7 @@ A word is typed like a command:
 - **Your session and floor are filled in**: every call carries you as its caller, and a word that works on a floor takes yours unless you say `--project <id>`.
 - **A failed word says what to do next**: what is missing with an example, the type a value wants, the nearest word or flag. It exits non-zero, and what the word prints on success is its answer.
 
-An old `tower x <capability> <verb> '<json>'` still works until 2.0, and prints what to type instead. Don't write new ones. Each extension teaches its own words in its guidance: `tower whoami` shows the brief, `tower x <capability>` the rest.
+Each extension teaches its own words in its guidance: `tower whoami` shows the brief, `tower x <capability>` the rest.
 
 ## Reaching out
 

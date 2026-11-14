@@ -26,6 +26,28 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 
 ## The CLI
 
+- **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form
+  under `tower x`. Replace them in scripts, prompts, skills and guidance:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `tower policies` | `tower x policies list` |
+  | `tower policies run <id>` | `tower x policies run-now <id>` |
+  | `tower policies approve <id>` | `tower x policies approve-now <id>` |
+  | `tower runs …` | `tower x policies runs …` |
+  | `tower probes` | `tower x quota probes` |
+  | `tower probes run quota` | `tower x quota read-now` |
+  | `tower note [on <checkout>] [re n<k>] [<anchor> …]` | `tower x reviews note [--on <checkout>] [--re <k>] [--at <anchor> …]` |
+  | `tower note resolve n<k> … [on <checkout>]` | `tower x reviews resolve <k> … [--on <checkout>]` |
+  | `tower thread [<checkout>]` | `tower x reviews thread [<checkout>]` |
+  | `tower send <CALLSIGN>` | `tower x reviews send <CALLSIGN>` |
+  | `tower review <CALLSIGN> [tell]` | `tower x reviews review <CALLSIGN> [--tell]` |
+
+- **`tower x` takes no JSON argument.** `tower x <capability> <word> '<json>'` exits 1, runs nothing, and names the
+  typed line to write instead: one flag per field, a list as its flag repeated, text on stdin where the word takes
+  it. `tower x <capability> <word> --help` lists a word's flags. A structured field still takes JSON as its flag's
+  value.
+
 ## Forks
 
 - **Take upstream's `API_VERSION`**, as before: `2.0`. Your own extensions follow the authors' section above.
