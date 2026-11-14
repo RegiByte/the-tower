@@ -203,10 +203,6 @@ button.wide { width: 100%; }
 .desk-bar .activity b { color: var(--ink); font-family: var(--ui); }
 .desk-bar .activity .said { color: var(--faint); }
 .moves { gap: var(--sp-s); }
-.move { display: flex; align-items: center; gap: var(--sp-s); padding: 1px var(--sp-m); font-size: var(--fs-xs); font-weight: 400; color: var(--muted); background: none; }
-.move .call { font-size: var(--fs-xs); color: var(--ink); }
-.move small { font: var(--fs-xs) var(--mono); color: var(--faint); }
-.move.waiting { border-color: var(--ink); }
 .dismiss { color: var(--muted); }
 .desk-tabs .shown-tab { gap: var(--sp-s); }
 .shown-tab .fresh, .desk-head .fresh { display: inline-block; margin-right: var(--sp-s); vertical-align: middle; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
@@ -329,7 +325,7 @@ button.doc-file { display: block; width: 100%; border: none; background: none; f
   <div class="desk-head" id="desk-head"></div>
   <div id="desk-ask" class="hidden"></div>
   <div class="desk-bar tab-row"><span class="desk-tabs tab-set" id="desk-tabs"></span><button class="activity" id="desk-activity" popovertarget="desk-details"></button>
-    <span class="desk-mode" id="desk-mode"></span><span class="moves" id="desk-moves"></span></div>
+    <span class="desk-mode" id="desk-mode"></span><span class="moves" id="desk-dismiss"></span></div>
   <div id="desk-details" popover></div>
   <div id="desk-body"><div id="desk-screen"></div><div id="desk-stamp" class="stamp hidden"></div><div id="desk-brief" class="hidden"></div><div id="desk-view" class="hidden"></div><div id="desk-shown" class="hidden"></div></div>
 </div>
