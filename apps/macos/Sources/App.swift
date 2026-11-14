@@ -20,19 +20,31 @@ final class TowerWebView: WKWebView {
   }
 }
 
-/** The window. While the find bar is open the page takes focus back only from a click into it, never from its own scripts or WebKit. */
+/**
+ The window. While the find field has focus, the page's scripts and WebKit can't take it: a match or a Shift would
+ otherwise hand it to the page as the user types. A click into the page hands the page focus, as WebKit asks for it only
+ once the page has handled the click, after the mouse-down has passed; ⌘F gives it back to the field.
+ */
 final class TowerWindow: NSWindow {
   static let clicks: Set<NSEvent.EventType> = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
   weak var page: NSView?
-  weak var findBar: NSView?
+  weak var findField: NSTextField?
+
+  var findHasFocus: Bool {
+    guard let findField else { return false }
+    return !findField.isHiddenOrHasHiddenAncestor && findField.currentEditor() != nil
+  }
+
+  override func sendEvent(_ event: NSEvent) {
+    if TowerWindow.clicks.contains(event.type), findHasFocus, let page, page.bounds.contains(page.convert(event.locationInWindow, from: nil)) {
+      super.makeFirstResponder(page)
+    }
+    super.sendEvent(event)
+  }
 
   @discardableResult
   override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
-    if findBar?.isHidden == false, let page, (responder as? NSView)?.isDescendant(of: page) == true,
-      !TowerWindow.clicks.contains(NSApp.currentEvent?.type ?? .applicationDefined)
-    {
-      return false
-    }
+    if findHasFocus, let page, (responder as? NSView)?.isDescendant(of: page) == true { return false }
     return super.makeFirstResponder(responder)
   }
 }
@@ -77,7 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     content.spacing = 0
     window.contentView = content
     window.page = web
-    window.findBar = findBar
+    window.findField = findBar.field
     window.delegate = self
     window.center()
     window.setFrameAutosaveName("Tower")
