@@ -23,6 +23,23 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 - **`requires.tower` is `"2.0"`.** A manifest that requires a 1.x tower is refused as `too-old` before any other key
   is read, and the tower says so on the board and in `tower extensions check`. Set `"requires": { "tower": "2.0" }`,
   then make the changes the rest of this section lists. Every name in the library now says it arrived in 2.0.
+- **The core's copy of policies is gone.** Policies have been the bundled policies extension since 1.91; the core
+  kept their old names as copies of the extension's, and 2.0 drops them. While the extension is off, nothing of a
+  policy is on the board or answers, as in 1.x. Find each old name and change it to the extension's:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `floor.policies` | `floor.x.policies.policies`, or `floorPolicies(floor).policies` of `/x/policies/policies.js`. Its calls name `policies/run` and `policies/approve` |
+  | `board.offers` | each floor's `x.policies.offers` (`floorPolicies(floor).offers`), whose `accept` calls `policies/run`. An offer is also an ask in `board.asks` (`cap: 'policies'`, `sound: 'offer'`): draw that one to put offers among the waits |
+  | `card.run` | `card.x.policies.run` |
+  | `POST /policy/run`, `/policy/pass`, `/policy/approve` | `POST /policies/run`, `/policies/pass`, `/policies/approve`, the same input and reply. The old routes answer `not_found` |
+  | `GET /runs/<project>?policy&limit` | `GET /policies/runs/<project>?policy&limit`, the same query and reply |
+  | `/policies.js` | `/x/policies/policies.js` (404 at the old URL) |
+  | `policiesHtml`, `policyZone`, `offerWords`, `policyDoneLine` of `/panels.js` | the extension's view `policies/policies`, mounted on a floor; its client is `/x/policies/panel.js` |
+  | `heededOffers`, `offerTransitions`, `offersBeganLine`, `isOffer` of `/cards.js`, and `isOffer` of `/lib/cards.js` | `heededAsks`, `askTransitions`, `asksBeganLine` and `isAsk` of `/lib/cards.js`, over the offers' asks. `Attended` is a wait or an ask |
+
+  Workers and scripts use `tower x policies …` (see [The CLI](#the-cli)). The facts stay where they were: the runs
+  and approvals of each project are still read from `streams/projects/<project>/runs/` and `approvals/`.
 
 ## The CLI
 
