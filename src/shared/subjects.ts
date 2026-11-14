@@ -65,7 +65,7 @@ export const linesAt = (key: string): Pick<Lines, 'card' | 'repo' | 'path' | 'fr
 
 /**
  * A file in a worker's checkout, as a renderer holds it: its repo (named as an anchor names it, `repoName` of
- * `/reviews.js`), its path in the repo, its absolute path where it has one (`file`, for Finder and the editor), where its content is read
+ * `src/shared/repos.ts`), its path in the repo, its absolute path where it has one (`file`, for Finder and the editor), where its content is read
  * (`text`, a read path), its media type, and where in it to show first, a link's `#fragment`. @since 1.114; `file`
  * @since 1.117; `fragment` @since 1.120
  */

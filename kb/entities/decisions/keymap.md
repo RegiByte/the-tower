@@ -30,7 +30,8 @@ every other key, and reach every renderer the way `user.name` does.
 - The config's `keys` maps an id to a chord, a list or `null`, replacing the defaults.
   [`keysProblems`](ref:hub/src/shared/keymap.ts#keysProblems) is the check: bad syntax and one chord on two commands
   that can fire in the same place fail, an unknown id warns, and an id the keymap no longer has (`pane-reviews`,
-  listed with the id holding its chords now) fails with the line to write instead (`"reviews/thread": <value>`).
+  listed with the id holding its chords now) fails with the line to write instead (`"reviews/thread": <value>`), or says to remove it when
+  `reviews/thread` is set too.
   [`configuredKeys`](ref:hub/src/shared/model.ts#configuredKeys) throws the first failure as a config error, so the
   board says it ([[board-errors]]); `tower config check` prints each at its path.
 - Extensions' commands and views take chords too, by `<cap>/<name>`: their manifests' `keys` as defaults, the

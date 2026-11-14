@@ -343,7 +343,7 @@ Modifiers match exactly: `Alt+J` doesn't fire on ⌥⇧J. Where a chord fires is
 | `cancel-pick` (drop the lines picked for a note) | field | `Escape` |
 
 `pane-reviews` went at 2.0: a config that holds it is refused, the problem naming the line to write, the chord of
-the reviews extension's view, `"reviews/thread"`.
+the reviews extension's view, `"reviews/thread"`, or saying to remove it when `reviews/thread` is set too.
 
 `tower config check` fails a value that is no chord, at `keys.<id>` or `keys.<id>[n]`, and a chord bound to two
 commands that can fire in the same place (a global chord with a modifier reaches terminals and fields too), at the

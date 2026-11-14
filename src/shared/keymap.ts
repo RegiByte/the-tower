@@ -149,16 +149,17 @@ export type KeysProblem = { level: 'fail' | 'warn'; at: string; problem: string 
 
 /**
  * What is wrong with the config's `keys`, each problem at its path below `keys`: a value that is no chord, a list of
- * them or null (a fail), an id the keymap no longer has (a fail naming the id to write), an id no command has (a warn:
- * it is ignored), a chord bound twice
- * where both may fire (a fail at the override that makes it so, as the config writes it).
+ * them or null (a fail), an id the keymap no longer has (a fail naming the line to write, or saying to remove it when
+ * the id holding its chords now is set), an id no command has (a warn: it is ignored), a chord bound twice where both
+ * may fire (a fail at the override that makes it so, as the config writes it).
  */
 export const keysProblems = (overrides: unknown, extensionIds: readonly string[]): KeysProblem[] => {
   if (typeof overrides !== 'object' || overrides === null || Array.isArray(overrides))
     return [{ level: 'fail', at: '', problem: 'takes an object of command ids, each a chord, a list of chords or null' }]
   const entries = Object.entries(overrides)
   const shape = entries.flatMap(([id, value]): KeysProblem[] => {
-    if (Object.hasOwn(RETIRED, id)) return [{ level: 'fail', at: `.${id}`, problem: `went at 2.0: write "${RETIRED[id]}": ${JSON.stringify(value)} instead` }]
+    if (Object.hasOwn(RETIRED, id))
+      return [{ level: 'fail', at: `.${id}`, problem: Object.hasOwn(overrides, RETIRED[id]) ? `went at 2.0, and "${RETIRED[id]}" is set: remove it` : `went at 2.0: write "${RETIRED[id]}": ${JSON.stringify(value)} instead` }]
     if (isAddedId(id) && !extensionIds.includes(id))
       return [{ level: 'warn', at: `.${id}`, problem: `no extension the tower runs declares a command or view "${id}"${extensionIds.length ? `: they are ${extensionIds.join(', ')}` : ''}` }]
     if (!COMMAND.has(id) && !isAddedId(id)) return [{ level: 'warn', at: `.${id}`, problem: `no command is called "${id}": they are ${COMMANDS.map((c) => c.id).join(', ')}, or an extension's <cap>/<name>` }]
