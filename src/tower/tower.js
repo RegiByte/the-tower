@@ -79,7 +79,7 @@
  * removal, a changed meaning). A board from a tower of another major, or of an older minor than this script's, stops
  * at the version check. A renderer kept apart from the tower names the version it was written against,
  *
- *   <script src="/tower.js?v=1.0"></script>
+ *   <script src="/tower.js?v=2.0"></script>
  *
  * and the script refuses to load into a tower of another major or an older minor; a page that names none moves with
  * the tower.
