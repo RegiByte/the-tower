@@ -392,8 +392,8 @@ absent.
 ### Every name, 1.x to 2.0
 
 Every name 1.x served, at the root or in the library, that 2.0's library doesn't export under the same name. A name
-not here is in the library: find its module with `GET /schema` or `tower types <dir>`. The tables are generated from
-the two releases' export lists (`test/served-exports.json` at `v1.114.1` and now).
+not here is in the library: find its module with `GET /schema` or `tower types <dir>`. The tables are checked against
+the export lists of `v1.114.1` and this release (`test/served-exports.json` at each tag).
 
 Renamed, or reached another way:
 
