@@ -35,6 +35,7 @@ import { slotWords } from '../src/shared/slots.ts'
 import { callsignsOf } from '../src/shared/model.ts'
 import { tagOf } from '../src/shared/tags.ts'
 import { isObject } from '../src/system.ts'
+import { callsOf, verbsOf } from './actions.ts'
 
 /**
  * A zone of whole hours where now is about noon. The board keeps a finished card only while it started that local day
@@ -683,7 +684,7 @@ test('server: policies kept before the policies extension keep their approvals, 
   const DAY = 24 * 60 * MIN
   const runByHand = (id: string) => ['run', ['policies/run', { project: 'lab', policy: id, start: 'hand' }]] as const
   const approve = (id: string, text: string) => ['approve', ['policies/approve', { project: 'lab', policy: id, hash: sha(text) }]] as const
-  const offering = (...pairs: (readonly [string, unknown])[]) => ({ calls: Object.fromEntries(pairs), actions: pairs.map(([verb, call]) => ({ verb, call })) })
+  const offering = (...pairs: (readonly [string, unknown])[]) => ({ actions: pairs.map(([verb, call]) => ({ verb, call })) })
   const rule = (at: number) => `daily at ${new Date(at).toISOString().slice(11, 16)} (UTC)`
   const { sweep, triage, digest, broken } = KEPT
   const triageOffer = { slot: triage.slot, since: OFFERED_AT, until: triage.slot + DAY }
@@ -745,7 +746,7 @@ test('server: policies kept before the policies extension keep their approvals, 
   )
   const accept = ['policies/run', { project: 'lab', policy: triage.id, slot: triage.slot, start: 'offer' }]
   assert.deepEqual(part.offers, [
-    { key: `${triage.id}@${triage.slot}`, project: 'lab', policy: triage.id, tag: 'muddy-thistle', title: 'Triage', ...triageOffer, calls: { accept }, actions: [{ verb: 'accept', call: accept }] },
+    { key: `${triage.id}@${triage.slot}`, project: 'lab', policy: triage.id, tag: 'muddy-thistle', title: 'Triage', ...triageOffer, actions: [{ verb: 'accept', call: accept }] },
   ])
   assert.deepEqual(worker.x?.policies, { run: { policy: digest.id, tag: 'warm-lily', title: 'Digest', n: 1, check: CHECKED, start: 'auto', slot: digest.slot } })
   assert.deepEqual(
@@ -924,7 +925,7 @@ test("server: an extension's folds put its part on the board's subjects, its bad
     tidy: [{ key: 'echo', label: 'Echo the beats', hint: 'answered done, and nothing kept changes', cap: 'pulse' }],
     slots: [{ key: 'lab', when: { every: '1h' }, cap: 'pulse' }],
   })
-  assert.deepEqual(lab.calls.tidy, ['tidy', { project: 'lab', plan: { ...lab.tidy, x: { pulse: ['echo'] } } }], "the floor's Tidy carries the extensions' entries")
+  assert.deepEqual(callsOf(lab).tidy, ['tidy', { project: 'lab', plan: { ...lab.tidy, x: { pulse: ['echo'] } } }], "the floor's Tidy carries the extensions' entries")
   assert.deepEqual(
     board.asks.filter((a) => a.cap === 'pulse' && a.subject === 'floor:lab').map(({ key, subject, title, sound, cap, actions }) => ({ key, subject, title, sound, cap, actions })),
     [{ key: 'pulse:beat-lab', subject: 'floor:lab', title: 'Keep a beat on lab', sound: 'offer', cap: 'pulse', actions: [{ verb: 'pulse/beat', call: { project: 'lab' }, cap: 'pulse' }] }],
@@ -1173,7 +1174,7 @@ test('reviews: on a floor keeping no threads, Tidy lists and files no thread, an
   assert.equal(errorCode(await post('tidy', { project: 'bare', plan: { ...NO_TIDY, x: { reviews: ['landed'] } } })), 'refused')
   const { tree, held } = cutWithWork(BARE, 'thrown')
   const atRisk = await boardWhere((b) => floorOf(b, 'bare').worktrees.some((w) => w.name === 'thrown' && w.state === 'at-risk'))
-  assert.deepEqual(floorOf(atRisk, 'bare').worktrees.find((w) => w.name === 'thrown')!.verbs, [], 'nothing records a discard there, so none is offered')
+  assert.deepEqual(verbsOf(floorOf(atRisk, 'bare').worktrees.find((w) => w.name === 'thrown')!), [], 'nothing records a discard there, so none is offered')
   assert.equal(errorCode(await post('worktree/discard', { project: 'bare', name: 'thrown', author: 'NEMO-92', held })), 'refused')
   assert.ok(existsSync(tree))
   assert.deepEqual(readdirSync(threadsIn('bare')), ['landed.md'])
@@ -1559,8 +1560,8 @@ test("server: the reviews extension holds the threads under its own names, and o
     (b) => b.floors.find((f) => f.id === 'desk')!.worktrees.length === 3,
   )
   const desk = board.floors.find((f) => f.id === 'desk')!
-  const part = desk.x?.reviews as { threads: { key: string; checkout: string; calls: { note?: unknown } }[] }
-  assert.deepEqual(part.threads.map((t) => [t.key, t.calls.note]), [
+  const part = desk.x?.reviews as { threads: { key: string; checkout: string; actions: { verb: string; call: unknown }[] }[] }
+  assert.deepEqual(part.threads.map((t) => [t.key, callsOf(t).note]), [
     ['desk/kite-2', undefined],
     ['desk/main', ['reviews/append', { project: 'desk', checkout: 'main' }]],
     ['desk/odin-1', ['reviews/append', { project: 'desk', checkout: 'odin-1' }]],

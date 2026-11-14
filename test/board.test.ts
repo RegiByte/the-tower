@@ -5,7 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { foldLog } from '../src/checkpoints.ts'
 import { factsOf } from '../src/bridge/facts.ts'
-import { board, placedOn, unresumableAt, type Floor } from '../src/bridge/board.ts'
+import { board, placedOn, unresumableAt, type Card, type Floor } from '../src/bridge/board.ts'
 import { heldBy, resumeName } from '../src/bridge/chains.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { gistLine, statusName, statusTitle } from '../src/shared/cards.ts'
@@ -19,6 +19,7 @@ import { cardPart, floorThreads, type ThreadFile } from '../extensions/reviews/t
 import { fixture } from './replay.ts'
 import { keptRead, reposOf, repoRead, treeRead } from './repos.ts'
 import { viewOf } from './view.ts'
+import { callsOf, verbsOf } from './actions.ts'
 
 const callsign = callsigns(CALLSIGNS)
 
@@ -153,7 +154,7 @@ test('waits: a screen that blocks first, then a question, then an answer, each k
     { id: '20261003-115149-aee9', key: '20261003-115149-aee9@1791028325519', reason: 'done', since: 1791028325519 },
   ])
   const blocked = cardsOf([logs[2]], hostWith(logs[2].header.id))[0]
-  assert.deepEqual([blocked.status, blocked.blocked, blocked.attention, blocked.verbs.includes('drive'), blocked.verbs.includes('submit')], ['blocked', 'trust', 'needs', true, false])
+  assert.deepEqual([blocked.status, blocked.blocked, blocked.attention, verbsOf(blocked).includes('drive'), verbsOf(blocked).includes('submit')], ['blocked', 'trust', 'needs', true, false])
 })
 
 test('attention: working at a turn, needs you on a question, ready on an answer, quiet when idle, broken once lost or failed', () => {
@@ -206,11 +207,11 @@ test('verbs: a live session is driven and killed, takes a prompt at its composer
   const log = homed(fixture('interrupts'))
   const at = (t: number, live: string[]) => cardsOf([{ ...log, events: log.events.filter((e) => e[0] <= t && e[1] !== 'x') }], hostWith(...live))[0]
   const id = [log.header.id]
-  assert.deepEqual(at(5, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
-  assert.deepEqual(at(110, id).verbs, ['drive', 'submit', 'prompt', 'brief', 'kill', 'send-home'])
-  assert.deepEqual(at(140, id).verbs, ['drive', 'brief', 'kill', 'send-home'])
-  assert.deepEqual(at(140, id).conversations.map((c) => c.verbs), [[]])
-  assert.deepEqual(at(140, []).verbs, ['resume', 'carry-on', 'brief', 'let-go'])
+  assert.deepEqual(verbsOf(at(5, id)), ['drive', 'brief', 'kill', 'send-home'])
+  assert.deepEqual(verbsOf(at(110, id)), ['drive', 'submit', 'prompt', 'brief', 'kill', 'send-home'])
+  assert.deepEqual(verbsOf(at(140, id)), ['drive', 'brief', 'kill', 'send-home'])
+  assert.deepEqual(at(140, id).conversations.map((c) => verbsOf(c)), [[]])
+  assert.deepEqual(verbsOf(at(140, [])), ['resume', 'carry-on', 'brief', 'let-go'])
 })
 
 test('a leave survives a message or a notice arriving as its turn ends, and only the user typing cancels it', () => {
@@ -244,11 +245,11 @@ test('let go: a stranded worker leaves duty for the archive on the tower.letGo t
   const lost = { ...log, events: log.events.filter((e) => e[0] <= 140 && e[1] !== 'x') }
   const [stranded] = cardsOf([lost])
   assert.equal(stranded.onDuty, true)
-  assert.deepEqual(stranded.calls['let-go'], ['let-go', { id: log.header.id }])
+  assert.deepEqual(callsOf(stranded)['let-go'], ['let-go', { id: log.header.id }])
   const [letGo] = cardsOf([{ ...lost, events: [...lost.events, [150, 'h', { hook_event_name: 'tower.letGo' }]] }])
   assert.equal(letGo.onDuty, false)
   assert.equal(letGo.letGoAt, log.header.startedAt + 150_000)
-  assert.ok(letGo.verbs.includes('resume') && !letGo.verbs.includes('let-go'))
+  assert.ok(verbsOf(letGo).includes('resume') && !verbsOf(letGo).includes('let-go'))
   assert.equal(letGo.heardAt, stranded.heardAt)
 })
 
@@ -256,12 +257,12 @@ test('carry on: a worker the host stopped mid-turn is cut off, and offers a resu
   const midTurn = homed(fixture('host-stopped-mid-turn'))
   const [cut, done] = cardsOf([midTurn, homed(fixture('host-stopped-done'))])
   assert.deepEqual([cut.status, cut.stranded, cut.cutOff, statusName(cut)], ['exited', true, true, 'stopped mid-turn, resumable'])
-  assert.ok(cut.verbs.includes('resume') && cut.verbs.includes('carry-on'))
-  assert.deepEqual(cut.calls['carry-on'], ['resume', { id: midTurn.header.id, conversation: 'dd49802c-3de0-416f-ac89-3711b7f03bb4', prompt: CARRY_ON }])
+  assert.ok(verbsOf(cut).includes('resume') && verbsOf(cut).includes('carry-on'))
+  assert.deepEqual(callsOf(cut)['carry-on'], ['resume', { id: midTurn.header.id, conversation: 'dd49802c-3de0-416f-ac89-3711b7f03bb4', prompt: CARRY_ON }])
   assert.deepEqual([done.status, done.stranded, done.cutOff, statusName(done)], ['exited', true, false, 'stopped, resumable'])
-  assert.ok(done.verbs.includes('resume') && !done.verbs.includes('carry-on'))
+  assert.ok(verbsOf(done).includes('resume') && !verbsOf(done).includes('carry-on'))
   const [letGo] = cardsOf([{ ...midTurn, events: [...midTurn.events, [20, 'h', { hook_event_name: 'tower.letGo' }]] }])
-  assert.deepEqual([letGo.cutOff, letGo.verbs.includes('resume'), letGo.verbs.includes('let-go')], [true, true, false])
+  assert.deepEqual([letGo.cutOff, verbsOf(letGo).includes('resume'), verbsOf(letGo).includes('let-go')], [true, true, false])
 })
 
 test('a worker killed by a signal from outside the tower, caught or not, is stranded like one the host stopped; one the tower killed has ended', () => {
@@ -270,7 +271,7 @@ test('a worker killed by a signal from outside the tower, caught or not, is stra
   const [killed, killedHard, sentHome, sentHomeHard] = cardsOf([exitingWith({ exitCode: 143 }), exitingWith({ exitCode: 0, signal: 9 }), exitingWith({ exitCode: 129 }), exitingWith({ exitCode: 0, signal: 1 })])
   for (const card of [killed, killedHard]) {
     assert.deepEqual([card.stranded, card.cutOff, card.onDuty, statusName(card)], [true, true, true, 'stopped mid-turn, resumable'])
-    assert.ok(card.verbs.includes('resume') && card.verbs.includes('carry-on'))
+    assert.ok(verbsOf(card).includes('resume') && verbsOf(card).includes('carry-on'))
   }
   for (const card of [sentHome, sentHomeHard]) assert.deepEqual([card.stranded, card.onDuty], [false, false])
 })
@@ -291,25 +292,25 @@ test("a stranded worker holds its worktree until it is resumed or let go: Tidy n
   assert.deepEqual(said(floorOf(letGo)), ['removable', [], ['odin-42']])
   assert.deepEqual(said(floorOf(log)), ['removable', [], ['odin-42']])
   const lostHeld = floorOf(lost, false)
-  assert.deepEqual([...said(lostHeld), lostHeld.worktrees[0].verbs], ['lost', [id], [], ['recut']], 'held for its resume: recut, never pruned')
+  assert.deepEqual([...said(lostHeld), verbsOf(lostHeld.worktrees[0])], ['lost', [id], [], ['recut']], 'held for its resume: recut, never pruned')
   const lostLetGo = floorOf(lost, false, hostWith(), true)
-  assert.deepEqual([...said(lostLetGo), lostLetGo.worktrees[0].verbs], ['lost', [], [], ['recut', 'prune']], 'a stranded worker on a detached HEAD is unresumable, off duty')
+  assert.deepEqual([...said(lostLetGo), verbsOf(lostLetGo.worktrees[0])], ['lost', [], [], ['recut', 'prune']], 'a stranded worker on a detached HEAD is unresumable, off duty')
 })
 
 test('verbs: a stopped session resumes its conversation; once resumed, it leads to whoever resumed it', () => {
   const [source, resumed] = [fixture('resume-source'), fixture('resumed')]
   const [sourceCard, resumedCard] = [source, resumed].map((log) => cardsOf([source, resumed]).find((c) => c.id === log.header.id)!)
-  assert.deepEqual(sourceCard.verbs, ['goto', 'brief'])
-  assert.deepEqual(sourceCard.conversations.map((c) => c.verbs), [['goto']])
-  assert.deepEqual(resumedCard.verbs, ['resume', 'brief'])
-  assert.deepEqual(cardsOf([homed(fixture('clear'))])[0].conversations.map((c) => c.verbs), [['resume'], ['resume']])
+  assert.deepEqual(verbsOf(sourceCard), ['goto', 'brief'])
+  assert.deepEqual(sourceCard.conversations.map((c) => verbsOf(c)), [['goto']])
+  assert.deepEqual(verbsOf(resumedCard), ['resume', 'brief'])
+  assert.deepEqual(cardsOf([homed(fixture('clear'))])[0].conversations.map((c) => verbsOf(c)), [['resume'], ['resume']])
 })
 
 test('verbs: what a session left running makes it reapable', () => {
   const log = homed(fixture('tool-turn'))
   const leftover = { pid: 4242, session: log.header.id, command: 'npm run dev', ports: [3000], orphan: true }
   const [card] = board(viewOf(CONFIG, { sessions: [{ header: log.header, facts: factsOf(log) }], host: hostWith(), processes: [leftover] })).floors[0].cards
-  assert.ok(card.verbs.includes('reap'))
+  assert.ok(verbsOf(card).includes('reap'))
 })
 
 test('a past worker can be resumed only where its floor still has its folder, or its resume can restore it: else it says why, offers no resume and is off duty', () => {
@@ -321,7 +322,7 @@ test('a past worker can be resumed only where its floor still has its folder, or
   const cardAt = (session: SessionLog, repos: Map<string, RepoRead>) =>
     board(viewOf(CONFIG, { sessions: [{ header: session.header, facts: factsOf(session) }], host: hostWith(), repos })).floors[0].cards[0]
   const inTree = homed(log, tree.path)
-  const said = (c: { unresumable?: string; verbs: string[]; conversations: { verbs: string[] }[] }) => [c.unresumable, c.verbs.includes('resume'), c.conversations.map((conv) => conv.verbs)]
+  const said = (c: Card) => [c.unresumable, verbsOf(c).includes('resume'), c.conversations.map((conv) => verbsOf(conv))]
   assert.deepEqual(said(cardAt(log, new Map())), [undefined, true, [['resume']]])
   assert.deepEqual(said(cardAt(homed(log, '/moved/hub'), new Map())), ['outside', false, [[]]])
   assert.deepEqual(said(cardAt(inTree, new Map())), [undefined, true, [['resume']]])
@@ -350,18 +351,18 @@ test('a past worker can be resumed only where its floor still has its folder, or
   assert.deepEqual([source, resumed].map((l) => moved.find((c) => c.id === l.header.id)!.unresumable), [undefined, 'outside'])
 })
 
-test('calls: each verb that is a request comes ready, a resume naming the conversation it continues', () => {
+test('actions: each verb that is a request comes with its call, a resume naming the conversation it continues', () => {
   const log = homed(fixture('clear'))
   const card = cardsOf([log])[0]
   const [first, latest] = card.conversations.map((c) => c.id)
-  assert.deepEqual(card.calls, { resume: ['resume', { id: log.header.id, conversation: latest }] })
-  assert.deepEqual(card.conversations.map((c) => c.calls), [
+  assert.deepEqual(callsOf(card), { resume: ['resume', { id: log.header.id, conversation: latest }] })
+  assert.deepEqual(card.conversations.map((c) => callsOf(c)), [
     { resume: ['resume', { id: log.header.id, conversation: first }] },
     { resume: ['resume', { id: log.header.id, conversation: latest }] },
   ])
   const live = cardsOf([{ ...log, events: log.events.filter((e) => e[1] !== 'x') }], hostWith(log.header.id))[0]
-  assert.deepEqual(live.calls, { submit: ['submit', { id: log.header.id }], prompt: ['submit/at-prompt', { id: log.header.id }], kill: ['kill', { id: log.header.id }], 'send-home': [['kill', { id: log.header.id }]] })
-  assert.deepEqual(board(viewOf(CONFIG, { host: hostWith() })).floors[0].calls, {
+  assert.deepEqual(callsOf(live), { submit: ['submit', { id: log.header.id }], prompt: ['submit/at-prompt', { id: log.header.id }], kill: ['kill', { id: log.header.id }], 'send-home': [['kill', { id: log.header.id }]] })
+  assert.deepEqual(callsOf(board(viewOf(CONFIG, { host: hostWith() })).floors[0]), {
     spawn: ['spawn', { project: 'tower' }],
     shell: ['shell/spawn', { project: 'tower' }],
     editor: ['open', {}],
@@ -369,7 +370,7 @@ test('calls: each verb that is a request comes ready, a resume naming the conver
 })
 
 test('verbs: a floor spawns while the host is up and opens shells while the terms daemon is', () => {
-  const floorVerbs = (live: HostLive | undefined, shells: [] | undefined) => board(viewOf(CONFIG, { host: live, shells })).floors[0].verbs
+  const floorVerbs = (live: HostLive | undefined, shells: [] | undefined) => verbsOf(board(viewOf(CONFIG, { host: live, shells })).floors[0])
   assert.deepEqual(floorVerbs(hostWith(), []), ['spawn', 'shell', 'editor'])
   assert.deepEqual(floorVerbs(undefined, []), ['shell', 'editor'])
   assert.deepEqual(floorVerbs(hostWith(), undefined), ['spawn', 'editor'])
@@ -515,11 +516,11 @@ test('review threads: each checkout’s on its floor, what each worker hasn’t 
   const note = ['reviews/append', { project: 'tower', checkout: 'main' }]
   assert.deepEqual(threadsOn(tower), [{
     key: 'tower/main', checkout: 'main', id: 'main.md', tag: tagOf('main.md'), messages: 4, last: { author: 'user', at: '2026-10-06 15:00', n: 4 }, landed: true, resolved: [],
-    state: { is: 'live' }, verbs: ['note'], calls: { note }, actions: [{ verb: 'note', call: note }],
+    state: { is: 'live' }, actions: [{ verb: 'note', call: note }],
   }])
-  assert.deepEqual(threadsOn(lab).map((t) => [t.checkout, t.landed, t.state, t.verbs]), [['odin-42', true, { is: 'landed' }, []]])
-  assert.deepEqual(threadsOn(floors(0, false)[1]).map((t) => [t.state, t.verbs]), [[{ is: 'live' }, ['note']]])
-  assert.ok(lab.verbs.includes('tidy'))
+  assert.deepEqual(threadsOn(lab).map((t) => [t.checkout, t.landed, t.state, verbsOf(t)]), [['odin-42', true, { is: 'landed' }, []]])
+  assert.deepEqual(threadsOn(floors(0, false)[1]).map((t) => [t.state, verbsOf(t)]), [[{ is: 'live' }, ['note']]])
+  assert.ok(verbsOf(lab).includes('tidy'))
   const [dirtyTower, unmergedLab] = floors(1, false)
   assert.deepEqual([threadsOn(dirtyTower)[0].landed, threadsOn(unmergedLab)[0].landed], [false, false])
   assert.deepEqual(tower.main, { dirty: 0, ahead: 0, changed: 0, inUse: false }, 'the floor says where its main checkouts stand')
@@ -568,7 +569,7 @@ test('a watching worker is quiet and waits on nobody; the turn that ends done wa
     return board(viewOf(CONFIG, { sessions: [{ header: log.header, facts: factsOf(running) }], host: hostWith(log.header.id) }))
   }
   const watching = cardsOf([until(log, 40)], hostWith(log.header.id))[0]
-  assert.deepEqual([watching.status, watching.waiting, watching.attention, watching.verbs.includes('submit')], ['watching', false, 'quiet', true])
+  assert.deepEqual([watching.status, watching.waiting, watching.attention, verbsOf(watching).includes('submit')], ['watching', false, 'quiet', true])
   assert.deepEqual(at(40).waiting, [])
   assert.deepEqual(at(50).waiting.map((w) => w.reason), ['done'])
 })
@@ -610,7 +611,7 @@ test("a log that lost its header reads broken on the floor its directory is on, 
   assert.equal(gistLine(card).split('× ')[1] ?? gistLine(card), "log unreadable from its start: its first line isn't a session's header (null)")
   assert.match(statusTitle(card), /nothing resumes it/)
   assert.equal(card.onDuty, false)
-  assert.ok(!card.verbs.includes('resume') && !card.verbs.includes('let-go'))
+  assert.ok(!verbsOf(card).includes('resume') && !verbsOf(card).includes('let-go'))
   assert.equal(b.floors.find((f) => f.id === 'tower')!.cards.length, 1)
 })
 
@@ -635,12 +636,12 @@ test("an event the fold can't follow breaks its session there: its facts stop, t
   assert.equal(statusName(running), 'broken')
   assert.match(gistLine(running), /^× log unreadable past a hook \(.+\): the fold threw on purpose$/)
   assert.deepEqual(speechOf(running), [])
-  assert.deepEqual(running.verbs, ['drive', 'submit', 'brief', 'kill', 'send-home'])
+  assert.deepEqual(verbsOf(running), ['drive', 'submit', 'brief', 'kill', 'send-home'])
 
   const [killed] = cardsOf([log])
   assert.equal(killed.status, 'lost')
   assert.equal(killed.attention, 'broken')
-  assert.deepEqual(killed.verbs, ['resume', 'brief', 'let-go'])
+  assert.deepEqual(verbsOf(killed), ['resume', 'brief', 'let-go'])
   const [letGo] = cardsOf([{ ...log, events: [...log.events, [20, 'h', { hook_event_name: 'tower.letGo' }]] }])
   assert.equal(letGo.onDuty, false)
   assert.equal(letGo.broken?.code, 'h')

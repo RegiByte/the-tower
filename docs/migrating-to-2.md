@@ -99,6 +99,32 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   - **The page's `#<id>/reviews` link opens the worker's card,** without its thread tab: write
     `#v/tower/card/card%3A<id>;reviews/thread`.
 
+- **`actions` is the one way to act on a subject.** Every card, conversation, leftover process (`card.resources[]`),
+  floor, worktree and kept branch carried what it offers three times: `actions`, a list of `{ verb, call? }`, and
+  the same split in two, `verbs` (the verbs in order) and `calls` (each call by verb). 2.0 drops `verbs` and `calls`
+  from all six. The bundled extensions' own subjects drop them too: a review thread (`floor.x.reviews.threads[]`)
+  loses `verbs` and `calls`, a policy and an open offer (`floor.x.policies.policies[]`, `.offers[]`) lose `calls`.
+  Read `actions`, or `can` and `callOf` of `/lib/board.js`, which read it:
+
+  ```js
+  // 1.x
+  if (card.verbs.includes('resume')) tower.run(card.calls.resume)
+  const tidy = floor.calls.tidy
+  const note = thread.calls.note
+  const accept = offer.calls.accept
+
+  // 2.0
+  import { can, callOf } from '/lib/board.js'
+  if (can(card, 'resume')) tower.run(callOf(card, 'resume'))
+  const tidy = callOf(floor, 'tidy')
+  const note = callOf(thread, 'note')
+  const accept = callOf(offer, 'accept')
+  // without the library: card.actions.find((a) => a.verb === 'resume')?.call
+  ```
+
+  The verbs keep their order in `actions`, the first still the subject's primary verb. A verb with no call (`drive`,
+  `brief`, `goto`) is an action with no `call`.
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form

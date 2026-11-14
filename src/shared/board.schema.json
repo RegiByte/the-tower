@@ -363,15 +363,6 @@
           "$ref": "#/definitions/TidyPlan",
           "description": "What its Tidy would do now, as its call applies it."
         },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FloorVerb"
-          }
-        },
-        "calls": {
-          "$ref": "#/definitions/FloorCalls"
-        },
         "actions": {
           "type": "array",
           "items": {
@@ -419,7 +410,6 @@
         "bases",
         "branchPrefix",
         "branches",
-        "calls",
         "cards",
         "collections",
         "cutByDefault",
@@ -431,7 +421,6 @@
         "name",
         "repos",
         "tidy",
-        "verbs",
         "worktrees"
       ],
       "description": "A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and kept branches in its repos. `bases`: the origin branches a cut can name for every repo at once, in the hub's order, `defaultBase` first when there is one; empty when a dir isn't a git repo with an origin, or when their default branches differ and share no other (a cut unnamed still starts each repo from its own)."
@@ -713,21 +702,12 @@
           "$ref": "#/definitions/Seat",
           "description": "Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one."
         },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CardVerb"
-          }
-        },
-        "calls": {
-          "$ref": "#/definitions/CardCalls"
-        },
         "actions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/CardAction"
           },
-          "description": "What can be done with it now, each verb with its call when it has one: `verbs` and `calls` say the same, apart."
+          "description": "What can be done with it now, each verb with its call when it has one."
         },
         "x": {
           "type": "object",
@@ -768,8 +748,6 @@
         "cutOff",
         "conversations",
         "onDuty",
-        "verbs",
-        "calls",
         "actions"
       ],
       "additionalProperties": false
@@ -1068,15 +1046,6 @@
         "orphan": {
           "type": "boolean"
         },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ResourceVerb"
-          }
-        },
-        "calls": {
-          "$ref": "#/definitions/ResourceCalls"
-        },
         "actions": {
           "type": "array",
           "items": {
@@ -1089,41 +1058,10 @@
         "command",
         "ports",
         "orphan",
-        "verbs",
-        "calls",
         "actions"
       ],
       "additionalProperties": false,
       "description": "A process a session left running: `orphan` when re-parented out of the host's tree."
-    },
-    "ResourceVerb": {
-      "type": "string",
-      "const": "reap",
-      "description": "A process a session left running can always be ended on its own."
-    },
-    "ResourceCalls": {
-      "type": "object",
-      "properties": {
-        "reap": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "reap/process"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "required": [
-        "reap"
-      ],
-      "additionalProperties": false
     },
     "ResourceAction": {
       "type": "object",
@@ -1249,15 +1187,6 @@
         "startedAt": {
           "type": "number"
         },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ConversationVerb"
-          }
-        },
-        "calls": {
-          "$ref": "#/definitions/ConversationCalls"
-        },
         "actions": {
           "type": "array",
           "items": {
@@ -1283,40 +1212,10 @@
       },
       "required": [
         "actions",
-        "calls",
         "id",
-        "startedAt",
-        "verbs"
+        "startedAt"
       ],
       "description": "`promptBy`: the hirer whose prompt its latest is, while that is still the prompt the worker was hired on; else the prompt is the user's."
-    },
-    "ConversationVerb": {
-      "type": "string",
-      "enum": [
-        "resume",
-        "goto"
-      ]
-    },
-    "ConversationCalls": {
-      "type": "object",
-      "properties": {
-        "resume": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "resume"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "additionalProperties": false
     },
     "ConversationAction": {
       "anyOf": [
@@ -1431,153 +1330,6 @@
         }
       ],
       "description": "Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the worker it reports to by its crew edge (that worker's card id)."
-    },
-    "CardVerb": {
-      "type": "string",
-      "enum": [
-        "drive",
-        "submit",
-        "prompt",
-        "resume",
-        "carry-on",
-        "goto",
-        "brief",
-        "reap",
-        "kill",
-        "let-go",
-        "send-home"
-      ],
-      "description": "`drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works; `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the session that resumed the conversation; `send-home` ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a prompt telling it so."
-    },
-    "CardCalls": {
-      "type": "object",
-      "properties": {
-        "submit": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "submit"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "prompt": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "submit/at-prompt"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "resume": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "resume"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "carry-on": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "resume"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "reap": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "reap"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "kill": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "kill"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "let-go": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "let-go"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "send-home": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "minItems": 2,
-            "items": [
-              {
-                "type": "string",
-                "const": "kill"
-              },
-              {
-                "type": "object",
-                "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-              }
-            ],
-            "maxItems": 2
-          }
-        }
-      },
-      "additionalProperties": false,
-      "description": "`send-home` is a kill per running worker, the deepest first."
     },
     "CardAction": {
       "anyOf": [
@@ -2021,15 +1773,6 @@
         "state": {
           "$ref": "#/definitions/WorktreeState"
         },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/WorktreeVerb"
-          }
-        },
-        "calls": {
-          "$ref": "#/definitions/WorktreeCalls"
-        },
         "actions": {
           "type": "array",
           "items": {
@@ -2042,8 +1785,6 @@
         "repos",
         "sessions",
         "state",
-        "verbs",
-        "calls",
         "actions"
       ],
       "additionalProperties": false
@@ -2203,83 +1944,6 @@
         "removable"
       ],
       "description": "`carried`: clean, its work landed only as copies, some edited (`isCarried`): removed by its own `remove`, never by Tidy. `unread`: git couldn't read it in some repo (`UnreadTree`), so nothing says what it holds and it offers no verb until it can be read (@since 1.158)."
-    },
-    "WorktreeVerb": {
-      "type": "string",
-      "enum": [
-        "recut",
-        "prune",
-        "remove",
-        "discard"
-      ],
-      "description": "`recut` restores a lost worktree's folders from its branch, `prune` forgets them while nobody is in it; `remove` is offered only when nothing would be lost, or its work landed as copies (`carried`); `discard` throws away work that never landed, its tips named on the checkout's review thread first."
-    },
-    "WorktreeCalls": {
-      "type": "object",
-      "properties": {
-        "recut": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "worktree/recut"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "prune": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "worktree/prune"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "remove": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "worktree/remove"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "discard": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "worktree/discard"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "additionalProperties": false,
-      "description": "`discard` carries what each repo held as shown, refused once it moved; it takes the author of its note."
     },
     "WorktreeAction": {
       "anyOf": [
@@ -2466,15 +2130,6 @@
           "type": "boolean",
           "description": "Not absorbed, but absorbed or carried in every repo that has it: deleted by its own `delete`, never by Tidy."
         },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/BranchVerb"
-          }
-        },
-        "calls": {
-          "$ref": "#/definitions/BranchCalls"
-        },
         "actions": {
           "type": "array",
           "items": {
@@ -2487,54 +2142,8 @@
         "repos",
         "absorbed",
         "carried",
-        "verbs",
-        "calls",
         "actions"
       ],
-      "additionalProperties": false
-    },
-    "BranchVerb": {
-      "type": "string",
-      "enum": [
-        "recut",
-        "delete"
-      ],
-      "description": "`delete` is offered only on a branch absorbed into its base, or carried there as copies."
-    },
-    "BranchCalls": {
-      "type": "object",
-      "properties": {
-        "recut": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "branch/recut"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "delete": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "branch/delete"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
       "additionalProperties": false
     },
     "BranchAction": {
@@ -2787,99 +2396,6 @@
       ],
       "additionalProperties": false,
       "description": "A plain month file Tidy would archive."
-    },
-    "FloorVerb": {
-      "type": "string",
-      "enum": [
-        "spawn",
-        "cut",
-        "shell",
-        "editor",
-        "tidy"
-      ],
-      "description": "`spawn` starts a session, `cut` one in a new worktree of every dir, `shell` a shell in one of the floor's dirs, `editor` opens a dir in the user's editor, `tidy` applies the floor's `TidyPlan` as listed: worktrees and kept branches, landed review threads, leftover processes and idle workers."
-    },
-    "FloorCalls": {
-      "type": "object",
-      "properties": {
-        "spawn": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "spawn"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "cut": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "spawn"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "shell": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "shell/spawn"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "editor": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "open"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        },
-        "tidy": {
-          "type": "array",
-          "minItems": 2,
-          "items": [
-            {
-              "type": "string",
-              "const": "tidy"
-            },
-            {
-              "type": "object",
-              "description": "The verb's input, the fields the board knows: `tower api <verb>` describes it."
-            }
-          ],
-          "maxItems": 2
-        }
-      },
-      "additionalProperties": false,
-      "description": "`spawn` and `shell` take the directory the user picks, `editor` too; `cut` takes the name, branch and base the user picks, or none."
     },
     "FloorAction": {
       "anyOf": [

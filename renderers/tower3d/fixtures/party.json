@@ -158,31 +158,9 @@
                     "id": "20261004-090000-p1xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 1",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-p1xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-p1xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -258,18 +236,6 @@
                     "startedAt": 1791124800000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p1xx",
-                          "conversation": "20261004-090007-p1xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -284,19 +250,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p1xx",
-                      "conversation": "20261004-090007-p1xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -358,18 +311,6 @@
                     "startedAt": 1791122580000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-p1xx",
-                          "conversation": "20261004-090014-p1xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -384,19 +325,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-p1xx",
-                      "conversation": "20261004-090014-p1xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -458,18 +386,6 @@
                     "startedAt": 1791120360000,
                     "prompt": "chore 3",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090021-p1xx",
-                          "conversation": "20261004-090021-p1xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -484,19 +400,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090021-p1xx",
-                      "conversation": "20261004-090021-p1xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -558,18 +461,6 @@
                     "startedAt": 1791118140000,
                     "prompt": "chore 4",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090028-p1xx",
-                          "conversation": "20261004-090028-p1xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -584,19 +475,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090028-p1xx",
-                      "conversation": "20261004-090028-p1xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -658,18 +536,6 @@
                     "startedAt": 1791115920000,
                     "prompt": "chore 5",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090035-p1xx",
-                          "conversation": "20261004-090035-p1xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -684,19 +550,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090035-p1xx",
-                      "conversation": "20261004-090035-p1xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -758,18 +611,6 @@
                     "startedAt": 1791113700000,
                     "prompt": "chore 6",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090042-p1xx",
-                          "conversation": "20261004-090042-p1xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -784,19 +625,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090042-p1xx",
-                      "conversation": "20261004-090042-p1xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -815,29 +643,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p1"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p1"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -939,18 +744,6 @@
                     "startedAt": 1791124140000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090000-p2xx",
-                          "conversation": "20261004-090000-p2xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -965,19 +758,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090000-p2xx",
-                      "conversation": "20261004-090000-p2xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1039,18 +819,6 @@
                     "startedAt": 1791121920000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p2xx",
-                          "conversation": "20261004-090007-p2xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1065,19 +833,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p2xx",
-                      "conversation": "20261004-090007-p2xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1139,18 +894,6 @@
                     "startedAt": 1791119700000,
                     "prompt": "chore 3",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-p2xx",
-                          "conversation": "20261004-090014-p2xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1165,19 +908,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-p2xx",
-                      "conversation": "20261004-090014-p2xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1239,18 +969,6 @@
                     "startedAt": 1791117480000,
                     "prompt": "chore 4",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090021-p2xx",
-                          "conversation": "20261004-090021-p2xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1265,19 +983,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090021-p2xx",
-                      "conversation": "20261004-090021-p2xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1339,18 +1044,6 @@
                     "startedAt": 1791115260000,
                     "prompt": "chore 5",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090028-p2xx",
-                          "conversation": "20261004-090028-p2xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1365,19 +1058,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090028-p2xx",
-                      "conversation": "20261004-090028-p2xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1396,29 +1076,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p2"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p2"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1520,18 +1177,6 @@
                     "startedAt": 1791123480000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090000-p3xx",
-                          "conversation": "20261004-090000-p3xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1546,19 +1191,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090000-p3xx",
-                      "conversation": "20261004-090000-p3xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1620,18 +1252,6 @@
                     "startedAt": 1791121260000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p3xx",
-                          "conversation": "20261004-090007-p3xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1646,19 +1266,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p3xx",
-                      "conversation": "20261004-090007-p3xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1720,18 +1327,6 @@
                     "startedAt": 1791119040000,
                     "prompt": "chore 3",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-p3xx",
-                          "conversation": "20261004-090014-p3xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1746,19 +1341,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-p3xx",
-                      "conversation": "20261004-090014-p3xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1820,18 +1402,6 @@
                     "startedAt": 1791116820000,
                     "prompt": "chore 4",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090021-p3xx",
-                          "conversation": "20261004-090021-p3xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1846,19 +1416,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090021-p3xx",
-                      "conversation": "20261004-090021-p3xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1877,29 +1434,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p3"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p3"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2001,31 +1535,9 @@
                     "id": "20261004-090000-p4xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 4",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-p4xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-p4xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2101,18 +1613,6 @@
                     "startedAt": 1791122820000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p4xx",
-                          "conversation": "20261004-090007-p4xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2127,19 +1627,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p4xx",
-                      "conversation": "20261004-090007-p4xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2201,18 +1688,6 @@
                     "startedAt": 1791120600000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-p4xx",
-                          "conversation": "20261004-090014-p4xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2227,19 +1702,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-p4xx",
-                      "conversation": "20261004-090014-p4xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2301,18 +1763,6 @@
                     "startedAt": 1791118380000,
                     "prompt": "chore 3",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090021-p4xx",
-                          "conversation": "20261004-090021-p4xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2327,19 +1777,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090021-p4xx",
-                      "conversation": "20261004-090021-p4xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2358,29 +1795,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p4"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p4"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2482,18 +1896,6 @@
                     "startedAt": 1791122160000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090000-p5xx",
-                          "conversation": "20261004-090000-p5xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2508,19 +1910,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090000-p5xx",
-                      "conversation": "20261004-090000-p5xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2582,18 +1971,6 @@
                     "startedAt": 1791119940000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p5xx",
-                          "conversation": "20261004-090007-p5xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2608,19 +1985,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p5xx",
-                      "conversation": "20261004-090007-p5xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2682,18 +2046,6 @@
                     "startedAt": 1791117720000,
                     "prompt": "chore 3",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-p5xx",
-                          "conversation": "20261004-090014-p5xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2708,19 +2060,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-p5xx",
-                      "conversation": "20261004-090014-p5xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2739,29 +2078,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p5"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p5"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2863,18 +2179,6 @@
                     "startedAt": 1791121500000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090000-p6xx",
-                          "conversation": "20261004-090000-p6xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2889,19 +2193,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090000-p6xx",
-                      "conversation": "20261004-090000-p6xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2963,18 +2254,6 @@
                     "startedAt": 1791119280000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p6xx",
-                          "conversation": "20261004-090007-p6xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2989,19 +2268,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p6xx",
-                      "conversation": "20261004-090007-p6xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3020,29 +2286,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p6"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p6"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -3144,31 +2387,9 @@
                     "id": "20261004-090000-p7xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 7",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-p7xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-p7xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3244,18 +2465,6 @@
                     "startedAt": 1791120840000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p7xx",
-                          "conversation": "20261004-090007-p7xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -3270,19 +2479,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p7xx",
-                      "conversation": "20261004-090007-p7xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3344,18 +2540,6 @@
                     "startedAt": 1791118620000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-p7xx",
-                          "conversation": "20261004-090014-p7xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -3370,19 +2554,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-p7xx",
-                      "conversation": "20261004-090014-p7xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3401,29 +2572,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p7"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p7"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -3525,18 +2673,6 @@
                     "startedAt": 1791120180000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090000-p8xx",
-                          "conversation": "20261004-090000-p8xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -3551,19 +2687,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090000-p8xx",
-                      "conversation": "20261004-090000-p8xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3582,29 +2705,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p8"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p8"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -3706,18 +2806,6 @@
                     "startedAt": 1791119520000,
                     "prompt": "chore 1",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090000-p9xx",
-                          "conversation": "20261004-090000-p9xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -3732,19 +2820,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090000-p9xx",
-                      "conversation": "20261004-090000-p9xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3806,18 +2881,6 @@
                     "startedAt": 1791117300000,
                     "prompt": "chore 2",
                     "answer": "Done.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-p9xx",
-                          "conversation": "20261004-090007-p9xx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -3832,19 +2895,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-p9xx",
-                      "conversation": "20261004-090007-p9xx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3863,29 +2913,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "p9"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "p9"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",

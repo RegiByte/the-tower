@@ -328,7 +328,6 @@
                 "tag",
                 "hash",
                 "live",
-                "calls",
                 "actions"
               ]
             }
@@ -344,7 +343,6 @@
                 "slot",
                 "since",
                 "until",
-                "calls",
                 "actions"
               ]
             }

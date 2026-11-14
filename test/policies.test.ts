@@ -6,6 +6,7 @@ import { liveRuns, NO_POLICY_FACTS, offersOf, policyFacts, policyViews, slotName
 import { hashOf, parsePolicy } from '../extensions/policies/policy-file.ts'
 import { decide, nextSlot, ruleWords, slotsBetween, slotWords, standing } from '../extensions/policies/client/policies.ts'
 import type { When } from '../src/shared/slots.ts'
+import { callsOf } from './actions.ts'
 
 const MIN = 60_000
 const policyText = (header: string, prose = 'Do the work.') => `# Bug hunt\n\n\`\`\`json\n${header}\n\`\`\`\n\n${prose}\n`
@@ -81,7 +82,7 @@ test('an edit drops an auto policy to offers and says it needs you; an offer sta
   assert.equal(view.approved, undefined)
   assert.deepEqual(standing(view, NOW), { t: 'offered', slot: SLOT, until: SLOT + 24 * 60 * MIN })
   assert.deepEqual(view.offer?.check, { exit: 0, ms: 5, out: '12' }, 'an accepted offer records what its check found')
-  assert.deepEqual(offersOf('lab', [view]).map((o) => [o.key, o.calls.accept]), [[`auto.md@${SLOT}`, ['policies/run', { project: 'lab', policy: 'auto.md', slot: SLOT, start: 'offer', check: { exit: 0, ms: 5, out: '12' } }]]])
+  assert.deepEqual(offersOf('lab', [view]).map((o) => [o.key, callsOf(o).accept]), [[`auto.md@${SLOT}`, ['policies/run', { project: 'lab', policy: 'auto.md', slot: SLOT, start: 'offer', check: { exit: 0, ms: 5, out: '12' } }]]])
   assert.deepEqual(decide({ policies: [view] }, new Map(), NOW), [], 'a slot with a fact is not decided again')
 })
 

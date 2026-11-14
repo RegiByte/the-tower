@@ -249,31 +249,9 @@
                       "callsign": "MAGELLAN-36",
                       "startedAt": 1791152400000
                     },
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-alph"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-alph"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -350,24 +328,9 @@
                     "id": "20261004-090007-alph-conversation",
                     "startedAt": 1791151500000,
                     "prompt": "Run the migration on the staging copy",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-alph"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -456,38 +419,9 @@
                     "startedAt": 1791150600000,
                     "prompt": "Summarize the failing tests",
                     "answer": "Three tests fail on a timezone assumption: they build dates in local time and compare against UTC fixtures.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-alph"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-alph"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-alph"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -572,38 +506,9 @@
                     "startedAt": 1791152700000,
                     "prompt": "hello",
                     "answer": "Ready when you are.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-alph"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090021-alph"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-alph"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -733,31 +638,9 @@
                     "id": "20261004-090028-alph-conversation",
                     "startedAt": 1791147600000,
                     "prompt": "Refactor the ingestion pipeline so every stage is a pure function over plain records, then thread the retry policy through the scheduler without touching the public API; keep the old adapters until the migration lands and write down every decision in the knowledge base as you go, with refs into the code for each claim.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-alph"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-alph"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -829,19 +712,6 @@
                 "pages": [],
                 "sent": [],
                 "conversations": [],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-alph"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -948,10 +818,6 @@
                       "callsign": "ATLAS-97",
                       "startedAt": 1791145800000
                     },
-                    "verbs": [
-                      "goto"
-                    ],
-                    "calls": {},
                     "actions": [
                       {
                         "verb": "goto"
@@ -959,11 +825,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "goto",
-                  "brief"
-                ],
-                "calls": {},
                 "actions": [
                   {
                     "verb": "goto"
@@ -975,29 +836,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "alpha"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "alpha"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1226,38 +1064,9 @@
                     "id": "20261004-090000-beta-conversation",
                     "startedAt": 1791152100000,
                     "prompt": "Deploy the preview",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-beta"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090000-beta"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-beta"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1341,18 +1150,6 @@
                     "id": "20261004-090007-beta-conversation",
                     "startedAt": 1791141000000,
                     "prompt": "Long build",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-beta",
-                          "conversation": "20261004-090007-beta-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1367,35 +1164,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "carry-on",
-                  "brief",
-                  "let-go"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-beta",
-                      "conversation": "20261004-090007-beta-conversation"
-                    }
-                  ],
-                  "carry-on": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-beta",
-                      "conversation": "20261004-090007-beta-conversation",
-                      "prompt": "You were cut off mid-turn: your session stopped before your turn ended. Carry on where you left off."
-                    }
-                  ],
-                  "let-go": [
-                    "let-go",
-                    {
-                      "id": "20261004-090007-beta"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1478,18 +1246,6 @@
                       5173
                     ],
                     "orphan": true,
-                    "verbs": [
-                      "reap"
-                    ],
-                    "calls": {
-                      "reap": [
-                        "reap/process",
-                        {
-                          "id": "20261004-090014-beta",
-                          "pid": 4242
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "reap",
@@ -1508,18 +1264,6 @@
                     "command": "esbuild --watch",
                     "ports": [],
                     "orphan": false,
-                    "verbs": [
-                      "reap"
-                    ],
-                    "calls": {
-                      "reap": [
-                        "reap/process",
-                        {
-                          "id": "20261004-090014-beta",
-                          "pid": 4243
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "reap",
@@ -1543,45 +1287,9 @@
                     "startedAt": 1791150000000,
                     "prompt": "Rename the module",
                     "answer": "Refactor the ingestion pipeline so every stage is a pure function over plain records, then thread the retry policy through the scheduler without touching the public API; keep the old adapters until the migration lands and write down every decision in the knowledge base as you go, with refs into the code for each claim.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "reap",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-beta"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-beta"
-                    }
-                  ],
-                  "reap": [
-                    "reap",
-                    {
-                      "id": "20261004-090014-beta"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-beta"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1685,31 +1393,9 @@
                     "id": "20261004-090021-beta-conversation",
                     "startedAt": 1791152280000,
                     "prompt": "Profile the hot path",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-beta"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-beta"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1785,18 +1471,6 @@
                     "startedAt": 1791149400000,
                     "prompt": "Quick question",
                     "answer": "Answered.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090028-beta",
-                          "conversation": "20261004-090028-beta-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1811,19 +1485,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090028-beta",
-                      "conversation": "20261004-090028-beta-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1842,29 +1503,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "beta"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "beta"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1988,38 +1626,9 @@
                     "startedAt": 1791152520000,
                     "prompt": "Look around",
                     "answer": "Looked.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-gamm"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090000-gamm"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-gamm"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2104,24 +1713,9 @@
                     "id": "20261004-090007-gamm-conversation",
                     "startedAt": 1791152820000,
                     "prompt": "Delete the old branch?",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-gamm"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2188,18 +1782,6 @@
                     "startedAt": 1791135000000,
                     "prompt": "Draft the release notes",
                     "answer": "Drafted.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-gamm",
-                          "conversation": "20261004-090014-gamm-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2214,19 +1796,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-gamm",
-                      "conversation": "20261004-090014-gamm-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2245,29 +1814,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "gamma"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "gamma"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",

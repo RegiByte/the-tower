@@ -186,31 +186,9 @@
                     "id": "20261004-090000-arca-conversation",
                     "startedAt": 1791120600000,
                     "prompt": "Coordinate the parser rewrite",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -292,38 +270,9 @@
                     "prompt": "Split the lexer out",
                     "answer": "Split; the tests pass.",
                     "promptBy": "RATATOSK-78",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-arca"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090007-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -419,38 +368,9 @@
                     "prompt": "Port the error messages",
                     "answer": "Ported all forty.",
                     "promptBy": "RATATOSK-78",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-arca"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -546,38 +466,9 @@
                     "prompt": "Measure the parse times",
                     "answer": "Twice as fast on the big files.",
                     "promptBy": "RATATOSK-78",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-arca"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090021-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -673,38 +564,9 @@
                     "prompt": "Drop the old grammar",
                     "answer": "Dropped.",
                     "promptBy": "RATATOSK-78",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-arca"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090028-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -799,31 +661,9 @@
                     "id": "20261004-090035-arca-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Write the migration notes",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090035-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -900,38 +740,9 @@
                     "startedAt": 1791123000000,
                     "prompt": "Tidy the changelog",
                     "answer": "Tidied.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090042-arca"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090042-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090042-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1016,31 +827,9 @@
                     "id": "20261004-090049-arca-conversation",
                     "startedAt": 1791123300000,
                     "prompt": "Lead the docs pass",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090049-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090049-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1122,38 +911,9 @@
                     "prompt": "Read the old docs",
                     "answer": "Read; three pages are stale.",
                     "promptBy": "ARGUS-59",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090056-arca"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090056-arca"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090056-arca"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1200,29 +960,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "arcade"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "arcade"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1324,31 +1061,9 @@
                     "id": "20261004-090000-quie-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Plan the release",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-quie"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-quie"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1430,38 +1145,9 @@
                     "prompt": "List the open issues",
                     "answer": "Seven, two of them blockers.",
                     "promptBy": "KOWALSKI-17",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-quie"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090007-quie"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-quie"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1556,31 +1242,9 @@
                     "id": "20261004-090014-quie-conversation",
                     "startedAt": 1791123900000,
                     "prompt": "Rework the release script",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-quie"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-quie"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1684,38 +1348,9 @@
                     "prompt": "/reviews:review WALT-02",
                     "answer": "Two notes left on the thread.",
                     "promptBy": "WALT-02",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-quie"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090021-quie"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-quie"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1762,29 +1397,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "quiet"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "quiet"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",

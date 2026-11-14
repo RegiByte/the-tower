@@ -10,6 +10,7 @@ import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { fixture } from './replay.ts'
 import { reposOf, repoRead, treeRead } from './repos.ts'
 import { viewOf } from './view.ts'
+import { callsOf, verbsOf } from './actions.ts'
 
 const CONFIG: Config = { argv: ['claude'], env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [] }, lab: { name: 'lab', hub: '/lab', repos: [] }, rec: { name: 'rec', hub: '/tmp/mc-prometheus-30/work', repos: [] } } }
 
@@ -31,11 +32,11 @@ test("every process of a session that no longer runs is Tidy's to reap, orphaned
   const running = [left(log, 41, true), left(log, 42, false)]
   const ended = floorAt(log, at(log, 300), false, running)
   assert.deepEqual(ended.tidy.prune, [{ t: 'reap', id: log.header.id, pid: 41 }, { t: 'reap', id: log.header.id, pid: 42 }])
-  assert.ok(ended.verbs.includes('tidy'))
-  assert.deepEqual(ended.calls.tidy, ['tidy', { project: log.header.project, plan: ended.tidy }])
+  assert.ok(verbsOf(ended).includes('tidy'))
+  assert.deepEqual(callsOf(ended).tidy, ['tidy', { project: log.header.project, plan: ended.tidy }])
   const working = floorAt(until(log, 15), at(log, 15), true, running)
   assert.deepEqual(working.tidy.prune, [])
-  assert.ok(!working.verbs.includes('tidy'))
+  assert.ok(!verbsOf(working).includes('tidy'))
 })
 
 const HUB = '/hub'

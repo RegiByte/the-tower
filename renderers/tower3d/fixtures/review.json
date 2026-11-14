@@ -192,31 +192,9 @@
                     "id": "20261004-090000-labx-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Add a retry budget to the scheduler",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -356,31 +334,9 @@
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
                     "prompt": "/reviews:review DARTAGNAN-67",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -462,38 +418,9 @@
                     "startedAt": 1791124200000,
                     "prompt": "Document the port",
                     "answer": "Added the port to the README.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -594,38 +521,9 @@
                     "startedAt": 1791125520000,
                     "prompt": "Look around",
                     "answer": "Looked.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -730,18 +628,6 @@
                     "startedAt": 1791115200000,
                     "prompt": "Drop the old flags",
                     "answer": "Dropped three.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090028-labx",
-                          "conversation": "20261004-090028-labx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -756,19 +642,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090028-labx",
-                      "conversation": "20261004-090028-labx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -817,18 +690,6 @@
                     "state": {
                       "is": "live"
                     },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "retry-budget"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "note",
@@ -857,18 +718,6 @@
                     "resolved": [],
                     "state": {
                       "is": "live"
-                    },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "readme"
-                        }
-                      ]
                     },
                     "actions": [
                       {
@@ -899,18 +748,6 @@
                     "state": {
                       "is": "live"
                     },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "old-flags"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "note",
@@ -931,29 +768,6 @@
                   }
                 ]
               }
-            },
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "lab"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "lab"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
             },
             "actions": [
               {
@@ -1376,31 +1190,9 @@
                     "id": "20261004-090000-labx-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Add a retry budget to the scheduler",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1540,18 +1332,6 @@
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
                     "prompt": "/reviews:review DARTAGNAN-67",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090007-labx",
-                          "conversation": "20261004-090007-labx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1566,19 +1346,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090007-labx",
-                      "conversation": "20261004-090007-labx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1646,38 +1413,9 @@
                     "startedAt": 1791124200000,
                     "prompt": "Document the port",
                     "answer": "Added the port to the README.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1778,38 +1516,9 @@
                     "startedAt": 1791125520000,
                     "prompt": "Look around",
                     "answer": "Looked.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1914,18 +1623,6 @@
                     "startedAt": 1791115200000,
                     "prompt": "Drop the old flags",
                     "answer": "Dropped three.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090028-labx",
-                          "conversation": "20261004-090028-labx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1940,19 +1637,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090028-labx",
-                      "conversation": "20261004-090028-labx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -2001,18 +1685,6 @@
                     "state": {
                       "is": "live"
                     },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "retry-budget"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "note",
@@ -2041,18 +1713,6 @@
                     "resolved": [],
                     "state": {
                       "is": "live"
-                    },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "readme"
-                        }
-                      ]
                     },
                     "actions": [
                       {
@@ -2083,18 +1743,6 @@
                     "state": {
                       "is": "live"
                     },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "old-flags"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "note",
@@ -2115,29 +1763,6 @@
                   }
                 ]
               }
-            },
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "lab"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "lab"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
             },
             "actions": [
               {
@@ -2560,31 +2185,9 @@
                     "id": "20261004-090000-labx-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Add a retry budget to the scheduler",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2724,31 +2327,9 @@
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
                     "prompt": "/reviews:review DARTAGNAN-67",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2830,38 +2411,9 @@
                     "startedAt": 1791124200000,
                     "prompt": "Document the port",
                     "answer": "Added the port to the README.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2962,38 +2514,9 @@
                     "startedAt": 1791125520000,
                     "prompt": "Look around",
                     "answer": "Looked.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-labx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3098,18 +2621,6 @@
                     "startedAt": 1791115200000,
                     "prompt": "Drop the old flags",
                     "answer": "Dropped three.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090028-labx",
-                          "conversation": "20261004-090028-labx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -3124,19 +2635,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090028-labx",
-                      "conversation": "20261004-090028-labx-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3185,18 +2683,6 @@
                     "state": {
                       "is": "live"
                     },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "retry-budget"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "note",
@@ -3225,18 +2711,6 @@
                     "resolved": [],
                     "state": {
                       "is": "live"
-                    },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "readme"
-                        }
-                      ]
                     },
                     "actions": [
                       {
@@ -3267,18 +2741,6 @@
                     "state": {
                       "is": "live"
                     },
-                    "verbs": [
-                      "note"
-                    ],
-                    "calls": {
-                      "note": [
-                        "reviews/append",
-                        {
-                          "project": "lab",
-                          "checkout": "old-flags"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "note",
@@ -3299,29 +2761,6 @@
                   }
                 ]
               }
-            },
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "lab"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "lab"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
             },
             "actions": [
               {

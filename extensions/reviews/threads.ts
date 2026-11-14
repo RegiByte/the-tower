@@ -13,12 +13,9 @@ export type ThreadFile = { id: string; thread: ReviewThread }
 export type NoteCall = [verb: 'reviews/append', input: { project: string; checkout: string }]
 
 /** `note` adds a note to a checkout's thread, offered while its work goes on: a note on finished work reaches nobody. */
-export type NoteOffers = { verbs: 'note'[]; calls: { note?: NoteCall }; actions: { verb: 'note'; call: NoteCall }[] }
+export type NoteOffers = { actions: { verb: 'note'; call: NoteCall }[] }
 
-const noteOffers = (project: string, checkout: string, live: boolean): NoteOffers => {
-  const call: NoteCall = ['reviews/append', { project, checkout }]
-  return live ? { verbs: ['note'], calls: { note: call }, actions: [{ verb: 'note', call }] } : { verbs: [], calls: {}, actions: [] }
-}
+const noteOffers = (project: string, checkout: string, live: boolean): NoteOffers => ({ actions: live ? [{ verb: 'note', call: ['reviews/append', { project, checkout }] }] : [] })
 
 /**
  * A checkout's thread: `messages` it holds and the `last` one. `landed`: the checkout's work has landed

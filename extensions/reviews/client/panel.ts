@@ -3,7 +3,7 @@
  * notes' quotes marked as the Changes find them; and where a card's and a floor's threads are on the board (the
  * extension's part, `x.reviews`). The reviews extension's client, served at `/x/reviews/panel.js`.
  */
-import { type Board, type Card, type CheckoutState, type Floor, sendTarget, sendTargets, workerIn } from '/lib/board.js'
+import { type Board, type Card, type CheckoutState, type Floor, callOf, sendTarget, sendTargets, workerIn } from '/lib/board.js'
 import type { RepoChanges } from '/lib/changes.js'
 import { checkoutDirs } from '/lib/files.js'
 import { type ReadEvent, type Reads, failureOf, valueOf } from '/lib/machine.js'
@@ -81,7 +81,7 @@ export const cardThread = (c: Card): ThreadPlace => {
 /** A floor's thread opened where no worker's view is (a list of the floor's threads), read as the worker on duty in its checkout. */
 export const floorThread = (f: Floor, t: FloorThread): ThreadPlace => {
   const worker = workerIn(f, t.checkout)
-  return { project: f.id, checkout: t.checkout, id: t.id, state: t.state, note: t.calls.note, reader: worker?.onDuty ? worker : undefined }
+  return { project: f.id, checkout: t.checkout, id: t.id, state: t.state, note: callOf(t, 'note'), reader: worker?.onDuty ? worker : undefined }
 }
 
 /** Where a thread is: its project and its item's id in the floor's `reviews`. */

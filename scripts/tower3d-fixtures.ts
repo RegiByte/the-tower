@@ -215,7 +215,7 @@ function withThreads(f: FloorFacts, cards: Card[]): { x?: Floor['x']; cards: Car
   const note = (checkout: string): NoteCall => ['reviews/append', { project: f.id, checkout }]
   const threads: FloorPart['threads'] = parsed.map(({ checkout, thread }) => ({
     key: `${f.id}/${checkout}`, checkout, id: threadId(checkout), tag: tagOf(threadId(checkout)), messages: thread.messages.length, landed: false, resolved: [...resolvedIn(thread).keys()], state: { is: 'live' as const },
-    verbs: ['note'], calls: { note: note(checkout) }, actions: [{ verb: 'note', call: note(checkout) }],
+    actions: [{ verb: 'note', call: note(checkout) }],
     last: thread.messages.at(-1) && { author: thread.messages.at(-1)!.author, at: thread.messages.at(-1)!.at, n: thread.messages.at(-1)!.n },
   }))
   const threadOf = (c: Card) => parsed.find((t) => t.checkout === threadCheckoutOf(c))?.thread

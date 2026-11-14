@@ -158,31 +158,9 @@
                     "id": "20261004-090000-logs-conversation",
                     "startedAt": 1791124800000,
                     "prompt": "Wire the logbook into the desk panel",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-logs"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-logs"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -266,38 +244,9 @@
                     "startedAt": 1791123900000,
                     "prompt": "Measure the replay of a long log",
                     "answer": "A 40 MB log takes 1.9 s to rebuild its screen.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-logs"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090007-logs"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-logs"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -414,38 +363,9 @@
                     "startedAt": 1791123000000,
                     "prompt": "Keep the filing cabinet tidy",
                     "answer": "Filed.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-logs"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-logs"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-logs"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -534,24 +454,9 @@
                     "id": "20261004-090021-logs-conversation",
                     "startedAt": 1791125640000,
                     "prompt": "Archive the old drawers?",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-logs"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -575,29 +480,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "logs"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "logs"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -821,18 +703,6 @@
               "startedAt": 1791066000000,
               "prompt": "Archived task 1",
               "answer": "Done with task 1.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090028-logs",
-                    "conversation": "20261004-090028-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -847,19 +717,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090028-logs",
-                "conversation": "20261004-090028-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",
@@ -925,18 +782,6 @@
               "startedAt": 1791062400000,
               "prompt": "Archived task 2",
               "answer": "Done with task 2.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090035-logs",
-                    "conversation": "20261004-090035-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -951,19 +796,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090035-logs",
-                "conversation": "20261004-090035-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",
@@ -1033,18 +865,6 @@
               "startedAt": 1791048000000,
               "prompt": "Archived task 3",
               "answer": "Done with task 3.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090042-logs",
-                    "conversation": "20261004-090042-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -1059,19 +879,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090042-logs",
-                "conversation": "20261004-090042-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",
@@ -1145,18 +952,6 @@
               "startedAt": 1790976000000,
               "prompt": "Archived task 4",
               "answer": "Done with task 4.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090049-logs",
-                    "conversation": "20261004-090049-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -1171,19 +966,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090049-logs",
-                "conversation": "20261004-090049-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",
@@ -1245,18 +1027,6 @@
               "startedAt": 1790969400000,
               "prompt": "Archived task 5",
               "answer": "Done with task 5.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090056-logs",
-                    "conversation": "20261004-090056-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -1271,19 +1041,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090056-logs",
-                "conversation": "20261004-090056-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",
@@ -1349,18 +1106,6 @@
               "startedAt": 1790886000000,
               "prompt": "Archived task 6",
               "answer": "Done with task 6.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090063-logs",
-                    "conversation": "20261004-090063-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -1375,19 +1120,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090063-logs",
-                "conversation": "20261004-090063-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",
@@ -1457,18 +1189,6 @@
               "startedAt": 1790796000000,
               "prompt": "Archived task 7",
               "answer": "Done with task 7.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090070-logs",
-                    "conversation": "20261004-090070-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -1483,19 +1203,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090070-logs",
-                "conversation": "20261004-090070-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",
@@ -1569,18 +1276,6 @@
               "startedAt": 1790706000000,
               "prompt": "Archived task 8",
               "answer": "Done with task 8.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090077-logs",
-                    "conversation": "20261004-090077-logs-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -1595,19 +1290,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090077-logs",
-                "conversation": "20261004-090077-logs-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",

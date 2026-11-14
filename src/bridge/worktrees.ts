@@ -4,7 +4,7 @@
  * is stored. The commands that produce the input are in `src/worktrees.ts`.
  */
 import { WORKTREE_NAME, WORKTREES_DIR } from '../shared/model.ts'
-import { branchOffers, worktreeOffers, type BranchAction, type BranchCalls, type BranchVerb, type WorktreeAction, type WorktreeCalls, type WorktreeVerb } from './verbs.ts'
+import { branchOffers, worktreeOffers, type BranchAction, type WorktreeAction } from './verbs.ts'
 
 /** One entry of `git worktree list --porcelain`. `head` and `branch` are missing on a bare entry, `branch` on a detached HEAD, `head` on an unborn branch. */
 export type GitWorktree = { path: string; head?: string; branch?: string; prunable: boolean; locked: boolean }
@@ -209,8 +209,6 @@ export type FloorWorktree = {
   /** The workers on duty and the shells whose cwd is inside any of its paths. */
   sessions: string[]
   state: WorktreeState
-  verbs: WorktreeVerb[]
-  calls: WorktreeCalls
   actions: WorktreeAction[]
 }
 
@@ -221,8 +219,6 @@ export type FloorBranch = {
   absorbed: boolean
   /** Not absorbed, but absorbed or carried in every repo that has it: deleted by its own `delete`, never by Tidy. */
   carried: boolean
-  verbs: BranchVerb[]
-  calls: BranchCalls
   actions: BranchAction[]
 }
 

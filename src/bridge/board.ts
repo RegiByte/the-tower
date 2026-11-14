@@ -25,21 +25,12 @@ import {
   cardOffers,
   conversationOffers,
   floorOffers,
-  offered,
   resourceOffers,
   sendHomeActions,
   type CardAction,
-  type CardCalls,
-  type CardVerb,
   type ConversationAction,
-  type ConversationCalls,
-  type ConversationVerb,
   type FloorAction,
-  type FloorCalls,
-  type FloorVerb,
   type ResourceAction,
-  type ResourceCalls,
-  type ResourceVerb,
 } from './verbs.ts'
 import { HOOKS } from '../shared/api.ts'
 import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.ts'
@@ -60,10 +51,10 @@ const EXCERPT_CHARS = 280
 const excerpt = (text: string | undefined) => (text && text.length > EXCERPT_CHARS ? `${text.slice(0, EXCERPT_CHARS)}…` : text)
 
 /** `promptBy`: the hirer whose prompt its latest is, while that is still the prompt the worker was hired on; else the prompt is the user's. */
-export type CardConversation = Pick<Thread, 'id' | 'prompt' | 'answer' | 'resumes' | 'resumedBy'> & { promptBy?: string; startedAt: number; verbs: ConversationVerb[]; calls: ConversationCalls; actions: ConversationAction[] }
+export type CardConversation = Pick<Thread, 'id' | 'prompt' | 'answer' | 'resumes' | 'resumedBy'> & { promptBy?: string; startedAt: number; actions: ConversationAction[] }
 
 /** A process a session left running: `orphan` when re-parented out of the host's tree. */
-export type CardResource = { pid: number; command: string; ports: number[]; orphan: boolean; verbs: ResourceVerb[]; calls: ResourceCalls; actions: ResourceAction[] }
+export type CardResource = { pid: number; command: string; ports: number[]; orphan: boolean; actions: ResourceAction[] }
 
 export type CardShown = Omit<Shown, 'at'> & { at: number; session: string }
 
@@ -206,9 +197,7 @@ export type Card = {
   onDuty: boolean
   /** Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one. */
   seat?: Seat
-  verbs: CardVerb[]
-  calls: CardCalls
-  /** What can be done with it now, each verb with its call when it has one: `verbs` and `calls` say the same, apart. */
+  /** What can be done with it now, each verb with its call when it has one. */
   actions: CardAction[]
   /** Each extension's own part of it, by capability, as its card fold made it (decision `extensions`). @since 1.84 */
   x?: Record<string, unknown>
@@ -292,8 +281,6 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   hiring: Required<HiringConfig>
   /** What its Tidy would do now, as its call applies it. */
   tidy: TidyPlan
-  verbs: FloorVerb[]
-  calls: FloorCalls
   actions: FloorAction[]
   /** Each extension's own part of it, by capability, as its floor fold made it. @since 1.84 */
   x?: Record<string, unknown>
@@ -620,7 +607,7 @@ const withCrews = (cards: Card[]): Card[] => {
   const crew = crewsOf(reporting)
   return reporting.map((c) => {
     const home = sendHomeActions([c, ...crew(c)])
-    return home.length ? { ...c, ...offered([...c.actions, ...home]) } : c
+    return home.length ? { ...c, actions: [...c.actions, ...home] } : c
   })
 }
 

@@ -158,31 +158,9 @@
                     "id": "20261004-090000-grow-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Coordinate the parser rewrite",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -263,31 +241,9 @@
                     "id": "20261004-090007-grow-conversation",
                     "startedAt": 1791123000000,
                     "prompt": "Rewrite parser stage 1",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -369,31 +325,9 @@
                     "id": "20261004-090014-grow-conversation",
                     "startedAt": 1791123300000,
                     "prompt": "Rewrite parser stage 2",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -475,31 +409,9 @@
                     "id": "20261004-090021-grow-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Rewrite parser stage 3",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -533,29 +445,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -878,31 +767,9 @@
                     "id": "20261004-090000-grow-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Coordinate the parser rewrite",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -983,31 +850,9 @@
                     "id": "20261004-090007-grow-conversation",
                     "startedAt": 1791123000000,
                     "prompt": "Rewrite parser stage 1",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1089,31 +934,9 @@
                     "id": "20261004-090014-grow-conversation",
                     "startedAt": 1791123300000,
                     "prompt": "Rewrite parser stage 2",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1195,31 +1018,9 @@
                     "id": "20261004-090021-grow-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Rewrite parser stage 3",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1301,31 +1102,9 @@
                     "id": "20261004-090028-grow-conversation",
                     "startedAt": 1791125700000,
                     "prompt": "Rewrite parser stage 4",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1359,29 +1138,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1704,31 +1460,9 @@
                     "id": "20261004-090000-grow-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Coordinate the parser rewrite",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1809,31 +1543,9 @@
                     "id": "20261004-090007-grow-conversation",
                     "startedAt": 1791123000000,
                     "prompt": "Rewrite parser stage 1",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1915,31 +1627,9 @@
                     "id": "20261004-090014-grow-conversation",
                     "startedAt": 1791123300000,
                     "prompt": "Rewrite parser stage 2",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2021,31 +1711,9 @@
                     "id": "20261004-090021-grow-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Rewrite parser stage 3",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2127,31 +1795,9 @@
                     "id": "20261004-090028-grow-conversation",
                     "startedAt": 1791125700000,
                     "prompt": "Rewrite parser stage 4",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2233,31 +1879,9 @@
                     "id": "20261004-090035-grow-conversation",
                     "startedAt": 1791125760000,
                     "prompt": "Rewrite parser stage 5",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090035-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2339,31 +1963,9 @@
                     "id": "20261004-090042-grow-conversation",
                     "startedAt": 1791125820000,
                     "prompt": "Rewrite parser stage 6",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090042-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090042-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2397,29 +1999,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2742,31 +2321,9 @@
                     "id": "20261004-090000-grow-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Coordinate the parser rewrite",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2847,31 +2404,9 @@
                     "id": "20261004-090007-grow-conversation",
                     "startedAt": 1791123000000,
                     "prompt": "Rewrite parser stage 1",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2954,18 +2489,6 @@
                     "startedAt": 1791123300000,
                     "prompt": "Rewrite parser stage 2",
                     "answer": "Rewritten.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090014-grow",
-                          "conversation": "20261004-090014-grow-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -2980,19 +2503,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090014-grow",
-                      "conversation": "20261004-090014-grow-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -3060,31 +2570,9 @@
                     "id": "20261004-090021-grow-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Rewrite parser stage 3",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3166,31 +2654,9 @@
                     "id": "20261004-090028-grow-conversation",
                     "startedAt": 1791125700000,
                     "prompt": "Rewrite parser stage 4",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3272,31 +2738,9 @@
                     "id": "20261004-090035-grow-conversation",
                     "startedAt": 1791125760000,
                     "prompt": "Rewrite parser stage 5",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090035-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3378,31 +2822,9 @@
                     "id": "20261004-090042-grow-conversation",
                     "startedAt": 1791125820000,
                     "prompt": "Rewrite parser stage 6",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090042-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090042-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3436,29 +2858,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -3781,31 +3180,9 @@
                     "id": "20261004-090000-grow-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Coordinate the parser rewrite",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3886,31 +3263,9 @@
                     "id": "20261004-090007-grow-conversation",
                     "startedAt": 1791123000000,
                     "prompt": "Rewrite parser stage 1",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3992,31 +3347,9 @@
                     "id": "20261004-090021-grow-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Rewrite parser stage 3",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -4098,31 +3431,9 @@
                     "id": "20261004-090028-grow-conversation",
                     "startedAt": 1791125700000,
                     "prompt": "Rewrite parser stage 4",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -4204,31 +3515,9 @@
                     "id": "20261004-090035-grow-conversation",
                     "startedAt": 1791125760000,
                     "prompt": "Rewrite parser stage 5",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090035-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -4310,31 +3599,9 @@
                     "id": "20261004-090042-grow-conversation",
                     "startedAt": 1791125820000,
                     "prompt": "Rewrite parser stage 6",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090042-grow"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090042-grow"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -4368,29 +3635,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "grow"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -4606,18 +3850,6 @@
               "startedAt": 1790946000000,
               "prompt": "Rewrite parser stage 2",
               "answer": "Rewritten.",
-              "verbs": [
-                "resume"
-              ],
-              "calls": {
-                "resume": [
-                  "resume",
-                  {
-                    "id": "20261004-090014-grow",
-                    "conversation": "20261004-090014-grow-conversation"
-                  }
-                ]
-              },
               "actions": [
                 {
                   "verb": "resume",
@@ -4632,19 +3864,6 @@
               ]
             }
           ],
-          "verbs": [
-            "resume",
-            "brief"
-          ],
-          "calls": {
-            "resume": [
-              "resume",
-              {
-                "id": "20261004-090014-grow",
-                "conversation": "20261004-090014-grow-conversation"
-              }
-            ]
-          },
           "actions": [
             {
               "verb": "resume",

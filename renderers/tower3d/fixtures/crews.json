@@ -159,31 +159,9 @@
                     "id": "20261004-090000-crew-conversation",
                     "startedAt": 1791120600000,
                     "prompt": "Coordinate the storage rewrite",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -269,31 +247,9 @@
                     "id": "20261004-090007-crew-conversation",
                     "startedAt": 1791121200000,
                     "prompt": "Split the storage layer into reads and writes",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -375,31 +331,9 @@
                     "id": "20261004-090014-crew-conversation",
                     "startedAt": 1791121320000,
                     "prompt": "Write the migration",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -481,24 +415,9 @@
                     "id": "20261004-090021-crew-conversation",
                     "startedAt": 1791121440000,
                     "prompt": "Benchmark the new layer",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -571,31 +490,9 @@
                     "id": "20261004-090028-crew-conversation",
                     "startedAt": 1791121560000,
                     "prompt": "Port the readers",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -678,38 +575,9 @@
                     "startedAt": 1791121680000,
                     "prompt": "Port the writers",
                     "answer": "Ported.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090035-crew"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090035-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -801,18 +669,6 @@
                     "startedAt": 1791121800000,
                     "prompt": "Update the docs",
                     "answer": "Documented.",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090042-crew",
-                          "conversation": "20261004-090042-crew-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -827,19 +683,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090042-crew",
-                      "conversation": "20261004-090042-crew-conversation"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -929,31 +772,9 @@
                     "id": "20261004-090049-crew-conversation",
                     "startedAt": 1791121920000,
                     "prompt": "/reviews:review ARIADNE-80",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090049-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090049-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1035,31 +856,9 @@
                     "id": "20261004-090056-crew-conversation",
                     "startedAt": 1791122040000,
                     "prompt": "Fix the flaky test",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090056-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090056-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1141,31 +940,9 @@
                     "id": "20261004-090063-crew-conversation",
                     "startedAt": 1791122160000,
                     "prompt": "Profile the cache",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090063-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090063-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1248,38 +1025,9 @@
                     "startedAt": 1791122280000,
                     "prompt": "Trim the indexes",
                     "answer": "Trimmed.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090070-crew"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090070-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090070-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1370,31 +1118,9 @@
                     "id": "20261004-090077-crew-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Check the backups",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090077-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090077-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1476,31 +1202,9 @@
                     "id": "20261004-090084-crew-conversation",
                     "startedAt": 1791122520000,
                     "prompt": "Rename the tables",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090084-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090084-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1582,31 +1286,9 @@
                     "id": "20261004-090091-crew-conversation",
                     "startedAt": 1791122640000,
                     "prompt": "Read the old schema",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090091-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090091-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1689,38 +1371,9 @@
                     "startedAt": 1791122760000,
                     "prompt": "Count the rows",
                     "answer": "Forty million.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090098-crew"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090098-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090098-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1811,31 +1464,9 @@
                     "id": "20261004-090105-crew-conversation",
                     "startedAt": 1791122880000,
                     "prompt": "Draw the new schema",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090105-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090105-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1912,31 +1543,9 @@
                     "id": "20261004-090112-crew-conversation",
                     "startedAt": 1791123000000,
                     "prompt": "Something else entirely",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090112-crew"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090112-crew"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1969,29 +1578,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "crew"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "crew"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2093,31 +1679,9 @@
                     "id": "20261004-090000-pair-conversation",
                     "startedAt": 1791122400000,
                     "prompt": "Lead the API review",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2198,31 +1762,9 @@
                     "id": "20261004-090007-pair-conversation",
                     "startedAt": 1791123000000,
                     "prompt": "Read the routes",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2305,38 +1847,9 @@
                     "startedAt": 1791123300000,
                     "prompt": "Read the schemas",
                     "answer": "The schemas agree.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-pair"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2422,31 +1935,9 @@
                     "id": "20261004-090021-pair-conversation",
                     "startedAt": 1791122700000,
                     "prompt": "Lead the release",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090021-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2527,31 +2018,9 @@
                     "id": "20261004-090028-pair-conversation",
                     "startedAt": 1791123600000,
                     "prompt": "Write the notes",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090028-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2633,31 +2102,9 @@
                     "id": "20261004-090035-pair-conversation",
                     "startedAt": 1791123900000,
                     "prompt": "Tag the build",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090035-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2740,38 +2187,9 @@
                     "startedAt": 1791124200000,
                     "prompt": "Check the installers",
                     "answer": "Checked.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090042-pair"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090042-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090042-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2862,31 +2280,9 @@
                     "id": "20261004-090049-pair-conversation",
                     "startedAt": 1791124500000,
                     "prompt": "Bump the version",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090049-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090049-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2963,31 +2359,9 @@
                     "id": "20261004-090056-pair-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "Lead the cleanup",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090056-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090056-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3068,31 +2442,9 @@
                     "id": "20261004-090063-pair-conversation",
                     "startedAt": 1791124800000,
                     "prompt": "Delete the dead code",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090063-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090063-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3174,31 +2526,9 @@
                     "id": "20261004-090070-pair-conversation",
                     "startedAt": 1791125100000,
                     "prompt": "Drop the old flags",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090070-pair"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090070-pair"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -3232,29 +2562,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "pairs"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "pairs"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",

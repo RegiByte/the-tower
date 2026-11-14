@@ -158,24 +158,9 @@
                     "id": "20261004-090000-f1xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 1",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f1xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -199,29 +184,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f1"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f1"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -323,31 +285,9 @@
                     "id": "20261004-090000-f2xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 2",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f2xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f2xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -380,29 +320,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f2"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f2"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -504,31 +421,9 @@
                     "id": "20261004-090000-f3xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 3",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f3xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f3xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -561,29 +456,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f3"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f3"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -685,24 +557,9 @@
                     "id": "20261004-090000-f4xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 4",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f4xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -726,29 +583,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f4"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f4"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -850,31 +684,9 @@
                     "id": "20261004-090000-f5xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 5",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f5xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f5xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -907,29 +719,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f5"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f5"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1031,31 +820,9 @@
                     "id": "20261004-090000-f6xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 6",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f6xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f6xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1088,29 +855,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f6"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f6"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1212,24 +956,9 @@
                     "id": "20261004-090000-f7xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 7",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f7xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1253,29 +982,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f7"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f7"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1377,31 +1083,9 @@
                     "id": "20261004-090000-f8xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 8",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f8xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f8xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1434,29 +1118,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f8"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f8"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1558,31 +1219,9 @@
                     "id": "20261004-090000-f9xx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 9",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f9xx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f9xx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1615,29 +1254,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f9"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f9"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1739,24 +1355,9 @@
                     "id": "20261004-090000-f10x-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 10",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f10x"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1780,29 +1381,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f10"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f10"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1904,31 +1482,9 @@
                     "id": "20261004-090000-f11x-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 11",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f11x"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f11x"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1961,29 +1517,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f11"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f11"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2085,31 +1618,9 @@
                     "id": "20261004-090000-f12x-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "task 12",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-f12x"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-f12x"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -2142,29 +1653,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "f12"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "f12"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
