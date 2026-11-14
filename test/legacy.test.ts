@@ -2,41 +2,22 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
-import { configNow, LEGACY_FIELDS, LEGACY_READS, LEGACY_VERBS, projectLegacy, respelled } from '../src/bridge/legacy.ts'
+import { LEGACY_FIELDS, LEGACY_READS, LEGACY_VERBS, projectLegacy } from '../src/bridge/legacy.ts'
 import type { Board } from '../src/bridge/board.ts'
 import { configProblems } from '../src/config-check.ts'
 import { LEGACY, Manifest, streamFolder } from '../src/shared/extensions.ts'
 import { readingStreams } from '../src/bridge/rate-limits.ts'
 import { VIEW_ALIASES } from '../src/shared/views.ts'
-import { ConfigError, type Config } from '../src/shared/model.ts'
+import type { Config } from '../src/shared/model.ts'
 
 const config = (over: Partial<Config> & Record<string, unknown>): Config => ({ argv: ['claude'], projects: {}, ...over }) as Config
 
-test("the quota probe's old spelling is read where it is now, and both spellings of a field is an error naming both", () => {
-  const old = config({ probes: { quota: { off: true, every: '1h' } } })
-  assert.deepEqual(respelled(old).config.extensions, { quota: { off: true, settings: { every: '1h' } } })
-  assert.deepEqual(
-    respelled(old).old.map((o) => [o.key, o.use]),
-    [
-      ['probes.quota.off', '"extensions": { "quota": { "off": true } }'],
-      ['probes.quota.every', '"extensions": { "quota": { "settings": { "every": "1h" } } }'],
-    ],
-  )
-  const mixed = config({ probes: { quota: { every: '1h' } }, extensions: { quota: { off: false, settings: { every: '5m' } }, roles: { path: '/r' } } })
-  assert.deepEqual(respelled(mixed).both, [{ key: 'probes.quota.every', now: 'extensions.quota.settings.every' }])
-  assert.throws(() => configNow(mixed), (e) => e instanceof ConfigError && /probes\.quota\.every and extensions\.quota\.settings\.every are both set/.test(e.message))
-  assert.deepEqual(configNow(config({ probes: { quota: { off: true } }, extensions: { roles: { path: '/r' } } })).extensions, { roles: { path: '/r' }, quota: { off: true } }, 'the other extensions are kept')
-  const plain = config({ extensions: { quota: { off: true } } })
-  assert.equal(configNow(plain), plain, 'a config with no old spelling is read as it is')
-})
-
-test('tower config check warns of the old spelling with the line to write, and fails what nothing reads', () => {
+test('tower config check fails the quota probe\'s old spelling, with the line to write', () => {
   const problems = (probes: unknown) => configProblems(config({ projects: { lab: { name: 'lab', hub: '/', repos: [] } }, probes } as never)).filter((p) => p.key.startsWith('probes'))
-  assert.deepEqual(problems({ quota: { off: true } }), [{ level: 'warn', key: 'probes.quota.off', problem: 'the old spelling, honoured until 2.0: write "extensions": { "quota": { "off": true } }' }])
-  assert.deepEqual(
-    problems({ quota: { reads: 'claude.usage' }, mine: { every: '10m' } }).map((p) => [p.level, p.key]),
-    [['fail', 'probes.quota.reads'], ['fail', 'probes.mine']],
-  )
+  assert.deepEqual(problems({ quota: { off: true, every: '1h' } }), [
+    { level: 'fail', key: 'probes', problem: 'probes is the quota extension\'s old spelling, read by nothing since 2.0: write "extensions": { "quota": {"off":true,"settings":{"every":"1h"}} } and remove probes' },
+  ])
+  assert.deepEqual(problems({ mine: { every: '10m' } }), [{ level: 'fail', key: 'probes', problem: "probes is the quota extension's old spelling, read by nothing since 2.0: remove it" }])
 })
 
 test('LEGACY names what each applier reads, and every verb, read and board field has its code', () => {

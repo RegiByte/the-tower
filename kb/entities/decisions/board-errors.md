@@ -46,8 +46,8 @@ belongs to the API, not to one page. The fix is the user's (a typo in the config
   whose handler throws.
 - **Two reads of the config.** The running tower reads through
   [`takenConfig`](ref:hub/src/system.ts#takenConfig): a config short of what every read stands on
-  ([`configLack`](ref:hub/src/system.ts#configLack): `argv`, `projects`, each project's `hub` and `repos`) is a
-  `ConfigError`, so the board says it and no later read meets the hole. What must reach a config the tower can't take
+  ([`configLack`](ref:hub/src/system.ts#configLack): `argv`, `projects`, each project's `hub` and `repos`), or one
+  still spelling `probes`, refused since 2.0 with the line to write ([[probes]]), is a `ConfigError`, so the board says it and no later read meets the hole. What must reach a config the tower can't take
   uses the plain [`readConfig`](ref:hub/src/system.ts#readConfig): `tower down`, `tower config check`, `tower doctor`,
   the config verbs that repair it, and the port the tower binds at start, so a JSON object short of those keys still
   brings the tower up to say so, on the default port when it holds no object. A file that names no port at all (gone,

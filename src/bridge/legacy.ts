@@ -6,7 +6,6 @@
  */
 import { apiError, type ApiError, type Replies } from '../shared/api.ts'
 import { legacyOf, type LegacyEntry } from '../shared/extensions.ts'
-import { ConfigError, type Config, type ProbeConfig } from '../shared/model.ts'
 import { usageReading, type RateLimitsReading } from '../shared/rate-limits.ts'
 import { POLICIES, type CardRun, type Offer, type OfferFields, type PolicyFields, type PolicyView } from '../shared/policies-legacy.ts'
 import { REVIEWS, reviewedIn, reviewPrompt } from '../shared/reviews.ts'
@@ -258,51 +257,4 @@ export const projectLegacy = (board: Board): Board => {
       return onFloor.reduce((f, { old, field }) => projected(f, field, board, old), { ...floor, cards })
     }),
   }
-}
-
-/** The config read with its old spellings moved to where they are now, and what each says. */
-export type Respelled = {
-  config: Config
-  /** Each old spelling honoured, by its key, with the line to write instead. */
-  old: { key: string; use: string }[]
-  /** Each old spelling set beside its new one: the tower takes neither. */
-  both: { key: string; now: string }[]
-}
-
-const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
-
-/**
- * The config as the tower reads it: `probes.quota.off`, the quota probe's before it moved into the quota extension,
- * read as `extensions.quota.off`, and `probes.quota.every` as `extensions.quota.settings.every`, until 2.0. A field set
- * in both spellings is `both`; any other probe or field reads nothing, which `tower config check` says.
- */
-export const respelled = (config: Config): Respelled => {
-  const quota = isObject(config.probes) && isObject(config.probes.quota) ? (config.probes.quota as ProbeConfig) : undefined
-  if (!quota || (config.extensions !== undefined && !isObject(config.extensions))) return { config, old: [], both: [] }
-  const entry = isObject(config.extensions?.quota) ? config.extensions.quota : {}
-  const settings = isObject(entry.settings) ? entry.settings : {}
-  const moves = [
-    ...(quota.off === undefined ? [] : [{ key: 'probes.quota.off', now: 'extensions.quota.off', set: entry.off !== undefined, use: `"extensions": { "quota": { "off": ${JSON.stringify(quota.off)} } }` }]),
-    ...(quota.every === undefined
-      ? []
-      : [{ key: 'probes.quota.every', now: 'extensions.quota.settings.every', set: settings.every !== undefined, use: `"extensions": { "quota": { "settings": { "every": ${JSON.stringify(quota.every)} } } }` }]),
-  ]
-  const both = moves.filter((m) => m.set).map(({ key, now }) => ({ key, now }))
-  const quotaNow = {
-    ...entry,
-    ...(quota.off !== undefined && entry.off === undefined && { off: quota.off }),
-    ...(quota.every !== undefined && settings.every === undefined && { settings: { ...settings, every: quota.every } }),
-  }
-  return {
-    config: moves.length ? { ...config, extensions: { ...config.extensions, quota: quotaNow } } : config,
-    old: moves.filter((m) => !m.set).map(({ key, use }) => ({ key, use })),
-    both,
-  }
-}
-
-/** The config as the tower reads it (`respelled`); a field set in both spellings is a config error naming both. */
-export const configNow = (config: Config): Config => {
-  const { config: now, both } = respelled(config)
-  if (both.length) throw new ConfigError(both.map((b) => `${b.key} and ${b.now} are both set: ${b.key} is the old spelling, so keep ${b.now} and remove ${b.key}`).join('; '))
-  return now
 }

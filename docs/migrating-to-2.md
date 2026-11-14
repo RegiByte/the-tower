@@ -15,6 +15,7 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   with `unavailable`, naming the fix. Restart the host: `tower down host`, then `tower up`. That stops the running
   sessions; each one stays resumable.
 - **The old CLI words are gone.** See [The CLI](#the-cli).
+- **A config still spelling `probes` is refused.** See [Config](#config).
 
 ## Extension and renderer authors
 
@@ -55,5 +56,11 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 - **Take upstream's `API_VERSION`**, as before: `2.0`. Your own extensions follow the authors' section above.
 
 ## Config
+
+- **`probes` is refused.** `"probes": { "quota": { "off": …, "every": … } }`, the quota probe's spelling before 1.90,
+  was read as the quota extension's until 2.0. A config that still has it is refused: the board says so, and
+  `tower config check` fails it at `probes`, naming the line to write, such as
+  `"extensions": { "quota": {"off":true,"settings":{"every":"1h"}} }`. Move `off` to `extensions.quota.off` and
+  `every` to `extensions.quota.settings.every`, then remove `probes`.
 
 ## Tower.app

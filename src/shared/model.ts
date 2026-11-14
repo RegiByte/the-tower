@@ -151,12 +151,6 @@ export const briefConfig = (config: Config, projectId: string): Required<BriefCo
  */
 export type RetentionConfig = { days?: number }
 
-/**
- * The quota probe's old spelling, `probes.quota`: `off` is read as `extensions.quota.off`, and `every` as
- * `extensions.quota.settings.every`. @deprecated since 1.90, honoured until 2.0.
- */
-export type ProbeConfig = { every?: string; off?: boolean }
-
 /** The person running the tower, as renderers name them and review notes are signed: `name` is free text a message heading can carry. */
 export type UserConfig = { name?: string }
 
@@ -325,8 +319,6 @@ export type Config = {
   hiring?: HiringConfig
   brief?: BriefConfig
   retention?: RetentionConfig
-  /** The quota probe's old spelling, `quota` its only name: see `ProbeConfig`. @deprecated since 1.90 */
-  probes?: Record<string, ProbeConfig>
   user?: UserConfig
   editor?: EditorConfig
 
@@ -358,7 +350,7 @@ const keysOf =
     keys as readonly string[]
 
 /** The keys the tower reads at the config's top level. */
-export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'probes', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'hosts', 'keys', 'extensions'])
+export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'hosts', 'keys', 'extensions'])
 
 /** The keys the tower reads in a project. */
 export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins', 'extensions', 'capabilities', 'command'])
