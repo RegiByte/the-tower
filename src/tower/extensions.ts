@@ -212,7 +212,7 @@ export const extensions = defineResource({
       /** The plugin folders the running extensions on a floor teach a session of `runtime` with, in resolved order. */
       plugins: (project: string, runtime: Runtime): string[] =>
         running().flatMap(({ a }) => {
-          const dir = a.manifest.plugins?.[runtime]
+          const dir = a.manifest.runtimes?.[runtime]?.plugins
           return dir !== undefined && !a.off.includes(project) ? [path.join(a.dir, dir)] : []
         }),
       /** Where each running extension's own subject kinds sit, by kind, `<cap>.<kind>`. */

@@ -11,8 +11,8 @@ import { fixture } from './replay.ts'
 import { viewOf } from './view.ts'
 
 const projects = { lab: { name: 'lab', hub: '/lab', repos: [] } }
-const TWO: Config = { argv: { work: ['claude'], home: ['claude-home'] }, env: { A: '1' }, projects }
-const ONE: Config = { argv: ['claude'], env: {}, projects }
+const TWO: Config = { runtimes: { claude: { argv: { work: ['claude'], home: ['claude-home'] } } }, env: { A: '1' }, projects }
+const ONE: Config = { runtimes: { claude: { argv: ['claude'] } }, env: {}, projects }
 
 const sessions = ['limits-command-work', 'limits-command-home'].map(fixture).map((log) => ({ header: log.header, facts: factsOf(log) }))
 const [work, home] = sessions
@@ -38,7 +38,7 @@ test('the board holds an entry per command in argv order, the default command\'s
   assert.deepEqual(b.limits.map((l) => l.command), ['work', 'home'])
   const { rateLimits, rateLimitsAt, rateLimitsFrom, turnLimits } = defaultLimits(b)
   assert.deepEqual([rateLimits, rateLimitsAt, rateLimitsFrom, turnLimits], [WORK_LIMITS, atOf(work), 'session', { at: atOf(work), limits: WORK_LIMITS }])
-  const swapped = board(viewOf({ ...TWO, argv: { home: ['claude-home'], work: ['claude'] } }, { sessions }))
+  const swapped = board(viewOf({ ...TWO, runtimes: { claude: { argv: { home: ['claude-home'], work: ['claude'] } } } }, { sessions }))
   assert.deepEqual(swapped.limits.map((l) => l.command), ['home', 'work'])
   assert.deepEqual(defaultLimits(swapped).rateLimits, HOME_LIMITS, 'the default is whichever argv writes first')
 })
@@ -100,11 +100,11 @@ test('limitsOf, defaultLimits and floorLimits find an entry; a floor that names 
   assert.equal(limitsOf(two, 'home'), two.limits[1])
   assert.equal(limitsOf(two, 'gone'), undefined)
   assert.equal(defaultLimits(two), two.limits[0])
-  assert.equal(floorLimits(two, { command: 'home' }), two.limits[1])
-  assert.equal(floorLimits(two, {}), two.limits[0])
+  assert.equal(floorLimits(two, { runtimes: { claude: { command: 'home' } } }), two.limits[1])
+  assert.equal(floorLimits(two, { runtimes: { claude: {} } }), two.limits[0])
   const one = { limits: [entry()] } as Pick<Board, 'limits'>
   assert.equal(defaultLimits(one), one.limits[0])
-  assert.equal(floorLimits(one, {}), one.limits[0])
+  assert.equal(floorLimits(one, { runtimes: { claude: {} } }), one.limits[0])
 })
 
 test('runtimeCommands: every command in order with the env, none named for the single array, an unknown runtime refused', () => {

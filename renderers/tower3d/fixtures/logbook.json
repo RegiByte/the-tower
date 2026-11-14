@@ -115,6 +115,7 @@
               {
                 "id": "20261004-090000-logs",
                 "callsign": "HOPPER-80",
+                "runtime": "claude",
                 "project": "logs",
                 "cwd": "/work/logs",
                 "checkout": "main",
@@ -145,7 +146,7 @@
                     "startedAt": 1791124800000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -186,6 +187,7 @@
               {
                 "id": "20261004-090007-logs",
                 "callsign": "SHACKLETON-77",
+                "runtime": "claude",
                 "project": "logs",
                 "cwd": "/work/logs",
                 "checkout": "main",
@@ -223,7 +225,7 @@
                     "startedAt": 1791123900000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -274,6 +276,7 @@
               {
                 "id": "20261004-090014-logs",
                 "callsign": "RANGER-90",
+                "runtime": "claude",
                 "project": "logs",
                 "cwd": "/work/logs",
                 "checkout": "main",
@@ -335,7 +338,7 @@
                     "startedAt": 1791123000000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -386,6 +389,7 @@
               {
                 "id": "20261004-090021-logs",
                 "callsign": "FREYR-92",
+                "runtime": "claude",
                 "project": "logs",
                 "cwd": "/work/logs",
                 "checkout": "main",
@@ -420,7 +424,7 @@
                     "startedAt": 1791125640000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -450,6 +454,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -619,8 +626,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [],
         "termsUp": true,
         "jobs": [],
@@ -630,6 +646,7 @@
         {
           "id": "20261004-090028-logs",
           "callsign": "THOTH-32",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -659,7 +676,7 @@
               "startedAt": 1791066000000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [
@@ -701,6 +718,7 @@
         {
           "id": "20261004-090035-logs",
           "callsign": "SMITH-62",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -734,7 +752,7 @@
               "startedAt": 1791062400000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [
@@ -776,6 +794,7 @@
         {
           "id": "20261004-090042-logs",
           "callsign": "MIKE-30",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -813,7 +832,7 @@
               "startedAt": 1791048000000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [
@@ -855,6 +874,7 @@
         {
           "id": "20261004-090049-logs",
           "callsign": "DARWIN-44",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -896,7 +916,7 @@
               "startedAt": 1790976000000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [
@@ -938,6 +958,7 @@
         {
           "id": "20261004-090056-logs",
           "callsign": "BABBAGE-43",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -967,7 +988,7 @@
               "startedAt": 1790969400000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [
@@ -1009,6 +1030,7 @@
         {
           "id": "20261004-090063-logs",
           "callsign": "DARWIN-03",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -1042,7 +1064,7 @@
               "startedAt": 1790886000000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [
@@ -1084,6 +1106,7 @@
         {
           "id": "20261004-090070-logs",
           "callsign": "ICARUS-96",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -1121,7 +1144,7 @@
               "startedAt": 1790796000000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [
@@ -1163,6 +1186,7 @@
         {
           "id": "20261004-090077-logs",
           "callsign": "WALT-96",
+          "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",
           "checkout": "main",
@@ -1204,7 +1228,7 @@
               "startedAt": 1790706000000
             }
           ],
-          "claudeUntested": false,
+          "runtimeUntested": false,
           "resources": [],
           "shown": [],
           "conversations": [

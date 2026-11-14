@@ -3,7 +3,6 @@
  * way. Each concern is a module beside this one; the tower serves them gathered here, bundled as `/cards.js`.
  */
 
-export { CLAUDE_UNTESTED } from './claude.ts'
 export { tagOf } from './tags.ts'
 export * from './format.ts'
 export * from './offered.ts'

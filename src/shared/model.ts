@@ -18,12 +18,18 @@ export type Project = {
   worktrees?: WorktreesConfig
   hiring?: HiringConfig
   brief?: BriefConfig
-  /** Absolute plugin directories this project's sessions load, beside the ones every session loads. */
-  plugins?: string[]
   /** Each extension's settings on this floor, by id, shallow-merged over the system's (`ExtensionConfig`). */
   extensions?: Record<string, FloorExtensionConfig>
   /** Capabilities turned off on this floor, whichever extension provides them; `tower`, the core, never is. */
   capabilities?: Record<string, CapabilityConfig>
+  /** What this project's sessions of each runtime start with, beside what every session of it does (`Config.runtimes`). */
+  runtimes?: Partial<Record<Runtime, ProjectRuntimeConfig>>
+}
+
+/** A project's part of one runtime's config. */
+export type ProjectRuntimeConfig = {
+  /** Absolute plugin directories this project's sessions load, beside the ones every session loads. */
+  plugins?: string[]
   /** The `argv` command this project starts with by default; ignored, falling back to `argv`'s first, when it names none of them or `argv` is the legacy array. */
   command?: string
 }
@@ -255,61 +261,59 @@ export const hiringConfig = (config: Config, projectId: string): Required<Hiring
   }
 }
 
-/** Every name `argv` offers, in write order; `undefined` for the legacy array shape (one unnamed command). */
-export const commandNames = (config: Config): string[] | undefined => (Array.isArray(config.argv) ? undefined : Object.keys(config.argv))
+/** The commands `runtime`'s sessions start with (`RuntimeConfig.argv`). */
+const argvOf = (config: Config, runtime: Runtime): RuntimeConfig['argv'] => config.runtimes[runtime].argv
+
+/** Every name `runtime`'s `argv` offers, in write order; `undefined` for the legacy array shape (one unnamed command). */
+export const commandNames = (config: Config, runtime: Runtime): string[] | undefined => {
+  const argv = argvOf(config, runtime)
+  return Array.isArray(argv) ? undefined : Object.keys(argv)
+}
 
 /** A command of the config's `argv`, by its name when `argv` names its commands, with the env its sessions run with. */
 export type SessionCommand = { name?: string; argv: string[]; env: Record<string, string> }
 
-/**
- * Every command `runtime` starts with, in `argv`'s order, the default first: `argv` holds the one runtime's commands
- * today. A runtime the tower doesn't know is refused.
- */
+/** Every command `runtime` starts with, in its `argv`'s order, the default first. A runtime the tower doesn't know is refused. */
 export const runtimeCommands = (config: Config, runtime: Runtime): SessionCommand[] => {
   if (!RUNTIMES.includes(runtime)) throw new Error(`runtime ${JSON.stringify(runtime)} is none the tower knows: it runs ${RUNTIMES.join(', ')}`)
   const env = config.env ?? {}
-  return Array.isArray(config.argv) ? [{ argv: config.argv, env }] : Object.entries(config.argv).map(([name, argv]) => ({ name, argv, env }))
+  const all = argvOf(config, runtime)
+  return Array.isArray(all) ? [{ argv: all, env }] : Object.entries(all).map(([name, argv]) => ({ name, argv, env }))
 }
 
 /** The command a session of `runtime` runs: the one `name` names, else the default (`resolvedCommandName`). */
 export const sessionCommand = (config: Config, runtime: Runtime, name: string | undefined): SessionCommand => {
   const commands = runtimeCommands(config, runtime)
-  const resolved = resolvedCommandName(config, name)
+  const resolved = resolvedCommandName(config, runtime, name)
   return commands.find((c) => c.name === resolved) ?? commands[0]
 }
 
-/** The argv to actually run: the legacy array as-is, or the named command when valid, else the object's first. */
-export const resolveCommand = (config: Config, name: string | undefined): string[] => {
-  if (Array.isArray(config.argv)) return config.argv
-  const names = Object.keys(config.argv)
-  return config.argv[name && names.includes(name) ? name : names[0]]
+/** The argv `runtime` actually runs: the legacy array as-is, or the named command when valid, else the object's first. */
+export const resolveCommand = (config: Config, runtime: Runtime, name: string | undefined): string[] => {
+  const argv = argvOf(config, runtime)
+  if (Array.isArray(argv)) return argv
+  const names = Object.keys(argv)
+  return argv[name && names.includes(name) ? name : names[0]]
 }
 
 /** The name `resolveCommand` actually resolves to: the named key when valid, else the object's first; `undefined` in single-command mode. */
-export const resolvedCommandName = (config: Config, name: string | undefined): string | undefined => {
-  const names = commandNames(config)
+export const resolvedCommandName = (config: Config, runtime: Runtime, name: string | undefined): string | undefined => {
+  const names = commandNames(config, runtime)
   if (names === undefined) return undefined
   return name && names.includes(name) ? name : names[0]
 }
 
-/** The project's resolved preferred command name; `undefined` in single-command mode. */
-export const projectPreferredCommand = (config: Config, projectId: string): string | undefined => resolvedCommandName(config, config.projects[projectId].command)
+/** The project's resolved preferred command name for `runtime`; `undefined` in single-command mode. */
+export const projectPreferredCommand = (config: Config, projectId: string, runtime: Runtime): string | undefined =>
+  resolvedCommandName(config, runtime, config.projects[projectId].runtimes?.[runtime]?.command)
 
 /**
  * The whole system's configuration. The directory holding this file is the system's root:
  * session logs and the host sockets live next to it.
  */
 export type Config = {
-  /**
-   * Command every session starts with, before the arguments the host adds. A plain array names one unnamed
-   * command. An object names several by key, in write order; a project's `command` picks among them
-   * (`projectPreferredCommand`), and the New Worker form offers a picker when there is more than one. Each
-   * command must be its own executable on PATH (e.g. `{"claude": ["claude"], "claude-mom": ["claude-mom"]}`),
-   * not a shell alias or function: the host spawns it directly, with no shell to expand one. A variant that
-   * should run Claude under different settings is typically a small wrapper bin that sets an env var (an
-   * alternate `ANTHROPIC_*` config, say) and then execs the real `claude`.
-   */
-  argv: string[] | Record<string, string[]>
+  /** What serves each runtime's own harness, by runtime: its commands and its plugins. */
+  runtimes: Record<Runtime, RuntimeConfig>
   /** Added to every session's environment after the parent-session scrub. */
   env?: Record<string, string>
   projects: Record<string, Project>
@@ -328,11 +332,6 @@ export type Config = {
   port?: number
   /** Names the tower answers to beside 127.0.0.1 and localhost, such as `mini.localhost` (`towerHosts`). */
   hosts?: string[]
-  /**
-   * Absolute plugin directories every session loads, each passed to Claude as `--plugin-dir`: Claude reads a path as
-   * written: no `~` expanded, a relative path against the session's cwd.
-   */
-  plugins?: string[]
   /** Renderers served at `/r/<name>/`, beside the core's (`page`, `week`, `tower3d`): a new name adds one, a built-in's name overrides its fields. */
   renderers?: Record<string, RendererConfig>
   /** The renderer `/` opens, `page` unless set. */
@@ -343,6 +342,25 @@ export type Config = {
   extensions?: Record<string, ExtensionConfig>
 }
 
+/** One runtime's part of the config. */
+export type RuntimeConfig = {
+  /**
+   * Command every session of the runtime starts with, before the arguments the host adds. A plain array names one
+   * unnamed command. An object names several by key, in write order; a project's `command` picks among them
+   * (`projectPreferredCommand`), and the New Worker form offers a picker when there is more than one. Each
+   * command must be its own executable on PATH (e.g. `{"claude": ["claude"], "claude-mom": ["claude-mom"]}`),
+   * not a shell alias or function: the host spawns it directly, with no shell to expand one. A variant that
+   * should run Claude under different settings is typically a small wrapper bin that sets an env var (an
+   * alternate `ANTHROPIC_*` config, say) and then execs the real `claude`.
+   */
+  argv: string[] | Record<string, string[]>
+  /**
+   * Absolute plugin directories every session of the runtime loads, each passed to Claude as `--plugin-dir`: Claude
+   * reads a path as written: no `~` expanded, a relative path against the session's cwd.
+   */
+  plugins?: string[]
+}
+
 /** Every key of `T`, from a list the typecheck holds to it: a key of `T` missing from the list, or one `T` lacks, fails it. */
 const keysOf =
   <T>() =>
@@ -350,10 +368,10 @@ const keysOf =
     keys as readonly string[]
 
 /** The keys the tower reads at the config's top level. */
-export const CONFIG_KEYS = keysOf<Config>()(['argv', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'user', 'editor', 'callsigns', 'plugins', 'renderers', 'renderer', 'port', 'hosts', 'keys', 'extensions'])
+export const CONFIG_KEYS = keysOf<Config>()(['runtimes', 'env', 'projects', 'collections', 'worktrees', 'hiring', 'brief', 'retention', 'user', 'editor', 'callsigns', 'renderers', 'renderer', 'port', 'hosts', 'keys', 'extensions'])
 
 /** The keys the tower reads in a project. */
-export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'plugins', 'extensions', 'capabilities', 'command'])
+export const PROJECT_KEYS = keysOf<Project>()(['name', 'hub', 'repos', 'color', 'shelf', 'collections', 'worktrees', 'hiring', 'brief', 'runtimes', 'extensions', 'capabilities'])
 
 /** The keys the tower reads in each object below the top level and a project's, by the type it is. */
 export const COLLECTION_KEYS = keysOf<CollectionType>()(['label', 'description'])
@@ -363,6 +381,8 @@ export const BRIEF_KEYS = keysOf<BriefConfig>()(['pairs'])
 export const RETENTION_KEYS = keysOf<RetentionConfig>()(['days'])
 export const USER_KEYS = keysOf<UserConfig>()(['name'])
 export const EDITOR_KEYS = keysOf<EditorConfig>()(['window', 'open', 'goto'])
+export const RUNTIME_KEYS = keysOf<RuntimeConfig>()(['argv', 'plugins'])
+export const PROJECT_RUNTIME_KEYS = keysOf<ProjectRuntimeConfig>()(['plugins', 'command'])
 export const RENDERER_KEYS = keysOf<RendererConfig>()(['root', 'entry', 'settings', 'layout'])
 export const EXTENSION_KEYS = keysOf<ExtensionConfig>()(['path', 'off', 'settings', 'guidance'])
 export const FLOOR_EXTENSION_KEYS = keysOf<FloorExtensionConfig>()(['settings'])
@@ -401,14 +421,20 @@ export const projectCollections = (config: Config, projectId: string): Record<st
   return { ...config.collections, ...own }
 }
 
-/** The plugin directories a project's sessions load: every session's, then its own. */
-export const projectPlugins = (config: Config, projectId: string): string[] => [...(config.plugins ?? []), ...(config.projects[projectId].plugins ?? [])]
+/** The plugin directories a project's sessions of `runtime` load: every such session's, then the project's own. */
+export const runtimePlugins = (config: Config, projectId: string, runtime: Runtime): string[] => [
+  ...(config.runtimes[runtime].plugins ?? []),
+  ...(config.projects[projectId].runtimes?.[runtime]?.plugins ?? []),
+]
 
 /** The agent runtimes the tower launches: a session runs one, fixed for its life and its whole resume chain. */
 export const RUNTIMES = ['claude'] as const
 export type Runtime = (typeof RUNTIMES)[number]
 
 export const isRuntime = (runtime: string): runtime is Runtime => (RUNTIMES as readonly string[]).includes(runtime)
+
+/** The runtime a session runs, as its header labels it: a log from before runtimes were logged (host protocol 5) ran Claude. */
+export const runtimeOf = (header: Pick<SessionHeader, 'runtime'>): string => header.runtime ?? 'claude'
 
 /** First line of a session log: everything known about the session when it started. */
 export type SessionHeader = {

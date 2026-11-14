@@ -219,7 +219,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
 
   /** The rest of what is known about the worker: what it does now in full, and every detail. */
   function detailsHtml(c: Card) {
-    const rows = [['now', gistLine(c)], ...detailsOf(c), resumesRow(c, when), ['started', when(c.startedAt)]].filter(([, value]) => value)
+    const rows = [['now', gistLine(c)], ...detailsOf(c, board.runtimes), resumesRow(c, when), ['started', when(c.startedAt)]].filter(([, value]) => value)
     return `<h3>${c.callsign}</h3><dl>${rows.map(([label, value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>`
   }
 

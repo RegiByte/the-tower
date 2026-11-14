@@ -76,10 +76,10 @@ export type Taken = { name: string; by: string }
 /** What no contributor may set: `flags`, by name; `env`, by key. */
 export type TakenParts = { flags: Taken[]; env: Taken[] }
 
-/** The flags no contributor may pass on `runtime`: the core's, and those the config's `argv` passes. */
+/** The flags no contributor may pass on `runtime`: the core's, and those the command of its config's `argv` passes. */
 export const takenFlags = (runtime: Runtime, argv: string[]): Taken[] => [
   ...CORE_FLAGS[runtime].map((name) => ({ name, by: 'the tower' })),
-  ...argv.flatMap((arg, i) => (i > 0 && arg.startsWith('-') ? [{ name: flagName(arg), by: `the config's argv[${i}] (${arg})` }] : [])),
+  ...argv.flatMap((arg, i) => (i > 0 && arg.startsWith('-') ? [{ name: flagName(arg), by: `the config's runtimes.${runtime}.argv[${i}] (${arg})` }] : [])),
 ]
 
 /** The env keys no contributor may set: those the config's `env` sets, which a contributed one would override in silence. */

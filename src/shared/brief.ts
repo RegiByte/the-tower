@@ -92,6 +92,8 @@ const isLong = (text: string) => text.length > FOLD_CHARS || text.split('\n').le
  */
 export type BriefView = {
   briefs: Brief[]
+  /** What the worker's runtime is called (`board.runtimes[card.runtime].label`): its bubbles are signed with it. @since 2.0 */
+  agent: string
   said: (text: string) => string
   promptBy: (conversation: string) => string | undefined
   open: ReadonlySet<string>
@@ -131,7 +133,7 @@ const saidKey = (t: Brief, turn: Turn, side: Side) => `${t.session.id}:${t.id}:$
 /** A turn's words in reading order: its prompt, Claude's words and messages on the way, its answer. */
 const turnSaid = (turn: Turn): { side: Side; text: string; what: string }[] => [
   { side: 'prompt', text: turn.prompt, what: 'the prompt' },
-  ...turn.steps.flatMap((s, n) => (s.t === 'tool' ? [] : [{ side: `step.${n}` as const, text: s.text, what: s.t === 'sent' ? 'the message' : "Claude's words" }])),
+  ...turn.steps.flatMap((s, n) => (s.t === 'tool' ? [] : [{ side: `step.${n}` as const, text: s.text, what: s.t === 'sent' ? 'the message' : 'its words' }])),
   ...(turn.answer === undefined ? [] : [{ side: 'answer' as const, text: turn.answer, what: 'the answer' }]),
 ]
 
@@ -245,6 +247,7 @@ export const toolCallHtml = (call: ToolCall) => {
 
 /** `latest`: the brief's latest turn, whose answer never folds; `working` whether Claude works on it now. */
 type Drawing = {
+  agent: string
   said: BriefView['said']
   expanded: ReadonlySet<string>
   raw: boolean
@@ -256,8 +259,8 @@ type Drawing = {
   tools?: BriefView['tools']
 }
 
-/** Who a bubble is: the user's prompt, another worker's message, Claude's answer, its words on the way, or a message it sent. */
-type Speaker = 'you' | 'peer' | 'claude' | 'step' | 'sent'
+/** Who a bubble is: the user's prompt, another worker's message, the agent's answer, its words on the way, or a message it sent. */
+type Speaker = 'you' | 'peer' | 'agent' | 'step' | 'sent'
 
 /** `what` names it for its copy button; `folds`, whether a long one folds to its start. */
 const bubbleHtml = (what: string, speaker: Speaker, key: string, text: string, who: string, d: Drawing, folds: boolean) => {
@@ -287,7 +290,7 @@ const stepsHtml = (t: Brief, turn: Turn, since: number, d: Drawing) => {
     return step.t === 'tool' && last?.steps[0].t === 'tool' ? [...runs.slice(0, -1), { ...last, steps: [...last.steps, step] }] : [...runs, { n, steps: [step] }]
   }, [])
   const html = runs.map(({ n, steps: [first, ...rest] }) => {
-    if (first.t === 'text') return bubbleHtml("Claude's words", 'step', saidKey(t, turn, `step.${n}`), first.text, '', d, true)
+    if (first.t === 'text') return bubbleHtml(`${d.agent}'s words`, 'step', saidKey(t, turn, `step.${n}`), first.text, '', d, true)
     if (first.t === 'sent') return bubbleHtml('the message', 'sent', saidKey(t, turn, `step.${n}`), first.text, `TO ${esc(first.to.callsign)} · ${esc(clockAt(first.at, since))}`, d, true)
     const calls = [first, ...rest] as ToolStep[]
     const lines = calls.map((c) => toolHtml(turn, c, d)).join('')
@@ -314,9 +317,9 @@ function turnHtml(t: Brief, turn: Turn, by: string | undefined, d: Drawing) {
   const steps = stepsHtml(t, turn, since, d)
   const working = latest && d.working
   if (turn.answer === undefined)
-    return `<div class="turn">${prompt}${steps}<div class="bubble claude ${working ? 'working' : 'none'}"><header><span class="who">CLAUDE${working ? ' · <span class="lamp"></span> working on it' : ' · no answer'}</span></header></div></div>`
-  const answered = `CLAUDE · ${esc(clockAt(turn.answeredAt!, since))} · took ${esc(ago(turn.answeredAt! - turn.startedAt))}`
-  return `<div class="turn">${prompt}${steps}${bubbleHtml('the answer', 'claude', saidKey(t, turn, 'answer'), turn.answer, answered, d, !latest)}</div>`
+    return `<div class="turn">${prompt}${steps}<div class="bubble agent ${working ? 'working' : 'none'}"><header><span class="who">${esc(d.agent.toUpperCase())}${working ? ' · <span class="lamp"></span> working on it' : ' · no answer'}</span></header></div></div>`
+  const answered = `${esc(d.agent.toUpperCase())} · ${esc(clockAt(turn.answeredAt!, since))} · took ${esc(ago(turn.answeredAt! - turn.startedAt))}`
+  return `<div class="turn">${prompt}${steps}${bubbleHtml('the answer', 'agent', saidKey(t, turn, 'answer'), turn.answer, answered, d, !latest)}</div>`
 }
 
 /** A session a conversation resumes or is resumed by: by its number when the brief holds it, else by its worker. */
@@ -342,11 +345,11 @@ const markdownBar = (markdown: BriefMarkdown) =>
   `<div class="brief-bar"><div class="seg" role="group" aria-label="prompts and answers">${BRIEF_MARKDOWNS.map((m) =>
     `<button type="button" class="${m === markdown ? 'on' : ''}" data-brief-markdown="${m}" aria-pressed="${m === markdown}" data-tip="${esc(BRIEF_MARKDOWN_MEANS[m])}">${BRIEF_MARKDOWN_LABEL[m]}</button>`).join('')}</div></div>`
 
-export function briefHtml({ briefs, said, promptBy, open, expanded = new Set(), markdown = 'rendered', working = false, adds, acts, openTools = new Set(), tools }: BriefView) {
+export function briefHtml({ briefs, agent, said, promptBy, open, expanded = new Set(), markdown = 'rendered', working = false, adds, acts, openTools = new Set(), tools }: BriefView) {
   const parts = briefParts(briefs)
   const [current, ...earlier] = parts
   if (!current) return '<div class="brief-view"><p class="none">no conversation yet</p></div>'
-  const d: Drawing = { said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working, adds, acts, openTools, tools }
+  const d: Drawing = { agent, said, expanded, raw: markdown === 'raw', latest: current.threads.at(-1)!.turns.at(-1), working, adds, acts, openTools, tools }
   const label = (p: BriefPart) => esc(sessionLabel(p.n, p.of, p.session.startedAt))
   const idle = (p: BriefPart) => resumedIdle(briefs, p.session, p.n) ? ` · <span class="idle" data-tip="${esc(RESUMED_IDLE.means)}">${RESUMED_IDLE.mark}</span>` : ''
   return `<div class="brief-view">${markdownBar(markdown)}
@@ -373,7 +376,7 @@ export const briefCss = `.brief-view { display: flex; flex-direction: column; ga
 .brief-view .bubble { min-width: 0; padding: var(--sp-m) var(--sp-xl) var(--sp-l); border-radius: 12px; border: 1px solid var(--line); }
 .brief-view .bubble.you { justify-self: end; max-width: min(82%, 760px); background: color-mix(in oklab, var(--accent) 12%, var(--panel)); border-color: color-mix(in oklab, var(--accent) 40%, var(--panel)); border-bottom-right-radius: 3px; }
 .brief-view .bubble.peer { justify-self: end; max-width: min(82%, 760px); background: color-mix(in oklab, var(--ink) 6%, var(--panel)); border-style: dashed; border-color: var(--muted); border-bottom-right-radius: 3px; }
-.brief-view .bubble.claude { justify-self: stretch; background: var(--panel-2); border-bottom-left-radius: 3px; }
+.brief-view .bubble.agent { justify-self: stretch; background: var(--panel-2); border-bottom-left-radius: 3px; }
 .brief-view .bubble.working, .brief-view .bubble.none { justify-self: start; }
 .brief-view .bubble > header { display: flex; align-items: center; gap: var(--sp-m); min-height: 20px; margin-bottom: var(--sp-xs); font: 700 var(--fs-xs)/1.3 var(--ui); letter-spacing: .06em; color: var(--muted); }
 .brief-view .bubble.working > header, .brief-view .bubble.none > header { margin: 0; }

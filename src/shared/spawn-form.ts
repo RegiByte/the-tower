@@ -1,5 +1,4 @@
-import type { Board, Floor } from '../bridge/board.ts'
-import type { ClaudeDefaults } from '../bridge/defaults.ts'
+import type { Board, BoardRuntime, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { callsignRefused } from './callsign.ts'
 import { base, esc, modelName } from './format.ts'
@@ -86,7 +85,7 @@ export const shellPlaces = (floors: Floor[], first?: string): ShellPlace[] =>
 
 /** The form as it opens, and as a quick hire sends it: everything left to its default. */
 export const spawnDefaults = (f: Floor, prompt = ''): SpawnForm => ({
-  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, callsign: '', name: '', branch: '', base: '', model: '', effort: '', command: f.command ?? '', prompt, x: {},
+  where: defaultWhere(f), worktree: joinable(f)[0]?.repos[0].path ?? '', checkout: f.hub, callsign: '', name: '', branch: '', base: '', model: '', effort: '', command: f.runtimes.claude.command ?? '', prompt, x: {},
 })
 
 /** The name an extension's field has in the form. */
@@ -134,8 +133,9 @@ const formCallsign = (v: SpawnForm) => {
   return !given || given.includes('-') ? given : `${given}-<nn>`
 }
 
-/** What starting the form as it stands does, as a line of facts. `defaults`: the board's `claudeDefaults`; `fields`: the extensions' (`formFields`). */
-export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefaults = {}, fields: FormField[] = []): string {
+/** What starting the form as it stands does, as a line of facts. `runtime`: the board's entry for the runtime it starts; `fields`: the extensions' (`formFields`). */
+export function spawnSummaryHtml(f: Floor, v: SpawnForm, runtime: BoardRuntime, fields: FormField[] = []): string {
+  const { label, defaults } = runtime
   const repos = [f.hub, ...f.repos].map(base).join(' + ')
   const joined = joinable(f).find((w) => w.repos[0].path === v.worktree)
   const others = joined?.sessions.length ?? 0
@@ -147,9 +147,9 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefault
       : v.where === 'worktree' && joined
         ? [`joins <b>${esc(joined.name)}</b>`, `⎇ ${esc(worktreeBranch(joined))}`, others ? `beside ${others} on duty in it` : 'nobody else in it']
         : [`main checkout of <b>${esc(base(v.checkout))}</b>`, 'shared with you and every worker there']
-  const claude = [
-    v.model || observed("Claude's model", modelName(defaults.model)),
-    v.effort ? `${v.effort} effort` : observed("Claude's effort", defaults.effort),
+  const launch = [
+    v.model || observed(`${label}'s model`, modelName(defaults.model)),
+    v.effort ? `${v.effort} effort` : observed(`${label}'s effort`, defaults.effort),
     ...(v.command ? [`with command "${v.command}"`] : []),
     v.prompt.trim() ? 'starts on the prompt' : 'starts idle',
   ]
@@ -157,14 +157,14 @@ export function spawnSummaryHtml(f: Floor, v: SpawnForm, defaults: ClaudeDefault
     const value = v.x[field.cap]?.[field.name]?.trim()
     return value ? [`${field.words.label.toLowerCase()} <b>${esc(field.options?.find((o) => o.value === value)?.label ?? value)}</b>`] : []
   })
-  return [...(callsign ? [`as <b>${esc(callsign)}</b>`] : []), ...place, ...claude.map(esc), ...added].map((fact) => `<span>${fact}</span>`).join('')
+  return [...(callsign ? [`as <b>${esc(callsign)}</b>`] : []), ...place, ...launch.map(esc), ...added].map((fact) => `<span>${fact}</span>`).join('')
 }
 
-/** Words for what Claude picks, with what it was seen to pick when known (`Board.claudeDefaults`). */
+/** Words for what the runtime picks, with what it was seen to pick when known (`BoardRuntime.defaults`). */
 const observed = (words: string, seen: string | undefined) => (seen ? `${words} (${seen})` : words)
 
-/** A select's empty option: what Claude was seen to pick first, as narrow selects clip the end. */
-const defaultOption = (seen: string | undefined) => (seen ? `${seen} (default)` : "Claude's default")
+/** A select's empty option: what the runtime `label` was seen to pick first, as narrow selects clip the end. */
+const defaultOption = (label: string, seen: string | undefined) => (seen ? `${seen} (default)` : `${label}'s default`)
 
 /** A choice of where, with what picking it means; `aside`: a hint at its right, as "default". */
 const choiceHtml = (where: Where, title: string, what: string, { checked = false, disabled = false, aside = '' } = {}) =>
@@ -192,10 +192,12 @@ const formFieldHtml = ({ cap, name, words, options }: FormField) =>
  * and a line saying what Start will do. `sign`: the floor's sign as the renderer draws it; `draft`: the draft it was
  * opened on. Its buttons carry `data-close` (`cancel`, `start`) and submit nothing; `[data-summary]` is the line to
  * redraw from `spawnSummaryHtml` as the fields change, `[name=branch]`'s placeholder from `branchPlaceholder`, and
- * `[data-callsign-why]` and `[name=callsign]`'s validity from `callsignRefusal`. `defaults`: the board's `claudeDefaults`,
- * said beside each of Claude's defaults. `fields`: the extensions' spawn fields on the floor (`formFields`), drawn below Claude's.
+ * `[data-callsign-why]` and `[name=callsign]`'s validity from `callsignRefusal`. `runtime`: the board's entry for the
+ * runtime it starts, its label naming it, its defaults said beside each of its choices and its commands offered when
+ * there are several. `fields`: the extensions' spawn fields on the floor (`formFields`), drawn below the runtime's.
  */
-export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [], commands }: { sign: string; draft?: string; defaults?: ClaudeDefaults; fields?: FormField[]; commands?: string[] }): string {
+export function spawnFormHtml(f: Floor, { sign, draft, runtime, fields = [] }: { sign: string; draft?: string; runtime: BoardRuntime; fields?: FormField[] }): string {
+  const { label, defaults, commands } = runtime
   const v = spawnDefaults(f)
   const worktrees = joinable(f)
   const repos = [f.hub, ...f.repos]
@@ -205,7 +207,7 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
   <header>${sign}<h2>New worker</h2>${draft ? `<span class="draft">on the draft <b>${esc(draft)}</b>, deleted once it starts</span>` : ''}</header>
   <div class="cols">
     <label class="task">${labelHtml('First prompt', true)}
-      <textarea name="prompt" spellcheck="false" placeholder="What should it work on? Left empty, Claude boots to an idle prompt.">${esc(v.prompt)}</textarea></label>
+      <textarea name="prompt" spellcheck="false" placeholder="What should it work on? Left empty, ${esc(label)} boots to an idle prompt.">${esc(v.prompt)}</textarea></label>
     <div class="setup">
       <fieldset class="where"><legend>${labelHtml('Where')}</legend>
         ${choiceHtml('new', 'New worktree', `its own branch, in ${esc(repos.map(base).join(' + '))}`, { checked: v.where === 'new', disabled: !can(f, 'cut'), aside: can(f, 'cut') ? isDefault('new') : esc(cutWhy) })}
@@ -225,17 +227,17 @@ export function spawnFormHtml(f: Floor, { sign, draft, defaults = {}, fields = [
         <label class="wide">${labelHtml('Callsign', true)}<input name="callsign" autocomplete="off" spellcheck="false" placeholder="drawn at random"><small class="why" data-callsign-why></small></label>
         ${
           commands && commands.length > 1
-            ? `<label class="wide">${labelHtml('Claude', true, 'The command run in the terminal to start Claude. Named commands are configured in config.json.')}<select name="command">${commands.map((c) => `<option value="${esc(c)}"${c === v.command ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>`
+            ? `<label class="wide">${labelHtml(esc(label), true, `The command run in the terminal to start ${label}. Named commands are configured in config.json.`)}<select name="command">${commands.map((c) => `<option value="${esc(c)}"${c === v.command ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>`
             : ''
         }
-        <label>${labelHtml('Model', true)}<select name="model">${optionsHtml(MODELS, defaultOption(modelName(defaults.model)))}</select></label>
-        <label>${labelHtml('Effort', true)}<select name="effort">${optionsHtml(EFFORTS, defaultOption(defaults.effort))}</select></label>
+        <label>${labelHtml('Model', true)}<select name="model">${optionsHtml(MODELS, defaultOption(label, modelName(defaults.model)))}</select></label>
+        <label>${labelHtml('Effort', true)}<select name="effort">${optionsHtml(EFFORTS, defaultOption(label, defaults.effort))}</select></label>
         ${fields.map(formFieldHtml).join('')}
       </div>
     </div>
   </div>
   <p class="spawn-error" role="alert" data-spawn-error></p>
-  <footer><p class="summary" data-summary>${spawnSummaryHtml(f, v, defaults, fields)}</p>
+  <footer><p class="summary" data-summary>${spawnSummaryHtml(f, v, runtime, fields)}</p>
     <button type="button" data-close="cancel">Cancel</button><button type="button" class="primary" data-close="start">Start <kbd>⌘⏎</kbd></button></footer>
 </form>`
 }

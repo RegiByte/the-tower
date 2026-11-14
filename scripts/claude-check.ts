@@ -49,7 +49,7 @@ import { initialConfig } from '../src/init.ts'
 import { bringAllDown, bringAllUp, daemons } from '../src/machine.ts'
 import { runProcess } from '../src/run.ts'
 import { USAGE_ARGS, usageRan, USAGE_REQUEST, USAGE_TIMEOUT_MS } from '../extensions/quota/usage.ts'
-import { claudeRange, CLAUDE_TESTED } from '../src/shared/claude.ts'
+import { CLAUDE_TESTED, releaseRange } from '../src/shared/claude.ts'
 import type { BlockedKind } from '../src/bridge/blocked.ts'
 import { resolveCommand, type Config, type LogEvent, type SessionHeader } from '../src/shared/model.ts'
 import { sessionLogPath, systemPaths } from '../src/shared/paths.ts'
@@ -125,7 +125,7 @@ const writeConfig = (config: Config) => writeJson(CONFIG, config)
 
 const configFor = (hub: string, dirs: string[], launch: Launch): Config => ({
   ...initialConfig(hub, [], undefined),
-  argv: argvOf(launch),
+  runtimes: { claude: { argv: argvOf(launch) } },
   env: envOf(launch),
   port: PORT,
   projects: { check: { name: 'check', color: '#e0a040', hub, repos: dirs } },
@@ -416,7 +416,7 @@ async function run() {
   }
   writeConfig(configFor(hub, [], LAUNCHES.plain))
   const claudeConfig = readJson<Config>(CONFIG)
-  const argv = resolveCommand(claudeConfig, undefined)
+  const argv = resolveCommand(claudeConfig, 'claude', undefined)
   const usage = usageRan(await runProcess([...argv, ...USAGE_ARGS], { cwd: os.tmpdir(), timeoutMs: USAGE_TIMEOUT_MS, stdin: `${JSON.stringify(USAGE_REQUEST)}\n`, env: claudeConfig.env }))
   const result: Run = { claude, startedAt, minutes: Math.round((Date.now() - startedAt) / 60_000), scenarios, usage }
   writeJson(RUN, result)
@@ -437,7 +437,7 @@ function report() {
     usageFixture: readFileSync(path.join(REPO, 'test', 'fixtures', 'probe-usage.out'), 'utf8'),
     changelog: existsSync(changelog) ? readFileSync(changelog, 'utf8') : undefined,
     debugLog: existsSync(debugLog) ? readFileSync(debugLog, 'utf8') : undefined,
-    range: { ...CLAUDE_TESTED, reads: claudeRange(result.claude) },
+    range: { ...CLAUDE_TESTED, reads: releaseRange(CLAUDE_TESTED, result.claude) },
   })
   writeFileSync(path.join(ROOT, 'report.md'), markdown)
   console.log(markdown)
@@ -463,7 +463,7 @@ function accept() {
  */
 function due(): 0 | 1 {
   const claude = installedClaude()
-  const reads = claudeRange(claude)
+  const reads = releaseRange(CLAUDE_TESTED, claude)
   if (reads !== 'above') {
     console.log(`Claude ${claude} reads ${reads} against the tested ${CLAUDE_TESTED.lowest} to ${CLAUDE_TESTED.highest}: nothing to check`)
     return 1

@@ -158,23 +158,12 @@
           "type": "boolean",
           "description": "The running host speaks another protocol than its clients: it predates their code, until it is restarted."
         },
-        "claudeDefaults": {
-          "$ref": "#/definitions/ClaudeDefaults",
-          "description": "The model and effort Claude starts a new worker on when asked for neither, as the sessions showed them."
-        },
-        "commands": {
-          "type": "array",
-          "items": {
-            "type": "string"
+        "runtimes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BoardRuntime"
           },
-          "description": "Every `argv` command name, in write order; absent in single-command mode (`commandNames`)."
-        },
-        "claudeUntested": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "The releases outside the tested range that live workers run, each once."
+          "description": "Every runtime the tower knows, by id: what a renderer draws for one instead of naming it."
         },
         "shells": {
           "type": "array",
@@ -254,8 +243,7 @@
         "today",
         "hostUp",
         "hostOutdated",
-        "claudeDefaults",
-        "claudeUntested",
+        "runtimes",
         "shells",
         "termsUp",
         "jobs",
@@ -280,9 +268,12 @@
         "id": {
           "type": "string"
         },
-        "command": {
-          "type": "string",
-          "description": "The floor's resolved preferred `argv` command, by name; absent in single-command mode (`projectPreferredCommand`)."
+        "runtimes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/FloorRuntime"
+          },
+          "description": "The floor's part of each runtime the tower knows, by the same ids as `board.runtimes`."
         },
         "cards": {
           "type": "array",
@@ -388,13 +379,6 @@
           "items": {
             "$ref": "#/definitions/ShelfEntry"
           }
-        },
-        "plugins": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Absolute plugin directories this project's sessions load, beside the ones every session loads."
         }
       },
       "required": [
@@ -412,10 +396,22 @@
         "id",
         "name",
         "repos",
+        "runtimes",
         "tidy",
         "worktrees"
       ],
       "description": "A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and kept branches in its repos. `bases`: the origin branches a cut can name for every repo at once, in the hub's order, `defaultBase` first when there is one; empty when a dir isn't a git repo with an origin, or when their default branches differ and share no other (a cut unnamed still starts each repo from its own)."
+    },
+    "FloorRuntime": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "The floor's resolved preferred command of the runtime's `argv`, by name; absent in single-command mode (`projectPreferredCommand`)."
+        }
+      },
+      "additionalProperties": false,
+      "description": "A floor's part of one runtime (`floor.runtimes`)."
     },
     "Card": {
       "type": "object",
@@ -429,6 +425,10 @@
         "peer": {
           "type": "string",
           "description": "The Claude session name its peers message it by (`SendMessage`'s `to`), while its Claude runs."
+        },
+        "runtime": {
+          "type": "string",
+          "description": "The runtime it runs, the key of its entry in `board.runtimes` (`runtimeOf`): any string, so a renderer reads past one it doesn't know."
         },
         "project": {
           "type": "string"
@@ -613,13 +613,13 @@
         "effort": {
           "type": "string"
         },
-        "claude": {
+        "runtimeRelease": {
           "type": "string",
-          "description": "The release of Claude Code the session runs, once the mod reported it."
+          "description": "The release of its runtime the session runs, once the runtime said."
         },
-        "claudeUntested": {
+        "runtimeUntested": {
           "type": "boolean",
-          "description": "Its Claude is outside the releases the tower is tested on (`CLAUDE_TESTED`)."
+          "description": "Its runtime's release is outside the range the tower is tested on (`board.runtimes[runtime].tested`)."
         },
         "resources": {
           "type": "array",
@@ -686,6 +686,7 @@
       "required": [
         "id",
         "callsign",
+        "runtime",
         "project",
         "cwd",
         "checkout",
@@ -704,7 +705,7 @@
         "subagentRuns",
         "turns",
         "lineage",
-        "claudeUntested",
+        "runtimeUntested",
         "resources",
         "shown",
         "stranded",
@@ -3848,7 +3849,46 @@
       "additionalProperties": false,
       "description": "Whether the day's spending lasts: `perDay`, the even daily spend that spends what is left exactly at the reset (all of it in the reset's last day), and `runsOutAt` (epoch ms), when what is left runs out at today's rate, only when that is before the reset."
     },
-    "ClaudeDefaults": {
+    "BoardRuntime": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "What a renderer prints for the runtime instead of naming it, such as `Claude Code`."
+        },
+        "defaults": {
+          "$ref": "#/definitions/RuntimeDefaults",
+          "description": "The model and effort it starts a new worker on when asked for neither, as its sessions showed them."
+        },
+        "untested": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The releases outside the tested range that its live workers run, each once."
+        },
+        "tested": {
+          "$ref": "#/definitions/TestedRange",
+          "description": "The releases the tower is tested on, so a renderer can say the range."
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Every command name of its config's `argv`, in write order; absent in single-command mode (`commandNames`)."
+        }
+      },
+      "required": [
+        "label",
+        "defaults",
+        "untested",
+        "tested"
+      ],
+      "additionalProperties": false,
+      "description": "One runtime the tower knows, as the board says it (`board.runtimes`)."
+    },
+    "RuntimeDefaults": {
       "type": "object",
       "properties": {
         "model": {
@@ -3859,7 +3899,24 @@
         }
       },
       "additionalProperties": false,
-      "description": "What Claude runs a new worker on when the launch asks for no model or effort, as observed: settings files, env, plan and `/model` decide it. One value for the machine, as a `/model` pick is saved in the user's settings: a project whose own settings pin a model is not told apart. Absent until a session shows it."
+      "description": "What a runtime runs a new worker on when the launch asks for no model or effort, as observed: for Claude, settings files, env, plan and `/model` decide it. One value for the machine, as a `/model` pick is saved in the user's settings: a project whose own settings pin a model is not told apart. Absent until a session shows it."
+    },
+    "TestedRange": {
+      "type": "object",
+      "properties": {
+        "lowest": {
+          "type": "string"
+        },
+        "highest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "lowest",
+        "highest"
+      ],
+      "additionalProperties": false,
+      "description": "The lowest and the highest release of a runtime the tower ran on with every surface it reads checked, both included."
     },
     "Job": {
       "type": "object",

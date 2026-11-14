@@ -11,7 +11,7 @@ const projectId = (dir: string): string => path.basename(dir).toLowerCase().repl
 
 /** Sessions start in `hub`, `repos` are added beside it; `user`, when known, signs the user's review notes. */
 export const initialConfig = (hub: string, repos: string[], user: string | undefined): Config => ({
-  argv: ['claude'],
+  runtimes: { claude: { argv: ['claude'] } },
   env: {},
   port: 4317,
   projects: { [projectId(hub)]: { name: path.basename(hub), hub, repos } },

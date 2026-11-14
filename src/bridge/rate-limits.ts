@@ -110,7 +110,7 @@ export type Account<S> = { command?: string; sessions: S[]; streams: LimitFacts[
  * account holds everything.
  */
 export const accountsOf = <S extends { header: Pick<SessionHeader, 'command'> }>(config: Config, sessions: S[], streams: LimitFacts[]): Account<S>[] => {
-  const names = commandNames(config)
+  const names = commandNames(config, 'claude')
   if (names === undefined) return [{ sessions, streams }]
   const named = (command: string, name: string | undefined) => (name ?? names[0]) === command
   return names.map((command) => ({

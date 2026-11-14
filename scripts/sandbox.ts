@@ -195,7 +195,7 @@ function freshConfig(port: number) {
   const labApi = path.join(ROOT, 'lab-api')
   for (const dir of [lab, labApi]) seedRepo(dir)
   return {
-    argv: ['bash', '-c', SESSION, 'session'],
+    runtimes: { claude: { argv: ['bash', '-c', SESSION, 'session'] } },
     port,
     projects: {
       tower: { name: 'tower', color: '#c792ea', hub: FLOOR_HUB, repos: [] },

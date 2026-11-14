@@ -70,7 +70,7 @@ export function shells(deps) {
       watch: (on) => tower.watch(`shell/${id}`, (msg) => on(/** @type {ShellStream} */ (msg))),
       resize: (size) => tower.call('shell/resize', { id, ...size }),
       send: (data) => tower.shellKeys(id, data),
-      claude: false,
+      wheelReports: false,
       scrollback: SHELL_SCROLLBACK,
       font: termFont,
       scheme,

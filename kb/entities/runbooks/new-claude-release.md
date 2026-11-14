@@ -5,7 +5,7 @@
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#claudeRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/health.ts#claudeUntestedHtml", "hub/test/fixtures/", "hub/test/seating.test.ts", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.ts#due", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.read.ts#withoutKept", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
+  "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#releaseRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/facts.ts#hookFacts", "hub/src/bridge/board.ts#board", "hub/src/shared/health.ts#untestedHtml", "hub/test/fixtures/", "hub/test/seating.test.ts", "hub/scripts/claude-check.ts", "hub/scripts/claude-check.ts#due", "hub/scripts/claude-check.report.ts#scenarioDifferences", "hub/scripts/claude-check.read.ts#withoutKept", "hub/scripts/claude-check.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
 **Symptom.** The tower reads several of [[claude-code]]'s surfaces it doesn't own, each listed with where it is read
@@ -15,15 +15,15 @@ goes quietly wrong, with a worker stuck `working`, waits that never come, or a c
 
 What says a release is new to the tower:
 - The mod posts `tower.claude` with `$.session.version()` as each session starts, once Claude's own start has run
-  ([`register`](ref:hub/src/mod/hooks/register.js#register)), folded into `facts.claude`. A card whose release
-  is outside [`CLAUDE_TESTED`](ref:hub/src/shared/claude.ts#CLAUDE_TESTED) has `claudeUntested`, and the board
-  lists each such release a live worker runs once, as `board.claudeUntested`. The tower page and Tower 3D say
-  `claude <version> untested` ([`claudeUntestedHtml`](ref:hub/src/shared/health.ts#claudeUntestedHtml)), with the
+  ([`register`](ref:hub/src/mod/hooks/register.js#register)), folded into `facts.runtimeRelease`. A card whose
+  release is outside [`CLAUDE_TESTED`](ref:hub/src/shared/claude.ts#CLAUDE_TESTED) has `runtimeUntested`, and the
+  board lists each such release a live worker runs once, as `board.runtimes.claude.untested`. The tower page and Tower
+  3D say `Claude Code <version> untested` ([`untestedHtml`](ref:hub/src/shared/health.ts#untestedHtml)), with the
   reason on hover.
-- `doctor` checks the `--version` of each Claude the config's `argv` starts with
-  [`claudeRange`](ref:hub/src/shared/claude.ts#claudeRange): `below`, `tested`, `above`, or `unknown` for a version
+- `doctor` checks the `--version` of each Claude the config's `runtimes.claude.argv` starts with
+  [`releaseRange`](ref:hub/src/shared/claude.ts#releaseRange) against `CLAUDE_TESTED`: `below`, `tested`, `above`, or `unknown` for a version
   that doesn't read as a release, which is flagged too: a renamed or missing field is drift as well.
-- A session started before the mod reported versions has no `claude`, and is never flagged. So is a session whose
+- A session started before the mod reported versions has no `runtimeRelease`, and is never flagged. So is a session whose
   Claude has no `$.session.version`: its start hook fails after the start ran, and no version is posted.
 
 **Where to look first.** `npm run tool:claude-check -- run`

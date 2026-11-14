@@ -245,7 +245,6 @@
       "hooks.*.payload",
       "id",
       "meta",
-      "plugins",
       "provides",
       "reads",
       "reads.*.cli",
@@ -274,6 +273,8 @@
       "regions.*.scale",
       "regions.*.subject",
       "requires",
+      "runtimes",
+      "runtimes.*.plugins",
       "server",
       "settings",
       "slots",
@@ -569,7 +570,6 @@
       "BROKEN_DOES",
       "BUDGETS",
       "CARRY_ON_MEANS",
-      "CLAUDE_UNTESTED",
       "CLI_REGIONS",
       "CREWS_UNFOLDED_KEY",
       "DISMISSED_KEY",
@@ -648,9 +648,6 @@
       "cardsOf",
       "carriedLine",
       "changedIn",
-      "claudeFlagHtml",
-      "claudeUntestedHtml",
-      "claudeUntestedLine",
       "clockAt",
       "collectionSubject",
       "commandName",
@@ -824,6 +821,10 @@
       "tokenCount",
       "transitions",
       "unboundCommands",
+      "untestedFlagHtml",
+      "untestedHtml",
+      "untestedLine",
+      "untestedTitle",
       "waitingCards",
       "waitsBeganLine",
       "weekElapsed",
@@ -1695,13 +1696,6 @@
         "carriedLine": {
           "since": "2.0"
         },
-        "claudeFlagHtml": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
-        "claudeUntestedHtml": {
-          "since": "2.0"
-        },
         "current": {
           "since": "2.0"
         },
@@ -1931,6 +1925,13 @@
           "since": "2.0"
         },
         "transitions": {
+          "since": "2.0"
+        },
+        "untestedFlagHtml": {
+          "since": "2.0",
+          "stability": "provisional"
+        },
+        "untestedHtml": {
           "since": "2.0"
         },
         "verbHint": {

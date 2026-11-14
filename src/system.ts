@@ -3,6 +3,7 @@
  * to it, every stream an extension folds kept current, the items of every collection, the host's live set, the terms daemon's shells,
  * the jobs log and the jobs the jobs daemon holds, what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
+import { movedKeys, movedLine } from './moved-keys.ts'
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher } from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
@@ -83,7 +84,10 @@ export const probesGone = (probes: unknown): string => {
 export const configLack = (config: Config): string | undefined => {
   if (!isObject(config)) return 'it holds no JSON object'
   if ('probes' in config) return probesGone(config.probes)
-  if (!validArgv(config.argv)) return 'argv must name the command sessions start with, such as ["claude"]'
+  const [moved] = movedKeys(config)
+  if (moved) return movedLine(moved)
+  if (!isObject(config.runtimes) || !isObject(config.runtimes.claude) || !validArgv(config.runtimes.claude.argv))
+    return 'runtimes.claude.argv must name the command Claude sessions start with, such as {"runtimes": {"claude": {"argv": ["claude"]}}}'
   if (!isObject(config.projects)) return 'projects must be an object of floors, each with name, hub and repos'
   for (const [id, project] of Object.entries(config.projects)) {
     if (!isObject(project)) return `projects.${id} must be an object with name, hub and repos`

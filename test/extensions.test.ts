@@ -10,7 +10,7 @@ const TOWER = '1.81'
 const NOW = Date.parse('2026-10-24T12:00:00Z')
 
 const config = (over: Partial<Config> = {}): Config => ({
-  argv: ['claude'],
+  runtimes: { claude: { argv: ['claude'] } },
   projects: { app: { name: 'App', hub: '/app', repos: [] }, site: { name: 'Site', hub: '/site', repos: [] } },
   ...over,
 })

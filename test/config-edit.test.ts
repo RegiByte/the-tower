@@ -8,7 +8,7 @@ import type { Config } from '../src/shared/model.ts'
 const HUB = os.tmpdir()
 
 const CONFIG: Config = {
-  argv: ['claude'],
+  runtimes: { claude: { argv: ['claude'] } },
   env: {},
   projects: { lab: { name: 'Lab', hub: HUB, repos: ['/elsewhere/a', '/elsewhere/b'] } },
 }
@@ -35,7 +35,7 @@ test('add puts a key the config lacks, making objects on the way, and never over
   assert.equal(CONFIG.projects.new, undefined, 'the config edited is a new value')
   assert.deepEqual(ok(edited(CONFIG, { t: 'add', key: ['renderers', 'page', 'layout'], value: {} })).config.renderers, { page: { layout: {} } })
   refused(edited(CONFIG, { t: 'add', key: ['projects', 'lab'], value: {} }), 'exists')
-  refused(edited(CONFIG, { t: 'add', key: ['argv', 'x'], value: 1 }), 'refused')
+  refused(edited(CONFIG, { t: 'add', key: ['runtimes', 'claude', 'argv', 'x'], value: 1 }), 'refused')
   refused(edited(CONFIG, { t: 'add', key: ['projects', 'lab', 'name', 'x'], value: 1 }), 'refused')
 })
 

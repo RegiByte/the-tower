@@ -13,7 +13,7 @@ import { folder } from './repos.ts'
 import { viewOf } from './view.ts'
 
 const CONFIG: Config = {
-  argv: ['claude'],
+  runtimes: { claude: { argv: ['claude'] } },
   projects: { tower: { name: 'tower', hub: '/hub', repos: [], shelf: [{ label: 'KB', html: 'kb.html' }] }, lab: { name: 'lab', hub: '/lab', repos: [] } },
 }
 

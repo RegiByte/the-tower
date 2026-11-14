@@ -50,7 +50,7 @@ async function main() {
   if (!existsSync(ENTRY)) throw new Error(`no ${path.relative(REPO, ENTRY)}: npm run tower3d`)
   const bundling = bundlingLibrary()
   if (bundling.length) throw new Error(`${bundling.map((p) => `${p}.js`).join(', ')} import nothing from /lib/: the build bundled the library, so pass --external:/lib/* to esbuild`)
-  await withTower('tower3d-boot', () => ({ argv: ['claude'], projects: {}, extensions: { quota: { off: true } } }), async (url) => {
+  await withTower('tower3d-boot', () => ({ runtimes: { claude: { argv: ['claude'] } }, projects: {}, extensions: { quota: { off: true } } }), async (url) => {
     const started = Date.now()
     const { booted, errors } = await withPage(`${url}/r/tower3d/?board=busy&seed=1&stepped&at=2026-10-04T15:00`, { timezone: 'UTC', flags: ['--enable-unsafe-swiftshader'] }, async (page) => ({ booted: (await page.eval(BOOT)) as Booted, errors: page.errors }))
     console.log(`booted in ${Date.now() - started} ms on ${booted.renderer}: ${JSON.stringify(booted.counts)}, ${booted.drawn.calls} draw calls`)

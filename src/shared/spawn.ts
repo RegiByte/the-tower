@@ -136,7 +136,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     field('branch').placeholder = branchPlaceholder(f, cutNameOf(v))
     field('callsign').setCustomValidity(refused)
     dialog.querySelector('[data-callsign-why]')!.textContent = refused
-    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v, io.board().claudeDefaults, formFields(io.board(), f))
+    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v, io.board().runtimes.claude, formFields(io.board(), f))
     return v
   }
   const keep = async ({ project, on, text }: Extract<SpawnEffect<D>, { type: 'keep' }>) => {
@@ -178,7 +178,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     execute: {
       show: ({ project, text, on }) => {
         const f = floorOf(project)!
-        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts?.titleOf(text), defaults: io.board().claudeDefaults, fields: formFields(io.board(), f), commands: io.board().commands })
+        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts?.titleOf(text), runtime: io.board().runtimes.claude, fields: formFields(io.board(), f) })
         prompt().value = text
         sync()
         dialog.showModal()

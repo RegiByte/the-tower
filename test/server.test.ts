@@ -257,7 +257,7 @@ function seed(port: number) {
 
 function writeConfig(port: number) {
   const config = {
-    argv: ['bash', '-c', 'printf "a worker\\r\\n"', 'worker'],
+    runtimes: { claude: { argv: ['bash', '-c', 'printf "a worker\\r\\n"', 'worker'] } },
     port,
     hosts: ['lab.localhost'],
     retention: { days: 1 },
@@ -440,7 +440,7 @@ test('server: every read answers', async () => {
     ['/extensions', 'application/json', has('extensions', 'topology')],
     ['/renderers', 'application/json', has('default', 'renderers')],
     ['/origins', 'application/json', has()],
-    ['/config', 'application/json', has('argv', 'projects')],
+    ['/config', 'application/json', has('runtimes', 'projects')],
     [`/conversations/${SESSION}`, 'application/json', isArray],
     ['/archive/lab', 'application/json', isArray],
     ['/landing?project=lab&branch=feature', 'application/json', has('branch', 'repos')],
@@ -593,7 +593,7 @@ test("server: the quota probe reads the folder its stream kept, and reads now at
   const run = await post('quota/read-now', {})
   assert.equal(run.status, 200)
   const read = JSON.parse(run.body) as { ok: boolean; error?: string }
-  assert.equal(read.ok, false, 'a config whose argv is no Claude answers no get_usage')
+  assert.equal(read.ok, false, 'a config whose runtimes.claude.argv is no Claude answers no get_usage')
   assert.equal(errorCode(await post('quota/read-now', {})), 'refused', 'a read starts at most once a minute')
   const [newest] = JSON.parse((await get('/quota/reads?last=1')).body).reads
   assert.deepEqual([newest.ok, newest.error], [false, read.error], 'the read is appended to the old folder, newest first')
@@ -1355,8 +1355,10 @@ test('server: a config short of what every read stands on, not JSON, gone or unr
       (msg) => 'error' in msg && msg.error.code === 'config' && msg.error.message.includes(words),
     )
   try {
-    writeFileSync(CONFIG, JSON.stringify({ argv: ['x'], projects: { lab: { name: 'lab' } } }))
+    writeFileSync(CONFIG, JSON.stringify({ runtimes: { claude: { argv: ['x'] } }, projects: { lab: { name: 'lab' } } }))
     await said(`${CONFIG}: projects.lab.hub must be the path of a directory`)
+    writeFileSync(CONFIG, JSON.stringify({ argv: ['x'], projects: {} }))
+    await said(`${CONFIG}: argv moved to runtimes.claude.argv in 2.0`)
     writeFileSync(CONFIG, '{ not json')
     await said(`${CONFIG} is not valid JSON`)
     rmSync(CONFIG)

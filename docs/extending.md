@@ -19,7 +19,7 @@ first.
 | [The library](#the-library) | what the tower's own renderers and extensions draw and read alike, for yours to import | `/lib/<module>.js`, the API's version: removing a name is a major |
 | [Collections](#collections) | your own kinds of files, kept per floor | files; what they mean is yours |
 | [Extensions](#extensions) | code the tower starts and stops beside its own pieces | `extension.json`, versioned with the API, `extension` at `/schema` |
-| [Claude plugins](#claude-plugins) | your commands and skills in every session the tower starts | config `plugins` |
+| [Claude plugins](#claude-plugins) | your commands and skills in every session the tower starts | config `runtimes.claude.plugins` |
 | [The `tower` command](#the-tower-command) | the system from a shell, for you and your workers | `tower` with no verb lists them |
 | [The logs](#the-logs) | everything that happened, to read | JSONL, written only by the host |
 
@@ -973,8 +973,8 @@ emoji until the next full redraw. The view turns on xterm.js's `allowProposedApi
 `io.files`, the file paths written in the terminal are links too, read from its `cwd()` and opened with its `edit`
 (the tower page calls the `edit` verb, which opens the user's editor at the path's `:line`). `io`
 (`TermViewIo` in `/lib/terminal.js`) is what the view needs of your renderer: `watch(on)` streams the PTY's messages and answers a function that stops,
-`resize(size)` and `send(data)` reach the PTY, `claude` says whether it is Claude's terminal (its wheel then goes to
-Claude as wheel reports), `scrollback`, `font()` and `scheme()` give its look, `mode(m)` hears how it holds the PTY
+`resize(size)` and `send(data)` reach the PTY, `wheelReports` says whether its program reads the wheel as wheel reports
+(Claude's fullscreen does), `scrollback`, `font()` and `scheme()` give its look, `mode(m)` hears how it holds the PTY
 (owning its size, watching, or exited), `end(msg)` its exit or stream error, and `error(err)` a failure of the view's own; `upload` and
 `files` are optional. Its `keymap`
 and `run` are a renderer's keymap: `run` gets the id of each command the key runs, an extension's `<cap>/<name>` too
@@ -1463,19 +1463,19 @@ command the session runs passes, an env key the config's `env` sets, and a flag,
 give, refuses the launch, naming both. A contributor that throws, doesn't settle within 10 s, or returns what the runtime can't place refuses a spawn that
 carries its fields, and otherwise is left out with a `launch` problem. `exempt` takes the worker out of its floor's hiring limits and
 `reportsTo` puts it in that worker's crew: each is logged as a core fact (`tower.exempt`, `tower.reports-to`) before it
-starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `plugins.claude` names a Claude plugin
+starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `runtimes.claude.plugins` names a Claude plugin
 folder in the extension, loaded into every session on floors where it is on: [An extension's Claude plugin](#an-extensions-claude-plugin).
 
 ### An extension's Claude plugin
 
 An extension teaches a Claude session with a plugin of its own: skills whose descriptions tell the worker when to reach
 for them, with no word for it to remember. `guidance` is the neutral text every runtime's worker reads; a plugin is
-Claude's, so `plugins` is keyed by runtime. [`examples/extensions/handoff`](../examples/extensions/handoff/) is the
+Claude's, so it sits under `runtimes`, keyed by runtime as the config's `runtimes` is. [`examples/extensions/handoff`](../examples/extensions/handoff/) is the
 smallest: an extension that is only a skill.
 
 ```
 handoff/
-  extension.json                     "plugins": { "claude": "plugin" }
+  extension.json                     "runtimes": { "claude": { "plugins": "plugin" } }
   plugin/
     .claude-plugin/plugin.json       { "name": "handoff", "version": "1.0.0" }
     skills/note/SKILL.md             name, description, then what it teaches
@@ -1491,7 +1491,8 @@ handoff/
   tower's own.
 - **Checked at load.** Claude skips a plugin folder it can't read and says nothing, so a folder that is missing or has
   no `.claude-plugin/plugin.json` is a warning on the extension, in `tower extensions` and `tower extensions check`. The
-  rest of the extension runs.
+  rest of the extension runs. A manifest still saying `plugins.claude`, the 1.x spelling, is refused, naming
+  `runtimes.claude.plugins`.
 
 ### An extension's README
 
@@ -1539,13 +1540,13 @@ when the look differs, and show them side by side:
 
 ## Claude plugins
 
-`plugins`, at the top level or under a project, lists absolute plugin directories every session the tower starts
-loads, each passed to Claude as `--plugin-dir`. Your commands and skills live in one plugin outside your repos and
+`runtimes.claude.plugins`, at the top level or under a project, lists absolute plugin directories every session the
+tower starts loads, each passed to Claude as `--plugin-dir`. Your commands and skills live in one plugin outside your repos and
 reach every worker as `/<plugin>:<command>`. A changed plugin reaches the next session started. An extension
-brings its own with [`plugins.claude`](#an-extensions-claude-plugin). The bundled `extensions/reviews` is the full example: guidance, a `cli` word per verb, and skills whose descriptions carry the triggers.
+brings its own with [`runtimes.claude.plugins`](#an-extensions-claude-plugin). The bundled `extensions/reviews` is the full example: guidance, a `cli` word per verb, and skills whose descriptions carry the triggers.
 
 ```json
-{ "plugins": ["/Users/you/code/my-workflow"] }
+{ "runtimes": { "claude": { "plugins": ["/Users/you/code/my-workflow"] } } }
 ```
 
 ## The `tower` command
@@ -1619,7 +1620,9 @@ A stream keeps its old folder for good: the quota stream's facts stay in `probe.
 ## What is not an extension point
 
 - **The host** (`src/host`). It owns every session's terminal, and changing it ends every running session. It stays
-  small and knows no Claude flags; what sessions start with is the config's `argv`, `env` and `plugins`.
+  small and knows no Claude flags; what sessions start with is the config's `env` and each runtime's own part,
+  `runtimes.<id>` (`argv`, `plugins`, a floor's `command`). A runtime is a core module, not an extension: the runtimes
+  the tower knows are the ids of `board.runtimes`, and a renderer draws one from its entry there, never by its id.
 - **Writing to the log files.** A log holds facts the host observed. A line written into one by anyone else is a fact
   that never happened, and every view computed from it inherits the lie. To say something on a session's log, declare
   a [fact](#extensions): the host writes it. Keep other data of your own in a stream or a collection.
