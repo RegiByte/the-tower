@@ -274,9 +274,11 @@ Do these in order when you update:
   `Floor['runtimes'][string]`, `Board` and `Floor` being types of `/lib/board.js`.
 - **`board.limits` is the one shape for rate limits.** The top-level copies of the default command's limits are gone:
   `board.rateLimits`, `rateLimitsAt`, `rateLimitsFrom`, `turnLimits` and `extraUsage`. Read the same fields from
-  `defaultLimits(board)` of `/lib/board.js`, or from a command's entry with `limitsOf(board, command)`. The limit
-  words of `/lib/cards.js` (`extraUsageLine`, `extraUsageAmounts`, `limitsFromTitle`) are unchanged for callers: their
-  parameter types name `CommandLimits` where they named `Board`, and the values passed are the same.
+  `defaultLimits(board)` of `/lib/board.js`, or from a command's entry with `limitsOf(board, command)`. `extraUsageLine`
+  and `extraUsageAmounts` of `/lib/cards.js` are unchanged for callers: they take the same `extraUsage` object, its
+  type now named through `CommandLimits`. `limitsFromTitle` reads `rateLimitsFrom` from a limits entry: a call that
+  passed the board passes `defaultLimits(board)` now, since the board has no `rateLimitsFrom` and the tip would always
+  say the limits were read during a session's turn.
 - **Quota readings written before API 1.90 no longer set the limits.** The core folded the `p` facts the old core probe
   wrote into `probe.quota/` beside the readings of kind `tower/rate-limits`; it now folds only the latter. The quota
   extension still reads `p` facts for its own status. A reading of your own extension's is folded as before, as long
