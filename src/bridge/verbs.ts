@@ -133,15 +133,6 @@ export const offered = <V extends string, C>(actions: Action<V, C>[]): Offers<V,
 const actionsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): Offers<V, C> =>
   offered(verbs.map((verb) => (requests[verb] ? { verb, call: requests[verb]() } : { verb }) as Action<V, C>))
 
-/** A probe offers `run`, a read now, unless it is off: the tower refuses it while a read is in flight or within the floor. */
-export type ProbeVerb = 'run'
-export type ProbeCalls = { run?: Call<'probe/run'> }
-export type ProbeAction = Action<ProbeVerb, ProbeCalls>
-
-export const probeOffers = (name: string, off: boolean): Offers<ProbeVerb, ProbeCalls> => {
-  const verbs: ProbeVerb[] = off ? [] : ['run']
-  return actionsOf(verbs, { run: (): Call<'probe/run'> => ['probe/run', { name }] })
-}
 
 export const conversationOffers = (session: string, conversation: string, live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): Offers<ConversationVerb, ConversationCalls> => {
   const verbs = conversationVerbs(live, resumable, resumedBy)

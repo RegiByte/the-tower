@@ -1,10 +1,7 @@
 import type { Board } from '../bridge/board.ts'
-import type { Attention } from '../bridge/life.ts'
-import type { Replies } from './api.ts'
 import { clockAt, plural, span } from './format.ts'
-import type { ProbeStatus as LegacyProbe } from '../bridge/legacy.ts'
 
-/** The account's rate limits, the budget's pace and the probes that read them, in words. */
+/** The account's rate limits and the budget's pace, in words. */
 
 type RateLimit = Board['rateLimits'][number]
 
@@ -43,46 +40,6 @@ export const paceLine = (percentUsed: number, elapsed: number) => {
   const gap = Math.round(elapsed - percentUsed)
   return `${Math.round(elapsed)}% of the week gone, ${gap >= 0 ? `${plural(gap, 'point')} under pace` : `${plural(-gap, 'point')} over pace`}`
 }
-
-/** A probe as these words read it: the quota extension's part with its name (`quotaOf`), or an entry of `board.probes`. */
-type ProbeStatus = Omit<LegacyProbe, 'reads'>
-
-/** The quota probe as the quota extension's part on the board says it stands, by its name: none while it doesn't run. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
-export const quotaOf = (b: Pick<Board, 'x'>): ProbeStatus | undefined => {
-  const quota = b.x?.quota as Omit<ProbeStatus, 'name'> | undefined
-  return quota && { name: 'quota', ...quota }
-}
-
-/** A probe's state in words, coloured by how much it asks of you: a failing probe leaves the limits to age. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
-export const PROBE_STATE_NAME: Record<ProbeStatus['state'], string> = { new: 'not read yet', ok: 'answering', failing: 'failing', backoff: 'backing off', unavailable: 'nothing to read' }
-/** @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
-export const PROBE_ATTENTION: Record<ProbeStatus['state'], Attention> = { new: 'quiet', ok: 'quiet', failing: 'working', backoff: 'broken', unavailable: 'working' }
-
-/** When a probe reads next: `reads now` once due, else in how long, and why when a session's turn holds it. */
-const probeNext = (p: ProbeStatus, now: number) =>
-  p.nextAt <= now ? 'reads now' : `next in ${span(p.nextAt - now)}${p.held ? ", after a session's reading" : ''}`
-
-/** A probe in a short line: `quota probe · answered 3m ago · next in 7m`. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
-export const probeLine = (p: ProbeStatus, now: number) =>
-  [
-    `${p.name} probe`,
-    p.lastAt === undefined ? PROBE_STATE_NAME[p.state] : `${p.error === undefined ? 'answered' : 'failed'} ${span(now - p.lastAt)} ago`,
-    probeNext(p, now),
-  ].filter(Boolean).join(' · ')
-
-/** A probe in full: its line, then what its state means, why its last read failed and when it last answered. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
-export const probeTitle = (p: ProbeStatus, now: number) =>
-  [
-    probeLine(p, now),
-    p.state === 'new' && `reads Claude's usage every ${span(p.every)} while no session's turn has`,
-    p.state === 'unavailable' && `the account has no rate limits to read (an API key, a cloud provider, or nobody signed in): it reads again every ${span(p.wait)}`,
-    p.error !== undefined && `${p.failsInRow} failed in a row${p.state === 'backoff' ? `, so it waits ${span(p.wait)}` : ''}: ${p.error}`,
-    p.error !== undefined && p.answeredAt !== undefined && `last answered ${span(now - p.answeredAt)} ago`,
-  ].filter(Boolean).join('\n')
-
-/** What a read now came to: `quota probe answered in 1.4s`, or why it has no answer. @deprecated since 1.97: the quota extension's client, `/x/quota/quota.js`; this copy goes at 2.0. */
-export const probedLine = (name: string, r: Pick<Replies['probe/run'], 'ms' | 'ok' | 'error'>) =>
-  r.ok ? `${name} probe answered in ${(r.ms / 1000).toFixed(1)}s` : `${name} probe failed: ${r.error}`
 
 /** Extra usage spent of its monthly limit: `$12 of $1,000`. */
 export const extraUsageAmounts = (e: NonNullable<Board['extraUsage']>) => {

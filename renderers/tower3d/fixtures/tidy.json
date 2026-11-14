@@ -1390,7 +1390,6 @@
           }
         ],
         "rateLimits": [],
-        "probes": [],
         "extensions": [
           {
             "id": "reviews",

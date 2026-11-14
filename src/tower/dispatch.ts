@@ -960,7 +960,6 @@ export const dispatch = defineResource({
       'viewer/active': ({ viewer }) => viewerActive(viewer),
       'viewer/selected': ({ viewer, id }) => viewerSelected(viewer, id),
       fact: logFact,
-      'probe/run': legacy('probe/run'),
       'extension/restart': async ({ id }) => {
         const view = await holder.restart(id)
         return view ? { t: 'restarted', state: view.state } : apiError('not_found', `No extension "${id}": \`tower extensions\` lists them`)
