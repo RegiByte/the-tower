@@ -134,10 +134,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   the folder's whole graph loads again, what lies outside it stays one instance, and each old graph stays in memory
   until the tower restarts.
 - **What server code imports.** `/lib/<module>.js` is the same line in server code and a client: a resolve hook maps
-  the prefix to `src/lib/`, and an unknown module fails at import, listing the library's ([[library]]). The served
-  modules are lent too, until 2.0: `tower:<name>.js` maps to the source behind `/<name>.js`
-  ([`lent-modules.ts`](ref:hub/src/lent-modules.ts), [[renderer-shared-modules]]). Either way a folder copied anywhere
-  loads, with the core's instance shared, and a name not lent fails at import. Types come from the library, by
+  the prefix to `src/lib/` ([`lent-modules.ts`](ref:hub/src/lent-modules.ts)), and an unknown module fails at
+  import, listing the library's ([[library]]). A folder copied anywhere loads, with the core's instance shared, and a
+  name not lent fails at import. Types come from the library, by
   `tsconfig.json`'s `/lib/*.js` path inside the checkout and by `tower types` in a copy elsewhere. An extension with
   npm dependencies declares them in its own `package.json` and installs them in its folder: its server code and its
   client's TypeScript, bundled at serve time, resolve packages from the folder up (the `files` example's Shiki).
@@ -204,7 +203,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   keeps loading with it off. A `command` is one of its modules' exports, offered on every subject of the kinds its
   `on` names (`item.*` every collection's items) with no fold, narrowed by `accepts` to the subjects whose
   `value.type` it lists (`image/*` a top-level type's every subtype), derived by the helpers rather than carried per
-  subject; one with no `on` is the palette's alone. Every renderer draws through `/cards.js`:
+  subject; one with no `on` is the palette's alone. Every renderer draws through `cards.ts`:
   [`actionsOf`](ref:hub/src/shared/adds.ts#actionsOf) (the core's, then `adds`, then the commands offered),
   `badgesOf`, `actionWords`, [`glyphOf`](ref:hub/src/shared/adds.ts#glyphOf) (a command's `words.icon`: a core icon,
   or an SVG of its client folder, a missing one refusing the extension as it loads,

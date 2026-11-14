@@ -79,7 +79,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   each dispatch has run all it queued, so the shell can await a machine (the tower page's lookup of an archived
   worker waits for its floors' archive reads) without keeping a copy of its state.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
-  minor): held reads ([`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers)), attention (`/attend.js`), the
+  minor): held reads ([`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers)), attention (`attend.ts`), the
   new-worker dialog ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), a hosted view's lifecycle
   ([`hostedHandlers`](ref:hub/src/shared/view-host.ts#hostedHandlers), [[ui-model]]) and a terminal's hold on its PTY's
   one size ([`termHandlers`](ref:hub/src/shared/term-view.ts#termHandlers)). A machine only one renderer

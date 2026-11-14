@@ -85,7 +85,7 @@ primitives every renderer can reach.
   as any kept one. Sending is a renderer's: send is read, then `spawn` with the text as `Launch.prompt`, then delete;
   transfer is read, then `submit`, then delete. Its editing is the extension's client module renderers import,
   `/x/drafts/drafts.js` ([[corkboard]]); the tower's server never imports it. Games are Tower 3D's
-  ([[arcade]]). Any collection, given a meaning or not, is listed and read alike through `/items.js`
+  ([[arcade]]). Any collection, given a meaning or not, is listed and read alike through `items.ts`
   ([[collection-trays]]), and an item's title is derived where it is shown
   ([`src/shared/titles.ts`](ref:hub/src/shared/titles.ts): a text item's first line, an html item's `<title>`).
 

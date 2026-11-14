@@ -57,7 +57,7 @@ does ([[web-tower]]).
 Sitting at a desk opens the session's real terminal in a modal over the world, which stops drawing until it
 closes; the worker stays at its keyboard, posed for its status
 ([`poseDesk`](ref:hub/renderers/tower3d/src/desk.ts#poseDesk)). How the terminal claims the PTY is [[tower3d-desk]]
-([`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) over `/term-view.js`). Monitors stream while the card
+([`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) over `term-view.ts`). Monitors stream while the card
 is `live`, a changing one repainted less often the farther its nearest monitor in sight
 ([`paintScreens`](ref:hub/renderers/tower3d/src/screens.ts#paintScreens)), their xterm measuring characters as the
 desk terminal does ([[renderer-shared-modules]]). With reduced motion

@@ -62,7 +62,7 @@ they are written once in shared code and a next renderer gets them by importing 
 ([[renderer-is-disposable]], [[shared-panels]]).
 
 **How.**
-- *The record* ([`prefs.ts`](ref:hub/src/shared/prefs.ts), `/prefs.js`): an empty field follows the default (the
+- *The record* ([`prefs.ts`](ref:hub/src/shared/prefs.ts), `prefs.ts`): an empty field follows the default (the
   system's scheme, motion and contrast, the shipped face).
 - *`tower.prefs`* ([`tower.js`](ref:hub/src/tower/tower.js)) keeps it in the viewer's localStorage at the tower's
   origin, synced across tabs by the `storage` event; framed, it goes through the framing page, which keeps it and
@@ -79,7 +79,7 @@ they are written once in shared code and a next renderer gets them by importing 
   works by name, with no file served. A browser lists no installed faces:
   [`faceInstalled`](ref:hub/src/shared/settings.ts#faceInstalled) measures text in the face against each generic
   family, and the popover suggests only installed faces.
-- *The settings popover* ([`settings.ts`](ref:hub/src/shared/settings.ts), `/settings.js`): sections as pure views
+- *The settings popover* ([`settings.ts`](ref:hub/src/shared/settings.ts), `settings.ts`): sections as pure views
   composed by [`settingsHtml`](ref:hub/src/shared/settings.ts#settingsHtml) from those a renderer offers (alerts, the
   ring in [`soundSection`](ref:hub/src/shared/settings.ts#soundSection), the appearance, markdown).
   [`PREF_SECTIONS`](ref:hub/src/shared/settings.ts#PREF_SECTIONS) describes each appearance setting by kind;
@@ -105,7 +105,7 @@ they are written once in shared code and a next renderer gets them by importing 
   [`designCss`](ref:hub/src/shared/design.ts#designCss)): the root's choice overrides the system's. Tower 3D's camera
   reads [`reducedMotion`](ref:hub/src/shared/prefs.ts#reducedMotion); the text it paints on canvas in the world keeps
   the shipped faces, as art.
-- *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `/tips.js`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
+- *One tooltip* ([`tips.ts`](ref:hub/src/shared/tips.ts), `tips.ts`): [`watchTips`](ref:hub/src/shared/tips.ts#watchTips)
   puts one element in the top layer and shows any `data-tip`'s text at once on keyboard focus and on a resting hover,
   with `aria-describedby` while shown. [`placeNear`](ref:hub/src/shared/tips.ts#placeNear) keeps it beside its
   element inside the viewport, and [`placeOnOpen`](ref:hub/src/shared/tips.ts#placeOnOpen) stands a popover by its
@@ -113,7 +113,7 @@ they are written once in shared code and a next renderer gets them by importing 
 - *Every explanation through it*: renderers and shared views say what a control does with `data-tip`, a control with
   no visible name carries an `aria-label`. `title` stays only where no tip can show: an `<iframe>`'s accessible name,
   a native `<option>` ([`scopeHtml`](ref:hub/src/shared/changes-panel.ts#scopeHtml)) and a markdown link's title in framed
-  documents that run no `watchTips`. The status counts' and host lamp's words live in `/cards.js`
+  documents that run no `watchTips`. The status counts' and host lamp's words live in `cards.ts`
   ([`ATTENTION_MEANS`](ref:hub/src/shared/status-words.ts#ATTENTION_MEANS),
   [`statusLegendHtml`](ref:hub/src/shared/status-words.ts#statusLegendHtml), [`hostState`](ref:hub/src/shared/health.ts#hostState),
   [`HOST_MEANS`](ref:hub/src/shared/health.ts#HOST_MEANS)), read by their tooltips and the `?` sheet alike.
@@ -130,5 +130,5 @@ they are written once in shared code and a next renderer gets them by importing 
 - *A face picker listing installed faces* (Local Font Access): Chrome only, behind a permission prompt.
 
 **Impact.** Every page that links `/design.css` and `/tower.js` gets the viewer's scheme, faces, motion and contrast,
-a framed renderer through the relay; a next renderer gets the popover and the tooltips by importing `/settings.js`
-and `/tips.js`. A renderer that draws the shared views without `watchTips` shows only their labels.
+a framed renderer through the relay; a next renderer gets the popover and the tooltips by importing `/lib/settings.js`
+and `/lib/chrome.js`. A renderer that draws the shared views without `watchTips` shows only their labels.

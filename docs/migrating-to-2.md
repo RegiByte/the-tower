@@ -208,6 +208,42 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 - **The Brief's answers are `.bubble.agent`.** The class `.bubble.claude` on an answer is `.bubble.agent`. A user theme
   or a renderer's stylesheet that targets `.brief-view .bubble.claude` targets `.brief-view .bubble.agent` instead.
 
+- **The 28 modules at the root are gone; the library replaces them.** Before the library (API 1.151) the tower served
+  its helpers as modules at the root, `/cards.js` and its siblings. 1.x kept serving them with a `Deprecation` header;
+  2.0 answers each with `not_found`. Find every import of one, in a renderer, a shelf page or an extension's client,
+  and import the same names from the library module beside it:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `/cards.js` | `/lib/cards.js`, `/lib/board.js`, `/lib/layout.js`, `/lib/words.js`, `/lib/spawn.js` |
+  | `/views.js` | `/lib/layout.js`, and `/lib/view.js` for a view's types |
+  | `/panels.js` | `/lib/changes.js`, `/lib/stats.js`, `/lib/view.js`; the Reviews and Policies panels are their extensions' views |
+  | `/items.js`, `/icons.js`, `/press.js` | `/lib/view.js` |
+  | `/brief.js` | `/lib/brief.js` |
+  | `/keymap.js` | `/lib/keys.js` |
+  | `/terminal.js`, `/term-view.js` | `/lib/terminal.js` |
+  | `/prefs.js`, `/viewer.js` | `/lib/viewer.js` |
+  | `/settings.js` | `/lib/settings.js` |
+  | `/tips.js`, `/toasts.js` | `/lib/chrome.js` |
+  | `/capabilities.js` | `/lib/capabilities.js` |
+  | `/verb-words.js` | `/lib/cards.js` |
+  | `/palette.js` | `/lib/palette.js` |
+  | `/markdown.js` | `/lib/markdown.js` |
+  | `/slots.js` | `/lib/time.js` |
+  | `/loop.js`, `/reads.js` | `/lib/machine.js` |
+  | `/spawn.js` | `/lib/spawn.js` |
+  | `/attend.js` | `/lib/attend.js` |
+  | `/media.js`, `/repos.js` | `/lib/files.js` |
+  | `/design.js` | `/lib/design.js` |
+  | `/termkeys.js` | nothing: `mountTermView` of `/lib/terminal.js` takes your keymap |
+
+  The library was chosen name by name, so it holds fewer names than these modules served. A name you import that no
+  library module exports has no replacement: copy it from the `v1` branch into your own code. `GET /schema` and
+  `tower types <dir>` list what the library holds.
+- **Server code imports the library, not `tower:`.** An extension's server module that imports
+  `tower:<name>.js` fails to load: node is told the tower doesn't lend it, and the error lists the library's
+  modules. Import `/lib/<module>.js` instead, the same line a client writes, by the table above.
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form
@@ -306,3 +342,7 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   `"reviews/thread": <its value>` under `keys`, the chord of the reviews extension's thread view.
 
 ## Tower.app
+
+- **An app built before release 1.98 loses its badge.** Tower.app reads its attention badge, menu-bar list and
+  notifications from a page that imports the tower's modules. Until 1.98 that page imported `/attend.js`, which 2.0
+  no longer serves, so an older build shows no badge. Run `tower app` from a 2.0 checkout, which builds it again.

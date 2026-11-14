@@ -25,7 +25,7 @@ board and the archive.
 - History derived in the bridge, over every card: [`SessionRef`](ref:hub/src/bridge/chains.ts#SessionRef) `{id, callsign}` for
   a conversation's `resumes` and `resumedBy` (on the board and in the brief) and a card's `continuedBy`; `keptBy` carries
   `{session, callsign}` and `hiredBy` `{session, callsign, project}`. [`bubbleOf`](ref:hub/renderers/tower3d/src/cards.ts#bubbleOf), a status's glyph, is
-  Tower 3D's own; `/cards.js` serves a copy until 2.0.
+  Tower 3D's own.
 - Tower 3D derives its seats and gallery itself, over the board's cards and the archive read beside it, which are
   every card again ([[workstations]], [[shared-wall]]): a seat is `{n}` a workstation or `{beside}` the author's id,
   a gallery the floor's last showings, newest first, each `{worker: {id, callsign}, shown}`.

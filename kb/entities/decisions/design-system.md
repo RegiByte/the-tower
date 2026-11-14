@@ -25,14 +25,14 @@ terminal that is a block of the ink colour.
   Tower 3D's bundle.
 - The tower serves it three ways ([`design`](ref:hub/src/tower/http.ts#design)): `/design.css`
   ([`designCss`](ref:hub/src/shared/design.ts#designCss): faces, `--` variables and the shared components, among
-  them the attention classes and every button's pressed, held and busy states, [[press-feedback]]), `/design.js`
+  them the attention classes and every button's pressed, held and busy states, [[press-feedback]]), `design.ts`
   and `/fonts/<file>` from the `@fontsource` packages. All three answer any origin: a framed shelf page has an
   opaque origin, and fonts and modules load only with CORS.
 - **Colour is attention.** Each board card carries `attention` (`needs | ready | working | quiet | broken`),
   derived in the bridge ([`board`](ref:hub/src/bridge/board.ts)): needs is a screen or a question, ready an answer
   nobody has read yet ([[waiting-on-you]]), working is booting or at work, broken is failed or lost. Renderers colour
   by it and never derive it; the status word keeps the exact state, its words in `STATUS_NAME` and `ATTENTION_NAME`
-  of `/cards.js`. Red is kept for what needs a hand: only a card that needs you washes, an answer ready is a calm
+  of `cards.ts`. Red is kept for what needs a hand: only a card that needs you washes, an answer ready is a calm
   green, something new is `accent`, a problem that waits on no one is `brokenText`. Only needs blinks, unless the viewer
   has waits flash ([[viewer-prefs]]); a `watching` lamp breathes ([[watching-status]]). Reduced motion and more
   contrast (the viewer's or the system's) are honoured by `design.css` ([[viewer-prefs]]).
@@ -83,6 +83,6 @@ terminal that is a block of the ink colour.
 - Fonts committed as woff2 files: the `@fontsource` packages pin versions and carry the OFL licences with no binaries
   in git.
 
-**Impact.** A renderer or shelf page gets the look by linking `/design.css`, or importing `/design.js` for data such
+**Impact.** A renderer or shelf page gets the look by linking `/design.css`, or importing `/lib/design.js` for data such
 as the terminal theme and the sky. Tower 3D imports the same module as `/lib/design.js`; its floors keep large planes neutral and the
 project colour on small things ([`floorPalette`](ref:hub/renderers/tower3d/src/palette.ts#floorPalette)).

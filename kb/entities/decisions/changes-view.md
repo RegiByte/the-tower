@@ -38,7 +38,7 @@ request, never kept:
 - **When.** Only while a worker's Changes are open: on open, on a poll (`CHANGES_POLL_MS`), and when the
   worker's status leaves `working`. Claude edits through scripts as often as through its edit tools, so no tool event
   is a reliable trigger. Every renderer reads them through [`changesHandlers`](ref:hub/src/shared/changes-reads.ts#changesHandlers),
-  a machine on `/loop.js` that a renderer tells, on each draw, whose Changes are open (held reads,
+  a machine on `loop.ts` that a renderer tells, on each draw, whose Changes are open (held reads,
   [[renderer-shared-modules]]).
 - **Tally.** The tab says how many files changed before the view is opened: each checkout's read on the board
   carries `changed` ([[worktrees]]), counted by [`changedSince`](ref:hub/src/changed-files.ts#changedSince) from the same

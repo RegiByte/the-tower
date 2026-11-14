@@ -1,20 +1,19 @@
 /**
  * What the tower serves for renderers to build on, part of the renderer API's contract: `/tower.js`, `/design.css`
- * and the shared modules. An export removed or renamed is an API major; one added, a minor. The names each one
- * exports are listed in test/served-exports.json, which test/served.test.ts holds them to.
- *
- * Every source file under `src/` that a page reaches is served once, at a URL of its own, so a module has one
- * instance on a page however many modules import it: a shared module is a re-export of its file's URL, and a core
- * view or a bundled client imports what it reaches under `src/` by URL. Those URLs (`/shared/…`, `/src/…`, and each npm
- * package at `/vendor/…`, and their hashed forms a renderer's import map names) are internal, not contract: renderers
- * import the shared modules' names.
+ * and the library. An export removed or renamed is an API major; one added, a minor. The names each one exports are
+ * listed in test/served-exports.json, which test/served.test.ts holds them to.
  *
  * The library, `/lib/<module>.js`, is what code outside the core builds on: each module a file of `src/lib/` that names
  * what it re-exports. It is served like any other file, and `src/lent-modules.ts` lends it to server code at the same
  * specifier, so a module shared by an extension's server and client imports it one way.
+ *
+ * Every source file under `src/` that a page reaches is served once, at a URL of its own, so a module has one
+ * instance on a page however many modules import it: a library module, a core view or a bundled client imports what
+ * it reaches under `src/` by URL. Those URLs (`/shared/…`, `/src/…`, and each npm package at `/vendor/…`, and their
+ * hashed forms a renderer's import map names) are internal, not contract: renderers import the library's names.
  */
 import { execFileSync } from 'node:child_process'
-import { build, buildSync, type BuildOptions, type Metafile, type Plugin } from 'esbuild'
+import { build, type BuildOptions, type Metafile, type Plugin } from 'esbuild'
 import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
@@ -28,38 +27,6 @@ const SHARED = path.join(SRC, 'shared')
 const LIB = path.join(SRC, 'lib')
 const REPO = path.join(SRC, '..')
 
-/** Shared modules renderers import, each served as a re-export of its source file's URL. */
-export const MODULES: Record<string, string> = {
-  '/design.js': path.join(SHARED, 'design.ts'),
-  '/items.js': path.join(SHARED, 'items.ts'),
-  '/cards.js': path.join(SHARED, 'cards.ts'),
-  '/icons.js': path.join(SHARED, 'icons.ts'),
-  '/panels.js': path.join(SHARED, 'panels.ts'),
-  '/brief.js': path.join(SHARED, 'brief.ts'),
-  '/termkeys.js': path.join(SHARED, 'termkeys.ts'),
-  '/keymap.js': path.join(SHARED, 'keymap.ts'),
-  '/terminal.js': path.join(SHARED, 'terminal.ts'),
-  '/prefs.js': path.join(SHARED, 'prefs.ts'),
-  '/settings.js': path.join(SHARED, 'settings.ts'),
-  '/tips.js': path.join(SHARED, 'tips.ts'),
-  '/capabilities.js': path.join(SHARED, 'capabilities.ts'),
-  '/verb-words.js': path.join(SHARED, 'verb-words.ts'),
-  '/palette.js': path.join(SHARED, 'palette.ts'),
-  '/markdown.js': path.join(SHARED, 'markdown.ts'),
-  '/press.js': path.join(SHARED, 'press.ts'),
-  '/toasts.js': path.join(SHARED, 'toasts.ts'),
-  '/slots.js': path.join(SHARED, 'slots.ts'),
-  '/loop.js': path.join(SHARED, 'loop.ts'),
-  '/reads.js': path.join(SHARED, 'reads.ts'),
-  '/viewer.js': path.join(SHARED, 'viewer.ts'),
-  '/spawn.js': path.join(SHARED, 'spawn.ts'),
-  '/attend.js': path.join(SHARED, 'attend.ts'),
-  '/term-view.js': path.join(SHARED, 'term-view.ts'),
-  '/views.js': path.join(SHARED, 'views.ts'),
-  '/media.js': path.join(SHARED, 'media.ts'),
-  '/repos.js': path.join(SHARED, 'repos.ts'),
-}
-
 /** Where the library is served, and where server code imports it from. */
 export const LIBRARY = '/lib/'
 
@@ -71,18 +38,6 @@ export const SERVER_ONLY = ['/lib/extension.js']
 
 /** The core's view modules (`CORE_VIEWS`), served at `/x/tower/<name>.js`, the core being the capability `tower`. */
 export const CORE_VIEWS_DIR = path.join(import.meta.dirname, '..', 'views')
-
-/** A TypeScript or JavaScript source bundled with all it imports into one ES module, with the names it exports. */
-export function bundledFile(file: string) {
-  const { outputFiles, metafile } = buildSync({ entryPoints: [file], bundle: true, format: 'esm', write: false, metafile: true })
-  return { text: outputFiles[0].text, exports: Object.values(metafile.outputs)[0].exports }
-}
-
-/** A shared module's text as the tower serves it: a re-export of its source file. */
-export const servedModule = (url: string) => `export * from '${sourceUrl(MODULES[url])}'\n`
-
-/** A shared module as the tower serves it, with the names it exports. */
-export const bundled = (url: string) => ({ text: servedModule(url), exports: bundledFile(MODULES[url]).exports })
 
 /** Where the files below `src/` are served, by folder; the core's views at their `/x/tower/` URLs, the rest by their path. */
 const SOURCE_DIRS: [dir: string, url: string][] = [
@@ -302,9 +257,7 @@ export const unhashedUrl = (url: string): string | undefined => /^(?<base>\/.+)\
  */
 export function importMap(modules: Map<string, string>): Record<string, string> {
   const own = (url: string) => /^\/(lib|shared|src|vendor)\//.test(url)
-  const hashed = new Map([...modules].filter(([url]) => own(url)).map(([url, text]) => [url, hashedUrl(url, text)]))
-  const served = [...modules.keys()].filter((url) => MODULES[url] && hashed.has(sourceUrl(MODULES[url]!))).map((url) => [url, hashed.get(sourceUrl(MODULES[url]!))!] as const)
-  return Object.fromEntries([...hashed, ...served])
+  return Object.fromEntries([...modules].filter(([url]) => own(url)).map(([url, text]) => [url, hashedUrl(url, text)]))
 }
 
 /** An html page that starts with `imports` as its import map, before its first script. */

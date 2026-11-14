@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Every press is answered: busy controls, toasts with an action, undo by putting back",
-  "summary": "A control that asks the tower something is aria-busy until the reply (pressing in /press.js), found again by its identity through redraws; every button's pressed, held and busy states are drawn by design.css; toasts stack, time out, pause under the pointer or focus and may carry one action (/toasts.js); sending one worker home offers Resume, and deleting a draft is done at once with an Undo that puts its file back under its id (collection/restore).",
+  "summary": "A control that asks the tower something is aria-busy until the reply (pressing in press.ts), found again by its identity through redraws; every button's pressed, held and busy states are drawn by design.css; toasts stack, time out, pause under the pointer or focus and may carry one action (toasts.ts); sending one worker home offers Resume, and deleting a draft is done at once with an Undo that puts its file back under its id (collection/restore).",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -84,5 +84,5 @@ them.
 - *`disabled` while in flight*: the focused button loses focus, and the keyboard lands at the page's start.
 - *Toasts in `tower.js`*: tower.js is the API's client; how a renderer tells things is a served module it may skip.
 
-**Impact.** `/press.js` and `/toasts.js` are served modules every renderer may import, and `collection/restore` is a
+**Impact.** `pressing` and the toaster are library names every renderer may import (`/lib/view.js`, `/lib/chrome.js`), and `collection/restore` is a
 verb.

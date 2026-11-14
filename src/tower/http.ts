@@ -46,20 +46,12 @@
  *   GET  /collection/<project>/<collection>/<item>   one of a collection's files
  *   GET  /shown/<id>/<path>   a file the session showed (its absolute path), or what a page it showed pulls in: anything
  *                             beside or below an html file, an image beside or below a markdown one, none of it hidden
- *   GET  /design.css    the design tokens as variables, and the faces;  GET /design.js  the design module (src/shared/design.ts)
- *   GET  /cards.js      what renderers say about a worker (src/shared/cards.ts)
- *   GET  /icons.js      the icons renderers draw for the same things (src/shared/icons.ts)
- *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
- *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
- *   GET  /views.js      views, the layout, locations and display: what a renderer hosting views reads (src/shared/views.ts)
- *   GET  /capabilities.js   what the tower lets a user do, and the tips renderers show of it and of the patterns (src/shared/capabilities.ts)
- *   GET  /palette.js        the command palette's entries and their ranking for what the viewer typed (src/shared/palette.ts)
- *   GET  /verb-words.js     each verb the board offers in words: label, hint, whether it asks first, its API verb (src/shared/verb-words.ts)
+ *   GET  /design.css    the design tokens as variables, and the faces
  *   GET  /lib/<module>.js   the library: what code outside the core builds on, each module a file of `src/lib/` naming its
  *                       re-exports, served like the files below and held by test/served-exports.json; `/lib/extension.js`
  *                       is server code, and a browser that loads it is told so
  *   GET  /fonts/<file>  a face the design names
- *   GET  /shared/<file>.js, /src/<path>.js, /vendor/<package>.js   internal, not contract: each file below src/ a served module,
+ *   GET  /shared/<file>.js, /src/<path>.js, /vendor/<package>.js   internal, not contract: each file below src/ a library module,
  *                       core view or client reaches, transpiled alone with its imports as URLs, and each npm package one
  *                       imports, bundled as one module; every page gets one instance of each (src/tower/served.ts). At
  *                       `<url>.<hash>.js`, the text a renderer page's import map named, cached as immutable
@@ -132,7 +124,7 @@ import { collectionOn } from '../bridge/stores.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, FRAME_PICKS, hashedUrl, importMap, moduleGraph, moduleScripts, MODULES, SERVER_ONLY, servedModule, serverOnlyModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withImportMap, withPreloads } from './served.ts'
+import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, FRAME_PICKS, hashedUrl, importMap, moduleGraph, moduleScripts, SERVER_ONLY, serverOnlyModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withImportMap, withPreloads } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /**
@@ -213,15 +205,8 @@ export const httpServer = defineResource({
       res.writeHead(200, { 'content-type': type, ...headers }).end(body)
     }
 
-    /** What the served modules' `Deprecation` links to: the library, which replaces them, one old module splitting into several of its modules. */
-    const LIBRARY_DOCS = 'https://github.com/RegiByte/the-tower/blob/main/docs/extending.md#the-library'
-
     function design(req: http.IncomingMessage, res: http.ServerResponse, url: string) {
       if (url === '/design.css') return revalidated(req, res, 'text/css', designCss())
-      if (MODULES[url]) {
-        res.setHeader('deprecation', '@0').setHeader('link', `<${LIBRARY_DOCS}>; rel="deprecation"`)
-        return revalidated(req, res, 'text/javascript', servedModule(url))
-      }
       const font = fonts.find((f) => url === `/fonts/${f.file}`)
       if (!font) return fail(res, 'not_found', `No face at "${url}"`)
       res
@@ -229,7 +214,7 @@ export const httpServer = defineResource({
         .end(readFileSync(fontFile(font)))
     }
 
-    /** A file below `src/` or an npm package's module, each served once at its own URL for the served modules, core views and clients that import it. */
+    /** A file below `src/` or an npm package's module, each served once at its own URL for the library modules, core views and clients that import it. */
     const sourceText = (url: string): Promise<string> | undefined => {
       if (SERVER_ONLY.includes(url)) return serverOnlyModule(url)
       const file = urlSource(url)
@@ -627,14 +612,13 @@ export const httpServer = defineResource({
       const modules = await moduleGraph(moduleScripts(html, url), textOf)
       const mapped = /<script\b[^>]*\btype\s*=\s*["']?importmap/i.test(html)
       const imports = mapped ? {} : importMap(modules)
-      for (const [plain, hashed] of Object.entries(imports)) if (!MODULES[plain]) named.set(hashed, modules.get(plain)!)
+      for (const [plain, hashed] of Object.entries(imports)) named.set(hashed, modules.get(plain)!)
       const preloads = withPreloads(html, [...new Set([...modules.keys()].map((m) => imports[m] ?? m))])
       res.writeHead(200, { 'content-type': FILE_TYPES['.html'], ...FRESH, ...ANY_ORIGIN }).end(mapped ? preloads : withImportMap(preloads, imports))
     }
 
     /** A module's text as the tower serves it at `url`, if it serves one there: what a page's imports reach. */
     async function moduleText(url: string): Promise<string | undefined> {
-      if (MODULES[url]) return servedModule(url)
       const source = sourceText(url)
       if (source) return source
       const client = /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/.exec(url)?.groups
@@ -1137,7 +1121,7 @@ export const httpServer = defineResource({
         return
       }
       if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return revalidated(req, res, 'text/javascript', towerClient(servedNow))
-      if (req.method === 'GET' && (MODULES[url] || /^\/(design\.css|fonts\/)/.test(url))) return design(req, res, url)
+      if (req.method === 'GET' && /^\/(design\.css|fonts\/)/.test(url)) return design(req, res, url)
       if (req.method === 'GET' && /^\/(lib|shared|src|vendor)\//.test(url)) return served(req, res, url.split('?')[0])
       const [pathname, search] = url.split('?')
       if (req.method === 'GET') return route(req, res, pathname, search === undefined ? '' : `?${search}`)

@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The command palette: a new way in to what exists, its entries and ranking shared",
-  "summary": "⌘K opens a palette that goes to any worker, floor, shelf entry or draft, runs any global command, any verb the selected worker and the floors offer and anything extensions add to them, and finds what the tower can teach. Entries and their ranking are pure shared code (/palette.js), a verb's words come from /verb-words.js, and a pick runs the same handler as the button or key it stands for: the palette takes no arguments and opens no form of its own.",
+  "summary": "⌘K opens a palette that goes to any worker, floor, shelf entry or draft, runs any global command, any verb the selected worker and the floors offer and anything extensions add to them, and finds what the tower can teach. Entries and their ranking are pure shared code (palette.ts), a verb's words come from verb-words.ts, and a pick runs the same handler as the button or key it stands for: the palette takes no arguments and opens no form of its own.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-21",
@@ -77,5 +77,5 @@ same palette, and only the drawing is a renderer's.
 - cmdk (shadcn's Command): React-only, and the page is plain modules; its ideas are borrowed.
 - The palette's code in the page alone: no capability lives in a renderer.
 
-**Impact.** Verbs added to the board's `actions` show up in the palette for free. `/palette.js` and `/verb-words.js`
+**Impact.** Verbs added to the board's `actions` show up in the palette for free. `palette.ts` and `verb-words.ts`
 are served modules.

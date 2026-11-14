@@ -93,8 +93,8 @@ test('library: spawnProblems says what is wrong with spawn fields, each at its p
 
 test('library: the reach check counts every way in but the library', () => {
   const reaching = (specifier: string) => reachesCore('extensions/autotidy/server.ts', specifier)
-  for (const specifier of ['../../src/shared/press.ts', '/cards.js', 'tower:media.js', '/shared/press.js', '/src/bridge/board.js', '/x/tower/text.js', '/vendor/marked.js']) assert.ok(reaching(specifier), specifier)
-  for (const specifier of ['/lib/words.js', '/tower.js', './own.ts', 'zod']) assert.ok(!reaching(specifier), specifier)
+  for (const specifier of ['../../src/shared/press.ts', '/shared/press.js', '/src/bridge/board.js', '/x/tower/text.js', '/vendor/marked.js']) assert.ok(reaching(specifier), specifier)
+  for (const specifier of ['/lib/words.js', '/tower.js', '/cards.js', 'tower:media.js', './own.ts', 'zod']) assert.ok(!reaching(specifier), specifier)
 })
 
 test('library: the core never imports it by path, and only a core view imports it by URL', () => {

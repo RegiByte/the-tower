@@ -102,7 +102,7 @@ it replaced.
   ([`commandLimitsLine`](ref:hub/extensions/quota/status.ts#commandLimitsLine)), and `quota/read-now` reads through the
   path a tick takes.
 - *Old names, gone at 2.0.* `POST /probe/run`, `GET /probe/<name>`, `board.probes`, the board's top-level copies of
-  the default command's limits, the probe words in `/cards.js` and the core's reading of old `p` facts: the
+  the default command's limits, the probe words in `cards.ts` and the core's reading of old `p` facts: the
   extension's names, `board.limits` and `defaultLimits` are the one way in.
 - *Closed months archived* by Tidy like any stream's ([[log-retention]]).
 

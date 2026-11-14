@@ -6,7 +6,7 @@
  *
  * Then, over a second system holding one worker the host stopped mid-turn, its card opened on its Reviews tab: every
  * module loads once on the page. A served module and the file it re-exports are one instance (`pressing`, `drawPanel`);
- * a press through `/press.js` holds a request open, and a click on the Reviews tab's Add note, a control of the same
+ * a press through `/lib/view.js` holds a request open, and a click on the Reviews tab's Add note, a control of the same
  * identity wired through the reviews client's own import, is ignored, sending nothing; and no file below `src/` or package is fetched twice, at its URL or at its hashed one.
  *
  *   npm run test:page-boot
@@ -92,14 +92,14 @@ function seedWorker(root: string) {
 /** In the page: what says each module loaded once, with the card view and the Reviews tab mounted. */
 const ONCE = `(async () => {
   const same = async (served, file, name) => (await import(served))[name] === (await import(file))[name]
-  const identical = { pressing: await same('/press.js', '/shared/press.js', 'pressing'), drawPanel: await same('/panels.js', '/shared/panel-kit.js', 'drawPanel'), libraryPressing: await same('/lib/view.js', '/shared/press.js', 'pressing'), libraryDrawPanel: await same('/lib/view.js', '/shared/panel-kit.js', 'drawPanel') }
+  const identical = { pressing: await same('/lib/view.js', '/shared/press.js', 'pressing'), drawPanel: await same('/lib/view.js', '/shared/panel-kit.js', 'drawPanel') }
   const library = await Promise.allSettled(${JSON.stringify(libraryUrls())}.map((url) => import(url)))
   const unloaded = ${JSON.stringify(libraryUrls())}.filter((_, n) => library[n].status === 'rejected')
   const add = document.querySelector('[data-view="reviews/thread"] [data-note-add]')
   const twin = add.cloneNode(true)
   twin.hidden = true
   document.body.append(twin)
-  const { pressing } = await import('/press.js')
+  const { pressing } = await import('/lib/view.js')
   let release
   const held = pressing(twin, () => new Promise((r) => (release = r)))
   await fetch('/config?before-press')
@@ -131,7 +131,7 @@ async function appendsDuringPress(requests: string[]) {
 
 /** What a page loading each module once fails to show, in words. */
 const onceProblems = (o: Once, appends: number, errors: string[]) => [
-  ...Object.entries(o.identical).flatMap(([name, same]) => (same ? [] : [`${name} is two instances: the served module's is not its file's`])),
+  ...Object.entries(o.identical).flatMap(([name, same]) => (same ? [] : [`${name} is two instances: the library's is not its file's`])),
   ...(o.unloaded.join() === SERVER_ONLY.join() ? [] : [`the library modules a browser couldn't load are ${o.unloaded.join(', ') || 'none'}, not ${SERVER_ONLY.join(', ')} alone`]),
   ...(o.busy ? [] : ["the Reviews tab's Add note isn't busy while a control of its identity is pressed through /press.js"]),
   ...(appends === 0 ? [] : [`the Reviews tab's Add note sent ${appends} note(s) while a control of its identity was in flight`]),
