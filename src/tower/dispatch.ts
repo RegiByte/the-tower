@@ -30,7 +30,7 @@ import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Repl
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { uploadRefusal } from '../shared/uploads.ts'
-import { hostSpawn, newSessionId, oldHostSpawn, restoredPrompt, resumeRequest, spawnRequest, worktreeBrief, type HostStart, type Launch, type SpawnLaunch } from '../shared/launch.ts'
+import { hostSpawn, newSessionId, restoredPrompt, resumeRequest, spawnRequest, worktreeBrief, type HostStart, type Launch, type SpawnLaunch } from '../shared/launch.ts'
 import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
 import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
@@ -58,7 +58,7 @@ import {
   type Runtime,
 } from '../shared/model.ts'
 import { projectCollectionsPath } from '../shared/paths.ts'
-import { promptPastes, sessionKeys, type FromHost, type ToAnyHost } from '../shared/protocol.ts'
+import { HOST_PROTOCOL, promptPastes, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
 import { REVIEWS } from '../shared/reviews.ts'
 import { STATUS_NAME } from '../shared/status-words.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
@@ -136,7 +136,7 @@ export const dispatch = defineResource({
     }
 
     /** A spawn answers once the system tracks its session, so whoever it answers reads the session by its id. */
-    async function host(msg: ToAnyHost): Promise<Answer> {
+    async function host(msg: ToHost): Promise<Answer> {
       const answer = await daemon(() => hostRequest(paths, msg))
       void system.refreshLive()
       if (msg.t === 'spawn' && answer.t === 'spawned') await system.tracked(msg.id, TRACK_TIMEOUT_MS)
@@ -165,51 +165,29 @@ export const dispatch = defineResource({
     const withSession = (id: string, act: () => Answer | Promise<Answer>) =>
       system.session(id) ? act() : apiError('not_found', `No session "${id}"`)
 
-    /** The host protocol that first takes `fact`. */
-    const FACT_PROTOCOL = 2
-
-    /** The host protocol that first logs a spawn's `facts`. */
-    const SPAWN_FACTS_PROTOCOL = 3
-
-    /** The host protocol that first takes a named `command`. */
-    const COMMAND_PROTOCOL = 4
-
-    /** The host protocol that first runs a spawn's whole `argv` and `env`, and takes no other spawn. */
-    const ARGV_PROTOCOL = 5
-
     /**
-     * A session started in the shape the running host takes, its protocol read just before, so a host restarted since
-     * the last poll is asked in its own. A host older than `SPAWN_FACTS_PROTOCOL` reads past a spawn's `facts`: the
-     * session would start without them. A host older than `COMMAND_PROTOCOL` spreads `argv` as its old array shape and
-     * fails on the object one a `command` implies. With no host running, the spawn fails as any request does.
+     * A session started on the running host, its protocol read just before, so a host restarted since the last poll is
+     * asked in its own. With no host running, the spawn fails as any request does.
      */
     async function start(s: HostStart): Promise<Answer> {
       await system.refreshLive()
-      const live = system.live()
-      if (!live || live.protocol >= ARGV_PROTOCOL) return host(hostSpawn(s, sessionCommand(readConfig(), s.runtime, s.command), MOD_DIR))
-      const refused =
-        (s.facts.length ? olderHost(SPAWN_FACTS_PROTOCOL, 'start a worker with its facts') : undefined) ??
-        (s.command !== undefined ? olderHost(COMMAND_PROTOCOL, 'start a worker under a named command') : undefined)
-      return refused ?? host(oldHostSpawn(s))
+      return hostRefused('start a session') ?? host(hostSpawn(s, sessionCommand(readConfig(), s.runtime, s.command), MOD_DIR))
     }
 
-    /** Why the running host, older than protocol `needs`, can't do something, so a verb that needs it refuses before it does anything. */
-    const olderHost = (needs: number, doing: string): ApiError | undefined => {
+    /**
+     * Why the running host, older than `HOST_PROTOCOL`, can't start a session or log a fact, so a verb that needs either
+     * refuses before it does anything.
+     */
+    const hostRefused = (doing: string): ApiError | undefined => {
       const live = system.live()
-      if (!live) return undefined
-      const protocol = live.protocol ?? 0
-      return protocol < needs
-        ? apiError('unavailable', `The running host is too old to ${doing} (protocol ${protocol}, this tower needs ${needs}): restart it with tower down host, then tower up (its running sessions stop, each resumable)`)
-        : undefined
+      if (!live || live.protocol >= HOST_PROTOCOL) return undefined
+      return apiError('unavailable', `The running host is too old to ${doing} (protocol ${live.protocol}, this tower needs ${HOST_PROTOCOL}): restart it with tower down host, then tower up (its running sessions stop, each resumable)`)
     }
-
-    /** Why the running host can't append a `tower.*` fact. */
-    const factRefused = (doing: string) => olderHost(FACT_PROTOCOL, doing)
 
     /** Only a card that offers `let-go` is let go: stranded, on duty, its latest conversation not yet resumed. */
     const letGo = (id: string) =>
       withSession(id, () => {
-        const refused = factRefused('let a worker go')
+        const refused = hostRefused('let a worker go')
         if (refused) return refused
         return boardOf().floors.some((f) => f.cards.some((c) => c.id === id && can(c, 'let-go')))
           ? host({ t: 'fact', id, fact: { hook_event_name: LET_GO } })
@@ -220,7 +198,7 @@ export const dispatch = defineResource({
     const logFact = (fact: RouteInput['fact'], caller: Caller) => {
       const id = caller.t === 'worker' ? caller.id : undefined
       if (!id || system.live()?.ids.has(id) === false) return apiError('refused', 'A fact is about the caller\'s own session: only a running worker logs one')
-      return factRefused('log a fact') ?? host({ t: 'fact', id, fact: { hook_event_name: `tower.${fact.name}`, ...('value' in fact && fact.value) } })
+      return hostRefused('log a fact') ?? host({ t: 'fact', id, fact: { hook_event_name: `tower.${fact.name}`, ...('value' in fact && fact.value) } })
     }
 
     /** A worker's act on a session is named in the session's log before it lands: the user's acts are the rest. */
@@ -234,7 +212,7 @@ export const dispatch = defineResource({
     /** `act` runs once `fact` names `by` in the session's log, when `by` is given. */
     const namedFirst = (id: string, fact: string, by: string | undefined, doing: string, act: () => Answer | Promise<Answer>) =>
       fromWorker(by, async () => {
-        const named = by ? (factRefused(doing) ?? (await actedBy(id, fact, by))) : OK
+        const named = by ? (hostRefused(doing) ?? (await actedBy(id, fact, by))) : OK
         return named.t === 'error' ? named : act()
       })
 
@@ -290,7 +268,7 @@ export const dispatch = defineResource({
           const before = system.session(id)!.facts
           const refused = promptRefused(id, before)
           if (refused) return refused
-          const unnamed = by ? factRefused(PROMPT_FROM_WORKER) : undefined
+          const unnamed = by ? hostRefused(PROMPT_FROM_WORKER) : undefined
           if (unnamed) return unnamed
           const typing = await daemon(() => typeText(paths, id, text))
           if (typing.t === 'error') return typing
@@ -357,7 +335,7 @@ export const dispatch = defineResource({
         fromWorker(by, async () => {
           const typed = sessionKeys(data)
           if (!typed) return OK
-          const named = by && !inBurst(system.session(id)!, by, Date.now()) ? (factRefused('name the worker that types keys') ?? (await keyedBy(id, by))) : OK
+          const named = by && !inBurst(system.session(id)!, by, Date.now()) ? (hostRefused('name the worker that types keys') ?? (await keyedBy(id, by))) : OK
           return named.t === 'error' ? named : host({ t: 'write', id, data: typed })
         }),
       )
@@ -388,7 +366,7 @@ export const dispatch = defineResource({
         withProject(projectId, () => {
           const hirer = everyCard(Date.now()).find((c) => c.id === by)!
           return inTurn(hirer.callsign, async () => {
-            const refused = factRefused(HIRE_FACT)
+            const refused = hostRefused(HIRE_FACT)
             if (refused) return refused
             const answer = await spawning()
             if (answer.t !== 'spawned') return answer

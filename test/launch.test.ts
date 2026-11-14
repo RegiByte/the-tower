@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf, type Session } from '../src/bridge/facts.ts'
 import { coreFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Merged } from '../src/bridge/launch.ts'
-import { CORE_FLAGS, EVERY_PART, hostSpawn, oldHostSpawn, resumeRequest, type HostStart } from '../src/shared/launch.ts'
+import { CORE_FLAGS, EVERY_PART, hostSpawn, resumeRequest, type HostStart } from '../src/shared/launch.ts'
 import { sessionCommand, type Config, type LogEvent, type SessionHeader } from '../src/shared/model.ts'
 import { UnsettledError, within } from '../src/tower/extensions.ts'
 
@@ -94,7 +94,6 @@ test('hostSpawn: the legacy argv always, a named command when given, the first w
   assert.deepEqual([spawn(multi, 'b').argv, spawn(multi, 'b').command], [['claude-mom', '--plugin-dir', '/mods', '--x'], 'b'])
   assert.deepEqual([spawn(multi, 'missing').argv, spawn(multi, 'missing').command], [['claude', '--plugin-dir', '/mods', '--x'], 'a'])
   assert.deepEqual([spawn(multi).argv, spawn(multi).command, spawn(multi).env], [['claude', '--plugin-dir', '/mods', '--x'], 'a', {}])
-  assert.deepEqual(oldHostSpawn({ ...start, command: 'b' }), { t: 'spawn', id: 'id', project: 'p', cwd: '/c', args: ['--x'], command: 'b', cols: 120, rows: 40 })
 })
 
 test('resumeRequest: carries the command it is given straight through to the host request', () => {
