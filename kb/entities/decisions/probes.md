@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-11",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-14",
   "refs": [
     "hub/extensions/quota/extension.json",
     "hub/extensions/quota/server.ts",
