@@ -181,14 +181,19 @@ function seedDesk() {
   execFileSync('git', ['-C', path.join(DESK, '.worktrees', 'odin-1'), '-c', 'user.name=test', '-c', 'user.email=test@localhost', 'commit', '-q', '-am', 'two'], { stdio: 'ignore' })
   cut('lark-3', 'main', {})
   cut('odin-1-review', 'tower/odin-1', { towerFrom: 'odin-1' })
-  const ended = (id: string, cwd: string, startedAt: number, argv: string[]) => {
+  const ended = (id: string, cwd: string, startedAt: number, argv: string[], facts: object[] = []) => {
     const header = { id, project: 'desk', cwd, argv, startedAt, cols: 80, rows: 24 }
-    writeFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), [header, [0.1, 'o', 'a worker\r\n'], [0.3, 'x', { exitCode: 0 }]].map((line) => JSON.stringify(line)).join('\n') + '\n')
+    const logged = facts.map((fact) => [0, 'h', fact])
+    writeFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), [header, ...logged, [0.1, 'o', 'a worker\r\n'], [0.3, 'x', { exitCode: 0 }]].map((line) => JSON.stringify(line)).join('\n') + '\n')
   }
   writeFileSync(path.join(ROOT, 'sessions', `${HEADLESS}.jsonl`), `{"id":"cut sho\n${JSON.stringify([0.1, 'h', { hook_event_name: 'SessionStart', cwd: DESK }])}\n`)
   writeFileSync(path.join(ROOT, 'sessions', `${FLOORLESS}.jsonl`), 'null\n')
   ended(DESK_SESSIONS.author, path.join(DESK, '.worktrees', 'odin-1'), DESK_STARTED, ['bash'])
-  ended(DESK_SESSIONS.reviewer, path.join(DESK, '.worktrees', 'odin-1-review'), DESK_STARTED + MIN, ['bash', '--', `/tower:review ${AUTHOR}`])
+  ended(DESK_SESSIONS.reviewer, path.join(DESK, '.worktrees', 'odin-1-review'), DESK_STARTED + MIN, ['bash', '--', `/reviews:review ${AUTHOR}`], [
+    { hook_event_name: 'tower.x.reviews.of', value: AUTHOR },
+    { hook_event_name: 'tower.exempt', from: 'hiring', by: 'reviews' },
+    { hook_event_name: 'tower.reports-to', callsign: AUTHOR, session: DESK_SESSIONS.author, by: 'reviews' },
+  ])
   ended(DESK_SESSIONS.lark, path.join(DESK, '.worktrees', 'lark-3'), DESK_STARTED + 2 * MIN, ['bash'])
   const past = { id: DESK_SESSIONS.past, project: 'desk', cwd: path.join(DESK, '.worktrees', 'odin-1'), argv: ['bash'], startedAt: DESK_STARTED - 3 * 24 * 60 * MIN, cols: 80, rows: 24 }
   writeStream('desk', 'runs', [[past.startedAt - 1_000, 'r', { policy: 'sweep.md', hash: sha('# Sweep, as it was'), id: past.id, start: 'hand', slot: null }]])
@@ -437,7 +442,6 @@ test('server: every read answers', async () => {
     ['/config', 'application/json', has('argv', 'projects')],
     [`/conversations/${SESSION}`, 'application/json', isArray],
     ['/archive/lab', 'application/json', isArray],
-    ['/reviews/lab', 'application/json', has('threads', 'authors')],
     ['/landing?project=lab&branch=feature', 'application/json', has('branch', 'repos')],
     [`/changes/${SESSION}`, 'application/json', isArray],
     [`/changes/${SESSION}?scope=uncommitted`, 'application/json', isArray],
@@ -853,7 +857,7 @@ test('server: an extension the config adds is started as x:<cap>, after the core
   assert.deepEqual(narrowedTo(pulse, expected), expected)
   const read: Reads['extensions'] = JSON.parse((await get('/extensions')).body)
   const exempted = (id: string) => (id === 'reviews' ? [{ session: DESK_SESSIONS.reviewer, callsign: REVIEWER, from: 'hiring' }] : [])
-  assert.deepEqual(read.extensions.map(({ words: _, ...e }) => e), msg.board.extensions.map((e) => ({ ...e, exempted: exempted(e.id) })), "the desk's reviewer, spawned on its prompt alone, is exempted by reviews")
+  assert.deepEqual(read.extensions.map(({ words: _, ...e }) => e), msg.board.extensions.map((e) => ({ ...e, exempted: exempted(e.id) })), "the desk's reviewer is exempted by reviews")
   assert.deepEqual(read.topology.graph['x:pulse'], ['core:config', 'core:system', 'core:publisher', 'core:dispatch', 'core:http', 'core:extensions', 'x:chime'])
   assert.equal(read.topology.startupOrder.at(-1), 'x:tally')
   assert.match(read.topology.mermaid, /\["x:pulse"\]/)
@@ -973,7 +977,7 @@ test("server: an extension's verb is called for the caller the CLI's headers cla
   assert.equal(errorCode(await post('pulse/nothing', {})), 'not_found')
 })
 
-test("server: an extension's ctx.read of a core read answers as over HTTP: a text file's text as written, and a legacy read", async () => {
+test("server: an extension's ctx.read of a core read answers as over HTTP: a text file's text as written", async () => {
   const peek = async (read: string, params: Record<string, string>) => {
     const answered = await post('pulse/peek', { read, params })
     assert.equal(answered.status, 200, answered.body)
@@ -981,7 +985,6 @@ test("server: an extension's ctx.read of a core read answers as over HTTP: a tex
   }
   assert.equal(await peek('tower/shelf/<project>/<n>/<file>', { project: 'lab', n: '0', file: 'report/index.html' }), readFileSync(SHOWN, 'utf8'), 'an html shelf file, unframed')
   assert.equal((await peek('tower/shelf/<project>/<n>/<file>', { project: 'lab', n: '0', file: 'report/chart.png' }) as { code: string }).code, 'invalid', 'a file that is no text, whose bytes are left to HTTP')
-  assert.deepEqual(await peek('tower/reviews/<project>', { project: 'lab' }), JSON.parse((await get('/reviews/lab')).body))
 })
 
 test("server: an extension's read answers by its path, and its deprecated verb says so in RFC 9745's headers", async () => {
@@ -1076,7 +1079,7 @@ const boardWhere = (holds: (b: Board) => boolean) => settled(async () => ((await
 const floorOf = (b: Board, id: string) => b.floors.find((f) => f.id === id)!
 /** A floor's threads as the reviews extension folds them. */
 const reviewThreads = (b: Board, id: string) => (floorOf(b, id).x!.reviews as FloorPart).threads
-const NO_TIDY = { worktrees: [], branches: [], threads: [], prune: [], logs: [], streams: [] }
+const NO_TIDY = { worktrees: [], branches: [], prune: [], logs: [], streams: [] }
 const threadText = (checkout: string) => `# ${checkout}\n\n## NEMO-92 · 2026-10-06 14:32 · n1\nShip it.\n`
 const threadsIn = (project: string) => path.join(ROOT, 'collections', project, 'reviews')
 
@@ -1092,26 +1095,28 @@ const cutWithWork = (hub: string, name: string) => {
 test("reviews: Tidy lists the thread of a checkout whose work landed and files it as <checkout>@<stamp>.md, unchanged, its checkout's name freed", async () => {
   mkdirSync(threadsIn('lab'), { recursive: true })
   writeFileSync(path.join(threadsIn('lab'), 'landed.md'), threadText('landed'))
-  await boardWhere((b) => floorOf(b, 'lab').tidy.threads.includes('landed'))
-  const tidied = await command('tidy', { project: 'lab', plan: { ...NO_TIDY, threads: ['landed'] } })
-  assert.deepEqual(tidied.threads, ['landed'])
+  const tidyKeys = (b: Board, project: string) => (b.adds[`floor:${project}`]?.tidy ?? []).map((e) => e.key)
+  await boardWhere((b) => tidyKeys(b, 'lab').includes('landed'))
+  const tidied = await command('tidy', { project: 'lab', plan: { ...NO_TIDY, x: { reviews: ['landed'] } } })
+  assert.deepEqual(tidied.x, { reviews: { done: ['landed'], skipped: [] } })
   const filed = readdirSync(threadsIn('lab')).filter((id) => id.startsWith('landed@'))
   assert.equal(filed.length, 1)
   assert.match(filed[0], /^landed@\d{4}-\d\d-\d\d-\d{4}\.md$/)
   assert.equal(readFileSync(path.join(threadsIn('lab'), filed[0]), 'utf8'), threadText('landed'))
   assert.ok(!existsSync(path.join(threadsIn('lab'), 'landed.md')))
-  await boardWhere((b) => !floorOf(b, 'lab').tidy.threads.includes('landed'))
+  await boardWhere((b) => !tidyKeys(b, 'lab').includes('landed'))
 })
 
 test("reviews: a discard notes each repo's branch and tip on the checkout's thread, then files the thread", async () => {
   const { tree, held } = cutWithWork(HUB, 'lost')
   const discarded = await command('worktree/discard', { project: 'lab', name: 'lost', author: 'NEMO-92', held })
   assert.ok(!existsSync(tree))
-  assert.match(discarded.thread!, /^lost@\d{4}-\d\d-\d\d-\d{4}\.md$/)
+  const filedId = (discarded.done!.reviews as { item: { id: string } }).item.id
+  assert.match(filedId, /^lost@\d{4}-\d\d-\d\d-\d{4}\.md$/)
   assert.ok(!existsSync(path.join(threadsIn('lab'), 'lost.md')))
   const [{ tip }] = discarded.tips
   const unpushed = gitIn(HUB, 'log', '--format=%h %s', held[0].head, '--not', '--remotes').trim().split('\n')
-  const thread = parseThread(readFileSync(path.join(threadsIn('lab'), discarded.thread!), 'utf8'))
+  const thread = parseThread(readFileSync(path.join(threadsIn('lab'), filedId), 'utf8'))
   assert.deepEqual(
     thread.messages.map(({ author, n }) => ({ author, n })),
     [{ author: 'NEMO-92', n: 1 }],
@@ -1134,12 +1139,12 @@ test("reviews: a landed thread is the reviews extension's tidy entry, belonging 
     cap: 'reviews',
   })
   const tidied = await command('tidy', { project: 'lab', plan: { ...NO_TIDY, x: { reviews: ['shipped'] } } })
-  assert.deepEqual([tidied.x, tidied.threads], [{ reviews: { done: ['shipped'], skipped: [] } }, ['shipped']])
+  assert.deepEqual(tidied.x, { reviews: { done: ['shipped'], skipped: [] } })
   assert.equal(readdirSync(threadsIn('lab')).filter((id) => id.startsWith('shipped@')).length, 1)
 })
 
 test('reviews: a resolution is a note marking earlier notes resolved, read as a plain note by the thread format, and resolved notes leave what is unseen', async () => {
-  const note = (author: string, body: string) => command('review/append', { project: 'lab', checkout: 'resolving', author, body })
+  const note = async (author: string, body: string) => assert.equal((await post('reviews/append', { project: 'lab', checkout: 'resolving', author, body })).status, 200)
   await note('NEMO-92', 'Why one by one?')
   await note('NEMO-92', 'And this name?')
   await note('ODIN-07', 'Fixed both.')
@@ -1163,9 +1168,9 @@ test('reviews: a resolution is a note marking earlier notes resolved, read as a 
 test('reviews: on a floor keeping no threads, Tidy lists and files no thread, and a discard, which nothing there records, is refused and touches nothing', async () => {
   mkdirSync(threadsIn('bare'), { recursive: true })
   writeFileSync(path.join(threadsIn('bare'), 'landed.md'), threadText('landed'))
-  const board = await boardWhere((b) => floorOf(b, 'bare').worktrees !== undefined && floorOf(b, 'lab').tidy.threads !== undefined)
-  assert.deepEqual(floorOf(board, 'bare').tidy.threads, [])
-  assert.equal(errorCode(await post('tidy', { project: 'bare', plan: { ...NO_TIDY, threads: ['landed'] } })), 'refused')
+  const board = await boardWhere((b) => floorOf(b, 'bare').worktrees !== undefined)
+  assert.deepEqual(board.adds['floor:bare']?.tidy ?? [], [])
+  assert.equal(errorCode(await post('tidy', { project: 'bare', plan: { ...NO_TIDY, x: { reviews: ['landed'] } } })), 'refused')
   const { tree, held } = cutWithWork(BARE, 'thrown')
   const atRisk = await boardWhere((b) => floorOf(b, 'bare').worktrees.some((w) => w.name === 'thrown' && w.state === 'at-risk'))
   assert.deepEqual(floorOf(atRisk, 'bare').worktrees.find((w) => w.name === 'thrown')!.verbs, [], 'nothing records a discard there, so none is offered')
@@ -1484,7 +1489,7 @@ test('server: no hidden file is served below a shown page or a renderer', async 
 })
 
 
-test('server: review threads written before the reviews extension read the same: threads, landed, filed, unseen, history and tower x reviews thread', async () => {
+test('server: review threads written before the reviews extension read the same: landed, filed, unseen, history and tower x reviews thread', async () => {
   const board = await settled(
     async () => {
       const msg = (await firstEvent('/board')) as BoardMsg
@@ -1495,34 +1500,23 @@ test('server: review threads written before the reviews extension read the same:
   )
   const desk = board.floors.find((f) => f.id === 'desk')!
   const lark = deskCallsign(DESK_SESSIONS.lark)
-  const note = (checkout: string) => ['review/append', { project: 'desk', checkout }] as const
-  const noting = (checkout: string) => ({ verbs: ['note'], calls: { note: note(checkout) }, actions: [{ verb: 'note', call: note(checkout) }] })
-  const quiet = { verbs: [], calls: {}, actions: [] }
-  const last = (author: string, at: number, n: number) => ({ author, at: localStamp(at), n })
-  assert.deepEqual(desk.threads, [
-    { checkout: 'kite-2', id: 'kite-2.md', tag: 'merry-grove', messages: 1, last: last('Ana', DESK_STARTED - 10 * MIN, 1), landed: true, state: { is: 'gone' }, ...quiet },
-    { checkout: 'main', id: 'main.md', tag: 'chalk-whale', messages: 1, last: last('Ana', DESK_STARTED, 1), landed: true, state: { is: 'live' }, ...noting('main') },
-    { checkout: 'odin-1', id: 'odin-1.md', tag: 'vivid-badger', messages: 4, last: last('Ana', DESK_STARTED + 4 * MIN, 4), landed: false, state: { is: 'live' }, ...noting('odin-1') },
-  ])
-  assert.deepEqual(desk.tidy.threads, ['kite-2', 'main'], 'Tidy files the threads whose work landed')
+  const note = (checkout: string) => ['reviews/append', { project: 'desk', checkout }]
+  assert.deepEqual((board.adds['floor:desk']?.tidy ?? []).filter((e) => e.cap === 'reviews').map((e) => e.key), ['kite-2', 'main'], 'Tidy files the threads whose work landed')
   const kept = desk.collections.find((c) => c.id === 'reviews')!
   assert.deepEqual([kept.label, kept.description, kept.items.map((i) => i.id)], ['Reviews', 'One review thread per checkout.', ['kite-2.md', FILED_ID, 'main.md', 'odin-1.md']], "the config's line names the collection")
-  const served = await get('/reviews.js')
-  assert.equal(served.status, 200)
-  for (const name of ['parseThread', 'printThread', 'appended', 'unseenBy', 'landedThreads', 'anchorState', 'sendText']) assert.match(served.body, new RegExp(`\\b${name}\\b`), `/reviews.js serves ${name}`)
 
   const filed = { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT }
   const cardOf = (id: string) => {
     const c = desk.cards.find((c) => c.id === id)!
-    return { reviews: c.reviews, checkoutState: c.checkoutState, threadState: c.threadState, unseen: c.unseen, note: c.calls.note }
+    const part = c.x?.reviews as { of?: string; threadState?: unknown; unseen?: number; note?: unknown }
+    return { of: part.of, checkoutState: c.checkoutState, threadState: part.threadState, unseen: part.unseen, note: part.note }
   }
-  assert.deepEqual(cardOf(DESK_SESSIONS.author), { reviews: undefined, checkoutState: { is: 'live' }, threadState: { is: 'live' }, unseen: 2, note: note('odin-1') })
-  assert.deepEqual(cardOf(DESK_SESSIONS.reviewer), { reviews: AUTHOR, checkoutState: { is: 'live' }, threadState: { is: 'live' }, unseen: 1, note: note('odin-1') }, "a reviewer's thread is its author's")
-  const landed = { is: 'landed', on: 'main', empty: true, filed }
-  assert.deepEqual(cardOf(DESK_SESSIONS.lark), { reviews: undefined, checkoutState: landed, threadState: landed, unseen: undefined, note: undefined }, 'its work landed, its thread filed after it started')
+  assert.deepEqual(cardOf(DESK_SESSIONS.author), { of: undefined, checkoutState: { is: 'live' }, threadState: { is: 'live' }, unseen: 2, note: note('odin-1') })
+  assert.deepEqual(cardOf(DESK_SESSIONS.reviewer), { of: AUTHOR, checkoutState: { is: 'live' }, threadState: { is: 'live' }, unseen: 1, note: note('odin-1') }, "a reviewer's thread is its author's")
+  assert.deepEqual(cardOf(DESK_SESSIONS.lark), { of: undefined, checkoutState: { is: 'landed', on: 'main', empty: true }, threadState: { is: 'landed', on: 'main', empty: true, filed }, unseen: undefined, note: undefined }, 'its work landed, its thread filed after it started')
 
   const message = (author: string, at: number, n: number, body: string, more: object = {}) => ({ author, at: localStamp(at), n, anchors: [], body, ...more })
-  assert.deepEqual(JSON.parse((await get('/reviews/desk')).body), {
+  assert.deepEqual(JSON.parse((await get('/reviews/history/desk')).body), {
     threads: [
       { id: 'kite-2.md', checkout: 'kite-2', messages: [message('Ana', DESK_STARTED - 10 * MIN, 1, 'Where did this go?')] },
       { id: 'main.md', checkout: 'main', messages: [message('Ana', DESK_STARTED, 1, 'The main checkouts look clean.')] },
@@ -1555,7 +1549,7 @@ test('server: review threads written before the reviews extension read the same:
   assert.ok((await threadSaid(DESK_SESSIONS.lark, '?checkout=kite-2')).includes(`(${threads}/kite-2.md) New to you since your last note: n1.\n`), "a worker that never wrote on a thread has seen none of it")
 })
 
-test("server: the reviews extension holds the threads under its own names, and the old ones answer deprecated, naming them", async () => {
+test("server: the reviews extension holds the threads under its own names, and owns their collection", async () => {
   const board = await settled(
     async () => {
       const msg = (await firstEvent('/board')) as BoardMsg
@@ -1576,13 +1570,6 @@ test("server: the reviews extension holds the threads under its own names, and t
   assert.deepEqual(cardPart(DESK_SESSIONS.lark), { thread: 'lark-3', threadState: { is: 'landed', on: 'main', empty: true, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } }, filed: { id: FILED_ID, tag: tagOf(FILED_ID), at: FILED_AT } })
   assert.deepEqual(desk.main, { dirty: 0, ahead: 0, changed: 0, inUse: false })
 
-  const history = await get('/reviews/history/desk')
-  const old = await get('/reviews/desk')
-  assert.deepEqual([old.status, old.body, old.headers.deprecation, old.headers.link], [200, history.body, '@0', '</reviews/history/<project>>; rel="successor-version"'])
-  const served = await get('/reviews.js')
-  assert.deepEqual([served.headers.deprecation, served.headers.link], ['@0', '</x/reviews/reviews.js>; rel="successor-version"'])
-  const appended = await post('review/append', { project: 'desk', checkout: 'kite-2', author: 'Ana', body: 'Through the old name.' })
-  assert.deepEqual([appended.status, JSON.parse(appended.body).n, appended.headers.deprecation], [200, 2, '@0'])
   const refused = await post('collection/create', { project: 'desk', collection: 'reviews', name: 'by hand', ext: 'md', content: '# x' })
   assert.deepEqual([errorCode(refused), JSON.parse(refused.body).message], ['refused', 'reviews owns reviews: use reviews/append'])
   const said = JSON.parse((await get(`/reviews/said/desk?checkout=odin-1&reader=${AUTHOR}&sender=Ana`)).body)
@@ -1596,14 +1583,14 @@ test("server: an archived card carries the extensions' parts and the old fields 
   )).find((c) => c.id === DESK_SESSIONS.past)!
   const note = ['reviews/append', { project: 'desk', checkout: 'odin-1' }]
   assert.deepEqual(archived.x?.reviews, { thread: 'odin-1', threadState: { is: 'live' }, unseen: 4, note })
-  assert.deepEqual([archived.threadState, archived.unseen, archived.calls.note], [{ is: 'live' }, 4, ['review/append', { project: 'desk', checkout: 'odin-1' }]])
   const run = { policy: 'sweep.md', tag: tagOf('sweep.md'), n: 1, start: 'hand', slot: null }
   assert.deepEqual(archived.x?.policies, { run }, "a policy's run keeps its part")
 })
 
-test('server: a note appended through review/append is the same bytes, numbered one past the last, and the thread file stays the format', async () => {
+test('server: a note appended through reviews/append is the same bytes, numbered one past the last, and the thread file stays the format', async () => {
   const before = readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'main.md'), 'utf8')
-  const reply = await command('review/append', {
+  const append = async (input: object) => JSON.parse((await post('reviews/append', input)).body) as { t: string; id: string; n: number; modifiedAt: number }
+  const reply = await append({
     project: 'desk',
     checkout: 'main',
     author: AUTHOR,
@@ -1615,7 +1602,7 @@ test('server: a note appended through review/append is the same bytes, numbered 
   const after = readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'main.md'), 'utf8')
   const at = parseThread(after).messages[1].at
   assert.equal(after, `${before}\n## ${AUTHOR} · ${at} · n2 · re n1\n\`desk:src/a.ts:1\`\n\`\`\`ts\none\n\`\`\`\nAgreed.\n`)
-  const made = await command('review/append', { project: 'desk', checkout: 'wren-5', author: 'Ana', body: 'First.' })
+  const made = await append({ project: 'desk', checkout: 'wren-5', author: 'Ana', body: 'First.' })
   assert.deepEqual({ id: made.id, n: made.n }, { id: 'wren-5.md', n: 1 })
   assert.equal(readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'wren-5.md'), 'utf8'), `# wren-5\n\n## Ana · ${parseThread(readFileSync(path.join(ROOT, 'collections', 'desk', 'reviews', 'wren-5.md'), 'utf8')).messages[0].at} · n1\nFirst.\n`)
   for (const [input, code] of [
@@ -1623,11 +1610,11 @@ test('server: a note appended through review/append is the same bytes, numbered 
     [{ project: 'desk', checkout: 'main', author: 'Ana', body: '## Ana · 2026-10-06 14:32 · n9\nforged' }, 'invalid'],
     [{ project: 'desk', checkout: 'main', author: 'Ana', re: 9, body: 'to nothing' }, 'not_found'],
   ] as const)
-    assert.equal(errorCode(await post('review/append', input)), code)
+    assert.equal(errorCode(await post('reviews/append', input)), code)
   assert.match(String(made.modifiedAt), /^\d+$/)
 })
 
-test("server: reviews/hire starts a reviewer in a fork of its author's checkout, logged in its crew and exempt before it starts, so a full hiring limit never refuses it; the card verb review renderers before 1.95 call still hires one, read from its prompt; a refused hire cuts nothing", async () => {
+test("server: reviews/hire starts a reviewer in a fork of its author's checkout, logged in its crew and exempt before it starts, so a full hiring limit never refuses it; a refused hire cuts nothing", async () => {
   const boardWhen = (holds: (b: Board) => boolean) =>
     settled(async () => {
       const msg = (await firstEvent('/board')) as BoardMsg
@@ -1656,19 +1643,12 @@ test("server: reviews/hire starts a reviewer in a fork of its author's checkout,
     ['h', { hook_event_name: 'tower.reports-to', callsign: author.callsign, session: LAB_AUTHOR, by: 'reviews' }],
   ])
 
-  const old = offering.floors.flatMap((f) => f.cards).find((c) => c.id === LAB_AUTHOR)!.calls.review!
-  assert.deepEqual(old, ['spawn', { project: 'lab', cut: { from: 'main' }, prompt: `/tower:review ${author.callsign}` }])
-  const legacy = await command('spawn', { ...old[1], by: SESSION, hire: true })
-  const legacyLog = await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${legacy.id}.jsonl`), 'utf8'), (log) => log.includes('"o"'))
-  assert.ok(!legacyLog.includes('tower.exempt') && !legacyLog.includes('tower.x.reviews'))
-
-  const hiredBoard = await boardWhen((b) => [hired.id, legacy.id].every((id) => cardIn(b, id)?.reportsTo === LAB_AUTHOR))
-  const reviewer = { reviews: author.callsign, of: author.callsign, crew: { callsign: author.callsign, session: LAB_AUTHOR, by: 'reviews' }, exempt: [{ from: 'hiring', by: 'reviews' }], reportsTo: LAB_AUTHOR, hiredBy: SESSION, review: undefined }
-  const read = (id: string) => {
-    const c = cardIn(hiredBoard, id)!
-    return { reviews: c.reviews, of: (c.x?.reviews as { of?: string }).of, crew: c.crew, exempt: c.exempt, reportsTo: c.reportsTo, hiredBy: c.hiredBy?.session, review: c.calls.review }
-  }
-  assert.deepEqual([read(hired.id), read(legacy.id)], [reviewer, reviewer])
+  const hiredBoard = await boardWhen((b) => cardIn(b, hired.id)?.reportsTo === LAB_AUTHOR)
+  const c = cardIn(hiredBoard, hired.id)!
+  assert.deepEqual(
+    { of: (c.x?.reviews as { of?: string }).of, crew: c.crew, exempt: c.exempt, reportsTo: c.reportsTo, hiredBy: c.hiredBy?.session },
+    { of: author.callsign, crew: { callsign: author.callsign, session: LAB_AUTHOR, by: 'reviews' }, exempt: [{ from: 'hiring', by: 'reviews' }], reportsTo: LAB_AUTHOR, hiredBy: SESSION },
+  )
   assert.ok(!hiredBoard.adds[`card:${hired.id}`]?.actions?.some((a) => 'verb' in a && a.verb === 'reviews/hire'))
 
   const again = await post('reviews/hire', { project: 'lab', of: cardIn(hiredBoard, hired.id)!.callsign, by: SESSION })

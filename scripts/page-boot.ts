@@ -143,7 +143,7 @@ const onceProblems = (o: Once, appends: number, errors: string[]) => [
 /** The second check: one worker's card on its Reviews tab, every module loaded once. */
 async function once() {
   await withTower('page-once', seedWorker, async (url) => {
-    const { result, appends, errors } = await withPage(`${url}/#${WORKER}/reviews`, {}, async (page) => {
+    const { result, appends, errors } = await withPage(`${url}/#v/tower/card/${encodeURIComponent(`card:${WORKER}`)};reviews/thread`, {}, async (page) => {
       await page.eval(until('[data-view="tower/card"]', '[data-view="reviews/thread"] [data-note-add]'))
       const result = (await page.eval(ONCE)) as Once
       return { result, appends: await appendsDuringPress(page.requests), errors: page.errors }

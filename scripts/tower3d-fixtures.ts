@@ -27,7 +27,7 @@ import { DEFAULT_KEYS } from '/lib/keys.js'
 import type { Board, Card, CommandLimits, Floor, Status } from '/lib/board.js'
 import type { RepoChanges } from '/lib/changes.js'
 import { DRAFTS } from '../extensions/drafts/client/drafts.ts'
-import { REVIEWS, anchorStates, parseThread, resolvedIn, reviewPrompt, threadCheckoutOf, threadId, unseenBy, type AnchorStates } from '../extensions/reviews/client/reviews.ts'
+import { REVIEWS, anchorStates, parseThread, resolvedIn, threadCheckoutOf, threadId, unseenBy, type AnchorStates } from '../extensions/reviews/client/reviews.ts'
 import { threadMarks } from '../extensions/reviews/client/anchors.ts'
 import type { CardPart, FloorPart, NoteCall } from '../extensions/reviews/threads.ts'
 import type { ProbeStatus } from '../extensions/quota/client/quota.ts'
@@ -134,7 +134,6 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
     checkoutState: { is: 'live' },
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
     ...(f.reviews !== undefined && {
-      reviews: callsign(idOf(project, f.reviews)),
       crew: { callsign: callsign(idOf(project, f.reviews)), session: idOf(project, f.reviews), by: 'reviews' },
       exempt: [{ from: 'hiring', by: 'reviews' }],
       x: { reviews: { of: callsign(idOf(project, f.reviews)) } },
@@ -249,7 +248,7 @@ const worktreesOf = (f: FloorFacts): Floor['worktrees'] =>
   })
 
 /** A floor's Tidy: what the bridge would prune from its cards and worktrees; fixture floors keep no branches and no old logs. */
-const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], threads: [], prune: prunable(cards, worktrees, cards), logs: [], streams: [] })
+const tidyOf = (cards: Card[], worktrees: Floor['worktrees']): Floor['tidy'] => ({ worktrees: [], branches: [], prune: prunable(cards, worktrees, cards), logs: [], streams: [] })
 
 /** A fixture board and what the page reads beside it: its floors' archived cards, newest first, and their files' texts. */
 type Built = { board: Board; archive: Card[] } & Omit<FixtureFile, 'at' | 'boards'>
@@ -461,6 +460,9 @@ const party = (now: number) => boardOf(PARTY_GUESTS.map((guests, i) => ({
 /** The callsign of the fixture worker at `n` on `project`. */
 const who = (project: string, n: number) => callsign(idOf(project, n))
 
+/** A reviewer's first prompt, as `reviews/hire` starts it on the callsign of the worker whose work it reviews. */
+const reviewing = (callsign: string, tell: boolean) => `/reviews:review ${callsign}${tell ? ' tell' : ''}`
+
 /** The review floor's checkouts: an author with a reviewer beside it, an author answered, one whose worker went home. */
 const REVIEWED = { author: 'retry-budget', answered: 'readme', gone: 'old-flags' }
 
@@ -558,7 +560,7 @@ const review = (now: number, reviewed = false) => boardOf([{
   id: 'lab', name: 'lab', color: '#5fb3b3', repos: ['/work/lab-api'], threads: reviewThreads(), changes: { 0: AUTHOR_CHANGES },
   workers: [
     { status: 'working', prompt: 'Add a retry budget to the scheduler', tool: 'Edit', worktree: REVIEWED.author, context: 38, turns: 7, ago: 40 },
-    { status: reviewed ? 'exited' : 'working', prompt: reviewPrompt(who('lab', 0), false), tool: 'Bash', worktree: 'retry-budget-review', reviews: 0, subagents: 1, ago: 12 },
+    { status: reviewed ? 'exited' : 'working', prompt: reviewing(who('lab', 0), false), tool: 'Bash', worktree: 'retry-budget-review', reviews: 0, subagents: 1, ago: 12 },
     { status: 'done', waiting: true, prompt: 'Document the port', answer: 'Added the port to the README.', worktree: REVIEWED.answered, turns: 3, ago: 30 },
     { status: 'idle', prompt: 'Look around', answer: 'Looked.', ago: 8 },
     { status: 'exited', prompt: 'Drop the old flags', answer: 'Dropped three.', worktree: REVIEWED.gone, ago: 180 },
@@ -644,7 +646,7 @@ const crews = (now: number) => boardOf([
       hire(0, 74, 'Port the readers'),
       hire(0, 72, 'Port the writers', { status: 'done', answer: 'Ported.' }),
       hire(0, 70, 'Update the docs', { status: 'exited', answer: 'Documented.' }),
-      hire(1, 68, reviewPrompt(who('crew', 1), false), { worktree: 'storage-split-review', reviews: 1 }),
+      hire(1, 68, reviewing(who('crew', 1), false), { worktree: 'storage-split-review', reviews: 1 }),
       hire(0, 66, 'Fix the flaky test'),
       hire(0, 64, 'Profile the cache'),
       hire(0, 62, 'Trim the indexes', { status: 'idle', answer: 'Trimmed.' }),
@@ -722,7 +724,7 @@ const breakroom = (now: number) => boardOf([
       { status: 'working', prompt: 'Plan the release', tool: 'Read', ago: 40 },
       waitingHire(0, 30, 20, 'List the open issues', 'Seven, two of them blockers.'),
       { status: 'working', prompt: 'Rework the release script', tool: 'Edit', worktree: 'release-script', ago: 35 },
-      hire(2, 25, reviewPrompt(who('quiet', 2), false), { status: 'done', hirersPrompt: true, waiting: true, left: 15, answer: 'Two notes left on the thread.', tool: undefined, worktree: 'release-script-review', reviews: 2 }),
+      hire(2, 25, reviewing(who('quiet', 2), false), { status: 'done', hirersPrompt: true, waiting: true, left: 15, answer: 'Two notes left on the thread.', tool: undefined, worktree: 'release-script-review', reviews: 2 }),
     ],
   },
 ], now)

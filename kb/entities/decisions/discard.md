@@ -53,8 +53,8 @@ thread ([[review-threads]]).
   says which it keeps). Once all is removed the core raises `tower/discard.done` (`{project, name, author, tips,
   kept}`, `reported` in the reply's `done`), and the reviews answer files the thread as Tidy files a landed one, so a
   discard refused anywhere before (by an answer, or by git) leaves the thread live. The reply names each tip and each record
-  ([`discardedLine`](ref:hub/src/shared/worktree-words.ts#discardedLine)); its `thread`, the reviews record's item,
-  is kept until 2.0.
+  ([`discardedLine`](ref:hub/src/shared/worktree-words.ts#discardedLine)); the filed thread is named only in the
+  reviews answer, under `done`.
 - Answers are independent: one that answered before another refused keeps what it recorded (the reviews note, on a
   live thread, naming tips that are still on their branches), as a sequence keeps what is done. A guard that would
   stop a discard wraps `tower/worktree/discard` or the hook with `around`, outside every answer.

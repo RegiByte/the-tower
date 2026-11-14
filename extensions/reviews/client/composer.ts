@@ -1,10 +1,10 @@
 import { type Card, type Lines, noLongerOffered } from '/lib/board.js'
-import type { Replies } from '/lib/extension.js'
 import { commandOf } from '/lib/keys.js'
 import { type Mount, pressing } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { anchorWhere, linesAnchor } from './anchors.ts'
 import { noteCallOf, threadCheckout } from './panel.ts'
+import type { Appended } from './reviews.ts'
 
 /**
  * `reviews/composer`: a note on lines picked in a worker's Changes, added to the review thread of its checkout under
@@ -58,7 +58,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
       const call = noteCallOf(card)
       if (!call) throw new Error(noLongerOffered(card.callsign, 'note'))
       const [verb, input] = call
-      return tower.call(verb as never, { ...input, author: board.user.name, anchors: [linesAnchor(lines)], body: text.value } as never) as Promise<Replies['review/append']>
+      return tower.call(verb as never, { ...input, author: board.user.name, anchors: [linesAnchor(lines)], body: text.value } as never) as Promise<Appended>
     }).catch((err: Error) => void kit.toast(err.message))
     if (!reply) return
     kit.toast(`n${reply.n} is on the thread of ${threadCheckout(card)}`)

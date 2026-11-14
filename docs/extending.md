@@ -836,7 +836,7 @@ is no entry's. Set `command` from `ctx.commands`, and a reader of several accoun
 **Reviewers.** The reviews extension hires a reviewer with `reviews/hire {project, of, by?, tell?}`: a spawn
 in a fork of the author's checkout whose `x.reviews.of` is logged before it starts, and whose launch contributor puts
 it in the author's crew and out of the hiring limits (`tower.reports-to`, `tower.exempt`). A card reads it at
-`x.reviews.of` (`reviewerOf` in `/x/reviews/reviews.js`), its `crew` and its `exempt`. A reviewer known only by its first prompt `/tower:review <CALLSIGN>`, reads the same.
+`x.reviews.of` (`reviewerOf` in `/x/reviews/reviews.js`), its `crew` and its `exempt`.
 `floor.git` says every dir of the floor is a git repo, so a checkout of it can be forked.
 
 **Folds and contributions** put an extension on the board. A subject is anything the board shows that
@@ -1602,7 +1602,6 @@ modules beside it:
 | `/media.js`, `/repos.js` | `/lib/files.js` |
 | `/design.js` | `/lib/design.js` |
 | `/termkeys.js` | nothing: `mountTermView` of `/lib/terminal.js` takes your keymap |
-| `/reviews.js` | `/x/reviews/reviews.js` |
 | `tower:<name>.js`, in an extension's server code | `/lib/<module>.js`, the line a client writes |
 
 The library was chosen name by name, so it holds fewer names than these modules served. `test/served-exports.json`
@@ -1614,8 +1613,6 @@ it, with RFC 9745's `Deprecation` and a `Link` to itself.
 
 | Deprecated | Use | Since |
 |---|---|---|
-| `POST /review/append` | `POST /reviews/append` | 1.93 |
-| `GET /reviews/<project>` | `GET /reviews/history/<project>` | 1.93 |
 | `tower x <cap> <name> '<json>'` | the word's flags ([Words](#extensions)); it says on stderr what to type | 1.153 |
 
 **The board and what reads it.** An old field is a copy of the part it moved to, as it stood at the move, so new
@@ -1623,14 +1620,8 @@ fields appear only under `x`. A renderer that draws extensions' actions draws th
 
 | Deprecated | Use |
 |---|---|
-| `floor.threads`, `card.threadState`, `card.unseen`, `card.checkoutState.filed` | `floor.x.reviews.threads`, and `threadState`, `unseen` and `filed` of `card.x.reviews` |
-| the card's `note` verb, call and action | `card.x.reviews.note` |
-| `floor.tidy.threads` | the reviews extension's entries of `board.adds['floor:<project>'].tidy` |
-| `card.reviews`, and `reviewerOf` of `/cards.js` | `card.x.reviews.of`, and `reviewerOf` of `/x/reviews/reviews.js` |
-| the card verb `review` and its `spawn` call | the reviews extension's action `reviews/hire` on the card |
 | `board.adds['<cap>.<kind>:<key>']`, an own kind's key before 1.98 | the key by the subject its entry was found in, `<cap>.<kind>:<instance>/<key>` |
 | `subject` in what a command is called with | `target`, whose `value` it is |
-| the keymap command `pane-reviews` | `reviews/thread`'s chord, read with `panesOf` and `addedCommandOf` of `/lib/keys.js` (since 1.159 `board.keys['pane-reviews']` is empty) |
 | `tower/shown` in a layout (retired at 1.115) | the views by type: naming it in `order` leaves showings to their type's pick, and in `hidden` hides each view that draws them now |
 
 A stream keeps its old folder for good: the quota stream's facts stay in `probe.quota/`.

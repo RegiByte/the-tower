@@ -1,8 +1,8 @@
 ---
 {
   "type": "decision",
-  "name": "Shared panels: one Changes, one Reviews and one Stats for every renderer",
-  "summary": "The Changes, Reviews and Stats panels are pure views in one served module, `/panels.js`, the Policies panel the policies extension's own, gathered from a module per concern (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
+  "name": "Shared panels: one Changes and one Stats for every renderer",
+  "summary": "The Changes and Stats panels are pure views in one served module, `/panels.js`, the Reviews and Policies panels their extensions' own, gathered from a module per concern (view model in, html out), with the logic of picking lines, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
@@ -11,7 +11,6 @@
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#markedChangesHtml",
     "hub/src/shared/changes-panel.ts#changesPanelHtml",
-    "hub/src/shared/anchors-legacy.ts#changesHtml",
     "hub/extensions/reviews/client/panel.ts#reviewsHtml",
     "hub/extensions/reviews/client/panel.ts#threadViewOf",
     "hub/src/shared/stats-panel.ts#statsHtml",
@@ -32,13 +31,13 @@
   ],
   "links": [
     { "to": "changes-view", "verb": "uses", "carries": "a worker's Changes read, its viewed marks and the viewer's folds" },
-    { "to": "review-threads", "verb": "uses", "carries": "a checkout's thread: its notes, anchors and what a worker hasn't seen" },
+    { "to": "review-threads", "verb": "uses", "carries": "the Reviews panel, the reviews extension's own, drawn with the same highlighting and failed-read view" },
     { "to": "renderer-is-disposable", "verb": "follows", "carries": "what a next renderer would port lives in shared" },
     { "to": "stats", "verb": "uses", "carries": "a /stats read: summaries, series, hours of the day, the weekly budget" }
   ]
 }
 ---
-**Problem.** Two renderers drawing their own Changes and Reviews port every feature by hand, keep the CSS twice and
+**Problem.** Two renderers drawing their own Changes and Stats port every feature by hand, keep the CSS twice and
 drift apart.
 
 **Why.** A capability a next renderer would need belongs in shared code ([[renderer-is-disposable]]). The panels
@@ -49,9 +48,8 @@ are the same view in every renderer; only where they sit, their state and a few 
   each in a module of its own that it gathers and bundles: Changes
   ([`markedChangesHtml`](ref:hub/src/shared/changes-panel.ts#markedChangesHtml), [[changes-view]]), Stats
   ([`statsHtml`](ref:hub/src/shared/stats-panel.ts#statsHtml) over a `/stats` read, ranges asked by
-  [`statsQuery`](ref:hub/src/shared/stats-panel.ts#statsQuery), [[stats]]), and Reviews
-  ([`reviewsHtml`](ref:hub/src/shared/reviews-panel.ts#reviewsHtml) over the board's old fields), a deprecated copy
-  kept until 2.0. Their extensions draw their own: `/x/reviews/panel.js`
+  [`statsQuery`](ref:hub/src/shared/stats-panel.ts#statsQuery), [[stats]]). The Reviews and Policies panels are their
+  extensions' alone: `/x/reviews/panel.js`
   ([`reviewsHtml`](ref:hub/extensions/reviews/client/panel.ts#reviewsHtml) over `x.reviews`, [[review-threads]], whose
   view model [`threadViewOf`](ref:hub/extensions/reviews/client/panel.ts#threadViewOf) builds) and
   `/x/policies/panel.js` ([[policies]]). Each takes a view model and reads nothing global. The logic of rows, picks,
@@ -63,9 +61,8 @@ are the same view in every renderer; only where they sit, their state and a few 
   something acts on them, and leaves an element under the pick (`data-pick-acts`) the renderer fills with the
   `lines.acts` region ([[ui-model]]). Both draw through one core,
   [`changesPanelHtml`](ref:hub/src/shared/changes-panel.ts#changesPanelHtml), which takes what each line says it is
-  marked with and the row drawn under a pick. An earlier form of the panel, over a thread with the note box under the
-  pick ([`changesHtml`](ref:hub/src/shared/anchors-legacy.ts#changesHtml)), and its anchor helpers stay exported from
-  `/panels.js` as deprecated copies until 2.0; the reviews extension's client holds its own (`/x/reviews/anchors.js`).
+  marked with and the row drawn under a pick. `/panels.js` holds no anchor or note helpers: the reviews extension's
+  client holds them (`/x/reviews/anchors.js`).
 - *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
   File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]). Text boxes are named by attribute, not id, so
   one panel can be drawn in two places.
@@ -93,7 +90,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   [`failedHtml`](ref:hub/src/shared/panel-html.ts#failedHtml) names what couldn't be read and why, with Read again. A
   failure over a read already held leaves it drawn and toasts (`Held`, `/reads.js`).
 - *Syntax* ([`highlightLines`](ref:hub/src/shared/highlight.ts#highlightLines)): code in Changes and quotes in
-  Reviews are highlighted with highlight.js, bundled into the served modules and Tower 3D's bundle (local-first:
+  the reviews extension's notes are highlighted with highlight.js, bundled into the served modules and Tower 3D's bundle (local-first:
   nothing comes from a CDN). [`rowCode`](ref:hub/src/shared/changes-panel.ts#rowCode) highlights each hunk as two texts, its
   old side and its new, so a removed line reads in the code it was removed from; a hunk carries no state from the lines
   before it, so one starting inside a block comment or string is highlighted as code. An edited line's changed words
@@ -101,8 +98,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   diffed as code tokens. The colours are the design's tokens ([[design-system]]).
 - *What stays per renderer is wiring, not html.* Copying, scrolling to a note and toasts are each renderer's handlers
   on the same attributes. Reading is shared: a renderer runs [`changesHandlers`](ref:hub/src/shared/changes-reads.ts#changesHandlers)
-  and the held thread reads on `/loop.js` with its own executors, and tells them, as it draws, whose Changes are open
-  and which thread it shows ([[changes-view]]). A Stats bar's readout (`data-tip`) shows through the renderer's one
+  on `/loop.js` with its own executors, and tells them, as it draws, whose Changes are open ([[changes-view]]). A Stats bar's readout (`data-tip`) shows through the renderer's one
   tooltip ([[viewer-prefs]]). Picking lines for a note stays a pointer gesture; a file's fold and Viewed are
   real buttons.
 

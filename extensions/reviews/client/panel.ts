@@ -36,7 +36,7 @@ type Worker = { id: string; callsign: string; checkout: string }
  * The Reviews panel: `reader` is the worker whose view it is, its notes new to it marked while the work goes on; `states`
  * where its anchors stand among the reader's changes (`anchorStates`), once known; `targets` who Send may reach and `target` the one it does; `re` the note the composer answers; `user` the name
  * the composer signs with (`board.user.name`), its notes marked as the viewer's own. `failed` is why the last read
- * of the thread failed, drawn while none is read. `state`: where the checkout's work stands (the card's `threadState`, or a
+ * of the thread failed, drawn while none is read. `state`: where the checkout's work stands (the card part's `threadState`, or a
  * floor thread's `state`); `noting`: the card or floor thread offers its note, so the composer, replies and Send are drawn.
  */
 export type ThreadView = {

@@ -52,7 +52,7 @@ export const KILL_COST = 'resumable, but its next turn reads the whole conversat
  */
 export type TidyRow = { what: string; does: string; title: string; call: Call<'tidy'> }
 
-const NOTHING: TidyPlan = { worktrees: [], branches: [], threads: [], prune: [], logs: [], streams: [] }
+const NOTHING: TidyPlan = { worktrees: [], branches: [], prune: [], logs: [], streams: [] }
 
 /** Each of the floor's Tidy rows: the core's, then each extension entry of `added` (`addedTidyOf`), applied by its extension. */
 export const tidyRows = (f: Floor, now: number, added: AddedTidy[] = []): TidyRow[] => {

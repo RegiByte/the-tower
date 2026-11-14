@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Crews: who reports to whom is derived, drawn as a tree on duty and in the archive, and sent home together",
-  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the worker a launch contributor named in tower.reports-to at its spawn (a reviewer's author, by reviews), else its hirer, followed through resumes; a reviewer spawned before 1.95 reads its author from its first prompt through LEGACY. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker. Both archives list past workers by crew the same way (pastCrews).",
+  "summary": "Each worker's current card says whom it reports to (card.reportsTo): the worker a launch contributor named in tower.reports-to at its spawn (a reviewer's author, by reviews), else its hirer, followed through resumes. Renderers and tower agents fold it into crews (crewTree), and every worker offers send-home: a kill per running worker under it and itself, the deepest first, the only way the renderers end a worker. Both archives list past workers by crew the same way (pastCrews).",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
@@ -11,7 +11,6 @@
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withReports",
     "hub/src/bridge/facts.ts#REPORTS_TO",
-    "hub/src/bridge/legacy.ts#legacyCrew",
     "hub/src/bridge/seats.ts#seats",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
@@ -68,10 +67,8 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   is where the hire was made, and the hirer may have been resumed since). The edge is a core fact read while the core's
   board is built, never an extension's fold, so send-home, seats, `tower agents` and `tower home` follow it; a fork
   carries none. A reviewer the user started has no hirer and
-  still nests under its author: it works for that worker. A reviewer spawned before 1.95 logged no edge: its first
-  prompt names its author, and `withReports` gives it `card.crew` by reviews to that callsign's card as the board names
-  it now (`workerNamed` on the floor, the one on duty first: [`legacyCrew`](ref:hub/src/bridge/legacy.ts#legacyCrew)),
-  as it always read. A worker whose crew edge names a worker seated when it comes sits beside it
+  still nests under its author: it works for that worker. A worker whose launch logged no edge reports to its hirer
+  alone, or to nobody. A worker whose crew edge names a worker seated when it comes sits beside it
   ([`seats`](ref:hub/src/bridge/seats.ts#seats)), a reviewer beside its author. A fork is a new worker with neither, so it heads its own crew.
 - *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by first start: the
   first session of its lineage, so a resumed worker keeps its place among its peers), `crewOf` (everyone under it, each

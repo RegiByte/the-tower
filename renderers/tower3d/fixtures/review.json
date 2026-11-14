@@ -40,7 +40,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -136,7 +135,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -280,7 +278,6 @@
                   "from": "retry-budget",
                   "gone": false
                 },
-                "reviews": "DARTAGNAN-67",
                 "crew": {
                   "callsign": "DARTAGNAN-67",
                   "session": "20261004-090000-labx",
@@ -358,7 +355,7 @@
                   {
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
-                    "prompt": "/tower:review DARTAGNAN-67",
+                    "prompt": "/reviews:review DARTAGNAN-67",
                     "verbs": [],
                     "calls": {},
                     "actions": []
@@ -1227,7 +1224,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -1323,7 +1319,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -1467,7 +1462,6 @@
                   "from": "retry-budget",
                   "gone": false
                 },
-                "reviews": "DARTAGNAN-67",
                 "crew": {
                   "callsign": "DARTAGNAN-67",
                   "session": "20261004-090000-labx",
@@ -1545,7 +1539,7 @@
                   {
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
-                    "prompt": "/tower:review DARTAGNAN-67",
+                    "prompt": "/reviews:review DARTAGNAN-67",
                     "verbs": [
                       "resume"
                     ],
@@ -2414,7 +2408,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -2510,7 +2503,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -2654,7 +2646,6 @@
                   "from": "retry-budget",
                   "gone": false
                 },
-                "reviews": "DARTAGNAN-67",
                 "crew": {
                   "callsign": "DARTAGNAN-67",
                   "session": "20261004-090000-labx",
@@ -2732,7 +2723,7 @@
                   {
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
-                    "prompt": "/tower:review DARTAGNAN-67",
+                    "prompt": "/reviews:review DARTAGNAN-67",
                     "verbs": [],
                     "calls": {},
                     "actions": []

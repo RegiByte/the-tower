@@ -107,8 +107,8 @@ Ending a worker is not undoable the way a removed worktree is recut: the user se
 - Any part of the plan is a plan: [`tidyRows`](ref:hub/src/shared/tidy.ts#tidyRows) gives each row the call that
   applies only it (one worker, one process, one worktree, one branch, one extension entry; the old logs as one row), applied
   and refused by the same checks as the whole.
-- *Until 2.0* (`LEGACY`): `floor.tidy.threads` is copied from the reviews extension's entries, an input's
-  `plan.threads` is added to `plan.x.reviews`, and the reply's `threads` is copied from `x.reviews.done`.
+- Threads are no part of the core's plan: `floor.tidy` lists none, and the call's `plan` and its reply name landed
+  threads only under `x.reviews`.
 - *Never in bulk*: a [[carried]] copy may hold less than the branch did (the lander dropped a hunk), so a worktree
   landed edited is never in the plan and `tidy` refuses it.
   [`editedRows`](ref:hub/src/shared/worktree-words.ts#editedRows) lists each such worktree and kept branch with its own

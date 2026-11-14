@@ -7,7 +7,7 @@
  * command (`/keymap.js`) that does the same for the selected worker. The tower serves this module as `/verb-words.js`.
  */
 import type { Card } from '../bridge/board.ts'
-import type { BranchVerb, CardVerb, ConversationVerb, FloorVerb, NoteVerb, ResourceVerb, WorktreeVerb } from '../bridge/verbs.ts'
+import type { BranchVerb, CardVerb, ConversationVerb, FloorVerb, ResourceVerb, WorktreeVerb } from '../bridge/verbs.ts'
 import type { Verb } from './api.ts'
 import type { CommandId } from './keymap.ts'
 
@@ -19,7 +19,6 @@ export type SubjectVerbs = {
   resource: ResourceVerb
   worktree: WorktreeVerb
   branch: BranchVerb
-  note: NoteVerb
 }
 
 export type Subject = keyof SubjectVerbs
@@ -39,12 +38,10 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'card/carry-on': { label: 'Carry on', hint: 'Resume it on a prompt telling it it was cut off mid-turn, so it takes the turn up again.', api: 'resume' },
   'card/goto': { label: 'Go to its resume', hint: 'Go to the worker that carries on its conversation.' },
   'card/brief': { label: 'Brief', hint: 'Its last prompts and answers, read as a chat.', command: 'pane-brief' },
-  'card/review': { label: 'Review', hint: 'Hire a reviewer: it works in a fork of its checkout, reviews once and leaves notes on its thread.', api: 'spawn' },
   'card/reap': { label: 'End all', hint: 'End every process it left running.', destructive: true, api: 'reap' },
   'card/kill': { label: 'Kill', hint: 'End its session; its conversation can be resumed.', destructive: true, api: 'kill' },
   'card/let-go': { label: 'Let go', hint: 'Take it off duty without resuming it; its conversation stays in the archive.', destructive: true, api: 'let-go' },
   'card/send-home': { label: 'Send home', hint: 'End it and every worker under it that runs; each can be resumed.', destructive: true, api: 'kill' },
-  'card/note': { label: 'Note', hint: 'Add a note to the review thread about its work.', api: 'review/append', command: 'pane-reviews' },
   'floor/spawn': { label: 'New worker', hint: 'Start a worker on this floor, from the new-worker form.', api: 'spawn' },
   'floor/cut': { label: 'New worker in a worktree', hint: 'Start a worker in a new worktree of every repo of the floor.', api: 'spawn' },
   'floor/shell': { label: 'New shell', hint: "A login shell in the floor's hub; it keeps running after the page closes.", api: 'shell/spawn' },
@@ -59,7 +56,6 @@ export const VERB_WORDS: Record<VerbId, VerbWords> = {
   'worktree/discard': { label: 'Discard', hint: 'Throw its work away, each tip noted on its review thread first.', destructive: true, api: 'worktree/discard' },
   'branch/recut': { label: 'Recut', hint: 'A worktree again on the kept branch.', api: 'branch/recut' },
   'branch/delete': { label: 'Delete', hint: 'Delete the kept branch where it is absorbed into its base.', destructive: true, api: 'branch/delete' },
-  'note/note': { label: 'Note', hint: "Add a note to the checkout's review thread.", api: 'review/append' },
 }
 
 /** What a resume of a worker whose worktree is gone does first, and the turn it spends saying so. @since 1.140 */
