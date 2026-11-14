@@ -2,7 +2,7 @@ import type { Floor } from '../bridge/board.ts'
 import { MAIN_CHECKOUT } from './model.ts'
 import { can } from './offered.ts'
 
-/** Who a checkout's review thread is about, who works at it, and who Send reaches. */
+/** Who works at a checkout, and who Send reaches from its review thread. */
 
 /** The worker a checkout's thread opens on: the one on duty there, else the latest to have worked there. */
 export const workerIn = (f: Floor, checkout: string) => {
