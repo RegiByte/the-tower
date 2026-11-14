@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-02",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#board", "hub/src/shared/api.ts", "hub/src/tower/tower.js", "hub/src/tower/served.ts#MODULES", "hub/src/shared/waits.ts#neighbours", "hub/src/collections.ts", "hub/PRINCIPLES.md"]
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#board", "hub/src/shared/api.ts", "hub/src/tower/tower.js", "hub/src/tower/served.ts#libraryUrls", "hub/src/shared/waits.ts#neighbours", "hub/src/collections.ts", "hub/PRINCIPLES.md"]
 }
 ---
 **Problem.** Every renderer is a stepping stone toward the next, and living in the tower produces a new want every
@@ -38,7 +38,7 @@ specific features. A capability shaped by one renderer's use case serves one pre
   ([[changes-view]]).
 - *Rules a next renderer would need in words are shared modules.* What renderers draw alike (status words, the
   order workers are stepped through, the panels, the icons) is served from `src/shared`
-  ([`MODULES`](ref:hub/src/tower/served.ts#MODULES), [[renderer-shared-modules]]), so two renderers cannot drift;
+  through the library ([`/lib/`](ref:hub/src/tower/served.ts#libraryUrls), [[library]], [[renderer-shared-modules]]), so two renderers cannot drift;
   the keys that step are commands of the shared [[keymap]].
 
 The tower *page* is one renderer; the tower *server* is the API and is not disposable.

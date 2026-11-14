@@ -137,11 +137,10 @@ sentence the user picked.
   be undone exactly.
 - *Placing the box in the gutter.* The gutter is 168px wide, too narrow for a prompt, and its rows are placed by
   sections.
-- *Serving the pick machine as `/picks.js`, and the source marks from `/markdown.js`.* The root modules are
-  deprecated and 2.0 removes them, and nothing outside the core needs either: the core's views import
-  [`picks.ts`](ref:hub/src/shared/picks.ts) and [`source-lines.ts`](ref:hub/src/shared/source-lines.ts) by source,
-  and the subject is published only in the library's `/lib/board.js`, kept apart from `subjects.ts`, which `/cards.js`
-  re-exports.
+- *Serving the pick machine as `/picks.js`, and the source marks from `/markdown.js`.* Nothing outside the
+  core needs either: the core's views import [`picks.ts`](ref:hub/src/shared/picks.ts) and
+  [`source-lines.ts`](ref:hub/src/shared/source-lines.ts) by source, and the subject is published only in the
+  library's `/lib/board.js`.
 - *Preset prompts (Explain, Rewrite) beside the text box.* The user asked for one prompt of their own.
 - *Collecting notes on passages into a review thread.* That fits reviewing a long document in one go, and the
   reviews extension could add a view `on: ["passage"]` for it. A direct prompt came first.

@@ -330,7 +330,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   and a `reportsTo` as `tower.reports-to {callsign, session, by}`: core facts the core's crews and hiring limits read
   ([[crews]], [[hiring-limits]]), drawn on the card as a badge and listed per extension at `GET /extensions`
   (`exempted`). A resume logs nothing again; a fork carries copies of its lineage's `tower.x.*` facts and neither core
-  fact ([`forkFacts`](ref:hub/src/bridge/launch.ts#forkFacts)). Each running extension's `plugins.claude` joins the
+  fact ([`forkFacts`](ref:hub/src/bridge/launch.ts#forkFacts)). Each running extension's `runtimes.claude.plugins` joins the
   config's plugins on its floors ([[plugins]]); a folder that isn't a Claude plugin is a warning
   ([`claudePluginProblems`](ref:hub/src/bridge/extensions.ts#claudePluginProblems)). The spawn form draws the fields
   ([`formFields`](ref:hub/src/shared/spawn-form.ts#formFields)). The reviews extension
