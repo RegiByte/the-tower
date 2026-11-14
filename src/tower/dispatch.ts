@@ -6,7 +6,6 @@
  * through `call` too, with its own verb in the caller's `within`, so whatever guards a verb sees every act of it.
  */
 import { defineResource, type StartedResource } from 'braided'
-import { z } from 'zod'
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { archiveLog, archiveStream, monthPath } from '../archive.ts'
@@ -26,7 +25,7 @@ import { createItem, deleteItem, itemPath, itemVersion, restoreItem, writeItem }
 import { logged } from '../logged.ts'
 import { thrownWords } from '../shared/thrown.ts'
 import { hostRequest, jobsRequest, pressSubmit, reap, reveal, runEditor, submitText, termsRequest, typeText, writeUpload } from '../machine.ts'
-import { apiError, isApiError, ITEM_EXT, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
+import { apiError, isApiError, ITEM_EXT, refusal, ROUTES, VERBS, type ApiError, type Replies, type Route, type RouteInput, type SpawnGate } from '../shared/api.ts'
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { uploadRefusal } from '../shared/uploads.ts'
@@ -994,7 +993,7 @@ export const dispatch = defineResource({
     const callCore = async (verb: string, input: unknown, caller: Caller): Promise<Answer> => {
       if (!isVerb(verb)) return apiError('not_found', `No verb "${verb}"`)
       const parsed = ROUTES[verb].input.safeParse(input)
-      if (!parsed.success) return apiError('invalid', z.prettifyError(parsed.error))
+      if (!parsed.success) return apiError('invalid', refusal(ROUTES[verb].input, parsed.error))
       const answer = await (HANDLERS[verb] as (input: unknown, caller: Caller) => Answer | Promise<Answer>)(parsed.data, caller)
       return answer.t === 'error' ? answer : ROUTES[verb].reply.parse(answer)
     }

@@ -404,7 +404,7 @@
           "checkout": {
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9._-]*$",
-            "description": "A worktree's name, or `main` for the main checkouts. Left out, the caller's: a reviewer's is its author's."
+            "description": "The checkout's name: a worktree's name like `daniel-16`, or `main` for the main checkouts; never its path. Left out, the caller's: a reviewer's is its author's."
           },
           "author": {
             "type": "string",
@@ -429,7 +429,7 @@
           "on": {
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9._-]*$",
-            "description": "The checkout, by the name `note` gives it: `checkout` as a word's flag. Left out, the caller's: a reviewer's is its author's."
+            "description": "The checkout's name, as `note` takes it: a worktree's name like `daniel-16`, or `main`; never its path. Left out, the caller's: a reviewer's is its author's."
           },
           "resolves": {
             "type": "array",
@@ -573,7 +573,8 @@
           "on": {
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9._-]*$",
-            "description": "The checkout whose thread it goes on. Left out, the caller's: a reviewer's is its author's."
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "description": "The checkout's name: a worktree's name like `daniel-16`, or `main`; never its path. Left out, the caller's: a reviewer's is its author's."
           },
           "re": {
             "type": "string",
@@ -847,7 +848,8 @@
         "properties": {
           "checkout": {
             "type": "string",
-            "description": "A worktree's name, or `main`."
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "description": "The checkout's name: a worktree's name like `daniel-16`, or `main`; never its path. Left out, the caller's: a reviewer's is its author's."
           }
         }
       },

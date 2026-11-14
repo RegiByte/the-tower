@@ -125,6 +125,20 @@ const pathWords = (path: PropertyKey[]): string =>
   path.reduce<string>((at, key) => (typeof key === 'number' ? `${at}[${key}]` : at ? `${at}.${String(key)}` : String(key)), '')
 
 /**
+ * What a schema refuses in an input, as zod words it, then each refused field's own `description`: a field's schema
+ * says what to pass, so its refusal does too.
+ */
+export function refusal(schema: z.ZodType, error: z.ZodError): string {
+  const json = z.toJSONSchema(schema, { io: 'input' }) as Record<string, unknown>
+  const described = error.issues.flatMap((issue) => {
+    const path = issue.path.map(String)
+    const field = path.reduce<Record<string, unknown> | undefined>((node, key) => (node?.properties as Record<string, Record<string, unknown>> | undefined)?.[key], json)
+    return typeof field?.description === 'string' ? [`${path.join('.')}: ${field.description}`] : []
+  })
+  return [z.prettifyError(error), ...new Set(described)].join('\n')
+}
+
+/**
  * What is wrong with the spawn fields given, each problem at its path (`cut.name`): any field a spawn takes passes, and
  * none is required. Which fields a caller accepts, and the rules between them (`cwd` or `cut`, not both), are the
  * caller's: a policy's `hire` takes four fields and refuses the rest itself.

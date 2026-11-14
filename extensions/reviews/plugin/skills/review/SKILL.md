@@ -21,11 +21,11 @@ You review the work of tower worker **$ARGUMENTS** (its callsign first; `tell` a
 ## Steps
 
 1. **The goal.** `tower agent <CALLSIGN>` shows only the author's last turns, often "please open the PR", and says when it left earlier ones out. Run the exact command it prints and read the whole conversation: the goal and what was agreed are usually at its start. A decision given through a question dialog is in the turn's `asked:` lines, and the author's notes on the thread count too. Review against that goal, not against what you would have built.
-2. **What's already said.** `tower x reviews thread <author's checkout>` (the checkout your worktree forked, from `tower whoami`). Don't repeat a note already there; answer it with `--re <k>` if you have something to add.
+2. **What's already said.** `tower x reviews thread`: with no checkout named it reads the author's thread, which is yours. Never pass a path. Don't repeat a note already there; answer it with `--re <k>` if you have something to add.
 3. **The diff.** In each repo of your worktree, the base is `git config branch.<your branch>.towerBase`:
    - `git log --oneline <base>..HEAD` lists the author's commits; the last one, `Snapshot of …`, holds their uncommitted work, if they had any.
-   - `git diff <base>...HEAD` is the whole change, the same one the user sees in the author's Changes pane.
-4. **Checks.** Run the project's checks if they are cheap (its CLAUDE.md or AGENTS.md names them: typecheck, tests). A failure is a finding.
+   - Start from `git diff --stat <base>...HEAD`, then read the diff per area: `git diff <base>...HEAD -- <path>`. Skip what is generated unless it is the point of the change: `test/fixtures/`, `renderers/tower3d/fixtures/`, `src/shared/board.schema.json`, `test/served-exports.json`.
+4. **Checks.** Run the checks the project's AGENTS.md lists under Contributing, if they are cheap. Keep their output in your own scratch space (the scratchpad your system prompt names), never in a path of the repo. A failure is a finding.
 5. **The review.**
    - Does it do what the goal asked? Is anything missing, or anything added that wasn't asked for?
    - Does it keep the project's stated rules? A repo names its rules in its CLAUDE.md or AGENTS.md, or a file they point to (the tower's own: `PRINCIPLES.md`). Hold the diff against each that applies; a breach is a finding that names the rule.
@@ -35,10 +35,10 @@ You review the work of tower worker **$ARGUMENTS** (its callsign first; `tell` a
 
 ## Notes
 
-Write one note per finding, on the author's checkout, anchored to the lines it is about:
+Write one note per finding, anchored to the lines it is about:
 
 ```bash
-tower x reviews note --on <author's checkout> --at <repo>:<path>:<from>-<to> <<'EOF'
+tower x reviews note --at <repo>:<path>:<from>-<to> <<'EOF'
 **bug** · correctness
 What goes wrong, as a concrete scenario: these inputs or this state → this wrong result.
 The fix, if it is clear.
@@ -51,8 +51,8 @@ EOF
 
 ## Deliver, then stop
 
-- With `tell`: `tower x reviews send <CALLSIGN>` submits a pointer to your notes into the author.
+- With `tell`: once at least one note was written, `tower x reviews send <CALLSIGN>` submits a pointer to your notes into the author. If a note was refused, fix it and write it again before sending; never send after a failed note.
 - Without it, leave them: the user reads them in the Reviews tab and sends them on.
-- When the author was hired (`hired by` in `tower agent <CALLSIGN>`), also tell its hirer the verdict, in one line with `SendMessage` to its **message as** name (`tower agent <HIRER>` gives it): your callsign, the author's, the verdict and the thread (`tower x reviews thread <checkout>`). The hirer then knows the review is in even if the author stalls.
+- When the author was hired (`hired by` in `tower agent <CALLSIGN>`), also tell its hirer the verdict, in one line with `SendMessage` to its **message as** name (`tower agent <HIRER>` gives it): your callsign, the author's, the verdict and the thread (`tower x reviews thread`). The hirer then knows the review is in even if the author stalls.
 
 Then stop. A review is one round: never wait for the author's answers, and never review again unless you are asked. A re-review is a new request.

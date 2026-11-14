@@ -98,7 +98,7 @@ import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, layoutReachOf, rendererFile, renderersOf, withLayoutProblems } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
-import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, refusal, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
 import { megabytes, UPLOAD_LIMIT } from '../shared/uploads.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
@@ -1061,7 +1061,7 @@ export const httpServer = defineResource({
     /** A core read's reply to `params` and `query`, the query parsed by the read's schema first, refused as `invalid` when it doesn't parse. */
     const answered = (entry: ApiRoute, params: Asked<unknown>['params'], query: unknown, caller: Caller): ReadReply | Promise<ReadReply> => {
       const parsed = (entry.query ?? z.unknown()).safeParse(query)
-      if (!parsed.success) return failed('invalid', z.prettifyError(parsed.error))
+      if (!parsed.success) return failed('invalid', refusal(entry.query!, parsed.error))
       return (entry.answer as (asked: Asked<unknown>) => ReadReply | Promise<ReadReply>)({ params, query: parsed.data, caller })
     }
 
