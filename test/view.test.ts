@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Board } from '../src/bridge/board.ts'
-import { HOME, floorOfView, hashOf, mainClass, mainViewOf, sameRoom, viewOf, type MainView } from '../renderers/page/view.js'
+import { HOME, SKYLINE, floorOfView, hashOf, mainClass, mainViewOf, sameRoom, viewOf, type MainView } from '../renderers/page/view.js'
 import { locationOf } from '../src/shared/views.ts'
 import { subjectAt } from '../src/shared/subjects.ts'
 
@@ -57,6 +57,7 @@ test('view: a hash naming nothing on the board is the skyline; an unknown id is 
   assert.deepEqual(viewOf('w9/changes', board, has), { t: 'lookup', id: 'w9', location: { view: 'tower/card', subject: 'card:w9', pane: { view: 'tower/changes' } } })
   assert.deepEqual(viewOf('w1/nonsense', board, has), worker())
   assert.equal(hashOf(worker(), board), '#w1')
+  for (const location of [SKYLINE, { view: 'tower/skyline', subject: 'board' }]) assert.equal(hashOf({ t: 'view', location }, board), '', 'the skyline, however reached, keeps the bare page')
   assert.equal(hashOf(worker({ view: 'tower/changes' }), board), '#w1/changes')
   assert.equal(hashOf(worker({ view: 'tower/document', subject: 'shown:w1/200' }), board), '#w1/shown%3Adocs%2Fa%20b.md')
   assert.equal(hashOf(worker({ view: 'tower/text', subject: 'shown:w1/200' }), board), '#v/tower/card/card%3Aw1;tower/text/shown%3Aw1%2F200', 'a showing opened by another view than its type picks keeps the long form')

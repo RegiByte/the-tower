@@ -49,7 +49,7 @@ export const cardIdOf = (v) => (v.t === 'view' && v.location.view === 'tower/car
 export function hashOf(v, board) {
   if (v.t === 'arriving') return ''
   const id = cardIdOf(v)
-  if (id === undefined) return v.location.view === SKYLINE.view && v.location.subject === undefined ? '' : locationHash(v.location)
+  if (id === undefined) return isHome(v) ? '' : locationHash(v.location)
   const pane = v.location.pane
   if (!pane) return `#${id}`
   if (PANE_NAMES[pane.view]) return `#${id}/${PANE_NAMES[pane.view]}`
