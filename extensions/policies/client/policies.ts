@@ -14,7 +14,7 @@ export type { Hire, PolicyHeader, Problem, Step } from '../policies.ts'
 type PolicyView = PolicyFields & (ValidPolicy | InvalidPolicy)
 type ValidPolicyView = Extract<PolicyView, { header: PolicyHeader }>
 
-/** The rule and slot words renderers import from `/policies.js`. */
+/** The rule and slot words renderers import from `/x/policies/policies.js`. */
 export { cronFields, cronProblem, nextSlot, ON_TIME_MS, onTimeSlot, ruleWords, slotsBetween, slotWords, zoneCity } from '/lib/time.js'
 
 /** A slot offered until `until`, in words said in `tz`: `today 15:00 offered, open until Fri 15:00`. */

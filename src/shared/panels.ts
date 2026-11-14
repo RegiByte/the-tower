@@ -1,11 +1,11 @@
 /**
- * The Changes, Reviews, Stats and Policies panels every renderer draws: pure views from plain data to html, the logic of
+ * The Changes, Reviews and Stats panels every renderer draws: pure views from plain data to html, the logic of
  * picking lines and finding an anchor's, and one stylesheet (`panelsCss`, beside `markdownCss`: a note's words are
  * markdown). A renderer keeps the state (what it read, folds, the pick, text being written), passes it in as a view
  * model, puts the html in an element with `drawPanel` and wires the attributes below. The tower serves it as
  * `/panels.js`, bundled with the modules it gathers: `changes-reads.ts`, `changes-lines.ts` and `changes-panel.ts`,
  * `anchors-legacy.ts` (deprecated since 1.116, review notes' anchors and the note box, now the reviews extension's),
- * `reviews-panel.ts`, `stats-panel.ts`, `policies-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts` and `panels-css.ts`.
+ * `reviews-panel.ts`, `stats-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts` and `panels-css.ts`.
  *
  * The protocol a renderer wires, by the attribute on the element clicked (`closest`):
  *
@@ -57,13 +57,6 @@
  *   data-stats-range="<r>"     read the stats again over another range (`statsQuery`)
  *   data-stats-read            read the stats again
  *   data-tip="<text>"          a bar's readout, shown by the renderer's tooltip (`watchTips`, src/shared/tips.ts)
- *
- *   Policies
- *   data-policy-call="<json>"  run the call: a policy's Run now or Approve, an offer's Accept (`policyDoneLine` says what it did)
- *   data-policy-open="<id>"    open the policy's file, an item of the floor's `policies` collection
- *   data-offer-dismiss="<key>" dismiss the offer for this viewer, as a wait is (`dismissing`, `DISMISSED_KEY`)
- *   data-worker="<id>"         go to the worker: a run's
- *   data-copy="<text>"         copy the text (a policy's tag)
  */
 export { markRanges, wordRanges, WORDS_ALIKE, WORDS_EDITS, WORDS_LONGEST, type CharRange } from './words.ts'
 export { fileButtonsHtml, fileSpansHtml, fileCall } from './file-acts.ts'
@@ -85,7 +78,6 @@ export {
   type ThreadView, type ThreadFiles, type ThreadPlace, type ThreadAt, type ThreadViewer,
 } from './reviews-panel.ts'
 export { STATS_ALL, statsQuery, usd, hours, duration, statsHtml, type StatsProject, type StatsView } from './stats-panel.ts'
-export { policyZone, offerWords, policiesHtml, policyDoneLine, type PoliciesView } from './policies-panel.ts'
 export { failedHtml } from './panel-html.ts'
 export { drawPanel, keepingFocus, keepShownTabs, type TextBox } from './panel-kit.ts'
 export { panelsCss } from './panels-css.ts'

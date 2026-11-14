@@ -79,7 +79,7 @@ export type OfferFields = { key: string; project: string; policy: string; tag: s
 export type CardRun = { policy: string; tag: string; title?: string; n: number; by?: string; check?: CheckResult } & ({ start: 'hand'; slot: null } | { start: 'auto' | 'offer'; slot: number })
 
 /**
- * One run as `GET /runs/<project>` reads it: its number, slot, when it started, the hash it ran on and whether that is
+ * One run as `GET /policies/runs/<project>` reads it: its number, slot, when it started, the hash it ran on and whether that is
  * the file's current one, how and by whom it started, its check, and its worker as it is now (its current card): its
  * status, whether it runs, when it ended, its cost, what it showed and its latest answer.
  */

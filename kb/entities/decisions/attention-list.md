@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-13",
+  "reviewed": "2026-11-14",
   "refs": ["hub/src/shared/waits.ts#nextAttended", 
     "hub/src/bridge/blocked.ts#blockedBy",
     "hub/src/bridge/status.ts#nextState",
@@ -19,7 +19,6 @@
     "hub/src/shared/waits.ts#heededWaits",
     "hub/src/shared/rings.ts#SOUNDS",
     "hub/src/shared/waits.ts#attentionOrder",
-    "hub/src/shared/waits.ts#offerTransitions",
     "hub/src/shared/waits.ts#askTransitions",
     "hub/src/shared/waits.ts#isAbout",
     "hub/src/shared/rings.ts#ringingSound",
@@ -56,14 +55,12 @@ only by typing, one chime covered a question and an answer alike, and every wait
   ([[design-system]]).
 - A policy's offered slot asks for you before any worker exists, so it is not a wait: the policies extension puts it
   among the asks ([[policies]]), and [`attentionOrder`](ref:hub/src/shared/waits.ts#attentionOrder) is the heeded
-  waits, then extensions' heeded asks (`board.asks`, oldest first, [[extensions]]); `board.offers`, LEGACY's copy until
-  2.0, is no longer in it. N on an ask opens where it leads, the view and subject its `opens` names, else what it is about (its worker, else its floor); a viewer already there is at the ask, and N moves past it, as [`nextAttended`](ref:hub/src/shared/waits.ts#nextAttended) reads it. The policies extension's offers open their floor's policies this way. An ask is about a worker when its subject is that worker's card
+  waits, then extensions' heeded asks (`board.asks`, oldest first, [[extensions]]). N on an ask opens where it leads, the view and subject its `opens` names, else what it is about (its worker, else its floor); a viewer already there is at the ask, and N moves past it, as [`nextAttended`](ref:hub/src/shared/waits.ts#nextAttended) reads it. The policies extension's offers open their floor's policies this way. An ask is about a worker when its subject is that worker's card
   ([`isAbout`](ref:hub/src/shared/waits.ts#isAbout)): the watched worker's asks ring for nobody, as its waits. An ask
   rings as its `sound` says, as a question or as an offer. An auto policy that lost its approval is a change of
   state, not a request: it never rings and isn't in the list.
 - `/cards.js` holds the pieces: what began and ended between two boards
   ([`transitions`](ref:hub/src/shared/waits.ts#transitions),
-  [`offerTransitions`](ref:hub/src/shared/waits.ts#offerTransitions),
   [`askTransitions`](ref:hub/src/shared/waits.ts#askTransitions), silent on the first board), round-robin N
   ([`nextWait`](ref:hub/src/shared/waits.ts#nextWait)), the heeded waits
   ([`heededWaits`](ref:hub/src/shared/waits.ts#heededWaits)), and a score each for a question, an answer and an offer

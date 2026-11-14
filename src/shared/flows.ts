@@ -156,9 +156,6 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   'extension/restart': single('Restart', "Read an extension's folder again and restart it.", 'restarted'),
   'probe/run': moved('Read quota', 'quota/read-now'),
   'review/append': moved('Note', 'reviews/append'),
-  'policy/run': moved('Run a policy', 'policies/run'),
-  'policy/pass': moved('Pass', 'policies/pass'),
-  'policy/approve': moved('Approve', 'policies/approve'),
 }
 
 /** Every core verb's flow. */

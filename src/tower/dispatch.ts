@@ -1010,9 +1010,6 @@ export const dispatch = defineResource({
       'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await deleteBranch(p, project, name)) })),
       tidy: ({ project, plan }, caller) => tidyProject(project, plan, caller),
       'review/append': legacy('review/append'),
-      'policy/run': legacy('policy/run'),
-      'policy/pass': legacy('policy/pass'),
-      'policy/approve': legacy('policy/approve'),
     }
 
     /** A core verb: its input parsed by its schema, handled with its caller, and its reply checked against its schema. */

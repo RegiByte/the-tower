@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Policies: standing work kept as items, run at its slots by the bundled policies extension, its facts in project streams",
-  "summary": "A policy is a markdown item of a floor's policies collection (a title, a strict json header, the prose a run's worker starts on); the bundled extension policies, fired at each slot by the core's slot loop, decides each due slot from the board alone (held, checked, run, offered) and writes one fact per slot it saw through policies/run or policies/pass, approvals through policies/approve, in the folders runs/ and approvals/ of streams/projects/<project>/; offers (as asks), approval, live runs, needs and a worker's run are its folds' part of the board, copied back to the old fields through LEGACY until 2.0.",
+  "summary": "A policy is a markdown item of a floor's policies collection (a title, a strict json header, the prose a run's worker starts on); the bundled extension policies, fired at each slot by the core's slot loop, decides each due slot from the board alone (held, checked, run, offered) and writes one fact per slot it saw through policies/run or policies/pass, approvals through policies/approve, in the folders runs/ and approvals/ of streams/projects/<project>/; offers (as asks), approval, live runs, needs and a worker's run are its folds' part of the board, under floor.x.policies and card.x.policies.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
@@ -28,10 +28,7 @@
     "hub/extensions/policies/policies.ts#runsRead",
     "hub/extensions/policies/check.ts#runCheck",
     "hub/extensions/policies/cli.ts#policiesLines",
-    "hub/src/shared/policies-legacy.ts#PolicyView",
-    "hub/src/shared/policies-panel.ts#policiesHtml",
     "hub/src/shared/extensions.ts#LEGACY",
-    "hub/src/bridge/legacy.ts#LEGACY_FIELDS",
     "hub/src/shared/waits.ts#attentionOrder",
     "hub/src/shared/api.ts#spawnProblems",
     "hub/extensions/policies/server.ts#runNow",
@@ -40,7 +37,7 @@
     "hub/test/server.test.ts"
   ],
   "links": [
-    { "to": "extensions", "verb": "follows", "carries": "a bundled extension on the core's slots, its old names kept by LEGACY until 2.0" },
+    { "to": "extensions", "verb": "follows", "carries": "a bundled extension on the core's slots, its stream folders kept by LEGACY" },
     { "to": "probes", "verb": "amends", "carries": "the first project streams, read and appended by the same stream code" },
     { "to": "collections", "verb": "amends", "carries": "a collection an extension declares, the config's line an override of its words" },
     { "to": "logs-are-facts", "verb": "follows", "carries": "one fact per slot seen, everything else derived" },
@@ -123,16 +120,12 @@ user may replace it by providing `policies`.
   ([`mount`](ref:hub/extensions/policies/client/view.ts#mount)), an offer dismissed there kept in the viewer's
   `tower.store` as a wait's is. `tower x policies list`, `run-now`, `approve-now`, `runs` and `tower whoami`'s run lines;
   the handbook's "Policies and runs".
-- *What stays for renderers kept outside the checkout, until 2.0.* `LEGACY` maps `policy/run`, `policy/pass`,
-  `policy/approve` and `GET /runs/<project>` to the extension's, deprecated, and copies its part back to
-  `floor.policies`, `card.run` and `board.offers` ([`LEGACY_FIELDS`](ref:hub/src/bridge/legacy.ts#LEGACY_FIELDS)),
-  their calls renamed to `policy/*`, in the shapes the core held at the move
-  ([`policies-legacy.ts`](ref:hub/src/shared/policies-legacy.ts#PolicyView)), which only the core's own readers use: the
-  extension owns its copy, in its `policies.ts`, and imports only the library; `/policies.js` serves the extension's
-  client, and `/panels.js` keeps a deprecated copy of the old panel over those fields
-  ([`policiesHtml`](ref:hub/src/shared/policies-panel.ts#policiesHtml)). Off on a floor, or off everywhere, the
-  extension's parts and their copies are gone and its files and folders stay; on again, every run and approval is
-  back, since nothing is stored beside them.
+- *What the core keeps of it.* The slot loop and the two stream rows of `LEGACY`; nothing of a policy's shape. The
+  extension owns its shapes, in its `policies.ts`, and imports only the library. The names 1.x kept for it in the core
+  (`floor.policies`, `card.run`, `board.offers`, `policy/run`, `policy/pass`, `policy/approve`, `GET /runs/<project>`,
+  `/policies.js` and the old panel in `/panels.js`) went at 2.0; `docs/migrating-to-2.md` names what replaces each.
+  Off on a floor, or off everywhere, the extension's parts are gone and its files and folders stay; on again, every
+  run and approval is back, since nothing is stored beside them.
 
 **Alternatives considered.** Offers as stored state with an expiry (derivable from the passes). Check results
 in the runner's memory alone (lost on restart, a check run twice in a slot). Generic `spawn` plus a separate fact
@@ -146,6 +139,6 @@ manifest slot ticking every 30 s in place of folded slots (the core's loop knows
 
 **Impact.** Project streams beside the system's ([[probes]]), kept in their old folders by `LEGACY` for good.
 A run that nobody watches ends itself with `tower home <own callsign>` ([[leave]]), its last answer kept for the
-next. The tower page draws policies with the extension's panel ([[shared-panels]] keeps the old one, deprecated) and
+next. The tower page draws policies with the extension's panel and
 puts offers in the attention order as asks, with a sound of their own ([[attention-list]]). Tidy archives the
 project streams' months as any stream's.

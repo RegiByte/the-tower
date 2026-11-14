@@ -86,7 +86,7 @@ const into = (state: Attending): AttendEffect => ({ type: 'state', state })
 export const attendHandlers: Handlers<Attending, AttendEvent, AttendEffect> = {
   /**
    * The waits and asks that began are said, notified and rung but for the watched worker's; those that ended close. A
-   * policy's offer is among the asks: `board.offers` holds the same slot again, for renderers of before 1.91.
+   * policy's offer is among the asks.
    */
   board: (a, { board }) => {
     const waits = transitions(a.board, board)

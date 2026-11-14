@@ -30,7 +30,7 @@ import type { Card } from '../src/bridge/board.ts'
 import { CORE_VIEWS_DIR, MODULES, sourceUrl, libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
 import type { Library } from './library.ts'
 import { bundledClient } from '../src/extensions.ts'
-import { decide, standing } from '../extensions/policies/client/policies.ts'
+import { decide, floorPolicies, standing } from '../extensions/policies/client/policies.ts'
 import { slotWords } from '../src/shared/slots.ts'
 import { callsignsOf } from '../src/shared/model.ts'
 import { tagOf } from '../src/shared/tags.ts'
@@ -442,7 +442,6 @@ test('server: every read answers', async () => {
     ['/landing?project=lab&branch=feature', 'application/json', has('branch', 'repos')],
     [`/changes/${SESSION}`, 'application/json', isArray],
     [`/changes/${SESSION}?scope=uncommitted`, 'application/json', isArray],
-    ['/runs/lab?policy=nightly.md', 'application/json', isArray],
     ['/probe/quota', 'application/json', has('status', 'reads')],
     ['/stats', 'application/json', has('from', 'to', 'bucket', 'all')],
     ['/shelf/lab/0', 'application/json', (body) => (json(body) as string[]).includes('report/index.html')],
@@ -686,14 +685,15 @@ test('server: policies kept before the policies extension keep their approvals, 
   const floor = board.floors.find((f) => f.id === 'lab')!
   const worker = floor.cards.find((c) => c.id === SESSION)!
   const DAY = 24 * 60 * MIN
-  const runByHand = (id: string) => ['run', ['policy/run', { project: 'lab', policy: id, start: 'hand' }]] as const
-  const approve = (id: string, text: string) => ['approve', ['policy/approve', { project: 'lab', policy: id, hash: sha(text) }]] as const
+  const runByHand = (id: string) => ['run', ['policies/run', { project: 'lab', policy: id, start: 'hand' }]] as const
+  const approve = (id: string, text: string) => ['approve', ['policies/approve', { project: 'lab', policy: id, hash: sha(text) }]] as const
   const offering = (...pairs: (readonly [string, unknown])[]) => ({ calls: Object.fromEntries(pairs), actions: pairs.map(([verb, call]) => ({ verb, call })) })
   const rule = (at: number) => `daily at ${new Date(at).toISOString().slice(11, 16)} (UTC)`
   const { sweep, triage, digest, broken } = KEPT
   const triageOffer = { slot: triage.slot, since: OFFERED_AT, until: triage.slot + DAY }
+  const part = floorPolicies(floor)
   assert.deepEqual(
-    floor.policies.filter((p) => p.id !== 'nightly.md'),
+    part.policies.filter((p) => p.id !== 'nightly.md'),
     [
       {
         id: broken.id,
@@ -747,15 +747,11 @@ test('server: policies kept before the policies extension keep their approvals, 
       },
     ],
   )
-  const accept = ['policy/run', { project: 'lab', policy: triage.id, slot: triage.slot, start: 'offer' }]
-  assert.deepEqual(board.offers, [
+  const accept = ['policies/run', { project: 'lab', policy: triage.id, slot: triage.slot, start: 'offer' }]
+  assert.deepEqual(part.offers, [
     { key: `${triage.id}@${triage.slot}`, project: 'lab', policy: triage.id, tag: 'muddy-thistle', title: 'Triage', ...triageOffer, calls: { accept }, actions: [{ verb: 'accept', call: accept }] },
   ])
-  assert.deepEqual(worker.run, { policy: digest.id, tag: 'warm-lily', title: 'Digest', n: 1, check: CHECKED, start: 'auto', slot: digest.slot })
-  const part = floor.x?.policies as { policies: { id: string; calls: object }[]; offers: { key: string; calls: object }[] }
-  const renamed = (value: unknown) => JSON.parse(JSON.stringify(value).replaceAll('"policy/run"', '"policies/run"').replaceAll('"policy/approve"', '"policies/approve"'))
-  assert.deepEqual(part, { policies: renamed(floor.policies), offers: renamed(board.offers) }, 'the extension holds the same views, its calls naming its own verbs')
-  assert.deepEqual(worker.x?.policies, { run: worker.run })
+  assert.deepEqual(worker.x?.policies, { run: { policy: digest.id, tag: 'warm-lily', title: 'Digest', n: 1, check: CHECKED, start: 'auto', slot: digest.slot } })
   assert.deepEqual(
     (board.adds['floor:lab']?.slots ?? []).filter((s) => s.cap === 'policies').map((s) => s.key),
     ['digest.md', 'nightly.md', 'sweep.md', 'triage.md'],
@@ -768,7 +764,7 @@ test('server: policies kept before the policies extension keep their approvals, 
     [{ key: `policies:${triage.id}@${triage.slot}`, subject: `item.policies:lab/${triage.id}`, title: 'Triage', since: OFFERED_AT, until: triage.slot + DAY, sound: 'offer', opens: { view: 'policies/policies', subject: 'floor:lab' }, cap: 'policies', actions: [{ verb: 'policies/run', call: accept[1], words: { label: 'Accept', hint: 'start the run this slot offers' }, cap: 'policies' }] }],
     'the open offer is an ask that rings as an offer, until the next slot',
   )
-  const standings = Object.fromEntries(floor.policies.map((p) => [p.id, standing(p, now)]))
+  const standings = Object.fromEntries(part.policies.map((p) => [p.id, standing(p, now)]))
   assert.deepEqual(standings, {
     [broken.id]: { t: 'invalid' },
     [digest.id]: { t: 'waits', next: digest.slot + DAY, step: 'check' },
@@ -776,9 +772,9 @@ test('server: policies kept before the policies extension keep their approvals, 
     [sweep.id]: { t: 'waits', next: sweep.slot, step: 'run' },
     [triage.id]: { t: 'offered', slot: triage.slot, until: triage.slot + DAY },
   })
-  assert.deepEqual(decide(floor, new Map(), now), [], 'the slot that ran is not run again, and the offered one is not offered again')
+  assert.deepEqual(decide(part, new Map(), now), [], 'the slot that ran is not run again, and the offered one is not offered again')
 
-  const runs = JSON.parse((await get(`/runs/lab?policy=${digest.id}`)).body)
+  const runs = JSON.parse((await get(`/policies/runs/lab?policy=${digest.id}`)).body)
   assert.deepEqual(runs, [
     {
       n: 1,
@@ -1610,7 +1606,7 @@ test("server: an archived card carries the extensions' parts and the old fields 
   assert.deepEqual(archived.x?.reviews, { thread: 'odin-1', threadState: { is: 'live' }, unseen: 4, note })
   assert.deepEqual([archived.threadState, archived.unseen, archived.calls.note], [{ is: 'live' }, 4, ['review/append', { project: 'desk', checkout: 'odin-1' }]])
   const run = { policy: 'sweep.md', tag: tagOf('sweep.md'), n: 1, start: 'hand', slot: null }
-  assert.deepEqual([archived.x?.policies, archived.run], [{ run }, run], "a policy's run keeps its part and its old field too")
+  assert.deepEqual(archived.x?.policies, { run }, "a policy's run keeps its part")
 })
 
 test('server: a note appended through review/append is the same bytes, numbered one past the last, and the thread file stays the format', async () => {

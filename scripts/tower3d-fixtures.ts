@@ -294,7 +294,6 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
       return { ...f, cards: present, archived: cards.length - present.length, gallery: galleryOf(cards) }
     }),
     waiting: waitingOrder(seated),
-    offers: [],
     archiveAt: archiveAtOf(seated, seated.filter((c) => !kept(c))),
     limits: [{ rateLimits: extra.rateLimits ?? [], rateLimitsAt: extra.rateLimitsAt, ...(extra.extraUsage && { extraUsage: extra.extraUsage }) }],
     rateLimits: extra.rateLimits ?? [],

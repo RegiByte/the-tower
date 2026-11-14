@@ -34,7 +34,6 @@
  *   GET  /reviews/<project>  the reviews extension's reviews/history/<project>, through LEGACY until 2.0
  *   GET  /landing?project&branch  what landing changed on a branch: each commit landed as an edited copy, and git range-diff
  *   GET  /changes/<id>  what changed in each of the session's repos, as git reads it now, `?scope=all|uncommitted|<commit>` (src/changes.ts)
- *   GET  /runs/<project>?policy&limit  a policy's runs, newest first, each with its worker as it is now (src/bridge/policies.ts)
  *   GET  /probe/<name>?last  deprecated: the quota probe's status as board.probes shows it and its latest reads, through
  *                            quota/reads (LEGACY, src/bridge/legacy.ts)
  *   GET  /stats?from&to&bucket&project   stats over every session's log and what landed on each project's default
@@ -55,7 +54,6 @@
  *   GET  /cards.js      what renderers say about a worker (src/shared/cards.ts)
  *   GET  /icons.js      the icons renderers draw for the same things (src/shared/icons.ts)
  *   GET  /reviews.js    the review threads' format (src/shared/reviews.ts)
- *   GET  /policies.js   what renderers say and decide about policies: rules and slots in words, standing (src/shared/policies.ts)
  *   GET  /termkeys.js   the editing keys every browser terminal sends (src/shared/termkeys.ts)
  *   GET  /keymap.js     every keyboard command, its chords and the ? sheet (src/shared/keymap.ts)
  *   GET  /views.js      views, the layout, locations and display: what a renderer hosting views reads (src/shared/views.ts)
@@ -85,8 +83,6 @@
  *   POST /config/add {key, value} | /config/append {key, value} | /config/set {key, value, was} | /config/remove {key, was}
  *        one edit of the config file, `was` the value read at the key, checked, the file written whole and read again (src/config-edit.ts)
  *   POST /review/append {project, checkout, author, re?, anchors, body}   a message on a checkout's review thread
- *   POST /policy/run {project, policy, start, slot?, by?, check?} | /policy/pass {project, policy, slot, outcome, check?}
- *        | /policy/approve {project, policy, hash, by?}   a policy's facts in its project's streams (decision `policies`)
  *   POST /probe/run {name}   deprecated: the quota probe read now, through quota/read-now (LEGACY, src/bridge/legacy.ts)
  *   POST /reap {id}     end what the session left running;  /reap/process {id, pid}  one of those processes
  *   POST /open {dir}    open a project directory in a new window of the user's editor
@@ -999,7 +995,6 @@ export const httpServer = defineResource({
       apiRead('jobs', { path: /^\/jobs$/, answer: () => json(jobsNow(system.jobs(), heldIds()) satisfies Reads['jobs']) }),
       apiRead('stats', { path: /^\/stats$/, answer: ({ query }) => statsRead(query) }),
       apiRead('landing', { path: /^\/landing$/, answer: ({ query }) => landingRead(query) }),
-      apiRead('runs/<project>', { path: /^\/runs\/(?<project>[\w-]+)$/, answer: (asked) => legacyRead('runs/<project>', asked) }),
       apiRead('probe/<name>', { path: /^\/probe\/(?<name>[\w-]+)$/, answer: (asked) => legacyRead('probe/<name>', asked) }),
       apiRead('collection/<project>/<collection>/<item>', { path: /^\/collection\/(?<project>[\w-]+)\/(?<collection>[\w.-]+)\/(?<item>[^/]+)$/, answer: ({ params }) => collectionItem(params.project!, params.collection!, params.item!) }),
       apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), undefined) }),
