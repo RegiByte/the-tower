@@ -177,7 +177,7 @@ test("what a worker showed and a floor's shelf entries are folded; an action's o
   assert.equal(parentOf(subjectAt(b, 'shelf:tower/0') as Subject), 'floor:tower')
 })
 
-test("an own kind's entry is keyed by the subject it was found in, its contributions copied to its old key, and resolved while its extension runs", () => {
+test("an own kind's entry is keyed by the subject it was found in, never by its key alone, and resolved while its extension runs", () => {
   const { board: folded, problems } = fold(
     [folderOf('reviews', { floor: () => ({ x: { threads: [{ key: 'main' }] } }) }), folderOf('chime', { 'reviews.thread': (t) => ({ badges: [{ label: t.key }] }) }, { wants: ['reviews'] })],
     core(),
@@ -185,7 +185,7 @@ test("an own kind's entry is keyed by the subject it was found in, its contribut
   )
   assert.deepEqual(problems, [])
   assert.deepEqual(folded.adds['reviews.thread:floor:lab/main'].badges, [{ label: 'main', cap: 'chime' }])
-  assert.equal(folded.adds['reviews.thread:main'].badges?.length, 2)
+  assert.equal(folded.adds['reviews.thread:main'], undefined)
   assert.equal(subjectAt(folded, 'reviews.thread:floor:lab/main'), undefined)
   const b = { ...folded, extensions: [started('reviews', { subjects: [{ kind: 'reviews.thread', in: 'floor', list: 'threads' }] })] }
   const thread = subjectAt(b, 'reviews.thread:floor:lab/main') as Subject

@@ -1620,7 +1620,6 @@ fields appear only under `x`. A renderer that draws extensions' actions draws th
 
 | Deprecated | Use |
 |---|---|
-| `board.adds['<cap>.<kind>:<key>']`, an own kind's key before 1.98 | the key by the subject its entry was found in, `<cap>.<kind>:<instance>/<key>` |
 | `subject` in what a command is called with | `target`, whose `value` it is |
 | `tower/shown` in a layout (retired at 1.115) | the views by type: naming it in `order` leaves showings to their type's pick, and in `hidden` hides each view that draws them now |
 

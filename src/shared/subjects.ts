@@ -167,9 +167,6 @@ export const ownSubject = (kind: string, entry: { key: string }, instance: Subje
   value: entry,
 })
 
-/** An own kind's entry's key before 1.98, `<cap>.<kind>:<key>`, under which `board.adds` copies its contributions until 2.0. */
-export const ownLegacyKey = (kind: string, entry: { key: string }) => `${kind}:${entry.key}`
-
 /** Whether `kind` is an extension's own, `<cap>.<kind>`: dotted, and no collection's item. @since 1.98 */
 export const isOwnKind = (kind: string) => kind.includes('.') && !kind.startsWith('item.')
 
