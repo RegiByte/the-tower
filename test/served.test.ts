@@ -7,7 +7,7 @@ import vm from 'node:vm'
 import { API_VERSION, HOOKS } from '../src/shared/api.ts'
 import { designCss } from '../src/shared/design.ts'
 import { ADDS, BADGE_TONES, BUNDLED, CTX_SINCE, MANIFEST_SCHEMA, PROBLEM_CODES, RESERVED } from '../src/shared/extensions.ts'
-import { bundled, clientModule, MODULES, towerClient } from '../src/tower/served.ts'
+import { clientModule, towerClient } from '../src/tower/served.ts'
 import { FACT_KINDS } from '../src/shared/rate-limits.ts'
 import { CLI_REGIONS, type Region } from '../src/shared/regions.ts'
 import { declaredAt } from '../src/renderers.ts'
@@ -66,7 +66,7 @@ const leafPaths = (value: object, at: string[] = []): string[] =>
   Object.entries(value).flatMap(([key, inner]) => (typeof inner === 'object' ? leafPaths(inner, [...at, key]) : [[...at, key].join('.')]))
 
 /**
- * Every name served now: each module's exports (a module moved into a bundled extension's client, at its old URL), `/tower.js`'s members, `/design.css`'s custom properties and classes,
+ * Every name served beside the library: `/tower.js`'s members, `/design.css`'s custom properties and classes,
  * and what extensions build on: the manifest's key paths, each lane's ctx members, and the core's problem codes, names,
  * adds, badge tones and hooks.
  */
@@ -86,7 +86,6 @@ function servedNow(): Record<string, string[]> {
       ...FACT_KINDS.map((kind) => `kind.${kind}`),
     ],
   }
-  for (const url of Object.keys(MODULES)) served[url] = bundled(url).exports
   return Object.fromEntries(Object.entries(served).map(([url, names]) => [url, [...names].sort()]))
 }
 

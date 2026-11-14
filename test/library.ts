@@ -5,7 +5,7 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { LIBRARY, libraryUrls, MODULES, urlSource, urlVendor } from '../src/tower/served.ts'
+import { LIBRARY, libraryUrls, urlSource, urlVendor } from '../src/tower/served.ts'
 
 export const REPO = path.join(import.meta.dirname, '..')
 const TSC = path.join(REPO, 'node_modules', '.bin', 'tsc')
@@ -119,11 +119,11 @@ const sourcesIn = (dir: string): string[] =>
 export const specifiersOf = (text: string): string[] =>
   [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)(['"])([^'"\n]+)\1/gm)].map((m) => m[2]!)
 
-/** A file's way into the core outside the library: a path below `src/`, a served module's URL, a loan from `tower:`, or an internal URL. */
+/** A file's way into the core outside the library: a path below `src/`, or an internal URL. */
 export const reachesCore = (file: string, specifier: string): boolean =>
   specifier.startsWith('.')
     ? path.resolve(REPO, path.dirname(file), specifier).startsWith(path.join(REPO, 'src') + path.sep)
-    : specifier.startsWith('tower:') || Boolean(MODULES[specifier]) || (specifier.startsWith('/') && !specifier.startsWith(LIBRARY) && (urlSource(specifier) ?? urlVendor(specifier)) !== undefined)
+    : specifier.startsWith('/') && !specifier.startsWith(LIBRARY) && (urlSource(specifier) ?? urlVendor(specifier)) !== undefined
 
 /** Each way into the core outside the library from code that isn't the core, once per file: `<file> -> <specifier>`. */
 export const reachNow = (): string[] => [

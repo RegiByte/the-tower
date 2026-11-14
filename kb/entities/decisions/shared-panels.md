@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Shared panels: one Changes and one Stats for every renderer",
-  "summary": "The Changes and Stats panels are pure views in one served module, `/panels.js`, the Reviews and Policies panels their extensions' own, gathered from a module per concern (view model in, html out), with the logic of picking lines, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
+  "summary": "The Changes and Stats panels are pure views gathered in one module, `panels.ts`, the Reviews and Policies panels their extensions' own, gathered from a module per concern (view model in, html out), with the logic of picking lines, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
@@ -44,7 +44,7 @@ drift apart.
 are the same view in every renderer; only where they sit, their state and a few gestures differ.
 
 **How.**
-- *One served module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts), served as `/panels.js`) holds three panels,
+- *One module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts)) holds three panels,
   each in a module of its own that it gathers and bundles: Changes
   ([`markedChangesHtml`](ref:hub/src/shared/changes-panel.ts#markedChangesHtml), [[changes-view]]), Stats
   ([`statsHtml`](ref:hub/src/shared/stats-panel.ts#statsHtml) over a `/stats` read, ranges asked by
@@ -61,7 +61,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   something acts on them, and leaves an element under the pick (`data-pick-acts`) the renderer fills with the
   `lines.acts` region ([[ui-model]]). Both draw through one core,
   [`changesPanelHtml`](ref:hub/src/shared/changes-panel.ts#changesPanelHtml), which takes what each line says it is
-  marked with and the row drawn under a pick. `/panels.js` holds no anchor or note helpers: the reviews extension's
+  marked with and the row drawn under a pick. `panels.ts` holds no anchor or note helpers: the reviews extension's
   client holds them (`/x/reviews/anchors.js`).
 - *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
   File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]). Text boxes are named by attribute, not id, so
@@ -88,7 +88,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   its showings kept in place across redraws by [`keepShownTabs`](ref:hub/src/shared/panel-kit.ts#keepShownTabs).
 - *A read that failed says so.* Each view takes `failed`, drawn while nothing is read:
   [`failedHtml`](ref:hub/src/shared/panel-html.ts#failedHtml) names what couldn't be read and why, with Read again. A
-  failure over a read already held leaves it drawn and toasts (`Held`, `/reads.js`).
+  failure over a read already held leaves it drawn and toasts (`Held`, `reads.ts`).
 - *Syntax* ([`highlightLines`](ref:hub/src/shared/highlight.ts#highlightLines)): code in Changes and quotes in
   the reviews extension's notes are highlighted with highlight.js, bundled into the served modules and Tower 3D's bundle (local-first:
   nothing comes from a CDN). [`rowCode`](ref:hub/src/shared/changes-panel.ts#rowCode) highlights each hunk as two texts, its
@@ -98,7 +98,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   diffed as code tokens. The colours are the design's tokens ([[design-system]]).
 - *What stays per renderer is wiring, not html.* Copying, scrolling to a note and toasts are each renderer's handlers
   on the same attributes. Reading is shared: a renderer runs [`changesHandlers`](ref:hub/src/shared/changes-reads.ts#changesHandlers)
-  on `/loop.js` with its own executors, and tells them, as it draws, whose Changes are open ([[changes-view]]). A Stats bar's readout (`data-tip`) shows through the renderer's one
+  on `loop.ts` with its own executors, and tells them, as it draws, whose Changes are open ([[changes-view]]). A Stats bar's readout (`data-tip`) shows through the renderer's one
   tooltip ([[viewer-prefs]]). Picking lines for a note stays a pointer gesture; a file's fold and Viewed are
   real buttons.
 
@@ -108,7 +108,7 @@ are the same view in every renderer; only where they sit, their state and a few 
 - *A DOM morph (idiomorph or morphdom) or a framework* for redraws: `drawPanel` covers today's needs; a morph is the
   next step only if hand-patching grows.
 - *Serving each panel's module apart* (`/changes-panel.js` and the rest): every module served is a URL renderers may
-  import and so part of the contract for good; `/panels.js` already serves every name, and its modules stay free to be
+  import and so part of the contract for good; the library re-exports the names renderers use, and the modules stay free to be
   cut again.
 - *Panel CSS inside `/design.css`*: every shelf page would load it, and the design module would import the panels.
 - *Shiki or Prism*: Shiki's TextMate grammars need a WASM regex engine and load asynchronously, too heavy for a pure,

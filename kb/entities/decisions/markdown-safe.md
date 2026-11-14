@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Markdown is drawn through one shared module, safe by construction for unvetted words",
-  "summary": "Every renderer draws markdown through /markdown.js: markdownHtml for Claude's answers, prompts and workers' words (raw HTML escaped, links only http(s), mailto or relative, images only the tower's own), safe in any element; documentHtml for a shown, shelved or kept file, raw HTML kept as written for a frame without scripts, its markdown links held to safeHref; the frame contains a document's raw HTML; inside a document frame the renderer holds what it made by reference and hears nothing (WebKit calls no listener in a document that can't run scripts): it writes where each link goes as it draws, by one rule, empties what could hold a document of its own, follows the frame's scroll from the page, and draws a section's commands in a gutter beside the frame, never in it.",
+  "summary": "Every renderer draws markdown through markdown.ts: markdownHtml for Claude's answers, prompts and workers' words (raw HTML escaped, links only http(s), mailto or relative, images only the tower's own), safe in any element; documentHtml for a shown, shelved or kept file, raw HTML kept as written for a frame without scripts, its markdown links held to safeHref; the frame contains a document's raw HTML; inside a document frame the renderer holds what it made by reference and hears nothing (WebKit calls no listener in a document that can't run scripts): it writes where each link goes as it draws, by one rule, empties what could hold a document of its own, follows the frame's scroll from the page, and draws a section's commands in a gutter beside the frame, never in it.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-08",
@@ -34,7 +34,7 @@
     "hub/src/shared/picks.ts"
   ],
   "links": [
-    { "to": "renderer-shared-modules", "verb": "extends", "carries": "/markdown.js" },
+    { "to": "renderer-shared-modules", "verb": "extends", "carries": "markdown.ts" },
     { "to": "brief-turns", "verb": "uses", "carries": "markdownHtml as the tower page's said" },
     { "to": "agent-show", "verb": "uses", "carries": "documentHtml for a shown markdown file" },
     { "to": "renderer-api-contract", "verb": "follows", "carries": "a served module added" }
@@ -51,7 +51,7 @@ own files and may use raw HTML on purpose.
 attribute at every call site is not held by anything a test can check. A renderer written from `docs/extending.md`
 would reach for a markdown library's `parse` and draw it inline.
 
-**How.** [`markdown.ts`](ref:hub/src/shared/markdown.ts), served as `/markdown.js`, holds two `Marked` instances
+**How.** [`markdown.ts`](ref:hub/src/shared/markdown.ts), whose names the library serves as `/lib/markdown.js`, holds two `Marked` instances
 (none mutates marked's global) and two functions:
 - [`markdownHtml`](ref:hub/src/shared/markdown.ts#markdownHtml), for words nobody vetted: the `html` renderer returns
   the raw HTML escaped (a block one as a paragraph), the `link` renderer keeps a link only when
@@ -148,4 +148,4 @@ files may use it, and they stay framed without scripts.
 
 **Impact.** Links, fragments and the gutter work alike in Chrome and WebKit; a document's nested frames, objects and
 embeds draw empty. Raw HTML in an answer or a prompt shows as its text (Claude's occasional `<details>` or `<br>` included);
-a remote image in an answer is a link. `/markdown.js` is a served module under the contract ([[renderer-api-contract]]).
+a remote image in an answer is a link. `/lib/markdown.js` is under the contract ([[renderer-api-contract]]).

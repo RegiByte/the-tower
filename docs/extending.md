@@ -1576,39 +1576,6 @@ Only the host writes them. Everything the tower shows is computed from them, the
 Everything in this section works today, and 2.0 removes it. Each is an older name for something this guide teaches
 under its current one, kept so that what was written against it goes on running. Write nothing new against them.
 
-**Modules.** Before the library (API 1.151) the tower served its helpers as 28 modules at the root. Each still
-answers, with a `Deprecation` header and a `Link` to [the library](#the-library), and its names are in the library
-modules beside it:
-
-| Deprecated | Use |
-|---|---|
-| `/cards.js` | `/lib/cards.js`, `/lib/board.js`, `/lib/layout.js`, `/lib/words.js`, `/lib/spawn.js` |
-| `/views.js` | `/lib/layout.js`, and `/lib/view.js` for a view's types |
-| `/panels.js` | `/lib/changes.js`, `/lib/stats.js`, `/lib/view.js`; the Reviews and Policies panels are their extensions' views |
-| `/items.js`, `/icons.js`, `/press.js` | `/lib/view.js` |
-| `/brief.js` | `/lib/brief.js` |
-| `/keymap.js` | `/lib/keys.js` |
-| `/terminal.js`, `/term-view.js` | `/lib/terminal.js` |
-| `/prefs.js`, `/viewer.js` | `/lib/viewer.js` |
-| `/settings.js` | `/lib/settings.js` |
-| `/tips.js`, `/toasts.js` | `/lib/chrome.js` |
-| `/capabilities.js` | `/lib/capabilities.js` |
-| `/verb-words.js` | `/lib/cards.js` |
-| `/palette.js` | `/lib/palette.js` |
-| `/markdown.js` | `/lib/markdown.js` |
-| `/slots.js` | `/lib/time.js` |
-| `/loop.js`, `/reads.js` | `/lib/machine.js` |
-| `/spawn.js` | `/lib/spawn.js` |
-| `/attend.js` | `/lib/attend.js` |
-| `/media.js`, `/repos.js` | `/lib/files.js` |
-| `/design.js` | `/lib/design.js` |
-| `/termkeys.js` | nothing: `mountTermView` of `/lib/terminal.js` takes your keymap |
-| `tower:<name>.js`, in an extension's server code | `/lib/<module>.js`, the line a client writes |
-
-The library was chosen name by name, so it holds fewer names than these modules served. `test/served-exports.json`
-lists both, module by module: a name under `served` that no module under `library` holds has no replacement, and
-joins the library as a minor the day something outside the core uses it.
-
 **Layouts.**
 
 | Deprecated | Use |

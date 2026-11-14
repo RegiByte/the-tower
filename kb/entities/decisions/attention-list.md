@@ -59,7 +59,7 @@ only by typing, one chime covered a question and an answer alike, and every wait
   ([`isAbout`](ref:hub/src/shared/waits.ts#isAbout)): the watched worker's asks ring for nobody, as its waits. An ask
   rings as its `sound` says, as a question or as an offer. An auto policy that lost its approval is a change of
   state, not a request: it never rings and isn't in the list.
-- `/cards.js` holds the pieces: what began and ended between two boards
+- `cards.ts` holds the pieces: what began and ended between two boards
   ([`transitions`](ref:hub/src/shared/waits.ts#transitions),
   [`askTransitions`](ref:hub/src/shared/waits.ts#askTransitions), silent on the first board), round-robin N
   ([`nextWait`](ref:hub/src/shared/waits.ts#nextWait)), the heeded waits
@@ -68,7 +68,7 @@ only by typing, one chime covered a question and an answer alike, and every wait
   [`ringingSound`](ref:hub/src/shared/rings.ts#ringingSound)). Dismissals and the ring setting are per viewer, fields of
   the viewer's record in `tower.store` ([`VIEWER_KEYS`](ref:hub/src/shared/viewer.ts#VIEWER_KEYS),
   [[renderer-shared-modules]]); a dismissed offer stays acceptable in the policies panel.
-- `/attend.js` is one machine, [`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers), that every renderer's
+- `attend.ts` is one machine, [`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers), that every renderer's
   own machine hands its events ([[machines]]): on each board what began and isn't dismissed is said, and but for the
   watched worker's waits and asks notified and rung, waits before asks before offers; what ended is unnotified. With `remind`, a timer
   rings what is heeded again, never while the tower is lost (its board is how it stood). The watched worker is the one

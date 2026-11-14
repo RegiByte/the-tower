@@ -20,7 +20,7 @@ kept file needs no meaning: its type says how to draw it. That part belongs in s
 and reads items alike ([[renderer-is-disposable]]).
 
 **How.**
-- `/items.js` ([`src/shared/items.ts`](ref:hub/src/shared/items.ts)): a collection's items newest first as rows
+- `items.ts` ([`src/shared/items.ts`](ref:hub/src/shared/items.ts)): a collection's items newest first as rows
   ([`collectionTrayHtml`](ref:hub/src/shared/items.ts#collectionTrayHtml)), titled where their type names itself
   ([`keptTitles`](ref:hub/src/shared/items.ts#keptTitles), else the tag), with the keeper
   ([[workers-edit-kept-items]]) and age. [`itemKind`](ref:hub/src/shared/items.ts#itemKind) reads an item by its

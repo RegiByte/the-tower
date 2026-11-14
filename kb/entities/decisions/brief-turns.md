@@ -124,7 +124,7 @@ renderer can draw the brief alike, inline.
   conversation (the one the next resumed), so "session 2 of 3" is counted from the brief alone. `card.lineage`
   ([`LineageSession`](ref:hub/src/bridge/board.ts#LineageSession)) lists the sessions a worker ran as, and
   [`shownFrom`](ref:hub/src/shared/brief.ts#shownFrom) marks a showing with the session it came from.
-- *One view, in shared code* ([`brief.ts`](ref:hub/src/shared/brief.ts), `/brief.js`):
+- *One view, in shared code* ([`brief.ts`](ref:hub/src/shared/brief.ts), `brief.ts`):
   [`briefParts`](ref:hub/src/shared/brief.ts#briefParts) groups a brief by session and
   [`briefHtml`](ref:hub/src/shared/brief.ts#briefHtml) draws it in time order as a chat: earlier sessions folded at the
   top, then the session read for. A resume never given a prompt says so

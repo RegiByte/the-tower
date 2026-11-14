@@ -90,7 +90,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *Sent home together.* Every worker offers `send-home` while it or anyone under it runs
   ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions)). Its call is a list of `kill` calls, the deepest
   first, so the API gains no verb and every kill can be resumed. A worker with nobody running under it ends alone: its
-  call is its own `kill`. `sentHome` (shared, `/cards.js`) names the cards those calls end, the worker first, then its
+  call is its own `kill`. `sentHome` (shared, `cards.ts`) names the cards those calls end, the worker first, then its
   crew; both renderers read it over every floor's cards. Sending home removes nothing: what the crew left is
   Tidy's, applied by itself where the [[autotidy]] extension's settings say so.
 - *The one way to end a worker.* Hires left running have no hirer to report to, so the chain is the unit: the
@@ -134,6 +134,6 @@ coordinator handing out work, or a conversation that just says hi. The model is 
 - *Keeping a non-matching coordinator as a dimmed context row while filtering*: more rows than the words asked for.
 
 **Impact.** Board: `card.reportsTo` (and `card.crew`, the edge a launch contributor logged) and the card verb `send-home`, its call a list of kills, on every worker;
-renderers draw no Kill on a worker. Shared: the crew folds and the archive's order are `/cards.js` exports every
+renderers draw no Kill on a worker. Shared: the crew folds and the archive's order are `cards.ts` exports every
 renderer draws from. The board carries only today's past cards, so the sidebar's fold counts those; the archive's
 tree reads the archive too.

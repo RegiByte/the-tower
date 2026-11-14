@@ -46,7 +46,7 @@ update of the core never touches it.
   nothing from it. Tower 3D's build copies its file into `out/`. The `tower` command's regions are `cli.regions` in
   `/schema` ([`CLI_REGIONS`](ref:hub/src/shared/regions.ts#CLI_REGIONS)). An ask lands in the board's regions only
   when folded on the board, since one folded on another kind is about a floor's things. [`landing`](ref:hub/src/shared/regions.ts#landing)
-  (`/cards.js`) answers which regions of each draw an extension's commands and fold contributions; `tower extensions
+  (`cards.ts`) answers which regions of each draw an extension's commands and fold contributions; `tower extensions
   check` prints it, and `docs/extending.md`'s table is generated from the shipped declarations by `npm run
   served:update`, its staleness failing `npm test`. A file that doesn't parse declares nothing and carries its `problem`, which `tower config check` warns of; the renderer, and every other, serves all the same. The tower reads
   `keeps` for extensions' chords; a renderer hosting views reads its `kit` and `layout`, the config's

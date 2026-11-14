@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "One keymap: commands as data, defaults in the module, overrides in the config",
-  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (/keymap.js): an id, a scope (global, terminal, field), a group, what it does, its default chords and, for a command that opens a worker's tab, that tab's view and name, listed as PANES, from which every table of panes derives; panesOf adds each worker's tab of a started extension with a chord bound. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃⇧1–4 show a worker's panes, from inside the terminal too.",
+  "summary": "Every command a renderer runs from the keyboard is data in src/shared/keymap.ts (keymap.ts): an id, a scope (global, terminal, field), a group, what it does, its default chords and, for a command that opens a worker's tab, that tab's view and name, listed as PANES, from which every table of panes derives; panesOf adds each worker's tab of a started extension with a chord bound. The config's keys replaces a command's chords by id (null unbinds it), checked by tower config check; the board carries the result as board.keys, so every renderer and every sheet follows the config live. ⌥Esc leaves a terminal, and ⌃⇧1–4 show a worker's panes, from inside the terminal too.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
@@ -115,6 +115,6 @@ every other key, and reach every renderer the way `user.name` does.
   and the relay's pairing stays as it was. Serving framed html at the tower's origin to hear its keys: it would call
   the API as the tower.
 
-**Impact.** `/keymap.js` and `board.keys` are part of the renderer API, and the `?` sheet can't drift from the
+**Impact.** `keymap.ts` and `board.keys` are part of the renderer API, and the `?` sheet can't drift from the
 bindings. Every page the tower frames forwards its global keys with nothing to add; a page that handles a key calls
-`preventDefault` to keep it. A remote `url` frame is the gap: nothing is injected there, and it is not heard. `MOVE_KEYS` and `moveOfKey` in `/cards.js` are deprecated in their favour until the API's next major.
+`preventDefault` to keep it. A remote `url` frame is the gap: nothing is injected there, and it is not heard. `MOVE_KEYS` and `moveOfKey` in `cards.ts` are deprecated in their favour until the API's next major.

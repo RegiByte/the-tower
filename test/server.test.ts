@@ -27,7 +27,7 @@ import type { FloorPart } from '../extensions/reviews/threads.ts'
 import { BUNDLED, type Adds } from '../src/shared/extensions.ts'
 import type { BoardMsg, Reads } from '../src/shared/shelf-page.ts'
 import type { Card } from '../src/bridge/board.ts'
-import { CORE_VIEWS_DIR, MODULES, sourceUrl, libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
+import { CORE_VIEWS_DIR, sourceUrl, libraryUrls, SERVER_ONLY } from '../src/tower/served.ts'
 import type { Library } from './library.ts'
 import { bundledClient } from '../src/extensions.ts'
 import { decide, floorPolicies, standing } from '../extensions/policies/client/policies.ts'
@@ -456,7 +456,6 @@ test('server: every read answers', async () => {
     ['/design.css', 'text/css'],
     [`/fonts/${fonts[0].file}`, 'font/woff2'],
     ['/xterm.js', 'text/javascript'],
-    ...Object.keys(MODULES).map((module): [string, string] => [module, 'text/javascript']),
   ]
   for (const [pathname, type, shape] of reads) {
     const reply = await get(pathname)
@@ -505,7 +504,7 @@ test("server: a page gets one copy of each module: no served module, core view o
   })
   const views = readdirSync(CORE_VIEWS_DIR).filter((f) => f.endsWith('.ts')).map((f) => `/x/tower/${f.replace(/\.ts$/, '.js')}`)
   const texts = new Map<string, string>()
-  for (let queue = [...Object.keys(MODULES), ...views, ...clients]; queue.length; ) {
+  for (let queue = [...libraryUrls(), ...views, ...clients]; queue.length; ) {
     const url = queue.shift()!
     if (texts.has(url)) continue
     const reply = await get(url)
@@ -562,11 +561,8 @@ test('server: a page loading /lib/view.js and /lib/changes.js gets one press.ts,
   assert.equal(pressing.length, 1, 'one file holds the in-flight set')
 })
 
-test('server: the old served modules say they are deprecated, and link to what replaces them', async () => {
-  const { headers } = await get('/cards.js')
-  assert.equal(headers.deprecation, '@0')
-  assert.match(headers.link as string, /^<https:[^>]+#the-library>; rel="deprecation"$/)
-  assert.equal((await get('/lib/words.js')).headers.deprecation, undefined)
+test('server: the modules served before the library are gone', async () => {
+  assert.equal((await get('/cards.js')).status, 404)
 })
 
 test('server: a sandboxed html file read by a script is the file as written; loaded any other way, its frame keys follow it', async () => {
