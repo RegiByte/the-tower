@@ -35,7 +35,7 @@ import { HOOKS } from '../shared/api.ts'
 import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.ts'
 import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
-import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReads, readsSince, restoreOf, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
+import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReading, projectReads, projectRefs, readsSince, restoreOf, treeAt, type FirstRead, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
 import { jobsNow, recentJobs, type Job, type JobRecord } from './jobs.ts'
 import type { HeldJob } from '../shared/jobs.ts'
 
@@ -271,6 +271,12 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   main?: MainCheckouts
   /** Every dir of the floor reads as a git repo, so a checkout of it can be forked (`spawn`'s `cut.from`). @since 1.95 */
   git: boolean
+  /**
+   * Its dirs not yet read in full, so its worktrees, kept branches and main checkouts are not shown yet: each still being
+   * read, or `failed` saying what git said at its last try, which is tried again. A cut is offered as soon as every dir's
+   * refs are read, before its checkouts are. Absent once every dir was read. @since 2.1
+   */
+  reading?: { dir: string; failed?: string }[]
   bases: string[]
   /** Origin's default branch, when every dir has the same one: where a cut naming no base starts. Absent when they differ. @since 1.96 */
   defaultBase?: string
@@ -698,12 +704,11 @@ const withCheckouts = (config: Config, cards: Unplaced[], shells: Shell[] | unde
 /** Whether a worker runs in a floor's main checkouts. */
 const mainInUse = (cards: Pick<Card, 'project' | 'live' | 'checkout'>[], projectId: string) => cards.some((c) => c.project === projectId && c.live && c.checkout === MAIN_CHECKOUT)
 
-/** A floor's worktrees, kept branches and main checkouts as git reads them, `read` `undefined` until every dir of it was read once. */
-const floorGit = (config: Config, projectId: string, project: Project, repos: Map<string, RepoRead>, occupants: Occupant[], inUse: boolean, stores: ExtensionStores[]): CheckoutsRead & { read: RepoRead[] | undefined } => {
+/** A floor's worktrees, kept branches and main checkouts as git reads them, none until every dir of it was read once. */
+const floorGit = (config: Config, projectId: string, project: Project, repos: Map<string, RepoRead>, occupants: Occupant[], inUse: boolean, stores: ExtensionStores[]): CheckoutsRead => {
   const read = projectReads(projectDirs(project), repos)
   const main = mainCheckouts(read, inUse)
   return {
-    read,
     worktrees: floorWorktrees(projectId, read ?? [], occupants, recordsDiscards(config, projectId, stores)),
     branches: floorBranches(projectId, read ?? []),
     ...(main && { main }),
@@ -777,6 +782,8 @@ export type SystemView = {
   heldJobs: HeldJob[] | undefined
   items: CollectionItem[]
   repos: Map<string, RepoRead>
+  /** Each project dir not yet read in full: its refs once read, which a cut is offered from, and why its last read failed. */
+  firstReads: Map<string, FirstRead>
   logFiles: Map<string, LogFile>
   /** Each started extension's stream of `tower/rate-limits` readings, folded. */
   readings: LimitFacts[]
@@ -823,7 +830,7 @@ export const board = (view: SystemView): Board => boardOf(view, allCards(view))
 
 /** The board of `view` from its cards (`allCards`), built once by a caller that reads them too. */
 export const boardOf = (view: SystemView, cards: Card[]): Board => {
-  const { config, sessions, host, shells, items, repos, logFiles, readings, streams, stores, paths, keeps, viewers, now } = view
+  const { config, sessions, host, shells, items, repos, firstReads, logFiles, readings, streams, stores, paths, keeps, viewers, now } = view
   const { keys, extensions } = keysOf(config, view.extensions, keeps, now)
   const continued = continuations(sessions, chainsOf(sessions))
   const kept = onBoard(bucketStart(now, 'day'))
@@ -839,9 +846,11 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     viewers,
     floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, runtimes: _______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)
-      const { read, worktrees, branches, main } = git
-      const bases = commonBases(read ?? [])
-      const defaultBase = sharedDefault(read ?? [])
+      const { worktrees, branches, main } = git
+      const refs = projectRefs(projectDirs(project), repos, firstReads) ?? []
+      const reading = projectReading(projectDirs(project), repos, firstReads)
+      const bases = commonBases(refs)
+      const defaultBase = sharedDefault(refs)
       const floorCards = cards.filter((c) => c.project === id)
       const present = floorCards.filter(kept)
       const collections = floorCollections(config, id, stores)
@@ -861,7 +870,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         worktrees,
         branches,
         ...(main && { main }),
-        git: read?.every((r) => r.git) ?? false,
+        git: refs.length > 0 && refs.every((r) => r.git),
         bases,
         ...(defaultBase && { defaultBase }),
         branchPrefix: worktreesConfig(config, id).branchPrefix,
@@ -869,7 +878,8 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         hiring: hiringConfig(config, id),
         tidy,
         runtimes: Object.fromEntries(RUNTIMES.map((r) => [r, floorRuntime(config, id, r)])),
-        ...floorOffers(id, host !== undefined, shells !== undefined, cuttable(read ?? []), tidy),
+        ...(reading.length && { reading }),
+        ...floorOffers(id, host !== undefined, shells !== undefined, cuttable(refs), tidy),
       }
     }),
     waiting: waitingOrder(cards),

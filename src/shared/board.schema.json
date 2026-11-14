@@ -312,6 +312,25 @@
           "type": "boolean",
           "description": "Every dir of the floor reads as a git repo, so a checkout of it can be forked (`spawn`'s `cut.from`)."
         },
+        "reading": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "dir": {
+                "type": "string"
+              },
+              "failed": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dir"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Its dirs not yet read in full, so its worktrees, kept branches and main checkouts are not shown yet: each still being read, or `failed` saying what git said at its last try, which is tried again. A cut is offered as soon as every dir's refs are read, before its checkouts are. Absent once every dir was read."
+        },
         "bases": {
           "type": "array",
           "items": {

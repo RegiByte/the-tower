@@ -5,15 +5,17 @@
  * (inotify drops on overflow without a word), so safety rounds read every repo's own facts every
  * `SAFETY_REPO_MS` and every worktree's status every `SAFETY_TREES_MS`, a few at each tick. A dir whose watch fails
  * is read by the rounds alone, its watch tried again at each tick. Each dir has one read at a time, on the reader the
- * caller gives, so a repo that hangs delays only its own.
+ * caller gives, so a repo that hangs delays only its own. A read is two asks of the reader: the dir's refs, which land
+ * on their own while the dir has never been read in full (`firsts`), so a cut is offered without waiting on every
+ * checkout's status, then its checkouts on those refs.
  */
 import { realpathSync } from 'node:fs'
 import { ignoredIn, isNothing, mergeStale, settleHandlers, staleOf, type SettleEffect, type SettleEvent, type Settling, type Stale } from './bridge/repo-changes.ts'
-import type { RepoRead } from './bridge/worktrees.ts'
+import type { FirstRead, RefsRead, RepoRead } from './bridge/worktrees.ts'
 import { logged, loggedRead } from './logged.ts'
 import { subscribe, type Subscription } from './subscribe.ts'
 import { loop, timers, type Executors } from './shared/loop.ts'
-import type { RepoParts, RepoReading } from './worktrees.ts'
+import type { RefsReading, RepoParts, RepoReading, RepoRefsReading } from './worktrees.ts'
 
 /** How often the safety rounds step. */
 const SAFETY_TICK_MS = 10_000
@@ -25,8 +27,19 @@ const SAFETY_TREES_MS = 10 * 60_000
 /** A read asked of the reader: `dir`'s parts as last read, and what is stale in them. */
 export type RepoAsk = { dir: string; last: RepoParts | undefined; stale: Stale }
 
+/** What the reader is asked: a dir's refs, or its checkouts judged on the refs just read. */
+export type ReaderAsk = ({ t: 'refs' } & RepoAsk) | ({ t: 'checkouts'; refs: RepoRefsReading } & RepoAsk)
+
+/** The reader's two reads, each answered as it settles. */
+export type RepoReader = {
+  refs: (ask: RepoAsk) => Promise<PromiseSettledResult<RefsReading>>
+  checkouts: (ask: RepoAsk, refs: RepoRefsReading) => Promise<PromiseSettledResult<RepoReading>>
+}
+
 export type RepoWatch = {
   repos: () => Map<string, RepoRead>
+  /** Each dir not yet read in full, with its refs once read and why its last read failed. */
+  firsts: () => Map<string, FirstRead>
   /** Reads every dir afresh; resolves once each read asked here landed, however often its dir is asked again. */
   refresh: () => Promise<void>
   /** Starts the watches and the safety rounds, and once watching reads every dir afresh, resolving as `refresh` does. */
@@ -61,7 +74,7 @@ const roundSlice = <T>(items: T[], at: number, share: number): { slice: T[]; at:
 const asJson = (value: unknown): string | undefined => JSON.stringify(value, (_, v) => (v instanceof Map ? [...v] : v))
 
 /** What a read says, without when it began. */
-const factsJson = (read: RepoRead | undefined) => read && asJson({ ...read, at: undefined })
+const factsJson = (read: RefsRead | undefined) => read && asJson({ ...read, at: undefined })
 
 /**
  * Whether `read` changes what the board shows over `last`: by what git says, or by being the first read dated after a
@@ -77,11 +90,12 @@ const moves = (last: RepoRead | undefined, read: RepoRead, startedWithin: (from:
  */
 export const watchRepos = (
   dirs: () => string[] | undefined,
-  read: (ask: RepoAsk) => Promise<PromiseSettledResult<RepoReading>>,
+  read: RepoReader,
   startedWithin: (from: number, to: number) => boolean,
   changed: () => void,
 ): RepoWatch => {
   const repos = new Map<string, RepoRead>()
+  const firsts = new Map<string, FirstRead>()
   const parts = new Map<string, RepoParts>()
   const queued = new Map<string, Stale>()
   /** Each watched dir's watches, by the real path each watches. */
@@ -118,21 +132,47 @@ export const watchRepos = (
     }
   }
 
+  /** A dir's first read that failed, said on the board until one succeeds; `true` when that changed what it says. */
+  const firstFailed = (dir: string, why: string) => {
+    if (repos.has(dir) || firsts.get(dir)?.failed === why) return false
+    firsts.set(dir, { ...firsts.get(dir), failed: why })
+    return true
+  }
+
   /** What a dir's read says: a dir that fails keeps its last read, said once until the reason changes. */
   const land = (dir: string, result: PromiseSettledResult<RepoReading>) => {
     if (result.status === 'rejected') {
-      const why = String(result.reason)
+      const why = (result.reason as Error).message
       if (failing.get(dir) !== why) console.error(`git in ${dir}:`, result.reason)
       failing.set(dir, why)
+      if (firstFailed(dir, why)) changed()
       return
     }
     failing.delete(dir)
+    firsts.delete(dir)
     if (result.value.parts) parts.set(dir, result.value.parts)
     else parts.delete(dir)
     const moved = moves(repos.get(dir), result.value.read, startedWithin)
     repos.set(dir, result.value.read)
     if (watching && watched.has(dir)) watchRoots(dir)
     if (moved) changed()
+  }
+
+  /** A dir's refs, kept on their own while it has never been read in full. */
+  const landRefs = (dir: string, refs: RefsRead) => {
+    if (repos.has(dir)) return
+    const moved = factsJson(firsts.get(dir)?.refs) !== factsJson(refs) || firsts.get(dir)?.failed !== undefined
+    firsts.set(dir, { refs })
+    if (moved) changed()
+  }
+
+  /** A dir's refs, then its checkouts judged on them; for a dir that is no repo, its refs read is all of it. */
+  const readDir = async (ask: RepoAsk): Promise<PromiseSettledResult<RepoReading>> => {
+    const refs = await read.refs(ask)
+    if (refs.status === 'rejected') return refs
+    if (!('facts' in refs.value)) return { status: 'fulfilled', value: { read: refs.value.read } }
+    landRefs(ask.dir, refs.value.read)
+    return read.checkouts(ask, refs.value)
   }
 
   const reading = new Set<string>()
@@ -147,13 +187,14 @@ export const watchRepos = (
       repos.delete(dir)
       parts.delete(dir)
     }
+    for (const dir of [...firsts.keys()].filter((d) => !now.includes(d))) firsts.delete(dir)
     if (gone.length) changed()
     for (const [dir, stale] of [...queued].filter(([d]) => !reading.has(d))) {
       queued.delete(dir)
       reading.add(dir)
       const carrier = carriers.get(dir)
       carriers.delete(dir)
-      void loggedRead('git', async () => land(dir, await read({ dir, last: parts.get(dir), stale })))().finally(() => {
+      void loggedRead('git', async () => land(dir, await readDir({ dir, last: parts.get(dir), stale })))().finally(() => {
         reading.delete(dir)
         carrier?.resolve()
         drain()
@@ -290,6 +331,7 @@ export const watchRepos = (
 
   return {
     repos: () => repos,
+    firsts: () => firsts,
     refresh,
     start: async () => {
       watching = true

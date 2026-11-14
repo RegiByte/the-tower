@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/shared/spawn-form.ts#cutWhy", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
 }
 ---
 **Problem.** Workers sharing one checkout interleave edits, test each other's half-done changes and move each
@@ -52,7 +52,10 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   the file. A failure while making, or a failed spawn, rolls back what this request made. The default name is a
   callsign whose name is free on the floor, and the worker is started with that session id ([[callsign-free-name]]).
 - **What a floor offers.** `cut` while every dir is a git repo with an origin, whatever default branch each has
-  ([`cuttable`](ref:hub/src/bridge/worktrees.ts#cuttable)). The floor's `bases` are the origin branches every repo has,
+  ([`cuttable`](ref:hub/src/bridge/worktrees.ts#cuttable)), judged on each dir's refs as soon as they are read, before
+  its checkouts are ([[live-system]]). While it isn't offered, the spawn form says why
+  ([`cutWhy`](ref:hub/src/shared/spawn-form.ts#cutWhy)): the host is down, a dir's first read failed (what git said),
+  its git is still being read, or a dir is no repo or has no origin. The floor's `bases` are the origin branches every repo has,
   nameable for all at once ([`commonBases`](ref:hub/src/bridge/worktrees.ts#commonBases)), and `defaultBase` is the
   default they share, absent when their defaults differ or one isn't recorded
   ([`sharedDefault`](ref:hub/src/bridge/worktrees.ts#sharedDefault)). The spawn form's From names `defaultBase` as

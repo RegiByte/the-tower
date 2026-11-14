@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { board } from '../src/bridge/board.ts'
 import type { Config } from '../src/shared/model.ts'
-import { spawnCall, spawnDefaults, spawnFormHtml } from '../src/shared/spawn-form.ts'
+import { can } from '../src/shared/offered.ts'
+import { cutWhy, spawnCall, spawnDefaults, spawnFormHtml } from '../src/shared/spawn-form.ts'
+import type { FirstRead } from '../src/bridge/worktrees.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { viewOf } from './view.ts'
 
@@ -32,4 +34,30 @@ test('spawnCall: a chosen command is sent, an empty one is left out', () => {
   assert.equal(withCommand.command, 'b')
   const [, withoutCommand] = spawnCall(floor, spawnDefaults(floorOf(SINGLE)))
   assert.equal('command' in withoutCommand, false)
+})
+
+const TWO_DIRS: Config = { runtimes: { claude: { argv: ['claude'] } }, env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: ['/api'] } } }
+const refsOf = (dir: string): FirstRead => ({ refs: { dir, at: 1, git: true, bases: ['origin/main'], originHead: 'origin/main' } })
+const readingFloor = (firstReads: [string, FirstRead][]) => board(viewOf(TWO_DIRS, { host: { ids: new Set(), protocol: HOST_PROTOCOL }, firstReads: new Map(firstReads) })).floors[0]
+
+test("a floor whose refs are read and checkouts aren't offers a cut, and says it is still reading", () => {
+  const floor = readingFloor([['/hub', refsOf('/hub')], ['/api', refsOf('/api')]])
+  assert.equal(can(floor, 'cut'), true)
+  assert.equal(cutWhy(floor), undefined)
+  assert.deepEqual(floor.reading, [{ dir: '/hub' }, { dir: '/api' }])
+  assert.deepEqual([floor.bases, floor.defaultBase, floor.git], [['origin/main'], 'origin/main', true])
+  assert.deepEqual(floor.worktrees, [])
+})
+
+test('a floor whose refs are still being read offers no cut, and says so rather than that a dir is no repo', () => {
+  const floor = readingFloor([['/hub', refsOf('/hub')]])
+  assert.equal(can(floor, 'cut'), false)
+  assert.equal(cutWhy(floor), 'its git is still being read')
+})
+
+test('a floor whose first read failed says what git said', () => {
+  const floor = readingFloor([['/hub', refsOf('/hub')], ['/api', { failed: 'git rev-parse in /api took over 60s and was stopped' }]])
+  assert.equal(can(floor, 'cut'), false)
+  assert.deepEqual(floor.reading, [{ dir: '/hub' }, { dir: '/api', failed: 'git rev-parse in /api took over 60s and was stopped' }])
+  assert.equal(cutWhy(floor), "git couldn't read api: git rev-parse in /api took over 60s and was stopped")
 })

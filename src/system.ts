@@ -12,10 +12,9 @@ import { foldLog } from './checkpoints.ts'
 import { streamFacts, type StreamFact, type StreamText } from './bridge/streams.ts'
 import { frozen } from './bridge/frozen.ts'
 import type { Peer, Resource } from './bridge/resources.ts'
-import type { RepoRead } from './bridge/worktrees.ts'
+import type { FirstRead, RepoRead } from './bridge/worktrees.ts'
 import { scanCollections } from './collections.ts'
-import { watchRepos, type RepoAsk } from './repo-watch.ts'
-import type { RepoReading } from './worktrees.ts'
+import { watchRepos, type ReaderAsk, type RepoReader } from './repo-watch.ts'
 import { heldJobs, hostLive, peersIn, resourcesIn, scanProcesses, termsShells } from './machine.ts'
 import { ConfigError, projectDirs, type CollectionItem, type Config } from './shared/model.ts'
 import { projectsStreamsPath, systemStreamsPath } from './shared/paths.ts'
@@ -34,7 +33,7 @@ const LIVE_POLL_MS = 1000
 const MACHINE_POLL_MS = 5000
 
 /** The git reader's thread, and each read it has yet to answer by the id it was asked with. */
-type Reader = { worker: Worker; unanswered: Map<number, (reading: PromiseSettledResult<RepoReading>) => void> }
+type Reader = { worker: Worker; unanswered: Map<number, (reading: PromiseSettledResult<unknown>) => void> }
 const RESCAN_DEBOUNCE_MS = 100
 
 /** A value as JSON, Sets and Maps as arrays, so two reads compare by what they hold. */
@@ -207,6 +206,8 @@ export type System = {
   heldJobs: () => HeldJob[] | undefined
   /** Every project dir's git, by dir, read without fetching: remote refs are as of the last fetch. */
   repos: () => Map<string, RepoRead>
+  /** Each project dir not yet read in full, with its refs once read and why its last read failed (`repo-watch.ts`). */
+  firstReads: () => Map<string, FirstRead>
   /** Ask the host again now, after a request that changed what it runs. */
   refreshLive: () => Promise<void>
   /** Resolves once the system holds the session the host just started, or after `ms`. */
@@ -465,7 +466,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
       for (const answer of started.unanswered.values()) answer({ status: 'rejected', reason: err })
       started.unanswered.clear()
     }
-    worker.on('message', ({ id, reading }: { id: number; reading: PromiseSettledResult<RepoReading> }) => {
+    worker.on('message', ({ id, reading }: { id: number; reading: PromiseSettledResult<unknown> }) => {
       started.unanswered.get(id)!(reading)
       started.unanswered.delete(id)
     })
@@ -473,13 +474,17 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     worker.on('exit', (code) => failed(new Error(`the git reader exited (${code}) before it answered`)))
     return started
   }
-  const readRepo = (ask: RepoAsk) =>
-    new Promise<PromiseSettledResult<RepoReading>>((answer) => {
+  const asked = <T>(ask: ReaderAsk) =>
+    new Promise<PromiseSettledResult<T>>((answer) => {
       reader ??= startReader()
       const id = ++lastAsk
-      reader.unanswered.set(id, answer)
+      reader.unanswered.set(id, answer as (reading: PromiseSettledResult<unknown>) => void)
       reader.worker.postMessage({ id, ask })
     })
+  const readRepo: RepoReader = {
+    refs: (ask) => asked({ t: 'refs', ...ask }),
+    checkouts: (ask, refs) => asked({ t: 'checkouts', ...ask, refs }),
+  }
 
   /**
    * A dir git fails to read keeps its last read, and the failure goes to the tower's log. A config the tower can't
@@ -591,6 +596,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     jobs: () => jobs,
     heldJobs: () => held,
     repos: repoWatch.repos,
+    firstReads: repoWatch.firsts,
     refreshLive,
     tracked: (id, ms) =>
       sessions.has(id)

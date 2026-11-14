@@ -37,6 +37,7 @@ import {
   type ReadTree,
   type RepoRead,
   type CheckoutTip,
+  type RefsRead,
   type TowerRecord,
   type TreeRead,
   type WorktreeState,
@@ -394,18 +395,31 @@ const factsOf = async (dir: string): Promise<RepoFacts> => {
 
 const statusOf = async (dir: string) => lines(await git(dir, ['status', '--porcelain']))
 
+/** A dir's refs read (`rereadRefs`): where its git lives and its own facts, which a checkouts read is judged on; none for a dir that is no repo. */
+export type RefsReading = { read: Extract<RefsRead, { git: false }> } | RepoRefsReading
+export type RepoRefsReading = { read: Extract<RefsRead, { git: true }>; layout: Omit<RepoLayout, 'admins'>; facts: RepoFacts }
+
 /**
- * What a project dir's git says about the tower's worktrees and branches, without fetching, read again from `last`:
- * only the parts `stale` names are asked of git, and the rest are kept, but for a branch's reflog once it moved. With
- * no `last`, or `stale` being `all`, everything is read.
+ * Where a project dir's git lives and its own facts, origin's branches among them, without fetching, read again from
+ * `last` when `stale` keeps them: a few calls, which is all a cut is offered from.
  */
-export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale: Stale): Promise<RepoReading> => {
+export const rereadRefs = async (dir: string, last: RepoParts | undefined, stale: Stale): Promise<RefsReading> => {
+  const prior = stale === 'all' || stale.repo ? undefined : last
+  const checked = Date.now()
+  const layout = prior ? prior.layout : await layoutOf(dir)
+  if (!layout) return { read: { dir, at: checked, git: false } }
+  const facts = prior ? prior.facts : await factsOf(dir)
+  return { read: { dir, at: facts.at, git: true, bases: originBases(facts.remotes, facts.originHead), originHead: facts.originHead }, layout, facts }
+}
+
+/**
+ * What a project dir's git says about the tower's worktrees and branches, judged on its refs read (`rereadRefs`),
+ * without fetching, read again from `last`: only the checkouts and branches `stale` names are asked of git, and the
+ * rest are kept, but for a branch's reflog once it moved. With no `last`, or `stale` being `all`, everything is read.
+ */
+export const rereadCheckouts = async ({ read: { dir }, layout: located, facts }: RepoRefsReading, last: RepoParts | undefined, stale: Stale): Promise<RepoReading> => {
   const prior = stale === 'all' ? undefined : last
   const fresh = stale === 'all' ? undefined : stale
-  const checked = Date.now()
-  const located = prior && !fresh!.repo ? prior.layout : await layoutOf(dir)
-  if (!located) return { read: { dir, at: checked, git: false } }
-  const facts = prior && !fresh!.repo ? prior.facts : await factsOf(dir)
   const { at, entries, records, heads, originHead, commits, remotes } = facts
   const checkedOut = new Set(entries.flatMap((e) => (e.branch ? [e.branch] : [])))
   const towerEntries = entries.flatMap((e) => {
@@ -469,6 +483,12 @@ export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale
     counted: new Map([...named.flatMap(([name, { counted }]) => (counted ? [[name, counted] as const] : [])), ...(main.counted ? [[MAIN_CHECKOUT, main.counted] as const] : [])]),
   }
   return { read: { dir, at, git: true, bases: originBases(remotes, originHead), originHead, main: main.read, trees, kept }, parts }
+}
+
+/** What a project dir's git says about the tower's worktrees and branches, without fetching, read again from `last` as `rereadRefs` and `rereadCheckouts` do. */
+export const rereadRepo = async (dir: string, last: RepoParts | undefined, stale: Stale): Promise<RepoReading> => {
+  const refs = await rereadRefs(dir, last, stale)
+  return 'facts' in refs ? rereadCheckouts(refs, last, stale) : { read: refs.read }
 }
 
 /** What a project dir's git says about the tower's worktrees and branches, without fetching: every part read afresh. */
