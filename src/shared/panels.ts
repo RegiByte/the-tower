@@ -2,7 +2,7 @@
  * The Changes and Stats panels every renderer draws: pure views from plain data to html, the logic of
  * picking lines, and one stylesheet (`panelsCss`). A renderer keeps the state (what it read, folds, the pick, text being
  * written), passes it in as a view model, puts the html in an element with `drawPanel` and wires the attributes below.
- * The tower serves it as `/panels.js`, bundled with the modules it gathers: `changes-reads.ts`, `changes-lines.ts` and
+ * It gathers the modules `changes-reads.ts`, `changes-lines.ts` and
  * `changes-panel.ts`, `stats-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts` and `panels-css.ts`.
  *
  * The protocol a renderer wires, by the attribute on the element clicked (`closest`):

@@ -2,7 +2,6 @@ import type { Board, Card, Floor } from '../bridge/board.ts'
 import type { Exemption } from '../bridge/facts.ts'
 import { plural } from './format.ts'
 import { callOf } from './offered.ts'
-import { VIEWER_KEYS } from './viewer.ts'
 
 /** Workers by who reports to whom: crews, the duty order every renderer steps through, and who may hire. */
 
@@ -30,9 +29,6 @@ export const crewsOf = (cards: Card[]): ((c: Card) => Card[]) => {
   const crew = (c: Card): Card[] => hires(c).flatMap((h) => [h, ...crew(h)])
   return crew
 }
-
-/** A worker's hires on other floors than its own, by start: each is drawn in full on its floor and linked under its hirer. */
-export const awayHiresOf = (cards: Card[], c: Card) => hiresOf(cards, c).filter((h) => h.project !== c.project)
 
 /** Everyone under a worker, each before those under it. */
 export const crewOf = (cards: Card[], c: Card): Card[] => hiresOf(cards, c).flatMap((h) => [h, ...crewOf(cards, h)])
@@ -63,9 +59,6 @@ export const crewFoldsOf = (cards: Card[]) => {
 export const crewFold = (cards: Card[], c: Card) => crewFoldsOf(cards)(c)
 
 export const goneHomeLine = (folded: number) => `${folded} gone home`
-
-/** The hirers whose gone-home crew a viewer unfolded, by card id, kept in `tower.store` for every renderer of theirs. */
-export const CREWS_UNFOLDED_KEY = VIEWER_KEYS.crewsUnfolded
 
 const reportsUpToDuty = (byId: Map<string, Card>, c: Card): boolean => {
   const up = c.reportsTo === undefined ? undefined : byId.get(c.reportsTo)
@@ -124,9 +117,6 @@ export const workerNamed = (cards: Card[], name: string): Card | undefined => {
  */
 export const dutyOrderIn = (board: Board, order: readonly string[]) =>
   [...board.floors].reverse().flatMap((f) => crewTreeIn(f.cards, order).map(({ card }) => card).filter((c) => c.onDuty))
-
-/** Workers on duty in the order every renderer steps through them, each floor's crews by first start: `dutyOrderIn` with no order of the viewer's. */
-export const dutyOrder = (board: Board) => dutyOrderIn(board, [])
 
 /** The card `by` steps away from `id` in `order`, wrapping round; from outside the order, the first forward and the last back. */
 export const stepFrom = (order: Card[], id: string | undefined, by: 1 | -1): Card | undefined => {

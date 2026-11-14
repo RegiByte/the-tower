@@ -341,7 +341,7 @@ export type Board = {
   user: { name: string }
   /** The config file's path: the system root, where the logs and collections are, is its directory. */
   config: string
-  /** Every command's chords by id, the config's `keys` over the keymap's defaults (`/keymap.js`). */
+  /** Every command's chords by id, the config's `keys` over the keymap's defaults (`keymap.ts`). */
   keys: Keys
   floors: Floor[]
   /** Who waits on you, in the order to go to them. */
@@ -367,7 +367,7 @@ export type Board = {
    * What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no
    * answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`,
    * `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability:
-   * `actionsOf` and `badgesOf` in `/cards.js` draw them beside the core's. @since 1.84
+   * `rankedActions` and `badgesOf` of `/lib/layout.js` draw them beside the core's. @since 1.84
    */
   adds: Record<string, Adds>
   /** What extensions' folds ask of the user, oldest first: in the attention order beside `waiting`. @since 1.84 */

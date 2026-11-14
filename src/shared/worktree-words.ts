@@ -14,7 +14,7 @@ export const risky = (f: Floor) => f.worktrees.filter((w) => w.state === 'at-ris
 
 export const WORKTREE_STATE_NAME: Record<WorktreeState, string> = { live: 'in use', lost: 'folder gone', unread: "couldn't read", 'at-risk': 'unsaved work', carried: 'landed, edited', removable: 'removable' }
 
-/** The verbs on worktrees and kept branches, as the sidebar's small buttons say them: their labels (`/verb-words.js`), lowercased. */
+/** The verbs on worktrees and kept branches, as the sidebar's small buttons say them: their labels (`verb-words.ts`), lowercased. */
 export const WORKTREE_VERB_NAME = {
   recut: VERB_WORDS['worktree/recut'].label.toLowerCase(),
   prune: VERB_WORDS['worktree/prune'].label.toLowerCase(),

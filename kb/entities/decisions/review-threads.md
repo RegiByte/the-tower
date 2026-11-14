@@ -24,7 +24,6 @@
     "hub/extensions/reviews/client/composer.ts#mount",
     "hub/extensions/reviews/client/panel.ts#threadViewAt",
     "hub/extensions/reviews/client/reviews.ts#sendText",
-    "hub/src/shared/model.ts#checkoutOf",
     "hub/extensions/reviews/threads.ts#floorThreads",
     "hub/extensions/reviews/server.ts",
     "hub/extensions/reviews/server.ts#append",

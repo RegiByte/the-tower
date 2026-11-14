@@ -80,7 +80,7 @@ export const fileSubject = (file: CheckoutFile): Subject => ({
 })
 
 /**
- * The file of the same checkout that `href`, a link relative to `from` (`relativeHref` of `/markdown.js`), names: its
+ * The file of the same checkout that `href`, a link relative to `from` (`relativeHref` of `markdown.ts`), names: its
  * path resolved against `from`'s folder, read beside it, its type by its name, and its `#fragment`. A folder is named by
  * its path as a file is. Undefined when the path climbs out of `from`'s repo; a `%` that starts no escape throws a
  * `URIError`, as decoding it does. @since 1.120
@@ -115,7 +115,7 @@ export const saidSubject = (said: Said): Subject => ({
 })
 
 /**
- * A section of a document a renderer draws (`sectionsOf` of `/markdown.js`), a child of the subject whose document it
+ * A section of a document a renderer draws (`sectionsOf` of `markdown.ts`), a child of the subject whose document it
  * is part of (`of`, a showing or an item), with its heading, its markdown and the document's type. @since 1.118
  */
 export const sectionSubject = (of: Subject, section: { n: number; heading?: string; body: string }): Subject => ({

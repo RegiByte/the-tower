@@ -1,38 +1,15 @@
 /**
  * The editing keys of a Mac text field, in every browser terminal. xterm.js sends a plain Enter for Shift+Enter, a
  * plain backspace for ⌘⌫ and ^H for Ctrl+⌫, nothing for ⌘← / ⌘→, and ESC [1;3D / ESC [1;3C for ⌥← / ⌥→, which a shell's
- * default keymap leaves unbound. Each of these sends the readline key that both Claude Code's prompt and a shell read. ⌥⌫ is left to xterm: its ESC DEL already deletes a word in both. The
- * tower serves this module as `/termkeys.js`.
+ * default keymap leaves unbound. Each of these sends the readline key that both Claude Code's prompt and a shell read. ⌥⌫ is left to xterm: its ESC DEL already deletes a word in both.
  */
 
-import { addedCommandOf, chordLabel, commandOf, COMMANDS, type Keys } from './keymap.ts'
+import { addedCommandOf, commandOf, type Keys } from './keymap.ts'
 
-/** The parts of a keydown a natural key depends on. */
-export type TermKey = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey'>
-
-type Chord = 'Shift' | 'Ctrl' | 'Alt' | 'Meta'
-
-/** The bytes each natural key's command (`/keymap.js`) sends. */
+/** The bytes each natural key's command (`keymap.ts`) sends. */
 const BYTES: Record<string, string> = {
   newline: '\n', 'delete-word': '\x17', 'delete-to-start': '\x15', 'delete-to-end': '\x0b', 'line-start': '\x01', 'line-end': '\x05',
   'word-left': '\x1bb', 'word-right': '\x1bf',
-}
-
-/** Each natural key at its default chord: its command, the key and the only modifier held, the bytes it sends, and how renderers name it. */
-export const NATURAL_KEYS: { id: string; key: string; chord: Chord; bytes: string; label: string; does: string }[] = Object.entries(BYTES).map(([id, bytes]) => {
-  const command = COMMANDS.find((c) => c.id === id)!
-  const first = command.chords[0]!
-  const [chord, key] = first.split('+') as [Chord, string]
-  return { id, key, chord, bytes, label: chordLabel(first), does: command.does }
-})
-
-const chordOf = (e: TermKey): string =>
-  [e.shiftKey && 'Shift', e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.metaKey && 'Meta'].filter(Boolean).join('+')
-
-/** The bytes a key sends in place of xterm's, or undefined when xterm's are right. */
-export const naturalKey = (e: TermKey): string | undefined => {
-  const chord = chordOf(e)
-  return NATURAL_KEYS.find((k) => k.key === e.key && k.chord === chord)?.bytes
 }
 
 /** A key that types text: no named key (`Enter`, `ArrowLeft`, `F5` are words), no ⌃ or ⌘ held. */
@@ -99,20 +76,3 @@ export const terminalKeymap = (keys: () => Keys, run: (id: string, e: KeyboardEv
   }
 }
 
-/**
- * A terminal's key handler at the default natural keys (xterm's `attachCustomKeyEventHandler`): the renderer's
- * `shortcut` first, then the natural keys, sent through `send` on keydown and kept from xterm and the browser, and dead
- * keys as `terminalKeymap` takes them; every other key goes to xterm. `terminalKeymap` follows the config's keys.
- */
-export const terminalKeys = (shortcut: (e: KeyboardEvent) => boolean, send: (bytes: string) => void) => {
-  const deadKeyText = deadKeys()
-  return (e: KeyboardEvent): boolean => {
-    if (shortcut(e)) return false
-    const dead = deadKeyText(e)
-    if (leftToComposition(e)) return false
-    const bytes = naturalKey(e) ?? dead
-    if (bytes === undefined) return true
-    if (e.type === 'keydown') (e.preventDefault(), send(bytes))
-    return false
-  }
-}

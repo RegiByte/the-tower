@@ -84,7 +84,6 @@ export const worktreeName = (project: Project, cwd: string): string | undefined 
     .map((dir) => cwd.startsWith(`${dir}/${WORKTREES_DIR}/`) && cwd.slice(dir.length + WORKTREES_DIR.length + 2))
     .find((name): name is string => !!name && WORKTREE_NAME.test(name))
 
-export const checkoutOf = (project: Project, cwd: string): string => worktreeName(project, cwd) ?? MAIN_CHECKOUT
 
 /** The project's dirs, or the same worktree of each of them when `cwd` is a worktree of one. */
 const checkoutDirsAt = (project: Project, cwd: string): string[] => {

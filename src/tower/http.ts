@@ -651,7 +651,7 @@ export const httpServer = defineResource({
       serveFile(res, source, ANY_ORIGIN)
     }
 
-    /** A module of the core's views (`CORE_VIEWS`, `/views.js`), served from `src/views/` as a client is. */
+    /** A module of the core's views (`CORE_VIEWS`, `views.ts`), served from `src/views/` as a client is. */
     async function coreViewFile(res: http.ServerResponse, file: string) {
       const source = clientSource(CORE_VIEWS_DIR, file)
       if (!source) return fail(res, 'not_found', `The core serves no view module "${file}"`)

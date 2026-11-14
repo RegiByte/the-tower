@@ -28,7 +28,7 @@
  *                                                   config keeps for it, and what its renderer.json declares (regions, kit,
  *                                                   keeps, layout); null for any other page
  *   await tower.get('origins')                      any read of the API: JSON as data, a shelf file as text
- *   await tower.get('patterns')                     what users found doing with the tower, one story each (`/capabilities.js` has
+ *   await tower.get('patterns')                     what users found doing with the tower, one story each (`capabilities.ts` has
  *                                                   the capabilities, and the tips a renderer shows of both)
  *   await tower.get('extensions')                   every extension the tower found, as board.extensions shows it, and its
  *                                                   resources as braided orders them: { extensions, topology, chains, answers, composites, launchers },
@@ -39,11 +39,11 @@
  *                                                   a failure rejects with an Error whose `code` is invalid, not_found, refused or unavailable
  *   await tower.call('reveal', { path })            a path the system names (a project's, the system root's, a shown file) in Finder,
  *   await tower.call('edit', { path, line })        or in the user's editor, a file at `line` if given
- *   await tower.run(callOf(card, 'resume'))         a call the board offers (`callOf`, /cards.js), with the fields the user supplies: run(callOf(floor, 'spawn'), { cwd })
+ *   await tower.run(callOf(card, 'resume'))         a call the board offers (`callOf`, cards.ts), with the fields the user supplies: run(callOf(floor, 'spawn'), { cwd })
  *   tower.keys(id, data) / tower.shellKeys(id, data)  keystrokes, delivered in order
  *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>` or `shell/<id>`, ending at `x` or `error`; returns unwatch
  *   tower.ui('select', { id }) / ('home') / ('shelf', { project, n })   the framing tower's own view, when framed
- *   tower.ui('go', { location }) / ('display', { subject, view? })      a location (/views.js), or a subject or its key shown
+ *   tower.ui('go', { location }) / ('display', { subject, view? })      a location (views.ts), or a subject or its key shown
  *                                                   where the framing page's layout puts it
  *   tower.relay(frame, url, { self, ui, stored })   a shelf page framed by this page, given the board and the API: `frame` an
  *                                                   iframe sandboxed without allow-same-origin, loaded with `url`; `self` the

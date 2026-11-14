@@ -7,11 +7,10 @@ import type { Viewer } from './viewer.ts'
  * What a viewer is told about what asks for them (the board's waits, extensions' asks and offers): one that begins is
  * said, notified and rung, unless the viewer dismissed it or watches its worker; with `remind`, what they heed rings
  * again every `REMIND_MS` while the tower answers. A dismissal is out of their way until the worker's next wait, and
- * closes its notification. The machine is `attendHandlers`, one pure handler per event on `/loop.js`; a renderer's own
+ * closes its notification. The machine is `attendHandlers`, one pure handler per event on `loop.ts`; a renderer's own
  * machine holds `Attending` beside what it draws and hands it every `AttendEvent` (through `attendNext`, or its own
- * `loop`), with executors of what is said, notified, rung and kept in the viewer's record (`/viewer.js`). What the
- * viewer looks at reaches it as events too: the window's `focus` and `visible`, and `watch`. The tower serves this
- * module as `/attend.js`.
+ * `loop`), with executors of what is said, notified, rung and kept in the viewer's record (`viewer.ts`). What the
+ * viewer looks at reaches it as events too: the window's `focus` and `visible`, and `watch`.
  */
 
 /** Whether the viewer's window has their eye: focused, and shown on screen. */
@@ -131,28 +130,3 @@ export function attendNext(a: Attending, e: AttendEvent): AttendStep {
   const effects = (attendHandlers[e.type] as (a: Attending, e: AttendEvent) => AttendEffect[])(a, e)
   return [effects.find((f): f is StateEffect<Attending> => f.type === 'state')?.state ?? a, effects.filter((f): f is AttendOut => f.type !== 'state')]
 }
-
-/**
- * The step of `e` with `watched` the worker the viewer watches as it is handled, in place of the `eye` and `at` the
- * state holds (the state returned keeps its own). A machine that hands `focus`, `visible` and `watch` to `attendNext`
- * needs no such argument.
- */
-export function attendStep(a: Attending, e: AttendEvent, watched: string | undefined): AttendStep {
-  const [next, out] = attendNext({ ...a, eye: { focused: true, visible: true }, at: watched }, e)
-  return [{ ...next, eye: a.eye, at: a.at }, out]
-}
-
-/** @deprecated `attendStep` of a `board` event. */
-export const seeBoard = (a: Attending, board: Board, watched: string | undefined) => attendStep(a, { type: 'board', board }, watched)
-
-/** @deprecated `attendStep` of a `remind` event. */
-export const remind = (a: Attending, watched: string | undefined) => attendStep(a, { type: 'remind' }, watched)
-
-/** @deprecated `attendNext` of a `dismiss` event. */
-export const dismiss = (a: Attending, key: string) => attendNext(a, { type: 'dismiss', key })
-
-/** @deprecated `attendNext` of a `ring` event. */
-export const chooseRing = (a: Attending, ring: Ring) => attendNext(a, { type: 'ring', ring })
-
-/** @deprecated `attendNext` of a `stored` event. */
-export const stored = (a: Attending, viewer: Pick<Viewer, 'dismissed' | 'ring'>) => attendNext(a, { type: 'stored', viewer })

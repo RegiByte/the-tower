@@ -1,6 +1,5 @@
 /**
- * The Finder and editor controls of a file, wherever a panel names one, and the call a click on them makes. Bundled into
- * `/panels.js`.
+ * The Finder and editor controls of a file, wherever a panel names one, and the call a click on them makes. Gathered by `panels.ts`.
  */
 import type { Call } from './api.ts'
 import { esc } from './cards.ts'

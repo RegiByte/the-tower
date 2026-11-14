@@ -4,7 +4,7 @@
  * while a tip shows or has just hidden), beside the element and inside the viewport, until the pointer or the focus
  * leaves it, Esc, a press, a scroll or a redraw that removes it. It fades in and out, at once under reduced motion. A
  * renderer calls `watchTips(document)` once; what it draws later needs only the attribute. `placeBeside` stands any popover by
- * the element that opened it the same way. The tower serves this module as `/tips.js`.
+ * the element that opened it the same way.
  */
 import { reduced } from './design.ts'
 

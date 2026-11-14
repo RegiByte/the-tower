@@ -1,7 +1,7 @@
 /**
  * A note's anchors: how one reads, the anchor a renderer was clicked on, the marks a thread's anchors put on a worker's
  * changed lines, and the anchor of lines picked in its Changes. The reviews extension's client, served at
- * `/x/reviews/anchors.js` (and, as they stood at 1.113, in `/panels.js` until 2.0).
+ * `/x/reviews/anchors.js`.
  */
 import type { Lines } from '/lib/board.js'
 import type { Mark } from '/lib/extension.js'

@@ -3,7 +3,7 @@
  * returned as tagged effects, the next state among them (`state`). The loop applies `state` itself and hands every
  * other effect to the renderer's executor of its type, which does the I/O (a fetch, the DOM, `tower.store`) and
  * dispatches what comes of it. A timer is an effect that carries the event it fires, so a poll's whole life is in the
- * data the handlers return. The tower serves this module as `/loop.js`.
+ * data the handlers return.
  */
 
 type Tagged = { type: string }

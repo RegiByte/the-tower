@@ -20,7 +20,6 @@ import type { Config, Renderer } from './model.ts'
 import type { Prefs } from './prefs.ts'
 import type { ShellStream } from './terms.ts'
 import type { Job } from '../bridge/jobs.ts'
-import type { JobStream } from './jobs.ts'
 import type { Subject } from './subjects.ts'
 import type { Location } from './views.ts'
 
@@ -56,7 +55,7 @@ export type Reads = {
    * `config/remove` names as its `was`. @since 1.147
    */
   config: Config
-  /** What users found doing with the tower, one story each, from the checkout's `docs/patterns/` (`/capabilities.js`). */
+  /** What users found doing with the tower, one story each, from the checkout's `docs/patterns/` (`capabilities.ts`). */
   patterns: Pattern[]
   /** The files of a project's nth shelf entry, relative to its hub. */
   'shelf/<project>/<n>': string[]
@@ -140,15 +139,12 @@ export type ScreenMsg =
  */
 export type TerminalMsg = Exclude<ScreenMsg, { t: 'snapshot' }> | (Extract<ScreenMsg, { t: 'snapshot' }> & { terminals: number })
 
-/** SSE streams: `screen/<id>` carries `ScreenMsg`, `terminal/<id>` `TerminalMsg`, `shell/<id>` `ShellStream`, `job/<id>/screen` `JobStream` (@since 1.149). */
-export type Streams = { 'screen/<id>': ScreenMsg; 'terminal/<id>': TerminalMsg; 'shell/<id>': ShellStream; 'job/<id>/screen': JobStream }
-
 /** What a page asks of the tower page that frames it, not of the system. */
 export type TowerVerb =
   | { verb: 'select'; id: string }
   | { verb: 'home' }
   | { verb: 'shelf'; project: string; n: number }
-  /** The framing page at a location (`/views.js`), as a link to its hash would take it. @since 1.104 */
+  /** The framing page at a location (`views.ts`), as a link to its hash would take it. @since 1.104 */
   | { verb: 'go'; location: Location }
   /** A subject, or its key, shown where the framing page's layout puts it, by `view` when one is given. @since 1.104 */
   | { verb: 'display'; subject: Subject | string; view?: string }

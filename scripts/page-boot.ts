@@ -133,7 +133,7 @@ async function appendsDuringPress(requests: string[]) {
 const onceProblems = (o: Once, appends: number, errors: string[]) => [
   ...Object.entries(o.identical).flatMap(([name, same]) => (same ? [] : [`${name} is two instances: the library's is not its file's`])),
   ...(o.unloaded.join() === SERVER_ONLY.join() ? [] : [`the library modules a browser couldn't load are ${o.unloaded.join(', ') || 'none'}, not ${SERVER_ONLY.join(', ')} alone`]),
-  ...(o.busy ? [] : ["the Reviews tab's Add note isn't busy while a control of its identity is pressed through /press.js"]),
+  ...(o.busy ? [] : ["the Reviews tab's Add note isn't busy while a control of its identity is pressed through /lib/view.js"]),
   ...(appends === 0 ? [] : [`the Reviews tab's Add note sent ${appends} note(s) while a control of its identity was in flight`]),
   ...(o.fetched ? [] : ['the page fetched no /shared/, /src/ or /vendor/ module']),
   ...o.twice.map((url) => `${url} was fetched twice`),

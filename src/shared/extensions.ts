@@ -95,7 +95,7 @@ const GATE = '1.107'
  * One of the built-ins' old names and what it is `now`, since the minor it moved in: `stream` a folder under
  * `streams/` and the stream's name (`quota.reads`), whose facts stay in the old folder for good; `view` a core view
  * retired and what draws its subjects now (`tower/shown`, by the views by type), its id in a layout read as theirs
- * (`VIEW_ALIASES` in `/views.js`).
+ * (`VIEW_ALIASES` in `views.ts`).
  */
 export type LegacyEntry = { kind: 'stream' | 'view'; old: string; now: string; since: string }
 
@@ -179,7 +179,7 @@ export type Scope = 'system' | 'project'
 export type Words = { label: string; hint?: string; destructive?: true }
 
 /**
- * A command's words: `icon`, where a renderer draws it as a glyph alone, is one of the core's icons by name (`/icons.js`)
+ * A command's words: `icon`, where a renderer draws it as a glyph alone, is one of the core's icons by name (`icons.ts`)
  * or an SVG of its client folder, a path ending `.svg` below it. @since 1.130
  */
 export type CommandWords = Words & { icon?: string }
@@ -202,7 +202,7 @@ export type ExtensionFact = { name: string; description?: string; writable?: Wri
  */
 export type ExtensionSubject = { kind: string; in: 'board' | 'floor' | 'card'; list: string }
 
-/** One of an extension's slots as the board shows it: `/slots.js` says its rule in words and finds its next slot. */
+/** One of an extension's slots as the board shows it: `slots.ts` says its rule in words and finds its next slot. */
 export type ExtensionSlot = { name: string; scope: Scope; when: When }
 
 /**
@@ -837,7 +837,7 @@ const Words = z.strictObject({ label: since(z.string()), hint: since(z.string().
 /** A name in words as a manifest or a fold's action gives them. */
 export const WordsShape = Words
 const Icon = z.union([
-  z.enum(Object.keys(ICON) as [keyof typeof ICON, ...(keyof typeof ICON)[]]).describe("One of the core's icons, by name: /icons.js's ICON."),
+  z.enum(Object.keys(ICON) as [keyof typeof ICON, ...(keyof typeof ICON)[]]).describe("One of the core's icons, by name: ICON of /lib/view.js."),
   z.string().regex(SVG_PATH, 'a core icon name, or a path ending .svg below the client folder').describe('An SVG of its client folder, below it: drawn as a mask in the ink of the control it marks.'),
 ])
 const CommandWordsShape = Words.extend({ icon: icons(Icon.optional().describe('Its glyph, where a renderer draws the command as an icon alone, its label and hint the tip.')) })

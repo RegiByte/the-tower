@@ -124,7 +124,7 @@ export type State = {
   cats: Map<CatName, Cat>
   /** What the renderer's settings name the cats. */
   catNames: CatNames
-  /** The waits visited by N this round (`Heed`); what you dismissed and how waits ring are the attention machine's (`/attend.js`). */
+  /** The waits visited by N this round (`Heed`); what you dismissed and how waits ring are the attention machine's (`attend.ts`). */
   visited: ReadonlySet<string>
   /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range, the actions seen. */
   viewer: Viewer

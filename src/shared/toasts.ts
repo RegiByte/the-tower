@@ -6,7 +6,7 @@
  * (`×2`). An action is one button that follows up what the toast tells (Resume after a kill, Undo after a delete):
  * pressing it closes the toast and runs it. The stack is a polite live region, so a screen reader says each toast as it
  * comes. A notice (`noticer`) stands in the same stack until it is closed, a closable one (`closableNoticer`) by its
- * reader's × too. The tower serves this module as `/toasts.js`. Every toast in the stack is as wide as the widest, so their
+ * reader's × too. Every toast in the stack is as wide as the widest, so their
  * edges and their actions line up.
  */
 

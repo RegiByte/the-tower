@@ -129,7 +129,7 @@ const here = () => s.plan.levels[s.me.level]
 const keepTexture = (t: THREE.Texture) => isScreenTexture(t) || isStillScreen(t) || isPosterTexture(t) || t === directory.texture || t === statsBoard.texture
 const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTexture))
 
-/** Tells what just happened, with an action that follows it up when given (`/toasts.js`). */
+/** Tells what just happened, with an action that follows it up when given (`toasts.ts`). */
 const toast = toaster($('toasts'))
 
 /**
@@ -1327,7 +1327,7 @@ const heed = (): Heed => ({ dismissed: seeing.state().attending.dismissed, visit
 
 /**
  * Tower 3D's machine: the panel open beside the world (the desk you sit at among them), whether the window has your
- * eye, and what asks for you, said and rung as every renderer does (`/attend.js`). Attention is told the desk at
+ * eye, and what asks for you, said and rung as every renderer does (`attend.ts`). Attention is told the desk at
  * which you sit as the panel changes: its waits ring for nobody while you look at it.
  */
 type Seeing = { panel: Panel | undefined; attending: Attending }

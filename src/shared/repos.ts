@@ -1,7 +1,6 @@
 /**
  * Where a checkout's repos are and how the core names them: a project's main checkouts and its worktrees' dirs, and a
- * repo and a file's code as the Changes, their picks and marks, and review threads' anchors name them. Served as
- * `/repos.js`, and lent to extensions' server code as `tower:repos.js`.
+ * repo and a file's code as the Changes, their picks and marks, and review threads' anchors name them.
  */
 
 /** The dirs a project is configured with: its hub and its repos, each a main checkout. */

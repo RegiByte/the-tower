@@ -61,7 +61,7 @@ const sizeOf = (size: string): [number, number] => {
 
 /**
  * A headless terminal that gives a character the cells Claude Code does (`Bun.stringWidth`): an emoji two, a grapheme
- * cluster one character. A screen it serializes then draws in a viewer's terminal (`/term-view.js`) as the live stream
+ * cluster one character. A screen it serializes then draws in a viewer's terminal (`term-view.ts`) as the live stream
  * does; under xterm's default Unicode 6 widths, most emoji take one cell and Claude's redraws after one land a column off.
  */
 export function headlessTerminal(options: { cols: number; rows: number; scrollback?: number }): Terminal {

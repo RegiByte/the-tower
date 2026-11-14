@@ -44,9 +44,6 @@ const untestedOf = (board: Pick<Board, 'runtimes'>) => Object.values(board.runti
 
 const runtimeUntestedLine = (r: BoardRuntime) => `${r.label} ${r.untested.join(', ')} untested`
 
-/** What each runtime's `untested` says once for every worker: `undefined` while every live worker runs a tested release. */
-export const untestedLine = (board: Pick<Board, 'runtimes'>) => untestedOf(board).map(runtimeUntestedLine).join(' · ') || undefined
-
 /** That line with its reason on hover, a span per runtime. It can run long (several releases, a build suffix): it takes a line of its own. */
 export const untestedHtml = (board: Pick<Board, 'runtimes'>) =>
   untestedOf(board)

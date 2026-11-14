@@ -91,7 +91,7 @@
         },
         "keys": {
           "$ref": "#/definitions/Keys",
-          "description": "Every command's chords by id, the config's `keys` over the keymap's defaults (`/keymap.js`)."
+          "description": "Every command's chords by id, the config's `keys` over the keymap's defaults (`keymap.ts`)."
         },
         "floors": {
           "type": "array",
@@ -133,7 +133,7 @@
           "additionalProperties": {
             "$ref": "#/definitions/Adds"
           },
-          "description": "What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability: `actionsOf` and `badgesOf` in `/cards.js` draw them beside the core's."
+          "description": "What extensions' folds added to each subject, and the core's badge on a floor where a stage of its hooks has no answer (cap `tower`, since 1.107), by its key (`card:<id>`, `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, `<cap>.<kind>:<key>`), each tagged with its capability: `rankedActions` and `badgesOf` of `/lib/layout.js` draw them beside the core's."
         },
         "asks": {
           "type": "array",
@@ -3110,7 +3110,7 @@
       "required": [
         "label"
       ],
-      "description": "A command's words: `icon`, where a renderer draws it as a glyph alone, is one of the core's icons by name (`/icons.js`) or an SVG of its client folder, a path ending `.svg` below it."
+      "description": "A command's words: `icon`, where a renderer draws it as a glyph alone, is one of the core's icons by name (`icons.ts`) or an SVG of its client folder, a path ending `.svg` below it."
     },
     "ExtensionSlot": {
       "type": "object",
@@ -3131,7 +3131,7 @@
         "when"
       ],
       "additionalProperties": false,
-      "description": "One of an extension's slots as the board shows it: `/slots.js` says its rule in words and finds its next slot."
+      "description": "One of an extension's slots as the board shows it: `slots.ts` says its rule in words and finds its next slot."
     },
     "When": {
       "anyOf": [

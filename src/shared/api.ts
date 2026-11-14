@@ -493,7 +493,6 @@ export const QUERIES = {
 }
 
 export type Query = keyof typeof QUERIES
-export type Queries = { [Q in Query]: z.input<(typeof QUERIES)[Q]> }
 
 /** The mux's own requests (GET `/mux`): parsed like verbs, but they carry streams, not commands. */
 export const TRANSPORT = {

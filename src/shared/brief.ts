@@ -2,7 +2,7 @@
  * A worker's brief as every renderer draws it, a chat read top to bottom: each earlier session the worker ran as
  * folded, oldest first, then the session it was read for, each conversation's turns oldest first, the user's prompts
  * on one side and Claude's answers on the other, the latest at the bottom. Pure views from plain data to html, with one
- * stylesheet (`briefCss`, beside `markdownCss`). The tower serves it as `/brief.js`.
+ * stylesheet (`briefCss`, beside `markdownCss`).
  *
  * A turn draws what Claude did between its prompt and its answer: its words between tool calls, each tool call folded
  * to one line, and the messages it sent other workers.
@@ -23,7 +23,7 @@
  *                                                   of its last turns (`withWhole`), joined to each later
  *                                                   read's last turns (`joinedWholes`, `withWholesRead`)
  *
- * and each fence's `data-copy-code` of `/markdown.js`. A brief shown is read again as its card moves (`briefKey`), each
+ * and each fence's `data-copy-code` of `markdown.ts`. A brief shown is read again as its card moves (`briefKey`), each
  * read with the conversations read whole joined to its last turns of them (`joinedWholes`).
  */
 import type { Board, Card, CardShown, LineageSession } from '../bridge/board.ts'
@@ -175,7 +175,7 @@ const turnMark = (turn: Turn | undefined) => turn && `${turn.startedAt} ${turn.a
  * Whether a conversation read whole still holds what a later brief gives of it: its latest turn is the same, unmoved.
  * One that moved is read again, or let go. @since 1.133
  */
-export const wholeHolds = (briefs: Brief[], whole: Brief): boolean => {
+const wholeHolds = (briefs: Brief[], whole: Brief): boolean => {
   const now = briefs.find((b) => conversationKey(b) === conversationKey(whole))
   return now !== undefined && turnMark(now.turns.at(-1)) === turnMark(whole.turns.at(-1))
 }

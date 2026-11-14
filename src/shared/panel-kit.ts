@@ -1,6 +1,6 @@
 /**
  * What every panel shares: drawing html into an element while keeping
- * what is being typed and what has focus, and a worker's tab row. Bundled into `/panels.js`.
+ * what is being typed and what has focus, and a worker's tab row. Gathered by `panels.ts`.
  */
 import { identityOf } from './press.ts'
 

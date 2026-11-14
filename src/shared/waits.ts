@@ -26,19 +26,6 @@ export const neighboursIn = (board: Board, order: readonly string[], id: string 
 export type Move = keyof ReturnType<typeof neighbours>
 
 /**
- * The keys that move between workers at their defaults, by `KeyboardEvent.code`: Option with ↑ ↓ along the duty order,
- * with J to the next one waiting.
- * @deprecated The keymap (`/keymap.js`) holds them as the commands `prev-worker`, `next-worker` and `next-waiting`, at
- * the chords the config binds, on `board.keys`; these ignore the config. Kept until the API's next major.
- */
-export const MOVE_KEYS: Record<Move, { code: string; label: string }> = {
-  prev: { code: 'ArrowUp', label: '⌥↑' }, next: { code: 'ArrowDown', label: '⌥↓' }, waiting: { code: 'KeyJ', label: '⌥J' },
-}
-/** @deprecated `commandOf` in `/keymap.js`, over `board.keys`. Kept until the API's next major. */
-export const moveOfKey = (e: { code: string; altKey: boolean; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): Move | undefined =>
-  e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey ? (Object.keys(MOVE_KEYS) as Move[]).find((m) => MOVE_KEYS[m].code === e.code) : undefined
-
-/**
  * What one viewer did about the waits on the board, keyed by `Wait.key`: `dismissed`, out of their way until the
  * worker's next wait (kept in `tower.store` under `DISMISSED_KEY`, so every renderer of theirs agrees), and `visited`,
  * gone to in this round of `nextWait` (kept by each renderer).

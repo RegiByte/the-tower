@@ -6,8 +6,8 @@ const stroke = (body: string, width = 1.3) => icon(`fill="none" stroke="currentC
 const fill = (body: string) => icon('fill="currentColor"', body)
 
 /**
- * The icons every renderer draws for the same things, as inline SVG in `currentColor`. The tower serves this module
- * as `/icons.js`. An icon-only control carries its name as `aria-label` and its tip as `data-tip`.
+ * The icons every renderer draws for the same things, as inline SVG in `currentColor`. An icon-only
+ * control carries its name as `aria-label` and its tip as `data-tip`.
  */
 export const ICON = {
   editor: stroke('<path d="M8 1.2 14 4.6v6.8L8 14.8 2 11.4V4.6z"/><path d="M2 4.6 8 8l6-3.4M8 8v6.8"/>'),
