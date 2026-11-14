@@ -214,8 +214,6 @@
                 "messages",
                 "landed",
                 "state",
-                "verbs",
-                "calls",
                 "actions",
                 "resolved"
               ],

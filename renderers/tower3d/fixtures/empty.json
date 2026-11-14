@@ -129,29 +129,6 @@
             "threads": [],
             "cards": [],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "alpha"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "alpha"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",
@@ -209,29 +186,6 @@
             "threads": [],
             "cards": [],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "beta"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "beta"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",

@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { worktreeOffers } from '../src/bridge/verbs.ts'
 import { carriedOf, commonBases, copiesOf, cuttable, floorBranches, floorWorktrees, parseTowerRecords, parseWorktreeList, sharedDefault, towerTreeName, type BranchRead, type RepoRead, type TreeRead } from '../src/bridge/worktrees.ts'
 import { notGit, repoRead, treeRead } from './repos.ts'
+import { callsOf, verbsOf } from './actions.ts'
 
 const HUB = '/w/lab'
 const API = '/w/lab-api'
@@ -11,10 +12,10 @@ const tree = (dir: string, name: string, over: Partial<TreeRead> = {}): TreeRead
 const repo = (dir: string, trees: TreeRead[], kept: BranchRead[] = [], bases = ['origin/main']): RepoRead => repoRead(dir, { bases, originHead: bases[0], trees, kept })
 
 const states = (reads: RepoRead[], occupants: { id: string; cwd: string }[] = []) =>
-  floorWorktrees('lab', reads, occupants, true).map((w) => [w.name, w.state, w.verbs])
+  floorWorktrees('lab', reads, occupants, true).map((w) => [w.name, w.state, verbsOf(w)])
 
 test('work at risk on a branch with no commit offers no discard: it has no tip to note', () => {
-  const offered = (head?: string) => worktreeOffers('lab', 'a', 'at-risk', false, [{ dir: '/w/lab', head, dirty: 1 }], true).verbs
+  const offered = (head?: string) => verbsOf(worktreeOffers('lab', 'a', 'at-risk', false, [{ dir: '/w/lab', head, dirty: 1 }], true))
   assert.deepEqual(offered('111'), ['discard'])
   assert.deepEqual(offered(undefined), [])
 })
@@ -98,8 +99,8 @@ test('kept branches: recut always, deletable only when absorbed in every repo th
   const kept = (absorbed: boolean) => [{ branch: 'tower/k', head: 'abc', base: 'origin/main', unpushed: 1, absorbed, risk: [] }]
   const both = floorBranches('lab', [repo(HUB, [], kept(true)), repo(API, [], kept(true))])
   const one = floorBranches('lab', [repo(HUB, [], kept(true)), repo(API, [], kept(false))])
-  assert.deepEqual([both[0].absorbed, both[0].verbs, both[0].calls.delete], [true, ['recut', 'delete'], ['branch/delete', { project: 'lab', name: 'tower/k' }]])
-  assert.deepEqual([one[0].absorbed, one[0].verbs], [false, ['recut']])
+  assert.deepEqual([both[0].absorbed, verbsOf(both[0]), callsOf(both[0]).delete], [true, ['recut', 'delete'], ['branch/delete', { project: 'lab', name: 'tower/k' }]])
+  assert.deepEqual([one[0].absorbed, verbsOf(one[0])], [false, ['recut']])
 })
 
 test('a cut can start from the origin branches every repo has, in the hub order; none if any dir is not git', () => {
@@ -141,16 +142,16 @@ test('a clean worktree whose work landed only as copies is carried: removed on i
   assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', carried)])]), [['a', 'carried', ['remove']]])
   assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', { ...carried, dirty: 1 })])]), [['a', 'at-risk', ['discard']]])
   assert.deepEqual(states([repo(HUB, [tree(HUB, 'a', carried)]), repo(API, [tree(API, 'a', { unpushed: 1 })])]), [['a', 'at-risk', ['discard']]])
-  assert.deepEqual(floorWorktrees('lab', [repo(HUB, [tree(HUB, 'a', { unpushed: 1 })])], [], false)[0].verbs, [], 'discard notes on a thread: none on a floor keeping none')
+  assert.deepEqual(verbsOf(floorWorktrees('lab', [repo(HUB, [tree(HUB, 'a', { unpushed: 1 })])], [], false)[0]), [], 'discard notes on a thread: none on a floor keeping none')
 })
 
 test('discard carries what each repo held as shown', () => {
   const [w] = floorWorktrees('lab', [repo(HUB, [tree(HUB, 'a', { dirty: 2 })]), repo(API, [tree(API, 'a', { head: 'def' })])], [], true)
-  assert.deepEqual(w.calls.discard, ['worktree/discard', { project: 'lab', name: 'a', held: [{ dir: HUB, head: 'abc', dirty: 2 }, { dir: API, head: 'def', dirty: 0 }] }])
+  assert.deepEqual(callsOf(w).discard, ['worktree/discard', { project: 'lab', name: 'a', held: [{ dir: HUB, head: 'abc', dirty: 2 }, { dir: API, head: 'def', dirty: 0 }] }])
 })
 
 test('a kept branch carried in every repo that has it is deletable on its own, and never absorbed', () => {
   const kept = (over: object) => [{ branch: 'tower/k', head: 'abc', base: 'origin/main', unpushed: 1, absorbed: false, risk: [], ...over }]
   const [b] = floorBranches('lab', [repo(HUB, [], kept({ carried: { commits: 1, edited: 1 } })), repo(API, [], kept({ absorbed: true }))])
-  assert.deepEqual([b.absorbed, b.carried, b.verbs], [false, true, ['recut', 'delete']])
+  assert.deepEqual([b.absorbed, b.carried, verbsOf(b)], [false, true, ['recut', 'delete']])
 })

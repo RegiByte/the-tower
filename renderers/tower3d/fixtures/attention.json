@@ -158,31 +158,9 @@
                     "id": "20261004-090000-opsx-conversation",
                     "startedAt": 1791124200000,
                     "prompt": "Split the deploy into stages",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090000-opsx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090000-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -264,38 +242,9 @@
                     "prompt": "Find every env var the deploy reads",
                     "answer": "Three: DEPLOY_ENV, REGION and the token path.",
                     "promptBy": "OTTO-29",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090007-opsx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090007-opsx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090007-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -385,38 +334,9 @@
                     "startedAt": 1791124500000,
                     "prompt": "Bump the base image",
                     "answer": "Bumped to the October image; the build is green.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090014-opsx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090014-opsx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090014-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -501,24 +421,9 @@
                     "id": "20261004-090021-opsx-conversation",
                     "startedAt": 1791125640000,
                     "prompt": "Roll back the canary",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090021-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -581,19 +486,6 @@
                 "pages": [],
                 "sent": [],
                 "conversations": [],
-                "verbs": [
-                  "drive",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090028-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -659,38 +551,9 @@
                     "id": "20261004-090035-opsx-conversation",
                     "startedAt": 1791125280000,
                     "prompt": "Publish the chart",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090035-opsx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090035-opsx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090035-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -774,38 +637,9 @@
                     "id": "20261004-090042-opsx-conversation",
                     "startedAt": 1791121800000,
                     "prompt": "Rotate the keys",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090042-opsx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090042-opsx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090042-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -890,38 +724,9 @@
                     "startedAt": 1791125460000,
                     "prompt": "Look around",
                     "answer": "Looked.",
-                    "verbs": [],
-                    "calls": {},
                     "actions": []
                   }
                 ],
-                "verbs": [
-                  "drive",
-                  "submit",
-                  "prompt",
-                  "brief",
-                  "kill"
-                ],
-                "calls": {
-                  "submit": [
-                    "submit",
-                    {
-                      "id": "20261004-090049-opsx"
-                    }
-                  ],
-                  "prompt": [
-                    "submit/at-prompt",
-                    {
-                      "id": "20261004-090049-opsx"
-                    }
-                  ],
-                  "kill": [
-                    "kill",
-                    {
-                      "id": "20261004-090049-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "drive"
@@ -1005,18 +810,6 @@
                     "id": "20261004-090056-opsx-conversation",
                     "startedAt": 1791111600000,
                     "prompt": "Long soak test",
-                    "verbs": [
-                      "resume"
-                    ],
-                    "calls": {
-                      "resume": [
-                        "resume",
-                        {
-                          "id": "20261004-090056-opsx",
-                          "conversation": "20261004-090056-opsx-conversation"
-                        }
-                      ]
-                    },
                     "actions": [
                       {
                         "verb": "resume",
@@ -1031,26 +824,6 @@
                     ]
                   }
                 ],
-                "verbs": [
-                  "resume",
-                  "brief",
-                  "let-go"
-                ],
-                "calls": {
-                  "resume": [
-                    "resume",
-                    {
-                      "id": "20261004-090056-opsx",
-                      "conversation": "20261004-090056-opsx-conversation"
-                    }
-                  ],
-                  "let-go": [
-                    "let-go",
-                    {
-                      "id": "20261004-090056-opsx"
-                    }
-                  ]
-                },
                 "actions": [
                   {
                     "verb": "resume",
@@ -1081,29 +854,6 @@
               }
             ],
             "policies": [],
-            "verbs": [
-              "spawn",
-              "shell",
-              "editor"
-            ],
-            "calls": {
-              "spawn": [
-                "spawn",
-                {
-                  "project": "ops"
-                }
-              ],
-              "shell": [
-                "shell/spawn",
-                {
-                  "project": "ops"
-                }
-              ],
-              "editor": [
-                "open",
-                {}
-              ]
-            },
             "actions": [
               {
                 "verb": "spawn",

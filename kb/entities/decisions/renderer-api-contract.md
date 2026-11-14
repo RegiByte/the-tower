@@ -38,9 +38,8 @@ went wrong, and know which changes can break it.
   worktree, a branch, a policy, an offer…) carries `actions`: each verb offered now,
   with its `call` when it is a request, `[verb, body]` with every field the board knows. The renderer adds only what
   the user supplies (a prompt's text, a floor's directory). `drive`, `brief` and `goto` are moves within the
-  renderer, not requests, and have no call. `verbs` and `calls`, the same split in two, are derived from `actions`
-  ([`offered`](ref:hub/src/bridge/verbs.ts#offered); a policy and an offer carry `calls` only,
-  [`calledOffers`](ref:hub/src/bridge/verbs.ts#calledOffers)) and kept for renderers that read them.
+  renderer, not requests, and have no call. `actions` is the one shape; 2.0 removed the `verbs` and `calls` that
+  repeated it apart.
 - **The contract is served.** `GET /schema` answers the verbs' input and reply schemas, every GET route as a read
   and the error as JSON Schema ([`apiSchema`](ref:hub/src/tower/http.ts#apiSchema), [[tower-server]]), and its `streams`: the board's message as the JSON Schema of
   the TypeScript type `BoardMsg`, JSDoc as descriptions. `npm run schema:board`

@@ -1,8 +1,8 @@
 /**
  * What can be done right now with each thing on the board, as data: renderers map a verb to a label, and never decide
  * availability themselves. Lists are in a fixed order, the first being the thing's primary verb. Each verb that is a
- * request of the renderer API comes with its call, built from the same list; `drive`, `brief` and `goto` are moves
- * within the renderer and have none.
+ * request of the renderer API comes with its call (`actions`); `drive`, `brief` and `goto` are moves within the
+ * renderer and have none.
  */
 import type { Call } from '../shared/api.ts'
 import type { AddedTidy } from '../shared/extensions.ts'
@@ -106,22 +106,13 @@ export type FloorAction = Action<FloorVerb, FloorCalls>
 export type WorktreeAction = Action<WorktreeVerb, WorktreeCalls>
 export type BranchAction = Action<BranchVerb, BranchCalls>
 
-/** What a thing offers: its `actions`, and the same as `verbs` and `calls` for the renderers that read those. */
-type Offers<V extends string, C> = { verbs: V[]; calls: C; actions: Action<V, C>[] }
-
-/** A policy or an offer: its `actions`, and the same as `calls` for the renderers that read those. */
-type CalledOffers<V extends string, C> = { calls: C; actions: Action<V, C>[] }
-
-export const calledOffers = <V extends string, C>(actions: Action<V, C>[]): CalledOffers<V, C> => ({
-  calls: Object.fromEntries(actions.flatMap((a) => ('call' in a ? [[a.verb, a.call]] : []))) as C,
-  actions,
-})
-
-export const offered = <V extends string, C>(actions: Action<V, C>[]): Offers<V, C> => ({ verbs: actions.map((a) => a.verb as V), ...calledOffers(actions) })
+/** What a thing offers now: each verb with its call when it has one. */
+export type Offers<V extends string, C> = { actions: Action<V, C>[] }
 
 /** Each verb with its call, built by `requests` for the verbs that have one. */
-const actionsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): Offers<V, C> =>
-  offered(verbs.map((verb) => (requests[verb] ? { verb, call: requests[verb]() } : { verb }) as Action<V, C>))
+const actionsOf = <V extends string, C>(verbs: V[], requests: { [K in V]?: () => unknown }): Offers<V, C> => ({
+  actions: verbs.map((verb) => (requests[verb] ? { verb, call: requests[verb]() } : { verb }) as Action<V, C>),
+})
 
 
 export const conversationOffers = (session: string, conversation: string, live: boolean, resumable: boolean, resumedBy: SessionRef | undefined): Offers<ConversationVerb, ConversationCalls> => {
@@ -161,7 +152,7 @@ export const sendHomeActions = (crew: { id: string; status: Status }[]): CardAct
 }
 
 export const resourceOffers = (session: string, pid: number): Offers<ResourceVerb, ResourceCalls> =>
-  offered([{ verb: 'reap', call: ['reap/process', { id: session, pid }] }])
+  ({ actions: [{ verb: 'reap', call: ['reap/process', { id: session, pid }] }] })
 
 export const isTidy = ({ worktrees, branches, prune, logs, streams }: TidyPlan) =>
   !worktrees.length && !branches.length && !prune.length && !logs.length && !streams.length
@@ -186,8 +177,7 @@ export const withAddedTidy = <F extends { id: string; tidy: TidyPlan } & Offers<
   const x: Record<string, string[]> = {}
   for (const { cap, key } of entries) (x[cap] ??= []).push(key)
   const tidy: FloorAction = { verb: 'tidy', call: ['tidy', { project: f.id, plan: { ...f.tidy, x } }] }
-  const actions = f.verbs.includes('tidy') ? f.actions.map((a) => (a.verb === 'tidy' ? tidy : a)) : [...f.actions, tidy]
-  return { ...f, ...offered(actions) }
+  return { ...f, actions: f.actions.some((a) => a.verb === 'tidy') ? f.actions.map((a) => (a.verb === 'tidy' ? tidy : a)) : [...f.actions, tidy] }
 }
 
 export const worktreeOffers = (project: string, name: string, state: WorktreeState, occupied: boolean, repos: { dir: string; head?: string; dirty?: number }[], recordsDiscards: boolean): Offers<WorktreeVerb, WorktreeCalls> => {

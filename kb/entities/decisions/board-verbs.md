@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The board advertises verbs",
-  "summary": "Each card, conversation and floor on the board lists the verbs available on it right now, decided in the bridge, each request among them with its call ready; renderers map a verb to a label and never decide availability.",
+  "summary": "Each card, conversation and floor on the board lists what can be done with it right now as its actions, decided in the bridge, each request among them with its call ready; renderers map a verb to a label and never decide availability.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
@@ -22,7 +22,7 @@ their interactions ([[verb-prompts]]).
 [`board`](ref:hub/src/bridge/board.ts#board) puts their results on the data every renderer reads. Lists keep a fixed
 order, the first being the thing's primary verb. Each verb's meaning and when it is offered are the doc comments of
 its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `BranchVerb`, `ResourceVerb`,
-`ProbeVerb`, `PolicyVerb`, `OfferVerb`); the rules that read other decisions:
+`PolicyVerb` and `OfferVerb` of the policies extension); the rules that read other decisions:
 - A card ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)) is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive))
   while its PTY runs: `drive` and `kill` then. `submit` while at Claude's composer, not on a startup screen nor a
   question ([[collections]]); `prompt` while it sits at its prompt with nothing in its composer ([[submit-at-prompt]]); `brief` while it is live, empty until Claude saves a [[conversation]] (a composer in the Brief sends its first prompt), and after it ends while it has one; `carry-on` beside `resume` when the host
@@ -47,9 +47,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 - Each verb that is a request of the renderer API comes with its call, the pair one of the thing's `actions`
   ([`cardOffers`](ref:hub/src/bridge/verbs.ts#cardOffers) and its siblings, [`floorOffers`](ref:hub/src/bridge/verbs.ts#floorOffers)),
   so a renderer adds only what the user supplies ([[renderer-api-contract]]). `drive`, `brief` and `goto` move within
-  the renderer and have no call. `verbs` and `calls` say the same apart, derived from `actions`
-  ([`offered`](ref:hub/src/bridge/verbs.ts#offered)); a policy and an offer carry `calls` beside theirs, and no `verbs`
-  ([`calledOffers`](ref:hub/src/bridge/verbs.ts#calledOffers)).
+  the renderer and have no call. `actions` is the one shape: since 2.0 no `verbs` list or `calls` record repeats it.
 - Renderers and the core ask whether a verb is offered ([`can`](ref:hub/src/shared/offered.ts#can), over `actions`) and
   take its call from the same list ([`callOf`](ref:hub/src/shared/offered.ts#callOf), none once the board stopped offering
   it; a press takes it through [`offeredCall`](ref:hub/src/shared/offered.ts#offeredCall), which throws once the board moved

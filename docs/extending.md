@@ -200,8 +200,8 @@ the Stats numbers its own way.
 
 The board is the whole system as one value, sent again whenever it changes: its type is `Board` in
 `/lib/board.js`, described as JSON Schema by `tower api board` (each event is `{v, board}`, not the board itself). Each card, conversation, floor, policy and offer carries `actions`, what can be done to it now, each a `verb`
-with its `call` when it is a request of the API: `tower.run(card.actions.find((a) => a.verb === 'resume').call)`.
-`verbs` and `calls` beside it say the same, apart (a policy and an offer carry `calls` only). `/tower.js` documents its every member in its header
+with its `call` when it is a request of the API: `tower.run(card.actions.find((a) => a.verb === 'resume').call)`, or
+`callOf(card, 'resume')` and `can(card, 'resume')` of `/lib/board.js`. `/tower.js` documents its every member in its header
 (`curl http://127.0.0.1:4317/tower.js | head -60`).
 
 **Pin the version you wrote against.** `/tower.js?v=1.151` (the minor the library arrived in) refuses to load into a tower of another major or an older
