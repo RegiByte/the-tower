@@ -17,78 +17,11 @@ import { ICON, SVG_PATH } from './icons.ts'
 
 export type { StreamFact }
 
-/** The minor the manifest's first keys, the start ctx and the load codes arrived in. */
-const SINCE = '1.81'
-
-/** The minor verbs and reads, the caller and the calls arrived in. */
-const CALLS = '1.82'
-
-/** The minor stores arrived in: collections, streams and session facts. */
-const STORES = '1.83'
-
-/** The minor folds and contributions arrived in: subjects, folds, client commands and their files. */
-const FOLDS = '1.84'
-/** The minor middleware and hooks arrived in: `around`, `hooks`, `answers` and `ctx.raise`. */
-const AROUND = '1.85'
-
-/** The minor triggers and checks arrived in: slots, the board trigger, checks and `ctx.run`. */
-const TRIGGERS = '1.86'
-
-/** The minor launch arrived in: spawn fields, launch contributors and plugins. */
-const LAUNCH = '1.87'
-/** The major the per-runtime keys arrived in: `runtimes.claude.plugins`, before it `plugins.claude`. */
-const BY_RUNTIME = '2.0'
-
-/** The minor fact kinds arrived in: a stream's fact code declaring a kind the core folds, and the moved built-ins' old names. */
-const KINDS = '1.90'
-
-/** The minor the policies moved into their bundled extension in. */
-const POLICIES_MOVED = '1.91'
-const CALLSIGN_OF = '1.92'
-
-/** The minor review threads moved into their bundled extension in: an owner writes an item by its own id. */
-const REVIEWS_MOVED = '1.93'
-/** The minor the reviews extension answered the core's hooks in: tidy entries' words, `ctx.collections.rename`, resolve. */
-const REVIEWS_HOOKS = '1.94'
-/** The minor jobs arrived in: `ctx.jobs`. */
-const JOBS = '1.149'
-
-/** The minor extension words arrived in: `cli` on verbs and reads, the `cli` problem. */
-const WORDS = '1.153'
-
-/** The minor a worker's showings came to be drawn by the views by type, their interim view retired. */
-
-/** The minor subjects grew in: shown, collection and shelf, an own kind's key by its instance, `accepts`, an action's words. */
-const SUBJECTS = '1.98'
-
-/** The minor views and regions were first read in, their shapes replaced, and commands and views took default chords. */
-export const VIEWS = '1.104'
-/** A view's tab export, since this minor. */
-export const TABS = '1.111'
-
-/** The minor reads that serve a file, a read path's trailing rest param and a region's default layout arrived in. */
-export const FILES = '1.114'
-
-/** The minor views and commands were first offered on a viewer subject in: `lines`, picked in a worker's Changes. */
-const VIEWER = '1.116'
-
-/** The minor a brief's prompts and answers (`said`) and a document's sections (`section`) became viewer subjects in. */
-const SECTIONS = '1.118'
-
-/** The minor text picked in a document drawn by sections (`passage`) became a viewer subject in. */
-const PASSAGES = '1.170'
-
-/** The minor writable facts arrived in: a fact's door and the manifest-only projection of a card's fold. */
-export const WRITABLE = '1.126'
-
-/** The minor an extension's guidance for agents arrived in: its manifest's, the config's over it, and where workers read it. */
-export const GUIDANCE = '1.129'
-
-/** The minor a command's words took an icon in, and the tower page its region inside an open shown tab. */
-export const ICONS = '1.130'
-
-/** The minor `tower/spawn.gate` arrived in, and `ctx.cards()` beside it for an answerer that counts workers. */
-const GATE = '1.107'
+/**
+ * The version every manifest key and ctx member arrived in, as `x-since` and `CTX_SINCE` mark it: a manifest below
+ * major 2 is refused as too old, so the 1.x minors those keys arrived in are never read. A 2.x minor marks its own.
+ */
+const SINCE = '2.0'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in: `stream` a folder under
@@ -98,9 +31,9 @@ export type LegacyEntry = { kind: 'stream'; old: string; now: string; since: str
 
 /** The built-ins' old names that outlive 2.0, each with what it is now: the moved streams, whose folders hold what was written. */
 export const LEGACY: readonly LegacyEntry[] = [
-  { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: KINDS },
-  { kind: 'stream', old: 'runs', now: 'policies.runs', since: POLICIES_MOVED },
-  { kind: 'stream', old: 'approvals', now: 'policies.approvals', since: POLICIES_MOVED },
+  { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: '1.90' },
+  { kind: 'stream', old: 'runs', now: 'policies.runs', since: '1.91' },
+  { kind: 'stream', old: 'approvals', now: 'policies.approvals', since: '1.91' },
 ]
 
 /** The entries `kind`'s applier reads. */
@@ -292,17 +225,8 @@ export type ExtensionViewEntry = {
   tab?: string
 }
 
-/**
- * What a fold may contribute beside its own part: the `adds` a manifest's fold declares. `slots`, a floor's or the
- * board's, since 1.86; `marks`, a card's, since 1.116.
- */
+/** What a fold may contribute beside its own part: the `adds` a manifest's fold declares. */
 export const ADDS = ['actions', 'badges', 'tidy', 'lines', 'asks', 'slots', 'marks'] as const
-
-/** The tower version a manifest that adds `slots` requires. */
-export const SLOTS_ADD_SINCE = '1.86'
-
-/** The tower version a manifest that adds `marks` requires. */
-export const MARKS_ADD_SINCE = '1.116'
 export type Add = (typeof ADDS)[number]
 
 /** How a badge reads, as a card's attention does. */
@@ -735,9 +659,6 @@ type SinceOf<T> = {
         : string
 }
 
-/** The minor `ctx.commands` arrived in. */
-const COMMANDS = '1.152'
-
 export const CTX_SINCE: {
   start: SinceOf<StartCtx>
   call: SinceOf<Pick<CallCtx, 'caller' | 'cards'>>
@@ -757,22 +678,22 @@ export const CTX_SINCE: {
     log: SINCE,
     signal: SINCE,
     board: SINCE,
-    call: CALLS,
-    read: CALLS,
-    deps: CALLS,
-    raise: AROUND,
-    streams: { append: STORES, read: STORES },
-    facts: { append: STORES },
-    collections: { list: STORES, read: STORES, create: STORES, write: STORES, put: REVIEWS_MOVED, rename: REVIEWS_HOOKS, delete: STORES },
-    own: { streams: STORES, collections: STORES, facts: STORES },
-    run: TRIGGERS,
-    jobs: { start: JOBS, cancel: JOBS },
-    runtime: KINDS,
-    commands: COMMANDS,
+    call: SINCE,
+    read: SINCE,
+    deps: SINCE,
+    raise: SINCE,
+    streams: { append: SINCE, read: SINCE },
+    facts: { append: SINCE },
+    collections: { list: SINCE, read: SINCE, create: SINCE, write: SINCE, put: SINCE, rename: SINCE, delete: SINCE },
+    own: { streams: SINCE, collections: SINCE, facts: SINCE },
+    run: SINCE,
+    jobs: { start: SINCE, cancel: SINCE },
+    runtime: SINCE,
+    commands: SINCE,
   },
-  call: { caller: { t: CALLS, id: CALLS, via: CALLS, within: CALLS }, cards: GATE },
-  fold: { now: FOLDS, settings: FOLDS, board: FOLDS, callsignOf: CALLSIGN_OF, own: { streams: FOLDS, collections: FOLDS, facts: FOLDS } },
-  launch: { settings: LAUNCH, read: LAUNCH, collections: { list: LAUNCH, read: LAUNCH } },
+  call: { caller: { t: SINCE, id: SINCE, via: SINCE, within: SINCE }, cards: SINCE },
+  fold: { now: SINCE, settings: SINCE, board: SINCE, callsignOf: SINCE, own: { streams: SINCE, collections: SINCE, facts: SINCE } },
+  launch: { settings: SINCE, read: SINCE, collections: { list: SINCE, read: SINCE } },
 }
 
 /** The keys `start` may return. */
@@ -783,24 +704,6 @@ const sinceAt =
   <T extends z.ZodType>(schema: T) =>
     schema.meta({ 'x-since': version })
 const since = sinceAt(SINCE)
-const sinceCalls = sinceAt(CALLS)
-const stores = sinceAt(STORES)
-const folds = sinceAt(FOLDS)
-const around = sinceAt(AROUND)
-const triggers = sinceAt(TRIGGERS)
-const launch = sinceAt(LAUNCH)
-const byRuntime = sinceAt(BY_RUNTIME)
-const kinds = sinceAt(KINDS)
-const views = sinceAt(VIEWS)
-const files = sinceAt(FILES)
-const tabs = sinceAt(TABS)
-const viewer = sinceAt(VIEWER)
-const sections = sinceAt(SECTIONS)
-const passages = sinceAt(PASSAGES)
-const writable = sinceAt(WRITABLE)
-const guided = sinceAt(GUIDANCE)
-const icons = sinceAt(ICONS)
-const words = sinceAt(WORDS)
 
 const Name = z
   .string()
@@ -818,8 +721,8 @@ const Schema = z.record(z.string(), z.unknown()).describe('A JSON Schema 2020-12
 const Brief = z.string().min(1).max(200).regex(/^[^\n]*$/, 'one line')
 const Full = z.string().min(1).max(4000)
 const Guidance = z.strictObject({
-  brief: guided(Brief.describe('One line a worker reads in `tower whoami`: what the extension is for and when to reach for it.')),
-  full: guided(Full.optional().describe('What `tower x <capability>` prints: when to use it, when not, and how, with the exact commands. Markdown.')),
+  brief: since(Brief.describe('One line a worker reads in `tower whoami`: what the extension is for and when to reach for it.')),
+  full: since(Full.optional().describe('What `tower x <capability>` prints: when to use it, when not, and how, with the exact commands. Markdown.')),
 })
 
 /** What the config sets over an extension's guidance: `brief` and `full` replace the manifest's, `also` is added after the full text. */
@@ -836,7 +739,7 @@ const Icon = z.union([
   z.enum(Object.keys(ICON) as [keyof typeof ICON, ...(keyof typeof ICON)[]]).describe("One of the core's icons, by name: ICON of /lib/view.js."),
   z.string().regex(SVG_PATH, 'a core icon name, or a path ending .svg below the client folder').describe('An SVG of its client folder, below it: drawn as a mask in the ink of the control it marks.'),
 ])
-const CommandWordsShape = Words.extend({ icon: icons(Icon.optional().describe('Its glyph, where a renderer draws the command as an icon alone, its label and hint the tip.')) })
+const CommandWordsShape = Words.extend({ icon: since(Icon.optional().describe('Its glyph, where a renderer draws the command as an icon alone, its label and hint the tip.')) })
 const Word = z.string().regex(/^[a-z][a-z0-9.-]{0,47}$/, 'a lowercase word of letters, digits, dots and dashes, at most 48 long')
 const Chords = z.array(
   z.string().superRefine((chord, ctx) => {
@@ -850,46 +753,46 @@ const MediaTypes = z.array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$
  * Changes, a brief's prompt or answer, a document's section, text picked in a document): views, commands and regions
  * are on one, and no fold is, since the board never carries one.
  */
-const ViewerKind = z.union([files(z.literal('file')), viewer(z.literal('lines')), sections(z.enum(['said', 'section'])), passages(z.literal('passage'))])
+const ViewerKind = z.union([since(z.literal('file')), since(z.literal('lines')), since(z.enum(['said', 'section'])), since(z.literal('passage'))])
 /** A kind a view or a command is on: a board subject's or a viewer subject's. */
 const OnKind = z.union([SubjectKind, z.literal('item.*'), ViewerKind])
 const Kinds = z.array(OnKind).min(1)
 const ReadPath = z.string().regex(READ_PATH, 'words and <param>s joined by /, such as rings/<project>, the last maybe a rest param, raw/<file...>')
 const Scope = z.enum(['system', 'project'])
 const Deprecated = z.strictObject({
-  since: sinceCalls(Version.describe("The provider's version it was deprecated in.")),
-  use: sinceCalls(z.string().optional().describe('What to use instead, qualified: chime/ring.')),
-  why: sinceCalls(z.string().optional()),
+  since: since(Version.describe("The provider's version it was deprecated in.")),
+  use: since(z.string().optional().describe('What to use instead, qualified: chime/ring.')),
+  why: since(z.string().optional()),
 })
 const Cli = z.strictObject({
-  stdin: words(z.string().min(1).optional().describe('The string field that receives stdin verbatim when it is a pipe or a file; without it the word takes nothing on stdin.')),
-  positional: words(z.array(z.string().min(1)).min(1).optional().describe('The fields taken without a flag, in order; only the last may be an array, which takes all that is left.')),
-  print: words(z.string().min(1).optional().describe('The reply field to print, a string or lines; without it the reply prints as JSON.')),
-  usage: words(z.string().min(1).optional().describe('Its one line of usage, starting with its word; made from its fields when left out.')),
-  word: words(Word.optional().describe('What it is typed as under `tower x <capability>`: a verb that types better under another name, or a read, which is a word only when it names one.')),
+  stdin: since(z.string().min(1).optional().describe('The string field that receives stdin verbatim when it is a pipe or a file; without it the word takes nothing on stdin.')),
+  positional: since(z.array(z.string().min(1)).min(1).optional().describe('The fields taken without a flag, in order; only the last may be an array, which takes all that is left.')),
+  print: since(z.string().min(1).optional().describe('The reply field to print, a string or lines; without it the reply prints as JSON.')),
+  usage: since(z.string().min(1).optional().describe('Its one line of usage, starting with its word; made from its fields when left out.')),
+  word: since(Word.optional().describe('What it is typed as under `tower x <capability>`: a verb that types better under another name, or a read, which is a word only when it names one.')),
 })
 const Verb = z.strictObject({
-  input: sinceCalls(Schema.describe("The input's JSON Schema: a project-scoped verb's requires `project`, a string.")),
-  reply: sinceCalls(Schema),
-  scope: sinceCalls(Scope.describe("`project`: refused on a floor where the capability is off, the floor its input's `project`.")),
-  description: sinceCalls(z.string().optional()),
-  words: sinceCalls(Words.optional()),
-  deprecated: sinceCalls(Deprecated.optional()),
-  cli: words(Cli.optional().describe('How it is typed under `tower x <capability>`, beyond the flags its input gives it with no declaration.')),
+  input: since(Schema.describe("The input's JSON Schema: a project-scoped verb's requires `project`, a string.")),
+  reply: since(Schema),
+  scope: since(Scope.describe("`project`: refused on a floor where the capability is off, the floor its input's `project`.")),
+  description: since(z.string().optional()),
+  words: since(Words.optional()),
+  deprecated: since(Deprecated.optional()),
+  cli: since(Cli.optional().describe('How it is typed under `tower x <capability>`, beyond the flags its input gives it with no declaration.')),
 })
 const Read = z.strictObject({
-  query: sinceCalls(Schema.optional().describe("The query's JSON Schema; every value arrives as a string.")),
-  reply: sinceCalls(Schema.optional().describe('Its reply\'s JSON Schema: required, unless it serves a file.')),
-  serves: files(
+  query: since(Schema.optional().describe("The query's JSON Schema; every value arrives as a string.")),
+  reply: since(Schema.optional().describe('Its reply\'s JSON Schema: required, unless it serves a file.')),
+  serves: since(
     z
       .literal('file')
       .optional()
       .describe("A file: its handler answers `{file}`, an absolute path, which the tower serves sandboxed as it serves a shown file. Which paths it serves is the handler's to confine."),
   ),
-  scope: sinceCalls(Scope.describe("`project`: refused on a floor where the capability is off, the floor its `<project>` param, or its query's `project`.")),
-  description: sinceCalls(z.string().optional()),
-  deprecated: sinceCalls(Deprecated.optional()),
-  cli: words(Cli.optional().describe('Makes it a word under `tower x <capability>`, named by `word`: its flags are its path\'s params and its query\'s fields.')),
+  scope: since(Scope.describe("`project`: refused on a floor where the capability is off, the floor its `<project>` param, or its query's `project`.")),
+  description: since(z.string().optional()),
+  deprecated: since(Deprecated.optional()),
+  cli: since(Cli.optional().describe('Makes it a word under `tower x <capability>`, named by `word`: its flags are its path\'s params and its query\'s fields.')),
 })
 /** A verb or read by its provider's capability, the core as `tower`: `reviews/append`, `tower/collection/<project>/<collection>/<item>`. */
 const Qualified = z
@@ -897,34 +800,34 @@ const Qualified = z
   .regex(/^[a-z][a-z0-9]*(-[a-z0-9]+)*(\/(<[a-z]+>|[a-z][a-z0-9.-]{0,47}))+$/, 'a verb or read qualified by its capability: reviews/append, tower/board')
 const Door = z.union([
   Qualified.describe('The verb or read others reach the store by.'),
-  z.strictObject({ none: stores(z.string().min(1).describe('Why the domain has no such act.')) }),
+  z.strictObject({ none: since(z.string().min(1).describe('Why the domain has no such act.')) }),
 ])
-const Doors = z.strictObject({ list: stores(Door), read: stores(Door), create: stores(Door), edit: stores(Door), delete: stores(Door) })
+const Doors = z.strictObject({ list: since(Door), read: since(Door), create: since(Door), edit: since(Door), delete: since(Door) })
 const Collection = z
   .strictObject({
-    label: stores(z.string()),
-    description: stores(z.string()),
-    owned: stores(z.boolean().optional().describe('Only its owner writes it: the generic writes are refused, naming the create door.')),
-    doors: stores(Doors.optional().describe('How others reach it: each a verb or read, or why the domain has none. An owned collection declares all five.')),
+    label: since(z.string()),
+    description: since(z.string()),
+    owned: since(z.boolean().optional().describe('Only its owner writes it: the generic writes are refused, naming the create door.')),
+    doors: since(Doors.optional().describe('How others reach it: each a verb or read, or why the domain has none. An owned collection declares all five.')),
   })
   .refine((c) => !c.owned || c.doors !== undefined, { message: 'an owned collection declares its doors: list, read, create, edit, delete', path: ['doors'] })
   .meta({ if: { properties: { owned: { const: true } }, required: ['owned'] }, then: { required: ['doors'] } })
 const Stream = z.strictObject({
-  scope: stores(z.enum(['system', 'project']).describe("`system`: the tower's one stream; `project`: one per floor.")),
-  description: stores(z.string().optional()),
-  facts: stores(
+  scope: since(z.enum(['system', 'project']).describe("`system`: the tower's one stream; `project`: one per floor.")),
+  description: since(z.string().optional()),
+  facts: since(
     z
       .record(
         z.string().regex(/^[a-z]$/, 'a fact code is one lowercase letter'),
         z.strictObject({
-          schema: stores(Schema),
-          kind: kinds(Qualified.optional().describe(`A kind the core folds, its facts holding to the kind's schema too: ${FACT_KINDS.join(', ')}.`)),
-          description: stores(z.string().optional()),
+          schema: since(Schema),
+          kind: since(Qualified.optional().describe(`A kind the core folds, its facts holding to the kind's schema too: ${FACT_KINDS.join(', ')}.`)),
+          description: since(z.string().optional()),
         }),
       )
       .describe('Its fact codes, each with the JSON Schema its facts hold to.'),
   ),
-  doors: stores(z.strictObject({ read: stores(Door), append: stores(Door) }).optional().describe('How others read it and append to it, through its owner.')),
+  doors: since(z.strictObject({ read: since(Door), append: since(Door) }).optional().describe('How others read it and append to it, through its owner.')),
 })
 /** What a writable fact's door is named by below its capability, before the fact's name: `tabline/facts/line`. A verb's name holds no `/`, so none takes it. */
 export const FACT_DOOR = 'facts/'
@@ -933,9 +836,9 @@ export const FACT_DOOR = 'facts/'
 export const WRITERS = ['user', 'self'] as const
 export type Writer = (typeof WRITERS)[number]
 const Fact = z.strictObject({
-  schema: stores(Schema),
-  description: stores(z.string().optional()),
-  writable: writable(
+  schema: since(Schema),
+  description: since(z.string().optional()),
+  writable: since(
     z
       .array(z.enum(WRITERS))
       .min(1)
@@ -945,15 +848,15 @@ const Fact = z.strictObject({
   ),
 })
 const Hook = z.strictObject({
-  payload: around(Schema.describe('What the provider raises it with.')),
-  answer: around(Schema.describe('What each answerer answers.')),
-  failure: around(z.enum(['refuses', 'reported']).describe('What a failed answer does to the call that raised the hook: refuses it, or is named in its reply.')),
-  description: around(z.string().optional()),
-  deprecated: around(Deprecated.optional()),
+  payload: since(Schema.describe('What the provider raises it with.')),
+  answer: since(Schema.describe('What each answerer answers.')),
+  failure: since(z.enum(['refuses', 'reported']).describe('What a failed answer does to the call that raised the hook: refuses it, or is named in its reply.')),
+  description: since(z.string().optional()),
+  deprecated: since(Deprecated.optional()),
 })
 const Around = z.strictObject({
-  before: around(z.array(Capability).optional().describe('The capabilities whose links it runs outside of: it sees the input before them and the reply after.')),
-  after: around(z.array(Capability).optional().describe('The capabilities whose links it runs inside of.')),
+  before: since(z.array(Capability).optional().describe('The capabilities whose links it runs outside of: it sees the input before them and the reply after.')),
+  after: since(z.array(Capability).optional().describe('The capabilities whose links it runs inside of.')),
 })
 const Cron = z.string().superRefine((cron, ctx) => {
   const problem = cronProblem(cron)
@@ -968,25 +871,25 @@ const Period = z
   })
 export const WhenShape = z.union([
   z.strictObject({
-    cron: triggers(z.array(Cron).min(1).describe('Crons in the subset the tower says in words: their slots are the union of theirs.')),
-    tz: triggers(z.string().refine(isZone, 'an IANA zone, like Europe/Lisbon').optional().describe("The zone the crons are read in; the tower machine's when left out.")),
+    cron: since(z.array(Cron).min(1).describe('Crons in the subset the tower says in words: their slots are the union of theirs.')),
+    tz: since(z.string().refine(isZone, 'an IANA zone, like Europe/Lisbon').optional().describe("The zone the crons are read in; the tower machine's when left out.")),
   }),
   z.strictObject({
-    every: triggers(
+    every: since(
       Period.describe("A period aligned to the UTC clock: 5m fires at each multiple of 5 minutes since the epoch. The tower's 30 s loop bounds it: below 30s fires at most every 30 s."),
     ),
   }),
 ])
 const SlotSpec = z.strictObject({
-  when: triggers(WhenShape.describe('Its slots: crons, or a period.')),
-  scope: triggers(Scope.optional().describe('`system`: one slot for the tower, the default; `project`: one per floor where it is on, the floor named.')),
+  when: since(WhenShape.describe('Its slots: crons, or a period.')),
+  scope: since(Scope.optional().describe('`system`: one slot for the tower, the default; `project`: one per floor where it is on, the floor named.')),
 })
 const Check = z
   .strictObject({
-    words: triggers(Words.describe('What it checks, as `tower doctor` prints it.')),
-    run: triggers(z.array(z.string()).min(1).optional().describe('A command run from its folder, env scrubbed, killed at 10 s: exit 0 passes.')),
-    read: triggers(ReadPath.optional().describe('One of its reads that takes no params: it passes when it answers. The tower must be up.')),
-    fix: triggers(z.string().optional().describe('What to do when it fails.')),
+    words: since(Words.describe('What it checks, as `tower doctor` prints it.')),
+    run: since(z.array(z.string()).min(1).optional().describe('A command run from its folder, env scrubbed, killed at 10 s: exit 0 passes.')),
+    read: since(ReadPath.optional().describe('One of its reads that takes no params: it passes when it answers. The tower must be up.')),
+    fix: since(z.string().optional().describe('What to do when it fails.')),
   })
   .refine((c) => (c.run === undefined) !== (c.read === undefined), { message: 'a check holds exactly one of run and read' })
   .meta({ oneOf: [{ required: ['run'] }, { required: ['read'] }] })
@@ -999,69 +902,69 @@ export type Collection = z.infer<typeof Collection>
 export type Check = z.infer<typeof Check>
 
 const SubjectDecl = z.strictObject({
-  description: folds(z.string().optional()),
-  in: folds(z.enum(['board', 'floor', 'card']).describe('Where its subjects sit: in its own part of the board, a floor or a card.')),
-  list: folds(z.string().min(1).describe('The array in its own x at `in` whose entries are the subjects; each has a `key`.')),
+  description: since(z.string().optional()),
+  in: since(z.enum(['board', 'floor', 'card']).describe('Where its subjects sit: in its own part of the board, a floor or a card.')),
+  list: since(z.string().min(1).describe('The array in its own x at `in` whose entries are the subjects; each has a `key`.')),
 })
 const Projection = z.strictObject({
-  from: writable(z.string().regex(/^fact:[a-z][a-z0-9.-]{0,47}$/, 'fact:<name>, one of its facts').describe('The fact it shows: fact:<name>.')),
-  pick: writable(z.literal('last').describe('Its newest value over the card\'s lineage: a blank string or null shows none.')),
+  from: since(z.string().regex(/^fact:[a-z][a-z0-9.-]{0,47}$/, 'fact:<name>, one of its facts').describe('The fact it shows: fact:<name>.')),
+  pick: since(z.literal('last').describe('Its newest value over the card\'s lineage: a blank string or null shows none.')),
 })
 const FoldSpec = z.strictObject({
-  project: writable(
+  project: since(
     z
-      .strictObject({ lines: writable(Projection) })
+      .strictObject({ lines: since(Projection) })
       .optional()
       .describe("A card's fold with no code: each contribution kind the newest value of one of its facts. A kind it projects holds no x or adds, and start returns no fold for it."),
   ),
-  x: folds(Schema.optional().describe("Its own part's JSON Schema, at subject.x.<capability>: on a card, a floor, the board, or an item of a collection it declares.")),
-  adds: folds(z.array(z.enum(ADDS)).refine((adds) => new Set(adds).size === adds.length, { message: 'each add once' }).optional().describe('What it contributes beside its part.')),
+  x: since(Schema.optional().describe("Its own part's JSON Schema, at subject.x.<capability>: on a card, a floor, the board, or an item of a collection it declares.")),
+  adds: since(z.array(z.enum(ADDS)).refine((adds) => new Set(adds).size === adds.length, { message: 'each add once' }).optional().describe('What it contributes beside its part.')),
 })
 const Command = z.strictObject({
-  module: folds(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
-  export: folds(z.string().min(1)),
-  words: folds(CommandWordsShape),
-  on: folds(z.array(OnKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items, lines those picked in a worker\'s Changes, said a brief\'s prompts and answers, section a document\'s sections.')),
-  accepts: sinceAt(SUBJECTS)(
+  module: since(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
+  export: since(z.string().min(1)),
+  words: since(CommandWordsShape),
+  on: since(z.array(OnKind).optional().describe('The subject kinds every subject of which is offered it, with no fold needed: item.* is every collection\'s items, lines those picked in a worker\'s Changes, said a brief\'s prompts and answers, section a document\'s sections.')),
+  accepts: since(
     z
       .array(z.string().regex(/^[a-z]+\/([a-z0-9][a-z0-9.+-]*|\*)$/, 'a media type, text/markdown, or a top-level type\'s every subtype, image/*'))
       .min(1)
       .optional()
       .describe("The media types of the subjects it is offered on, matched against a subject's value.type: a subject with no type isn't offered it."),
   ),
-  keys: views(Chords.optional().describe("Default chords that run it on the subject in focus: the config's keys replace them.")),
-  deprecated: folds(Deprecated.optional()),
+  keys: since(Chords.optional().describe("Default chords that run it on the subject in focus: the config's keys replace them.")),
+  deprecated: since(Deprecated.optional()),
 })
 
 const SpawnField = z.strictObject({
-  schema: launch(Schema.describe("Its value's JSON Schema: a spawn's value is parsed by it, then logged as `tower.x.<provides>.<field>`.")),
-  words: launch(Words),
-  form: launch(z.boolean().optional().describe('Drawn on every spawn form (the default), or set only by calls.')),
-  options: launch(
+  schema: since(Schema.describe("Its value's JSON Schema: a spawn's value is parsed by it, then logged as `tower.x.<provides>.<field>`.")),
+  words: since(Words),
+  form: since(z.boolean().optional().describe('Drawn on every spawn form (the default), or set only by calls.')),
+  options: since(
     z
-      .strictObject({ from: launch(z.string().describe('A path into its own floor part, `floor.x.<provides>.…`: an array of {value, label, hint?}.')) })
+      .strictObject({ from: since(z.string().describe('A path into its own floor part, `floor.x.<provides>.…`: an array of {value, label, hint?}.')) })
       .optional()
       .describe('Where the form reads its choices.'),
   ),
 })
 const Spawn = z.strictObject({
-  launch: launch(z.boolean().optional().describe('`start` returns `launch`, a contributor to every spawn, resume and fork on floors where it is on.')),
-  fields: launch(z.record(Word, SpawnField).optional().describe('Its spawn fields: a spawn sets them in `x.<provides>`, each logged as a session fact before the worker starts.')),
+  launch: since(z.boolean().optional().describe('`start` returns `launch`, a contributor to every spawn, resume and fork on floors where it is on.')),
+  fields: since(z.record(Word, SpawnField).optional().describe('Its spawn fields: a spawn sets them in `x.<provides>`, each logged as a session fact before the worker starts.')),
 })
 
 const View = z.strictObject({
-  module: views(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
-  export: views(z.string().min(1).describe('The export that mounts it: mount(host, ctx) returning { update, show?, visible?, close }.')),
-  on: views(Kinds.describe('The subject kinds it mounts on: a region offers it on these, at a scale it has.')),
-  shows: views(Kinds.optional().describe('The kinds it is handed through show while mounted on an ancestor, never mounted on.')),
-  accepts: views(MediaTypes.optional().describe("The media types of a file-bearing subject it draws, matched against the subject's value.type.")),
-  scales: views(z.array(z.enum(SCALES)).min(1).describe('The room it can draw in: chip, row, cell, pane.')),
-  needs: views(z.array(z.enum(KIT_MEMBERS)).optional().describe("The kit members it can't draw without: a renderer whose kit lacks one doesn't offer it.")),
-  regions: views(z.array(z.string()).optional().describe("The regions it declares inside it, each one of the manifest's regions.")),
-  options: views(Schema.optional().describe("Its options' JSON Schema, as a region's layout sets them.")),
-  words: views(Words.describe('Its name, as a palette offers "Open <label>".')),
-  keys: views(Chords.optional().describe("Default chords that display the subject in focus with it, or open its tab where it is a worker's tab: the config's keys replace them.")),
-  tab: tabs(
+  module: since(Path.describe('Its module, below the client folder: served at /x/<capability>/<module>.')),
+  export: since(z.string().min(1).describe('The export that mounts it: mount(host, ctx) returning { update, show?, visible?, close }.')),
+  on: since(Kinds.describe('The subject kinds it mounts on: a region offers it on these, at a scale it has.')),
+  shows: since(Kinds.optional().describe('The kinds it is handed through show while mounted on an ancestor, never mounted on.')),
+  accepts: since(MediaTypes.optional().describe("The media types of a file-bearing subject it draws, matched against the subject's value.type.")),
+  scales: since(z.array(z.enum(SCALES)).min(1).describe('The room it can draw in: chip, row, cell, pane.')),
+  needs: since(z.array(z.enum(KIT_MEMBERS)).optional().describe("The kit members it can't draw without: a renderer whose kit lacks one doesn't offer it.")),
+  regions: since(z.array(z.string()).optional().describe("The regions it declares inside it, each one of the manifest's regions.")),
+  options: since(Schema.optional().describe("Its options' JSON Schema, as a region's layout sets them.")),
+  words: since(Words.describe('Its name, as a palette offers "Open <label>".')),
+  keys: since(Chords.optional().describe("Default chords that display the subject in focus with it, or open its tab where it is a worker's tab: the config's keys replace them.")),
+  tab: since(
     z
       .string()
       .min(1)
@@ -1070,17 +973,17 @@ const View = z.strictObject({
   ),
 })
 const RegionDecl = z.strictObject({
-  subject: views(z.union([SubjectKind, ViewerKind])),
-  holds: views(z.array(z.enum(HOLDS)).min(1)),
-  scale: views(z.enum(SCALES).optional()),
-  arity: views(z.enum(['one', 'tabs']).optional()),
-  description: views(z.string().min(1).optional()),
-  layout: files(
+  subject: since(z.union([SubjectKind, ViewerKind])),
+  holds: since(z.array(z.enum(HOLDS)).min(1)),
+  scale: since(z.enum(SCALES).optional()),
+  arity: since(z.enum(['one', 'tabs']).optional()),
+  description: since(z.string().min(1).optional()),
+  layout: since(
     z
       .strictObject({
-        order: files(z.array(z.string()).optional()),
-        hidden: files(z.array(z.string()).optional()),
-        options: files(z.record(z.string(), z.record(z.string(), z.unknown())).optional()),
+        order: since(z.array(z.string()).optional()),
+        hidden: since(z.array(z.string()).optional()),
+        options: since(z.record(z.string(), z.record(z.string(), z.unknown())).optional()),
       })
       .optional()
       .describe("Its default layout, the bottom layer, under the renderer's own, the config's and the viewer's: `order` and `hidden` of view ids, and each view's `options`."),
@@ -1109,38 +1012,38 @@ export const Manifest = z
     wants: since(z.record(Name, Version).optional().describe('Optional dependencies: it starts without one that is missing.')),
     settings: since(Schema.optional().describe('What the config may set, as JSON Schema; no settings are taken without it.')),
     server: since(Path.optional().describe("The module whose default export is `start`; none, no code.")),
-    verbs: sinceCalls(z.record(Word, Verb).optional().describe('Its verbs by name: POST /<capability>/<name>, ctx.call, tower x.')),
-    reads: sinceCalls(z.record(ReadPath, Read).optional().describe('Its reads by path: GET /<capability>/<path>, ctx.read.')),
-    hooks: around(z.record(Word, Hook).optional().describe('Its own hooks, raised inside its verbs with ctx.raise: a hook shares one namespace with its verbs and reads.')),
-    answers: around(
+    verbs: since(z.record(Word, Verb).optional().describe('Its verbs by name: POST /<capability>/<name>, ctx.call, tower x.')),
+    reads: since(z.record(ReadPath, Read).optional().describe('Its reads by path: GET /<capability>/<path>, ctx.read.')),
+    hooks: since(z.record(Word, Hook).optional().describe('Its own hooks, raised inside its verbs with ctx.raise: a hook shares one namespace with its verbs and reads.')),
+    answers: since(
       z
         .record(Qualified, z.strictObject({}))
         .optional()
         .describe("The hooks it answers, qualified: tower/discard.record. Each one's capability is its own, the core's or one it requires or wants."),
     ),
-    around: around(
+    around: since(
       z
         .record(Qualified, Around)
         .optional()
         .describe("The verbs and hooks it wraps, qualified: tower/spawn, chime/ring. Each one's capability is its own, the core's or one it requires or wants."),
     ),
-    collections: stores(z.record(Word, Collection).optional().describe('Its collections, each named `<provides>` or `<provides>.<name>`.')),
-    streams: stores(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
-    facts: stores(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),
-    client: folds(Path.optional().describe('Its folder of files served at /x/<capability>/: its commands\' modules.')),
-    subjects: folds(z.record(Word, SubjectDecl).optional().describe('Its own subject kinds, `<provides>.<kind>`, that others contribute to: where they sit in its part.')),
-    folds: folds(z.record(SubjectKind, FoldSpec).optional().describe('Per subject kind it folds: the x it makes and what it adds.')),
-    commands: folds(z.record(Word, Command).optional().describe('Its client commands: a module\'s export run by renderers that import modules.')),
-    slots: triggers(z.record(Word, SlotSpec).optional().describe("Its time triggers: start returns slots.<name>, which the tower's loop calls at each slot due.")),
-    triggers: triggers(
+    collections: since(z.record(Word, Collection).optional().describe('Its collections, each named `<provides>` or `<provides>.<name>`.')),
+    streams: since(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
+    facts: since(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),
+    client: since(Path.optional().describe('Its folder of files served at /x/<capability>/: its commands\' modules.')),
+    subjects: since(z.record(Word, SubjectDecl).optional().describe('Its own subject kinds, `<provides>.<kind>`, that others contribute to: where they sit in its part.')),
+    folds: since(z.record(SubjectKind, FoldSpec).optional().describe('Per subject kind it folds: the x it makes and what it adds.')),
+    commands: since(z.record(Word, Command).optional().describe('Its client commands: a module\'s export run by renderers that import modules.')),
+    slots: since(z.record(Word, SlotSpec).optional().describe("Its time triggers: start returns slots.<name>, which the tower's loop calls at each slot due.")),
+    triggers: since(
       z
-        .strictObject({ board: triggers(z.strictObject({}).optional().describe('start returns board(prev, next), called after each board build from the second on.')) })
+        .strictObject({ board: since(z.strictObject({}).optional().describe('start returns board(prev, next), called after each board build from the second on.')) })
         .optional()
         .describe('Its change triggers.'),
     ),
-    checks: triggers(z.record(Word, Check).optional().describe('Lines `tower doctor` prints: a command, or one of its reads.')),
-    spawn: launch(Spawn.optional().describe('Its spawn fields, and whether it contributes to launches.')),
-    runtimes: byRuntime(
+    checks: since(z.record(Word, Check).optional().describe('Lines `tower doctor` prints: a command, or one of its reads.')),
+    spawn: since(Spawn.optional().describe('Its spawn fields, and whether it contributes to launches.')),
+    runtimes: since(
       z
         .partialRecord(
           z.enum(RUNTIMES),
@@ -1152,7 +1055,7 @@ export const Manifest = z
         .describe('What serves each runtime\'s own harness, by runtime: the config\'s `runtimes` keyed the same.'),
     ),
     views: since(z.record(Word, View).optional().describe('Its views by name, `<capability>/<name>`: modules a renderer mounts into a region it gives them.')),
-    guidance: guided(Guidance.optional().describe('What it tells the workers: when to use its doors, verbs and reads, and how. The config may replace or add to it.')),
+    guidance: since(Guidance.optional().describe('What it tells the workers: when to use its doors, verbs and reads, and how. The config may replace or add to it.')),
     regions: since(
       z
         .record(z.string().regex(REGION_ID, 'a subject kind and a place: card.cell, reviews.thread.head'), RegionDecl)
