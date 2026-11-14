@@ -29,6 +29,10 @@ import {
   HIRING_KEYS,
   projectCollections,
   PROJECT_KEYS,
+  PROJECT_RUNTIME_KEYS,
+  RUNTIME_KEYS,
+  RUNTIMES,
+  isRuntime,
   RENDERER_KEYS,
   RETENTION_KEYS,
   towerHosts,
@@ -42,6 +46,7 @@ import {
 } from './shared/model.ts'
 import { keysProblems } from './shared/keymap.ts'
 import { isObject, probesGone, readConfig, validArgv } from './system.ts'
+import { movedKeys, movedLine } from './moved-keys.ts'
 
 export type ConfigProblem = { level: 'fail' | 'warn'; key: string; problem: string }
 
@@ -230,6 +235,30 @@ const floorExtensions = (config: Config, at: string, project: Project, { found, 
   return [...settings, ...capabilities]
 }
 
+/**
+ * The `runtimes` object at `at`: each entry a runtime the tower knows and an object of `known` keys, checked further
+ * by `each`.
+ */
+const runtimesIn = (at: string, value: unknown, known: readonly string[], each: (key: string, entry: Record<string, unknown>) => ConfigProblem[]): ConfigProblem[] => {
+  if (value === undefined || !isObject(value)) return value === undefined ? [] : [fail(at, 'takes an object by runtime, such as {"claude": {...}}')]
+  return Object.entries(value).flatMap(([id, entry]) => {
+    const key = `${at}.${id}`
+    if (!isRuntime(id)) return [fail(key, `names no runtime the tower knows: it runs ${RUNTIMES.join(', ')}`)]
+    if (!isObject(entry)) return [fail(key, `takes an object: ${known.join(', ')}`)]
+    return [...unknownKeys(`${key}.`, entry, known), ...each(key, entry)]
+  })
+}
+
+/** A project's `command` of Claude's: one of `runtimes.claude.argv`'s names, ignored when it names only one. */
+const projectCommand = (config: Config, key: string, command: unknown): ConfigProblem[] => {
+  if (command === undefined) return []
+  if (typeof command !== 'string') return [fail(key, "takes the name of one of runtimes.claude.argv's commands")]
+  if (!isObject(config.runtimes) || !isObject(config.runtimes.claude) || !validArgv(config.runtimes.claude.argv)) return []
+  const names = commandNames(config, 'claude')
+  if (names === undefined) return [warn(key, 'runtimes.claude.argv names only one command: this is ignored')]
+  return names.includes(command) ? [] : [fail(key, `names no command of runtimes.claude.argv: they are ${names.join(', ')}`)]
+}
+
 const projectProblems = (config: Config, id: string, project: Project, renderers: Renderer[] | undefined, extensions: Extensions): ConfigProblem[] => {
   const at = `projects.${id}`
   if (!isObject(project)) return [fail(at, 'takes an object: name, hub and repos at least')]
@@ -237,17 +266,6 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
     ...(typeof project.name === 'string' && project.name ? [] : [fail(`${at}.name`, 'takes the name the floor is shown by')]),
     ...(typeof project.hub === 'string' && path.isAbsolute(project.hub) && isDirectory(project.hub) ? [] : [fail(`${at}.hub`, `${JSON.stringify(project.hub)} is no absolute path of a directory: sessions start in the hub`)]),
     ...(project.repos === undefined ? [fail(`${at}.repos`, 'takes a list of absolute directories, [] for none')] : directories(`${at}.repos`, project.repos, 'absolute directories')),
-    ...(project.command === undefined
-      ? []
-      : typeof project.command !== 'string'
-        ? [fail(`${at}.command`, "takes the name of one of argv's commands")]
-        : !validArgv(config.argv)
-          ? []
-          : (() => {
-              const names = commandNames(config)
-              if (names === undefined) return [warn(`${at}.command`, "argv names only one command: this is ignored")]
-              return names.includes(project.command) ? [] : [fail(`${at}.command`, `names no command of argv: they are ${names.join(', ')}`)]
-            })()),
   ]
   if (shape.some((p) => p.key === `${at}.hub`)) return [...unknownKeys(`${at}.`, project, PROJECT_KEYS), ...shape]
   const collectionIds = [config.collections, project.collections].flatMap((c) => (isObject(c) ? Object.keys(c) : []))
@@ -270,7 +288,10 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
     ...worktrees(`${at}.worktrees`, project.worktrees),
     ...counts(`${at}.hiring`, project.hiring, HIRING_KEYS),
     ...counts(`${at}.brief`, project.brief, BRIEF_KEYS),
-    ...directories(`${at}.plugins`, project.plugins, 'absolute plugin directories'),
+    ...runtimesIn(`${at}.runtimes`, project.runtimes, PROJECT_RUNTIME_KEYS, (key, r) => [
+      ...directories(`${key}.plugins`, r.plugins, 'absolute plugin directories'),
+      ...projectCommand(config, `${key}.command`, r.command),
+    ]),
     ...floorExtensions(config, at, project, extensions),
   ]
 }
@@ -278,6 +299,8 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
 /** Every problem of a config read from its file, each at the key it is at. */
 export const configProblems = (config: Config): ConfigProblem[] => {
   if (!isObject(config)) return [fail('(the file)', 'holds no JSON object')]
+  const moved = movedKeys(config)
+  const isMoved = (p: ConfigProblem) => p.level === 'warn' && moved.some((m) => m.key === p.key)
   const renderers = (() => {
     try {
       return renderersOf(config)
@@ -292,7 +315,13 @@ export const configProblems = (config: Config): ConfigProblem[] => {
   return [
     ...unknownKeys('', config, CONFIG_KEYS).filter((p) => p.key !== 'probes'),
     ...('probes' in config ? [fail('probes', probesGone(config.probes))] : []),
-    ...(validArgv(config.argv) ? [] : [fail('argv', 'takes the command sessions start with (["claude"]), or several named ones ({"claude": ["claude"], "mom": ["claude-mom"]})')]),
+    ...moved.map((m) => fail(m.key, movedLine(m))),
+    ...(isObject(config.runtimes) || moved.some((m) => m.key === 'argv') ? [] : [fail('runtimes', 'takes an object of runtimes, with claude.argv at least: {"claude": {"argv": ["claude"]}}')]),
+    ...runtimesIn('runtimes', config.runtimes, RUNTIME_KEYS, (key, r) => [
+      ...(validArgv(r.argv) ? [] : [fail(`${key}.argv`, 'takes the command sessions start with (["claude"]), or several named ones ({"claude": ["claude"], "mom": ["claude-mom"]})')]),
+      ...directories(`${key}.plugins`, r.plugins, 'absolute plugin directories'),
+    ]),
+    ...(isObject(config.runtimes) && !isObject(config.runtimes.claude) ? [fail('runtimes.claude', 'takes an object with argv, the command Claude sessions start with')] : []),
     ...(config.env === undefined || (isObject(config.env) && Object.values(config.env).every((v) => typeof v === 'string')) ? [] : [fail('env', 'takes an object of strings, {} for none')]),
     ...(projects.length ? [] : [fail('projects', 'names no project: add one, or `tower init` on a fresh system')]),
     ...unknownKeysAt('user', config.user, USER_KEYS),
@@ -316,11 +345,10 @@ export const configProblems = (config: Config): ConfigProblem[] => {
     ...counts('hiring', config.hiring, HIRING_KEYS),
     ...counts('brief', config.brief, BRIEF_KEYS),
     ...counts('retention', config.retention, RETENTION_KEYS),
-    ...directories('plugins', config.plugins, 'absolute plugin directories'),
     ...(config.keys === undefined ? [] : keysProblems(config.keys, addedIds(extensions.resolved)).map(({ level, at, problem }) => ({ level, key: `keys${at}`, problem }))),
     ...extensionEntries(config, extensions),
     ...projects.flatMap(([id, project]) => projectProblems(config, id, project, renderers, extensions)),
-  ]
+  ].filter((p) => !isMoved(p))
 }
 
 /** The config file's problems; a file it can't read, or JSON it can't parse, is the one problem. */

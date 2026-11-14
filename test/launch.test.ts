@@ -46,7 +46,7 @@ test('a flag, env key, defaults member or crew edge given twice refuses, naming 
   assert.match((conflict({ defaults: { model: 'a' } }, { defaults: { model: 'b' } }) as { message: string }).message, /^roles and focus both give defaults\.model$/)
   assert.match((conflict({ reportsTo: 'A-1' }, { reportsTo: 'B-2' }) as { message: string }).message, /^roles and focus both give reportsTo$/)
   assert.deepEqual(conflict({ args: { claude: ['--model=opus'] } }, {}), { t: 'conflict', message: 'roles passes --model, which the tower passes', caps: ['roles'] })
-  assert.match((conflict({}, { args: { claude: ['--verbose'] } }) as { message: string }).message, /^focus passes --verbose, which the config's argv\[2\] \(--verbose=1\) passes$/)
+  assert.match((conflict({}, { args: { claude: ['--verbose'] } }) as { message: string }).message, /^focus passes --verbose, which the config's runtimes\.claude\.argv\[2\] \(--verbose=1\) passes$/)
   assert.deepEqual(conflict({ env: { HTTPS_PROXY: 'http://other' } }, {}), { t: 'conflict', message: "roles sets HTTPS_PROXY in env, which the config's env.HTTPS_PROXY sets", caps: ['roles'] })
 })
 
@@ -88,9 +88,9 @@ test("a launch contributor is bound as start is: one that hasn't settled in time
 test('hostSpawn: the legacy argv always, a named command when given, the first when not or when stale, then the mod and the args; its env and name on the spawn', () => {
   const start: HostStart = { id: 'id', project: 'p', cwd: '/c', runtime: 'claude', args: ['--x'], facts: [] }
   const spawn = (config: Config, name?: string) => hostSpawn(start, sessionCommand(config, 'claude', name), '/mods')
-  const legacy = { argv: ['claude'], env: { A: '1' }, projects: {} } as Config
+  const legacy = { runtimes: { claude: { argv: ['claude'] } }, env: { A: '1' }, projects: {} } as Config
   assert.deepEqual(spawn(legacy), { t: 'spawn', id: 'id', project: 'p', cwd: '/c', runtime: 'claude', argv: ['claude', '--plugin-dir', '/mods', '--x'], env: { A: '1' }, cols: 120, rows: 40 })
-  const multi = { argv: { a: ['claude'], b: ['claude-mom'] }, projects: {} } as Config
+  const multi = { runtimes: { claude: { argv: { a: ['claude'], b: ['claude-mom'] } } }, projects: {} } as Config
   assert.deepEqual([spawn(multi, 'b').argv, spawn(multi, 'b').command], [['claude-mom', '--plugin-dir', '/mods', '--x'], 'b'])
   assert.deepEqual([spawn(multi, 'missing').argv, spawn(multi, 'missing').command], [['claude', '--plugin-dir', '/mods', '--x'], 'a'])
   assert.deepEqual([spawn(multi).argv, spawn(multi).command, spawn(multi).env], [['claude', '--plugin-dir', '/mods', '--x'], 'a', {}])

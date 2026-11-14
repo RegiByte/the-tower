@@ -115,6 +115,7 @@
               {
                 "id": "20261004-090000-crew",
                 "callsign": "SHANNON-26",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -146,7 +147,7 @@
                     "startedAt": 1791120600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -187,6 +188,7 @@
               {
                 "id": "20261004-090007-crew",
                 "callsign": "ARIADNE-80",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew/.worktrees/storage-split",
                 "checkout": "storage-split",
@@ -227,7 +229,7 @@
                     "startedAt": 1791121200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -269,6 +271,7 @@
               {
                 "id": "20261004-090014-crew",
                 "callsign": "COLOMBO-41",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -304,7 +307,7 @@
                     "startedAt": 1791121320000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -346,6 +349,7 @@
               {
                 "id": "20261004-090021-crew",
                 "callsign": "VEGA-16",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -381,7 +385,7 @@
                     "startedAt": 1791121440000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -414,6 +418,7 @@
               {
                 "id": "20261004-090028-crew",
                 "callsign": "BROKER-67",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -449,7 +454,7 @@
                     "startedAt": 1791121560000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -491,6 +496,7 @@
               {
                 "id": "20261004-090035-crew",
                 "callsign": "JOHN-58",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -526,7 +532,7 @@
                     "startedAt": 1791121680000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -578,6 +584,7 @@
               {
                 "id": "20261004-090042-crew",
                 "callsign": "CHIRON-73",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -613,7 +620,7 @@
                     "startedAt": 1791121800000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -656,6 +663,7 @@
               {
                 "id": "20261004-090049-crew",
                 "callsign": "EIFFEL-18",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew/.worktrees/storage-split-review",
                 "checkout": "storage-split-review",
@@ -713,7 +721,7 @@
                     "startedAt": 1791121920000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -755,6 +763,7 @@
               {
                 "id": "20261004-090056-crew",
                 "callsign": "HUDSON-20",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -790,7 +799,7 @@
                     "startedAt": 1791122040000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -832,6 +841,7 @@
               {
                 "id": "20261004-090063-crew",
                 "callsign": "RANGER-67",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -867,7 +877,7 @@
                     "startedAt": 1791122160000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -909,6 +919,7 @@
               {
                 "id": "20261004-090070-crew",
                 "callsign": "TURING-50",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -944,7 +955,7 @@
                     "startedAt": 1791122280000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -996,6 +1007,7 @@
               {
                 "id": "20261004-090077-crew",
                 "callsign": "FREYR-49",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -1031,7 +1043,7 @@
                     "startedAt": 1791122400000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1073,6 +1085,7 @@
               {
                 "id": "20261004-090084-crew",
                 "callsign": "DON-95",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -1108,7 +1121,7 @@
                     "startedAt": 1791122520000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1150,6 +1163,7 @@
               {
                 "id": "20261004-090091-crew",
                 "callsign": "SAILOR-01",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -1185,7 +1199,7 @@
                     "startedAt": 1791122640000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1227,6 +1241,7 @@
               {
                 "id": "20261004-090098-crew",
                 "callsign": "RIGEL-41",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -1262,7 +1277,7 @@
                     "startedAt": 1791122760000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1314,6 +1329,7 @@
               {
                 "id": "20261004-090105-crew",
                 "callsign": "WALT-97",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -1349,7 +1365,7 @@
                     "startedAt": 1791122880000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1391,6 +1407,7 @@
               {
                 "id": "20261004-090112-crew",
                 "callsign": "SHACKLETON-24",
+                "runtime": "claude",
                 "project": "crew",
                 "cwd": "/work/crew",
                 "checkout": "main",
@@ -1421,7 +1438,7 @@
                     "startedAt": 1791123000000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1460,6 +1477,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1517,6 +1537,7 @@
               {
                 "id": "20261004-090000-pair",
                 "callsign": "QUIXOTE-87",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -1547,7 +1568,7 @@
                     "startedAt": 1791122400000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1588,6 +1609,7 @@
               {
                 "id": "20261004-090007-pair",
                 "callsign": "DUPIN-17",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -1623,7 +1645,7 @@
                     "startedAt": 1791123000000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1665,6 +1687,7 @@
               {
                 "id": "20261004-090014-pair",
                 "callsign": "LESTRADE-17",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -1700,7 +1723,7 @@
                     "startedAt": 1791123300000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1752,6 +1775,7 @@
               {
                 "id": "20261004-090021-pair",
                 "callsign": "KEPLER-34",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -1782,7 +1806,7 @@
                     "startedAt": 1791122700000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1823,6 +1847,7 @@
               {
                 "id": "20261004-090028-pair",
                 "callsign": "FRANKLIN-88",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -1858,7 +1883,7 @@
                     "startedAt": 1791123600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1900,6 +1925,7 @@
               {
                 "id": "20261004-090035-pair",
                 "callsign": "BEN-26",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -1935,7 +1961,7 @@
                     "startedAt": 1791123900000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1977,6 +2003,7 @@
               {
                 "id": "20261004-090042-pair",
                 "callsign": "FRIDAY-22",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -2012,7 +2039,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2064,6 +2091,7 @@
               {
                 "id": "20261004-090049-pair",
                 "callsign": "ALTAIR-17",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -2099,7 +2127,7 @@
                     "startedAt": 1791124500000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2141,6 +2169,7 @@
               {
                 "id": "20261004-090056-pair",
                 "callsign": "ARTHUR-33",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -2171,7 +2200,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2212,6 +2241,7 @@
               {
                 "id": "20261004-090063-pair",
                 "callsign": "BROK-55",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -2247,7 +2277,7 @@
                     "startedAt": 1791124800000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2289,6 +2319,7 @@
               {
                 "id": "20261004-090070-pair",
                 "callsign": "FREYR-85",
+                "runtime": "claude",
                 "project": "pairs",
                 "cwd": "/work/pairs",
                 "checkout": "main",
@@ -2324,7 +2355,7 @@
                     "startedAt": 1791125100000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2364,6 +2395,9 @@
                 "reportsTo": "20261004-090056-pair"
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2533,8 +2567,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [],
         "termsUp": true,
         "jobs": [],

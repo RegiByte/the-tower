@@ -31,7 +31,7 @@ function seed(root: string) {
   mkdirSync(drafts, { recursive: true })
   writeFileSync(path.join(drafts, '20261004T150000Z-a-kept-prompt.md'), '# A kept prompt\n\nStarts a worker later.\n')
   return {
-    argv: ['claude'],
+    runtimes: { claude: { argv: ['claude'] } },
     projects: { lab: { name: 'lab', hub, repos: [] } },
     collections: { drafts: { label: 'Drafts', description: 'Prompts kept for later.' } },
     extensions: { quota: { off: true } },

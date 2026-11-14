@@ -127,6 +127,9 @@
               "streams": []
             },
             "cards": [],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -181,6 +184,9 @@
               "streams": []
             },
             "cards": [],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -336,8 +342,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [],
         "termsUp": true,
         "jobs": [],

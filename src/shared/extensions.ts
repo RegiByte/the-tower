@@ -36,6 +36,8 @@ const TRIGGERS = '1.86'
 
 /** The minor launch arrived in: spawn fields, launch contributors and plugins. */
 const LAUNCH = '1.87'
+/** The major the per-runtime keys arrived in: `runtimes.claude.plugins`, before it `plugins.claude`. */
+const BY_RUNTIME = '2.0'
 
 /** The minor fact kinds arrived in: a stream's fact code declaring a kind the core folds, and the moved built-ins' old names. */
 const KINDS = '1.90'
@@ -791,6 +793,7 @@ const folds = sinceAt(FOLDS)
 const around = sinceAt(AROUND)
 const triggers = sinceAt(TRIGGERS)
 const launch = sinceAt(LAUNCH)
+const byRuntime = sinceAt(BY_RUNTIME)
 const kinds = sinceAt(KINDS)
 const views = sinceAt(VIEWS)
 const files = sinceAt(FILES)
@@ -1141,11 +1144,16 @@ export const Manifest = z
     ),
     checks: triggers(z.record(Word, Check).optional().describe('Lines `tower doctor` prints: a command, or one of its reads.')),
     spawn: launch(Spawn.optional().describe('Its spawn fields, and whether it contributes to launches.')),
-    plugins: launch(
+    runtimes: byRuntime(
       z
-        .partialRecord(z.enum(RUNTIMES), Path)
+        .partialRecord(
+          z.enum(RUNTIMES),
+          z.strictObject({
+            plugins: Path.optional().describe("What teaches a session of the runtime the extension: for claude, a Claude plugin's folder, passed with --plugin-dir on floors where it is on."),
+          }),
+        )
         .optional()
-        .describe("What teaches a session of a runtime the extension, by runtime: for claude, a Claude plugin's folder, passed with --plugin-dir on floors where it is on."),
+        .describe('What serves each runtime\'s own harness, by runtime: the config\'s `runtimes` keyed the same.'),
     ),
     views: since(z.record(Word, View).optional().describe('Its views by name, `<capability>/<name>`: modules a renderer mounts into a region it gives them.')),
     guidance: guided(Guidance.optional().describe('What it tells the workers: when to use its doors, verbs and reads, and how. The config may replace or add to it.')),

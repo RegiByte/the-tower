@@ -143,6 +143,7 @@
               {
                 "id": "20261004-090000-labx",
                 "callsign": "DARTAGNAN-67",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget",
                 "checkout": "retry-budget",
@@ -179,7 +180,7 @@
                     "startedAt": 1791123600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -236,6 +237,7 @@
               {
                 "id": "20261004-090007-labx",
                 "callsign": "FREYR-79",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget-review",
                 "checkout": "retry-budget-review",
@@ -314,7 +316,7 @@
                     "startedAt": 1791125280000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -356,6 +358,7 @@
               {
                 "id": "20261004-090014-labx",
                 "callsign": "RAGNAR-12",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/readme",
                 "checkout": "readme",
@@ -390,7 +393,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -457,6 +460,7 @@
               {
                 "id": "20261004-090021-labx",
                 "callsign": "AMUNDSEN-99",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab",
                 "checkout": "main",
@@ -486,7 +490,7 @@
                     "startedAt": 1791125520000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -552,6 +556,7 @@
               {
                 "id": "20261004-090028-labx",
                 "callsign": "AURELIUS-26",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/old-flags",
                 "checkout": "old-flags",
@@ -586,7 +591,7 @@
                     "startedAt": 1791115200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -642,6 +647,9 @@
                 }
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "x": {
               "reviews": {
                 "threads": [
@@ -955,8 +963,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [],
         "termsUp": true,
         "jobs": [],
@@ -1106,6 +1123,7 @@
               {
                 "id": "20261004-090000-labx",
                 "callsign": "DARTAGNAN-67",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget",
                 "checkout": "retry-budget",
@@ -1142,7 +1160,7 @@
                     "startedAt": 1791123600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1199,6 +1217,7 @@
               {
                 "id": "20261004-090007-labx",
                 "callsign": "FREYR-79",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget-review",
                 "checkout": "retry-budget-review",
@@ -1277,7 +1296,7 @@
                     "startedAt": 1791125280000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1319,6 +1338,7 @@
               {
                 "id": "20261004-090014-labx",
                 "callsign": "RAGNAR-12",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/readme",
                 "checkout": "readme",
@@ -1353,7 +1373,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1420,6 +1440,7 @@
               {
                 "id": "20261004-090021-labx",
                 "callsign": "AMUNDSEN-99",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab",
                 "checkout": "main",
@@ -1449,7 +1470,7 @@
                     "startedAt": 1791125520000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1515,6 +1536,7 @@
               {
                 "id": "20261004-090028-labx",
                 "callsign": "AURELIUS-26",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/old-flags",
                 "checkout": "old-flags",
@@ -1549,7 +1571,7 @@
                     "startedAt": 1791115200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1605,6 +1627,9 @@
                 }
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "x": {
               "reviews": {
                 "threads": [
@@ -1918,8 +1943,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [],
         "termsUp": true,
         "jobs": [],
@@ -2069,6 +2103,7 @@
               {
                 "id": "20261004-090000-labx",
                 "callsign": "DARTAGNAN-67",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget",
                 "checkout": "retry-budget",
@@ -2105,7 +2140,7 @@
                     "startedAt": 1791123600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2162,6 +2197,7 @@
               {
                 "id": "20261004-090007-labx",
                 "callsign": "FREYR-79",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget-review",
                 "checkout": "retry-budget-review",
@@ -2240,7 +2276,7 @@
                     "startedAt": 1791125280000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2282,6 +2318,7 @@
               {
                 "id": "20261004-090014-labx",
                 "callsign": "RAGNAR-12",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/readme",
                 "checkout": "readme",
@@ -2316,7 +2353,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2383,6 +2420,7 @@
               {
                 "id": "20261004-090021-labx",
                 "callsign": "AMUNDSEN-99",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab",
                 "checkout": "main",
@@ -2412,7 +2450,7 @@
                     "startedAt": 1791125520000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2478,6 +2516,7 @@
               {
                 "id": "20261004-090028-labx",
                 "callsign": "AURELIUS-26",
+                "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/old-flags",
                 "checkout": "old-flags",
@@ -2512,7 +2551,7 @@
                     "startedAt": 1791115200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2568,6 +2607,9 @@
                 }
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "x": {
               "reviews": {
                 "threads": [
@@ -2881,8 +2923,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [],
         "termsUp": true,
         "jobs": [],

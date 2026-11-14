@@ -29,7 +29,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   `tidy.ts`, `duty.ts`, `limits.ts`, `health.ts`, `shelf-words.ts`, `worktree-words.ts`, `checkouts.ts`, …), served as one:
   words about cards (status words and glyphs, the status counts' and the host lamp's words, what a live
   region says as waits begin), the spawn form and its request (an empty model or effort said as what the board's
-  `claudeDefaults` observed, `opus 5.5 (default)`, or as Claude's default until one is seen), round-robin through waits, dismissals and the ring
+  `runtimes.claude.defaults` observed, `opus 5.5 (default)`, or as the runtime's default, by its label, until one is
+  seen), round-robin through waits, dismissals and the ring
   setting kept in `tower.store`, the sounds as scores, who a review's notes can be sent to, the hiring limits
   ([[hire]]), crews ([[crews]]) and the past by crew.
 - `panels.ts`: the Changes and Stats panels, as pure views (view model in, html out), the line-picking logic,

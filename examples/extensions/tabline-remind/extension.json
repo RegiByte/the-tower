@@ -7,7 +7,7 @@
   "requires": { "tower": "2.0" },
   "client": "client",
   "server": "server.ts",
-  "plugins": { "claude": "plugin" },
+  "runtimes": { "claude": { "plugins": "plugin" } },
   "settings": {
     "type": "object",
     "additionalProperties": false,

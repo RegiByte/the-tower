@@ -64,7 +64,7 @@ const clientRead = (dir: string): ClientRead => {
 }
 
 /** A manifest's keys, only peeked at here: one that isn't JSON has none, and the read of the manifest says why it is refused. */
-const peeked = (text: string | undefined): { client?: unknown; plugins?: { claude?: unknown } } => {
+const peeked = (text: string | undefined): { client?: unknown; runtimes?: { claude?: { plugins?: unknown } } } => {
   try {
     return text === undefined ? {} : (JSON.parse(text) ?? {})
   } catch {
@@ -82,7 +82,7 @@ const clientDir = (dir: string, text: string | undefined): string | undefined =>
 
 /** What the Claude plugin a manifest names lacks, when it lacks anything: the folder, or the file that makes it a plugin. */
 const claudePluginLack = (dir: string, text: string | undefined): Found['claudePluginLack'] => {
-  const plugin = peeked(text).plugins?.claude
+  const plugin = peeked(text).runtimes?.claude?.plugins
   if (typeof plugin !== 'string') return undefined
   if (!statSync(path.join(dir, plugin), { throwIfNoEntry: false })?.isDirectory()) return 'folder'
   return existsSync(path.join(dir, plugin, CLAUDE_PLUGIN_FILE)) ? undefined : 'plugin.json'

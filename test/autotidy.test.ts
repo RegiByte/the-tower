@@ -15,7 +15,7 @@ import { viewOf } from './view.ts'
 const HUB = '/hub'
 const TREE = 'odin-42'
 const BRANCH = `tower/${TREE}`
-const CONFIG: Config = { argv: ['claude'], env: {}, projects: { tower: { name: 'tower', hub: HUB, repos: [] } } }
+const CONFIG: Config = { runtimes: { claude: { argv: ['claude'] } }, env: {}, projects: { tower: { name: 'tower', hub: HUB, repos: [] } } }
 const DAY = 24 * 60 * 60 * 1000
 const ALL = { reap: true, worktrees: true, branches: true, extensions: true }
 

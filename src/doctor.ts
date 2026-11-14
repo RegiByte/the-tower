@@ -14,7 +14,7 @@ import { runProcess } from './run.ts'
 import { API_VERSION, isApiError, type ApiError } from './shared/api.ts'
 import type { Check, RunResult } from './shared/extensions.ts'
 import { extensionLine, PROBLEM_FIX, problemLine } from './shared/cards.ts'
-import { CLAUDE_TESTED, claudeRange } from './shared/claude.ts'
+import { CLAUDE_TESTED, releaseRange } from './shared/claude.ts'
 import { configProblems } from './config-check.ts'
 import { ConfigError, commandNames, editorArgv, resolveCommand, towerPort, type Config } from './shared/model.ts'
 import { withoutParentSession } from './shared/env.ts'
@@ -79,17 +79,17 @@ const gitVersion = async (): Promise<Verdict> => {
 }
 
 /**
- * A Claude the config's `argv` starts: `file`, the binary one or more of its commands name, checked alone (a command's
+ * A Claude the config's `runtimes.claude.argv` starts: `file`, the binary one or more of its commands name, checked alone (a command's
  * own arguments may not be valid beside `--version` or `auth status`), in the config's `env` over the scrubbed
  * environment, as the host builds it. `names`: the commands that start it, none for the legacy array.
  */
 type Claude = { file: string; names: string[]; env: NodeJS.ProcessEnv }
 
-/** Each distinct binary the config's `argv` commands start, so a Claude under several names is checked once. */
+/** Each distinct binary the config's `runtimes.claude.argv` commands start, so a Claude under several names is checked once. */
 const claudesOf = (config: Config): Claude[] => {
   const byFile = new Map<string, string[]>()
-  for (const name of commandNames(config) ?? [undefined]) {
-    const [file] = resolveCommand(config, name)
+  for (const name of commandNames(config, 'claude') ?? [undefined]) {
+    const [file] = resolveCommand(config, 'claude', name)
     byFile.set(file, [...(byFile.get(file) ?? []), ...(name === undefined ? [] : [name])])
   }
   const env = withoutParentSession({ ...process.env, ...config.env })
@@ -97,12 +97,12 @@ const claudesOf = (config: Config): Claude[] => {
 }
 
 /** How a line names a Claude: its binary, and the commands that start it when `argv` names several. */
-const claudeLabel = ({ file, names }: Claude): string => (names.length ? `${file} (${names.map((n) => `argv.${n}`).join(', ')})` : file)
+const claudeLabel = ({ file, names }: Claude): string => (names.length ? `${file} (${names.map((n) => `runtimes.claude.argv.${n}`).join(', ')})` : file)
 
 const missing = (claude: Claude): Verdict => ({
   level: 'fail',
   what: `${claudeLabel(claude)}: ${claude.file} ${claude.file.includes('/') ? 'does not exist' : 'is not on the PATH'}`,
-  fix: `install Claude Code (https://docs.claude.com/en/docs/claude-code/setup), or fix argv${claude.names.length ? `.${claude.names[0]}` : ''} in the config`,
+  fix: `install Claude Code (https://docs.claude.com/en/docs/claude-code/setup), or fix runtimes.claude.argv${claude.names.length ? `.${claude.names[0]}` : ''} in the config`,
 })
 
 /** A Claude's version, from its `--version`, against the tested range. */
@@ -110,7 +110,7 @@ const claudeVersion = (claude: Claude, printed: string): Verdict => {
   const label = claudeLabel(claude)
   const version = printed.trim()
   const range = `${CLAUDE_TESTED.lowest} to ${CLAUDE_TESTED.highest}`
-  switch (claudeRange(version)) {
+  switch (releaseRange(CLAUDE_TESTED, version)) {
     case 'tested':
       return { level: 'ok', what: `${label} ${version}, tested (${range})` }
     case 'below':
@@ -152,7 +152,7 @@ const checkable = (config: Config | Error): Config | undefined =>
 const unchecked = (what: string): Verdict => ({ level: 'warn', what: `${what}: unchecked until the config is fixed`, fix: 'fix the config first' })
 
 /**
- * The Claude each of the config's `argv` commands starts, checked as the host would start it: its version against the
+ * The Claude each of the config's `runtimes.claude.argv` commands starts, checked as the host would start it: its version against the
  * tested range, and that someone is signed in.
  */
 const claudes = async (config: Config | undefined): Promise<Verdict[]> =>

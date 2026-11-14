@@ -1,14 +1,14 @@
 import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
-import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, runtimeOf, isRuntime, RUNTIMES, type Runtime, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchOf } from '../shared/launch.ts'
 import { tagOf } from '../shared/tags.ts'
 import { current } from '../shared/status-words.ts'
 import { crewsOf } from '../shared/crews.ts'
 import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
-import { claudeRange } from '../shared/claude.ts'
+import { CLAUDE_LABEL, CLAUDE_TESTED, releaseRange, type TestedRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/model.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
-import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
+import { runtimeDefaults, type RuntimeDefaults } from './defaults.ts'
 import { chainsOf, continuations, lineage, namer, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
 import { accountsOf, commandLimits, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
@@ -71,6 +71,8 @@ export type Card = {
   callsign: string
   /** The Claude session name its peers message it by (`SendMessage`'s `to`), while its Claude runs. */
   peer?: string
+  /** The runtime it runs, the key of its entry in `board.runtimes` (`runtimeOf`): any string, so a renderer reads past one it doesn't know. @since 2.0 */
+  runtime: string
   project: string
   cwd: string
   /**
@@ -150,10 +152,10 @@ export type Card = {
   lineage: LineageSession[]
   model?: string
   effort?: string
-  /** The release of Claude Code the session runs, once the mod reported it. */
-  claude?: string
-  /** Its Claude is outside the releases the tower is tested on (`CLAUDE_TESTED`). */
-  claudeUntested: boolean
+  /** The release of its runtime the session runs, once the runtime said. @since 2.0 */
+  runtimeRelease?: string
+  /** Its runtime's release is outside the range the tower is tested on (`board.runtimes[runtime].tested`). @since 2.0 */
+  runtimeUntested: boolean
   /** What the session left running, each with the verb that ends it alone. */
   resources: CardResource[]
   /** What the worker showed the user across the sessions it ran as, oldest first; `at` in epoch ms, `session` the one that showed it. */
@@ -228,16 +230,36 @@ export type FloorCollection = {
   items: FloorItem[]
 }
 
+/** One runtime the tower knows, as the board says it (`board.runtimes`). */
+export type BoardRuntime = {
+  /** What a renderer prints for the runtime instead of naming it, such as `Claude Code`. */
+  label: string
+  /** The model and effort it starts a new worker on when asked for neither, as its sessions showed them. */
+  defaults: RuntimeDefaults
+  /** The releases outside the tested range that its live workers run, each once. */
+  untested: string[]
+  /** The releases the tower is tested on, so a renderer can say the range. */
+  tested: TestedRange
+  /** Every command name of its config's `argv`, in write order; absent in single-command mode (`commandNames`). */
+  commands?: string[]
+}
+
+/** A floor's part of one runtime (`floor.runtimes`). */
+export type FloorRuntime = {
+  /** The floor's resolved preferred command of the runtime's `argv`, by name; absent in single-command mode (`projectPreferredCommand`). */
+  command?: string
+}
+
 /**
  * A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and
  * kept branches in its repos. `bases`: the origin branches a cut can name for every repo at once, in the hub's
  * order, `defaultBase` first when there is one; empty when a dir isn't a git repo with an origin, or when their default
  * branches differ and share no other (a cut unnamed still starts each repo from its own).
  */
-export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities' | 'command'> & {
+export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities' | 'runtimes'> & {
   id: string
-  /** The floor's resolved preferred `argv` command, by name; absent in single-command mode (`projectPreferredCommand`). @since 1.141 */
-  command?: string
+  /** The floor's part of each runtime the tower knows, by the same ids as `board.runtimes`. @since 2.0 */
+  runtimes: Record<string, FloorRuntime>
   /** The cards of its present (`onBoard`); the rest are its archive, read at `GET /archive/<project>`. */
   cards: Card[]
   /** How many cards its archive holds. */
@@ -357,12 +379,8 @@ export type Board = {
   hostUp: boolean
   /** The running host speaks another protocol than its clients: it predates their code, until it is restarted. */
   hostOutdated: boolean
-  /** The model and effort Claude starts a new worker on when asked for neither, as the sessions showed them. */
-  claudeDefaults: ClaudeDefaults
-  /** Every `argv` command name, in write order; absent in single-command mode (`commandNames`). @since 1.141 */
-  commands?: string[]
-  /** The releases outside the tested range that live workers run, each once. */
-  claudeUntested: string[]
+  /** Every runtime the tower knows, by id: what a renderer draws for one instead of naming it. @since 2.0 */
+  runtimes: Record<string, BoardRuntime>
   shells: (Shell & { activity: string })[]
   termsUp: boolean
   /**
@@ -423,6 +441,27 @@ const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead
   return name === undefined ? undefined : { name, branch: tree?.branch, from: tree?.from, gone: checkoutGone(project!, cwd, projectRead) }
 }
 
+/** What the tower declares of each runtime it knows: the name a renderer prints and the releases it is tested on. */
+const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested'>> = { claude: { label: CLAUDE_LABEL, tested: CLAUDE_TESTED } }
+
+/** A release of `runtime` outside its tested range; a runtime the tower doesn't know has none it is tested on to compare. */
+const untested = (runtime: string, release: string | undefined): boolean =>
+  release !== undefined && isRuntime(runtime) && releaseRange(DECLARED[runtime].tested, release) !== 'tested'
+
+/** The board's entry for `runtime`: what it declares, the defaults and untested releases its sessions show, its commands. */
+const boardRuntime = (config: Config, runtime: Runtime, sessions: Session[], cards: Card[]): BoardRuntime => ({
+  ...DECLARED[runtime],
+  defaults: runtimeDefaults(sessions, runtime),
+  untested: [...new Set(cards.filter((c) => c.live && c.runtime === runtime && c.runtimeUntested).map((c) => c.runtimeRelease!))],
+  ...(commandNames(config, runtime) !== undefined && { commands: commandNames(config, runtime) }),
+})
+
+/** A floor's entry for `runtime`. */
+const floorRuntime = (config: Config, projectId: string, runtime: Runtime): FloorRuntime => {
+  const command = projectPreferredCommand(config, projectId, runtime)
+  return command === undefined ? {} : { command }
+}
+
 const card = (
   session: Session,
   chains: Chains,
@@ -437,6 +476,7 @@ const card = (
   nameOf: (s: Session) => string,
 ): Unplaced => {
   const { header, facts } = session
+  const runtime = runtimeOf(header)
   const worker = lineage(session, (s) => continued.get(s))
   const callsign = nameOf(session)
   const launch = launchOf(worker[0].header.argv).prompt
@@ -484,6 +524,7 @@ const card = (
     id: header.id,
     callsign,
     peer: peers.find((p) => p.session === header.id)?.name,
+    runtime,
     project: header.project,
     cwd: header.cwd,
     worktree,
@@ -507,8 +548,8 @@ const card = (
     lineage: worker.map((s) => ({ id: s.header.id, startedAt: s.header.startedAt })),
     model: facts.model,
     effort: facts.effort,
-    claude: facts.claude,
-    claudeUntested: facts.claude !== undefined && claudeRange(facts.claude) !== 'tested',
+    runtimeRelease: facts.runtimeRelease,
+    runtimeUntested: untested(runtime, facts.runtimeRelease),
     resources,
     shown,
     conversations,
@@ -796,7 +837,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     keys,
     config: paths.config,
     viewers,
-    floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, command: _______, ...project }]) => {
+    floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, runtimes: _______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)
       const { read, worktrees, branches, main } = git
       const bases = commonBases(read ?? [])
@@ -827,7 +868,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         cutByDefault: worktreesConfig(config, id).cutByDefault,
         hiring: hiringConfig(config, id),
         tidy,
-        ...(projectPreferredCommand(config, id) !== undefined && { command: projectPreferredCommand(config, id) }),
+        runtimes: Object.fromEntries(RUNTIMES.map((r) => [r, floorRuntime(config, id, r)])),
         ...floorOffers(id, host !== undefined, shells !== undefined, cuttable(read ?? []), tidy),
       }
     }),
@@ -840,9 +881,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     today: today(sessions, weeklyBudget(accounts[0].sessions, accounts[0].streams, now), now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
-    claudeDefaults: claudeDefaults(sessions),
-    ...(commandNames(config) !== undefined && { commands: commandNames(config) }),
-    claudeUntested: [...new Set(cards.filter((c) => c.live && c.claudeUntested).map((c) => c.claude!))],
+    runtimes: Object.fromEntries(RUNTIMES.map((r) => [r, boardRuntime(config, r, sessions, cards)])),
     shells: (shells ?? []).map((shell) => ({ ...shell, activity: shellActivity(shell) })),
     termsUp: shells !== undefined,
     jobs: recentJobs(jobsNow(view.jobs, view.heldJobs && new Set(view.heldJobs.map((j) => j.id))), now),

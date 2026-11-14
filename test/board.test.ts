@@ -24,7 +24,7 @@ import { callsOf, verbsOf } from './actions.ts'
 const callsign = callsigns(CALLSIGNS)
 
 const CONFIG: Config = {
-  argv: ['claude'],
+  runtimes: { claude: { argv: ['claude'] } },
   env: {},
   projects: { tower: { name: 'tower', hub: '/hub', repos: [] }, lab: { name: 'lab', hub: '/lab', repos: [] }, t: { name: 't', hub: '/tmp/mct2/hub', repos: [] }, trust: { name: 'trust', hub: '/tmp/mc-sailor98/trustme', repos: [] }, rec: { name: 'rec', hub: '/tmp/mc-prometheus-30/work', repos: [] } },
 }
@@ -39,12 +39,12 @@ const cardsOf = (logs: SessionLog[], host = hostWith()) =>
 
 test("boardOf: commands and each floor's preferred one are absent in single-command mode, present and resolved in multi", () => {
   const single = board(viewOf(CONFIG))
-  assert.equal(single.commands, undefined)
-  assert.equal(single.floors[0].command, undefined)
-  const multiConfig: Config = { argv: { a: ['claude'], b: ['claude-mom'] }, env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [], command: 'b' } } }
+  assert.equal(single.runtimes.claude.commands, undefined)
+  assert.equal(single.floors[0].runtimes.claude.command, undefined)
+  const multiConfig: Config = { runtimes: { claude: { argv: { a: ['claude'], b: ['claude-mom'] } } }, env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [], runtimes: { claude: { command: 'b' } } } } }
   const multi = board(viewOf(multiConfig))
-  assert.deepEqual(multi.commands, ['a', 'b'])
-  assert.equal(multi.floors[0].command, 'b')
+  assert.deepEqual(multi.runtimes.claude.commands, ['a', 'b'])
+  assert.equal(multi.floors[0].runtimes.claude.command, 'b')
 })
 
 test('a session card carries its prompt, context and cost', () => {

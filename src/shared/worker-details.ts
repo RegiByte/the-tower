@@ -1,4 +1,4 @@
-import type { Card, CardSubagent, Floor, HiredBy } from '../bridge/board.ts'
+import type { Board, Card, CardSubagent, Floor, HiredBy } from '../bridge/board.ts'
 import { base, commandName, modelName, tokenCount } from './format.ts'
 import { can } from './offered.ts'
 import { current, UNRESUMABLE_TITLE } from './status-words.ts'
@@ -51,11 +51,11 @@ export const resumesRow = (c: Card, when: (ms: number) => string): [string, stri
   return ref.callsign === c.callsign ? ['continues', `its session of ${when(ref.startedAt)}`] : ['resumes', `${ref.callsign}, session of ${when(ref.startedAt)}`]
 }
 
-/** What a worker's header keeps out of sight until asked, as label and value: only what is known. */
-export const detailsOf = (c: Card): [string, string][] =>
+/** What a worker's header keeps out of sight until asked, as label and value: only what is known. Its runtime's row is labelled by `runtimes`' entry. */
+export const detailsOf = (c: Card, runtimes: Board['runtimes']): [string, string][] =>
   ([
     ['model', [modelName(c.model), c.effort].filter(Boolean).join(' · ')],
-    ['claude', c.claude ? `${c.claude}${c.claudeUntested ? ' · untested' : ''}` : ''],
+    ...(c.runtimeRelease ? [[runtimes[c.runtime].label, `${c.runtimeRelease}${c.runtimeUntested ? ' · untested' : ''}`]] : []),
     ['context', c.context !== undefined ? `${c.context}% of the window` : ''],
     ['cost', c.costUsd != null ? `$${c.costUsd.toFixed(2)}` : ''],
     ['subagents', c.subagents ? [String(c.subagents), ...c.subagentRuns.map(subagentRow)].join('\n') : ''],

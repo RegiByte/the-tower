@@ -194,6 +194,7 @@
               {
                 "id": "20261004-090000-alph",
                 "callsign": "ATLAS-97",
+                "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
                 "checkout": "main",
@@ -231,7 +232,7 @@
                   }
                 ],
                 "model": "opus",
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -277,6 +278,7 @@
               {
                 "id": "20261004-090007-alph",
                 "callsign": "EITRI-96",
+                "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
                 "checkout": "main",
@@ -308,7 +310,7 @@
                     "startedAt": 1791151500000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -340,6 +342,7 @@
               {
                 "id": "20261004-090014-alph",
                 "callsign": "FIXER-48",
+                "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
                 "checkout": "main",
@@ -370,7 +373,7 @@
                     "startedAt": 1791150600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [
                   {
@@ -442,6 +445,7 @@
               {
                 "id": "20261004-090021-alph",
                 "callsign": "RAPUNZEL-46",
+                "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
                 "checkout": "main",
@@ -471,7 +475,7 @@
                     "startedAt": 1791152700000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -522,6 +526,7 @@
               {
                 "id": "20261004-090028-alph",
                 "callsign": "HUGO-76",
+                "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
                 "checkout": "main",
@@ -583,7 +588,7 @@
                     "startedAt": 1791147600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [
                   {
@@ -638,6 +643,7 @@
               {
                 "id": "20261004-090035-alph",
                 "callsign": "KEPLER-63",
+                "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
                 "checkout": "main",
@@ -668,7 +674,7 @@
                     "startedAt": 1791152940000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [],
@@ -693,6 +699,7 @@
               {
                 "id": "20261004-090042-alph",
                 "callsign": "MAGELLAN-36",
+                "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
                 "checkout": "main",
@@ -722,7 +729,7 @@
                     "startedAt": 1791145800000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [
                   {
@@ -788,6 +795,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -845,6 +855,7 @@
               {
                 "id": "20261004-090000-beta",
                 "callsign": "GOLEM-63",
+                "runtime": "claude",
                 "project": "beta",
                 "cwd": "/work/beta",
                 "checkout": "main",
@@ -874,7 +885,7 @@
                     "startedAt": 1791152100000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -924,6 +935,7 @@
               {
                 "id": "20261004-090007-beta",
                 "callsign": "PATHFINDER-26",
+                "runtime": "claude",
                 "project": "beta",
                 "cwd": "/work/beta",
                 "checkout": "main",
@@ -953,7 +965,7 @@
                     "startedAt": 1791141000000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1014,6 +1026,7 @@
               {
                 "id": "20261004-090014-beta",
                 "callsign": "HUGO-85",
+                "runtime": "claude",
                 "project": "beta",
                 "cwd": "/work/beta",
                 "checkout": "main",
@@ -1043,7 +1056,7 @@
                     "startedAt": 1791150000000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [
                   {
                     "pid": 4242,
@@ -1142,6 +1155,7 @@
               {
                 "id": "20261004-090021-beta",
                 "callsign": "DIOGENES-95",
+                "runtime": "claude",
                 "project": "beta",
                 "cwd": "/work/beta",
                 "checkout": "main",
@@ -1174,7 +1188,7 @@
                     "startedAt": 1791152280000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [
                   {
@@ -1223,6 +1237,7 @@
               {
                 "id": "20261004-090028-beta",
                 "callsign": "WAYLAND-30",
+                "runtime": "claude",
                 "project": "beta",
                 "cwd": "/work/beta",
                 "checkout": "main",
@@ -1252,7 +1267,7 @@
                     "startedAt": 1791149400000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1292,6 +1307,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1357,6 +1375,7 @@
               {
                 "id": "20261004-090000-gamm",
                 "callsign": "CABRAL-31",
+                "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
                 "checkout": "main",
@@ -1386,7 +1405,7 @@
                     "startedAt": 1791152520000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1437,6 +1456,7 @@
               {
                 "id": "20261004-090007-gamm",
                 "callsign": "DARWIN-30",
+                "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
                 "checkout": "main",
@@ -1467,7 +1487,7 @@
                     "startedAt": 1791152820000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1499,6 +1519,7 @@
               {
                 "id": "20261004-090014-gamm",
                 "callsign": "POLLUX-48",
+                "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
                 "checkout": "main",
@@ -1528,7 +1549,7 @@
                     "startedAt": 1791135000000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1568,6 +1589,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1806,8 +1830,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [
           {
             "id": "shell-alpha-0",

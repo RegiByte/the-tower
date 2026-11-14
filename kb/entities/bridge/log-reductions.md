@@ -5,7 +5,7 @@
   "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, rate-limit readings, stats, and the board that gathers them for every renderer.",
   "in": "bridge",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/bridge/defaults.ts#claudeDefaults", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/rate-limits.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/src/bridge/screen.ts#headlessTerminal", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/checkouts.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
+  "refs": ["hub/src/bridge/defaults.ts#runtimeDefaults", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/rate-limits.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/src/bridge/screen.ts#headlessTerminal", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/checkouts.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -59,10 +59,12 @@
   Code's registrations and the same `ps` output ([[agent-directory]]).
 - [`board`](ref:hub/src/bridge/board.ts#board): the whole system as one view for renderers: projects as floors of
   cards, who waits on you ([[waiting-on-you]]), the verbs each card, conversation and floor offers ([[board-verbs]]),
-  each floor's gallery and hiring limits, the model and effort Claude starts a new worker on when asked for neither,
-  read from the sessions that asked for none ([`claudeDefaults`](ref:hub/src/bridge/defaults.ts#claudeDefaults); one
-  value for the machine, Claude's per-project precedence not modelled), whether the host is outdated and which
-  Claude releases live workers run outside the tested range, the rate limits per `argv` command
+  each floor's hiring limits, every runtime the tower knows as `runtimes[id]` (its label, its tested range, its
+  commands, the releases live workers run outside that range, and the model and effort it starts a new worker on when
+  asked for neither, read from that runtime's sessions that asked for none:
+  [`runtimeDefaults`](ref:hub/src/bridge/defaults.ts#runtimeDefaults); one value for the machine, Claude's per-project
+  precedence not modelled), each card's `runtime` (its header's, Claude's for a log from before runtimes were logged),
+  whether the host is outdated, the rate limits per `runtimes.claude.argv` command
   ([`accountLimits`](ref:hub/src/bridge/rate-limits.ts#accountLimits), [[probes]]), `today` ([[stats]]) and shells.
   The core's board is built first; then each running extension's folds put its part at a subject's `x`, its
   contributions at `board.adds` and its asks at `board.asks` ([`foldBoard`](ref:hub/src/bridge/folds.ts#foldBoard),

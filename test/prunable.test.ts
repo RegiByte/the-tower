@@ -12,7 +12,7 @@ import { reposOf, repoRead, treeRead } from './repos.ts'
 import { viewOf } from './view.ts'
 import { callsOf, verbsOf } from './actions.ts'
 
-const CONFIG: Config = { argv: ['claude'], env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [] }, lab: { name: 'lab', hub: '/lab', repos: [] }, rec: { name: 'rec', hub: '/tmp/mc-prometheus-30/work', repos: [] } } }
+const CONFIG: Config = { runtimes: { claude: { argv: ['claude'] } }, env: {}, projects: { tower: { name: 'tower', hub: '/hub', repos: [] }, lab: { name: 'lab', hub: '/lab', repos: [] }, rec: { name: 'rec', hub: '/tmp/mc-prometheus-30/work', repos: [] } } }
 
 /** The log up to second `t`, the session still running. */
 const until = (log: SessionLog, t: number): SessionLog => ({ ...log, events: log.events.filter((e) => e[0] <= t) })

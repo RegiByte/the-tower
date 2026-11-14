@@ -21,12 +21,12 @@ export {
 } from '../shared/extension-words.ts'
 export {
   boardErrorTitle,
-  /** @provisional */ claudeFlagHtml,
-  claudeUntestedHtml,
   HOST_ATTENTION,
   HOST_MEANS,
   HOST_NAME,
   hostState,
+  /** @provisional */ untestedFlagHtml,
+  untestedHtml,
   whyNot,
 } from '../shared/health.ts'
 export {

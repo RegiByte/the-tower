@@ -11,6 +11,7 @@
  *
  * Each fixture is built at one instant, in UTC, which its file records as `at`: the page's wall clock on that fixture.
  */
+import { CLAUDE_LABEL, CLAUDE_TESTED } from '../src/shared/claude.ts'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { archiveAtOf, onBoard, waitingOrder, withReports } from '../src/bridge/board.ts'
@@ -129,7 +130,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
   }]
   const resources = (f.leftovers ?? []).map((r) => ({ ...r, ...resourceOffers(id, r.pid) }))
   return {
-    id, callsign: callsign(id), project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
+    id, callsign: callsign(id), runtime: 'claude', project, cwd: f.worktree ? `/work/${project}/.worktrees/${f.worktree}` : `/work/${project}`, checkout: checkoutOf(f),
     checkoutState: { is: 'live' },
     worktree: f.worktree ? { name: f.worktree, branch: `tower/${f.worktree}`, from: author && checkoutOf(author), gone: false } : undefined,
     ...(f.reviews !== undefined && {
@@ -138,7 +139,7 @@ function card(project: string, n: number, f: Facts, now: number, floor: Facts[])
       x: { reviews: { of: callsign(idOf(project, f.reviews)) } },
     }),
     ...life, hiredBy, enteredAt, startedAt,
-    context: f.context, costUsd: f.costUsd, tool: f.tool, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, claudeUntested: false,
+    context: f.context, costUsd: f.costUsd, tool: f.tool, says: f.says ?? [], subagents: f.subagents ?? 0, subagentRuns: runsOf(id, startedAt, f), turns: f.turns ?? 0, lineage: lineageOf(id, startedAt, f.sessions ?? 1), model: f.model, effort: undefined, runtimeUntested: false,
     resources, shown: (f.shown ?? []).map(({ ago, ...s }) => ({ ...s, at: now - ago * MIN, session: id })), conversations,
     ...cardOffers(id, life.status, promptRefusal(life.status, undefined) === undefined, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
   }
@@ -276,7 +277,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
         ...(f.games ? gamesCollection(f.id, f.games, cards, now) : []),
       ],
       worktrees, branches: [], git: true, bases: [], branchPrefix: 'tower/', cutByDefault: true, hiring: { depth: 2, live: 3 },
-      tidy, cards, ...(x && { x }),
+      tidy, cards, runtimes: { claude: {} }, ...(x && { x }),
       ...floorOffers(f.id, true, true, false, tidy),
     }
   })
@@ -302,8 +303,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
     hostUp: true,
     hostOutdated: false,
-    claudeDefaults: {},
-    claudeUntested: [],
+    runtimes: { claude: { label: CLAUDE_LABEL, defaults: {}, untested: [], tested: CLAUDE_TESTED } },
     shells: extra.shells ?? [],
     termsUp: true,
     jobs: [],

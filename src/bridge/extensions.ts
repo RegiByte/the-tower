@@ -446,13 +446,13 @@ const compileFolds = (manifest: Manifest, provides: string): { folds: Map<string
 }
 
 /**
- * Why `plugins.claude` teaches nothing: Claude skips a `--plugin-dir` it can't read and says nothing, so the tower says
- * it. A warning, since the extension's other doors work without it.
+ * Why `runtimes.claude.plugins` teaches nothing: Claude skips a `--plugin-dir` it can't read and says nothing, so the
+ * tower says it. A warning, since the extension's other doors work without it.
  */
 const claudePluginProblems = (found: Found, manifest: Manifest): LoadProblem[] => {
-  const folder = manifest.plugins?.claude
-  if (found.claudePluginLack === 'folder') return [warn('invalid', `${folder} is no folder of this extension, so its sessions load no plugin: add the folder, or fix plugins.claude`, 'plugins.claude')]
-  if (found.claudePluginLack === 'plugin.json') return [warn('invalid', `${folder} holds no .claude-plugin/plugin.json, so it is no Claude plugin: add one naming the plugin`, 'plugins.claude')]
+  const folder = manifest.runtimes?.claude?.plugins
+  if (found.claudePluginLack === 'folder') return [warn('invalid', `${folder} is no folder of this extension, so its sessions load no plugin: add the folder, or fix runtimes.claude.plugins`, 'runtimes.claude.plugins')]
+  if (found.claudePluginLack === 'plugin.json') return [warn('invalid', `${folder} holds no .claude-plugin/plugin.json, so it is no Claude plugin: add one naming the plugin`, 'runtimes.claude.plugins')]
   return []
 }
 
@@ -709,6 +709,7 @@ const oldShapeProblems = (raw: unknown): LoadProblem[] => {
   const views = isObject(raw.views) ? Object.entries(raw.views).filter(([, v]) => isObject(v) && v.module === undefined && Object.values(v).some((r) => isObject(r) && 'module' in r)) : []
   const regions = isObject(raw.regions) ? Object.entries(raw.regions).filter(([, r]) => isObject(r) && r.holds === undefined) : []
   return [
+    ...('plugins' in raw ? [error('invalid', 'plugins.claude moved to runtimes.claude.plugins in 2.0: write "runtimes": { "claude": { "plugins": "<its folder>" } } and remove plugins', 'plugins')] : []),
     ...views.map(([name]) => error('invalid', `views.${name} is keyed by renderer and region, a shape no tower reads: since 1.104 views are { "<name>": { module, export, on, scales, words, … } }, and the layout places them`, `views.${name}`)),
     ...regions.map(([id]) => error('invalid', `regions.${id} lacks holds: since 1.104 a region is { subject, holds, scale?, arity?, description? }`, `regions.${id}`)),
   ]
@@ -804,8 +805,8 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const parsed = Manifest.safeParse(raw)
   if (!parsed.success) {
     const unknown = (i: { path: string; message: string }) =>
-      i.path.startsWith('plugins.')
-        ? `${i.message}: plugins are keyed by a runtime this tower knows, ${RUNTIMES.join(', ')}`
+      /^runtimes\.[^.]+$/.test(i.path)
+        ? `${i.message}: runtimes are keyed by a runtime this tower knows, ${RUNTIMES.join(', ')}`
         : USER_LAYOUT_KEY.test(i.path)
           ? `${i.message}: ${USER_LAYOUT_KEYS.join(', ')} are the user's: a manifest's layout gives order, hidden and options`
           : `${i.message}: this tower is ${tower}. If the key is newer, raise requires.tower; otherwise it's a typo`

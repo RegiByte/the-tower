@@ -222,8 +222,8 @@ export type TermViewIo = {
   watch(on: (msg: TerminalMsg | ScreenMsg | ShellStream) => void): () => void
   resize(size: Size): Promise<unknown>
   send(data: string): void
-  /** Claude's terminal: its wheel goes to Claude as wheel reports, a row each (`reportWheel`). A shell's program may read another mouse encoding. */
-  claude: boolean
+  /** Its program reads the wheel as wheel reports, a row each (`reportWheel`), as Claude's fullscreen does. A shell's program may read another mouse encoding. */
+  wheelReports: boolean
   scrollback: number
   font(): TermFont
   scheme(): Scheme
@@ -294,7 +294,7 @@ export function mountTermView(host: HTMLElement, xterm: Xterm, io: TermViewIo): 
         if (exited) return term.attachCustomKeyEventHandler(terminalKeymap(io.keymap, io.run, () => {}))
         term.attachCustomKeyEventHandler(terminalKeymap(io.keymap, io.run, typed))
         term.onData(typed)
-        if (io.claude) reportWheel(term, (data) => machine.dispatch({ type: 'wheeled', data }))
+        if (io.wheelReports) reportWheel(term, (data) => machine.dispatch({ type: 'wheeled', data }))
         term.focus()
       },
       fit: ({ then }, dispatch) => {

@@ -41,7 +41,8 @@ import {
   isRuntime,
   outsideProject,
   projectDirs,
-  projectPlugins,
+  runtimePlugins,
+  runtimeOf,
   projectPreferredCommand,
   resolveCommand,
   RUNTIMES,
@@ -81,23 +82,23 @@ export type Verb = Exclude<Route, 'mux/watch' | 'mux/unwatch'>
 /** The `Launch` a spawn verb's input carries into `newLaunch`: every launch field the API lets a spawn set. */
 export const spawnLaunchOf = ({ model, effort, prompt, command }: { model?: string; effort?: string; prompt?: string; command?: string }): Launch => ({ model, effort, prompt, command })
 
-/** The `argv` command a spawn runs under: the one it names, else the project's preferred one. */
-const spawnCommand = (config: Config, projectId: string, launch: Launch): string | undefined => launch.command ?? projectPreferredCommand(config, projectId)
+/** The `argv` command a spawn of `runtime` runs under: the one it names, else the project's preferred one. */
+const spawnCommand = (config: Config, projectId: string, runtime: Runtime, launch: Launch): string | undefined => launch.command ?? projectPreferredCommand(config, projectId, runtime)
 
 /** A spawn's launch, Claude's defaults filled in for what it left blank, and the project's preferred command when it named none. */
-export const launchWithDefaults = (config: Config, projectId: string, launch: Launch, defaults: { model?: string; effort?: string }): Launch => ({
+export const launchWithDefaults = (config: Config, projectId: string, runtime: Runtime, launch: Launch, defaults: { model?: string; effort?: string }): Launch => ({
   ...launch,
   model: launch.model ?? defaults.model,
   effort: launch.effort ?? defaults.effort,
-  command: spawnCommand(config, projectId, launch),
+  command: spawnCommand(config, projectId, runtime, launch),
 })
 
-/** Why `name` can't be the command a launch names: `argv`'s names, when it has more than one, else that none can be given. */
-const commandRefused = (config: Config, name: string | undefined): ApiError | undefined => {
+/** Why `name` can't be the command a launch of `runtime` names: its `argv`'s names, when it has more than one, else that none can be given. */
+const commandRefused = (config: Config, runtime: Runtime, name: string | undefined): ApiError | undefined => {
   if (name === undefined) return undefined
-  const names = commandNames(config)
-  if (names === undefined) return apiError('invalid', `command: argv names only one command, so none can be given`)
-  return names.includes(name) ? undefined : apiError('invalid', `command: names no command of argv: they are ${names.join(', ')}`)
+  const names = commandNames(config, runtime)
+  if (names === undefined) return apiError('invalid', `command: runtimes.${runtime}.argv names only one command, so none can be given`)
+  return names.includes(name) ? undefined : apiError('invalid', `command: names no command of runtimes.${runtime}.argv: they are ${names.join(', ')}`)
 }
 
 type Deps = {
@@ -448,18 +449,18 @@ export const dispatch = defineResource({
         const config = readConfig()
         const project = config.projects[source.header.project]
         if (!project) return apiError('not_found', `No project "${source.header.project}" in the config`)
-        const badCommand = commandRefused(config, source.header.command)
-        if (badCommand) return apiError('config', `${source.header.id} ran under command "${source.header.command}": ${badCommand.message}, change config.json's argv to bring it back`)
+        const runtime = runtimeOf(source.header)
+        if (!isRuntime(runtime)) return apiError('refused', `${source.header.id} ran runtime "${runtime}", which this tower doesn't run: it runs ${RUNTIMES.join(', ')}`)
+        const badCommand = commandRefused(config, runtime, source.header.command)
+        if (badCommand) return apiError('config', `${source.header.id} ran under command "${source.header.command}": ${badCommand.message}, change config.json's runtimes.${runtime}.argv to bring it back`)
         const { project: projectId, cwd } = source.header
         const name = worktreeName(project, cwd)
         const gone = name !== undefined && sessionDirs(project, cwd).some((dir) => !existsSync(dir))
         const kind = carriesOn(source, conversation) ? 'resume' : 'fork'
         const heir = kind === 'resume' ? newSessionId() : (await workerIds(config))()
-        const runtime = source.header.runtime ?? 'claude'
-        if (!isRuntime(runtime)) return apiError('refused', `${source.header.id} ran runtime "${runtime}", which this tower doesn't run: it runs ${RUNTIMES.join(', ')}`)
         const chains = chainsOf(system.sessions())
         const worker = lineage(source, (s) => continues(s, chains))
-        const merged = await contribute(kind, runtime, { hire: false, project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker), resolveCommand(config, source.header.command))
+        const merged = await contribute(kind, runtime, { hire: false, project: projectId, cwd }, new Map(), (cap) => sessionFacts(cap, worker), resolveCommand(config, runtime, source.header.command))
         if (merged.t === 'error') return merged
         const gated = await gate({ project: projectId, kind, runtime, hire: false, exempt: merged.exempt, fields: {} }, within)
         if (gated) return gated
@@ -481,7 +482,7 @@ export const dispatch = defineResource({
               user: configuredUser(config),
               worktree: await briefFor(project, links, cwd),
               kept: projectCollectionsPath(paths, projectId),
-              plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
+              plugins: [...runtimePlugins(config, projectId, runtime), ...holder.plugins(projectId, runtime)],
               contributed: merged.contributed,
               facts: kind === 'fork' ? forkFacts(worker) : [],
               conversation,
@@ -589,12 +590,12 @@ export const dispatch = defineResource({
      * refuses it, or when its crew edge names no worker; its facts are its fields' and the core's.
      */
     const newLaunch = async (config: Config, projectId: string, at: Pick<SpawnLaunch, 'id' | 'name' | 'cwd' | 'dirs' | 'worktree'>, launch: Launch, spawn: Spawn): Promise<SpawnLaunch | ApiError> => {
-      const badCommand = commandRefused(config, launch.command)
-      if (badCommand) return badCommand
       const runtime: Runtime = 'claude'
+      const badCommand = commandRefused(config, runtime, launch.command)
+      if (badCommand) return badCommand
       const now = Date.now()
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
-      const merged = await contribute('spawn', runtime, { hire: spawn.hire, ...(spawn.by && { by: spawn.by }), project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, spawnCommand(config, projectId, launch)))
+      const merged = await contribute('spawn', runtime, { hire: spawn.hire, ...(spawn.by && { by: spawn.by }), project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, runtime, spawnCommand(config, projectId, runtime, launch)))
       if (merged.t === 'error') return merged
       const fields = Object.fromEntries([...new Set([...spawn.fields.keys(), ...merged.fields.keys()])].map((cap) => [cap, { ...merged.fields.get(cap), ...spawn.fields.get(cap) }]))
       const gated = await gate({ project: projectId, kind: 'spawn', runtime, ...(spawn.by && { by: spawn.by }), hire: spawn.hire, exempt: merged.exempt, fields }, spawn.within)
@@ -608,10 +609,10 @@ export const dispatch = defineResource({
         ...at,
         user: configuredUser(config),
         kept: projectCollectionsPath(paths, projectId),
-        plugins: [...projectPlugins(config, projectId), ...holder.plugins(projectId, runtime)],
+        plugins: [...runtimePlugins(config, projectId, runtime), ...holder.plugins(projectId, runtime)],
         contributed: merged.contributed,
         facts: [...spawn.facts, ...fieldFacts(Object.fromEntries(merged.fields)), ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by)],
-        launch: launchWithDefaults(config, projectId, launch, merged.defaults),
+        launch: launchWithDefaults(config, projectId, runtime, launch, merged.defaults),
       }
     }
 

@@ -38,7 +38,7 @@ const { sessionFixtures, cases: frozen }: { sessionFixtures: string[]; cases: Re
 const sessionLogs = sessionFixtures.map((name) => fixture(name))
 
 const configFor = (logs: SessionLog[]): Config => ({
-  argv: ['claude'],
+  runtimes: { claude: { argv: ['claude'] } },
   env: {},
   projects: Object.fromEntries([...new Set(logs.map((l) => l.header.project))].map((id) => [id, { name: id, hub: `/${id}`, repos: [] }])),
 })

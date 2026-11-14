@@ -12,7 +12,7 @@ import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } fr
 import type { Board, Brief, Card, Floor, GalleryShowing, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { verbLabel } from '/lib/cards.js'
-import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, claudeFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, neighboursIn, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
+import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, untestedFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, neighboursIn, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, type Move, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
 import { MOVE_COMMAND, chordLabel, keysLabel } from '/lib/keys.js'
 import { wallNow } from './clock.ts'
 import { waitingAt, type Level, type Plan } from './layout.ts'
@@ -328,7 +328,7 @@ export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor 
   const stats = [
     ctx !== undefined && `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
     c.costUsd != null && `<b>$${c.costUsd.toFixed(2)}</b>`,
-    claudeFlagHtml(c),
+    untestedFlagHtml(c, board),
   ].filter(Boolean).join('')
   const acts = [
     `<button class="icon-btn" popovertarget="desk-details" aria-label="details" data-tip="everything else about ${esc(c.callsign)}">${ICON.info}</button>`,
@@ -356,7 +356,7 @@ export function activityHtml(c: Card) {
 export function detailsHtml(board: Board, c: Card) {
   const rows = [
     ['now', gistLine(c)],
-    ...detailsOf(c),
+    ...detailsOf(c, board.runtimes),
     resumesRow(c, when),
     ['started', when(c.startedAt)],
   ].filter(([, value]) => value)
@@ -454,6 +454,7 @@ export type BriefLook = Pick<BriefView, 'open' | 'expanded' | 'markdown' | 'open
 const briefHtml = (board: Board, c: Card, threads: Brief[], look: BriefLook) =>
   lineageBriefHtml({
     briefs: threads,
+    agent: board.runtimes[c.runtime].label,
     said: markdownHtml,
     promptBy: (id) => c.conversations.find((conv) => conv.id === id)?.promptBy,
     working: c.status === 'working',

@@ -1,9 +1,8 @@
-import type { Board, Card } from '../bridge/board.ts'
+import type { Board, BoardRuntime, Card } from '../bridge/board.ts'
 import type { Attention } from '../bridge/life.ts'
-import { CLAUDE_UNTESTED } from './claude.ts'
 import { esc } from './format.ts'
 
-/** The tower's own state in words: the host, the daemons a verb needs, a board error and an untested Claude. */
+/** The tower's own state in words: the host, the daemons a verb needs, a board error and an untested runtime. */
 
 /** Why the board says `hostOutdated`, and what ends it. */
 export const HOST_OUTDATED = 'the running host is older than the tower: it updates when restarted (tower down, then tower up), which ends every session and shell'
@@ -37,16 +36,26 @@ export const whyNot = (b: Pick<Board, 'hostUp' | 'termsUp'>, verb: DaemonVerb): 
 /** What a renderer heads a board error with: the tower lost, or the board it can't build. */
 export const boardErrorTitle = (code: string) => (code === 'disconnected' ? 'Lost the tower' : "The tower can't build the board")
 
-/** What the board's `claudeUntested` says once for every worker: `undefined` while every live worker runs a tested Claude. */
-export const claudeUntestedLine = (board: Pick<Board, 'claudeUntested'>) =>
-  board.claudeUntested.length ? `claude ${board.claudeUntested.join(', ')} untested` : undefined
+/** Why a session of `runtime` is flagged untested, and what ends it. */
+export const untestedTitle = ({ label, tested }: Pick<BoardRuntime, 'label' | 'tested'>) =>
+  `the tower is tested on ${label} ${tested.lowest} to ${tested.highest}: another release may change what the tower reads, and the board can go quietly wrong (a worker stuck working, waits that never come)`
 
-/** That line with its reason on hover. It can run long (several releases, a build suffix): it takes a line of its own. */
-export const claudeUntestedHtml = (board: Pick<Board, 'claudeUntested'>) => {
-  const line = claudeUntestedLine(board)
-  return line && `<span class="untested" data-tip="${CLAUDE_UNTESTED}">${esc(line)}</span>`
+const untestedOf = (board: Pick<Board, 'runtimes'>) => Object.values(board.runtimes).filter((r) => r.untested.length)
+
+const runtimeUntestedLine = (r: BoardRuntime) => `${r.label} ${r.untested.join(', ')} untested`
+
+/** What each runtime's `untested` says once for every worker: `undefined` while every live worker runs a tested release. */
+export const untestedLine = (board: Pick<Board, 'runtimes'>) => untestedOf(board).map(runtimeUntestedLine).join(' · ') || undefined
+
+/** That line with its reason on hover, a span per runtime. It can run long (several releases, a build suffix): it takes a line of its own. */
+export const untestedHtml = (board: Pick<Board, 'runtimes'>) =>
+  untestedOf(board)
+    .map((r) => `<span class="untested" data-tip="${esc(untestedTitle(r))}">${esc(runtimeUntestedLine(r))}</span>`)
+    .join('') || undefined
+
+/** A worker's own flag beside its stats: `undefined` while its runtime's release is tested or unknown. */
+export const untestedFlagHtml = (c: Pick<Card, 'runtime' | 'runtimeRelease' | 'runtimeUntested'>, board: Pick<Board, 'runtimes'>) => {
+  if (!c.runtimeUntested) return undefined
+  const r = board.runtimes[c.runtime]
+  return `<span class="untested" data-tip="${esc(untestedTitle(r))}">${esc(r.label)} ${esc(c.runtimeRelease!)} untested</span>`
 }
-
-/** A worker's own flag beside its stats: `undefined` while its Claude is tested or unknown. */
-export const claudeFlagHtml = (c: Pick<Card, 'claude' | 'claudeUntested'>) =>
-  c.claudeUntested ? `<span class="untested" data-tip="${CLAUDE_UNTESTED}">claude ${esc(c.claude!)} untested</span>` : undefined

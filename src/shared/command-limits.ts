@@ -14,5 +14,5 @@ export const limitsOf = (board: Limits, command: string): CommandLimits | undefi
 /** The default command's limits: the only ones in single-command mode. */
 export const defaultLimits = (board: Limits): CommandLimits => entryOf(board, undefined)!
 
-/** A floor's own limits: its `command`'s, or the default command's on a floor that names none. */
-export const floorLimits = (board: Limits, floor: Pick<Floor, 'command'>): CommandLimits => entryOf(board, floor.command)!
+/** A floor's own limits: its Claude `command`'s, or the default command's on a floor that names none. */
+export const floorLimits = (board: Limits, floor: Pick<Floor, 'runtimes'>): CommandLimits => entryOf(board, floor.runtimes.claude.command)!

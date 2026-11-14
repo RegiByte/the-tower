@@ -115,6 +115,7 @@
               {
                 "id": "20261004-090000-p1xx",
                 "callsign": "CASTOR-93",
+                "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
                 "checkout": "main",
@@ -145,7 +146,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -186,6 +187,7 @@
               {
                 "id": "20261004-090007-p1xx",
                 "callsign": "DARTAGNAN-51",
+                "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
                 "checkout": "main",
@@ -215,7 +217,7 @@
                     "startedAt": 1791124800000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -257,6 +259,7 @@
               {
                 "id": "20261004-090014-p1xx",
                 "callsign": "HECTOR-27",
+                "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
                 "checkout": "main",
@@ -286,7 +289,7 @@
                     "startedAt": 1791122580000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -328,6 +331,7 @@
               {
                 "id": "20261004-090021-p1xx",
                 "callsign": "CHIRON-43",
+                "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
                 "checkout": "main",
@@ -357,7 +361,7 @@
                     "startedAt": 1791120360000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -399,6 +403,7 @@
               {
                 "id": "20261004-090028-p1xx",
                 "callsign": "HANZ-81",
+                "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
                 "checkout": "main",
@@ -428,7 +433,7 @@
                     "startedAt": 1791118140000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -470,6 +475,7 @@
               {
                 "id": "20261004-090035-p1xx",
                 "callsign": "BEN-66",
+                "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
                 "checkout": "main",
@@ -499,7 +505,7 @@
                     "startedAt": 1791115920000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -541,6 +547,7 @@
               {
                 "id": "20261004-090042-p1xx",
                 "callsign": "AJAX-94",
+                "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
                 "checkout": "main",
@@ -570,7 +577,7 @@
                     "startedAt": 1791113700000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -610,6 +617,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -667,6 +677,7 @@
               {
                 "id": "20261004-090000-p2xx",
                 "callsign": "KOWALSKI-16",
+                "runtime": "claude",
                 "project": "p2",
                 "cwd": "/work/p2",
                 "checkout": "main",
@@ -696,7 +707,7 @@
                     "startedAt": 1791124140000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -738,6 +749,7 @@
               {
                 "id": "20261004-090007-p2xx",
                 "callsign": "HUGIN-81",
+                "runtime": "claude",
                 "project": "p2",
                 "cwd": "/work/p2",
                 "checkout": "main",
@@ -767,7 +779,7 @@
                     "startedAt": 1791121920000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -809,6 +821,7 @@
               {
                 "id": "20261004-090014-p2xx",
                 "callsign": "EULER-63",
+                "runtime": "claude",
                 "project": "p2",
                 "cwd": "/work/p2",
                 "checkout": "main",
@@ -838,7 +851,7 @@
                     "startedAt": 1791119700000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -880,6 +893,7 @@
               {
                 "id": "20261004-090021-p2xx",
                 "callsign": "VOSTOK-96",
+                "runtime": "claude",
                 "project": "p2",
                 "cwd": "/work/p2",
                 "checkout": "main",
@@ -909,7 +923,7 @@
                     "startedAt": 1791117480000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -951,6 +965,7 @@
               {
                 "id": "20261004-090028-p2xx",
                 "callsign": "FREYR-29",
+                "runtime": "claude",
                 "project": "p2",
                 "cwd": "/work/p2",
                 "checkout": "main",
@@ -980,7 +995,7 @@
                     "startedAt": 1791115260000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1020,6 +1035,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1077,6 +1095,7 @@
               {
                 "id": "20261004-090000-p3xx",
                 "callsign": "AMUNDSEN-23",
+                "runtime": "claude",
                 "project": "p3",
                 "cwd": "/work/p3",
                 "checkout": "main",
@@ -1106,7 +1125,7 @@
                     "startedAt": 1791123480000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1148,6 +1167,7 @@
               {
                 "id": "20261004-090007-p3xx",
                 "callsign": "MARSHAL-83",
+                "runtime": "claude",
                 "project": "p3",
                 "cwd": "/work/p3",
                 "checkout": "main",
@@ -1177,7 +1197,7 @@
                     "startedAt": 1791121260000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1219,6 +1239,7 @@
               {
                 "id": "20261004-090014-p3xx",
                 "callsign": "POLO-56",
+                "runtime": "claude",
                 "project": "p3",
                 "cwd": "/work/p3",
                 "checkout": "main",
@@ -1248,7 +1269,7 @@
                     "startedAt": 1791119040000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1290,6 +1311,7 @@
               {
                 "id": "20261004-090021-p3xx",
                 "callsign": "HECTOR-73",
+                "runtime": "claude",
                 "project": "p3",
                 "cwd": "/work/p3",
                 "checkout": "main",
@@ -1319,7 +1341,7 @@
                     "startedAt": 1791116820000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1359,6 +1381,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1416,6 +1441,7 @@
               {
                 "id": "20261004-090000-p4xx",
                 "callsign": "HEPHAESTUS-36",
+                "runtime": "claude",
                 "project": "p4",
                 "cwd": "/work/p4",
                 "checkout": "main",
@@ -1446,7 +1472,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1487,6 +1513,7 @@
               {
                 "id": "20261004-090007-p4xx",
                 "callsign": "DANTES-14",
+                "runtime": "claude",
                 "project": "p4",
                 "cwd": "/work/p4",
                 "checkout": "main",
@@ -1516,7 +1543,7 @@
                     "startedAt": 1791122820000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1558,6 +1585,7 @@
               {
                 "id": "20261004-090014-p4xx",
                 "callsign": "SANCHO-84",
+                "runtime": "claude",
                 "project": "p4",
                 "cwd": "/work/p4",
                 "checkout": "main",
@@ -1587,7 +1615,7 @@
                     "startedAt": 1791120600000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1629,6 +1657,7 @@
               {
                 "id": "20261004-090021-p4xx",
                 "callsign": "EULER-13",
+                "runtime": "claude",
                 "project": "p4",
                 "cwd": "/work/p4",
                 "checkout": "main",
@@ -1658,7 +1687,7 @@
                     "startedAt": 1791118380000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1698,6 +1727,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -1755,6 +1787,7 @@
               {
                 "id": "20261004-090000-p5xx",
                 "callsign": "SHANNON-59",
+                "runtime": "claude",
                 "project": "p5",
                 "cwd": "/work/p5",
                 "checkout": "main",
@@ -1784,7 +1817,7 @@
                     "startedAt": 1791122160000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1826,6 +1859,7 @@
               {
                 "id": "20261004-090007-p5xx",
                 "callsign": "BROKER-91",
+                "runtime": "claude",
                 "project": "p5",
                 "cwd": "/work/p5",
                 "checkout": "main",
@@ -1855,7 +1889,7 @@
                     "startedAt": 1791119940000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1897,6 +1931,7 @@
               {
                 "id": "20261004-090014-p5xx",
                 "callsign": "ADLER-77",
+                "runtime": "claude",
                 "project": "p5",
                 "cwd": "/work/p5",
                 "checkout": "main",
@@ -1926,7 +1961,7 @@
                     "startedAt": 1791117720000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -1966,6 +2001,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2023,6 +2061,7 @@
               {
                 "id": "20261004-090000-p6xx",
                 "callsign": "DANTES-66",
+                "runtime": "claude",
                 "project": "p6",
                 "cwd": "/work/p6",
                 "checkout": "main",
@@ -2052,7 +2091,7 @@
                     "startedAt": 1791121500000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2094,6 +2133,7 @@
               {
                 "id": "20261004-090007-p6xx",
                 "callsign": "DON-44",
+                "runtime": "claude",
                 "project": "p6",
                 "cwd": "/work/p6",
                 "checkout": "main",
@@ -2123,7 +2163,7 @@
                     "startedAt": 1791119280000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2163,6 +2203,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2220,6 +2263,7 @@
               {
                 "id": "20261004-090000-p7xx",
                 "callsign": "WHEELMAN-89",
+                "runtime": "claude",
                 "project": "p7",
                 "cwd": "/work/p7",
                 "checkout": "main",
@@ -2250,7 +2294,7 @@
                     "startedAt": 1791124200000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2291,6 +2335,7 @@
               {
                 "id": "20261004-090007-p7xx",
                 "callsign": "DUMONT-21",
+                "runtime": "claude",
                 "project": "p7",
                 "cwd": "/work/p7",
                 "checkout": "main",
@@ -2320,7 +2365,7 @@
                     "startedAt": 1791120840000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2362,6 +2407,7 @@
               {
                 "id": "20261004-090014-p7xx",
                 "callsign": "ALTAIR-07",
+                "runtime": "claude",
                 "project": "p7",
                 "cwd": "/work/p7",
                 "checkout": "main",
@@ -2391,7 +2437,7 @@
                     "startedAt": 1791118620000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2431,6 +2477,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2488,6 +2537,7 @@
               {
                 "id": "20261004-090000-p8xx",
                 "callsign": "KOROLEV-84",
+                "runtime": "claude",
                 "project": "p8",
                 "cwd": "/work/p8",
                 "checkout": "main",
@@ -2517,7 +2567,7 @@
                     "startedAt": 1791120180000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2557,6 +2607,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2614,6 +2667,7 @@
               {
                 "id": "20261004-090000-p9xx",
                 "callsign": "HUGIN-07",
+                "runtime": "claude",
                 "project": "p9",
                 "cwd": "/work/p9",
                 "checkout": "main",
@@ -2643,7 +2697,7 @@
                     "startedAt": 1791119520000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2685,6 +2739,7 @@
               {
                 "id": "20261004-090007-p9xx",
                 "callsign": "MYCROFT-49",
+                "runtime": "claude",
                 "project": "p9",
                 "cwd": "/work/p9",
                 "checkout": "main",
@@ -2714,7 +2769,7 @@
                     "startedAt": 1791117300000
                   }
                 ],
-                "claudeUntested": false,
+                "runtimeUntested": false,
                 "resources": [],
                 "shown": [],
                 "conversations": [
@@ -2754,6 +2809,9 @@
                 ]
               }
             ],
+            "runtimes": {
+              "claude": {}
+            },
             "actions": [
               {
                 "verb": "spawn",
@@ -2964,8 +3022,17 @@
         },
         "hostUp": true,
         "hostOutdated": false,
-        "claudeDefaults": {},
-        "claudeUntested": [],
+        "runtimes": {
+          "claude": {
+            "label": "Claude Code",
+            "defaults": {},
+            "untested": [],
+            "tested": {
+              "lowest": "2.1.292",
+              "highest": "2.1.323"
+            }
+          }
+        },
         "shells": [],
         "termsUp": true,
         "jobs": [],

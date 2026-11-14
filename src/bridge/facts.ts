@@ -68,8 +68,8 @@ export type Facts = {
   effort?: string
   /** When the main loop last stepped (epoch ms): when `model` and `effort` were last seen. */
   steppedAt?: number
-  /** The release of Claude Code the session runs (`claude --version`), as the mod reports it on start. */
-  claude?: string
+  /** The release of the session's runtime: Claude Code's (`claude --version`), as the mod reports it on start. */
+  runtimeRelease?: string
   /** Claude's conversations this session held, in order: `/clear` moves it to a new one. */
   conversations: Conversation[]
   /** What the worker showed, oldest first: showing a target again moves it last. */
@@ -379,7 +379,7 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
       return { ...facts, kept: [...facts.kept, { project, collection, id, conversation: facts.conversations.at(-1)?.id, at: t }] }
     }
     case 'tower.claude':
-      return { ...facts, claude: String(hook.version) }
+      return { ...facts, runtimeRelease: String(hook.version) }
     case HIRED:
       return { ...facts, hired: [...facts.hired, String(hook.id)] }
     case PROMPTED_BY:
