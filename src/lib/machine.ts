@@ -19,7 +19,7 @@ export {
 export type {
   Executors,
   Handlers,
-  /** @provisional */ Loop,
+  Loop,
   StateEffect,
   TimerEffect,
 } from '../shared/loop.ts'

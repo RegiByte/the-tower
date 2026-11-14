@@ -1,6 +1,6 @@
 /** The library's `/lib/viewer.js`: what a viewer keeps, and their appearance. */
 export {
-  /** @provisional */ reducedMotion,
+  reducedMotion,
 } from '../shared/prefs.ts'
 export {
   /** @provisional */ seenMarker,

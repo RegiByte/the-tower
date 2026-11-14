@@ -31,7 +31,7 @@ export type Loop<S, E> = {
    * Waits for the machine to reach the first state `holds` is true of: now if it holds already and no event is being
    * handled, else once the events dispatched have all been handled, so a wait asked from an executor sees the
    * events queued before it. A waiter whose predicate never holds is kept as long as the loop.
-   * Provisional, as `Loop` is. @since 1.162
+   * Provisional, though `Loop` is stable. @since 1.162
    */
   until(holds: (state: S) => boolean): Promise<S>
 }

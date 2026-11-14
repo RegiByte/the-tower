@@ -49,18 +49,18 @@ export {
 } from '../shared/press.ts'
 export {
   closeHtml,
-  /** @provisional */ keyedTip,
+  keyedTip,
   paintOnce,
   viewCss,
 } from '../shared/view-parts.ts'
 export {
-  /** @provisional */ viewHost,
+  viewHost,
 } from '../shared/view-host.ts'
 export type {
-  /** @provisional */ Hosted,
-  /** @provisional */ HostDeps,
-  /** @provisional */ Placed,
-  /** @provisional */ ViewHost,
+  Hosted,
+  HostDeps,
+  Placed,
+  ViewHost,
 } from '../shared/view-host.ts'
 export type {
   /** @provisional */ Bus,
@@ -74,6 +74,6 @@ export type {
   RegionHandle,
   /** @provisional */ RegionOptions,
   Tab,
-  /** @provisional */ TabWords,
-  /** @provisional */ View,
+  TabWords,
+  View,
 } from '../shared/views.ts'
