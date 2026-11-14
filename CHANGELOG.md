@@ -12,6 +12,45 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.0.0
+
+The major release: 2.0 removes what 1.x kept for compatibility, so every user does something once. Read
+[`docs/migrating-to-2.md`](docs/migrating-to-2.md), or point a Claude session at it and at your config, extensions,
+renderers or fork: it is written to be applied. **host restart** (if your host predates protocol 5), **API major**,
+**config**.
+
+Do these in order:
+
+1. **Restart the host** (`tower down host`, then `tower up`) unless it already speaks host protocol 5: an older host has
+   every spawn, hire and resume refused, naming the fix. Running sessions stop and stay resumable.
+2. **Rewrite your config.** `argv` and `plugins` move to `runtimes.claude.argv` and `runtimes.claude.plugins`, and a
+   project's `plugins` and `command` to `projects.<id>.runtimes.claude.*`. A config with a key at its old place is
+   refused, on the board and by `tower config check`, which names the new path; it passes once the rewrite is done.
+3. **Bump your own extensions** to `"requires": { "tower": "2.0" }`, and move a manifest's `plugins.claude` to
+   `runtimes.claude.plugins`. A 1.x extension is refused as too-old, naming the fix.
+4. **Rebuild Tower.app** with `tower app`: it gains ⌘F (find in the page) and Tower 3D's mouse-look under pointer lock.
+5. **Replace the old CLI words:** `tower policies`, `runs`, `probes`, `note`, `thread`, `send` and `review` live under
+   `tower x` (`tower x reviews thread`, `tower x policies list`…). Each old word names its new form.
+
+What went, for extension and renderer authors (API 2.0; the guide has every name):
+
+- **The library is the contract.** The 28 old root modules (`/cards.js` and its siblings, `/reviews.js`,
+  `/policies.js`, `/drafts.js`) are no longer served; import from `/lib/`. Library names nothing used are pruned, each
+  with a "copy it from v1" line in the guide.
+- **One way to act on a subject:** `verbs` and `calls` are gone from every subject; read `actions`.
+- **The board drops what the extensions own or nothing read:** reviews', policies' and quota's old copies
+  (`card.reviews`, `floor.policies`, `board.offers`, `board.probes`, the top-level limit fields; read `board.limits`
+  and the extensions' own subjects), `card.pages`, `sent`, `cols`, `rows`, `card.seat` and `floor.gallery`.
+- **Claude-named fields are named by runtime:** `card.runtime` (new), `card.runtimeRelease`, `card.runtimeUntested`,
+  `board.runtimes[id]` and `floor.runtimes[id]`.
+- **The old hash short forms** (`#shelf/…`, `#draft/…`, `#archive/…`, `#policies/…`, `#kept/…`) open the skyline: copy
+  the page's current `#v/…` address instead.
+
+Fixes since v1.114.1: Tower.app's window accepts mouse-moved events, so Tower 3D's mouse-look no longer needs a button
+held (#567), and a click into a framed page takes the keyboard while the find bar is open (#579).
+
+`v1` holds 1.x (v1.114.1) for anyone who must stay; `tower update` follows the newest release, which is this one.
+
 ## v1.114.1
 
 A fix, and the last 1.x release: main now works toward 2.0, and fixes to 1.x go on the `v1` branch. Nothing to
