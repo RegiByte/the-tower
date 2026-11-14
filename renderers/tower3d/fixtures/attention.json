@@ -135,8 +135,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -151,8 +149,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-opsx-conversation",
@@ -218,8 +214,6 @@
                 },
                 "enteredAt": 1791124860000,
                 "startedAt": 1791124800000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -233,8 +227,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-opsx-conversation",
@@ -311,8 +303,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124560000,
                 "startedAt": 1791124500000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -326,8 +316,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-opsx-conversation",
@@ -398,8 +386,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125700000,
                 "startedAt": 1791125640000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 0,
@@ -414,8 +400,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-opsx-conversation",
@@ -468,8 +452,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125940000,
                 "startedAt": 1791125880000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -483,8 +465,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [],
                 "actions": [
                   {
@@ -529,8 +509,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125340000,
                 "startedAt": 1791125280000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -544,8 +522,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090035-opsx-conversation",
@@ -615,8 +591,6 @@
                 "onDuty": true,
                 "enteredAt": 1791121860000,
                 "startedAt": 1791121800000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -630,8 +604,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090042-opsx-conversation",
@@ -701,8 +673,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125520000,
                 "startedAt": 1791125460000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -716,8 +686,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090049-opsx-conversation",
@@ -788,8 +756,6 @@
                 "onDuty": true,
                 "enteredAt": 1791111660000,
                 "startedAt": 1791111600000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -803,8 +769,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090056-opsx-conversation",

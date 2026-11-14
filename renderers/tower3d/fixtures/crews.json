@@ -135,8 +135,6 @@
                 "onDuty": true,
                 "enteredAt": 1791120660000,
                 "startedAt": 1791120600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 52,
                 "tool": "Bash",
                 "says": [],
@@ -152,8 +150,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-crew-conversation",
@@ -224,8 +220,6 @@
                 },
                 "enteredAt": 1791121260000,
                 "startedAt": 1791121200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -240,8 +234,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-crew-conversation",
@@ -308,8 +300,6 @@
                 },
                 "enteredAt": 1791121380000,
                 "startedAt": 1791121320000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -324,8 +314,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-crew-conversation",
@@ -392,8 +380,6 @@
                 },
                 "enteredAt": 1791121500000,
                 "startedAt": 1791121440000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 0,
@@ -408,8 +394,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-crew-conversation",
@@ -467,8 +451,6 @@
                 },
                 "enteredAt": 1791121620000,
                 "startedAt": 1791121560000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -483,8 +465,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-crew-conversation",
@@ -551,8 +531,6 @@
                 },
                 "enteredAt": 1791121740000,
                 "startedAt": 1791121680000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -567,8 +545,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090035-crew-conversation",
@@ -645,8 +621,6 @@
                 },
                 "enteredAt": 1791121860000,
                 "startedAt": 1791121800000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -661,8 +635,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090042-crew-conversation",
@@ -749,8 +721,6 @@
                 },
                 "enteredAt": 1791121980000,
                 "startedAt": 1791121920000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -765,8 +735,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090049-crew-conversation",
@@ -833,8 +801,6 @@
                 },
                 "enteredAt": 1791122100000,
                 "startedAt": 1791122040000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -849,8 +815,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090056-crew-conversation",
@@ -917,8 +881,6 @@
                 },
                 "enteredAt": 1791122220000,
                 "startedAt": 1791122160000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -933,8 +895,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090063-crew-conversation",
@@ -1001,8 +961,6 @@
                 },
                 "enteredAt": 1791122340000,
                 "startedAt": 1791122280000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1017,8 +975,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090070-crew-conversation",
@@ -1095,8 +1051,6 @@
                 },
                 "enteredAt": 1791122460000,
                 "startedAt": 1791122400000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1111,8 +1065,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090077-crew-conversation",
@@ -1179,8 +1131,6 @@
                 },
                 "enteredAt": 1791122580000,
                 "startedAt": 1791122520000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1195,8 +1145,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090084-crew-conversation",
@@ -1263,8 +1211,6 @@
                 },
                 "enteredAt": 1791122700000,
                 "startedAt": 1791122640000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1279,8 +1225,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090091-crew-conversation",
@@ -1347,8 +1291,6 @@
                 },
                 "enteredAt": 1791122820000,
                 "startedAt": 1791122760000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1363,8 +1305,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090098-crew-conversation",
@@ -1441,8 +1381,6 @@
                 },
                 "enteredAt": 1791122940000,
                 "startedAt": 1791122880000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1457,8 +1395,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090105-crew-conversation",
@@ -1520,8 +1456,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123060000,
                 "startedAt": 1791123000000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Read",
                 "says": [],
                 "subagents": 0,
@@ -1536,8 +1470,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090112-crew-conversation",
@@ -1656,8 +1588,6 @@
                 "onDuty": true,
                 "enteredAt": 1791122460000,
                 "startedAt": 1791122400000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Read",
                 "says": [],
                 "subagents": 0,
@@ -1672,8 +1602,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-pair-conversation",
@@ -1739,8 +1667,6 @@
                 },
                 "enteredAt": 1791123060000,
                 "startedAt": 1791123000000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1755,8 +1681,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-pair-conversation",
@@ -1823,8 +1747,6 @@
                 },
                 "enteredAt": 1791123360000,
                 "startedAt": 1791123300000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1839,8 +1761,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-pair-conversation",
@@ -1912,8 +1832,6 @@
                 "onDuty": true,
                 "enteredAt": 1791122760000,
                 "startedAt": 1791122700000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 0,
@@ -1928,8 +1846,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-pair-conversation",
@@ -1995,8 +1911,6 @@
                 },
                 "enteredAt": 1791123660000,
                 "startedAt": 1791123600000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -2011,8 +1925,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-pair-conversation",
@@ -2079,8 +1991,6 @@
                 },
                 "enteredAt": 1791123960000,
                 "startedAt": 1791123900000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -2095,8 +2005,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090035-pair-conversation",
@@ -2163,8 +2071,6 @@
                 },
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -2179,8 +2085,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090042-pair-conversation",
@@ -2257,8 +2161,6 @@
                 },
                 "enteredAt": 1791124560000,
                 "startedAt": 1791124500000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -2273,8 +2175,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090049-pair-conversation",
@@ -2336,8 +2236,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -2352,8 +2250,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090056-pair-conversation",
@@ -2419,8 +2315,6 @@
                 },
                 "enteredAt": 1791124860000,
                 "startedAt": 1791124800000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -2435,8 +2329,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090063-pair-conversation",
@@ -2503,8 +2395,6 @@
                 },
                 "enteredAt": 1791125160000,
                 "startedAt": 1791125100000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -2519,8 +2409,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090070-pair-conversation",

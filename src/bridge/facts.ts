@@ -53,8 +53,6 @@ export type LimitReading = [at: number, percentUsed: number, resetsAt: string]
 /** What is known about one session, folded from its log one event at a time. */
 export type Facts = {
   state: SessionState
-  cols: number
-  rows: number
   /** Percent of the context window in use, from the last `session.measure`. */
   context?: number
   costUsd?: number
@@ -141,8 +139,6 @@ export type Facts = {
   subagentRuns: SubagentRun[]
   /** Each rate limit's readings where it changed, by kind, oldest first. */
   limitReadings: Record<string, LimitReading[]>
-  /** The html files the worker wrote (`Write`, its subagents' too), each at its first write (epoch ms), oldest first. */
-  pages: [at: number, path: string][]
   /** The messages it sent other Claude sessions (`SendMessage`): when (epoch ms), the address, and the text's digest. */
   sent: [at: number, to: string, digest: number][]
   /** The messages it received from other Claude sessions: when (epoch ms), and the digest of the text as sent. */
@@ -169,9 +165,9 @@ export type FoldEvent = LogEvent | Unreadable
 export type Session = { header: SessionHeader; facts: Facts }
 
 export const initialFacts = (header: SessionHeader): Facts => ({
-  state: BOOTING, cols: header.cols, rows: header.rows, turns: 0, typed: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
+  state: BOOTING, turns: 0, typed: 0, says: [], conversations: [], shown: [], kept: [], hired: [],
   spend: [], tokens: [], turnSpans: [], waits: [], prompts: [], asks: [], failures: [], subagentRuns: [], limitReadings: {},
-  pages: [], sent: [], received: [], extensionFacts: [], exempt: [],
+  sent: [], received: [], extensionFacts: [], exempt: [],
 })
 
 /** What an extension's session facts are named under: `tower.x.<cap>.<name>`, the capability never holding a dot. */
@@ -278,8 +274,6 @@ export const digestOf = (text: string): number => {
 /** Claude gives a subagent's hand-back a peer's origin: only a message from another Claude session is a peer's. */
 const promptOrigin = (kind: string, text: string) => (kind === 'peer' && !delivered(text) ? 'hand-back' : kind)
 
-const PAGE = /\.html$/
-
 type Usage = { input_tokens?: number; output_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number }
 
 const tokensOf = (u: Usage): Tokens => ({
@@ -345,11 +339,8 @@ const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<stri
     }
     case 'turn.start':
       return mainLoop ? { ...facts, tool: undefined, says: [], turnStartedAt: t, stoppedAt: undefined } : facts
-    case 'tool.call': {
-      const path = hook.tool === 'Write' && typeof hook.file_path === 'string' && PAGE.test(hook.file_path) ? hook.file_path : undefined
-      const paged = path && !facts.pages.some(([, p]) => p === path) ? { ...facts, pages: [...facts.pages, [at, path] as [number, string]] } : facts
-      return mainLoop ? { ...paged, tool: toolLabel(hook) } : paged
-    }
+    case 'tool.call':
+      return mainLoop ? { ...facts, tool: toolLabel(hook) } : facts
     case 'session.send':
       return { ...facts, sent: [...facts.sent, [at, String(hook.to), digestOf(String(hook.text))]] }
     case 'session.receive': {
@@ -431,10 +422,6 @@ const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
   }
   if (event[1] === 'i') return isTyped(event[2]) ? { ...next, typedAt: event[0], typed: facts.typed + 1 } : next
   if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitCode: event[2].exitCode, signal: event[2].signal, exitedFrom: facts.state.status }
-  if (event[1] === 'r') {
-    const [cols, rows] = event[2].split('x').map(Number)
-    return { ...next, cols, rows }
-  }
   if (isLetGo(event)) return { ...next, letGoAt: event[0] }
   if (event[1] === 'h') return hookFacts({ ...next, heardAt: event[0] }, event[0], startedAt, event[2])
   return next

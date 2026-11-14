@@ -135,8 +135,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -151,8 +149,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f1xx-conversation",
@@ -262,8 +258,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -278,8 +272,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f2xx-conversation",
@@ -398,8 +390,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -414,8 +404,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f3xx-conversation",
@@ -534,8 +522,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -550,8 +536,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f4xx-conversation",
@@ -661,8 +645,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -677,8 +659,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f5xx-conversation",
@@ -797,8 +777,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -813,8 +791,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f6xx-conversation",
@@ -933,8 +909,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -949,8 +923,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f7xx-conversation",
@@ -1060,8 +1032,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1076,8 +1046,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f8xx-conversation",
@@ -1196,8 +1164,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1212,8 +1178,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f9xx-conversation",
@@ -1332,8 +1296,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1348,8 +1310,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f10x-conversation",
@@ -1459,8 +1419,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1475,8 +1433,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f11x-conversation",
@@ -1595,8 +1551,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -1611,8 +1565,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-f12x-conversation",

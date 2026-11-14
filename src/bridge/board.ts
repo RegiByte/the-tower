@@ -36,7 +36,6 @@ import { HOOKS } from '../shared/api.ts'
 import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.ts'
 import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
-import { deliveries, type Delivery } from './messages.ts'
 import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReads, readsSince, restoreOf, treeAt, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
 import { jobsNow, recentJobs, type Job, type JobRecord } from './jobs.ts'
 import type { HeldJob } from '../shared/jobs.ts'
@@ -60,12 +59,6 @@ export type CardShown = Omit<Shown, 'at'> & { at: number; session: string }
 
 /** A subagent the session started whose loop the tower follows (`SubagentRun` with an `id`), running while its loop is mid-turn in a live session. */
 export type CardSubagent = SubagentRun & { id: string; running: boolean }
-
-/** An html file the worker wrote, at its first write (epoch ms), and whether the worker showed it. */
-export type CardPage = { path: string; at: number; shown: boolean }
-
-/** A message the worker sent another Claude session, with the callsign of the worker that received it. */
-export type CardSent = Delivery & { callsign?: string }
 
 /**
  * Why a past worker can't be resumed where it ran: its cwd is no longer one of its floor's folders (`outside`: the
@@ -141,8 +134,6 @@ export type Card = {
    */
   broken?: { message: string; code: string; at: number }
   startedAt: number
-  cols: number
-  rows: number
   context?: number
   costUsd?: number
   tool?: string
@@ -168,10 +159,6 @@ export type Card = {
   resources: CardResource[]
   /** What the worker showed the user across the sessions it ran as, oldest first; `at` in epoch ms, `session` the one that showed it. */
   shown: CardShown[]
-  /** The html files the worker wrote across the sessions it ran as, oldest first. */
-  pages: CardPage[]
-  /** The messages it sent other Claude sessions across the sessions it ran as, oldest first. */
-  sent: CardSent[]
   /** Ended while nobody meant it to end: the host stopped or died, or a signal from outside the tower killed it. */
   stranded: boolean
   /**
@@ -454,8 +441,6 @@ const card = (
   worktree: Card['worktree'],
   unresumableHere: Unresumable | undefined,
   hirers: Map<string, HiredBy>,
-  delivered: Map<string, Delivery[]>,
-  callsignOf: (id: string) => string,
   now: number,
   nameOf: (s: Session) => string,
 ): Unplaced => {
@@ -520,8 +505,6 @@ const card = (
     heardAt,
     broken: facts.broken && { ...facts.broken, at: header.startedAt + facts.broken.at * 1000 },
     startedAt: header.startedAt,
-    cols: facts.cols,
-    rows: facts.rows,
     context: facts.context,
     costUsd: facts.costUsd,
     tool: facts.tool,
@@ -536,11 +519,6 @@ const card = (
     claudeUntested: facts.claude !== undefined && claudeRange(facts.claude) !== 'tested',
     resources,
     shown,
-    pages: worker
-      .flatMap((s) => s.facts.pages)
-      .filter(([, path], i, all) => all.findIndex(([, p]) => p === path) === i)
-      .map(([at, path]) => ({ path, at, shown: shown.some((s) => s.target === path) })),
-    sent: worker.flatMap((s) => delivered.get(s.header.id) ?? []).map((d) => (d.session ? { ...d, callsign: callsignOf(d.session) } : d)),
     conversations,
     continuedBy: continuedBy === undefined ? undefined : { id: continuedBy, callsign },
     ...cardOffers(header.id, life.status, promptRefusal(life.status, facts.heldSince) === undefined, !life.unresumable, conversations, resources.length, awaitsResume(life), life.cutOff),
@@ -741,9 +719,6 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, rep
   const reads = [...repos.values()]
   const nameOf = namer(continued, callsignsOf(config))
   const hirers = hirersOf(sessions, nameOf)
-  const delivered = deliveries(sessions)
-  const byId = new Map(sessions.map((s) => [s.header.id, s]))
-  const callsignOf = (id: string) => nameOf(byId.get(id)!)
   const projectRead = (p: Project | undefined) => p && projectReads(projectDirs(p), repos)
   const sessionRead = ({ project, startedAt }: Session['header']) => readsSince(projectRead(config.projects[project]), startedAt)
   const unresumableOf = (header: Session['header']) => unresumableAt(config.projects[header.project], header.cwd, sessionRead(header))
@@ -758,8 +733,6 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, rep
       cardWorktree(config.projects[s.header.project], s.header.cwd, reads, sessionRead(s.header)),
       unresumableOf(s.header),
       hirers,
-      delivered,
-      callsignOf,
       now,
       nameOf,
     ),

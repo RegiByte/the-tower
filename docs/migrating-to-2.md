@@ -125,6 +125,15 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   The verbs keep their order in `actions`, the first still the subject's primary verb. A verb with no call (`drive`,
   `brief`, `goto`) is an action with no `call`.
 
+- **Four card fields nobody read are gone.** No renderer, `/lib/` module or extension in the checkout read them;
+  a renderer of yours that did reads what the tower still derives:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `card.pages`, the html files the worker wrote | `card.shown`, what it showed; a file it wrote and didn't show is its own to name |
+  | `card.sent`, the messages it sent other sessions | the message steps of its turns in the Brief, `GET /conversations/<id>`, each naming its recipient |
+  | `card.cols`, `card.rows` | the screen's own size, on each frame of `/screen/<id>` |
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form
