@@ -20,9 +20,26 @@ final class TowerWebView: WKWebView {
   }
 }
 
+/** The window. While the find bar is open the page takes focus back only from a click into it, never from its own scripts or WebKit. */
+final class TowerWindow: NSWindow {
+  static let clicks: Set<NSEvent.EventType> = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+  weak var page: NSView?
+  var findOpen = false
+
+  @discardableResult
+  override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
+    if findOpen, let page, (responder as? NSView)?.isDescendant(of: page) == true,
+      !TowerWindow.clicks.contains(NSApp.currentEvent?.type ?? .applicationDefined)
+    {
+      return false
+    }
+    return super.makeFirstResponder(responder)
+  }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
   let tower = Tower.bundled
-  var window: NSWindow!
+  var window: TowerWindow!
   var web: TowerWebView!
   var findBar: FindBar!
   /** The tower's address once it is up: the origin whose pages stay in the window. */
@@ -46,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     web.isInspectable = true
     web.navigationDelegate = self
     web.uiDelegate = self
-    window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1440, height: 900), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+    window = TowerWindow(contentRect: NSRect(x: 0, y: 0, width: 1440, height: 900), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
     window.title = "Tower"
     window.tabbingMode = .disallowed
     // Under pointer lock a window that doesn't accept mouse-moved events hands the page the mouse's travel only while a
@@ -59,6 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     content.alignment = .width
     content.spacing = 0
     window.contentView = content
+    window.page = web
     window.delegate = self
     window.center()
     window.setFrameAutosaveName("Tower")
@@ -163,6 +181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
   @objc func showFind() {
     findBar.isHidden = false
+    window.findOpen = true
     window.makeFirstResponder(findBar.field)
     findBar.field.selectText(nil)
   }
@@ -178,6 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
 
   func hideFind() {
     findBar.isHidden = true
+    window.findOpen = false
     window.makeFirstResponder(web)
   }
 
