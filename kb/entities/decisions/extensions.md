@@ -35,8 +35,9 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   ([`rendererLayoutProblems`](ref:hub/src/bridge/extensions.ts#rendererLayoutProblems),
   [`withRendererLayouts`](ref:hub/src/bridge/extensions.ts#withRendererLayouts)). Verbs, commands and views share one
   id space, since pins, hides and a viewer's seen name each by `<cap>/<name>`, so a manifest naming two alike is
-  refused. Every key carries the minor it arrived in (`x-since`), so a key newer than the manifest's `requires.tower`
-  is `under-declared`, and later keys arrive as API minors. `/schema` serves the manifest as `extension`.
+  refused. Every key carries the version it arrived in (`x-since`), so a key newer than the manifest's `requires.tower`
+  is `under-declared`, and later keys arrive as API minors. Every key 2.0 shipped is marked 2.0: a manifest below
+  major 2 is refused as too old, so no 1.x mark could warn. `/schema` serves the manifest as `extension`.
 - **One capability per extension.** `provides` defaults to `id`; everything an extension shows others is named by its
   capability, so a replacement providing the same capability takes over its names. Names are lowercase words joined by
   single dashes, never the core's ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED); a name the core takes

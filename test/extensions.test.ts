@@ -114,11 +114,9 @@ test('views are read in their shape: a view\'s regions its own, one region id on
   const at = (found: Found[]) => resolve(found, config({ extensions: added(found) }), '1.104')
   const r = at([
     ext('grid', { requires: { tower: '1.104' }, views: { grid }, regions: { 'card.cell': cell } }),
-    ext('later', { requires: { tower: '1.101' }, views: { grid }, regions: { 'card.cell': cell } }),
     ext('loose', { requires: { tower: '1.104' }, views: { grid } }),
   ])
   assert.deepEqual(r.accepted.get('grid')!.problems, [])
-  assert.deepEqual(r.accepted.get('later')!.problems.filter((p) => p.code === 'under-declared').map((p) => p.path), ['views.grid.module'])
   assert.match(r.refused.get('loose')!.problems[0].message, /declares region card\.cell, which regions doesn't hold/)
   const clash = at([ext('one', { requires: { tower: '1.104' }, views: { grid }, regions: { 'card.cell': cell } }), ext('two', { requires: { tower: '1.104' }, views: { grid }, regions: { 'card.cell': { ...cell, scale: 'row' } } })])
   assert.deepEqual([codes(clash, 'one'), codes(clash, 'two')], [['conflict'], ['conflict']])
@@ -203,7 +201,7 @@ test("a door that reads names a read of its owner's or the core's, a door that a
   assert.deepEqual(message({ list: 'tower/spawn' }), [['collections.pulse.doors.list', "tower/spawn is no read of the core's: a door names the core's generic reads (tower/board, tower/collection/<project>/<collection>/<item>)"]])
 })
 
-test('a manifest within the rules is accepted with its stores, each schema read as zod; requiring a tower before stores warns', () => {
+test('a manifest within the rules is accepted with its stores, each schema read as zod', () => {
   const r = resolved([
     ext('pulse', {
       verbs: KEEP,
@@ -213,7 +211,7 @@ test('a manifest within the rules is accepted with its stores, each schema read 
     }),
   ])
   const pulse = r.accepted.get('pulse')!
-  assert.deepEqual(pulse.problems.map((p) => [p.code, p.path]), [['under-declared', 'verbs'], ['under-declared', 'collections']])
+  assert.deepEqual(pulse.problems, [])
   assert.equal(pulse.schemas.streams.get('beats')!.get('b')!.safeParse({ n: 'x' }).success, false)
   assert.equal(pulse.schemas.facts.get('beat')!.safeParse(3).success, true)
   assert.deepEqual(registry(r, new Map([['pulse', { at: NOW }]]), NOW).stores.map((s) => [s.provides, Object.keys(s.collections)]), [['pulse', ['pulse', 'pulse.notes']]])
@@ -292,14 +290,13 @@ test("a projected card fold is the newest value of its fact over the lineage, no
   assert.match(mismatchOf({ folds: { card: () => ({}) } }, tabline.manifest)!, /which its manifest projects/)
 })
 
-test("a projection is refused off a card, beside x or adds, from a fact not declared or not a string; a read a door shadows is a conflict; requiring a tower before writable facts warns", () => {
+test("a projection is refused off a card, beside x or adds, from a fact not declared or not a string; a read a door shadows is a conflict", () => {
   const r = atWritable([
     lined('floored', { facts: { line: LINE }, folds: { floor: { project: { lines: { from: 'fact:line', pick: 'last' } } } } }),
     lined('mixed', { facts: { line: LINE }, folds: { card: { ...PROJECTED.card, adds: ['lines'] } } }),
     lined('unnamed', { folds: PROJECTED }),
     lined('counted', { facts: { line: { schema: { type: 'integer' } } }, folds: PROJECTED }),
     lined('shadowed', { facts: { line: LINE }, reads: { 'facts/<name>': { scope: 'system', reply: { type: 'object' } } } }),
-    ext('early', { facts: { line: LINE }, requires: { tower: '1.110' } }),
   ])
   const refusedAt = (id: string) => r.refused.get(id)?.problems.map((p) => [p.code, p.path])
   assert.deepEqual(refusedAt('floored'), [['invalid', 'folds.floor.project']])
@@ -307,7 +304,6 @@ test("a projection is refused off a card, beside x or adds, from a fact not decl
   assert.deepEqual(refusedAt('unnamed'), [['invalid', 'folds.card.project.lines.from']])
   assert.deepEqual(refusedAt('counted'), [['invalid', 'folds.card.project.lines.from']])
   assert.deepEqual(r.accepted.get('shadowed')!.problems.map((p) => [p.level, p.code, p.path]), [['warn', 'conflict', 'reads.facts/<name>']])
-  assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'facts.line.writable']])
 })
 
 const GUIDE = { brief: 'Say a short memo aloud to the user', full: 'Speak only when it is worth their ears.' }
@@ -329,8 +325,8 @@ test("an extension's guidance is its manifest's, the config's brief and full ove
   assert.equal(guidanceOf('silent'), undefined)
 })
 
-test('guidance is refused with no brief to list it by, with a brief over a line or a key it does not take; requiring a tower before guidance warns', () => {
-  const r = atGuidance([guided('briefless'), guided('long', { guidance: { brief: 'two\nlines' } }), guided('typo', { guidance: GUIDE }), ext('early', { guidance: GUIDE, requires: { tower: '1.110' } })], {
+test('guidance is refused with no brief to list it by, with a brief over a line or a key it does not take', () => {
+  const r = atGuidance([guided('briefless'), guided('long', { guidance: { brief: 'two\nlines' } }), guided('typo', { guidance: GUIDE })], {
     briefless: { guidance: { also: 'More.' } },
     typo: { guidance: { breif: 'x' } as never },
   })
@@ -338,7 +334,6 @@ test('guidance is refused with no brief to list it by, with a brief over a line 
   assert.match(r.refused.get('briefless')!.problems[0].message, /give one/)
   assert.deepEqual(r.refused.get('long')!.problems.map((p) => p.path), ['guidance.brief'])
   assert.match(r.refused.get('typo')!.problems[0].message, /^extensions\.typo\.guidance/)
-  assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'guidance']])
 })
 
 test("an extension lays out only its own regions: its layout of a renderer's region is dropped, with a warning", () => {
@@ -370,7 +365,6 @@ test("a cli naming a missing or mistyped field, or a word two share, refuses the
     ext('nameclash', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { word: 'a2' }), a2: verb(NOTE, {}) } }),
     ext('wordless', { requires: { tower: '1.153' }, reads: { a1: read({ usage: 'a1 --n <n>' }) } }),
     ext('badusage', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { usage: 'other --n <n>' }) } }),
-    ext('early', { requires: { tower: '1.152' }, guidance: { brief: 'Its words.' }, verbs: { a1: verb(NOTE, { print: 'said' }) } }),
     ext('unguided', { requires: { tower: '1.153' }, verbs: { a1: verb(NOTE, { print: 'said' }) } }),
     ext('nowords', { requires: { tower: '1.153' }, verbs: { a1: { ...verb(NOTE, {}), cli: undefined } } }),
   ]
@@ -390,7 +384,6 @@ test("a cli naming a missing or mistyped field, or a word two share, refuses the
   assert.deepEqual(refusal('nameclash')?.[0], ['cli', 'verbs.a1.word', 'a2 is also verb a2: two words may not share a name'])
   assert.deepEqual(refusal('wordless'), [['cli', 'reads.a1', 'a read is a word when its cli names one: add word']])
   assert.deepEqual(refusal('badusage'), [['cli', 'verbs.a1.usage', 'usage starts with its word, a1']])
-  assert.deepEqual(r.accepted.get('early')!.problems.map((p) => [p.code, p.path]), [['under-declared', 'verbs.a1.cli']])
   assert.deepEqual(r.accepted.get('unguided')!.problems.map((p) => [p.level, p.code, p.path]), [['warn', 'cli', 'guidance']], 'words nothing teaches are a warning')
   assert.equal(r.accepted.get('nowords')?.problems.length, 0, 'a verb with no cli declares no word for workers')
 })

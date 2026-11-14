@@ -7,7 +7,7 @@
 import path from 'node:path'
 import { z } from 'zod'
 import { SVG_PATH } from '../shared/icons.ts'
-import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, MARKS_ADD_SINCE, SLOTS_ADD_SINCE, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
+import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { wordsOf, type Word, type WordField } from '../shared/cli-words.ts'
 import { RUNTIMES } from '../shared/model.ts'
@@ -831,8 +831,6 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
     ...claudePluginProblems(found, manifest),
     ...unguidedWords(manifest, guided),
     ...underDeclared(raw, manifest.requires.tower),
-    ...addsUnderDeclared(manifest, 'slots', SLOTS_ADD_SINCE),
-    ...addsUnderDeclared(manifest, 'marks', MARKS_ADD_SINCE),
   ]
   return { found, claims, manifest, problems: warnings, settings: settings?.value, schema, verbs: calls.verbs, reads: calls.reads, hooks: calls.hooks, schemas: stores.schemas, folds: folds.folds, fields: fields.fields, ...(guided && { guidance: guided }) }
 }
@@ -1320,12 +1318,6 @@ const namesMismatch = (lane: 'verbs' | 'reads' | 'around' | 'answers' | 'slots',
 export const foldsSlots = (manifest: Manifest): boolean => foldsAdd(manifest, 'slots')
 
 const foldsAdd = (manifest: Manifest, add: Add): boolean => Object.values(manifest.folds ?? {}).some((fold) => fold.adds?.includes(add))
-
-/** A warning when a fold adds `add`, which arrived at `since`, under a `requires.tower` of the same major below it. */
-const addsUnderDeclared = (manifest: Manifest, add: Add, since: string) =>
-  foldsAdd(manifest, add) && !meets(manifest.requires.tower, since) && versionOf(manifest.requires.tower)[0] === versionOf(since)[0]
-    ? [warn('under-declared', `adds ${add}, since ${since}, but requires tower ${manifest.requires.tower}: raise it to ${since}`, 'folds')]
-    : []
 
 /** The names a lane of what `start` returned holds that the manifest doesn't declare there. */
 const undeclaredIn = (lane: unknown, declared: Record<string, unknown> | undefined): string[] =>
