@@ -647,8 +647,9 @@ floor (`on`), timers cleared at halt (`every`), the tower's log (`log`), a `sign
 calls, its stores, `raise` and `run`. The manifest's keys, the ctx members and the problem codes are part of the contract, held like
 the library: removing one is a major.
 
-**Which version a thing arrived in** is the tower's to say. Each manifest key carries the minor it arrived in as
-`x-since` at `GET /schema`, under `extension`, and each core hook under `hooks`. `tower extensions check <dir>` warns
+**Which version a thing arrived in** is the tower's to say. Each manifest key carries it as `x-since` at
+`GET /schema`, under `extension`: `2.0` for every key 2.0 shipped with, a 2.x minor for one added since. Each core hook
+under `hooks` carries the minor it arrived in, a 1.x one included. `tower extensions check <dir>` warns
 of every key newer than the manifest's `requires.tower` (`under-declared`), naming the keys and the version to raise
 it to. The declarations [`tower types`](#types-outside-the-checkout) writes say it in the comment of each ctx
 member, and of many of the library's names, a view's kit, the subjects and the board's fields, as `@since` or as
