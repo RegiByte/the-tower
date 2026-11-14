@@ -2,7 +2,7 @@
   "seed": [
     "tower keep policies < $EXT/shots/seed/morning-triage.md && tower keep policies < $EXT/shots/seed/dependency-updates.md && tower keep policies < $EXT/shots/seed/release-notes.md",
     "id=$(ls $TOWER_SANDBOX/collections/lab/policies | grep release-notes) && tower x policies approve-now $id && echo 'Link each entry to its pull request.' >> $TOWER_SANDBOX/collections/lab/policies/$id",
-    "id=$(ls $TOWER_SANDBOX/collections/lab/policies | grep morning-triage) && slot=$(node -e 'const d = new Date(); d.setUTCHours(0, 0, 0, 0); console.log(+d)') && { tower x policies pass \"{\\\"project\\\": \\\"lab\\\", \\\"policy\\\": \\\"$id\\\", \\\"slot\\\": $slot, \\\"outcome\\\": \\\"offered\\\"}\" || tower x policies list --project lab | grep -q '00:00 UTC is offered'; } # in a slot's first 5 minutes the tower may offer it first",
+    "id=$(ls $TOWER_SANDBOX/collections/lab/policies | grep morning-triage) && slot=$(node -e 'const d = new Date(); d.setUTCHours(0, 0, 0, 0); console.log(+d)') && { tower x policies pass --project lab --policy $id --slot $slot --outcome offered || tower x policies list --project lab | grep -q '00:00 UTC is offered'; } # in a slot's first 5 minutes the tower may offer it first",
     "tower x policies run-now $(ls $TOWER_SANDBOX/collections/lab/policies | grep dependency-updates)"
   ],
   "scenes": [
