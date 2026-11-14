@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-09",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#infoPlist", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Find.swift#FindBar", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
+  "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#infoPlist", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Find.swift#FindBar", "hub/apps/macos/Sources/App.swift#TowerWindow", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
 }
 ---
 **Problem.** The tower lives in a browser tab, one among many: no Dock icon or window of its own, and it is gone with
@@ -27,9 +27,11 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   which the locked page hears the mouse only while a button is held; and find in the page
   ([`FindBar`](ref:hub/apps/macos/Sources/Find.swift#FindBar)). Edit › Find… (⌘F) opens a bar above the page over
   WebKit's own find, which searches the page and the frames inside it (shelf pages included) and wraps around; ⌘G and
-  ⇧⌘G, or Enter and ⇧Enter in the bar, find the next and previous match, and Esc or Done closes it. WebKit says only
-  whether there is a match, so the bar says "Not found" and counts nothing; text a renderer draws to a canvas is out of
-  its reach. Frames inside the page (shelf pages at origins of their own) go where the page sends them.
+  ⇧⌘G, or Enter and ⇧Enter in the bar, find the next and previous match, and Esc or Done closes it. While the bar is
+  open, the page takes focus back only from a click into it
+  ([`TowerWindow`](ref:hub/apps/macos/Sources/App.swift#TowerWindow)): its scripts and WebKit can't take it from the
+  field while the user types. WebKit says only whether there is a match, so the bar says "Not found" and counts nothing;
+  text a renderer draws to a canvas is out of its reach. Frames inside the page (shelf pages at origins of their own) go where the page sends them.
 - **A view of a running system, never its starter** ([`start`](ref:hub/apps/macos/Sources/App.swift#start)): the
   app reads the config's `port` ([`Tower`](ref:hub/apps/macos/Sources/Tower.swift#Tower)) and opens the tower once it
   answers. Until then the window says what starts it from a terminal (`tower up`, with `TOWER_CONFIG` when the config
