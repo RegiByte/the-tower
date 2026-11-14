@@ -1417,9 +1417,6 @@
         "FloorWorktree": {
           "since": "2.0"
         },
-        "GalleryShowing": {
-          "since": "2.0"
-        },
         "Job": {
           "since": "2.0"
         },

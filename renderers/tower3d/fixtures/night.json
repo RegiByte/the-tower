@@ -273,10 +273,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 3
-                }
+                ]
               },
               {
                 "id": "20261004-090007-alph",
@@ -339,10 +336,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 2
-                }
+                ]
               },
               {
                 "id": "20261004-090014-alph",
@@ -444,10 +438,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 1
-                }
+                ]
               },
               {
                 "id": "20261004-090021-alph",
@@ -527,10 +518,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 4
-                }
+                ]
               },
               {
                 "id": "20261004-090028-alph",
@@ -646,10 +634,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 0
-                }
+                ]
               },
               {
                 "id": "20261004-090035-alph",
@@ -704,10 +689,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 5
-                }
+                ]
               },
               {
                 "id": "20261004-090042-alph",
@@ -835,136 +817,7 @@
                 ]
               }
             ],
-            "archived": 0,
-            "gallery": [
-              {
-                "worker": {
-                  "id": "20261004-090014-alph",
-                  "callsign": "FIXER-48"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/reports/failures-by-hour.png",
-                  "title": "Failures by hour",
-                  "at": 1791152100000,
-                  "session": "20261004-090014-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090014-alph",
-                  "callsign": "FIXER-48"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/reports/timezones.html",
-                  "title": "Where the clocks disagree",
-                  "at": 1791151800000,
-                  "session": "20261004-090014-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090014-alph",
-                  "callsign": "FIXER-48"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/reports/failing-tests.md",
-                  "at": 1791151200000,
-                  "session": "20261004-090014-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090028-alph",
-                  "callsign": "HUGO-76"
-                },
-                "shown": {
-                  "kind": "url",
-                  "target": "http://localhost:5173/",
-                  "title": "The ingestion dashboard",
-                  "at": 1791150000000,
-                  "session": "20261004-090028-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090028-alph",
-                  "callsign": "HUGO-76"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/notes/pipeline.md",
-                  "at": 1791148800000,
-                  "session": "20261004-090028-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090042-alph",
-                  "callsign": "MAGELLAN-36"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/reports/coverage.html",
-                  "at": 1791147000000,
-                  "session": "20261004-090042-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090042-alph",
-                  "callsign": "MAGELLAN-36"
-                },
-                "shown": {
-                  "kind": "link",
-                  "target": "https://github.com/example/alpha/pull/42",
-                  "title": "PR #42: pure stages",
-                  "at": 1791146700000,
-                  "session": "20261004-090042-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090042-alph",
-                  "callsign": "MAGELLAN-36"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/diagrams/stages.svg",
-                  "title": "The stages, drawn",
-                  "at": 1791146280000,
-                  "session": "20261004-090042-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090042-alph",
-                  "callsign": "MAGELLAN-36"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/plans/refactor.md",
-                  "title": "Refactor plan",
-                  "at": 1791145920000,
-                  "session": "20261004-090042-alph"
-                }
-              },
-              {
-                "worker": {
-                  "id": "20261004-090042-alph",
-                  "callsign": "MAGELLAN-36"
-                },
-                "shown": {
-                  "kind": "file",
-                  "target": "/work/alpha/plans/first-look.md",
-                  "title": "First look at the pipeline",
-                  "at": 1791145860000,
-                  "session": "20261004-090042-alph"
-                }
-              }
-            ]
+            "archived": 0
           },
           {
             "id": "beta",
@@ -1069,10 +922,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 2
-                }
+                ]
               },
               {
                 "id": "20261004-090007-beta",
@@ -1162,10 +1012,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 0
-                }
+                ]
               },
               {
                 "id": "20261004-090014-beta",
@@ -1293,10 +1140,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 1
-                }
+                ]
               },
               {
                 "id": "20261004-090021-beta",
@@ -1377,10 +1221,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 3
-                }
+                ]
               },
               {
                 "id": "20261004-090028-beta",
@@ -1482,22 +1323,7 @@
                 ]
               }
             ],
-            "archived": 0,
-            "gallery": [
-              {
-                "worker": {
-                  "id": "20261004-090021-beta",
-                  "callsign": "DIOGENES-95"
-                },
-                "shown": {
-                  "kind": "link",
-                  "target": "https://example.com/flamegraphs/board-build",
-                  "title": "Flame graph of the board build",
-                  "at": 1791152760000,
-                  "session": "20261004-090021-beta"
-                }
-              }
-            ]
+            "archived": 0
           },
           {
             "id": "gamma",
@@ -1611,10 +1437,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 0
-                }
+                ]
               },
               {
                 "id": "20261004-090007-gamm",
@@ -1676,10 +1499,7 @@
                       }
                     ]
                   }
-                ],
-                "seat": {
-                  "n": 1
-                }
+                ]
               },
               {
                 "id": "20261004-090014-gamm",
@@ -1781,8 +1601,7 @@
                 ]
               }
             ],
-            "archived": 0,
-            "gallery": []
+            "archived": 0
           }
         ],
         "waiting": [

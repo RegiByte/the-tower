@@ -16,7 +16,7 @@
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/board.ts#Card",
     "hub/src/bridge/verbs.ts#CardVerb",
-    "hub/src/bridge/seats.ts#leftAt",
+    "hub/renderers/tower3d/src/seating.ts#leftAt",
     "hub/src/system.ts#watchSystem",
     "hub/src/tower/dispatch.ts#letGo",
     "hub/src/shared/duty.ts#strandedOf",

@@ -13,13 +13,12 @@
  */
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { archiveAtOf, galleryOf, onBoard, waitingOrder, withReports } from '../src/bridge/board.ts'
+import { archiveAtOf, onBoard, waitingOrder, withReports } from '../src/bridge/board.ts'
 import { awaitsResume, lifeOf } from '../src/bridge/life.ts'
 import { promptRefusal } from '../src/bridge/composer.ts'
 import { bucketStart } from '../src/bridge/stats.ts'
 import { prunable, STUCK_MS } from '../src/bridge/prunable.ts'
 import { cardOffers, conversationOffers, floorOffers, resourceOffers, worktreeOffers } from '../src/bridge/verbs.ts'
-import { withSeats } from '../src/bridge/seats.ts'
 import { CALLSIGNS, callsigns } from '../src/shared/callsign.ts'
 import { shellActivity } from '../src/shared/terms.ts'
 import { tagOf } from '/lib/words.js'
@@ -281,7 +280,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
       ...floorOffers(f.id, true, true, false, tidy),
     }
   })
-  const seated = withSeats(built.flatMap((f) => f.cards))
+  const seated = built.flatMap((f) => f.cards)
   const kept = onBoard(bucketStart(now, 'day'))
   const board: Board = {
     user: { name: 'user' },
@@ -290,7 +289,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     floors: built.map((f) => {
       const cards = seated.filter((c) => c.project === f.id)
       const present = cards.filter(kept)
-      return { ...f, cards: present, archived: cards.length - present.length, gallery: galleryOf(cards) }
+      return { ...f, cards: present, archived: cards.length - present.length }
     }),
     waiting: waitingOrder(seated),
     archiveAt: archiveAtOf(seated, seated.filter((c) => !kept(c))),

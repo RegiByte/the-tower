@@ -156,8 +156,7 @@
                 ]
               }
             ],
-            "archived": 0,
-            "gallery": []
+            "archived": 0
           },
           {
             "id": "beta",
@@ -213,8 +212,7 @@
                 ]
               }
             ],
-            "archived": 0,
-            "gallery": []
+            "archived": 0
           }
         ],
         "waiting": [],

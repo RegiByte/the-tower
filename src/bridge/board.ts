@@ -20,7 +20,6 @@ import { awaitsResume, lifeOf, type Attention } from './life.ts'
 import type { BlockedKind } from './blocked.ts'
 import { prunable, type Prune } from './prunable.ts'
 import { oldLogs, oldStreams, type LogFile, type OldLog, type OldStream, type StreamMonth } from './retention.ts'
-import { withSeats, type Seat } from './seats.ts'
 import {
   cardOffers,
   conversationOffers,
@@ -182,8 +181,6 @@ export type Card = {
   continuedBy?: SessionRef
   /** Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be, unless let go. */
   onDuty: boolean
-  /** Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one. */
-  seat?: Seat
   /** What can be done with it now, each verb with its call when it has one. */
   actions: CardAction[]
   /** Each extension's own part of it, by capability, as its card fold made it (decision `extensions`). @since 1.84 */
@@ -192,9 +189,6 @@ export type Card = {
 
 /** A session of a worker's lineage, and when it started (epoch ms). */
 export type LineageSession = { id: string; startedAt: number }
-
-/** A showing in a floor's gallery: what was shown, under the worker that carries it now. */
-export type GalleryShowing = { worker: SessionRef; shown: CardShown }
 
 export type { SessionRef }
 
@@ -253,8 +247,6 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   branches: FloorBranch[]
   /** Its main checkouts as git reads them, once every dir of it is read: what a checkout's state is read from (`src/bridge/checkouts.ts`). @since 1.93 */
   main?: MainCheckouts
-  /** The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`). */
-  gallery: GalleryShowing[]
   /** Every dir of the floor reads as a git repo, so a checkout of it can be forked (`spawn`'s `cut.from`). @since 1.95 */
   git: boolean
   bases: string[]
@@ -528,20 +520,6 @@ const card = (
 /** A card before the worktrees are read for who is in them: what its checkouts' states are folded from. */
 type Unplaced = Omit<Card, 'checkoutState'>
 
-/** How many of a floor's last showings its gallery holds. */
-const GALLERY_SHOWINGS = 12
-
-/**
- * A floor's last showings, any worker's, on duty or not, newest first. A worker carried on by a resume holds its
- * showings under the card that carries them now, so each is counted once.
- */
-export const galleryOf = (cards: Card[]): GalleryShowing[] =>
-  cards
-    .filter((card) => !card.continuedBy)
-    .flatMap((card) => card.shown.map((shown) => ({ worker: { id: card.id, callsign: card.callsign }, shown })))
-    .sort((a, b) => b.shown.at - a.shown.at)
-    .slice(0, GALLERY_SHOWINGS)
-
 /** Only declared collections reach the board: a directory nobody declared is not one. */
 const itemKey = (project: string, collection: string, id: string) => `${project}/${collection}/${id}`
 
@@ -737,7 +715,7 @@ export const allCards = ({ config, sessions, host, processes, peers, shells, rep
       nameOf,
     ),
   )
-  return withSeats(withCrews(withCheckouts(config, placed, shells, repos, stores)))
+  return withCrews(withCheckouts(config, placed, shells, repos, stores))
 }
 
 /**
@@ -842,7 +820,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         worktrees,
         branches,
         ...(main && { main }),
-        gallery: galleryOf(floorCards),
         git: read?.every((r) => r.git) ?? false,
         bases,
         ...(defaultBase && { defaultBase }),

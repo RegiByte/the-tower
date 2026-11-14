@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/bridge/board.ts#board", "hub/src/bridge/board.ts#onBoard", "hub/src/bridge/board.ts#allCards", "hub/src/bridge/board.ts#archiveOf", "hub/src/bridge/board.ts#archiveAtOf", "hub/src/tower/http.ts#archive", "hub/src/tower/publisher.ts#archivedCards", "hub/src/tower/publisher.ts#archiveCore", "hub/src/shared/past.ts#pastOf", "hub/src/shared/past.ts#archiveKey", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/chains.ts#SessionRef", "hub/src/bridge/seats.ts#withSeats", "hub/src/bridge/board.ts#galleryOf", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#findCard", "hub/src/directory.ts#everyCard", "hub/src/directory.ts#readArchive", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
+  "refs": ["hub/src/bridge/board.ts#board", "hub/src/bridge/board.ts#onBoard", "hub/src/bridge/board.ts#allCards", "hub/src/bridge/board.ts#archiveOf", "hub/src/bridge/board.ts#archiveAtOf", "hub/src/tower/http.ts#archive", "hub/src/tower/publisher.ts#archivedCards", "hub/src/tower/publisher.ts#archiveCore", "hub/src/shared/past.ts#pastOf", "hub/src/shared/past.ts#archiveKey", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/chains.ts#SessionRef", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#findCard", "hub/src/directory.ts#everyCard", "hub/src/directory.ts#readArchive", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
 **Problem.** The board is pushed whole, to every client, on every change. Holding every session ever run, it grows
@@ -17,22 +17,20 @@ with history, while the cards that change are the few on duty.
 `resumes`/`resumedBy`, callsign lineage, a card's `shown` gathered across its lineage, `keptBy` and `waiting`
 ([`board`](ref:hub/src/bridge/board.ts#board), [`threads`](ref:hub/src/bridge/chains.ts#threads)). The server
 can keep full history and send less, as long as nothing a renderer derives needs the cards it isn't sent: so whatever
-is derived from history (seats, the gallery, the callsigns of referenced sessions) is derived in the bridge, over
-every card.
+is derived from history (the callsigns of referenced sessions, crews, Tidy's plan) is derived in the bridge, over
+every card. What only one renderer draws from history (Tower 3D's seats and gallery) that renderer derives over the
+board and the archive.
 
 **How.**
-- History derived in the bridge, over every card: `card.seat`
-  ([`withSeats`](ref:hub/src/bridge/seats.ts#withSeats): `{n}` a workstation, `{beside}` the author's id);
-  `floor.gallery` ([`galleryOf`](ref:hub/src/bridge/board.ts#galleryOf)): the floor's last showings, newest
-  first, each `{worker: {id, callsign}, shown}` ([[shared-wall]]); [`SessionRef`](ref:hub/src/bridge/chains.ts#SessionRef) `{id, callsign}` for
+- History derived in the bridge, over every card: [`SessionRef`](ref:hub/src/bridge/chains.ts#SessionRef) `{id, callsign}` for
   a conversation's `resumes` and `resumedBy` (on the board and in the brief) and a card's `continuedBy`; `keptBy` carries
   `{session, callsign}` and `hiredBy` `{session, callsign, project}`. [`bubbleOf`](ref:hub/renderers/tower3d/src/cards.ts#bubbleOf), a status's glyph, is
   Tower 3D's own; `/cards.js` serves a copy until 2.0.
 - Tower 3D derives its seats and gallery itself, over the board's cards and the archive read beside it, which are
-  every card again ([[workstations]], [[shared-wall]]); the bridge's `card.seat` and `floor.gallery` stay on the
-  board until 2.0.
-- [`allCards`](ref:hub/src/bridge/board.ts#allCards) derives every card (seats, crews, the gallery and
-  Tidy's plan run over all of them); [`board`](ref:hub/src/bridge/board.ts#board) keeps those
+  every card again ([[workstations]], [[shared-wall]]): a seat is `{n}` a workstation or `{beside}` the author's id,
+  a gallery the floor's last showings, newest first, each `{worker: {id, callsign}, shown}`.
+- [`allCards`](ref:hub/src/bridge/board.ts#allCards) derives every card (crews and Tidy's plan run over all of
+  them); [`board`](ref:hub/src/bridge/board.ts#board) keeps those
   [`onBoard`](ref:hub/src/bridge/board.ts#onBoard): on duty, waiting, holding leftovers, or started since the start
   of the host's local day. It carries `floor.archived` (a count) and `board.archiveAt`
   ([`archiveAtOf`](ref:hub/src/bridge/board.ts#archiveAtOf)): the latest of each archived card's end,
@@ -59,7 +57,7 @@ every card.
   worker on screen leaving the board, reads every floor's archive not read at its `archiveKey` (again where that read
   failed) and waits for those reads to land or fail ([`archive`](ref:hub/renderers/page/archive.js#archive), the
   loop's `until`). Tower 3D reads every floor's archive for its filing cabinets and its archive panel ([[logbook]]; a fixture board serves its own), and
-  a gallery picture is looked up in `floor.gallery`, its card optional (`archived` on hover when the board lacks it).
+  a gallery picture is looked up in the gallery it derives, its card optional (`archived` on hover when the board lacks it).
 - `tower agent`, `review`, `home` and `send` take a worker on duty by callsign from the board, else read every floor's
   archive; `tower hire` reads them for the hire depth, which walks `hiredBy` to sessions the board may leave out.
 - A past worker that can't be resumed where it ran says why in both past lists (`unresumable`, [[resume]]), in place
