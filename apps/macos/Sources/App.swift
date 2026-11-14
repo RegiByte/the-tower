@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
   let tower = Tower.bundled
   var window: NSWindow!
   var web: TowerWebView!
+  var findBar: FindBar!
   /** The tower's address once it is up: the origin whose pages stay in the window. */
   var home: URL?
   var titleWatch: NSKeyValueObservation?
@@ -51,7 +52,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     // Under pointer lock a window that doesn't accept mouse-moved events hands the page the mouse's travel only while a
     // button is held: Tower 3D's mouse-look turns only on a drag.
     window.acceptsMouseMovedEvents = true
-    window.contentView = web
+    findBar = FindBar(web: web, close: { [weak self] in self?.hideFind() })
+    findBar.isHidden = true
+    let content = NSStackView(views: [findBar, web])
+    content.orientation = .vertical
+    content.alignment = .width
+    content.spacing = 0
+    window.contentView = content
     window.delegate = self
     window.center()
     window.setFrameAutosaveName("Tower")
@@ -152,6 +159,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     // The inspector has no public opener; the context menu's Inspect Element is the other way in.
     let inspector = web.perform(NSSelectorFromString("_inspector"))?.takeUnretainedValue() as? NSObject
     inspector?.perform(NSSelectorFromString("show"))
+  }
+
+  @objc func showFind() {
+    findBar.isHidden = false
+    window.makeFirstResponder(findBar.field)
+    findBar.field.selectText(nil)
+  }
+
+  @objc func findNext() { findAgain(backwards: false) }
+  @objc func findPrevious() { findAgain(backwards: true) }
+
+  /** ⌘G and ⇧⌘G: the bar's search again, or the bar when nothing is searched yet. */
+  func findAgain(backwards: Bool) {
+    if findBar.isHidden || findBar.field.stringValue.isEmpty { return showFind() }
+    findBar.find(backwards: backwards)
+  }
+
+  func hideFind() {
+    findBar.isHidden = true
+    window.makeFirstResponder(web)
   }
 
   @objc func showTower() {
@@ -319,6 +346,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
       item("Copy", #selector(NSText.copy(_:)), "c"),
       item("Paste", #selector(NSText.paste(_:)), "v"),
       item("Select All", #selector(NSText.selectAll(_:)), "a"),
+      .separator(),
+      item("Find…", #selector(showFind), "f"),
+      item("Find Next", #selector(findNext), "g"),
+      item("Find Previous", #selector(findPrevious), "G"),
     ])
     let renderers = NSMenuItem(title: "Renderer", action: nil, keyEquivalent: "")
     renderers.submenu = renderersMenu
