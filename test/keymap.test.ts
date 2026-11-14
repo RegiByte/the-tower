@@ -61,4 +61,5 @@ test("a pane's row sits with the keymap's panes on the sheet, and the keymap's s
 
 test('pane-reviews, gone at 2.0, is refused with the line to write', () => {
   assert.deepEqual(keysProblems({ 'pane-reviews': 'Ctrl+Shift+R' }, ['reviews/thread']), [{ level: 'fail', at: '.pane-reviews', problem: 'went at 2.0: write "reviews/thread": "Ctrl+Shift+R" instead' }])
+  assert.deepEqual(keysProblems({ 'pane-reviews': 'Ctrl+Shift+R', 'reviews/thread': 'Ctrl+Shift+T' }, ['reviews/thread'])[0].problem, 'went at 2.0, and "reviews/thread" is set: remove it')
 })
