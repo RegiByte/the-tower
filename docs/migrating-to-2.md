@@ -17,6 +17,11 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 
 ## Everyone who runs a tower
 
+Update from a Claude session started in a plain terminal, outside the tower, in your tower checkout: have it run
+`tower update`, then apply this section. A worker inside the tower can't do it: once the tower runs 2.0 it refuses a
+1.x config, so it hires no one until the config is rewritten, and restarting the host ends every worker, including
+the one doing the update.
+
 Do these in order when you update:
 
 1. **Restart the host.** A 2.0 tower starts sessions and logs facts only on a host at host protocol 5, which arrived
