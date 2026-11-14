@@ -130,27 +130,35 @@ type Side = 'prompt' | 'answer' | `step.${number}`
 /** A prompt's or answer's key: a resumed conversation's turns are drawn again in the session that resumed it. */
 const saidKey = (t: Brief, turn: Turn, side: Side) => `${t.session.id}:${t.id}:${turn.startedAt}:${side}`
 
-/** A turn's words in reading order: its prompt, Claude's words and messages on the way, its answer. */
-const turnSaid = (turn: Turn): { side: Side; text: string; what: string }[] => [
-  { side: 'prompt', text: turn.prompt, what: 'the prompt' },
-  ...turn.steps.flatMap((s, n) => (s.t === 'tool' ? [] : [{ side: `step.${n}` as const, text: s.text, what: s.t === 'sent' ? 'the message' : 'its words' }])),
-  ...(turn.answer === undefined ? [] : [{ side: 'answer' as const, text: turn.answer, what: 'the answer' }]),
+/** What a turn's words are: its prompt, the agent's words or a message it sent on the way, its answer. */
+type SaidKind = 'prompt' | 'words' | 'sent' | 'answer'
+
+/** A kind of words, said: the agent's words by `agent`, its runtime's label. */
+const saidWords = (kind: SaidKind, agent: string) => ({ prompt: 'the prompt', words: `${agent}'s words`, sent: 'the message', answer: 'the answer' })[kind]
+
+/** A turn's words in reading order: its prompt, the agent's words and messages on the way, its answer. */
+const turnSaid = (turn: Turn): { side: Side; text: string; kind: SaidKind }[] => [
+  { side: 'prompt', text: turn.prompt, kind: 'prompt' },
+  ...turn.steps.flatMap((s, n) => (s.t === 'tool' ? [] : [{ side: `step.${n}` as const, text: s.text, kind: s.t === 'sent' ? ('sent' as const) : ('words' as const) }])),
+  ...(turn.answer === undefined ? [] : [{ side: 'answer' as const, text: turn.answer, kind: 'answer' as const }]),
 ]
+
+const keyedSaid = (briefs: Brief[]) =>
+  briefs.flatMap((b) => b.turns.flatMap((turn) => turnSaid(turn).map((s) => ({ ...s, key: saidKey(b, turn, s.side), session: b.session.id, conversation: b.id, startedAt: turn.startedAt }))))
 
 /**
  * Every prompt, answer and step with words of a brief, by the key it is drawn under: the session it is drawn in, its
- * conversation, when its turn started, its side, its text as written, and what it is in words ("the prompt"). @since 1.118
+ * conversation, when its turn started, its side, its text as written, and what it is in words ("the prompt"), the
+ * agent's words named by `agent`, its runtime's label. @since 1.118
  */
-export const saidOf = (briefs: Brief[]): { key: string; session: string; conversation: string; startedAt: number; side: Side; text: string; what: string }[] =>
-  briefs.flatMap((b) =>
-    b.turns.flatMap((turn) => turnSaid(turn).map(({ side, text, what }) => ({ key: saidKey(b, turn, side), session: b.session.id, conversation: b.id, startedAt: turn.startedAt, side, text, what }))),
-  )
+export const saidOf = (briefs: Brief[], agent: string): { key: string; session: string; conversation: string; startedAt: number; side: Side; text: string; what: string }[] =>
+  keyedSaid(briefs).map(({ kind, ...s }) => ({ ...s, what: saidWords(kind, agent) }))
 
 /** The text of a prompt, answer or step of a brief by its key, as written. */
-export const saidText = (briefs: Brief[], key: string): string | undefined => saidOf(briefs).find((s) => s.key === key)?.text
+export const saidText = (briefs: Brief[], key: string): string | undefined => keyedSaid(briefs).find((s) => s.key === key)?.text
 
-/** What a prompt, answer or step of a brief is, in words, by its key: "the prompt", "the message". @since 1.133 */
-export const saidWhat = (briefs: Brief[], key: string): string | undefined => saidOf(briefs).find((s) => s.key === key)?.what
+/** What a prompt, answer or step of a brief is, in words, by its key: "the prompt", "the message", the agent's words by `agent`, its runtime's label. @since 1.133 */
+export const saidWhat = (briefs: Brief[], key: string, agent: string): string | undefined => saidOf(briefs, agent).find((s) => s.key === key)?.what
 
 /** A tool call's key, `<session>:<call>`: the session whose log holds it and its id (`tower.toolCall`). @since 1.133 */
 export const toolKey = (turn: Turn, call: Extract<Step, { t: 'tool' }>) => `${turn.session}:${call.id}`
@@ -290,7 +298,7 @@ const stepsHtml = (t: Brief, turn: Turn, since: number, d: Drawing) => {
     return step.t === 'tool' && last?.steps[0].t === 'tool' ? [...runs.slice(0, -1), { ...last, steps: [...last.steps, step] }] : [...runs, { n, steps: [step] }]
   }, [])
   const html = runs.map(({ n, steps: [first, ...rest] }) => {
-    if (first.t === 'text') return bubbleHtml(`${d.agent}'s words`, 'step', saidKey(t, turn, `step.${n}`), first.text, '', d, true)
+    if (first.t === 'text') return bubbleHtml(saidWords('words', d.agent), 'step', saidKey(t, turn, `step.${n}`), first.text, '', d, true)
     if (first.t === 'sent') return bubbleHtml('the message', 'sent', saidKey(t, turn, `step.${n}`), first.text, `TO ${esc(first.to.callsign)} · ${esc(clockAt(first.at, since))}`, d, true)
     const calls = [first, ...rest] as ToolStep[]
     const lines = calls.map((c) => toolHtml(turn, c, d)).join('')

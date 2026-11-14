@@ -2353,8 +2353,10 @@ document.addEventListener('click', (e) => {
   const files = el.closest<HTMLElement>('[data-changes-files]')?.dataset.changesFiles
   if (files) return (keepViewer('changesTree', files === 'shown'), renderPanel(), drawSettings())
   const said = el.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
-  const threads = el.closest('#desk-brief') ? deskBrief?.threads : panelAs('logbook')?.threads
-  if (said && threads) return copiedAs(saidText(threads, said)!, saidWhat(threads, said)!)
+  const atDesk = el.closest('#desk-brief')
+  const threads = atDesk ? deskBrief?.threads : panelAs('logbook')?.threads
+  const of = atDesk ? deskBrief && findCard(s.board!, deskBrief.id) : panelAs('logbook')?.card
+  if (said && threads && of) return copiedAs(saidText(threads, said)!, saidWhat(threads, said, s.board!.runtimes[of.runtime].label)!)
   const earlier = el.closest<HTMLElement>('[data-brief-earlier]')?.dataset.briefEarlier
   if (earlier) readWhole(earlier, !!el.closest('#desk-brief'))
 })
