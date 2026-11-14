@@ -187,10 +187,10 @@ export type FromPage =
 export type ToPage =
   /**
    * Sent after `hello`, then whenever the board changes: the board, or why the tower can't build it, and the code the
-   * tower serves as the board said it (`BoardMsg`), none from a framing page of a tower before 1.144.
+   * tower serves as the board said it (`BoardMsg`).
    */
-  | { t: 'board'; v: typeof API_VERSION; served?: Served; self: ShelfSelf; board: Board }
-  | { t: 'board'; v: typeof API_VERSION; served?: Served; self: ShelfSelf; error: BoardError }
+  | { t: 'board'; v: typeof API_VERSION; served: Served; self: ShelfSelf; board: Board }
+  | { t: 'board'; v: typeof API_VERSION; served: Served; self: ShelfSelf; error: BoardError }
   | { t: 'answer'; id: number; data: unknown }
   | { t: 'answer'; id: number; error: string; code: ErrorCode }
   /** One message of a watched stream. */

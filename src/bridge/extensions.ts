@@ -700,20 +700,11 @@ const targetProblems = (manifest: Manifest, provides: string): LoadProblem[] =>
     return [error('invalid', `${target} is ${cap}'s: declare requires.${cap} or wants.${cap} to ${lane === 'around' ? 'wrap' : 'answer'} it`, at)]
   })
 
-/**
- * A manifest written to the reserved shapes of `views` (by renderer, then region) or `regions` (a subject and a
- * description) before 1.104 read them: each refused with the shape that replaced it.
- */
-const oldShapeProblems = (raw: unknown): LoadProblem[] => {
-  if (!isObject(raw)) return []
-  const views = isObject(raw.views) ? Object.entries(raw.views).filter(([, v]) => isObject(v) && v.module === undefined && Object.values(v).some((r) => isObject(r) && 'module' in r)) : []
-  const regions = isObject(raw.regions) ? Object.entries(raw.regions).filter(([, r]) => isObject(r) && r.holds === undefined) : []
-  return [
-    ...('plugins' in raw ? [error('invalid', 'plugins.claude moved to runtimes.claude.plugins in 2.0: write "runtimes": { "claude": { "plugins": "<its folder>" } } and remove plugins', 'plugins')] : []),
-    ...views.map(([name]) => error('invalid', `views.${name} is keyed by renderer and region, a shape no tower reads: since 1.104 views are { "<name>": { module, export, on, scales, words, … } }, and the layout places them`, `views.${name}`)),
-    ...regions.map(([id]) => error('invalid', `regions.${id} lacks holds: since 1.104 a region is { subject, holds, scale?, arity?, description? }`, `regions.${id}`)),
-  ]
-}
+/** A manifest that still names `plugins`, which moved under its runtime in 2.0: refused with the key that replaced it. */
+const oldShapeProblems = (raw: unknown): LoadProblem[] =>
+  isObject(raw) && 'plugins' in raw
+    ? [error('invalid', 'plugins.claude moved to runtimes.claude.plugins in 2.0: write "runtimes": { "claude": { "plugins": "<its folder>" } } and remove plugins', 'plugins')]
+    : []
 
 /** A view's regions are among the manifest's own, and a region holding views says the room it gives. */
 const viewProblems = (manifest: Manifest): LoadProblem[] => [
