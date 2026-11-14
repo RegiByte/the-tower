@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { board } from '../src/bridge/board.ts'
 import type { Config } from '../src/shared/model.ts'
 import { can } from '../src/shared/offered.ts'
-import { cutWhy, spawnCall, spawnDefaults, spawnFormHtml } from '../src/shared/spawn-form.ts'
+import { cutWhy, hireBlocked, spawnCall, spawnDefaults, spawnFormHtml } from '../src/shared/spawn-form.ts'
 import type { FirstRead } from '../src/bridge/worktrees.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { viewOf } from './view.ts'
@@ -60,4 +60,15 @@ test('a floor whose first read failed says what git said', () => {
   assert.equal(can(floor, 'cut'), false)
   assert.deepEqual(floor.reading, [{ dir: '/hub' }, { dir: '/api', failed: 'git rev-parse in /api took over 60s and was stopped' }])
   assert.equal(cutWhy(floor), "git couldn't read api: git rev-parse in /api took over 60s and was stopped")
+})
+
+test("a hire left to the floor's default waits while its repos are read, says what failed, and starts once the floor cuts", () => {
+  assert.equal(hireBlocked(readingFloor([['/hub', refsOf('/hub')]])), "tower's repos are still being read: hire again in a moment")
+  assert.equal(
+    hireBlocked(readingFloor([['/hub', refsOf('/hub')], ['/api', { failed: 'git rev-parse in /api took over 60s and was stopped' }]])),
+    "tower's repos can't all be read, so no worktree can be cut: git couldn't read api: git rev-parse in /api took over 60s and was stopped",
+  )
+  assert.equal(hireBlocked(readingFloor([['/hub', refsOf('/hub')], ['/api', refsOf('/api')]])), undefined, 'refs read: it cuts')
+  const hubFirst = { ...TWO_DIRS, projects: { tower: { ...TWO_DIRS.projects.tower, worktrees: { cutByDefault: false } } } }
+  assert.equal(hireBlocked(board(viewOf(hubFirst, { host: { ids: new Set(), protocol: HOST_PROTOCOL } })).floors[0]), undefined, 'a floor that starts workers in the hub never waits')
 })

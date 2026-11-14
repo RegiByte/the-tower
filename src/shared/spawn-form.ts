@@ -69,10 +69,27 @@ export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 export const cutWhy = (f: Floor): string | undefined => {
   if (can(f, 'cut')) return undefined
   if (!can(f, 'spawn')) return 'the host is down'
-  const failed = f.reading?.find((r) => r.failed !== undefined)
-  if (failed) return `git couldn't read ${base(failed.dir)}: ${failed.failed}`
+  const failed = failedRead(f)
+  if (failed) return failed
   if (f.reading) return 'its git is still being read'
   return f.git ? 'a directory has no origin' : 'a directory is not a git repo'
+}
+
+/** What git said of the first of `f`'s dirs whose first read failed, none when none did. */
+const failedRead = (f: Floor): string | undefined => {
+  const failed = f.reading?.find((r) => r.failed !== undefined)
+  return failed && `git couldn't read ${base(failed.dir)}: ${failed.failed}`
+}
+
+/**
+ * Why a hire left to the floor's default can't start now, `undefined` once it can: the floor cuts by default, but its
+ * repos are still being read or a first read of one failed, so it offers no cut yet, and the hire would start in the
+ * hub instead of a worktree of its own.
+ */
+export const hireBlocked = (f: Floor): string | undefined => {
+  if (!f.cutByDefault || can(f, 'cut') || !f.reading) return undefined
+  const failed = failedRead(f)
+  return failed ? `${f.name}'s repos can't all be read, so no worktree can be cut: ${failed}` : `${f.name}'s repos are still being read: hire again in a moment`
 }
 
 /** Where a worker starts unless told: its own worktree when the floor cuts by default and can cut now, else the hub. */

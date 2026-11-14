@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/shared/spawn-form.ts#cutWhy", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/shared/spawn-form.ts#cutWhy", "hub/src/shared/spawn-form.ts#hireBlocked", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
 }
 ---
 **Problem.** Workers sharing one checkout interleave edits, test each other's half-done changes and move each
@@ -86,6 +86,10 @@ keyed on `cwd` working: resume, shells, the editor, leftovers, a reviewer in the
   board's `floor.cutByDefault`, and [`defaultWhere`](ref:hub/src/shared/spawn-form.ts#defaultWhere) turns it into a new
   worktree when the floor can cut, else the hub. Every start goes through one form,
   [`spawnFormHtml`](ref:hub/src/shared/spawn-form.ts#spawnFormHtml), whose defaults a quick hire sends too.
+  A hire left to the default (`tower hire`, Tower 3D's one-press hire) on a floor that cuts by default is refused
+  while the floor's repos are still being read or a first read failed
+  ([`hireBlocked`](ref:hub/src/shared/spawn-form.ts#hireBlocked)), naming which: started then, it would land in the hub
+  unseen. The form shows the hub picked and why New worktree isn't offered.
 - **Tidy is manual** ([`tidyable`](ref:hub/src/worktrees.ts#tidyable)): after a fetch, every `removable` name its
   list named is removed through `worktree/remove` (refused, before anything, when one no longer is: [[tidy]]) without
   `--force` and its branch deleted where absorbed; an unmerged branch is kept and listed as a kept branch. Every branch delete (Tidy, `remove`,

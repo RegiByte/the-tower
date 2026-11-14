@@ -2,6 +2,7 @@
 export {
   /** @provisional */ cutLine,
   /** @provisional */ defaultWhere,
+  /** @provisional */ hireBlocked,
   shellPlaces,
   /** @provisional */ spawnCall,
   /** @provisional */ spawnDefaults,

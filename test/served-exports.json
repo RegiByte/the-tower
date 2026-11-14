@@ -2095,6 +2095,10 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "hireBlocked": {
+          "since": "2.1",
+          "stability": "provisional"
+        },
         "shellPlaces": {
           "since": "2.0"
         },

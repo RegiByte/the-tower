@@ -25,7 +25,7 @@ import { helpLines, jsonArgument, jsonRefusal, missingLine, parseWord, printedOf
 import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, hireBlocked, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
@@ -877,6 +877,8 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const own = ownFloor(board, me)
     const floor = hireFloor(board, own, hire.floor)
     if (!can(floor, 'spawn')) throw new CliError('The tower offers no spawn: its host is down. The user starts it with `tower up`.')
+    const blocked = hireBlocked(floor)
+    if (blocked) throw new CliError(blocked)
     const named = hire.item ? itemNamed(own, hire.item) : undefined
     const prompt = named ? await readItem(own, named.collection.id, named.item.id) : await readStdin()
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
