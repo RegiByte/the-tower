@@ -26,7 +26,8 @@ Each piece, and the kb entity that holds the rest:
 - **host** (`src/host`): owns every PTY, sole writer of the session logs; a change kills running sessions. `host-daemon`
 - **mod** (`src/mod`): the Claude Code plugin in every session: posts its events, puts `tower` on its PATH, ships the
   `tower:*` skills. `tower-mod`
-- **cli** (`src/cli.ts`, `src/directory.ts`): the `tower` command, the user's verbs and the workers'. `tower-cli`
+- **cli** (`src/cli.ts`, `src/directory.ts`): the `tower` command; the verb table is `src/cli-verbs.ts`, the workers' verbs'
+  implementations `src/directory.ts`. `tower-cli`
 - **terms** (`src/terms`): owns shell PTYs in project dirs, logs nothing. `terms-daemon`
 - **jobs** (`src/jobs`): runs each job, one command, to its end in a PTY, sole writer of the jobs log; never its output
   or env. `jobs-daemon`
@@ -55,19 +56,23 @@ re-renders (`kb.mjs render`). `/kb verify` for a full check; `/kb build` to docu
 ## Code
 
 - TypeScript on Node ≥24, run with `tsx`, checked by `npm run typecheck`, which also checks the JavaScript served as
-  written through JSDoc (`tsconfig.client.json`, `tsconfig.page.json`).
+  written through JSDoc (`tsconfig.client.json`, `tsconfig.page.json`). It is TypeScript 7: `tsc` only, no JS
+  compiler API.
 - A fresh clone runs with `npm run setup`, which also configures and starts the real system. A worktree installs
-  with `npm ci` only.
+  with `npm ci` only, and first: without its own `node_modules`, typecheck quietly resolves the hub's install and
+  tests fail in about a millisecond (a stale install fails on `@types/node`).
 - Tests replay recorded session logs (`test/fixtures/*.jsonl`) through the bridge, check Tower 3D's models against
   their contract, and drive the tower's API over HTTP once (`test/server.test.ts`): `npm test`. Fixtures are real
   sessions recorded in a throwaway system, expectations written by hand from what was observed live. Add a fixture
-  when Claude shows a behavior the bridge must handle. No other tests unless asked.
+  when Claude shows a behavior the bridge must handle. No other tests unless asked. One file:
+  `npm run test:one -- test/<name>.test.ts` (plain `node --test` fails on the served `/lib/…` imports). The runner
+  prints `ℹ pass`/`ℹ fail` and `✖`, not `# pass`.
 - Agent tools are npm scripts named `tool:<name>`, documented in their script's header. Run `tool:contrast` after any
   change to `design.ts`'s palettes or a new use of a token as text.
 
 ## Checking a renderer
 
-On the sandbox, never on the real system and never by stubbing browser input (recipe: `scripts/sandbox.ts`).
+On the sandbox, never on the real system and never by stubbing browser input (recipe: `scripts/sandbox.ts`, which also says how to act as a worker there).
 
 - `npm run sandbox -- up` starts your own throwaway system (`/tmp/tower-<callsign>` on a free port) and prints how to
   reach it; `down` stops it.
@@ -90,8 +95,9 @@ On the sandbox, never on the real system and never by stubbing browser input (re
 
 CI (`.github/workflows/ci.yml`) runs these; run the same before pushing, and leave `git status` clean after them:
 
-- `npm run typecheck`, `npm test`, `npm run tower3d`, `npm run test:tower3d-boot`, `npm run test:page-boot`, and
-  `xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift` if `apps/macos` changed.
+- `npm run check` runs CI's steps in CI's order (read from `ci.yml`: typecheck, test, tower3d, both boot tests, the
+  clean tree, kb verify) and stops at the first failure: commit first, since the clean-tree step fails on uncommitted
+  work. Besides it, `xcrun swiftc -typecheck -swift-version 5 apps/macos/Sources/*.swift` if `apps/macos` changed.
 - `node .claude/skills/kb/tool/kb.mjs verify`, and `verify --since origin/main` lists the suspects your commits
   caused: clear each by checking the entity's claims, then `kb.mjs review <id>...` sets its `reviewed`.
 - A served module's exports change: `npm run served:update`. A board shape change: `npm run schema:board`. An API
