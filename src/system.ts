@@ -65,7 +65,7 @@ export const isObject = (value: unknown): value is Record<string, unknown> => ty
 
 const isCommand = (value: unknown): value is string[] => Array.isArray(value) && value.length > 0 && value.every((arg) => typeof arg === 'string')
 
-/** Either the legacy array shape, or a non-empty object of named, non-empty commands. */
+/** Either the array shape (one command), or a non-empty object of named, non-empty commands. */
 export const validArgv = (value: unknown): boolean => isCommand(value) || (isObject(value) && Object.keys(value).length > 0 && Object.values(value).every(isCommand))
 
 /**

@@ -81,7 +81,7 @@ const gitVersion = async (): Promise<Verdict> => {
 /**
  * A Claude the config's `runtimes.claude.argv` starts: `file`, the binary one or more of its commands name, checked alone (a command's
  * own arguments may not be valid beside `--version` or `auth status`), in the config's `env` over the scrubbed
- * environment, as the host builds it. `names`: the commands that start it, none for the legacy array.
+ * environment, as the host builds it. `names`: the commands that start it, none for a single command's array.
  */
 type Claude = { file: string; names: string[]; env: NodeJS.ProcessEnv }
 

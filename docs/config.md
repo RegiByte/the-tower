@@ -144,7 +144,7 @@ reaches every session.
 | `runtimes.claude.argv` | The command every Claude session starts with, before the arguments the tower adds: `["claude"]`. Several named commands are also allowed: `{"claude": ["claude"], "mom": ["claude-mom"]}`. A project's `command` picks one by name; naming more than one adds a picker to the New Worker form. | required |
 | `runtimes.claude.plugins` | Absolute plugin directories every Claude session loads, each passed to Claude as `--plugin-dir`. | none |
 | `projects.<id>.runtimes.claude.plugins` | Absolute plugin directories this floor's Claude sessions load, beside every session's. | none |
-| `projects.<id>.runtimes.claude.command` | The `argv` command this floor's workers start with unless told otherwise, by name: a fail if `argv` names more than one and none of them is this, a warning (ignored) if `argv` names only one (or is the legacy array). | `argv`'s first |
+| `projects.<id>.runtimes.claude.command` | The `argv` command this floor's workers start with unless told otherwise, by name: a fail if `argv` names more than one and none of them is this, a warning (ignored) if `argv` names only one (or is a single command's array). | `argv`'s first |
 
 ## Extensions
 
