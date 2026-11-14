@@ -27,7 +27,9 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form
-  under `tower x`. Replace them in scripts, prompts, skills and guidance:
+  under `tower x`, read from the running extensions: while the extension that owns a word is off, the word gets the
+  plain `Unknown command`, and its `tower x` form doesn't run either. This table is the reference. Replace them in
+  scripts, prompts, skills and guidance:
 
   | 1.x | 2.0 |
   | --- | --- |
