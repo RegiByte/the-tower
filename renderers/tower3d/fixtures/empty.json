@@ -126,9 +126,7 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -182,9 +180,7 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",

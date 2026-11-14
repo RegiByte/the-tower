@@ -276,7 +276,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
         ...(f.games ? gamesCollection(f.id, f.games, cards, now) : []),
       ],
       worktrees, branches: [], git: true, bases: [], branchPrefix: 'tower/', cutByDefault: true, hiring: { depth: 2, live: 3 },
-      tidy, threads: [], cards, policies: [], ...(x && { x }),
+      tidy, cards, ...(x && { x }),
       ...floorOffers(f.id, true, true, false, tidy),
     }
   })

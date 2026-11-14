@@ -111,7 +111,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-crew",
@@ -1461,7 +1460,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -1515,7 +1513,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-pair",
@@ -2367,7 +2364,6 @@
                 "reportsTo": "20261004-090056-pair"
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",

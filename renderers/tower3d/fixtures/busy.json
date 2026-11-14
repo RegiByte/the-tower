@@ -190,7 +190,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-alph",
@@ -789,7 +788,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -843,7 +841,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-beta",
@@ -1295,7 +1292,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -1357,7 +1353,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-gamm",
@@ -1573,7 +1568,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2044,7 +2038,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-alph",
@@ -2658,7 +2651,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -2712,7 +2704,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-beta",
@@ -3164,7 +3155,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -3226,7 +3216,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-gamm",
@@ -3442,7 +3431,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -3913,7 +3901,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-alph",
@@ -4537,7 +4524,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -4591,7 +4577,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-beta",
@@ -5035,7 +5020,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
@@ -5097,7 +5081,6 @@
               "logs": [],
               "streams": []
             },
-            "threads": [],
             "cards": [
               {
                 "id": "20261004-090000-gamm",
@@ -5322,7 +5305,6 @@
                 ]
               }
             ],
-            "policies": [],
             "actions": [
               {
                 "verb": "spawn",
