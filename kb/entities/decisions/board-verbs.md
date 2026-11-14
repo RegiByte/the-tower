@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/bridge/verbs.ts#noteActions", "hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/checkouts.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
+  "refs": ["hub/src/bridge/verbs.ts#probeOffers", "hub/src/bridge/checkouts.ts#checkoutState", "hub/src/bridge/verbs.ts#resourceOffers", "hub/src/bridge/verbs.ts", "hub/src/bridge/verbs.ts#cardVerbs", "hub/src/bridge/verbs.ts#conversationVerbs", "hub/src/bridge/board.ts#unresumableAt", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/verbs.ts#floorVerbs", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/bridge/verbs.ts#cardOffers", "hub/src/bridge/verbs.ts#isLive", "hub/src/bridge/board.ts#board", "hub/test/board.test.ts", "hub/src/shared/offered.ts#can", "hub/src/shared/health.ts#whyNot", "hub/src/bridge/verbs.ts#worktreeVerbs", "hub/src/bridge/verbs.ts#branchOffers", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#reapProcess", "hub/src/bridge/verbs.ts#floorOffers", "hub/src/bridge/verbs.ts#sendHomeActions"]
 }
 ---
 **Problem.** What can be done with a session (resume it, kill it, reap it) depends on rules over its status, its
@@ -26,13 +26,11 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 - A card ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)) is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive))
   while its PTY runs: `drive` and `kill` then. `submit` while at Claude's composer, not on a startup screen nor a
   question ([[collections]]); `prompt` while it sits at its prompt with nothing in its composer ([[submit-at-prompt]]); `brief` while it is live, empty until Claude saves a [[conversation]] (a composer in the Brief sends its first prompt), and after it ends while it has one; `carry-on` beside `resume` when the host
-  cut it off mid-turn ([[carry-on]]); `review` while every dir of its floor is a git repo, it isn't a reviewer and its
-  checkout is still there ([[reviewer]]); `reap` while it
+  cut it off mid-turn ([[carry-on]]); `reap` while it
   has [[leftover]]s; `send-home` while any of its crew runs ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions),
-  [[crews]]); `let-go` while stranded on duty ([[let-go]]); `note` while its floor keeps review threads and its
-  checkout's work goes on ([`noteActions`](ref:hub/src/bridge/verbs.ts#noteActions),
-  [`checkoutState`](ref:hub/src/bridge/checkouts.ts#checkoutState), [[review-threads]]). A floor's `threads` offer
-  `note` the same way.
+  [[crews]]); `let-go` while stranded on duty ([[let-go]]). Review and a note on the review thread are no card verbs:
+  the reviews extension's fold offers them in `board.adds` and `x.reviews`, while the checkout's work goes on
+  ([`checkoutState`](ref:hub/src/bridge/checkouts.ts#checkoutState), [[reviewer]], [[review-threads]]).
 - A conversation ([`conversationVerbs`](ref:hub/src/bridge/verbs.ts#conversationVerbs)): `goto` once another session
   resumed it, else `resume` once its session is no longer live, unless its card is `unresumable`
   ([`unresumableAt`](ref:hub/src/bridge/board.ts#unresumableAt): its `cwd` is no longer a dir of its floor, or a worktree

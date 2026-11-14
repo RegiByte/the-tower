@@ -31,7 +31,7 @@ import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/calls
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { uploadRefusal } from '../shared/uploads.ts'
 import { hostSpawn, newSessionId, restoredPrompt, resumeRequest, spawnRequest, worktreeBrief, type HostStart, type Launch, type SpawnLaunch } from '../shared/launch.ts'
-import { LEGACY_VERBS, legacyNamed, legacyReviewer } from '../bridge/legacy.ts'
+import { LEGACY_VERBS, legacyNamed } from '../bridge/legacy.ts'
 import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
   callsignsOf,
@@ -59,7 +59,6 @@ import {
 } from '../shared/model.ts'
 import { projectCollectionsPath } from '../shared/paths.ts'
 import { HOST_PROTOCOL, promptPastes, sessionKeys, type FromHost, type ToHost } from '../shared/protocol.ts'
-import { REVIEWS } from '../shared/reviews.ts'
 import { STATUS_NAME } from '../shared/status-words.ts'
 import { SHELL_SIZE, type FromTerms, type ToTerms } from '../shared/terms.ts'
 import type { FromJobs, ToJobs } from '../shared/jobs.ts'
@@ -598,9 +597,8 @@ export const dispatch = defineResource({
       const factsOf = (cap: string) => Object.entries(spawn.fields.get(cap) ?? {}).map(([name, value]) => ({ name, value, at: now, session: at.id }))
       const merged = await contribute('spawn', runtime, { hire: spawn.hire, ...(spawn.by && { by: spawn.by }), project: projectId, cwd: at.cwd, model: launch.model, effort: launch.effort }, spawn.fields, factsOf, resolveCommand(config, spawnCommand(config, projectId, launch)))
       if (merged.t === 'error') return merged
-      const exempt = legacyReviewer(merged, spawn.prompt)?.exempt ?? merged.exempt
       const fields = Object.fromEntries([...new Set([...spawn.fields.keys(), ...merged.fields.keys()])].map((cap) => [cap, { ...merged.fields.get(cap), ...spawn.fields.get(cap) }]))
-      const gated = await gate({ project: projectId, kind: 'spawn', runtime, ...(spawn.by && { by: spawn.by }), hire: spawn.hire, exempt, fields }, spawn.within)
+      const gated = await gate({ project: projectId, kind: 'spawn', runtime, ...(spawn.by && { by: spawn.by }), hire: spawn.hire, exempt: merged.exempt, fields }, spawn.within)
       if (gated) return gated
       const lead = merged.reportsTo && workerNamed(cardsNow().filter((c) => !c.continuedBy), merged.reportsTo.callsign)
       if (merged.reportsTo && !lead) return apiError('not_found', `${merged.reportsTo.by} has the worker report to ${merged.reportsTo.callsign}, and no worker is called that`)
@@ -824,15 +822,13 @@ export const dispatch = defineResource({
         const x = Object.fromEntries(answers.flatMap((a) => (a.ok ? [[a.cap, a.answer as Recorded]] : [])))
         const doneAnswers = await chains.raise('tower/discard.done', { project, name, author, tips, kept }, within)
         const done = Object.fromEntries(doneAnswers.map((a) => [a.cap, a.ok ? (a.answer as Recorded) : { code: a.code, message: a.message }]))
-        const filed = done[REVIEWS]
-        const thread = filed && 'item' in filed ? filed.item?.id : undefined
-        return { t: 'discarded', tips: tips.map(({ dir, branch, tip }) => ({ dir, branch, tip })), ...(thread && { thread }), ...keptOf(kept), x, ...(doneAnswers.length && { done }) }
+        return { t: 'discarded', tips: tips.map(({ dir, branch, tip }) => ({ dir, branch, tip })), ...keptOf(kept), x, ...(doneAnswers.length && { done }) }
       })
 
     const pruneKey = (p: Prune) => (p.t === 'reap' ? `reap ${p.id} ${p.pid}` : `kill ${p.id}`)
 
     /** What of the listed plan the floor's Tidy no longer lists: the processes, workers, logs and stream months, as read now. `callsign`: a session id's. */
-    const movedOn = (plan: Omit<TidyPlan, 'threads'>, now: TidyPlan, callsign: (id: string) => string): string[] => {
+    const movedOn = (plan: TidyPlan, now: TidyPlan, callsign: (id: string) => string): string[] => {
       const prunes = new Set(now.prune.map(pruneKey))
       return [
         ...plan.prune.filter((p) => !prunes.has(pruneKey(p))).map((p) => (p.t === 'reap' ? `process ${p.pid}` : `worker ${callsign(p.id)}`)),
@@ -869,11 +865,10 @@ export const dispatch = defineResource({
      * through it, for the caller, so what wraps that verb sees it. A worker is checked again just before its kill, since
      * the fetch takes seconds; an entry no longer listed, or whose verb refuses, is skipped and named, and the rest goes on.
      */
-    const tidyProject = (projectId: string, { threads, ...listed }: RouteInput['tidy']['plan'], caller: Caller) =>
+    const tidyProject = (projectId: string, plan: RouteInput['tidy']['plan'], caller: Caller) =>
       onWorktrees(projectId, async (project) => {
         const release = await system.observe()
         try {
-          const plan = threads.length ? { ...listed, x: { ...listed.x, [REVIEWS]: [...new Set([...(listed.x?.[REVIEWS] ?? []), ...threads])] } } : listed
           const callsign = callsignsOf(readConfig())
           const gone = [...movedOn(plan, boardOf().floors.find((f) => f.id === projectId)!.tidy, callsign), ...addedMovedOn(plan.x ?? {}, projectId)]
           if (gone.length) return apiError('refused', `Tidy's list moved on: ${gone.join(', ')} no longer qualif${gone.length === 1 ? 'ies' : 'y'}`)
@@ -920,8 +915,7 @@ export const dispatch = defineResource({
                 ? (answer.answer as { done: string[]; skipped: string[] })
                 : { code: answer.code, message: answer.cap === cap ? answer.message : `${answer.cap}'s link around tower/tidy.apply refused: ${answer.message}` }
           }
-          const filed = x[REVIEWS]
-          return { t: 'tidied', removed, deleted, threads: filed && 'done' in filed ? filed.done : [], reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams, ...(plan.x && { x }) }
+          return { t: 'tidied', removed, deleted, reaped: reaped.map((r) => r.pid), killed, skipped, archived: plan.logs.map((l) => l.id), streams, ...(plan.x && { x }) }
         } finally {
           release()
         }
@@ -1009,7 +1003,6 @@ export const dispatch = defineResource({
         onWorktrees(project, async (p, config) => (await recutBranch(p, project, worktreesConfig(config, project).links, name), OK)),
       'branch/delete': ({ project, name }) => onWorktrees(project, async (p) => ({ ...OK, ...keptOf(await deleteBranch(p, project, name)) })),
       tidy: ({ project, plan }, caller) => tidyProject(project, plan, caller),
-      'review/append': legacy('review/append'),
     }
 
     /** A core verb: its input parsed by its schema, handled with its caller, and its reply checked against its schema. */

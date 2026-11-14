@@ -117,7 +117,7 @@ export const SPAWN_FIELDS = z.strictObject({
     .literal(true)
     .optional()
     .describe(
-      "The session is `by`'s hire: logged as `tower.hire` in `by`'s log, and refused with `limited` past the floor's `hiring` limits unless its prompt starts a reviewer or a launch contributor exempts it. Hires of one worker are taken one at a time, each counted before the next is weighed.",
+      "The session is `by`'s hire: logged as `tower.hire` in `by`'s log, and refused with `limited` past the floor's `hiring` limits unless a launch contributor exempts it. Hires of one worker are taken one at a time, each counted before the next is weighed.",
     ),
 })
 
@@ -381,30 +381,6 @@ export const VERBS = {
       ),
     reply: configReply('removed'),
   },
-  'review/append': {
-    input: z
-      .strictObject({
-        project: id,
-        checkout: worktreeName.describe('A worktree\'s name, or `main` for the main checkouts.'),
-        author: z.string().regex(AUTHOR).describe('Who writes: the user\'s name (`board.user.name`), or a worker\'s callsign.'),
-        re: z.int().positive().optional().describe('The number of the message this one answers.'),
-        anchors: z
-          .array(
-            z.strictObject({
-              repo: z.string().regex(/^[^`:\s]+$/).describe('The repo as the Changes pane names it: its main checkout\'s folder.'),
-              path: z.string().regex(/^[^`\n]+$/),
-              from: z.int().positive(),
-              to: z.int().positive(),
-              quote: z.strictObject({ lang: z.string().regex(/^\S*$/), lines: z.array(z.string().regex(/^[^\n]*$/)) }).optional(),
-            }),
-          )
-          .default([])
-          .describe('The lines the note is about, each quoted as it was.'),
-        body: z.string(),
-      })
-      .describe("Append a message to the checkout's review thread, made on the first one; it is numbered one past the last."),
-    reply: z.object({ t: z.literal('appended'), id: z.string(), n: z.int(), modifiedAt }),
-  },
   'worktree/recut': {
     input: z.object(worktree).describe("Restore a lost worktree's folders from its branch, in every repo where they are gone; then resume its workers."),
     reply: ok,
@@ -436,7 +412,6 @@ export const VERBS = {
     reply: z.object({
       t: z.literal('discarded'),
       tips: z.array(discardedTip).describe('What each repo held, now on no branch.'),
-      thread: z.string().optional().describe("The filed thread, its note naming the tips. @deprecated since 1.94: the reviews extension's `done.reviews.item`, copied here until 2.0."),
       kept: z.array(z.string()).optional().describe("Each branch kept instead of deleted, with why (`<branch> in <dir>: kept, …`)."),
       x: z.record(z.string(), discardRecorded).optional().describe("Each extension's answer to `tower/discard.record`, by capability."),
       done: z
@@ -463,10 +438,6 @@ export const VERBS = {
           .object({
             worktrees: z.array(z.string()),
             branches: z.array(z.string()),
-            threads: z
-              .array(z.string())
-              .default([])
-              .describe("@deprecated since 1.94: the reviews extension's tidy entries, `x.reviews`, which these are added to until 2.0."),
             prune: z.array(
               z.discriminatedUnion('t', [
                 z.object({ t: z.literal('reap'), id, pid: z.int().positive() }),
@@ -492,7 +463,6 @@ export const VERBS = {
       t: z.literal('tidied'),
       removed: z.array(z.string()),
       deleted: z.array(z.string()),
-      threads: z.array(z.string()).describe("@deprecated since 1.94: the keys the reviews extension's answer applied, `x.reviews.done`, copied here until 2.0."),
       reaped: z.array(z.int()),
       killed: z.array(z.string()),
       skipped: z.array(z.string()).describe('Branches kept instead of deleted, workers left alive (no longer idle when their turn came, or their kill failed) and stream months another floor\'s Tidy archived meanwhile, each with why.'),

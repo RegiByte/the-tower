@@ -25,8 +25,7 @@ import { helpLines, jsonArgument, jsonRefusal, missingLine, parseWord, printedOf
 import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-// `reviewerOf` is the core's deprecated copy of the reviews client's: `tower agent` and `tower agents` say it.
-import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, reviewerOf, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
 import { towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
@@ -114,7 +113,7 @@ const cardLines = (card: Card, me: string | undefined, now: number, depth = 0): 
 }
 
 const reportLine = (card: Card) =>
-  reviewerOf(card) ? `reviews ${reviewerOf(card)}` : card.crew ? `in ${card.crew.callsign}'s crew, by ${card.crew.by}` : `hired by ${hirerName(card.hiredBy!, card.project)}`
+  card.crew ? `in ${card.crew.callsign}'s crew, by ${card.crew.by}` : `hired by ${hirerName(card.hiredBy!, card.project)}`
 
 /** A worker hired from another floor: it heads a crew on its own, and is linked under its hirer's there. */
 const hiredOff = (card: Card) => card.hiredBy !== undefined && card.hiredBy.project !== card.project
@@ -282,7 +281,6 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
     `  ${[statusName(card), `for ${ago(now - card.enteredAt)}`, card.peer ? `message as "${card.peer}"` : 'not reachable: its Claude is not running', modelName(card.model)].filter(Boolean).join('  ·  ')}`,
     `  in ${card.cwd}`,
     ...(card.unresumable ? [`  ${UNRESUMABLE_TITLE[card.unresumable]}`] : []),
-    ...(reviewerOf(card) ? [`  reviews ${reviewerOf(card)}'s work`] : []),
     ...(card.hiredBy ? [`  hired by ${hirerName(card.hiredBy, card.project)}`] : []),
     ...(card.crew ? [`  in ${card.crew.callsign}'s crew, by ${card.crew.by}`] : []),
     ...(card.exempt ?? []).map((e) => `  ${exemptionWords(e)}`),

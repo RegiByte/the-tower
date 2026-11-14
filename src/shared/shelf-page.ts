@@ -11,7 +11,6 @@ import type { Stats, StatsQuery } from '../bridge/stats.ts'
 import type { ProbeView } from '../bridge/legacy.ts'
 import type { LandingRead } from '../bridge/worktrees.ts'
 import type { Brief, ToolCall } from '../bridge/turns.ts'
-import type { ReviewHistory } from './reviews-legacy.ts'
 import type { RepoChanges } from './repo-changes.ts'
 import type { API_VERSION, Call, ErrorCode, Replies, Verb, Verbs } from './api.ts'
 import type { Scheme } from './design.ts'
@@ -45,8 +44,6 @@ export type Reads = {
   jobs: Job[]
   /** What changed in each of the session's repos, as git reads it now, `changes/<id>?scope` (`Queries['changes/<id>']`): all since the base, uncommitted, or one commit. */
   'changes/<id>': RepoChanges[]
-  /** A project's review threads, live and landed (Tidy files a landed one as `<checkout>@<time>.md`), and each author's notes, replies and verdicts. */
-  'reviews/<project>': ReviewHistory
   /** Stats over every session's log, `stats?from&to&bucket&project` (`Queries['stats']`, parsed by its schema). */
   stats: Stats
   /**

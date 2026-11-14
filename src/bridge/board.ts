@@ -1,17 +1,16 @@
 import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
 import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchOf } from '../shared/launch.ts'
-import type { FloorThread } from '../shared/reviews-legacy.ts'
 import { tagOf } from '../shared/tags.ts'
 import { current } from '../shared/status-words.ts'
-import { crewsOf, workerNamed } from '../shared/crews.ts'
+import { crewsOf } from '../shared/crews.ts'
 import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
 import { claudeRange } from '../shared/claude.ts'
 import type { SystemPaths } from '../shared/model.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { chainsOf, continuations, lineage, namer, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
-import { legacyCrew, legacyReviewer, type ProbeStatus } from './legacy.ts'
+import type { ProbeStatus } from './legacy.ts'
 import { accountsOf, commandLimits, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
 import type { Peer, Resource } from './resources.ts'
@@ -101,23 +100,15 @@ export type Card = {
    * its folder in every repo of the project (`checkoutGone`).
    */
   worktree?: { name: string; branch?: string; from?: string; gone: boolean }
-  /**
-   * The callsign of the worker whose work this one reviews: the reviews extension's `x.reviews.of`, or for a reviewer
-   * spawned before reviews logged its facts, its first prompt (`legacyReviewer`).
-   * @deprecated since 1.95: read `x.reviews.of`. Goes at 2.0.
-   */
-  reviews?: string
   /** The worker that hired this one (`tower hire`, `tower review`); a worker started any other way has none. */
   hiredBy?: HiredBy
   /**
    * The worker a launch contributor put this one in the crew of at its spawn (`tower.reports-to`), and the capability
-   * that did; a reviewer spawned before reviews logged its facts is in its author's, by reviews, as the board names
-   * the author now (`legacyCrew`). @since 1.85
+   * that did. @since 1.85
    */
   crew?: CrewEdge
   /**
-   * What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability; a reviewer
-   * spawned before reviews logged its facts is exempt from hiring by reviews (`legacyReviewer`). @since 1.85
+   * What launch contributors exempted this worker from at its spawn (`tower.exempt`), each by its capability. @since 1.85
    */
   exempt?: Exemption[]
   /**
@@ -129,18 +120,6 @@ export type Card = {
   checkout: string
   /** Where the work in its checkout stands: what its Changes are. */
   checkoutState: CheckoutState
-  /**
-   * Where the work its review thread is about stands (`threadCheckoutOf`: a reviewer's is its author's), with the thread
-   * Tidy filed once it landed. The card offers `note` while it is live.
-   * @deprecated since 1.93: the reviews extension's `x.reviews.threadState`, copied here until 2.0.
-   */
-  threadState?: CheckoutState
-  /**
-   * The messages of the review thread about its work (`threadCheckoutOf`: a reviewer's is its author's) it hasn't seen
-   * (after its own last one); none without a thread, or once `threadState` is no longer live.
-   * @deprecated since 1.93: the reviews extension's `x.reviews.unseen`, copied here until 2.0.
-   */
-  unseen?: number
   status: Status
   /** The screen a `blocked` worker shows: answered on its terminal. */
   blocked?: BlockedKind
@@ -300,11 +279,6 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   collections: FloorCollection[]
   worktrees: FloorWorktree[]
   branches: FloorBranch[]
-  /**
-   * The review thread of each checkout that has one, their calls naming `review/append`.
-   * @deprecated since 1.93: the reviews extension's `x.reviews.threads`, copied here until 2.0.
-   */
-  threads: FloorThread[]
   /** Its main checkouts as git reads them, once every dir of it is read: what a checkout's state is read from (`src/bridge/checkouts.ts`). @since 1.93 */
   main?: MainCheckouts
   /** The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`). */
@@ -338,8 +312,6 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
 export type TidyPlan = {
   worktrees: string[]
   branches: string[]
-  /** @deprecated since 1.94: the reviews extension's tidy entries, by key, copied here until 2.0. */
-  threads: string[]
   prune: Prune[]
   logs: OldLog[]
   streams: OldStream[]
@@ -532,9 +504,7 @@ const card = (
   const worker = lineage(session, (s) => continued.get(s))
   const callsign = nameOf(session)
   const launch = launchOf(worker[0].header.argv).prompt
-  const legacy = legacyReviewer(worker[0].facts, launch)
-  const reviews = legacy?.reviews
-  const exempt = legacy?.exempt ?? worker[0].facts.exempt
+  const exempt = worker[0].facts.exempt
   const hiredBy = hirers.get(worker[0].header.id)
   const checkout = worktree?.name ?? MAIN_CHECKOUT
   const state = withLiveness(facts.state, header.id, liveIds)
@@ -581,7 +551,6 @@ const card = (
     project: header.project,
     cwd: header.cwd,
     worktree,
-    reviews,
     hiredBy,
     crew: worker[0].facts.reportsTo,
     ...(exempt.length && { exempt }),
@@ -620,7 +589,7 @@ const card = (
 }
 
 /** A card before the worktrees are read for who is in them: what its checkouts' states are folded from. */
-type Unplaced = Omit<Card, 'checkoutState' | 'threadState'>
+type Unplaced = Omit<Card, 'checkoutState'>
 
 /** How many of a floor's last showings its gallery holds. */
 const GALLERY_SHOWINGS = 12
@@ -669,8 +638,6 @@ export const withReports = (cards: Card[]): Card[] => {
       const lead = carriedOn(byId, c.crew.session)
       return { ...c, ...(lead && { reportsTo: lead.id }), ...answerWait(c, hirer) }
     }
-    const author = c.reviews ? workerNamed(cards.filter((a) => a.project === c.project && !a.continuedBy), c.reviews) : undefined
-    if (author) return { ...c, crew: legacyCrew(c.reviews!, author.id), reportsTo: author.id, ...answerWait(c, hirer) }
     return { ...c, ...(hirer && { reportsTo: hirer.id }), ...answerWait(c, hirer) }
   })
 }
@@ -931,7 +898,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
       const tidy: TidyPlan = {
         worktrees: worktrees.filter((w) => w.state === 'removable').map((w) => w.name),
         branches: branches.filter((b) => b.absorbed).map((b) => b.name),
-        threads: [],
         prune: prunable(floorCards, worktrees, cards),
         logs: oldLogs(floorCards, logFiles, config.retention?.days, now),
         streams: [...systemStreams, ...oldStreams(streams.filter((m) => m.file.startsWith(`projects/${id}/`)), config.retention?.days, now)],
@@ -945,7 +911,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         worktrees,
         branches,
         ...(main && { main }),
-        threads: [],
         gallery: galleryOf(floorCards),
         git: read?.every((r) => r.git) ?? false,
         bases,

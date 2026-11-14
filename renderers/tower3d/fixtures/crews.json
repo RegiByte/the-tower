@@ -40,7 +40,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -108,7 +107,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -874,7 +872,6 @@
                   "from": "storage-split",
                   "gone": false
                 },
-                "reviews": "ARIADNE-80",
                 "crew": {
                   "callsign": "ARIADNE-80",
                   "session": "20261004-090007-crew",
@@ -931,7 +928,7 @@
                   {
                     "id": "20261004-090049-crew-conversation",
                     "startedAt": 1791121920000,
-                    "prompt": "/tower:review ARIADNE-80",
+                    "prompt": "/reviews:review ARIADNE-80",
                     "verbs": [],
                     "calls": {},
                     "actions": []
@@ -2045,7 +2042,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []

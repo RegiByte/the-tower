@@ -121,10 +121,9 @@ export const RELOAD_ENTRY: Entry = {
 
 /**
  * Verbs the palette leaves out: a prompt is typed in the worker's terminal, a worker is ended by sending it home, a
- * reviewer is hired by the reviews extension's action (`review` is its copy for renderers of before 1.95), a worktree
- * is chosen in the new-worker form.
+ * worktree is chosen in the new-worker form.
  */
-const UNLISTED: ReadonlySet<VerbId> = new Set(['card/submit', 'card/prompt', 'card/kill', 'card/review', 'floor/cut'])
+const UNLISTED: ReadonlySet<VerbId> = new Set(['card/submit', 'card/prompt', 'card/kill', 'floor/cut'])
 
 /** Commands only a terminal or a text field runs, the palette's own, and `spawn`, which each floor's entry runs, are not listed in it. */
 const listedCommand = (id: string, scope: string) => scope === 'global' && id !== 'palette' && id !== 'spawn'

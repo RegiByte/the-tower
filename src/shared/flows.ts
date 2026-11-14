@@ -155,7 +155,6 @@ const VERB_FLOWS: Record<Verb, FlowOf> = {
   'branch/delete': single('Delete', 'Delete a kept branch absorbed into its base.', 'deleted'),
   'extension/restart': single('Restart', "Read an extension's folder again and restart it.", 'restarted'),
   'probe/run': moved('Read quota', 'quota/read-now'),
-  'review/append': moved('Note', 'reviews/append'),
 }
 
 /** Every core verb's flow. */

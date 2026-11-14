@@ -40,7 +40,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -136,7 +135,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -1275,7 +1273,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -1629,7 +1626,6 @@
                   "from": "release-script",
                   "gone": false
                 },
-                "reviews": "WALT-02",
                 "crew": {
                   "callsign": "WALT-02",
                   "session": "20261004-090014-quie",
@@ -1685,7 +1681,7 @@
                   {
                     "id": "20261004-090021-quie-conversation",
                     "startedAt": 1791124500000,
-                    "prompt": "/tower:review WALT-02",
+                    "prompt": "/reviews:review WALT-02",
                     "answer": "Two notes left on the thread.",
                     "promptBy": "WALT-02",
                     "verbs": [],

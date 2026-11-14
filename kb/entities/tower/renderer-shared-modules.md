@@ -2,10 +2,10 @@
 {
   "type": "library",
   "name": "Renderer shared modules",
-  "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Reviews, Stats and Policies panels, a worker's brief, review threads, icons, terminal keys), served by the tower as /<name>.js, each source file once at its own URL so a page holds one instance of every module.",
+  "summary": "The TypeScript modules every renderer imports for what they draw alike (cards, the Changes, Stats and Policies panels, a worker's brief, icons, terminal keys), served by the tower as /<name>.js, each source file once at its own URL so a page holds one instance of every module.",
   "in": "tower-core",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#sourceModule", "hub/src/tower/served.ts#vendorModule", "hub/src/tower/served.ts#sourceUrl", "hub/src/shared/media.ts#mediaTypeOf", "hub/src/shared/repos.ts#checkoutDirs", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/extensions/drafts/client/drafts.ts", "hub/src/shared/items.ts", "hub/extensions/reviews/client/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/checkouts.ts#sendTargets", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/shared/anchors-legacy.ts#changesHtml", "hub/extensions/reviews/client/panel.ts#reviewsHtml", "hub/extensions/drafts/client/drafts.ts#readDraft", "hub/extensions/reviews/client/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/src/shared/capabilities.ts#parsePattern", "hub/src/shared/capabilities.ts#tipAt", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/extensions/policies/client/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/extensions/reviews/client/panel.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/spawn.ts#SpawnDrafts", "hub/src/shared/spawn.ts#SpawnIo", "hub/src/shared/palette.ts#PaletteContext", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#fileMentions", "hub/src/machine.ts#writeUpload", "hub/src/shared/viewer.ts#seenOf", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/fill.ts#fill"]
+  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/tower/served.ts#servedModule", "hub/src/tower/served.ts#sourceModule", "hub/src/tower/served.ts#vendorModule", "hub/src/tower/served.ts#sourceUrl", "hub/src/shared/media.ts#mediaTypeOf", "hub/src/shared/repos.ts#checkoutDirs", "hub/src/shared/cards.ts", "hub/src/shared/panels.ts", "hub/src/shared/brief.ts", "hub/src/shared/highlight.ts", "hub/extensions/drafts/client/drafts.ts", "hub/src/shared/items.ts", "hub/extensions/reviews/client/reviews.ts", "hub/src/shared/icons.ts", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/checkouts.ts#sendTargets", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/extensions/reviews/client/panel.ts#reviewsHtml", "hub/extensions/drafts/client/drafts.ts#readDraft", "hub/extensions/reviews/client/reviews.ts#parseThread", "hub/src/shared/icons.ts#ICON", "hub/src/shared/settings.ts", "hub/src/shared/tips.ts", "hub/src/shared/capabilities.ts#CAPABILITIES", "hub/src/shared/capabilities.ts#parsePattern", "hub/src/shared/capabilities.ts#tipAt", "hub/src/shared/verb-words.ts#VERB_WORDS", "hub/src/shared/palette.ts#paletteEntries", "hub/src/shared/palette.ts#rankPalette", "hub/src/shared/markdown.ts#markdownHtml", "hub/src/shared/markdown.ts#documentHtml", "hub/src/shared/termkeys.ts#NATURAL_KEYS", "hub/src/shared/termkeys.ts#terminalKeys", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/terminal.ts", "hub/src/shared/prefs.ts", "hub/extensions/policies/client/policies.ts", "hub/src/shared/loop.ts#loop", "hub/src/shared/reads.ts#heldHandlers", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/extensions/reviews/client/panel.ts#heldThread", "hub/src/shared/attend.ts#attendStep", "hub/src/shared/viewer.ts#readViewer", "hub/src/shared/spawn.ts#wireSpawn", "hub/src/shared/spawn.ts#SpawnDrafts", "hub/src/shared/spawn.ts#SpawnIo", "hub/src/shared/palette.ts#PaletteContext", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#fileMentions", "hub/src/machine.ts#writeUpload", "hub/src/shared/viewer.ts#seenOf", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/fill.ts#fill"]
 }
 ---
 The library ([[library]]) is what code outside the core builds on; these modules are deprecated since 1.151 and go at 2.0.
@@ -32,15 +32,13 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   `claudeDefaults` observed, `opus 5.5 (default)`, or as Claude's default until one is seen), round-robin through waits, dismissals and the ring
   setting kept in `tower.store`, the sounds as scores, who a review's notes can be sent to, the hiring limits
   ([[hire]]), crews ([[crews]]) and the past by crew.
-- `panels.ts`: the Changes and Stats panels, and the Reviews panel's 1.92 copy over the board's old fields until 2.0, as pure views (view model in, html out), the line-picking logic,
+- `panels.ts`: the Changes and Stats panels, as pure views (view model in, html out), the line-picking logic,
   one stylesheet and the data attributes each renderer wires ([[shared-panels]]), with code highlighted by
   `highlight.ts` (highlight.js, whose core and languages it registers are each served once under `/vendor/`). It gathers a module per concern (`changes-reads.ts`, `changes-lines.ts`,
-  `changes-panel.ts`, `anchors-legacy.ts`, `reviews-panel.ts`, `stats-panel.ts`, `file-acts.ts`,
-  `panel-html.ts`, `panel-kit.ts`, `panels-css.ts`), re-exported by `/panels.js` and served apart only at their internal URLs. `anchors-legacy.ts` is the
-  Changes panel over a thread with its note box, and review anchors' helpers, as they stood at 1.113: deprecated
-  copies until 2.0, the reviews extension's client holding its own (`/x/reviews/anchors.js`). The review threads' format and the Reviews panel are
-  the reviews extension's client, `/x/reviews/reviews.js` and `/x/reviews/panel.js` (`/reviews.js` serves the former
-  through `LEGACY` until 2.0, [[review-threads]]).
+  `changes-panel.ts`, `stats-panel.ts`, `file-acts.ts`, `panel-html.ts`, `panel-kit.ts`, `panels-css.ts`),
+  re-exported by `/panels.js` and served apart only at their internal URLs. No core module holds review threads:
+  their format, their anchors and the Reviews panel are the reviews extension's client, `/x/reviews/reviews.js`,
+  `/x/reviews/anchors.js` and `/x/reviews/panel.js` ([[review-threads]]).
 - `brief.ts`: a worker's brief by session, the current one in full and the earlier ones folded, each turn with
   Claude's steps between its prompt and its answer, as a pure view over the `/conversations/<id>` read, and the label of the session a showing came from ([[brief-turns]]).
 - Drafts' editing moved into the bundled drafts extension's client, `/x/drafts/drafts.js`
@@ -53,10 +51,11 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `items.ts`: any collection's items as rows and trays (title, tag, keeper, age), whole or bounded to the newest, how an item is read by its type,
   and what to ask before deleting one ([[collection-trays]]); a collection's tray as a view (`mountKeptTray`, the shape of
   `tower/tray` and `drafts/tray`, [[ui-model]]).
-- `reviews.ts`: the thread format, its parse and append, anchors and their state against a diff (`anchorStates`, by
-  `<n>|<i>`, which the extension's `anchors/<project>` read answers), the
-  text that sends notes ([[review-round]], [[review-threads]]); the reviewer's prompt helpers stay, deprecated, until
-  2.0, a reviewer being hired with `reviews/hire` and read at `x.reviews.of` (`reviewerOf`, `/x/reviews/reviews.js`; `/cards.js` keeps a deprecated copy until 2.0, and its `pairLineOf` and `whereLineOf` take the reviewed callsign).
+- The reviews extension's `reviews.ts`, served at `/x/reviews/reviews.js` only: the thread format, its parse and
+  append, anchors and their state against a diff (`anchorStates`, by `<n>|<i>`, which the extension's
+  `anchors/<project>` read answers), the text that sends notes ([[review-round]], [[review-threads]]), and
+  `reviewerOf`, a reviewer read at `x.reviews.of`. `/cards.js` holds no reviewer reading: its `pairLineOf` and
+  `whereLineOf` take the reviewed callsign from their caller.
 - `icons.ts`: the inline SVG every renderer draws for the same things, and `withIcons`, which draws the text marks
   shared words carry as those icons ([[design-system]]).
 - `settings.ts`: the settings popover (alerts, sound, and the viewer's appearance drawn from descriptors and wired by

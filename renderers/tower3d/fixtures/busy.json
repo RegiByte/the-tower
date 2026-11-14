@@ -40,7 +40,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -187,7 +186,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -1178,7 +1176,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -1940,7 +1937,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -2607,7 +2603,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -2754,7 +2749,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -3786,7 +3780,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -4548,7 +4541,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -5215,7 +5207,6 @@
           "pane-changes": [
             "Ctrl+Shift+3"
           ],
-          "pane-reviews": [],
           "shell-here": [
             "Meta+J",
             "Ctrl+Backquote"
@@ -5362,7 +5353,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -6411,7 +6401,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []
@@ -7158,7 +7147,6 @@
             "tidy": {
               "worktrees": [],
               "branches": [],
-              "threads": [],
               "prune": [],
               "logs": [],
               "streams": []

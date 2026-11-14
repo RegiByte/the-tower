@@ -19,7 +19,7 @@
     "hub/extensions/reviews/client/composer.ts#mount",
     "hub/src/directory.ts#agent",
     "hub/src/mod/skills/handbook/SKILL.md",
-    "hub/src/mod/skills/review/SKILL.md",
+    "hub/extensions/reviews/plugin/skills/review/SKILL.md",
     "hub/src/mod/skills/guide/SKILL.md"
   ]
 }
@@ -29,7 +29,7 @@ tower got agents that talked about someone else.
 
 **Decision.**
 - Agent-facing text says "the user": [`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief), the mod's
-  skills, every `tower` message and the API's descriptions.
+  skills and the reviews plugin's, every `tower` message and the API's descriptions.
 - `config.user.name` ([`UserConfig`](ref:hub/src/shared/model.ts#UserConfig)) signs the notes renderers write for the
   user, `user` when unset ([`userName`](ref:hub/src/shared/model.ts#userName)). The board carries it as
   `board.user.name`, so a renderer written from scratch signs the same way. The Reviews panel takes it as

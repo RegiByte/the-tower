@@ -16,18 +16,12 @@ import type { WorktreeState } from './worktrees.ts'
 /**
  * `drive` opens the terminal; `submit` sends the worker a prompt from outside its terminal, queued while it works;
  * `prompt` sends one only while it sits at its prompt with nothing in its composer (`promptRefusal`); `goto` goes to the
- * session that resumed the conversation; `review` starts a reviewer of its work in a fork of its checkout; `send-home`
+ * session that resumed the conversation; `send-home`
  * ends the worker and every worker under it that runs (`crewOf`), alone when nobody runs under it; `let-go` takes a
  * stranded worker off duty, its conversation left resumable; `carry-on` resumes a worker the host cut off mid-turn on a
- * prompt telling it so; `note` adds a note to the review thread about its work
- * (`NoteVerb`).
+ * prompt telling it so.
  */
-export type CardVerb = 'drive' | 'submit' | 'prompt' | 'resume' | 'carry-on' | 'goto' | 'brief' | 'review' | 'reap' | 'kill' | 'let-go' | 'send-home' | 'note'
-/**
- * `note` adds a note to a checkout's review thread, offered while its work goes on (`CheckoutState` live): a note on
- * work that landed, or whose worktree is gone, reaches nobody. The API still takes one there.
- */
-export type NoteVerb = 'note'
+export type CardVerb = 'drive' | 'submit' | 'prompt' | 'resume' | 'carry-on' | 'goto' | 'brief' | 'reap' | 'kill' | 'let-go' | 'send-home'
 export type ConversationVerb = 'resume' | 'goto'
 /** A process a session left running can always be ended on its own. */
 export type ResourceVerb = 'reap'
@@ -93,11 +87,8 @@ const floorVerbs = (hostUp: boolean, termsUp: boolean, canCut: boolean, tidyable
 const worktreeVerbs = (state: WorktreeState, occupied: boolean, recordsDiscards: boolean): WorktreeVerb[] =>
   state === 'lost' ? (occupied ? ['recut'] : ['recut', 'prune']) : state === 'removable' || state === 'carried' ? ['remove'] : state === 'at-risk' && recordsDiscards ? ['discard'] : []
 
-/** `review` leaves the reviewer's notes on the thread for the user to send; a worker hiring its own reviewer adds `tell`. */
 /** `send-home` is a kill per running worker, the deepest first. */
-/** `note` takes the author and what the note says. */
-export type CardCalls = { submit?: Call<'submit'>; prompt?: Call<'submit/at-prompt'>; resume?: Call<'resume'>; 'carry-on'?: Call<'resume'>; review?: Call<'spawn'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[]; note?: Call<'review/append'> }
-export type NoteCalls = { note?: Call<'review/append'> }
+export type CardCalls = { submit?: Call<'submit'>; prompt?: Call<'submit/at-prompt'>; resume?: Call<'resume'>; 'carry-on'?: Call<'resume'>; reap?: Call<'reap'>; kill?: Call<'kill'>; 'let-go'?: Call<'let-go'>; 'send-home'?: Call<'kill'>[] }
 export type ConversationCalls = { resume?: Call<'resume'> }
 export type ResourceCalls = { reap: Call<'reap/process'> }
 /** `spawn` and `shell` take the directory the user picks, `editor` too; `cut` takes the name, branch and base the user picks, or none. */
@@ -109,7 +100,6 @@ export type BranchCalls = { recut?: Call<'branch/recut'>; delete?: Call<'branch/
 /** A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none. */
 type Action<V extends string, C> = { [K in V]: K extends keyof C ? { verb: K; call: Exclude<C[K], undefined> } : { verb: K } }[V]
 export type CardAction = Action<CardVerb, CardCalls>
-export type NoteAction = Action<NoteVerb, NoteCalls>
 export type ConversationAction = Action<ConversationVerb, ConversationCalls>
 export type ResourceAction = Action<ResourceVerb, ResourceCalls>
 export type FloorAction = Action<FloorVerb, FloorCalls>
@@ -179,15 +169,11 @@ export const sendHomeActions = (crew: { id: string; status: Status }[]): CardAct
   return running.length ? [{ verb: 'send-home', call: running.map(({ id }): Call<'kill'> => ['kill', { id }]) }] : []
 }
 
-/** `live`: the checkout's work goes on, on a floor that keeps review threads. */
-export const noteActions = (project: string, checkout: string, live: boolean): NoteAction[] =>
-  live ? [{ verb: 'note', call: ['review/append', { project, checkout }] }] : []
-
 export const resourceOffers = (session: string, pid: number): Offers<ResourceVerb, ResourceCalls> =>
   offered([{ verb: 'reap', call: ['reap/process', { id: session, pid }] }])
 
-export const isTidy = ({ worktrees, branches, threads, prune, logs, streams }: TidyPlan) =>
-  !worktrees.length && !branches.length && !threads.length && !prune.length && !logs.length && !streams.length
+export const isTidy = ({ worktrees, branches, prune, logs, streams }: TidyPlan) =>
+  !worktrees.length && !branches.length && !prune.length && !logs.length && !streams.length
 
 /** Tidy's call carries the plan it applies: the tower refuses it once the floor's plan moved on. */
 export const floorOffers = (project: string, hostUp: boolean, termsUp: boolean, canCut: boolean, tidy: TidyPlan): Offers<FloorVerb, FloorCalls> => {

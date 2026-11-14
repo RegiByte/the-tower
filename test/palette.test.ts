@@ -57,7 +57,7 @@ test('groups come in the order of their best entry', () => {
 const go = (id: string, label: string, target: GoTarget, more: Partial<Entry> = {}): Entry => entry(id, label, { does: { t: 'go', target }, ...more })
 
 test('with nothing typed: the selected worker’s verbs, who waits and recent picks, the last two capped, then every other entry once, Learn last', () => {
-  const own = Array.from({ length: 7 }, (_, n) => entry(`card/${n}`, `Verb ${n}`, { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'card', verb: 'review', id: 'w1' } }))
+  const own = Array.from({ length: 7 }, (_, n) => entry(`card/${n}`, `Verb ${n}`, { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'card', verb: 'brief', id: 'w1' } }))
   const workers = Array.from({ length: 7 }, (_, n) => go(`worker:w${n + 2}`, `W${n + 2}`, { t: 'worker', id: `w${n + 2}` }, { group: 'Workers', card: `w${n + 2}`, project: n % 2 ? 'p1' : 'p2' }))
   const commands = Array.from({ length: 7 }, (_, n) => entry(`command:${n}`, `Command ${n}`))
   const floors = [go('floor:p2', 'Two', { t: 'floor', project: 'p2' }, { group: 'Floors', project: 'p2' }), go('floor:p1', 'One', { t: 'floor', project: 'p1' }, { group: 'Floors', project: 'p1' })]
@@ -79,7 +79,7 @@ test('with nothing typed: the selected worker’s verbs, who waits and recent pi
 })
 
 test('with nothing typed: the selected worker’s earlier conversations go to the catalog, among the floors’ verbs, its floor’s first', () => {
-  const verb = entry('card/brief', 'Brief', { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'card', verb: 'review', id: 'w1' } })
+  const verb = entry('card/brief', 'Brief', { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'card', verb: 'brief', id: 'w1' } })
   const earlier = Array.from({ length: 12 }, (_, n) => entry(`conversation/resume@c${n}`, 'Resume: an earlier conversation', { group: 'ODIN-07', card: 'w1', project: 'p1', does: { t: 'action', subject: 'conversation', verb: 'resume', id: 'w1', conversation: `c${n}` } }))
   const tidy = entry('floor/tidy@p2', 'Tidy', { group: 'Two', project: 'p2', does: { t: 'action', subject: 'floor', verb: 'tidy', project: 'p2' } })
   const groups = rankPalette([tidy, ...earlier, verb, entry('command:help', 'Keys')], '', { ...nowhere, selected: 'w1', floor: 'p1' })

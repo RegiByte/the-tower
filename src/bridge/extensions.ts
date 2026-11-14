@@ -294,7 +294,6 @@ const CORE_READS: string[] = Object.keys({
   'archive/<project>': true,
   jobs: true,
   'changes/<id>': true,
-  'reviews/<project>': true,
   stats: true,
   'probe/<name>': true,
   landing: true,

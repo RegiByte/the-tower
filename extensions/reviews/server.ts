@@ -13,16 +13,12 @@
 import { type Board, can, type Card, type CheckoutTip, type Floor, workerNamed } from '/lib/board.js'
 import { statusName } from '/lib/cards.js'
 import type { RepoChanges } from '/lib/changes.js'
-import { type ApiError, type CallCtx, type FoldCtx, type LaunchParts, type LaunchRequest, type Part, type RouteInput, type Start, apiError, isApiError } from '/lib/extension.js'
+import { type ApiError, type CallCtx, type FoldCtx, type LaunchParts, type LaunchRequest, type Part, type Start, apiError, isApiError } from '/lib/extension.js'
 import { threadMarks } from './client/anchors.ts'
-import { anchorStates, appended, bodyProblem, landedThreadId, nextNumber, parseThread, resolutionBody, resolveProblem, REVIEWS, sendText, stamp, threadCheckoutOf, threadId, unseenBy, type Anchor, type ReviewThread } from './client/reviews.ts'
+import { anchorStates, appended, bodyProblem, landedThreadId, nextNumber, parseThread, resolutionBody, resolveProblem, REVIEWS, sendText, stamp, threadCheckoutOf, threadId, unseenBy, type Anchor, type AppendInput, type Appended, type ReviewThread } from './client/reviews.ts'
 import { discardNote, tidyEntries } from './filing.ts'
 import { anchorLine, parseAnchor, quotedAnchor } from './quoting.ts'
 import { cardPart, floorThreads, reviewHistory, threadFileOf, type CardPart, type FloorPart, type ThreadFile } from './threads.ts'
-
-type AppendInput = RouteInput['review/append']
-
-type Appended = { t: 'appended'; id: string; n: number; modifiedAt: number }
 
 type Caller = CallCtx['caller']
 
