@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Chime",
   "description": "Rings and says who called, wraps its own ring, and calls any verb it is asked to: the dependency the server test's pulse calls.",
-  "requires": { "tower": "1.85" },
+  "requires": { "tower": "2.0" },
   "server": "server.ts",
   "verbs": {
     "ring": {

@@ -1,5 +1,5 @@
 {
-  "major": 1,
+  "major": 2,
   "served": {
     "/tower.js": [
       "archive",
@@ -1294,30 +1294,30 @@
       "runtime": "browser",
       "values": {
         "attendNext": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "attending": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "watchedIn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       },
       "types": {
         "AttendEffect": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "AttendEvent": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "AttendOut": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Attending": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -1325,264 +1325,264 @@
       "runtime": "generic",
       "values": {
         "boardSubject": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "callOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "can": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "cardSubject": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "cardsOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "checkoutLanded": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "checkoutState": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "checkoutsOn": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "conversationSubject": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "crewFoldsOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "crewTreeIn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "crewsOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "defaultLimits": {
-          "since": "1.152"
+          "since": "2.0"
         },
         "dutyOrderIn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "fileSubject": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "findCard": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "floorLimits": {
-          "since": "1.152"
+          "since": "2.0"
         },
         "floorSettingsOf": {
-          "since": "1.154"
+          "since": "2.0"
         },
         "floorSubject": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "goneHome": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "goneHomeLine": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "hiresBy": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "itemKey": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "itemSubject": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "landedByRecord": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "limitsOf": {
-          "since": "1.152"
+          "since": "2.0"
         },
         "linesAt": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "linesSubject": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "linkedFile": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "noLongerOffered": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "offeredCall": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "orderMoving": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "parentOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "passageSubject": {
-          "since": "1.170"
+          "since": "2.0"
         },
         "projectOfKey": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "runVerb": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "saidSubject": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sectionSubject": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sendTarget": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "sendTargets": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "sentHome": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "settingsOf": {
-          "since": "1.154"
+          "since": "2.0"
         },
         "shownSubject": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "subjectAt": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "textOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "workerIn": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "workerKeyOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "workerNamed": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "workersIn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       },
       "types": {
         "Attention": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Board": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Card": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "CardShown": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "CheckoutFile": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "CheckoutState": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "CheckoutTip": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "CheckoutsRead": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "CommandLimits": {
-          "since": "1.152"
+          "since": "2.0"
         },
         "Floor": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "FloorBranch": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "FloorCollection": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "FloorItem": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "FloorWorktree": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "GalleryShowing": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Job": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "KeptBy": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "LandedState": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "LandingRead": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Lines": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Passage": {
-          "since": "1.170"
+          "since": "2.0"
         },
         "RateLimit": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Renderer": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "SessionRef": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "ShelfEntry": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Status": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Subject": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "TidyPlan": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Unresumable": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Wait": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -1590,76 +1590,76 @@
       "runtime": "browser",
       "values": {
         "RESUMED_IDLE": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "briefCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "briefHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "briefKey": {
-          "since": "1.161"
+          "since": "2.0"
         },
         "expandedSaid": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "joinedWholes": {
-          "since": "1.163"
+          "since": "2.0"
         },
         "keptWholes": {
-          "since": "1.161"
+          "since": "2.0"
         },
         "openFolds": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "openTools": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "resumedIdle": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "saidText": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "saidWhat": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "sessionLabel": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sessionWhen": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "shownFrom": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "toolCallHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "toolCallSettled": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "withWhole": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "withWholesRead": {
-          "since": "1.163"
+          "since": "2.0"
         }
       },
       "types": {
         "Brief": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "BriefMarkdown": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "BriefView": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       }
@@ -1668,33 +1668,33 @@
       "runtime": "generic",
       "values": {
         "CAPABILITIES": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "tipAt": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "tipKey": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "tipsOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       },
       "types": {
         "Capability": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Pattern": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Tip": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       }
@@ -1703,424 +1703,424 @@
       "runtime": "generic",
       "values": {
         "ATTENTION_MEANS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "ATTENTION_NAME": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "BLOCKED_TEXT": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "DISMISS_ASK_TITLE": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "DISMISS_OFFER_TITLE": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "DISMISS_TITLE": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "EXTENSION_ATTENTION": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "GIST_MARK": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "HOST_ATTENTION": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "HOST_MEANS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "HOST_NAME": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "KILL_COST": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "LET_GO_MEANS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "LIMITS_STALE_MS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "ON_DUTY_MEANS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "SOUNDS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "SUBAGENT_FADE_MS": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "UNRESUMABLE_NAME": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "UNRESUMABLE_TITLE": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "WAITING_MEANS": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "WAITING_NAME": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "WORKTREE_ASK": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "WORKTREE_DONE": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "WORKTREE_STATE_NAME": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "WORKTREE_VERB_NAME": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "addedTidyOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "archiveKey": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "archiveWant": {
-          "since": "1.162",
+          "since": "2.0",
           "stability": "provisional"
         },
         "archivedCard": {
-          "since": "1.162",
+          "since": "2.0",
           "stability": "provisional"
         },
         "archivesMoved": {
-          "since": "1.162",
+          "since": "2.0",
           "stability": "provisional"
         },
         "askTransitions": {
-          "since": "1.164",
+          "since": "2.0",
           "stability": "provisional"
         },
         "attentionOrder": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "boardErrorTitle": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "branchLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "carriedLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "claudeFlagHtml": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "claudeUntestedHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "current": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "detailsOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "discardAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "discardedLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "dismissing": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "editedRows": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "extensionLine": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "extensionTitle": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "extraUsageAmounts": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "extraUsageLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "gistLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "gistOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "goneBases": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "heededAsks": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "heededWaits": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "heldActions": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "hostState": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "isAsk": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "isOffer": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "keptBranchLines": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keptLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "killShellAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "lampOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "landingHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "leftoversOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "letGoAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "letGoneLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "limitsFromTitle": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "loudest": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "mainUnreadHtml": {
-          "since": "1.158"
+          "since": "2.0"
         },
         "nameIn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "neighboursIn": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "nextAttended": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "nextWait": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "onDisk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "paceLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "paceWords": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "pairLineOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "pastCount": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "pastCrews": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "pastMatching": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "pastSize": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "reapAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "rendererUrl": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "renderersHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "resetLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "resetWhen": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "resumeAllAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "resumeStranded": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "resumesRow": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "risky": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "satellitesOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sendHomeAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shelfKind": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shelfPage": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shelfPaths": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shelfSource": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shellWhere": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shownHref": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shownKey": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "shownTitle": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "statusLegendHtml": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "statusName": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "statusTitle": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "statusWord": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "strandedOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "subagentTitle": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "tidiedLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "tidyAllAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "tidyLine": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "tidyRowAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "tidyRows": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "transitions": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "verbHint": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "verbLabel": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "waitingCards": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "weekElapsed": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "whereLineOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "whyNot": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "wordsOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "worktreeBranch": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "worktreeRisk": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "ArchiveReads": {
-          "since": "1.162",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Attended": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "DaemonVerb": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "EditedRow": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Heed": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Move": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "PastCrew": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Ring": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Sound": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "TidyRow": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -2128,86 +2128,86 @@
       "runtime": "browser",
       "values": {
         "CHANGES_POLL_MS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "changedFiles": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "changesFailure": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "changesHandlers": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "changesOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "changesPath": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "fileKey": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "isFolded": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keepingFileTop": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keepingViewedFileTop": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "livePick": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "marksToggled": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "noChanges": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "picked": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "readChanges": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "scopeOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "spanned": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "spotSelector": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "watchPickDrag": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "ChangesEvent": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "ChangesRead": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "ChangesScope": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "DiffFile": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "DiffLayout": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "LinePick": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "RepoChanges": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -2215,41 +2215,41 @@
       "runtime": "browser",
       "values": {
         "ask": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "asking": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "closableNoticer": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "closeOnBackdrop": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "noticer": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "placeOnOpen": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "toaster": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "toastsCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "watchTips": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Notice": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       }
@@ -2258,33 +2258,33 @@
       "runtime": "browser",
       "values": {
         "clientOf": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         }
       },
       "types": {
         "BoardError": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "FromPage": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "ShelfSelf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "StreamMsg": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "TerminalMsg": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Tower": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -2292,38 +2292,38 @@
       "runtime": "generic",
       "values": {
         "documentCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "mixOklab": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "palettes": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "projectTones": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "skyAt": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "terminalTheme": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "type": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Scheme": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Sky": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       }
@@ -2332,113 +2332,113 @@
       "runtime": "server",
       "values": {
         "apiError": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "isApiError": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "spawnProblems": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Action": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Added": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "AddedLine": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "AddedTidy": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "ApiError": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Ask": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "AskOpens": {
-          "since": "1.156",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Badge": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "BoardAsk": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Call": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "CallCtx": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Config": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "FoldCtx": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "LaunchParts": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "LaunchRequest": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Mark": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Part": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "RateLimitsReading": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Reduce": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Replies": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "RouteInput": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "RunResult": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Slot": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Start": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "StartCtx": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "StreamFact": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "TidyEntry": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "TriggerCall": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Verb": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "VerbAction": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Verbs": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -2446,19 +2446,19 @@
       "runtime": "generic",
       "values": {
         "MAIN_CHECKOUT": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "checkoutDirs": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "langOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "mediaTypeOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "repoName": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {}
@@ -2467,73 +2467,73 @@
       "runtime": "browser",
       "values": {
         "COMMANDS": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "DEFAULT_KEYS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "MOVE_COMMAND": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "PANES": {
-          "since": "1.157",
+          "since": "2.0",
           "stability": "provisional"
         },
         "addedCommandOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "chordLabel": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "chordsOf": {
-          "since": "1.159",
+          "since": "2.0",
           "stability": "provisional"
         },
         "commandOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "frameCommandOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "isAddedId": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "keymapSheetHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keysHint": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keysLabel": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keyshortcuts": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "paneSheetHtml": {
-          "since": "1.159",
+          "since": "2.0",
           "stability": "provisional"
         },
         "panesOf": {
-          "since": "1.159",
+          "since": "2.0",
           "stability": "provisional"
         }
       },
       "types": {
         "BoardPane": {
-          "since": "1.159",
+          "since": "2.0",
           "stability": "provisional"
         },
         "KeyPress": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Keys": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -2541,175 +2541,175 @@
       "runtime": "browser",
       "values": {
         "NO_KIT": {
-          "since": "1.171",
+          "since": "2.0",
           "stability": "provisional"
         },
         "actionId": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "actionWords": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "addedActions": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "badgesOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "busOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "commandUrl": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "declaredLayout": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "displayed": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "exemptionsOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "fill": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "glyphOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "hashOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "headRanked": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "isCommand": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "isFresh": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "layoutKey": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "layoutOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "lineId": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "locationOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "marksOf": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "offeredIds": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "offeredIn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "openable": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "ordered": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "overflowOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "paneShows": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "pickView": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "rankedActions": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "rankedBadges": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "rankedLines": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "runCommandWith": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "shortHashOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "shownOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "usableConfigLayout": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "viewOn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "viewsOf": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Glyph": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "HeadItem": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Hold": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "KitMember": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Layout": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "LayoutEntry": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Overflow": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Ranked": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Region": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Scale": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       }
@@ -2718,75 +2718,75 @@
       "runtime": "generic",
       "values": {
         "failRead": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "failureAt": {
-          "since": "1.165"
+          "since": "2.0"
         },
         "failureOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "heldHandlers": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "landRead": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "loop": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "noReads": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "reading": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "refreshRead": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "stepped": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "timers": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "valueAt": {
-          "since": "1.165"
+          "since": "2.0"
         },
         "valueOf": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Executors": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Handlers": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Loop": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "ReadEffect": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "ReadEvent": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Reads": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "StateEffect": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "TimerEffect": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -2794,40 +2794,40 @@
       "runtime": "generic",
       "values": {
         "documentHtml": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "fenceText": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "imagePath": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "markdownCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "markdownHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "relativeHref": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "safeHref": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sectionLabels": {
-          "since": "1.171",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sectionsHtml": {
-          "since": "1.171",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sectionsOf": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         }
       },
@@ -2837,33 +2837,33 @@
       "runtime": "browser",
       "values": {
         "paletteEntries": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "rankPalette": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "rankingOf": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       },
       "types": {
         "Entry": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Openable": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "PaletteGroup": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Pick": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -2871,42 +2871,42 @@
       "runtime": "browser",
       "values": {
         "alertsSection": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "changesSection": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "choice": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "faceInstalled": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "markdownSection": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "prefSections": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "section": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "settingsCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "settingsHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "soundSection": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "tipsSection": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "wirePrefs": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {}
@@ -2915,43 +2915,43 @@
       "runtime": "browser",
       "values": {
         "cutLine": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "defaultWhere": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "shellPlaces": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "spawnCall": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "spawnDefaults": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "wireSpawn": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "ShellPlace": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "SpawnEvent": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "SpawnForm": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Spawning": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         }
       }
@@ -2960,39 +2960,39 @@
       "runtime": "generic",
       "values": {
         "STATS_ALL": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "WEEKLY": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "duration": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "hours": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "statsHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "statsQuery": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "usd": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Lasted": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "SessionShare": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Stats": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "StatsRange": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -3000,49 +3000,49 @@
       "runtime": "browser",
       "values": {
         "SHELL_SCROLLBACK": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "loadTerminalFont": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "modeText": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "mountTermView": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "terminalFont": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "JobStream": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "ShellStream": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "TermFont": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "TermMode": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "TermView": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "TermViewHandle": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "TermViewIo": {
-          "since": "1.171"
+          "since": "2.0"
         }
       }
     },
@@ -3050,37 +3050,37 @@
       "runtime": "generic",
       "values": {
         "ON_TIME_MS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "cronFields": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "cronProblem": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "isZone": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "listed": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "nextSlot": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "onTimeSlot": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "ruleWords": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "slotWords": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "slotsBetween": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "zoneCity": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {}
@@ -3089,195 +3089,195 @@
       "runtime": "browser",
       "values": {
         "GIST_ICON": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "ICON": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "SHELF_ICON": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "closeHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "collectionTrayHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "deleteAsk": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "drawPanel": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "failedHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "fileButtonsHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "fileCall": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "fileSpansHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "foldTrayHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "highlightLines": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "itemFile": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "itemKind": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "itemPath": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "itemTextHtml": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "itemsCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keepShownTabs": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "keepingFocus": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keptOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keptTitles": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "keptTrayTitles": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "keyedTip": {
-          "since": "1.155",
+          "since": "2.0",
           "stability": "provisional"
         },
         "mountKeptTray": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "openItemOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "originIcon": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "paintOnce": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "panelsCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "pressTrayHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "pressing": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "readsText": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "settledHtml": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "viewCss": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "viewHost": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "withIcons": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Bus": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "CommandKit": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Fill": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Fills": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "HostDeps": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Hosted": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Kit": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Lent": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Location": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Mount": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "Mounted": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Pane": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Placed": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Placing": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "RegionHandle": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "RegionOptions": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "Tab": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "TabWords": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "View": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "ViewHost": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         }
       }
@@ -3286,36 +3286,36 @@
       "runtime": "browser",
       "values": {
         "DISMISSED_KEY": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "VIEWER_DEFAULT": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "VIEWER_KEYS": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "readViewer": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "reducedMotion": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "sawAll": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "seenMarker": {
-          "since": "1.160",
+          "since": "2.0",
           "stability": "provisional"
         },
         "seenOf": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {
         "Viewer": {
-          "since": "1.151"
+          "since": "2.0"
         }
       }
     },
@@ -3323,49 +3323,49 @@
       "runtime": "generic",
       "values": {
         "ago": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "base": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "clockAt": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "commandName": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "esc": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "itemTitles": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "modelName": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "noun": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "plain": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "plural": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "span": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "tagOf": {
-          "since": "1.151"
+          "since": "2.0"
         },
         "titleIn": {
-          "since": "1.151",
+          "since": "2.0",
           "stability": "provisional"
         },
         "when": {
-          "since": "1.151"
+          "since": "2.0"
         }
       },
       "types": {}

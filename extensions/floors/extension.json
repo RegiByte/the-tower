@@ -4,7 +4,7 @@
   "title": "Floors",
   "description": "New floors from the tower, and a floor's repos: a floor for a folder that already holds a project, a git repository cloned from its URL as a job, or a new project started from scratch, added to the config through config/add; a floor's repos changed through config/append and config/remove.",
   "requires": {
-    "tower": "1.153"
+    "tower": "2.0"
   },
   "server": "server.ts",
   "client": "client",

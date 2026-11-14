@@ -3,7 +3,7 @@
   "version": "2.5",
   "title": "Grid",
   "description": "Up to four workers side by side in the main pane, each one's worker view: its tabs, and its head when shown.",
-  "requires": { "tower": "1.154" },
+  "requires": { "tower": "2.0" },
   "client": "client",
   "settings": {
     "type": "object",

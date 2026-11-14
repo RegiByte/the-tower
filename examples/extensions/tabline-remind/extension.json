@@ -4,7 +4,7 @@
   "version": "1.0",
   "title": "Tab line, reminded",
   "description": "Tab line, with a remind setting for workers that forget their line: a short line under a worker's card, written by the user or by the worker itself.",
-  "requires": { "tower": "1.153" },
+  "requires": { "tower": "2.0" },
   "client": "client",
   "server": "server.ts",
   "plugins": { "claude": "plugin" },

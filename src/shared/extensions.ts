@@ -1138,7 +1138,7 @@ export const Manifest = z
     requires: since(
       z
         .record(Capability, Version)
-        .refine((requires) => Object.hasOwn(requires, 'tower'), { message: 'holds the tower version it is written for: "tower": "1.81"', path: ['tower'] })
+        .refine((requires) => Object.hasOwn(requires, 'tower'), { message: 'holds the tower version it is written for: "tower": "2.0"', path: ['tower'] })
         .meta({ required: ['tower'] })
         .describe('Hard dependencies by capability, the core as `tower`: refused unless each is met.'),
     ),
