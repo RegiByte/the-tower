@@ -4,6 +4,9 @@
  * `apps/macos/icon.svg` with Quick Look when that changed, writes the config it serves into its Info.plist, signs it
  * for this machine alone, and opens it. The app is a window over the tower's routes, started apart from it (`tower
  * up`), and holds no capability or process of its own (`apps/macos/Sources`).
+ *
+ * It builds the checkout it runs from. In a worktree, the `tower` on a worker's PATH is the hub's, so `tower app` builds
+ * the hub's app: build the worktree's with `npx tsx src/cli.ts app`.
  */
 
 import { execFile } from 'node:child_process'
