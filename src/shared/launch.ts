@@ -171,7 +171,7 @@ const keptArgs = (kept: string) => ['--add-dir', kept]
 /** A worktree's links lead into the main checkouts: writing through one asks no permission when its source is a directory of the session. */
 const linkArgs = (worktree: WorktreeBrief | undefined) => (worktree?.links ?? []).flatMap((source) => ['--add-dir', source])
 
-/** The plugins the config names for the session's project (`projectPlugins`) and the extensions on its floor, loaded beside the tower mod the host passes. */
+/** The plugins the config names for the session's project (`runtimePlugins`) and the extensions on its floor, loaded beside the tower mod the host passes. */
 const pluginArgs = (plugins: string[]) => plugins.flatMap((dir) => ['--plugin-dir', dir])
 
 /**
@@ -186,7 +186,7 @@ export const NOTHING_CONTRIBUTED: Contributed = { systemPrompt: [], prompt: [], 
  * A session the host starts. `name`: the worker's callsign (`callsignsOf`), or a fork's own (`resumeName`). `dirs`: the
  * session's directories (`sessionDirs`). `user`: the config's `user.name`. `worktree`: the brief of the worktree `cwd`
  * is, `undefined` in a main checkout (`worktreeBrief`). `kept`: the project's collections directory
- * (`projectCollectionsPath`). `plugins`: the plugin directories for the project (`projectPlugins`, and the extensions'
+ * (`projectCollectionsPath`). `plugins`: the plugin directories for the project (`runtimePlugins`, and the extensions'
  * on its floor). `facts`: `tower.*` facts the host logs before the session's first event.
  */
 type Start = {
