@@ -1,5 +1,5 @@
 import { sessionDirs, worktreeName, worktreePath, type ModEvent, type Project, type Runtime, type SessionCommand } from './model.ts'
-import type { OldHostSpawn, ToHost } from './protocol.ts'
+import type { ToHost } from './protocol.ts'
 
 /** What a new session is asked for. Whatever is left out is Claude's own default. */
 export type Launch = { model?: string; effort?: string; prompt?: string; command?: string }
@@ -224,8 +224,8 @@ const startArgs = (s: Start): string[] => [
 ]
 
 /**
- * A session composed for the host, before it is said in the shape the running host takes (`hostSpawn`,
- * `oldHostSpawn`). `args` are Claude's own, after the command and the mod; `command` names one of the config's `argv`.
+ * A session composed for the host, before it is said as a spawn (`hostSpawn`). `args` are Claude's own, after the
+ * command and the mod; `command` names one of the config's `argv`.
  */
 export type HostStart = { id: string; project: string; cwd: string; runtime: Runtime; args: string[]; command?: string; facts: ModEvent[] }
 
@@ -258,18 +258,6 @@ export const hostSpawn = ({ id, project, cwd, runtime, args, facts }: HostStart,
   argv: [...command.argv, '--plugin-dir', modDir, ...args],
   env: command.env,
   ...(command.name !== undefined && { command: command.name }),
-  ...(facts.length && { facts }),
-  ...SPAWN_SIZE,
-})
-
-/** `start` as a host older than protocol 5 takes it: that host adds the command and the mod, and resolves `command` itself. */
-export const oldHostSpawn = ({ id, project, cwd, args, command, facts }: HostStart): OldHostSpawn => ({
-  t: 'spawn',
-  id,
-  project,
-  cwd,
-  args,
-  ...(command !== undefined && { command }),
   ...(facts.length && { facts }),
   ...SPAWN_SIZE,
 })

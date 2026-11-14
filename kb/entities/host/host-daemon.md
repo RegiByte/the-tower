@@ -4,8 +4,8 @@
   "name": "Host daemon",
   "summary": "The detached Node process that spawns Claude sessions in PTYs, relays control requests, and appends output, input, hooks and exits to each session's log.",
   "in": "host",
-  "reviewed": "2026-11-12",
-  "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/main.ts#appendFact", "hub/src/host/main.ts#checkFact", "hub/src/host/session.ts#checkSpawn", "hub/src/host/session.ts#sessionEnv", "hub/src/shared/launch.ts#hostSpawn", "hub/src/shared/launch.ts#oldHostSpawn", "hub/src/tower/dispatch.ts#start", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize", "hub/src/host/main.ts#LOG_BUFFER_BYTES", "hub/src/host/session.ts#hookFact"],
+  "reviewed": "2026-11-14",
+  "refs": ["hub/src/host/main.ts#spawnSession", "hub/src/host/main.ts#handle", "hub/src/host/main.ts#appendFact", "hub/src/host/main.ts#checkFact", "hub/src/host/session.ts#checkSpawn", "hub/src/host/session.ts#sessionEnv", "hub/src/shared/launch.ts#hostSpawn", "hub/src/tower/dispatch.ts#start", "hub/src/tower/dispatch.ts#hostRefused", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#jsonObject", "hub/src/shared/protocol.ts#checkSize", "hub/src/host/main.ts#LOG_BUFFER_BYTES", "hub/src/host/session.ts#hookFact"],
   "links": [
     { "to": "claude-code", "verb": "triggers", "carries": "a PTY running the spawn's whole argv (the tower composes config argv + --plugin-dir for the tower mod + its args), with the cwd checked by sessionDirs, the spawn's env over the host's, scrubbed, plus TOWER_SESSION_ID and TOWER_HOOKS_SOCKET" },
     { "to": "system-root", "verb": "writes", "carries": "sessions/<id>.jsonl: header (the spawn's runtime and command labels), the spawn's tower.* facts, then o/i/r/h/x events" },
@@ -33,10 +33,9 @@
   [`HOST_PROTOCOL`](ref:hub/src/shared/protocol.ts#HOST_PROTOCOL), bumped by any change to a host message: the board
   says `hostOutdated` while the running host speaks another or none. A host reads past a field it doesn't know, so a
   client checks the protocol before asking for what an older host would drop. The tower reads `live` just before each
-  spawn and says it in the running host's shape ([`start`](ref:hub/src/tower/dispatch.ts#start)): a host below 5 gets
-  `args` after the config's `argv` and the mod, which it adds itself ([`oldHostSpawn`](ref:hub/src/shared/launch.ts#oldHostSpawn));
-  the tower refuses a `spawn` with `facts` while the host speaks below 3, a `spawn` naming a `command` below 4 (an
-  older host spreads `argv` as an array), and a `fact` below 2. `tower update` restarts the tower and never the host,
+  spawn ([`start`](ref:hub/src/tower/dispatch.ts#start)) and needs the host to speak `HOST_PROTOCOL`: while one below
+  it runs, a `spawn` or a `fact` is refused with `unavailable` naming the host restart
+  ([`hostRefused`](ref:hub/src/tower/dispatch.ts#hostRefused)). `tower update` restarts the tower and never the host,
   so the tower is at least as new as the host it talks to.
 - `hooks.sock`: HTTP. `POST /hooks/<session id>` appends the body as an `h` event, a `PostToolUse` without its
   `tool_response` ([`hookFact`](ref:hub/src/host/session.ts#hookFact), [[logs-are-facts]]); an unknown or exited

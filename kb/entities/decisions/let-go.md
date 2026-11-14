@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-12",
+  "reviewed": "2026-11-14",
   "refs": [
     "hub/src/host/main.ts#appendFact",
     "hub/src/shared/log-file.ts#wholeLinesLength",
@@ -48,7 +48,7 @@ socket appends only for sessions the host runs, and a stranded session is run by
   left unfinished ([`wholeLinesLength`](ref:hub/src/shared/log-file.ts#wholeLinesLength), [[broken-logs]]). It
   refuses a session with no plain log (unknown or archived) and one still writing its exit. A stranded id never runs
   again (a resume is a new session), so nothing else writes that file. `POST /let-go` refuses with `unavailable`
-  while the running host is too old to take `fact` ([`factRefused`](ref:hub/src/tower/dispatch.ts#factRefused)).
+  while the running host speaks an older protocol than the tower needs ([`hostRefused`](ref:hub/src/tower/dispatch.ts#hostRefused)).
 - The bridge folds it as `letGoAt` without counting it as Claude heard from. The card is off duty and frees its seat
   at that moment, reads "let go, resumable", and keeps `resume` in the archive. The `let-go` card verb
   ([[board-verbs]]) is offered while the card is stranded, on duty and not yet resumed; the CLI's

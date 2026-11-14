@@ -25,16 +25,6 @@ export type ToHost =
   | { t: 'fact'; id: string; fact: ModEvent }
   | { t: 'live' }
 
-/**
- * A spawn as a host older than protocol 5 takes it: `args` follow the config's `argv` and the mod's `--plugin-dir`,
- * which that host adds. `facts` from protocol 3; `command`, a name of the config's `argv` the host resolves, from
- * protocol 4: an older host spreads `argv` as an array and fails on the object shape.
- */
-export type OldHostSpawn = { t: 'spawn'; id: string; project: string; cwd: string; args: string[]; command?: string; facts?: ModEvent[]; cols: number; rows: number }
-
-/** What a client sends a host: a host older than protocol 5 takes the old spawn. */
-export type ToAnyHost = ToHost | OldHostSpawn
-
 /** What a running host says of itself: the ids of its running sessions and the protocol it speaks. */
 export type HostLive = { ids: Set<string>; protocol: number }
 

@@ -4,7 +4,7 @@
   "name": "Hire",
   "summary": "A worker starts another on a prompt with tower hire: a spawn marked as its hire, which the tower weighs against the floor's hiring limits, starts, and logs as a fact in the hirer's log, one hire of a hirer at a time; the board turns the fact into the new card's hiredBy.",
   "in": "tower",
-  "reviewed": "2026-11-12",
+  "reviewed": "2026-11-14",
   "involves": ["tower-mod", "tower-server", "host-daemon", "system-root", "log-reductions"],
   "refs": ["hub/src/directory.ts#hireArgs", "hub/src/directory.ts#hireFloor", "hub/src/tower/dispatch.ts#hired", "hub/src/tower/dispatch.ts#gate", "hub/src/tower/dispatch.ts#inTurn", "hub/src/tower/hires.ts#hireSettled", "hub/src/system.ts#watchSystem", "hub/src/directory.ts#hiredLines", "hub/src/shared/crews.ts#hireRefusal", "hub/src/shared/crews.ts#hireDepth", "hub/src/shared/crews.ts#liveHires", "hub/src/shared/spawn-form.ts#spawnDefaults", "hub/src/shared/spawn-form.ts#spawnCall", "hub/src/shared/spawn-form.ts#spawnForm", "hub/src/shared/model.ts#hiringConfig", "hub/src/bridge/facts.ts", "hub/src/bridge/board.ts#hirersOf", "hub/src/tower/dispatch.ts#newLaunch"]
 }
@@ -65,5 +65,5 @@ sequenceDiagram
   contributors and before the cut ([`newLaunch`](ref:hub/src/tower/dispatch.ts#newLaunch), on the path the worktree
   will have), so a refused hire cuts nothing.
 - **Failure.** Without `TOWER_SESSION_ID` the command refuses (the Claude was not started by the tower); with the
-  host down the floor offers no spawn and the command says to run `tower up`; a host older than protocol 2 can't
-  append the fact, and the hire refuses with `unavailable` before it spawns.
+  host down the floor offers no spawn and the command says to run `tower up`; a host older than the tower's protocol
+  can't take the spawn, and the hire refuses with `unavailable` before it spawns.
