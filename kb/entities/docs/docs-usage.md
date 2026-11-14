@@ -9,8 +9,8 @@
 }
 ---
 `docs/usage.md` names the workers' `tower` verbs ([`CLI_VERBS`](ref:hub/src/cli-verbs.ts#CLI_VERBS), [[tower-cli]]):
-`show`, `hire`, `agents`, `agent`, `home`, `let-go`, `review`, `note`, `thread`, `send`, `keep`, `kept`, `read`,
-`policies`, `runs`, `probes`, and the renderers that ship.
+`show`, `hire`, `agents`, `agent`, `home`, `let-go`, `keep`, `kept`, `unkeep`, `read`, `reveal`, `edit`, `job`, the
+bundled extensions' words under `tower x` (`tower x reviews note`, `tower x policies list`), and the renderers that ship.
 A verb added, renamed or dropped re-checks it.
 
 It also restates what a floor is ([[hub]], [`sessionDirs`](ref:hub/src/shared/model.ts#sessionDirs) granting the repos as file access only, [[tower-cuts-worktrees]]),
