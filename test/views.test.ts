@@ -4,7 +4,7 @@ import type { Board, Card, CardShown } from '../src/bridge/board.ts'
 import { mediaTypeOf } from '../src/shared/media.ts'
 import { KIT_MEMBERS, type Region } from '../src/shared/regions.ts'
 import { ADDRESS_TYPE, fileSubject, linesAt, linesSubject, shownSubject, subjectAt, type Subject } from '../src/shared/subjects.ts'
-import { CORE_VIEWS, VIEW_ALIASES, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, offeredIn, pickView, shortHashOf, shownOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
+import { CORE_VIEWS, coreViewOf, declaredLayout, displayed, hashOf, layoutOf, locationOf, offeredIn, pickView, shownOf, viewOn, type Location, type Placing, type View } from '../src/shared/views.ts'
 
 const board = { floors: [{ id: 'p', cards: [{ id: 'w1', shown: [{ kind: 'file', at: 100, target: 'a.md' }, { kind: 'file', at: 200, target: 'a.md' }] }] }] } as unknown as Board
 
@@ -29,32 +29,29 @@ test('views: a location is written by the grammar and read back, every key and a
   assert.equal(locationOf('#v/grid', board), undefined)
 })
 
-test("views: the tower page's short forms name their core views, a showing by its target's latest", () => {
-  const cases: [string, Location][] = [
+test("views: a worker's short form names its card and tab, a showing by its target's latest; the floor forms of 1.x name none of their views", () => {
+  const cards: [string, Location][] = [
     ['#w1', { view: 'tower/card', subject: 'card:w1' }],
     ['#w1/changes', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/changes' } }],
     ['#w1/screen', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/terminal' } }],
     ['#w1/shown%3Aa.md', { view: 'tower/card', subject: 'card:w1', pane: { view: 'tower/document', subject: 'shown:w1/200' } }],
+  ]
+  for (const [hash, location] of cards) assert.deepEqual(locationOf(hash, board), location, hash)
+  const floors: [string, Location][] = [
     ['#shelf/p/2/docs%2Fa.md', { view: 'tower/shelf', subject: 'shelf:p/2', args: ['docs/a.md'] }],
     ['#shelf/p/2', { view: 'tower/shelf', subject: 'shelf:p/2' }],
     ['#draft/p', { view: 'drafts/editor', subject: 'collection:p/drafts' }],
     ['#draft/p/d%201.md', { view: 'drafts/editor', subject: 'item.drafts:p/d 1.md' }],
     ['#kept/p/notes', { view: 'tower/collection', subject: 'collection:p/notes' }],
     ['#kept/p/notes/n%2F1.md', { view: 'tower/document', subject: 'item.notes:p/n/1.md' }],
-    ['#kept/p/notes/a.html', { view: 'tower/html', subject: 'item.notes:p/a.html' }],
-    ['#kept/p/notes/a.avif', { view: 'tower/image', subject: 'item.notes:p/a.avif' }],
-    ['#kept/p/notes/a.mp4', { view: 'tower/video', subject: 'item.notes:p/a.mp4' }],
-    ['#kept/p/notes/a.edn', { view: 'tower/text', subject: 'item.notes:p/a.edn' }],
-    ['#kept/p/notes/a.bin', { view: 'tower/file', subject: 'item.notes:p/a.bin' }],
-    ['#kept/p/drafts/d.md', { view: 'tower/document', subject: 'item.drafts:p/d.md' }],
     ['#archive/p', { view: 'tower/archive', subject: 'floor:p' }],
     ['#policies/p', { view: 'policies/policies', subject: 'floor:p' }],
   ]
-  for (const [hash, location] of cases) assert.deepEqual(locationOf(hash, board), location, hash)
-  for (const [hash, location] of cases.filter(([, l]) => l.view !== 'tower/card')) assert.equal(shortHashOf(location), hash, hash)
-  assert.equal(shortHashOf({ view: 'tower/skyline' }), '')
-  assert.equal(shortHashOf({ view: 'grid/grid', subject: 'floor:p' }), undefined)
-  assert.equal(shortHashOf({ view: 'tower/text', subject: 'item.notes:p/a.md' }), undefined)
+  for (const [hash, location] of floors) {
+    assert.notEqual(locationOf(hash, board)?.view, location.view, hash)
+    assert.deepEqual(locationOf(hashOf(location), board), location, hashOf(location))
+  }
+  for (const hash of ['#shelf/p/2', '#kept/p/notes', '#draft/p/d.md']) assert.equal(locationOf(hash, board), undefined, hash)
 })
 
 test('views: an item is drawn by the view accepting its type most specifically, the owner first, the fallback last', () => {
@@ -155,10 +152,6 @@ test("views: the layout takes each field from the highest layer that sets it; hi
   const declaring = { extensions: [{ state: 'started', layout: { 'file.open': { order: ['files/code'], hidden: ['tower/text'] } } }, { state: 'failed', layout: { 'x.y': { order: ['x/x'] } } }] } as unknown as Board
   assert.deepEqual(declaredLayout(declaring, { 'card.panes': { order: ['a/a'] } }), { 'file.open': { order: ['files/code'], hidden: ['tower/text'] }, 'card.panes': { order: ['a/a'] } }, "a started extension's region defaults lie under the renderer's own")
   assert.deepEqual(layoutOf(declaredLayout(declaring, {}), { 'file.open': { order: ['tower/text'] } }, undefined)['file.open'], { order: ['tower/text'] }, 'a higher layer orders a view the default hid')
-  const retired = layoutOf({}, { 'card.panes': { order: ['tower/brief', 'tower/shown'], hidden: ['tower/shown'] } }, undefined)['card.panes']
-  assert.deepEqual(retired.order, ['tower/brief'], 'a retired view in an order leaves its subjects to their pick')
-  assert.deepEqual(retired.hidden, VIEW_ALIASES['tower/shown'], 'a retired view hidden hides the views that draw its subjects now')
-  assert.ok(VIEW_ALIASES['tower/shown'].includes('tower/document') && VIEW_ALIASES['tower/shown'].includes('tower/link'))
 })
 
 test('views: display places a card on its worker view, its children in its tabs, and a view showing cards on the floor', () => {

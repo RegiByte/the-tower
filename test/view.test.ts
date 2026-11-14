@@ -52,7 +52,7 @@ test('view: every view the board carries is named by its hash and read back from
 })
 
 test('view: a hash naming nothing on the board is the skyline; an unknown id is looked up', () => {
-  for (const hash of ['shelf/p/3', 'shelf/q/0', 'archive/q', 'policies/q', 'draft/q', 'draft/p/gone.md', 'kept/p/games', 'kept/p/notes/gone.md']) assert.deepEqual(viewOf(hash, board, has), HOME, hash)
+  for (const hash of ['v/tower/shelf/shelf%3Ap%2F3', 'v/tower/archive/floor%3Aq', 'v/policies/policies/floor%3Aq', 'v/tower/collection/collection%3Ap%2Fgames', 'v/tower/document/item.notes%3Ap%2Fgone.md', 'shelf/p/3', 'kept/p/notes/gone.md']) assert.deepEqual(viewOf(hash, board, has), HOME, hash)
   assert.deepEqual(viewOf('w9', board, has), { t: 'lookup', id: 'w9', location: { view: 'tower/card', subject: 'card:w9' } })
   assert.deepEqual(viewOf('w9/changes', board, has), { t: 'lookup', id: 'w9', location: { view: 'tower/card', subject: 'card:w9', pane: { view: 'tower/changes' } } })
   assert.deepEqual(viewOf('w1/nonsense', board, has), worker())
@@ -87,14 +87,14 @@ test('view: every short form opens what the served locationOf names it as, and t
     if (hash.startsWith('#v/') || !hash) continue
     assert.deepEqual(mainViewOf(locationOf(hash, board), has), viewOf(hash.slice(1), board, has), hash)
   }
-  for (const hash of ['shelf/p/3', 'archive/q', 'kept/p/notes/gone.md', 'w9/changes', 'w1/nonsense']) assert.deepEqual(mainViewOf(locationOf(hash, board), has), viewOf(hash, board, has), hash)
+  for (const hash of ['shelf/p/3', 'kept/p/notes/gone.md', 'w9/changes', 'w1/nonsense']) assert.deepEqual(mainViewOf(locationOf(hash, board), has), viewOf(hash, board, has), hash)
 })
 
-test('view: a #v/ hash opens the view it names, written back short where it has a short form', () => {
+test('view: a #v/ hash opens the view it names, a worker written back short', () => {
   assert.deepEqual(viewOf('v/tower/card/card%3Aw1;tower/changes', board, has), worker({ view: 'tower/changes' }))
   assert.equal(hashOf(viewOf('v/tower/card/card%3Aw1;tower/changes', board, has) as MainView, board), '#w1/changes')
   assert.deepEqual(viewOf('v/tower/shelf/shelf%3Ap%2F0/docs%2Fa%20b.md', board, has), { t: 'view', location: { view: 'tower/shelf', subject: 'shelf:p/0', args: ['docs/a b.md'] } })
-  assert.equal(hashOf(viewOf('v/tower/shelf/shelf%3Ap%2F0/docs%2Fa%20b.md', board, has) as MainView, board), '#shelf/p/0/docs%2Fa%20b.md')
+  assert.equal(hashOf(viewOf('v/tower/shelf/shelf%3Ap%2F0/docs%2Fa%20b.md', board, has) as MainView, board), '#v/tower/shelf/shelf%3Ap%2F0/docs%2Fa%20b.md')
   assert.deepEqual(viewOf('v/grid/grid/floor%3Ap', board, has), { t: 'view', location: { view: 'grid/grid', subject: 'floor:p' } })
   assert.equal(floorOfView({ t: 'view', location: { view: 'grid/grid', subject: 'floor:p' } }, () => undefined), 'p')
   assert.ok(!sameRoom({ t: 'view', location: { view: 'grid/grid', subject: 'floor:p' } }, { t: 'view', location: { view: 'grid/grid', subject: 'board' } }))

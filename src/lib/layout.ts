@@ -40,7 +40,6 @@ export {
   /** @provisional */ ordered,
   /** @provisional */ paneShows,
   /** @provisional */ pickView,
-  /** @provisional */ shortHashOf,
   /** @provisional */ shownOf,
   usableConfigLayout,
   /** @provisional */ viewOn,

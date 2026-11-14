@@ -7,7 +7,7 @@
   ],
   "scenes": [
     {
-      "name": "panel", "open": "#policies/lab", "size": "1180x720",
+      "name": "panel", "open": "#v/policies/policies/floor%3Alab", "size": "1180x720",
       "steps": [{ "until": ".policy", "text": "Dependency updates" }, { "until": ".offer", "text": "Morning triage" }],
       "crop": "[data-view=\"policies/policies\"]", "pad": 0
     },

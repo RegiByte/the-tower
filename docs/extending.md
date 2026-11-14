@@ -1278,7 +1278,7 @@ links it to the hash `kit.href` gives it. Display walks up to its card, whose ta
 (`shows`, the link's fragment its arg), so the link is an address a reload or another tab reads again.
 
 What the pick passes over is offered as "Open <label>": on a markdown or html item or showing, `tower/text` is Open Text, its
-source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view for the item's type.
+source.
 
 **Locations.** Where a renderer is, `{ view, subject?, pane?, args? }`, is written in its URL by one grammar,
 `#v/<cap>/<name>[/<key>[/<arg>…]][;<cap>/<name>[/<key>[/<shows>[/<arg>…]]]]`, each key and arg one
@@ -1286,9 +1286,8 @@ source. `#kept/<p>/<c>/<id>`, the tower page's older hash, names the core's view
 open; `shows` is the key of a subject below the tab's that it shows, a file in a Files tab, and `args`
 where in it, a link's fragment. Reading a location, the renderer hands the tab `show(subject)` with that key and
 `value` holding only `fragment` (`shownOf` in `/lib/layout.js`), so a view that shows a kind reads what it needs from the
-key. `hashOf` and `locationOf(hash, board)` in `/lib/layout.js` write and read it, and read the
-tower page's older hashes (`#<id>/changes`, `#shelf/<p>/<n>`, …) as the core views they name; `shortHashOf(location)`
-writes a location's older hash when it has one, as the tower page keeps doing.
+key. `hashOf` and `locationOf(hash, board)` in `/lib/layout.js` write and read it, and `locationOf` also reads a
+worker's short form, `#<id>`, `#<id>/<tab>` or `#<id>/shown:<target>`, which Tower.app and the tower page write.
 
 **Display** is the one navigation: `kit.display(subject, { view? })`, or `tower.ui('display', …)` from a framed page.
 `displayed` in `/lib/layout.js` walks the subject's chain (`parentOf`) outward to the nearest level whose main view shows
@@ -1570,17 +1569,6 @@ tail -n +2 ~/.tower/sessions/<id>.jsonl | jq -c 'select(.[1] == "h") | .[2].hook
 ```
 
 Only the host writes them. Everything the tower shows is computed from them, the config and the collections.
-
-## Deprecated until 2.0
-
-Everything in this section works today, and 2.0 removes it. Each is an older name for something this guide teaches
-under its current one, kept so that what was written against it goes on running. Write nothing new against them.
-
-**Layouts.**
-
-| Deprecated | Use |
-|---|---|
-| `tower/shown` in a layout (retired at 1.115) | the views by type: naming it in `order` leaves showings to their type's pick, and in `hidden` hides each view that draws them now |
 
 A stream keeps its old folder for good: the quota stream's facts stay in `probe.quota/`.
 

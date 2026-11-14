@@ -3,9 +3,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 import { configProblems } from '../src/config-check.ts'
-import { LEGACY, Manifest, streamFolder } from '../src/shared/extensions.ts'
+import { Manifest, streamFolder } from '../src/shared/extensions.ts'
 import { readingStreams } from '../src/bridge/rate-limits.ts'
-import { VIEW_ALIASES } from '../src/shared/views.ts'
 import type { Config } from '../src/shared/model.ts'
 
 const config = (over: Partial<Config> & Record<string, unknown>): Config => ({ argv: ['claude'], projects: {}, ...over }) as Config
@@ -18,8 +17,7 @@ test('tower config check fails the quota probe\'s old spelling, with the line to
   assert.deepEqual(problems({ mine: { every: '10m' } }), [{ level: 'fail', key: 'probes', problem: "probes is the quota extension's old spelling, read by nothing since 2.0: remove it" }])
 })
 
-test('LEGACY names a view alias for each retired view, and a moved stream keeps its old folder', () => {
-  for (const e of LEGACY) if (e.kind === 'view') assert.ok(VIEW_ALIASES[e.old], e.old)
+test('a moved stream keeps its old folder', () => {
   assert.equal(streamFolder('quota.reads'), 'probe.quota', 'a moved stream keeps its old folder')
   assert.equal(streamFolder('pulse.beats'), 'pulse.beats')
 })

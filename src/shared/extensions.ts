@@ -57,7 +57,6 @@ const JOBS = '1.149'
 const WORDS = '1.153'
 
 /** The minor a worker's showings came to be drawn by the views by type, their interim view retired. */
-const SHOWN_BY_TYPE = '1.115'
 
 /** The minor subjects grew in: shown, collection and shelf, an own kind's key by its instance, `accepts`, an action's words. */
 const SUBJECTS = '1.98'
@@ -93,18 +92,15 @@ const GATE = '1.107'
 
 /**
  * One of the built-ins' old names and what it is `now`, since the minor it moved in: `stream` a folder under
- * `streams/` and the stream's name (`quota.reads`), whose facts stay in the old folder for good; `view` a core view
- * retired and what draws its subjects now (`tower/shown`, by the views by type), its id in a layout read as theirs
- * (`VIEW_ALIASES` in `views.ts`).
+ * `streams/` and the stream's name (`quota.reads`), whose facts stay in the old folder for good.
  */
-export type LegacyEntry = { kind: 'stream' | 'view'; old: string; now: string; since: string }
+export type LegacyEntry = { kind: 'stream'; old: string; now: string; since: string }
 
-/** The built-ins' old names that outlive 2.0, each with what it is now: the moved streams, whose folders hold what was written, and the retired view. */
+/** The built-ins' old names that outlive 2.0, each with what it is now: the moved streams, whose folders hold what was written. */
 export const LEGACY: readonly LegacyEntry[] = [
   { kind: 'stream', old: 'probe.quota', now: 'quota.reads', since: KINDS },
   { kind: 'stream', old: 'runs', now: 'policies.runs', since: POLICIES_MOVED },
   { kind: 'stream', old: 'approvals', now: 'policies.approvals', since: POLICIES_MOVED },
-  { kind: 'view', old: 'tower/shown', now: 'the views by type on shown', since: SHOWN_BY_TYPE },
 ]
 
 /** The entries `kind`'s applier reads. */

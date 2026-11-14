@@ -1,5 +1,5 @@
 import { PANES } from '/lib/keys.js'
-import { hashOf as locationHash, locationOf, shortHashOf } from '/lib/layout.js'
+import { hashOf as locationHash, locationOf } from '/lib/layout.js'
 
 /**
  * What the tower page's main pane shows, as one value, and the URL hash that names it. Pure: the page goes from one
@@ -41,15 +41,15 @@ const PANE_NAMES = /** @type {Record<string, string>} */ (Object.fromEntries(PAN
 export const cardIdOf = (v) => (v.t === 'view' && v.location.view === 'tower/card' && v.location.subject?.startsWith('card:') ? v.location.subject.slice('card:'.length) : undefined)
 
 /**
- * The hash naming `v`, `''` for the skyline: a reload opens what it names; a location by its short form when it has
- * one, a worker as `#<id>` with its tab (`/changes`, `/shown:<target>`, the showing read on `board`, while its view is
+ * The hash naming `v`, `''` for the skyline, the view the bare page opens: a reload opens what it names; a location by
+ * the grammar, a worker as `#<id>` with its tab (`/changes`, `/shown:<target>`, the showing read on `board`, while its view is
  * the one its type picks).
  * @param {MainView} v @param {Board} board @returns {string}
  */
 export function hashOf(v, board) {
   if (v.t === 'arriving') return ''
   const id = cardIdOf(v)
-  if (id === undefined) return shortHashOf(v.location) ?? locationHash(v.location)
+  if (id === undefined) return v.location.view === SKYLINE.view && v.location.subject === undefined ? '' : locationHash(v.location)
   const pane = v.location.pane
   if (!pane) return `#${id}`
   if (PANE_NAMES[pane.view]) return `#${id}/${PANE_NAMES[pane.view]}`
