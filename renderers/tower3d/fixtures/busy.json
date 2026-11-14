@@ -214,8 +214,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125460000,
                 "startedAt": 1791125400000,
-                "cols": 120,
-                "rows": 40,
                 "context": 41,
                 "costUsd": 1.2,
                 "tool": "Bash",
@@ -237,8 +235,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-alph-conversation",
@@ -304,8 +300,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124560000,
                 "startedAt": 1791124500000,
-                "cols": 120,
-                "rows": 40,
                 "context": 18,
                 "tool": "Bash",
                 "says": [],
@@ -321,8 +315,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-alph-conversation",
@@ -374,8 +366,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123660000,
                 "startedAt": 1791123600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 33,
                 "says": [],
                 "subagents": 0,
@@ -411,8 +401,6 @@
                     "session": "20261004-090014-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-alph-conversation",
@@ -483,8 +471,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125760000,
                 "startedAt": 1791125700000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -498,8 +484,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-alph-conversation",
@@ -570,8 +554,6 @@
                 "onDuty": true,
                 "enteredAt": 1791120660000,
                 "startedAt": 1791120600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 77,
                 "costUsd": 4.8,
                 "tool": "mcp__knowledge_base__write_entity_with_a_very_long_tool_name",
@@ -631,8 +613,6 @@
                     "session": "20261004-090028-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-alph-conversation",
@@ -694,8 +674,6 @@
                 "onDuty": true,
                 "enteredAt": 1791126000000,
                 "startedAt": 1791125940000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -709,8 +687,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [],
                 "actions": [
                   {
@@ -755,8 +731,6 @@
                 "onDuty": false,
                 "enteredAt": 1791118860000,
                 "startedAt": 1791118800000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -805,8 +779,6 @@
                     "session": "20261004-090042-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090042-alph-conversation",
@@ -1042,8 +1014,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125160000,
                 "startedAt": 1791125100000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1057,8 +1027,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-beta-conversation",
@@ -1128,8 +1096,6 @@
                 "onDuty": true,
                 "enteredAt": 1791114060000,
                 "startedAt": 1791114000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1143,8 +1109,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-beta-conversation",
@@ -1225,8 +1189,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123060000,
                 "startedAt": 1791123000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1279,8 +1241,6 @@
                   }
                 ],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-beta-conversation",
@@ -1360,8 +1320,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125340000,
                 "startedAt": 1791125280000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Read",
                 "says": [
                   "Reading the board build to see where the time goes."
@@ -1386,8 +1344,6 @@
                     "session": "20261004-090021-beta"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-beta-conversation",
@@ -1448,8 +1404,6 @@
                 "onDuty": false,
                 "enteredAt": 1791122460000,
                 "startedAt": 1791122400000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1463,8 +1417,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-beta-conversation",
@@ -1603,8 +1555,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125580000,
                 "startedAt": 1791125520000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1618,8 +1568,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-gamm-conversation",
@@ -1690,8 +1638,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125880000,
                 "startedAt": 1791125820000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 0,
@@ -1706,8 +1652,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-gamm-conversation",
@@ -1759,8 +1703,6 @@
                 "onDuty": false,
                 "enteredAt": 1791108060000,
                 "startedAt": 1791108000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1774,8 +1716,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-gamm-conversation",
@@ -2309,8 +2249,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125460000,
                 "startedAt": 1791125400000,
-                "cols": 120,
-                "rows": 40,
                 "context": 41,
                 "costUsd": 1.2,
                 "tool": "Bash",
@@ -2332,8 +2270,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-alph-conversation",
@@ -2399,8 +2335,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124560000,
                 "startedAt": 1791124500000,
-                "cols": 120,
-                "rows": 40,
                 "context": 18,
                 "tool": "Bash",
                 "says": [],
@@ -2416,8 +2350,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-alph-conversation",
@@ -2469,8 +2401,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123660000,
                 "startedAt": 1791123600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 33,
                 "says": [],
                 "subagents": 0,
@@ -2506,8 +2436,6 @@
                     "session": "20261004-090014-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-alph-conversation",
@@ -2578,8 +2506,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125760000,
                 "startedAt": 1791125700000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -2608,8 +2534,6 @@
                     "session": "20261004-090021-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-alph-conversation",
@@ -2680,8 +2604,6 @@
                 "onDuty": true,
                 "enteredAt": 1791120660000,
                 "startedAt": 1791120600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 77,
                 "costUsd": 4.8,
                 "tool": "mcp__knowledge_base__write_entity_with_a_very_long_tool_name",
@@ -2741,8 +2663,6 @@
                     "session": "20261004-090028-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-alph-conversation",
@@ -2804,8 +2724,6 @@
                 "onDuty": true,
                 "enteredAt": 1791126000000,
                 "startedAt": 1791125940000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -2819,8 +2737,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [],
                 "actions": [
                   {
@@ -2865,8 +2781,6 @@
                 "onDuty": false,
                 "enteredAt": 1791118860000,
                 "startedAt": 1791118800000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -2915,8 +2829,6 @@
                     "session": "20261004-090042-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090042-alph-conversation",
@@ -3178,8 +3090,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125160000,
                 "startedAt": 1791125100000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -3193,8 +3103,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-beta-conversation",
@@ -3264,8 +3172,6 @@
                 "onDuty": true,
                 "enteredAt": 1791114060000,
                 "startedAt": 1791114000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -3279,8 +3185,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-beta-conversation",
@@ -3361,8 +3265,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123060000,
                 "startedAt": 1791123000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -3415,8 +3317,6 @@
                   }
                 ],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-beta-conversation",
@@ -3496,8 +3396,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125340000,
                 "startedAt": 1791125280000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Read",
                 "says": [
                   "Reading the board build to see where the time goes."
@@ -3522,8 +3420,6 @@
                     "session": "20261004-090021-beta"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-beta-conversation",
@@ -3584,8 +3480,6 @@
                 "onDuty": false,
                 "enteredAt": 1791122460000,
                 "startedAt": 1791122400000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -3599,8 +3493,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-beta-conversation",
@@ -3739,8 +3631,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125580000,
                 "startedAt": 1791125520000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -3754,8 +3644,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-gamm-conversation",
@@ -3826,8 +3714,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125880000,
                 "startedAt": 1791125820000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 0,
@@ -3842,8 +3728,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-gamm-conversation",
@@ -3895,8 +3779,6 @@
                 "onDuty": false,
                 "enteredAt": 1791108060000,
                 "startedAt": 1791108000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -3910,8 +3792,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-gamm-conversation",
@@ -4445,8 +4325,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125460000,
                 "startedAt": 1791125400000,
-                "cols": 120,
-                "rows": 40,
                 "context": 41,
                 "costUsd": 1.2,
                 "tool": "Bash",
@@ -4468,8 +4346,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-alph-conversation",
@@ -4535,8 +4411,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124560000,
                 "startedAt": 1791124500000,
-                "cols": 120,
-                "rows": 40,
                 "context": 18,
                 "tool": "Edit",
                 "says": [],
@@ -4552,8 +4426,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-alph-conversation",
@@ -4614,8 +4486,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123660000,
                 "startedAt": 1791123600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 33,
                 "tool": "Edit",
                 "says": [],
@@ -4652,8 +4522,6 @@
                     "session": "20261004-090014-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-alph-conversation",
@@ -4715,8 +4583,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125760000,
                 "startedAt": 1791125700000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -4745,8 +4611,6 @@
                     "session": "20261004-090021-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-alph-conversation",
@@ -4817,8 +4681,6 @@
                 "onDuty": true,
                 "enteredAt": 1791120660000,
                 "startedAt": 1791120600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 77,
                 "costUsd": 4.8,
                 "tool": "mcp__knowledge_base__write_entity_with_a_very_long_tool_name",
@@ -4878,8 +4740,6 @@
                     "session": "20261004-090028-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-alph-conversation",
@@ -4940,8 +4800,6 @@
                 "onDuty": true,
                 "enteredAt": 1791126000000,
                 "startedAt": 1791125940000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -4956,8 +4814,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [],
                 "actions": [
                   {
@@ -5011,8 +4867,6 @@
                 "onDuty": false,
                 "enteredAt": 1791118860000,
                 "startedAt": 1791118800000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -5061,8 +4915,6 @@
                     "session": "20261004-090042-alph"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090042-alph-conversation",
@@ -5324,8 +5176,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125160000,
                 "startedAt": 1791125100000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -5340,8 +5190,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-beta-conversation",
@@ -5402,8 +5250,6 @@
                 "onDuty": true,
                 "enteredAt": 1791114060000,
                 "startedAt": 1791114000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -5417,8 +5263,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-beta-conversation",
@@ -5499,8 +5343,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123060000,
                 "startedAt": 1791123000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -5553,8 +5395,6 @@
                   }
                 ],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-beta-conversation",
@@ -5634,8 +5474,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125340000,
                 "startedAt": 1791125280000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Read",
                 "says": [
                   "Reading the board build to see where the time goes."
@@ -5660,8 +5498,6 @@
                     "session": "20261004-090021-beta"
                   }
                 ],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-beta-conversation",
@@ -5722,8 +5558,6 @@
                 "onDuty": false,
                 "enteredAt": 1791122460000,
                 "startedAt": 1791122400000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -5737,8 +5571,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-beta-conversation",
@@ -5877,8 +5709,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125580000,
                 "startedAt": 1791125520000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -5892,8 +5722,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-gamm-conversation",
@@ -5964,8 +5792,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125880000,
                 "startedAt": 1791125820000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Edit",
                 "says": [],
                 "subagents": 0,
@@ -5980,8 +5806,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-gamm-conversation",
@@ -6042,8 +5866,6 @@
                 "onDuty": false,
                 "enteredAt": 1791108060000,
                 "startedAt": 1791108000000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -6057,8 +5879,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-gamm-conversation",

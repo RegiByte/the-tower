@@ -27,14 +27,14 @@
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter), the fold step every reader of facts takes, and the one place
   a bad event is caught: a step that throws leaves the facts as they were with `broken`, and after it only the user
   letting the worker go is folded ([[broken-logs]]). What it folds is the `Facts` type in `src/bridge/facts.ts`:
-  state, size, context, cost, rate limits, the main loop's latest model and effort, Claude's release, the current tool
-  and what Claude said this turn, the [[conversation]]s, what the worker showed and kept, its pages, the timed facts
+  state, context, cost, rate limits, the main loop's latest model and effort, Claude's release, the current tool
+  and what Claude said this turn, the [[conversation]]s, what the worker showed and kept, the timed facts
   [`stats`](ref:hub/src/bridge/stats.ts#stats) reduces over a window ([[stats]]), and the subagents it started. The
   tower's own facts fold here too: `tower.prompt` makes a worker's typed prompt `peer`, `tower.keys` and `tower.kill`
   name who typed or killed ([[worker-prompts]]), `tower.leave` a worker asking to go home ([[leave]]).
 - Messages between Claude sessions are folded as digests, never text. [`deliveries`](ref:hub/src/bridge/messages.ts#deliveries)
-  joins every send to the session that logged the same text as received, nearest in time, so `card.sent` names the
-  recipient whatever the address was (a name, or a reply's socket path, which nothing else ties to a session). A
+  joins every send to the session that logged the same text as received, nearest in time, so a brief's message step
+  names the recipient whatever the address was (a name, or a reply's socket path, which nothing else ties to a session). A
   message arrives as a prompt wrapping the text as sent, read by [`delivered`](ref:hub/src/bridge/messages.ts#delivered);
   [`receipts`](ref:hub/src/bridge/messages.ts#receipts) is the same join from the receiving side, which names the
   sender in a brief ([[brief-turns]]). A peer-origin prompt without that wrapper is a subagent's hand-back.

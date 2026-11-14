@@ -168,8 +168,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123660000,
                 "startedAt": 1791123600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 38,
                 "tool": "Edit",
                 "says": [],
@@ -185,8 +183,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-labx-conversation",
@@ -296,8 +292,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125340000,
                 "startedAt": 1791125280000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 1,
@@ -327,8 +321,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-labx-conversation",
@@ -395,8 +387,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -410,8 +400,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-labx-conversation",
@@ -498,8 +486,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125580000,
                 "startedAt": 1791125520000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -513,8 +499,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-labx-conversation",
@@ -605,8 +589,6 @@
                 "onDuty": false,
                 "enteredAt": 1791115260000,
                 "startedAt": 1791115200000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -620,8 +602,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-labx-conversation",
@@ -1166,8 +1146,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123660000,
                 "startedAt": 1791123600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 38,
                 "tool": "Edit",
                 "says": [],
@@ -1183,8 +1161,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-labx-conversation",
@@ -1294,8 +1270,6 @@
                 "onDuty": false,
                 "enteredAt": 1791125340000,
                 "startedAt": 1791125280000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 1,
@@ -1325,8 +1299,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-labx-conversation",
@@ -1390,8 +1362,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1405,8 +1375,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-labx-conversation",
@@ -1493,8 +1461,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125580000,
                 "startedAt": 1791125520000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1508,8 +1474,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-labx-conversation",
@@ -1600,8 +1564,6 @@
                 "onDuty": false,
                 "enteredAt": 1791115260000,
                 "startedAt": 1791115200000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -1615,8 +1577,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-labx-conversation",
@@ -2161,8 +2121,6 @@
                 "onDuty": true,
                 "enteredAt": 1791123660000,
                 "startedAt": 1791123600000,
-                "cols": 120,
-                "rows": 40,
                 "context": 38,
                 "tool": "Edit",
                 "says": [],
@@ -2178,8 +2136,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090000-labx-conversation",
@@ -2289,8 +2245,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125340000,
                 "startedAt": 1791125280000,
-                "cols": 120,
-                "rows": 40,
                 "tool": "Bash",
                 "says": [],
                 "subagents": 1,
@@ -2320,8 +2274,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090007-labx-conversation",
@@ -2388,8 +2340,6 @@
                 "onDuty": true,
                 "enteredAt": 1791124260000,
                 "startedAt": 1791124200000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -2403,8 +2353,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090014-labx-conversation",
@@ -2491,8 +2439,6 @@
                 "onDuty": true,
                 "enteredAt": 1791125580000,
                 "startedAt": 1791125520000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -2506,8 +2452,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090021-labx-conversation",
@@ -2598,8 +2542,6 @@
                 "onDuty": false,
                 "enteredAt": 1791115260000,
                 "startedAt": 1791115200000,
-                "cols": 120,
-                "rows": 40,
                 "says": [],
                 "subagents": 0,
                 "subagentRuns": [],
@@ -2613,8 +2555,6 @@
                 "claudeUntested": false,
                 "resources": [],
                 "shown": [],
-                "pages": [],
-                "sent": [],
                 "conversations": [
                   {
                     "id": "20261004-090028-labx-conversation",

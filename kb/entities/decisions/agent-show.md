@@ -35,8 +35,6 @@ worker that made it.
   which is the one `/shown/<session>/<path>` serves it by. A target shown again in a later session moves last.
   While the worker has run as more than one session, both renderers mark a showing's tab with its session (`s1`,
   "session 1 of 2 · Oct 6, 21:40" in its title) from `card.lineage` ([[brief-turns]]).
-- What a worker made and didn't show is derived beside it: `card.pages` lists each html file the worker wrote
-  (`Write`), at its first write, with `shown` true when the worker showed that path.
 - `GET /shown/<id>/<path>` serves a file the session showed, anything beside or below an html file it showed
   (the shelf's rule), or an image beside or below a markdown one ([[blob-reads]]), none of it hidden: no file whose
   path below the page's folder has a part starting with `.` ([`shownServes`](ref:hub/src/shelf.ts#shownServes)).

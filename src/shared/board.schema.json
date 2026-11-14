@@ -573,12 +573,6 @@
         "startedAt": {
           "type": "number"
         },
-        "cols": {
-          "type": "number"
-        },
-        "rows": {
-          "type": "number"
-        },
         "context": {
           "type": "number"
         },
@@ -649,20 +643,6 @@
           },
           "description": "What the worker showed the user across the sessions it ran as, oldest first; `at` in epoch ms, `session` the one that showed it."
         },
-        "pages": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CardPage"
-          },
-          "description": "The html files the worker wrote across the sessions it ran as, oldest first."
-        },
-        "sent": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CardSent"
-          },
-          "description": "The messages it sent other Claude sessions across the sessions it ran as, oldest first."
-        },
         "stranded": {
           "type": "boolean",
           "description": "Ended while nobody meant it to end: the host stopped or died, or a signal from outside the tower killed it."
@@ -730,8 +710,6 @@
         "enteredAt",
         "stuck",
         "startedAt",
-        "cols",
-        "rows",
         "compacting",
         "says",
         "subagents",
@@ -741,8 +719,6 @@
         "claudeUntested",
         "resources",
         "shown",
-        "pages",
-        "sent",
         "stranded",
         "killed",
         "cutOff",
@@ -1124,50 +1100,6 @@
         "session",
         "target"
       ]
-    },
-    "CardPage": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "at": {
-          "type": "number"
-        },
-        "shown": {
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "path",
-        "at",
-        "shown"
-      ],
-      "additionalProperties": false,
-      "description": "An html file the worker wrote, at its first write (epoch ms), and whether the worker showed it."
-    },
-    "CardSent": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "callsign": {
-          "type": "string"
-        },
-        "at": {
-          "type": "number"
-        },
-        "to": {
-          "type": "string"
-        },
-        "session": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "at",
-        "to"
-      ],
-      "description": "A message the worker sent another Claude session, with the callsign of the worker that received it."
     },
     "Unresumable": {
       "type": "string",
