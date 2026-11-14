@@ -6,6 +6,7 @@ export const reviewsPanelCss = `
 .reviews-panel .add { color: var(--added); } .reviews-panel .del { color: var(--removed); }
 .reviews-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
 .reviews-panel .settled { margin: var(--sp-s) 0 var(--sp-m); padding: var(--sp-s) var(--sp-l); border-left: 3px solid var(--quiet); color: var(--muted); }
+.reviews-panel .settled + .filed { margin: calc(-1 * var(--sp-m)) 0 var(--sp-m); padding: 0 var(--sp-l) var(--sp-s); border-left: 3px solid var(--quiet); color: var(--muted); }
 .reviews-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
 .reviews-panel .composer .re-chip { display: flex; align-items: center; gap: var(--sp-s); margin-bottom: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
 .reviews-panel .composer textarea { display: block; width: 100%; min-height: 72px; resize: vertical; padding: var(--sp-s) var(--sp-m);

@@ -16,7 +16,7 @@ export function settledHtml(state: CheckoutState, checkout: string) {
   const said = state.is === 'gone'
     ? `<b>Worktree removed</b>: the folders of ${esc(checkout)} are gone, and nothing says its work landed.`
     : state.empty
-      ? `<b>Nothing to land</b>: ${esc(checkout)} made no commits of its own${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
-      : `<b>Landed${state.on ? ` on <code>${esc(state.on)}</code>` : ''}${state.edited ? `, ${state.edited} edited` : ''}</b>: the work of ${esc(checkout)} is in its base${state.edited ? `, ${state.edited === 1 ? 'one commit' : `${state.edited} commits`} changed on the way${state.branch ? ` (<button data-landing-of="${esc(state.branch)}">what landing changed</button>)` : ''}` : ''}${state.filed ? `, and its thread was filed ${esc(state.filed.at)}` : ''}.`
+      ? `<b>Nothing to land</b>: ${esc(checkout)} made no commits of its own.`
+      : `<b>Landed${state.on ? ` on <code>${esc(state.on)}</code>` : ''}${state.edited ? `, ${state.edited} edited` : ''}</b>: the work of ${esc(checkout)} is in its base${state.edited ? `, ${state.edited === 1 ? 'one commit' : `${state.edited} commits`} changed on the way${state.branch ? ` (<button data-landing-of="${esc(state.branch)}">what landing changed</button>)` : ''}` : ''}.`
   return `<p class="settled" role="status">${said} Notes on it would reach nobody.</p>`
 }

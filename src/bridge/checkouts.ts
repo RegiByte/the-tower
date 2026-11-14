@@ -15,22 +15,8 @@ import { isUnread, wasRead, type FloorBranch, type FloorWorktree, type RepoRead 
  */
 export type CheckoutState =
   | { is: 'live' }
-  | {
-      is: 'landed'
-      on?: string
-      empty?: true
-      edited?: number
-      branch?: string
-      /**
-       * The thread Tidy filed once the work landed.
-       * @deprecated since 1.93: the reviews extension's `card.x.reviews.filed`, copied onto `card.checkoutState` until 2.0.
-       */
-      filed?: FiledThread
-    }
+  | { is: 'landed'; on?: string; empty?: true; edited?: number; branch?: string }
   | { is: 'gone' }
-
-/** A thread Tidy filed: its item's id and tag, and when it was filed, as a message heading writes a time. */
-export type FiledThread = { id: string; tag: string; at: string }
 
 export type LandedState = Extract<CheckoutState, { is: 'landed' }>
 
