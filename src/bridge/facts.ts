@@ -76,7 +76,7 @@ export type Facts = {
   shown: Shown[]
   /** What the worker kept, oldest first. */
   kept: Kept[]
-  /** The sessions the worker hired (`spawn` with `hire`: `tower hire`, `tower review`), oldest first. */
+  /** The sessions the worker hired (`spawn` with `hire`: `tower hire`, or an extension's hire such as `tower x reviews review`), oldest first. */
   hired: string[]
   /** When someone last typed into the session. */
   typedAt?: number
