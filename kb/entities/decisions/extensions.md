@@ -172,7 +172,7 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   `floor:<project>`, `board`, `conversation:<id>`, `item.<collection>:<project>/<id>`, `shown:<card>/<at>` (what a
   worker showed), `collection:<project>/<collection>` and `shelf:<project>/<n>`, or `<cap>.<kind>:<instance>/<key>`
   for an extension's own kinds, declared in `subjects` (where their keyed entries sit in its part) and keyed by the
-  subject they were found in, their contributions copied to the old `<cap>.<kind>:<key>` until 2.0.
+  subject they were found in.
   [`subjects.ts`](ref:hub/src/shared/subjects.ts) spells every key, names each subject's parent (`parentOf`) and
   resolves any key on the board (`subjectAt`, own kinds through `ExtensionView.subjects`). A subject whose content is
   text or a file says where it is, `value.text` a read path or `value.body` the text, and `value.type` its media type

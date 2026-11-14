@@ -140,6 +140,11 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   `renderers/tower3d/src/seating.ts`, `galleryOf` in `renderers/tower3d/src/showings.ts`, each short enough to copy.
   The type `GalleryShowing` is no longer in `/lib/board.js`: it is `{ worker: SessionRef; shown: CardShown }`.
 
+- **An own kind's contributions are only at its key by the subject it was found in.** Since 1.98 an entry of an
+  extension's own subject kind is keyed `<cap>.<kind>:<instance>/<key>`, and `board.adds` copied its contributions to
+  the key before 1.98, `<cap>.<kind>:<key>`. 2.0 drops the copy: read `board.adds` at the subject's `key`
+  (`subjectAt`, or the `key` of the subject your view or command is handed).
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form

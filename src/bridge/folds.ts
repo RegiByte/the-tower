@@ -16,7 +16,6 @@ import {
   floorSubject,
   itemKey,
   itemSubject,
-  ownLegacyKey,
   ownSubject,
   shelfSubject,
   shownSubject,
@@ -179,10 +178,9 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
     if (!dropped.has(key)) dropped.set(key, new Set())
     dropped.get(key)!.add(cap)
   }
-  /** `part`'s contributions at `key`, and its asks; an own kind's contributions copied to its key before 1.98 until 2.0. */
-  const contribute = (cap: string, subject: Subject, legacyKey: string | undefined, part: Part) => {
+  /** `part`'s contributions at `key`, and its asks. */
+  const contribute = (cap: string, subject: Subject, part: Part) => {
     addAt(cap, subject.key, part)
-    if (legacyKey) addAt(cap, legacyKey, part)
     for (const ask of part.asks ?? []) {
       if (ask.until !== undefined && ask.until <= now) continue
       asks.push({ ...ask, key: `${cap}:${ask.key}`, cap, actions: tagged<Action>(cap, ask.actions) })
@@ -204,8 +202,8 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
     const on = (project: string | undefined) => project === undefined || !folder.off.includes(project)
     let spent = 0
 
-    /** Folds `subject` (`value` as `folder` sees it) with its fold of `kind`, at the floor `at.project`; an own kind's entry with its `legacyKey`. */
-    const foldOne = (kind: string, subject: Subject, value: unknown, at: OwnAt, legacyKey?: string) => {
+    /** Folds `subject` (`value` as `folder` sees it) with its fold of `kind`, at the floor `at.project`. */
+    const foldOne = (kind: string, subject: Subject, value: unknown, at: OwnAt) => {
       const { key } = subject
       if (folder.requires.some((cap) => dropped.get(key)?.has(cap))) return drop(key, folder.cap)
       const failed = (code: 'threw' | 'shape', message: string) => {
@@ -228,7 +226,7 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
         if (!parts.has(key)) parts.set(key, new Map())
         parts.get(key)!.set(folder.cap, checked.part.x)
       }
-      contribute(folder.cap, subject, legacyKey, checked.part)
+      contribute(folder.cap, subject, checked.part)
     }
 
     for (const kind of kindOrder(Object.keys(folder.folds))) {
@@ -259,13 +257,13 @@ export const foldBoard = ({ board: built, callsignOf, folders, subjects, now, cl
           if (!decl || decl.in === 'board') continue
           const holders = decl.in === 'floor' ? [floorSubject(f)] : f.cards.map(cardSubject)
           for (const holder of holders) {
-            for (const entry of entriesOf(parts.get(holder.key)?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, holder), entry, { project: f.id }, ownLegacyKey(kind, entry))
+            for (const entry of entriesOf(parts.get(holder.key)?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, holder), entry, { project: f.id })
           }
         }
       }
       const decl = own && subjects.get(kind)
       if (own && decl && decl.in === 'board') {
-        for (const entry of entriesOf(parts.get('board')?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, boardSubject(core)), entry, {}, ownLegacyKey(kind, entry))
+        for (const entry of entriesOf(parts.get('board')?.get(own.cap), decl.list)) foldOne(kind, ownSubject(kind, entry, boardSubject(core)), entry, {})
       }
     }
     spentBy.set(folder.id, spent)
