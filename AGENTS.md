@@ -48,7 +48,7 @@ State lives in the system root, `~/.tower/` (`system-root`): `config.json` (ever
 
 `kb/` is the project's working theory: systems, flows, decisions and terms, each backed by refs into the code (schema:
 `.claude/skills/kb/SCHEMA.md`). Before changing a part, read its entity: `node .claude/skills/kb/tool/kb.mjs tree <id>`
-(an id from the Map above; plain `tree` prints all 68 KB), then `kb/entities/**/<id>.md`. `verify` reads committed HEAD:
+(an id from the Map above; plain `tree` prints every entity), then `kb/entities/**/<id>.md`. `verify` reads committed HEAD:
 commit first. A change that alters what an entity claims updates it in the same commit, sets its `reviewed`, and
 re-renders (`kb.mjs render`). `/kb verify` for a full check; `/kb build` to document something new.
 
