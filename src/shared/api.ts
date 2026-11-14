@@ -238,18 +238,6 @@ export const VERBS = {
       ),
     reply: ok,
   },
-  'probe/run': {
-    input: z.object({ name: id }).describe(
-      "Read the probe now, whatever its stream says, its read appended to its stream as any read is. Refused while it is off, while a read is in flight, or within 60 s of the last read's start.",
-    ),
-    reply: z.object({
-      t: z.literal('probed'),
-      at: z.int().describe('When the read started, epoch ms.'),
-      ms: z.int().nonnegative(),
-      ok: z.boolean(),
-      error: z.string().optional().describe('Why the read has no answer.'),
-    }),
-  },
   'extension/restart': {
     input: z.object({ id }).describe(
       "Read the extension's folder again and restart it, with every extension that depends on it: its code is imported afresh, each module of its folder. Meanwhile calls to it answer `unavailable`.",
@@ -527,9 +515,6 @@ export const QUERIES = {
       project: id.optional().describe("Only this project's sessions."),
     })
     .describe("Stats over every session's log and what landed on each project's default branches: summaries, series, hours of the day and the weekly budget, per project and for all."),
-  'probe/<name>': z
-    .object({ last: z.coerce.number().int().positive().max(1000).default(20).describe('How many of its latest reads, newest first.') })
-    .describe("One probe of the config's: its status as the board shows it, and its latest reads as its stream keeps them, each Claude's answer as it came or why there is none."),
   landing: z
     .object({ project: id, branch: z.string().min(1).describe('A branch of a worktree or a kept branch, `carried` on the board.') })
     .describe(

@@ -3975,7 +3975,6 @@
           "currency": "USD",
           "reached": false
         },
-        "probes": [],
         "x": {
           "quota": {
             "every": 600000,

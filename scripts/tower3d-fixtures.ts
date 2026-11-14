@@ -299,7 +299,6 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     rateLimits: extra.rateLimits ?? [],
     rateLimitsAt: extra.rateLimitsAt,
     ...(extra.extraUsage && { extraUsage: extra.extraUsage }),
-    probes: [],
     ...(extra.quota && { x: { quota: { ...extra.quota, commands: [extra.quota] } satisfies QuotaPart } }),
     extensions: [REVIEWS_ON_BOARD],
     viewers: {},

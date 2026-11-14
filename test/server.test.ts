@@ -441,7 +441,6 @@ test('server: every read answers', async () => {
     ['/landing?project=lab&branch=feature', 'application/json', has('branch', 'repos')],
     [`/changes/${SESSION}`, 'application/json', isArray],
     [`/changes/${SESSION}?scope=uncommitted`, 'application/json', isArray],
-    ['/probe/quota', 'application/json', has('status', 'reads')],
     ['/stats', 'application/json', has('from', 'to', 'bucket', 'all')],
     ['/shelf/lab/0', 'application/json', (body) => (json(body) as string[]).includes('report/index.html')],
     ['/shelf/lab/0/report/index.html', 'text/html'],
@@ -580,25 +579,19 @@ const cli = (session: string, ...args: string[]) =>
   execFileSync(process.execPath, ['--import', 'tsx', path.join('src', 'cli.ts'), ...args], { cwd: REPO, env: { ...ENV, TOWER_SESSION_ID: session }, encoding: 'utf8' })
 
 // The slot loop's first tick runs quota's read 30 s after the tower starts, and read-now then refuses for a minute: this test must run before that.
-test("server: the quota probe, moved into its extension, answers its old names through LEGACY, its old folder folded as before", async () => {
+test("server: the quota probe reads the folder its stream kept, and reads now at most once a minute, appending to that folder", async () => {
   const { board } = (await firstEvent('/board')) as Extract<BoardMsg, { board: unknown }>
   const status = board.x?.quota as { every: number; lastAt: number }
   assert.equal(status.every, 3_600_000, 'extensions.quota.settings.every')
-  assert.deepEqual([board.probes.length, board.probes[0].name, board.probes[0].every, board.probes[0].calls], [1, 'quota', 3_600_000, { run: ['probe/run', { name: 'quota' }] }])
-  assert.equal(board.rateLimits.find((l) => l.kind === 'seven_day')?.percentUsed, 89, "the old folder's readings are the account's limits")
-  const view = await get('/probe/quota?last=3')
-  assert.deepEqual([view.status, view.headers.deprecation, view.headers.link], [200, '@0', '</quota/reads>; rel="successor-version"'])
-  const { status: was, reads } = JSON.parse(view.body)
-  assert.deepEqual([was.name, reads.length, reads[0].reads], ['quota', 3, 'claude.usage'])
-  assert.equal(errorCode(await get('/probe/mine')), 'not_found')
-  const run = await post('probe/run', { name: 'quota' })
-  assert.deepEqual([run.status, run.headers.deprecation, run.headers.link], [200, '@0', '</quota/read-now>; rel="successor-version"'])
-  const probed = ROUTES['probe/run'].reply.parse(JSON.parse(run.body))
-  assert.deepEqual([probed.t, probed.ok], ['probed', false], 'a config whose argv is no Claude answers no get_usage')
-  assert.equal(errorCode(await post('probe/run', { name: 'quota' })), 'refused', 'a read starts at most once a minute')
-  assert.equal(errorCode(await post('probe/run', { name: 'mine' })), 'not_found')
+  const { reads } = JSON.parse((await get('/quota/reads?last=3')).body)
+  assert.equal(reads.length, 3, "the old folder's reads are the stream's")
+  const run = await post('quota/read-now', {})
+  assert.equal(run.status, 200)
+  const read = JSON.parse(run.body) as { ok: boolean; error?: string }
+  assert.equal(read.ok, false, 'a config whose argv is no Claude answers no get_usage')
+  assert.equal(errorCode(await post('quota/read-now', {})), 'refused', 'a read starts at most once a minute')
   const [newest] = JSON.parse((await get('/quota/reads?last=1')).body).reads
-  assert.deepEqual([newest.ok, newest.error], [false, probed.error], 'the read is appended to the old folder, newest first')
+  assert.deepEqual([newest.ok, newest.error], [false, read.error], 'the read is appended to the old folder, newest first')
 })
 
 /** The `tower` command run with `stdin` as its fd 0: its stdout, its stderr and how it exited. */

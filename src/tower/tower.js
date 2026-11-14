@@ -20,9 +20,6 @@
  *                                                   and again when `board.archiveAt` or the floor's `archived` moves
  *   await tower.stats({ from, to, bucket, project })  stats over every session's log (`/stats`): every field optional,
  *                                                   times in epoch ms, `bucket` 'hour' or 'day'; the last seven local days by day
- *   await tower.probe(name, { last })               one probe's status, as `board.probes` has it, and its latest `last` reads (20
- *                                                   unless given), newest first (`/probe/<name>`); deprecated since 1.90:
- *                                                   `get('quota/reads')` and the board's `x.quota`
  *   await tower.landing({ project, branch })         what landing changed on a worktree's or kept branch's `branch` (`/landing`), when
  *                                                   the board says it is carried: per repo, each commit landed edited, its copy and
  *                                                   `git range-diff` between them
@@ -747,7 +744,6 @@
     archive: (project) => api.get(`archive/${encodeURIComponent(project)}`),
     renderer: async () => (served === 'r' ? (await api.get('renderers')).renderers.find((/** @type {import('../shared/model.ts').Renderer} */ r) => r.name === servedAs) ?? null : null),
     landing: (query) => api.get(`landing?${new URLSearchParams(query)}`),
-    probe: (name, query = {}) => api.get(`probe/${encodeURIComponent(name)}?${new URLSearchParams(/** @type {string[][]} */ (Object.entries(query).filter(([, v]) => v !== undefined)))}`),
     stats: (query = {}) => api.get(`stats?${new URLSearchParams(/** @type {string[][]} */ (Object.entries(query).filter(([, v]) => v !== undefined)))}`),
     get: api.get,
     text: api.text,

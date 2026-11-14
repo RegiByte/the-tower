@@ -44,8 +44,8 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
 - `brief.ts`: a worker's brief by session, the current one in full and the earlier ones folded, each turn with
   Claude's steps between its prompt and its answer, as a pure view over the `/conversations/<id>` read, and the label of the session a showing came from ([[brief-turns]]).
 - Drafts' editing moved into the bundled drafts extension's client, `/x/drafts/drafts.js`
-  ([`drafts.ts`](ref:hub/extensions/drafts/client/drafts.ts), [[extensions]]); `/drafts.js` still serves it, with a
-  `Deprecation` header, until 2.0 (`LEGACY`). No served module bundles it: `wireSpawn` takes its `draftsOf`, `keepUnsent` and `titleOf` as `io.drafts`, and the
+  ([`drafts.ts`](ref:hub/extensions/drafts/client/drafts.ts), [[extensions]]); its old URL `/drafts.js` went at
+  2.0. No served module bundles it: `wireSpawn` takes its `draftsOf`, `keepUnsent` and `titleOf` as `io.drafts`, and the
   palette its `draftsOf` in its context, from the renderer, so a page runs only the drafts client its provider serves.
   Given `io.upload` (API 1.169), a file dropped anywhere on the dialog, or pasted on its prompt without plain text, is
   uploaded as a terminal's is (below) and its path typed at the prompt's caret, so a screenshot dragged in reaches

@@ -41,6 +41,22 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
 
   Workers and scripts use `tower x policies …` (see [The CLI](#the-cli)). The facts stay where they were: the runs
   and approvals of each project are still read from `streams/projects/<project>/runs/` and `approvals/`.
+- **The quota probe and drafts answer only under their extensions' names.** Each old name had its replacement since
+  1.90:
+
+  | 1.x | 2.0 |
+  | --- | --- |
+  | `POST /probe/run` `{ "name": "quota" }`, `ctx.call('probe/run', …)` | `POST /quota/read-now` `{}`, or `{ "command": "<name>" }` for one command |
+  | `GET /probe/<name>?last=<n>`, `tower.probe(name, { last })` | `GET /quota/reads?last=<n>`, `tower.get('quota/reads?last=<n>')` |
+  | `board.probes` | `board.x.quota`, and `quotaOf`, `probeLine` and `probeTitle` of `/x/quota/quota.js` |
+  | `quotaOf`, `PROBE_STATE_NAME`, `PROBE_ATTENTION`, `probeLine`, `probeTitle`, `probedLine` of `/cards.js` | the same names of `/x/quota/quota.js` |
+  | the module `/drafts.js` | `/x/drafts/drafts.js` |
+
+  A removed route answers `not_found`; a removed board field is absent.
+- **Quota readings written before 1.90 no longer set the limits.** The core folded the `p` facts the old core probe
+  wrote into `probe.quota/` beside the readings of kind `tower/rate-limits`; it now folds only the latter. The quota
+  extension still reads `p` facts for its own status. A reading of your own extension's is folded as before, as long
+  as its fact code declares `"kind": "tower/rate-limits"`.
 
 ## The CLI
 

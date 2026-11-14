@@ -8,7 +8,7 @@ import type { CommandStatus, QuotaPart, QuotaStatus } from '../status.ts'
  * its extension's client file.
  */
 
-/** A probe as these words read it: the quota extension's part with its name (`quotaOf`), or an entry of `board.probes`. */
+/** A probe as these words read it: the quota extension's part with its name (`quotaOf`). */
 export type ProbeStatus = QuotaStatus & { name: string }
 
 /** A read now, as these words read it. */
