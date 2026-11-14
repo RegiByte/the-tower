@@ -5,7 +5,7 @@ import type { Tower } from './shelf-page.ts'
 import type { TermViewHandle } from './term-view.ts'
 import type { Notice } from './toasts.ts'
 import { PANES } from './keymap.ts'
-import { accepted, mediaTypeOf } from './media.ts'
+import { accepted } from './media.ts'
 import type { KitMember, Layout, LayoutEntry, Region, Scale } from './regions.ts'
 import { ADDRESS_TYPE, onKind, parentOf, shownSubject, subjectAt, type Subject, type Text } from './subjects.ts'
 
@@ -261,23 +261,6 @@ export const viewsOf = (board: Board): View[] => [
 ]
 
 /**
- * The core's retired views (`LEGACY`'s `view` entries) and the views that draw their subjects now: a layout naming one
- * names those. `tower/shown`'s showings are drawn by the views by type, so an `order` naming it leaves them to their
- * type's pick, and `hidden` naming it hides each of them.
- */
-export const VIEW_ALIASES: Record<string, string[]> = { 'tower/shown': CORE_VIEWS.filter((v) => v.on.includes('shown')).map((v) => v.id) }
-
-/** A layer of a layout as the views now are: each retired view in it read as the views that draw its subjects. */
-const unaliased = (entry: LayoutEntry): LayoutEntry => {
-  const retired = (id: string) => VIEW_ALIASES[id] !== undefined
-  return {
-    ...entry,
-    ...(entry.order && { order: entry.order.filter((id) => !retired(id)) }),
-    ...(entry.hidden && { hidden: entry.hidden.flatMap((id) => VIEW_ALIASES[id] ?? [id]) }),
-  }
-}
-
-/**
  * The pins of a region's layers, lowest first, as one list (decision `region-overflow`): each layer's pins, the
  * highest layer's first, an id once, less every id a layer above it names in its `unpinned`.
  */
@@ -317,7 +300,7 @@ export const layoutOf = (declared: Layout, configured: Layout, stored: Layout | 
   const regions = [...new Set(layers.flatMap((l) => Object.keys(l)))]
   return Object.fromEntries(
     regions.map((id) => {
-      const at = layers.map((l) => unaliased(l[id] ?? {}))
+      const at = layers.map((l) => l[id] ?? {})
       const last = <K extends keyof LayoutEntry>(field: K) => at.findLast((e) => e[field] !== undefined)?.[field]
       const pinned = pinsOf(at)
       const hidden = at.flatMap((e, n) => (e.hidden ?? []).filter((v) => !at.slice(n + 1).some((above) => above.order?.includes(v) || (above.pinned?.includes(v) && pinned.includes(v)))))
@@ -555,73 +538,32 @@ const latestShown = (board: Board, id: string, target: string) => {
   return card && shown && shownSubject(card, shown)
 }
 
-/** A location the hash's short form names, as the tower page wrote them before the grammar: kept for every link the user has. */
-const shortForm = (body: string, board: Board): Location | undefined => {
-  const [kind, project, ...rest] = body.split('/')
-  const decoded = (part: string | undefined) => (part === undefined ? undefined : decodeURIComponent(part))
-  if (kind === 'shelf') return { view: 'tower/shelf', subject: `shelf:${project}/${rest[0]}`, ...(rest[1] !== undefined && { args: [decoded(rest[1])!] }) }
-  if (kind === 'draft') return rest[0] === undefined ? { view: 'drafts/editor', subject: `collection:${project}/drafts` } : { view: 'drafts/editor', subject: `item.drafts:${project}/${decoded(rest[0])}` }
-  if (kind === 'archive') return { view: 'tower/archive', subject: `floor:${project}` }
-  if (kind === 'policies') return { view: 'policies/policies', subject: `floor:${project}` }
-  if (kind === 'kept') {
-    const [collection, id] = rest
-    if (id === undefined) return { view: 'tower/collection', subject: `collection:${project}/${collection}` }
-    const name = decoded(id)!
-    return { view: coreViewOf(mediaTypeOf(name)).id, subject: `item.${collection}:${project}/${name}` }
-  }
-  const pane = decoded(project)
-  const card = { view: 'tower/card', subject: `card:${kind}` }
+/**
+ * A worker's location by its short form, `<id>`, `<id>/<pane>` or `<id>/shown:<target>` (the target's latest
+ * showing, read on `board`): the form Tower.app and notifications open. A tab it doesn't know opens the worker alone;
+ * more segments name no location.
+ */
+const cardForm = (body: string, board: Board): Location | undefined => {
+  const [id, pane, ...more] = body.split('/')
+  if (!id || more.length) return undefined
+  const card = { view: 'tower/card', subject: `card:${id}` }
   if (pane === undefined) return card
-  if (PANE_VIEWS[pane]) return { ...card, pane: { view: PANE_VIEWS[pane] } }
-  if (!pane.startsWith('shown:')) return card
-  const shown = latestShown(board, kind, pane.slice('shown:'.length))
+  const named = decodeURIComponent(pane)
+  if (PANE_VIEWS[named]) return { ...card, pane: { view: PANE_VIEWS[named] } }
+  if (!named.startsWith('shown:')) return card
+  const shown = latestShown(board, id, named.slice('shown:'.length))
   return shown ? { ...card, pane: { view: coreViewOn('shown', (shown.value as Text).type!).id, subject: shown.key } } : card
 }
 
-/** A subject key's floor and what follows it: `collection:p/notes` is `p` and `notes`. */
-const inFloor = (key: string) => {
-  const rest = key.slice(key.indexOf(':') + 1)
-  return { project: rest.slice(0, rest.indexOf('/')), name: rest.slice(rest.indexOf('/') + 1) }
-}
-
 /**
- * The short form of a location the tower page wrote before the grammar, which it keeps writing: `''` for the skyline,
- * `#archive/<p>`, `#policies/<p>`, `#kept/<p>/<c>`, `#kept/<p>/<c>/<id>` for an item in the core's view for its type,
- * `#shelf/<p>/<n>[/<file>]`, `#draft/<p>[/<id>]`; `undefined` for a
- * location that has none. `locationOf` reads each back.
- */
-export const shortHashOf = (location: Location): string | undefined => {
-  const key = location.subject ?? 'board'
-  const kind = key.slice(0, key.indexOf(':'))
-  const floor = key.slice(key.indexOf(':') + 1)
-  const { project, name } = inFloor(key)
-  switch (location.view) {
-    case 'tower/skyline':
-      return key === 'board' ? '' : undefined
-    case 'tower/archive':
-      return kind === 'floor' ? `#archive/${floor}` : undefined
-    case 'policies/policies':
-      return kind === 'floor' ? `#policies/${floor}` : undefined
-    case 'tower/collection':
-      return kind === 'collection' ? `#kept/${project}/${name}` : undefined
-    case 'tower/shelf':
-      return kind === 'shelf' ? `#shelf/${project}/${name}${location.args?.[0] === undefined ? '' : `/${segment(location.args[0])}`}` : undefined
-    case 'drafts/editor':
-      return kind === 'collection' ? `#draft/${project}` : kind === 'item.drafts' ? `#draft/${project}/${segment(name)}` : undefined
-    default:
-      return kind.startsWith('item.') && location.view === coreViewOf(mediaTypeOf(name)).id ? `#kept/${project}/${kind.slice('item.'.length)}/${segment(name)}` : undefined
-  }
-}
-
-/**
- * The location `hash` names (`location.hash`, with or without its `#`): by the grammar `hashOf` writes, or a short
- * form the tower page wrote before it, which `board` resolves where it names a showing by its target. `undefined`
- * for the empty hash, the skyline's, and for one that names no view.
+ * The location `hash` names (`location.hash`, with or without its `#`): by the grammar `hashOf` writes, or a worker's
+ * short form (`cardForm`), which `board` resolves where it names a showing by its target. `undefined` for the empty
+ * hash, the skyline's, and for one that names no view.
  */
 export const locationOf = (hash: string, board: Board): Location | undefined => {
   const body = hash.replace(/^#/, '')
   if (!body) return undefined
-  if (!body.startsWith('v/')) return shortForm(body, board)
+  if (!body.startsWith('v/')) return cardForm(body, board)
   const [main, pane] = body.slice(2).split(';')
   const [cap, name, key, ...args] = main.split('/')
   if (!cap || !name) return undefined

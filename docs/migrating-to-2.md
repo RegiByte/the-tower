@@ -14,6 +14,10 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   protocol, which arrived in 1.x. While an older host runs, a spawn, a hire, a resume or a logged fact is refused
   with `unavailable`, naming the fix. Restart the host: `tower down host`, then `tower up`. That stops the running
   sessions; each one stays resumable.
+- **Old links to a floor's page open the skyline.** The tower page's hashes before 1.104, `#shelf/<p>/<n>`,
+  `#draft/<p>[/<id>]`, `#archive/<p>`, `#policies/<p>` and `#kept/<p>/<c>[/<id>]`, are no longer read: a bookmark
+  or a link in a note that uses one opens the default view. Open the page again and copy its address, which is the
+  current form, `#v/<view>/<subject>`. A worker's link, `#<id>` with or without its tab, still opens the worker.
 - **The old CLI words are gone.** See [The CLI](#the-cli).
 - **A config still spelling `probes` is refused.** See [Config](#config).
 - **Every config must be rewritten: `argv` and the plugins and commands moved under `runtimes`.** A 1.x config is
@@ -246,6 +250,9 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   `{ t: 'tower', verb: 'prefs', prefs: { scheme } }` instead; the old verb is ignored. A framed page that ran its own
   relay and listened for `{ t: 'scheme' }` listens for `{ t: 'prefs', prefs }`: only a `url` entry's frame still gets
   the scheme alone.
+- **`shortHashOf` is gone from `/lib/layout.js`.** It wrote the floor hashes 2.0 no longer reads (see
+  [Everyone who runs a tower](#everyone-who-runs-a-tower)). Write `hashOf(location)`, the grammar, for every location;
+  `locationOf` still reads a worker's `#<id>` and `#<id>/<tab>`.
 - **Server code imports the library, not `tower:`.** An extension's server module that imports
   `tower:<name>.js` fails to load: node is told the tower doesn't lend it, and the error lists the library's
   modules. Import `/lib/<module>.js` instead, the same line a client writes, by the table above.
@@ -344,6 +351,11 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   A plain `"argv": ["claude"]` becomes `"runtimes": { "claude": { "argv": ["claude"] } }`. A key under `runtimes` that
   names no runtime the tower knows is a failure in `tower config check`. `tower config check` passing is the sign the
   rewrite is complete.
+- **A layout naming `tower/shown` no longer means the views that draw showings.** The view was retired at 1.115;
+  1.x read it in a layout's `order` as leaving showings to their type's pick and in `hidden` as hiding each view
+  that draws them. 2.0 reads it as any other id no view has: nothing. Remove it from `order`, and in `hidden` name
+  the views by type you meant (`tower/document`, `tower/link`, `tower/text` and their kin, listed in
+  [Views](extending.md#views)).
 - **`keys.pane-reviews` is refused.** The config is not taken, and `tower config check` names the line to write:
   `"reviews/thread": <its value>` under `keys`, the chord of the reviews extension's thread view.
 

@@ -1879,10 +1879,6 @@
           "since": "2.0",
           "stability": "provisional"
         },
-        "shortHashOf": {
-          "since": "2.0",
-          "stability": "provisional"
-        },
         "shownOf": {
           "since": "2.0",
           "stability": "provisional"
