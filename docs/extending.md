@@ -1608,15 +1608,7 @@ The library was chosen name by name, so it holds fewer names than these modules 
 lists both, module by module: a name under `served` that no module under `library` holds has no replacement, and
 joins the library as a minor the day something outside the core uses it.
 
-**Verbs and reads.** As a built-in moved into a bundled extension, its old route kept answering: the new one answers
-it, with RFC 9745's `Deprecation` and a `Link` to itself.
-
-| Deprecated | Use | Since |
-|---|---|---|
-| `tower x <cap> <name> '<json>'` | the word's flags ([Words](#extensions)); it says on stderr what to type | 1.153 |
-
-**The board and what reads it.** An old field is a copy of the part it moved to, as it stood at the move, so new
-fields appear only under `x`. A renderer that draws extensions' actions draws the new one and leaves the copy out.
+**Layouts.**
 
 | Deprecated | Use |
 |---|---|

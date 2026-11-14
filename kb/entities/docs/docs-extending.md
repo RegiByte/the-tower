@@ -16,9 +16,9 @@ the tower serves beside it (`tower.js`, `/design.css`, extensions' clients, the 
 [`STATIC`](ref:hub/src/tower/http.ts#STATIC)), collections, plugins, the `tower` command and the logs. Every recipe
 and import in it uses the library.
 
-What is deprecated until 2.0 is told once, in one section near its end: each served module
-([`MODULES`](ref:hub/src/tower/served.ts#MODULES)) with the library modules its names are in, and the verbs, reads
-and board fields that moved into bundled extensions ([`LEGACY`](ref:hub/src/shared/extensions.ts#LEGACY)). Nothing
+What is deprecated is told once, in one section near its end: each served module
+([`MODULES`](ref:hub/src/tower/served.ts#MODULES)) with the library modules its names are in, and what else is
+deprecated and its replacement. Nothing
 else in the document names one.
 
 It names an API version only where a sample needs one (`/tower.js?v=`, `requires`), in that section, and beside a
