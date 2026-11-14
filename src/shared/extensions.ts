@@ -48,7 +48,9 @@ export const NAME = /^(?=.{2,32}$)[a-z][a-z0-9]*(-[a-z0-9]+)*$/
 /**
  * The names no extension may be, id or capability: every first segment the core serves, names it may want, the agent
  * runtimes and the core's subject kinds. A new one arrives at an API minor: a user's extension of that name is then
- * refused until it is renamed, the refusal saying so, and the changelog names it (`config`, 1.147).
+ * refused until it is renamed, the refusal saying so, and the changelog names it (`config`, 1.147). A segment the core
+ * no longer serves (`probe`, `review`, `policy`, `runs`) stays reserved: freeing a name is an addition any minor can
+ * make, and taking one back refuses whoever took it.
  */
 export const RESERVED = [
   ...['spawn', 'resume', 'keys', 'submit', 'resize', 'kill', 'let-go', 'probe', 'reap', 'open', 'reveal', 'edit', 'shell', 'collection', 'review', 'worktree', 'branch', 'tidy', 'config'],
