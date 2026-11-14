@@ -14,7 +14,6 @@ export {
 } from '../shared/extensions.ts'
 export {
   defaultLimits,
-  floorLimits,
   limitsOf,
 } from '../shared/command-limits.ts'
 export {

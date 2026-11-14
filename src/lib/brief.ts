@@ -4,8 +4,6 @@ export {
   briefHtml,
   briefKey,
   expandedSaid,
-  keptWholes,
-  joinedWholes,
   openFolds,
   openTools,
   /** @provisional */ RESUMED_IDLE,

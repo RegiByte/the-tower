@@ -11,7 +11,6 @@ export type {
   ApiError,
   Call,
   Replies,
-  RouteInput,
   /** @provisional */ Verb,
   Verbs,
 } from '../shared/api.ts'

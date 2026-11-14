@@ -56,11 +56,8 @@ export {
   /** @provisional */ viewHost,
 } from '../shared/view-host.ts'
 export type {
-  /** @provisional */ Fill,
-  /** @provisional */ Fills,
   /** @provisional */ Hosted,
   /** @provisional */ HostDeps,
-  /** @provisional */ Lent,
   /** @provisional */ Placed,
   /** @provisional */ ViewHost,
 } from '../shared/view-host.ts'

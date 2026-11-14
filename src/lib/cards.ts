@@ -119,7 +119,6 @@ export {
   /** @provisional */ isAsk,
   neighboursIn,
   /** @provisional */ nextAttended,
-  /** @provisional */ nextWait,
   transitions,
   /** @provisional */ waitingCards,
 } from '../shared/waits.ts'

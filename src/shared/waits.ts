@@ -75,7 +75,7 @@ const keyed = <T extends { key: string }>(prev: T[], next: T[]) => {
  * visited this round, and the visited keys to keep once there. `here`'s own wait counts as visited. When every other
  * wait was visited, a new round starts at the first.
  */
-export const nextWait = <T extends { key: string; id?: string }>(waits: T[], visited: ReadonlySet<string>, here: string | undefined): { to?: T; visited: Set<string> } =>
+const nextWait = <T extends { key: string; id?: string }>(waits: T[], visited: ReadonlySet<string>, here: string | undefined): { to?: T; visited: Set<string> } =>
   nextIn(waits, visited, (w) => w.id !== undefined && w.id === here)
 
 /**

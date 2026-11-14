@@ -6,7 +6,6 @@ export {
   markdownCss,
   markdownHtml,
   /** @provisional */ relativeHref,
-  /** @provisional */ safeHref,
   /** @provisional */ sectionLabels,
   /** @provisional */ sectionsHtml,
   /** @provisional */ sectionsOf,
