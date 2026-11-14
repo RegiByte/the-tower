@@ -3,7 +3,7 @@
  * notes' quotes marked as the Changes find them; and where a card's and a floor's threads are on the board (the
  * extension's part, `x.reviews`). The reviews extension's client, served at `/x/reviews/panel.js`.
  */
-import { type Board, type Card, type CheckoutState, type Floor, callOf, sendTarget, sendTargets, workerIn } from '/lib/board.js'
+import { type Board, type Card, type Floor, callOf, sendTarget, sendTargets, workerIn } from '/lib/board.js'
 import type { RepoChanges } from '/lib/changes.js'
 import { checkoutDirs } from '/lib/files.js'
 import { type ReadEvent, type Reads, failureOf, valueOf } from '/lib/machine.js'
@@ -11,7 +11,7 @@ import { markdownHtml } from '/lib/markdown.js'
 import { ICON, failedHtml, fileButtonsHtml, highlightLines, settledHtml } from '/lib/view.js'
 import { esc, noun } from '/lib/words.js'
 import { anchorWhere } from './anchors.ts'
-import type { CardPart, FloorPart, FloorThread, NoteCall } from '../threads.ts'
+import type { CardPart, FloorPart, FloorThread, NoteCall, ThreadState } from '../threads.ts'
 import { anchorStates, langOf, parseThread, repoName, resolvedIn, resolvesOf, REVIEWS, threadId, unseenBy, type Anchor, type AnchorState, type AnchorStates, type Message, type Quote, type ReviewThread } from './reviews.ts'
 
 /** A card's reviews part: where its thread is, how its work stands, what of it is new to it, and its note while it is live. `undefined` where reviews is off. */
@@ -42,7 +42,7 @@ type Worker = { id: string; callsign: string; checkout: string }
 export type ThreadView = {
   project: string; checkout: string; tag: string | undefined; thread: ReviewThread | undefined; failed: string | undefined; reader: Worker | undefined
   states: AnchorStates | undefined; targets: Worker[]; target: Worker | undefined; re: number | undefined; user: string
-  files: ThreadFiles; state: CheckoutState; noting: boolean
+  files: ThreadFiles; state: ThreadState; noting: boolean
 }
 
 /** Where a checkout's thread is kept (none when its floor keeps no threads), and the dirs its anchors' repos are. */
@@ -65,7 +65,7 @@ export const threadFiles = (floor: ThreadFloor, checkout: string): ThreadFiles =
  * on whose view is open: an author and its reviewer each read the other's notes since their own last one as new.
  */
 export type ThreadPlace = {
-  project: string; checkout: string; id: string; state: CheckoutState; note: NoteCall | undefined; reader: Card | undefined
+  project: string; checkout: string; id: string; state: ThreadState; note: NoteCall | undefined; reader: Card | undefined
 }
 
 /**
@@ -176,12 +176,16 @@ const composerHtml = (v: ThreadView) => `<div class="composer">${v.re ? `<div cl
       <textarea data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
       <div class="actions"><button class="primary" data-note-add>Add note</button></div></div>`
 
+/** When Tidy filed the thread of landed work, said under the line saying the work landed. */
+const filedHtml = (state: ThreadState) =>
+  state.is === 'landed' && state.filed ? `<p class="filed">Its thread was filed ${esc(state.filed.at)}.</p>` : ''
+
 /**
  * A checkout's thread: notes with their quotes marked as the Changes find them, and, while a note is offered, Send and a
  * composer for a note on the whole work. Once the work no longer goes on, the thread is read only, under a line saying why.
  */
 export function reviewsHtml(v: ThreadView) {
-  const settled = settledHtml(v.state, v.checkout)
+  const settled = settledHtml(v.state, v.checkout) + filedHtml(v.state)
   if (!v.thread) return `<div class="reviews-panel">${settled}${v.failed ? failedHtml('the thread', v.failed, 'data-thread-read') : '<p class="none">reading the thread…</p>'}</div>`
   if (settled && !v.thread.messages.length) return `<div class="reviews-panel">${settled}<p class="none">${esc(v.checkout)} has no review thread.</p></div>`
   const unseen = new Set(v.reader && !settled ? unseenBy(v.thread, v.reader.callsign).map((m) => m.n) : [])
