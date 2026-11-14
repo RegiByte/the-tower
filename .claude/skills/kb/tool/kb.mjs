@@ -19,6 +19,9 @@ const USAGE = `usage: node <skill-dir>/tool/kb.mjs <command>   (run from the pro
               the same, with only the suspects caused by commits in <rev>..HEAD of the repo holding kb/,
               on the first-parent line: what a merge brought in isn't counted, a merged side branch of
               one's own included (a branch's own: verify --since origin/main)
+  review <id>...
+              set each entity's reviewed to today, once you have read what made it suspect; refuses an
+              unknown id before writing any
   render      build kb/dist/<project-id>.html (refuses on errors)
   diagrams    parse every diagram the page draws (entity maps, mermaid fences) with the mermaid it loads,
               in headless Chrome (CHROME=<binary> if not found; needs the network); exit 1 on any refused
@@ -102,6 +105,22 @@ if (cmd === "tree") {
   }
   diagnostics = rankSuspects(diagnostics, evidence.repos);
   process.exit(report(diagnostics) ? 1 : 0);
+} else if (cmd === "review") {
+  const ids = process.argv.slice(3);
+  if (!ids.length) { console.error("usage: review <id>..."); process.exit(1); }
+  const unknown = ids.filter((id) => !kb.entities.has(id));
+  if (unknown.length) {
+    console.error(`no entity ${unknown.map((id) => `"${id}"`).join(", ")}: nothing written (kb.mjs tree lists the ids)`);
+    process.exit(1);
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  for (const id of new Set(ids)) {
+    const file = path.join(ROOT, kb.entities.get(id).file);
+    const text = fs.readFileSync(file, "utf8");
+    const set = text.replace(/^(\s*"reviewed":\s*")\d{4}-\d{2}-\d{2}(")/m, `$1${today}$2`);
+    if (set !== text) fs.writeFileSync(file, set);
+    console.log(`${id}: reviewed ${today}`);
+  }
 } else if (cmd === "render") {
   const evidence = collectEvidence(kb);
   if (report([...kb.diagnostics, ...evidence.diagnostics])) {

@@ -37,4 +37,4 @@ If the schema cannot express something, stop and tell the human; propose a custo
   first): that is what lets one branch change code and its entities together. A change spanning repos
   updates the KB in the PR that merges last.
 - `reviewed` is an attestation that someone confirmed the entity's claims against the code on that
-  date. Set it only for claims you actually checked.
+  date. Set it only for claims you actually checked, with `kb.mjs review <id>...`.

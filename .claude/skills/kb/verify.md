@@ -18,8 +18,8 @@ date on an unread change is worse than a stale entity, because it hides the stal
 3. **Suspect entities.** Verify lists the commits after `reviewed` for each ref. One commit usually
    makes several entities suspect, so work commit by commit:
    `git -C <checkout> show <hash> -- <path>`. Then re-read the entity, summary included, and decide:
-   - claims still true: set `reviewed` to today, change nothing else
-   - claims changed: fix prose, links and refs, then set `reviewed` to today
+   - claims still true: `node <skill-dir>/tool/kb.mjs review <id>...` sets `reviewed` to today, change nothing else
+   - claims changed: fix prose, links and refs, then `kb.mjs review <id>`
    - a decision's premise changed: draft the decision that now stands and ask the human before writing it
 
    Verify lists first the suspects whose commits changed what the entity reads (an anchored symbol's lines, or a
