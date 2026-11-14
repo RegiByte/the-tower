@@ -1,6 +1,6 @@
 {
   "id": "reviews",
-  "version": "1.0",
+  "version": "2.0",
   "title": "Review threads",
   "description": "One markdown thread of notes per checkout, where the user, the workers in it and its reviewers talk about its unlanded work.",
   "requires": {

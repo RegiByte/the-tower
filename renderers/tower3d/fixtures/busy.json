@@ -1703,7 +1703,7 @@
           {
             "id": "reviews",
             "provides": "reviews",
-            "version": "1.0",
+            "version": "2.0",
             "title": "Review threads",
             "bundled": true,
             "state": "started",
@@ -3599,7 +3599,7 @@
           {
             "id": "reviews",
             "provides": "reviews",
-            "version": "1.0",
+            "version": "2.0",
             "title": "Review threads",
             "bundled": true,
             "state": "started",
@@ -5472,7 +5472,7 @@
           {
             "id": "reviews",
             "provides": "reviews",
-            "version": "1.0",
+            "version": "2.0",
             "title": "Review threads",
             "bundled": true,
             "state": "started",

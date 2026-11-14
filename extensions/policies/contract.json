@@ -1,6 +1,6 @@
 {
   "provides": "policies",
-  "major": 1,
+  "major": 2,
   "names": [
     "verbs.run",
     "verbs.run-now",
@@ -15,6 +15,7 @@
     "streams.runs.s",
     "streams.approvals.a",
     "collections.policies",
+    "client.panel-css.js#policiesPanelCss",
     "client.panel.js#offerWords",
     "client.panel.js#policiesHtml",
     "client.panel.js#policyDoneLine",
