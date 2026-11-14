@@ -317,13 +317,6 @@
           "$ref": "#/definitions/MainCheckouts",
           "description": "Its main checkouts as git reads them, once every dir of it is read: what a checkout's state is read from (`src/bridge/checkouts.ts`)."
         },
-        "gallery": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/GalleryShowing"
-          },
-          "description": "The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`)."
-        },
         "git": {
           "type": "boolean",
           "description": "Every dir of the floor reads as a git repo, so a checkout of it can be forked (`spawn`'s `cut.from`)."
@@ -413,7 +406,6 @@
         "cards",
         "collections",
         "cutByDefault",
-        "gallery",
         "git",
         "hiring",
         "hub",
@@ -677,10 +669,6 @@
         "onDuty": {
           "type": "boolean",
           "description": "Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be, unless let go."
-        },
-        "seat": {
-          "$ref": "#/definitions/Seat",
-          "description": "Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one."
         },
         "actions": {
           "type": "array",
@@ -1233,35 +1221,6 @@
       ],
       "additionalProperties": false,
       "description": "A session by id, with the callsign of the worker it ran as."
-    },
-    "Seat": {
-      "anyOf": [
-        {
-          "type": "object",
-          "properties": {
-            "n": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "n"
-          ],
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "beside": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "beside"
-          ],
-          "additionalProperties": false
-        }
-      ],
-      "description": "Where a worker sits on its floor: a workstation of its own, numbered from the landing, or beside the worker it reports to by its crew edge (that worker's card id)."
     },
     "CardAction": {
       "anyOf": [
@@ -2186,23 +2145,6 @@
       ],
       "additionalProperties": false,
       "description": "The main checkouts as git reads them across a floor's repos: unlanded files (`dirty`, tracked or not) and commits `ahead` of their upstreams, summed, and whether a worker on duty runs there."
-    },
-    "GalleryShowing": {
-      "type": "object",
-      "properties": {
-        "worker": {
-          "$ref": "#/definitions/SessionRef"
-        },
-        "shown": {
-          "$ref": "#/definitions/CardShown"
-        }
-      },
-      "required": [
-        "worker",
-        "shown"
-      ],
-      "additionalProperties": false,
-      "description": "A showing in a floor's gallery: what was shown, under the worker that carries it now."
     },
     "TidyPlan": {
       "type": "object",

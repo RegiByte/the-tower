@@ -1,9 +1,12 @@
-import type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, Wait, Status } from '/lib/board.js'
+import type { Board, Card, CardShown, Floor, KeptBy, SessionRef, Wait, Status } from '/lib/board.js'
 import type { Brief } from '/lib/brief.js'
 import type { Stats } from '/lib/stats.js'
 import type { ShelfSelf, StreamMsg, Tower } from '/lib/client.js'
 
-export type { Board, Card, Floor, GalleryShowing, KeptBy, SessionRef, ShelfSelf, Status, Brief, Wait, StreamMsg }
+export type { Board, Card, Floor, KeptBy, SessionRef, ShelfSelf, Status, Brief, Wait, StreamMsg }
+
+/** A showing in a floor's gallery (`galleryOf`): what was shown, under the worker that carries it now. */
+export type GalleryShowing = { worker: SessionRef; shown: CardShown }
 
 export type Shell = Board['shells'][number]
 export type Today = Board['today']

@@ -134,6 +134,12 @@ own checks (`tower extensions check <dir>`, `tower config check`, `tower doctor`
   | `card.sent`, the messages it sent other sessions | the message steps of its turns in the Brief, `GET /conversations/<id>`, each naming its recipient |
   | `card.cols`, `card.rows` | the screen's own size, on each frame of `/screen/<id>` |
 
+- **`card.seat` and `floor.gallery` are gone.** They were Tower 3D's seating and gallery, derived in the bridge
+  until Tower 3D derived both itself. A renderer of yours that seats workers or hangs showings derives them the same
+  way, over the board's cards and the floor's archive (`GET /archive/<project>`): `seatsOf` and `buildingSeats` in
+  `renderers/tower3d/src/seating.ts`, `galleryOf` in `renderers/tower3d/src/showings.ts`, each short enough to copy.
+  The type `GalleryShowing` is no longer in `/lib/board.js`: it is `{ worker: SessionRef; shown: CardShown }`.
+
 ## The CLI
 
 - **The seven old words that named bundled extensions are gone.** Each exits 1, runs nothing, and names its form

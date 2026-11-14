@@ -23,7 +23,7 @@
     "hub/src/directory.ts",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/renderers/tower3d/src/acts.ts#KEY",
-    "hub/src/bridge/seats.ts#seats",
+    "hub/renderers/tower3d/src/seating.ts#seatsOf",
     "hub/renderers/tower3d/src/desk.ts#makeVisitor",
     "hub/renderers/tower3d/src/life.ts#carryIn",
     "hub/renderers/tower3d/src/life.ts#carryChair",

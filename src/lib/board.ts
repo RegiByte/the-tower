@@ -74,7 +74,6 @@ export type {
   Floor,
   FloorCollection,
   FloorItem,
-  GalleryShowing,
   KeptBy,
   TidyPlan,
   Unresumable,

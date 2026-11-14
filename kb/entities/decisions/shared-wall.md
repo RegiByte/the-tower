@@ -35,8 +35,7 @@ it goes home.
   ([[corkboard]]) hangs on its left only when the floor keeps drafts; the gallery keeps its right half either way.
 - **The gallery**: the floor's latest showings from every card on the floor, on duty or not, newest first: the
   Tower 3D gathers them from the floor's history, its board's and its archive's cards
-  ([`galleryOf`](ref:hub/renderers/tower3d/src/showings.ts#galleryOf), [[board-archive]], [[workstations]]), as the
-  bridge's `floor.gallery`, kept on the board until 2.0, does
+  ([`galleryOf`](ref:hub/renderers/tower3d/src/showings.ts#galleryOf), [[board-archive]], [[workstations]]),
   and the wall hangs as many as [`HANG`](ref:hub/renderers/tower3d/src/layout.ts#HANG) has places, a fixed salon
   arrangement with the newest centred at eye level. All of it is in the plan, derived from the board. A card another
   continues (`continuedBy`) gives the gallery nothing: its showings hang once, under the worker as it is now.

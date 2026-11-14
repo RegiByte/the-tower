@@ -11,7 +11,7 @@
     "hub/renderers/tower3d/src/meetings.ts#meetingsOf",
     "hub/src/bridge/board.ts#withReports",
     "hub/src/bridge/facts.ts#REPORTS_TO",
-    "hub/src/bridge/seats.ts#seats",
+    "hub/renderers/tower3d/src/seating.ts#seatsOf",
     "hub/src/bridge/board.ts#withCrews",
     "hub/src/bridge/board.ts#carriedOn",
     "hub/src/bridge/verbs.ts#sendHomeActions",
@@ -69,7 +69,7 @@ coordinator handing out work, or a conversation that just says hi. The model is 
   carries none. A reviewer the user started has no hirer and
   still nests under its author: it works for that worker. A worker whose launch logged no edge reports to its hirer
   alone, or to nobody. A worker whose crew edge names a worker seated when it comes sits beside it
-  ([`seats`](ref:hub/src/bridge/seats.ts#seats)), a reviewer beside its author. A fork is a new worker with neither, so it heads its own crew.
+  in Tower 3D ([`seatsOf`](ref:hub/renderers/tower3d/src/seating.ts#seatsOf)), a reviewer beside its author. A fork is a new worker with neither, so it heads its own crew.
 - *Folds every renderer shares* (`src/shared/crews.ts`): `hiresOf` (who reports to a worker, by first start: the
   first session of its lineage, so a resumed worker keeps its place among its peers), `crewOf` (everyone under it, each
   before those under it) and `crewTree` (each worker on duty with nobody on duty above it heads a crew, by first start,

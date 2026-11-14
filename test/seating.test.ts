@@ -18,24 +18,21 @@ const DAY = 86_400_000
 /** Each floor's history, by project: the board's cards and its archive's, as Tower 3D's `historyOf` joins them. */
 const historiesOf = (b: Board, archive: (project: string) => Card[]) => new Map(b.floors.map((f) => [f.id, historyFrom(f.cards, archive(f.id))]))
 
-/** What Tower 3D derives from the histories, beside what the bridge put on the board. */
-function derivedBeside(b: Board, archive: (project: string) => Card[]) {
+/** What Tower 3D derives from the histories: each card's seat, and each floor's gallery. */
+function derived(b: Board, archive: (project: string) => Card[]) {
   const histories = historiesOf(b, archive)
   const seats = buildingSeats(histories)
-  return {
-    derived: { seats: b.floors.flatMap((f) => f.cards.map((c) => [c.id, seats.get(c.id)])), galleries: b.floors.map((f) => galleryOf(histories.get(f.id)!)) },
-    bridge: { seats: b.floors.flatMap((f) => f.cards.map((c) => [c.id, c.seat])), galleries: b.floors.map((f) => f.gallery) },
-  }
+  return { seats: b.floors.flatMap((f) => f.cards.map((c) => [c.id, seats.get(c.id)])), galleries: b.floors.map((f) => galleryOf(histories.get(f.id)!)) }
 }
 
 /**
- * The bridge's seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither.
+ * The seats and galleries as recorded, with the session fixtures they were recorded from: a fixture added later changes neither.
  * `npm run seating:update` (`UPDATE_SEATING=1`) rewrites the file from what Tower 3D derives now, keeping its list of session fixtures; read the
  * diff before committing it, since the test no longer holds the seats it replaced. A run in which any test does not run to its end writes nothing.
  */
 const FROZEN = path.join(import.meta.dirname, 'fixtures', 'seating-frozen.json')
 const UPDATE = Boolean(process.env.UPDATE_SEATING)
-const { sessionFixtures, cases: frozen }: { sessionFixtures: string[]; cases: Record<string, ReturnType<typeof derivedBeside>['bridge']> } = JSON.parse(
+const { sessionFixtures, cases: frozen }: { sessionFixtures: string[]; cases: Record<string, ReturnType<typeof derived>> } = JSON.parse(
   readFileSync(FROZEN, 'utf8'),
 )
 const sessionLogs = sessionFixtures.map((name) => fixture(name))
@@ -54,11 +51,9 @@ const fixtureView = (now: number) =>
     now,
   })
 
-/** The derivation is the bridge's now, and the bridge's as frozen then (a card with no seat is `null` in the data). */
+/** The derivation is the one frozen (a card with no seat is `null` in the data). */
 function assertSeating(label: string, b: Board, archive: (project: string) => Card[]) {
-  const { derived, bridge } = derivedBeside(b, archive)
-  assert.deepEqual(derived, bridge, label)
-  const settled = JSON.parse(JSON.stringify(derived))
+  const settled = JSON.parse(JSON.stringify(derived(b, archive)))
   if (UPDATE) written[label] = settled
   else assert.deepEqual(settled, frozen[label], `${label}, against the frozen expectations`)
   ran.push(label)
@@ -85,7 +80,7 @@ test.after(() => {
   assert.deepEqual(ran.toSorted(), Object.keys(frozen).toSorted(), 'every frozen case ran, and every case that ran is frozen')
 })
 
-seatingTest("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every session fixture", () => {
+seatingTest("Tower 3D's seats and galleries, derived from each floor's board and archive, are the frozen ones on every session fixture", () => {
   const latest = Math.max(...sessionLogs.map((l) => l.header.startedAt))
   for (const now of [0, latest + 2 * DAY]) {
     const view = fixtureView(now)
@@ -94,7 +89,7 @@ seatingTest("Tower 3D's seats and galleries, derived from each floor's board and
   }
 })
 
-seatingTest("Tower 3D's seats and galleries, derived from each floor's board and archive, are the bridge's on every Tower 3D fixture board", () => {
+seatingTest("Tower 3D's seats and galleries, derived from each floor's board and archive, are the frozen ones on every Tower 3D fixture board", () => {
   for (const file of readdirSync(FIXTURES_DIR)) {
     const { boards }: FixtureFile = JSON.parse(readFileSync(path.join(FIXTURES_DIR, file), 'utf8'))
     for (const [i, { board: b, archive }] of boards.entries()) {
@@ -125,7 +120,7 @@ seatingTest('a long-running worker keeps its desk at midnight, when the worker w
   assert.deepEqual(seatsOf(floor.cards, floor.cards).get(long.header.id), { n: 0 }, 'the board alone would move it to the one the earlier worker left')
 })
 
-seatingTest("a board built just before midnight, with its archive served just after, keeps the bridge's seat: the board's card counts once", () => {
+seatingTest("a board built just before midnight, with its archive served just after, keeps the worker's seat: the board's card counts once", () => {
   const day = new Date(2026, 9, 4).getTime()
   const session = (id: string, hour: number, exitAfter?: number): SessionLog => ({
     header: { id, project: 'tower', cwd: '/hub', argv: ['claude'], startedAt: day + hour * 3_600_000, cols: 80, rows: 24 },
@@ -138,5 +133,5 @@ seatingTest("a board built just before midnight, with its archive served just af
   const midnight = new Date(2026, 9, 5).getTime()
   const [floor] = board(at(midnight - 1000)).floors
   const history = historyFrom(floor.cards, archiveOf(allCards(at(midnight + 1000)), 'tower', midnight + 1000))
-  assert.deepEqual(seatsOf(history, history).get(long.header.id), floor.cards.find((c) => c.id === long.header.id)!.seat)
+  assert.deepEqual(seatsOf(history, history).get(long.header.id), { n: 1 }, 'the workstation it took beside the earlier worker')
 })

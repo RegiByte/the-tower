@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-10",
+  "reviewed": "2026-11-14",
   "refs": [
     "hub/renderers/tower3d/src/layout.ts#AwaySlot",
     "hub/renderers/tower3d/src/layout.ts#plan",
@@ -47,8 +47,7 @@ defaults, and the new-worker form as the optional path.
   once every floor's archive is read at its key, or failed to be
   ([`whenSettled`](ref:hub/renderers/tower3d/src/main.ts#whenSettled)), so no board draws with an archive older than
   itself and a reload seats everyone where they were; a floor whose archive can't be read draws its workers on duty
-  without desks. The seats are a map by card id, so a layer of placements by hand can later sit over them. The
-  bridge's `card.seat` is the same replay over every card, kept on the board until 2.0. A worker whose crew edge names a seated
+  without desks. The seats are a map by card id, so a layer of placements by hand can later sit over them. A worker whose crew edge names a seated
   worker ([[crews]]: a [[reviewer]] and its author) sits beside it, taking no workstation; one whose lead leaves first
   takes the lowest free desk then. So the open
   desk, where the next worker sits, is the lowest free one
