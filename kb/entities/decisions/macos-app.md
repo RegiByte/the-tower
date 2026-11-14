@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-11-12",
+  "reviewed": "2026-11-14",
   "refs": ["hub/src/app.ts#openApp", "hub/src/app.ts#infoPlist", "hub/src/app.ts#renderIcon", "hub/apps/macos/icon.svg", "hub/src/cli.ts", "hub/apps/macos/Sources/Tower.swift#Tower", "hub/apps/macos/Sources/App.swift#start", "hub/apps/macos/Sources/App.swift#TowerWebView", "hub/apps/macos/Sources/App.swift#AppDelegate", "hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock", "hub/apps/macos/Sources/Attention.swift#Attention", "hub/src/shared/waits.ts#heededWaits", "hub/src/shared/waits.ts#transitions"]
 }
 ---
@@ -23,7 +23,8 @@ the browser. Keys a browser keeps for itself (⌘W, ⌘T) are one slip from clos
   `alert`/`confirm`/`prompt` as sheets, links that leave the tower opening in the default browser (a window opened
   with no address and given one after included), and pointer lock for Tower 3D's mouse-look
   ([`webViewDidRequestPointerLock`](ref:hub/apps/macos/Sources/App.swift#webViewDidRequestPointerLock)), granted
-  through a private delegate method, the one way an embedder can. Frames inside the page (shelf pages at origins of
+  through a private delegate method, the one way an embedder can, with the window accepting mouse-moved events, without
+  which the locked page hears the mouse only while a button is held. Frames inside the page (shelf pages at origins of
   their own) go where the page sends them.
 - **A view of a running system, never its starter** ([`start`](ref:hub/apps/macos/Sources/App.swift#start)): the
   app reads the config's `port` ([`Tower`](ref:hub/apps/macos/Sources/Tower.swift#Tower)) and opens the tower once it
