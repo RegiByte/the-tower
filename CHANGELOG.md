@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.1.0
+
+A floor with many worktrees can cut a new one as soon as the tower starts (#589). Nothing to restart beyond the tower
+(`tower update` does it). API 2.1.
+
+- **New worktree is offered once each repo's branches are read,** in milliseconds, instead of after every worktree's
+  status, which took about a minute on a floor of 14 repos and ~47 worktrees. Those few reads go ahead of the status
+  reads queued behind them. Worktree lists, Tidy and the Changes pane fill in as before, once their reads finish.
+- **The new-worker form says why it can't cut yet:** the floor's repos are still being read, or which one git couldn't
+  read and what it said, instead of a false "not a git repo with an origin". `tower hire` and Tower 3D's one-press
+  hire refuse with the same reason rather than starting the worker in the main checkout.
+- **For renderers:** `floor.reading` lists the floor's directories not yet read in full, each with `failed` when its
+  first read failed; `hireBlocked` in `/lib/spawn.js` (provisional) gives the reason a default hire waits.
+
 ## v2.0.1
 
 Fixes for the workers who run in the tower, from reading how they work in it. Nothing to restart beyond the tower
