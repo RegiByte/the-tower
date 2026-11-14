@@ -41,7 +41,7 @@ naming the host restart ([[host-daemon]]).
 - tmux as the PTY owner: the host must see every byte to log it.
 - Typed fields in the spawn message (`model`, `effort`, `resume`): every new option would change the host protocol.
 - A protocol-5 host taking both the old `args` spawn and the whole `argv` one: a mode on one message, kept in the host
-  for good or dropped by a second restart. The tower speaks the old shape to an old host instead, until 2.0.
+  for good or dropped by a second restart. The tower spoke the old shape to an old host instead; 2.0 dropped it and requires protocol 5.
 
 **Consequences.** Changing the host ends every session (each is resumable), so host changes are batched for a
 deliberate restart, and anything that can live in a client does. New Claude options ship with a client change only.
