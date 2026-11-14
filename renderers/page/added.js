@@ -5,7 +5,7 @@ import { esc, plural, span } from '/lib/words.js'
 
 /**
  * What extensions add to a subject, as the page draws it beside the core's own: badges, and actions as buttons whose
- * press the page runs through `runAdded`; and the asks, as rows beside the offers.
+ * press the page runs through `runAddedAt`; and the asks, as rows beside the offers.
  * @import { Board, Subject } from '/lib/board.js'
  * @import { Action, Added, Badge, BoardAsk } from '/lib/extension.js'
  * @import { Glyph } from '/lib/layout.js'
