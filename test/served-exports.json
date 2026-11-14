@@ -2315,6 +2315,10 @@
         "foldTrayHtml": {
           "since": "2.0"
         },
+        "highlightCss": {
+          "since": "2.0",
+          "stability": "provisional"
+        },
         "highlightLines": {
           "since": "2.0"
         },

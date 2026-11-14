@@ -6,6 +6,7 @@ import { type Mount, type Tab, drawPanel, fileCall, panelsCss, pressing } from '
 import { plural } from '/lib/words.js'
 import { anchorOf } from './anchors.ts'
 import type { FloorThread, NoteCall } from '../threads.ts'
+import { reviewsPanelCss } from './panel-css.ts'
 import { type ThreadPlace, cardReviews, cardThread, floorThread, floorThreadsOf, heldThread, readThread, resolveAction, reviewsHtml, threadCheckout, threadFailure, threadViewAt, threadWant } from './panel.ts'
 import { THE_USER, sendText, unseenBy, type AnchorStates, type AppendInput, type Appended, type ReviewThread } from './reviews.ts'
 
@@ -50,7 +51,7 @@ const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): 
   let seen = true
   /** The note the composer answers. */
   let re: number | undefined
-  host.innerHTML = `<style>${CSS}${panelsCss}</style><div class="reviews"></div>`
+  host.innerHTML = `<style>${CSS}${panelsCss}${reviewsPanelCss}</style><div class="reviews"></div>`
   const el = host.querySelector<HTMLElement>('.reviews')!
 
   const threadReads = loop({

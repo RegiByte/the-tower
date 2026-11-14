@@ -1,7 +1,7 @@
 import { highlightCss } from './highlight.ts'
 
 /**
- * The panels' look, under `.changes-panel`, `.reviews-panel` and `.stats-panel`: the renderer places and sizes the element
+ * The panels' look, under `.changes-panel` and `.stats-panel`: the renderer places and sizes the element
  * they're painted in.
  *
  * Also a worker's `.tab-row`, on one line: its tabs (any of them in a `.tab-set`, which lays out as if absent), its
@@ -34,16 +34,15 @@ a.badge:hover { background: color-mix(in oklab, var(--c) 12%, transparent); }
 .file-acts { display: inline-flex; gap: var(--sp-2xs); flex: none; }
 .file-act { min-width: var(--control); min-height: var(--control); display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); padding: 0; background: none; color: var(--muted); cursor: pointer; }
 .file-act:hover { color: var(--ink); border-color: var(--line); background: var(--panel); }
-.reviews-panel .anchor .where .file-acts { margin-left: auto; }
-.changes-panel .add, .reviews-panel .add { color: var(--added); } .changes-panel .del, .reviews-panel .del { color: var(--removed); }
-.changes-panel .none, .reviews-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
-.changes-panel .settled, .reviews-panel .settled { margin: var(--sp-s) 0 var(--sp-m); padding: var(--sp-s) var(--sp-l); border-left: 3px solid var(--quiet); color: var(--muted); }
+.changes-panel .add { color: var(--added); } .changes-panel .del { color: var(--removed); }
+.changes-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
+.changes-panel .settled { margin: var(--sp-s) 0 var(--sp-m); padding: var(--sp-s) var(--sp-l); border-left: 3px solid var(--quiet); color: var(--muted); }
 .landing h3 { margin: var(--sp-l) 0 var(--sp-s); font-size: var(--fs-m); }
 .landing h3 small, .landing p { color: var(--faint); font-weight: 400; }
 .landing-edit { margin-bottom: var(--sp-l); }
 .landing pre { margin: var(--sp-s) 0 0; padding: var(--sp-m); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; font: var(--fs-s)/1.45 var(--mono); }
 .settled [data-landing-of] { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer; }
-.changes-panel code, .reviews-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
+.changes-panel code { font: var(--fs-s) var(--mono); color: var(--ink); }
 /* The head stays at the top while the diff scrolls under it, each file's header stuck just below it. */
 .changes-panel { --changes-head-h: 3rem; }
 .changes-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: var(--sp-l); height: var(--changes-head-h); box-sizing: border-box;
@@ -138,45 +137,13 @@ a.badge:hover { background: color-mix(in oklab, var(--c) 12%, transparent); }
 .changes-panel .file table.split td.picked { background: color-mix(in oklab, var(--accent) 20%, var(--panel)); }
 .changes-panel .file table.split td.ln[data-pick]:hover { color: var(--ink); background: color-mix(in oklab, var(--accent) 22%, var(--panel)); }
 .changes-panel .note-box { margin: var(--sp-s) var(--sp-l) var(--sp-l); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel); font: var(--fs-m)/1.4 var(--ui); }
-.changes-panel .note-box .where, .reviews-panel .composer .re-chip { display: flex; align-items: center; gap: var(--sp-s); margin-bottom: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
-.changes-panel .note-box textarea, .reviews-panel .composer textarea { display: block; width: 100%; min-height: 72px; resize: vertical; padding: var(--sp-s) var(--sp-m);
+.changes-panel .note-box .where { display: flex; align-items: center; gap: var(--sp-s); margin-bottom: var(--sp-s); color: var(--muted); font-size: var(--fs-s); }
+.changes-panel .note-box textarea { display: block; width: 100%; min-height: 72px; resize: vertical; padding: var(--sp-s) var(--sp-m);
   border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel-2); color: var(--ink); font: var(--fs-m)/1.45 var(--ui); }
-.changes-panel .note-box textarea::placeholder, .reviews-panel .composer textarea::placeholder { color: var(--faint); }
-.changes-panel .note-box .actions, .reviews-panel .composer .actions { display: flex; align-items: center; gap: var(--sp-s); margin-top: var(--sp-s); }
+.changes-panel .note-box textarea::placeholder { color: var(--faint); }
+.changes-panel .note-box .actions { display: flex; align-items: center; gap: var(--sp-s); margin-top: var(--sp-s); }
 .changes-panel .note-box .actions .hint { margin-left: auto; color: var(--faint); font-size: var(--fs-xs); }
-.reviews-panel .reviews-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: var(--sp-l); padding: var(--sp-l) 0 var(--sp-m); color: var(--muted); font-size: var(--fs-m); background: var(--panel); }
-.reviews-panel .reviews-head b { color: var(--ink); }
-.reviews-panel .reviews-head .tag { font: var(--fs-xs) var(--mono); padding: 1px var(--sp-s); border-radius: var(--radius-pill); background: var(--panel-2); color: var(--muted); cursor: copy; }
-.reviews-panel .reviews-head .send { margin-left: auto; display: flex; gap: var(--sp-xs); }
-.reviews-panel .reviews-head .send b { color: inherit; }
-.reviews-panel .reviews-head .send select { max-width: 200px; font: var(--fs-s) var(--ui); background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius); }
-.reviews-panel .note { max-width: 980px; margin: 0 0 var(--sp-l); padding: var(--sp-m) var(--sp-l) var(--sp-l); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: var(--radius); }
-.reviews-panel .note.mine { border-left-color: var(--accent); }
-.reviews-panel .note.new { border-color: var(--accent); border-left-color: var(--accent); }
-.reviews-panel .note > header { display: flex; align-items: baseline; gap: var(--sp-m); margin-bottom: var(--sp-xs); font-size: var(--fs-s); color: var(--muted); }
-.reviews-panel .note > header b { font: 800 var(--fs-m)/1 var(--display); letter-spacing: .04em; color: var(--ink); }
-.reviews-panel .note > header .n { font: var(--fs-s) var(--mono); }
-.reviews-panel .note > header .re { font: var(--fs-s) var(--mono); color: var(--accent); cursor: pointer; }
-.reviews-panel .note > header button.re { margin-left: 0; padding: 0; border: none; background: none; }
-.reviews-panel .reviews-head button.tag { border: none; font-weight: 400; }
-.reviews-panel .note > header .new-mark { padding: 0 var(--sp-s); border-radius: var(--radius-pill); font-weight: 700; color: var(--panel); background: var(--accent); }
-.reviews-panel .note > header button { margin-left: auto; min-height: var(--control); padding: 0 var(--sp-m); font-size: var(--fs-xs); font-weight: 400; background: none; }
-.reviews-panel .note > header button[data-reply] + button[data-resolve] { margin-left: 0; }
-.reviews-panel .note > header button.resolved-mark { margin-left: 0; min-height: 0; padding: 0 var(--sp-s); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); color: var(--muted); cursor: pointer; }
-.reviews-panel .note.resolved { border-style: dashed; border-left-style: solid; }
-.reviews-panel .note.resolved .body, .reviews-panel .note.resolved .anchor { color: var(--muted); }
-.reviews-panel .note .body { font-size: var(--fs-l); line-height: 1.5; }
-.reviews-panel .anchor { margin: var(--sp-s) 0; border: 1px solid var(--line); border-radius: var(--radius); }
-.reviews-panel .anchor .where { display: flex; align-items: center; gap: var(--sp-m); padding: var(--sp-xs) var(--sp-m); background: var(--panel-2); border-radius: var(--radius) var(--radius) 0 0; }
-.reviews-panel .anchor .where .go { display: flex; align-items: center; gap: var(--sp-m); min-width: 0; padding: 0; border: none; background: none; color: inherit; font: inherit; text-align: left; }
-.reviews-panel .anchor .where .go:hover code { text-decoration: underline; }
-.reviews-panel .anchor .state { padding: 0 var(--sp-s); border-radius: var(--radius-pill); font-size: var(--fs-xs); color: var(--panel); background: var(--muted); }
-.reviews-panel .anchor.changed { border-color: var(--accent); } .reviews-panel .anchor.changed .state { background: var(--accent); }
-.reviews-panel .anchor pre { display: grid; grid-template-columns: minmax(100%, max-content); margin: 0; padding: var(--sp-s) 0; overflow-x: auto; font: var(--fs-s)/1.55 var(--mono); font-variant-ligatures: none; }
-.reviews-panel .anchor pre .row { min-height: 1lh; padding: 0 var(--sp-l); } .reviews-panel .anchor pre .m { display: inline-block; width: 2ch; color: var(--muted); user-select: none; }
-.reviews-panel .anchor pre .plus { background: var(--added-wash); } .reviews-panel .anchor pre .minus { background: var(--removed-wash); }
-.reviews-panel .anchor pre .plus .m, .reviews-panel .anchor pre .minus .m { color: var(--ink); }
-${highlightCss(':is(.changes-panel, .reviews-panel)')}.reviews-panel .composer { max-width: 980px; margin-top: var(--sp-xl); }
+${highlightCss('.changes-panel')}
 .stats-panel { font: var(--fs-m)/1.4 var(--ui); color: var(--ink); }
 .stats-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
 .read-failed { margin: var(--sp-s) 0; padding: var(--sp-m) var(--sp-l); border-left: 3px solid var(--broken); display: flex; align-items: center; gap: var(--sp-l); flex-wrap: wrap; }
@@ -218,32 +185,4 @@ ${highlightCss(':is(.changes-panel, .reviews-panel)')}.reviews-panel .composer {
 .stats-panel .spreads th { color: var(--muted); font-weight: 400; } .stats-panel .spreads tr > th:first-child { text-align: left; color: var(--ink); }
 .stats-panel .spreads tr:first-child th { color: var(--faint); font-size: var(--fs-xs); }
 .stats-panel .as-of { margin: var(--sp-l) 0 0; color: var(--faint); font-size: var(--fs-xs); }
-.policies-panel { font: var(--fs-m)/1.45 var(--ui); color: var(--ink); }
-.policies-panel section { margin: 0 0 var(--sp-xl); }
-.policies-panel h3 { margin: var(--sp-l) 0 var(--sp-s); color: var(--muted); font: 700 var(--fs-xs)/1.3 var(--ui); letter-spacing: .08em; text-transform: uppercase; }
-.policies-panel .none { margin: var(--sp-s) 0; color: var(--faint); font-style: italic; }
-.policies-panel code { font: var(--fs-s) var(--mono); }
-.policies-panel .policy, .policies-panel .need { margin: 0 0 var(--sp-m); padding: var(--sp-m) var(--sp-l); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-.policies-panel .need { border-left: 3px solid var(--accent); }
-.policies-panel .policy.invalid { border-left: 3px solid var(--broken); }
-.policies-panel header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s); }
-.policies-panel button.title { padding: 0; border: 0; background: none; color: var(--ink); font: 700 var(--fs-l)/1.3 var(--ui); cursor: pointer; text-align: left; }
-.policies-panel button.title:hover { text-decoration: underline; }
-.policies-panel .tag { padding: 1px var(--sp-s); border: 0; border-radius: var(--radius-pill); background: var(--panel-2); color: var(--muted); font: var(--fs-xs) var(--mono); cursor: copy; }
-.policies-panel .acts { display: flex; align-items: center; gap: var(--sp-s); margin-left: auto; }
-.policies-panel p { margin: var(--sp-xs) 0 0; }
-.policies-panel .rule { color: var(--ink); }
-.policies-panel .now { color: var(--muted); }
-.policies-panel .need p { color: var(--muted); }
-.policies-panel .facts { display: flex; flex-wrap: wrap; gap: var(--sp-xs) var(--sp-l); color: var(--faint); font-size: var(--fs-s); }
-.policies-panel .unapproved { color: var(--needs-text); }
-.policies-panel .worker { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
-.policies-panel .worker:hover { text-decoration: underline; }
-.policies-panel .problems { margin: var(--sp-s) 0 0; padding-left: var(--sp-xl); color: var(--broken-text); font-size: var(--fs-s); }
-.policies-panel .problems code { color: var(--ink); }
-.policies-panel .offer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-s) var(--sp-m); margin: 0 0 var(--sp-s); padding: var(--sp-s) var(--sp-l); border: 1px solid var(--accent); border-radius: var(--radius); background: var(--panel); }
-.policies-panel .offer.dismissed { border-color: var(--line); }
-.policies-panel .offer .lamp { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-.policies-panel .offer .when { color: var(--muted); }
-.policies-panel .offer small { color: var(--faint); font-size: var(--fs-xs); }
 `

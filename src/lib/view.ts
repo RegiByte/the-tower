@@ -5,6 +5,7 @@ export {
   fileSpansHtml,
 } from '../shared/file-acts.ts'
 export {
+  /** @provisional */ highlightCss,
   highlightLines,
 } from '../shared/highlight.ts'
 export {

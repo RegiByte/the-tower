@@ -5,6 +5,7 @@ import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 import type { PolicyReplies } from '../policies.ts'
 import { policiesHtml, policyDoneLine, type PolicyCall } from './panel.ts'
+import { policiesPanelCss } from './panel-css.ts'
 import { floorPolicies, POLICIES } from './policies.ts'
 
 /**
@@ -14,7 +15,7 @@ import { floorPolicies, POLICIES } from './policies.ts'
 
 const ID = 'policies/policies'
 
-const STYLE = `${panelsCss}
+const STYLE = `${panelsCss}${policiesPanelCss}
 ${viewCss(
   ID,
   `& .policies-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--sp-l); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
