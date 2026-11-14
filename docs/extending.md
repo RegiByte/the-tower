@@ -490,7 +490,8 @@ in; outside a checkout, the declarations `tower types` writes carry `@since` on 
 name is a minor. Removing, renaming or changing the meaning of
 one is a major, after a deprecation: the name stays as an alias marked `@deprecated`, with its replacement, until that
 major. A name marked `@provisional` has met one consumer: it may change in a minor, with a `CHANGELOG.md` line saying
-what to use, and is never removed without a replacement before a major. A second consumer promotes it, for good.
+what to use, and is never removed without a replacement before a major. A second consumer promotes it, for good. A
+member can be provisional in a type that isn't: `Loop` of `/lib/machine.js` is stable, its `until` provisional.
 `npm test` holds the tower to the list: any difference fails, and `npm run served:update` rewrites it for a change you
 meant (commit it).
 
@@ -1094,7 +1095,7 @@ rows drawn by a view it names first, in its order, the rest in the floor's colle
 `tower/tray`'s shape, for an extension that draws its collection's tray as any collection's with its own icon,
 titles and actions.
 
-**Hosting views** (API 1.160, provisional). `viewHost` in `/lib/view.js` is what mounts views, the page's and a
+**Hosting views** (API 1.160). `viewHost` in `/lib/view.js` is what mounts views, the page's and a
 sibling's alike:
 
 ```js
