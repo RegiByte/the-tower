@@ -395,17 +395,20 @@ const start: Start = (ctx) => {
         const views = policyViews(floor.id, filesOf(own.collections[POLICIES] ?? []), factsOf(own.streams as OwnStreams), floor.cards, callsignOf, board.hostUp, now)
         const offers = offersOf(floor.id, views)
         const asks = offers.map(
-          (o): Ask => ({
-            key: o.key,
-            subject: `item.${POLICIES}:${floor.id}/${o.policy}`,
-            title: o.title ?? o.tag,
-            hint: offeredWords(o.slot, o.until, views.find((v) => v.id === o.policy)?.header?.when.tz, now),
-            since: o.since,
-            until: o.until,
-            sound: 'offer',
-            actions: [{ verb: callOf(o, 'accept')![0], call: callOf(o, 'accept')![1], words: { label: 'Accept', hint: 'start the run this slot offers' } }],
-            opens: { view: `${POLICIES}/policies`, subject: `floor:${floor.id}` },
-          }),
+          (o): Ask => {
+            const [verb, call] = callOf(o, 'accept')!
+            return {
+              key: o.key,
+              subject: `item.${POLICIES}:${floor.id}/${o.policy}`,
+              title: o.title ?? o.tag,
+              hint: offeredWords(o.slot, o.until, views.find((v) => v.id === o.policy)?.header?.when.tz, now),
+              since: o.since,
+              until: o.until,
+              sound: 'offer',
+              actions: [{ verb, call, words: { label: 'Accept', hint: 'start the run this slot offers' } }],
+              opens: { view: `${POLICIES}/policies`, subject: `floor:${floor.id}` },
+            }
+          },
         )
         const slots = views.flatMap((v) => (v.header && v.header.runner === undefined ? [{ key: v.id, when: v.header.when }] : []))
         return { x: { policies: views, offers } satisfies FloorPolicies, ...(slots.length && { slots }), ...(asks.length && { asks }) }
