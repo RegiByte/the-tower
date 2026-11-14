@@ -8,7 +8,6 @@ import { apiError, type ApiError, type Replies } from '../shared/api.ts'
 import { legacyOf, type LegacyEntry } from '../shared/extensions.ts'
 import { ConfigError, type Config, type ProbeConfig } from '../shared/model.ts'
 import { usageReading, type RateLimitsReading } from '../shared/rate-limits.ts'
-import { POLICIES, type CardRun, type Offer, type OfferFields, type PolicyFields, type PolicyView } from '../shared/policies-legacy.ts'
 import { REVIEWS, reviewedIn, reviewPrompt } from '../shared/reviews.ts'
 import type { VerbAction } from '../shared/extensions.ts'
 import type { FloorThread, ReviewsCardPart, ReviewsFloorPart } from '../shared/reviews-legacy.ts'
@@ -75,9 +74,6 @@ const QUOTA_ONLY = (name: string | undefined) => apiError('not_found', `No probe
 const same: LegacyVerb = { input: (old) => old, reply: (now) => now }
 
 export const LEGACY_VERBS: Record<string, LegacyVerb> = {
-  'policy/run': same,
-  'policy/pass': same,
-  'policy/approve': same,
   'review/append': same,
   'probe/run': {
     input: (old) => ((old as { name: string }).name === 'quota' ? {} : QUOTA_ONLY((old as { name: string }).name)),
@@ -90,10 +86,6 @@ export const LEGACY_VERBS: Record<string, LegacyVerb> = {
 
 export const LEGACY_READS: Record<string, LegacyRead> = {
   'reviews/<project>': { request: ({ project }) => ({ params: { project: project! }, query: {} }), reply: (now) => now },
-  'runs/<project>': {
-    request: ({ project }, { policy, limit }) => ({ params: { project: project! }, query: { policy: String(policy), limit: String(limit) } }),
-    reply: (now) => now,
-  },
   'probe/<name>': {
     request: ({ name }, { last }) => (name === 'quota' ? { params: {}, query: { last: String(last) } } : QUOTA_ONLY(name)),
     reply: (now, board) => {
@@ -107,27 +99,6 @@ export const LEGACY_READS: Record<string, LegacyRead> = {
 
 /** The quota extension's part, as `board.x.quota` holds it. */
 type QuotaPart = Omit<ProbeStatus, 'name' | 'reads'> & { commands?: unknown }
-
-/** A call as the policies extension's part names it: its verb, and its input. */
-type MovedCall = [verb: string, input: unknown]
-
-/** The policies extension's part of a floor, as it stood at the move: its calls naming `policies/run` and `policies/approve`. */
-type PoliciesPart = {
-  policies: (PolicyFields & { calls: Record<string, MovedCall>; actions: { verb: string; call?: MovedCall }[] })[]
-  offers: (OfferFields & { calls: Record<string, MovedCall>; actions: { verb: string; call?: MovedCall }[] })[]
-}
-
-/** The core's verbs the moved calls named before the move. */
-const OLD_VERB: Record<string, string> = { 'policies/run': 'policy/run', 'policies/approve': 'policy/approve' }
-
-const oldCall = ([verb, input]: MovedCall): MovedCall => [OLD_VERB[verb] ?? verb, input]
-
-/** What a view or an offer calls, named as the core named it. */
-const oldCalls = <T extends { calls: Record<string, MovedCall>; actions: { verb: string; call?: MovedCall }[] }>(thing: T): T => ({
-  ...thing,
-  calls: Object.fromEntries(Object.entries(thing.calls).map(([verb, call]) => [verb, oldCall(call)])),
-  actions: thing.actions.map((a) => (a.call ? { ...a, call: oldCall(a.call) } : a)),
-})
 
 const reviewsPart = <T>(subject: { x?: Record<string, unknown> }) => subject.x?.[REVIEWS] as T | undefined
 
@@ -149,17 +120,11 @@ const oldThread = ({ key: _, resolved: __, ...thread }: ReviewsFloorPart['thread
   return { ...thread, calls: note ? { note: [...note] } : {}, actions: note ? [{ verb: 'note', call: [...note] }] : [] }
 }
 
-const policiesPart = (subject: { x?: Record<string, unknown> }) => subject.x?.[POLICIES] as PoliciesPart | undefined
-
 export const LEGACY_FIELDS: Record<string, LegacyField> = {
-  'floor.policies': (floor): PolicyView[] => (policiesPart(floor as Floor)?.policies ?? []).map(oldCalls) as PolicyView[],
   'floor.tidy.threads': (floor, board): Floor['tidy'] => ({
     ...(floor as Floor).tidy,
     threads: (board.adds[`floor:${(floor as Floor).id}`]?.tidy ?? []).flatMap((e) => (e.cap === 'reviews' ? [e.key] : [])),
   }),
-  'card.run': (card): CardRun | undefined => (policiesPart(card as Card) as { run?: CardRun } | undefined)?.run,
-  'board.offers': (board): Offer[] =>
-    ((board as Board).floors.flatMap((f) => (policiesPart(f)?.offers ?? []).map(oldCalls)) as Offer[]).sort((a, b) => a.since - b.since),
   'floor.threads': (floor): FloorThread[] => (reviewsPart<ReviewsFloorPart>(floor as Floor)?.threads ?? []).map(oldThread),
   'card.threadState': (card) => reviewsPart<ReviewsCardPart>(card as Card)?.threadState,
   'card.unseen': (card) => reviewsPart<ReviewsCardPart>(card as Card)?.unseen,

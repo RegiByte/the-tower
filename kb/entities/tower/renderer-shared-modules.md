@@ -32,10 +32,10 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   `claudeDefaults` observed, `opus 5.5 (default)`, or as Claude's default until one is seen), round-robin through waits, dismissals and the ring
   setting kept in `tower.store`, the sounds as scores, who a review's notes can be sent to, the hiring limits
   ([[hire]]), crews ([[crews]]) and the past by crew.
-- `panels.ts`: the Changes, Stats and Policies panels, and the Reviews panel's 1.92 copy over the board's old fields until 2.0, as pure views (view model in, html out), the line-picking logic,
+- `panels.ts`: the Changes and Stats panels, and the Reviews panel's 1.92 copy over the board's old fields until 2.0, as pure views (view model in, html out), the line-picking logic,
   one stylesheet and the data attributes each renderer wires ([[shared-panels]]), with code highlighted by
   `highlight.ts` (highlight.js, whose core and languages it registers are each served once under `/vendor/`). It gathers a module per concern (`changes-reads.ts`, `changes-lines.ts`,
-  `changes-panel.ts`, `anchors-legacy.ts`, `reviews-panel.ts`, `stats-panel.ts`, `policies-panel.ts`, `file-acts.ts`,
+  `changes-panel.ts`, `anchors-legacy.ts`, `reviews-panel.ts`, `stats-panel.ts`, `file-acts.ts`,
   `panel-html.ts`, `panel-kit.ts`, `panels-css.ts`), re-exported by `/panels.js` and served apart only at their internal URLs. `anchors-legacy.ts` is the
   Changes panel over a thread with its note box, and review anchors' helpers, as they stood at 1.113: deprecated
   copies until 2.0, the reviews extension's client holding its own (`/x/reviews/anchors.js`). The review threads' format and the Reviews panel are
@@ -113,9 +113,6 @@ a renderer would otherwise write twice, so a sibling renderer written from scrat
   read; every xterm a renderer mounts takes [`terminalKeymap`](ref:hub/src/shared/termkeys.ts#terminalKeymap) as its
   key handler, each natural key a command of the keymap the config can rebind
   ([`terminalKeys`](ref:hub/src/shared/termkeys.ts#terminalKeys) stays for renderers on the default keys).
-- `/policies.js`, `LEGACY`'s: the policies extension's client (`/x/policies/policies.js`), a policy's rule and slots in
-  words and where it stands ([[policies]]); `/panels.js` keeps the old Policies panel over the board's old fields,
-  deprecated until 2.0.
 - `loop.ts`: a machine as data ([`loop`](ref:hub/src/shared/loop.ts#loop)): a handler per event type returns effects,
   the next state among them, and the renderer's executors run the rest (a fetch, a draw, `tower.store`); a timer is an
   effect carrying the event it fires, so a poll's life is in what the handlers return.

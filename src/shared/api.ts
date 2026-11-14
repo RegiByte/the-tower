@@ -139,52 +139,6 @@ export function spawnProblems(fields: unknown): { path: string; message: string 
   )
 }
 
-/** A policy's item id in its project's `policies` collection. */
-const policy = z.string().regex(ITEM_ID).describe("The policy: its item's id in the project's `policies` collection.")
-
-/**
- * A check's run at a slot: its exit code (0, there is work; 1, none; absent when it timed out or never started, `error`
- * saying which), how long it took, its stdout when it found work (at most 2,048 characters) and the end of its stderr
- * when it failed (at most 500).
- */
-export type CheckResult = { exit: number; ms: number; out?: string; stderr?: string } | { error: string; ms: number; stderr?: string }
-
-/** Why the runner passed a slot: offered it, the check found no work, live was full, or the check failed. */
-export type Outcome = 'offered' | 'no-work' | 'held' | 'check-failed'
-
-/** How a run started: on its own at its slot, an offer accepted, or by hand with no slot. */
-export type RunStart = 'auto' | 'offer' | 'hand'
-
-/** What a policy's check did at a slot (decision `policies`). */
-const checkMs = z.int().nonnegative()
-const checkStderr = z.string().max(500).optional().describe('The end of its stderr when it failed, at most 500 characters.')
-
-const checkResult = z.union([
-  z.strictObject({
-    exit: z.int().describe('Its exit code: 0, there is work; 1, none.'),
-    ms: checkMs,
-    out: z.string().max(2048).optional().describe('Its stdout when it found work, at most 2,048 characters.'),
-    stderr: checkStderr,
-  }),
-  z.strictObject({
-    error: z.string().describe('Why it has no exit code: it timed out, or could not start.'),
-    ms: checkMs,
-    stderr: checkStderr,
-  }),
-]) satisfies z.ZodType<CheckResult>
-
-const OUTCOMES = ['offered', 'no-work', 'held', 'check-failed'] as const satisfies Outcome[]
-const SLOTTED_STARTS = ['auto', 'offer'] as const satisfies RunStart[]
-
-const slot = z.int().nonnegative().describe("One of the policy's slots, epoch ms, at or before now.")
-
-const policyRunBase = {
-  project: id,
-  policy,
-  by: actor('named on the run fact as the session that accepted or started it.'),
-  check: checkResult.optional().describe('The check that let it run.'),
-}
-
 const configKey = z
   .array(z.string().min(1))
   .min(1)
@@ -550,38 +504,6 @@ export const VERBS = {
         .describe("Each capability's answer to `tower/tidy.apply` for its keys of `plan.x`."),
     }),
   },
-  'policy/run': {
-    input: z
-      .discriminatedUnion('start', [
-        z.strictObject({ ...policyRunBase, start: z.literal('hand').describe('Now, with no slot.') }),
-        z.strictObject({
-          ...policyRunBase,
-          start: z.enum(SLOTTED_STARTS).describe('`auto`, a runner at its slot; `offer`, an open offer accepted.'),
-          slot: slot.describe("The slot it runs for, epoch ms: one of the policy's, at or before now."),
-        }),
-      ])
-      .describe(
-        "Start a run of a policy: its file parsed now, a worker spawned on its prose with its `hire`, and a run fact appended to the project's `runs` stream (a worker whose fact can't be appended is killed). It needs no approval (the caller consents), except `auto`, refused unless the file's words as read now are approved. Refused for an invalid policy, another runner's, a slot already run, or the host down; `limited` while as many of its runs run as its `live`. A policy's runs, passes and approvals are taken one at a time.",
-      ),
-    reply: z.object({ t: z.literal('ran'), id: z.string().describe("The worker's session."), n: z.int().describe("The run's number among the policy's runs."), hash: z.string() }),
-  },
-  'policy/pass': {
-    input: z
-      .strictObject({ project: id, policy, slot, outcome: z.enum(OUTCOMES), check: checkResult.optional().describe('The check, when one ran.') })
-      .describe("Record a slot of a policy the runner saw and didn't start, and why: `offered`, `no-work`, `held` (live was full), `check-failed`. Refused once the slot has a fact."),
-    reply: ok,
-  },
-  'policy/approve': {
-    input: z
-      .strictObject({
-        project: id,
-        policy,
-        hash: z.string().regex(/^sha256:[0-9a-f]{64}$/).describe("The hash of the policy's file as the approver read it, `sha256:<hex>`."),
-        by: actor('named on the approval fact.'),
-      })
-      .describe("Approve a policy's current words for the runner to start on its own (`start: auto`): refused unless `hash` is the file's hash now. Any edit needs a new approval."),
-    reply: ok,
-  },
 }
 
 /**
@@ -608,9 +530,6 @@ export const QUERIES = {
   'probe/<name>': z
     .object({ last: z.coerce.number().int().positive().max(1000).default(20).describe('How many of its latest reads, newest first.') })
     .describe("One probe of the config's: its status as the board shows it, and its latest reads as its stream keeps them, each Claude's answer as it came or why there is none."),
-  'runs/<project>': z
-    .object({ policy, limit: z.coerce.number().int().positive().max(1000).default(20).describe('How many of its latest runs, newest first.') })
-    .describe("A policy's runs, newest first: each run's number, slot, how it started and on which hash, its check, and its worker as it is now, its latest answer in full."),
   landing: z
     .object({ project: id, branch: z.string().min(1).describe('A branch of a worktree or a kept branch, `carried` on the board.') })
     .describe(

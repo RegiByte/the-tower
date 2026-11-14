@@ -1,5 +1,4 @@
 import type { Board, Wait, WaitReason } from '../bridge/board.ts'
-import type { Offer } from './policies-legacy.ts'
 import type { AskOpens, BoardAsk } from './extensions.ts'
 import { dutyOrderIn, findCard, stepFrom } from './crews.ts'
 import { VIEWER_KEYS } from './viewer.ts'
@@ -51,31 +50,20 @@ export const DISMISSED_KEY = VIEWER_KEYS.dismissed
 /** The waits a viewer hasn't dismissed, in the board's order. */
 export const heededWaits = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.waiting.filter((w) => !heed.dismissed.has(w.key))
 
-/**
- * The offers a viewer hasn't dismissed, oldest first. A dismissed offer stays open, and stays acceptable, until its policy's next slot.
- * @deprecated since 1.91: each offer is the policies extension's ask too (`heededAsks`); `board.offers` is its copy until 2.0, so don't count both.
- */
-export const heededOffers = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.offers.filter((o) => !heed.dismissed.has(o.key))
-
 /** The asks of extensions a viewer hasn't dismissed, oldest first. */
 export const heededAsks = (board: Board, heed: Pick<Heed, 'dismissed'>) => board.asks.filter((a) => !heed.dismissed.has(a.key))
 
-/**
- * What asks for you: a worker's wait, or an extension's ask (`board.asks`), a policy's slot offered among them. An offer
- * of `board.offers` is the same slot as the policies extension's ask, read the way renderers read it before 1.91.
- */
-export type Attended = Wait | BoardAsk | Offer
-
-export const isOffer = (a: Attended): a is Offer => 'policy' in a
+/** What asks for you: a worker's wait, or an extension's ask (`board.asks`), a policy's slot offered among them. */
+export type Attended = Wait | BoardAsk
 
 export const isAsk = (a: Attended): a is BoardAsk => 'cap' in a
 
 /** Everything asking for you that a viewer heeds, in the order to go to them: the workers' waits, then the extensions' asks, the policies' offers among them. */
 export const attentionOrder = (board: Board, heed: Pick<Heed, 'dismissed'>): Attended[] => [...heededWaits(board, heed), ...heededAsks(board, heed)]
 
-/** The dismissed keys to store once `key` (a wait's, an ask's or an offer's) is dismissed too: those that are over drop out. */
+/** The dismissed keys to store once `key` (a wait's or an ask's) is dismissed too: those that are over drop out. */
 export const dismissing = (board: Board, dismissed: ReadonlySet<string>, key: string) =>
-  [...board.waiting, ...board.asks, ...board.offers].map((a) => a.key).filter((k) => k === key || dismissed.has(k))
+  [...board.waiting, ...board.asks].map((a) => a.key).filter((k) => k === key || dismissed.has(k))
 
 /**
  * The waits that began and the waits that ended between two boards. On the first board a renderer sees nothing begins
@@ -83,17 +71,11 @@ export const dismissing = (board: Board, dismissed: ReadonlySet<string>, key: st
  */
 export const transitions = (prev: Board | undefined, next: Board): { began: Wait[]; ended: Wait[] } => (prev ? keyed(prev.waiting, next.waiting) : { began: [], ended: [] })
 
-/**
- * The offers that opened and the offers that closed between two boards, as `transitions` reads waits.
- * @deprecated since 1.91: `askTransitions` holds them, as the policies extension's asks; don't announce both.
- */
-export const offerTransitions = (prev: Board | undefined, next: Board): { began: Offer[]; ended: Offer[] } => (prev ? keyed(prev.offers, next.offers) : { began: [], ended: [] })
-
 /** The asks that began and the asks that ended between two boards, as `transitions` reads waits. */
 export const askTransitions = (prev: Board | undefined, next: Board): { began: BoardAsk[]; ended: BoardAsk[] } => (prev ? keyed(prev.asks, next.asks) : { began: [], ended: [] })
 
 /** Whether `a` is about the worker `id`: its wait, or an ask about its card. */
-export const isAbout = (a: Attended, id: string | undefined) => id !== undefined && (isAsk(a) ? a.subject === `card:${id}` : !isOffer(a) && a.id === id)
+export const isAbout = (a: Attended, id: string | undefined) => id !== undefined && (isAsk(a) ? a.subject === `card:${id}` : a.id === id)
 
 const keyed = <T extends { key: string }>(prev: T[], next: T[]) => {
   const before = new Set(prev.map((a) => a.key))
@@ -134,12 +116,6 @@ export const waitsBeganLine = (began: Wait[], callsignOf: (id: string) => string
   began.map((w) => `${callsignOf(w.id)} is waiting on you: ${WAIT_SAID[w.reason]}.`).join(' ')
 
 export const DISMISS_TITLE = 'dismiss this wait: out of your way until the worker waits again'
-
-/**
- * What a renderer's polite live region says as `began` offers open (`offerTransitions`): one sentence per offer, empty for none.
- * @deprecated since 1.91: `asksBeganLine`, over the policies extension's asks.
- */
-export const offersBeganLine = (began: Offer[]) => began.map((o) => `${o.title ?? o.tag} is offered: a slot to start.`).join(' ')
 
 export const DISMISS_OFFER_TITLE = 'dismiss this offer: out of your way, still open until its next slot'
 

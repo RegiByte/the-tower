@@ -1,6 +1,6 @@
 /**
  * The Policies panel: a floor's policies, the slots offered now and what needs the user, with Run now, Approve and
- * Accept. Bundled into `/panels.js`.
+ * Accept. Served as `/x/policies/panel.js`.
  */
 import { callOf, type Board, type Floor } from '/lib/board.js'
 import { DISMISS_OFFER_TITLE } from '/lib/cards.js'

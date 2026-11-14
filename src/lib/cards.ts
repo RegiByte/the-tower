@@ -117,7 +117,6 @@ export {
   /** @provisional */ heededAsks,
   heededWaits,
   /** @provisional */ isAsk,
-  /** @provisional */ isOffer,
   neighboursIn,
   /** @provisional */ nextAttended,
   /** @provisional */ nextWait,

@@ -11,7 +11,6 @@ import type { SystemPaths } from '../shared/model.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { claudeDefaults, type ClaudeDefaults } from './defaults.ts'
 import { chainsOf, continuations, lineage, namer, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
-import type { CardRun, Offer, PolicyView } from '../shared/policies-legacy.ts'
 import { legacyCrew, legacyReviewer, type ProbeStatus } from './legacy.ts'
 import { accountsOf, commandLimits, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
@@ -230,11 +229,6 @@ export type Card = {
   continuedBy?: SessionRef
   /** Running, or stopped by the host or lost while its latest conversation waits to be resumed and can be, unless let go. */
   onDuty: boolean
-  /**
-   * The run of a policy it is, through every resume: a run fact names the first session of its lineage.
-   * @deprecated since 1.91: the policies extension's `x.policies.run`, copied here until 2.0.
-   */
-  run?: CardRun
   /** Where it sits on its floor, replayed from the floor's comings and goings (`withSeats`): every on-duty card has one. */
   seat?: Seat
   verbs: CardVerb[]
@@ -313,11 +307,6 @@ export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brie
   threads: FloorThread[]
   /** Its main checkouts as git reads them, once every dir of it is read: what a checkout's state is read from (`src/bridge/checkouts.ts`). @since 1.93 */
   main?: MainCheckouts
-  /**
-   * Its policies, in id order (decision `policies`), their calls naming `policy/*`.
-   * @deprecated since 1.91: the policies extension's `x.policies.policies`, copied here until 2.0.
-   */
-  policies: PolicyView[]
   /** The floor's last showings, any worker's, on duty or not, newest first (`galleryOf`). */
   gallery: GalleryShowing[]
   /** Every dir of the floor reads as a git repo, so a checkout of it can be forked (`spawn`'s `cut.from`). @since 1.95 */
@@ -401,11 +390,6 @@ export type Board = {
   floors: Floor[]
   /** Who waits on you, in the order to go to them. */
   waiting: Wait[]
-  /**
-   * Every floor's open offers, oldest first: a policy's slot waiting for someone to start it, until its next slot.
-   * @deprecated since 1.91: each floor's `x.policies.offers`, and its ask in `asks`, copied here until 2.0.
-   */
-  offers: Offer[]
   /**
    * The latest change to any archived card (epoch ms; 0 with none archived): a renderer holding a floor's archive reads
    * it again when this or the floor's `archived` moves.
@@ -962,7 +946,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         branches,
         ...(main && { main }),
         threads: [],
-        policies: [],
         gallery: galleryOf(floorCards),
         git: read?.every((r) => r.git) ?? false,
         bases,
@@ -976,7 +959,6 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
       }
     }),
     waiting: waitingOrder(cards),
-    offers: [],
     archiveAt: archiveAtOf(cards, cards.filter((c) => !kept(c))),
     limits,
     ...defaults,

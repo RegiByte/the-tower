@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "Shared panels: one Changes, one Reviews, one Stats and one Policies for every renderer",
-  "summary": "The Changes, Reviews, Stats and Policies panels are pure views in one served module, `/panels.js`, gathered from a module per concern (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
+  "summary": "The Changes, Reviews and Stats panels are pure views in one served module, `/panels.js`, the Policies panel the policies extension's own, gathered from a module per concern (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
   "in": "tower-core",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-12",
+  "reviewed": "2026-11-14",
   "refs": [
     "hub/src/shared/panels.ts",
     "hub/src/shared/changes-panel.ts#markedChangesHtml",
@@ -16,7 +16,6 @@
     "hub/extensions/reviews/client/panel.ts#threadViewOf",
     "hub/src/shared/stats-panel.ts#statsHtml",
     "hub/src/shared/stats-panel.ts#statsQuery",
-    "hub/src/shared/policies-panel.ts#policiesHtml",
     "hub/src/shared/panel-kit.ts#drawPanel",
     "hub/src/shared/changes-lines.ts#watchPickDrag",
     "hub/src/shared/panel-kit.ts#keepingFocus",
@@ -46,14 +45,13 @@ drift apart.
 are the same view in every renderer; only where they sit, their state and a few gestures differ.
 
 **How.**
-- *One served module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts), served as `/panels.js`) holds four panels,
+- *One served module of pure views* ([`panels.ts`](ref:hub/src/shared/panels.ts), served as `/panels.js`) holds three panels,
   each in a module of its own that it gathers and bundles: Changes
   ([`markedChangesHtml`](ref:hub/src/shared/changes-panel.ts#markedChangesHtml), [[changes-view]]), Stats
   ([`statsHtml`](ref:hub/src/shared/stats-panel.ts#statsHtml) over a `/stats` read, ranges asked by
   [`statsQuery`](ref:hub/src/shared/stats-panel.ts#statsQuery), [[stats]]), and Reviews
-  ([`reviewsHtml`](ref:hub/src/shared/reviews-panel.ts#reviewsHtml) over the board's old fields) and Policies
-  ([`policiesHtml`](ref:hub/src/shared/policies-panel.ts#policiesHtml) over `floor.policies` and `board.offers`), both
-  deprecated copies kept until 2.0. Their extensions draw their own: `/x/reviews/panel.js`
+  ([`reviewsHtml`](ref:hub/src/shared/reviews-panel.ts#reviewsHtml) over the board's old fields), a deprecated copy
+  kept until 2.0. Their extensions draw their own: `/x/reviews/panel.js`
   ([`reviewsHtml`](ref:hub/extensions/reviews/client/panel.ts#reviewsHtml) over `x.reviews`, [[review-threads]], whose
   view model [`threadViewOf`](ref:hub/extensions/reviews/client/panel.ts#threadViewOf) builds) and
   `/x/policies/panel.js` ([[policies]]). Each takes a view model and reads nothing global. The logic of rows, picks,

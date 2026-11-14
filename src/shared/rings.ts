@@ -1,6 +1,6 @@
 import type { Wait } from '../bridge/board.ts'
 import { VIEWER_KEYS } from './viewer.ts'
-import { type Attended, isAbout, isAsk, isOffer } from './waits.ts'
+import { type Attended, isAbout, isAsk } from './waits.ts'
 
 /** How a wait or an offer rings: how often, and each sound as a score. */
 
@@ -36,6 +36,6 @@ export const ringing = (waits: Wait[], watched: string | undefined) => waits.fin
  * as its `sound` says: as a question, or as an offer.
  */
 export const ringingSound = (attended: Attended[], watched: string | undefined): Sound | undefined => {
-  const a = attended.find((a) => isOffer(a) || !isAbout(a, watched))
-  return a && (isOffer(a) ? 'offer' : isAsk(a) ? (a.sound === 'offer' ? 'offer' : 'question') : soundOf(a))
+  const a = attended.find((a) => !isAbout(a, watched))
+  return a && (isAsk(a) ? (a.sound === 'offer' ? 'offer' : 'question') : soundOf(a))
 }
