@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Roles",
   "description": "A worker's role: a default model and effort, a prompt joining its system prompt, and flags the tower reads (whether it hires, whether it is consulted). A hire naming no role can take a default one.",
-  "requires": { "tower": "1.167" },
+  "requires": { "tower": "2.0" },
   "server": "server.ts",
   "settings": {
     "type": "object",

@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Quote to worker",
   "description": "Pick text in a markdown, text, code or html file a worker showed and write the worker a prompt about it: the prompt quotes the passage and says where it is in the file.",
-  "requires": { "tower": "1.170" },
+  "requires": { "tower": "2.0" },
   "client": "client",
   "views": {
     "composer": {

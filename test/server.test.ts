@@ -1727,7 +1727,7 @@ test("server: tower/spawn.gate is answered by the core's hiring limits first, th
   const manifest = readFileSync(path.join(TALLY, 'extension.json'), 'utf8')
   const server = readFileSync(path.join(TALLY, 'server.ts'), 'utf8')
   const gated = JSON.parse(manifest)
-  writeFileSync(path.join(TALLY, 'extension.json'), JSON.stringify({ ...gated, requires: { ...gated.requires, tower: '1.107' }, answers: { ...gated.answers, 'tower/spawn.gate': {} } }))
+  writeFileSync(path.join(TALLY, 'extension.json'), JSON.stringify({ ...gated, requires: { ...gated.requires, tower: '2.0' }, answers: { ...gated.answers, 'tower/spawn.gate': {} } }))
   writeFileSync(
     path.join(TALLY, 'server.ts'),
     server.replace(

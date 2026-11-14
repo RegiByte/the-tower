@@ -260,7 +260,7 @@ const versionProblem = (required: string, tower: string): LoadProblem | undefine
   const [rm, rn] = versionOf(required)
   const [tm, tn] = versionOf(tower)
   if (rm > tm) return error('too-new', `needs tower ${rm}; this is ${tm}: tower update`, 'requires.tower')
-  if (rm < tm) return error('too-old', `written for tower ${rm}; this is ${tm}: CHANGELOG ${tm}.0 says what changed for extensions, then raise requires.tower`, 'requires.tower')
+  if (rm < tm) return error('too-old', `written for tower ${rm}; this is ${tm}: docs/migrating-to-${tm}.md in the tower's checkout says what changed for extensions, then raise requires.tower to "${tm}.0"`, 'requires.tower')
   if (rn > tn) return error('too-new', `needs tower ${required}; this is ${tower}: tower update`, 'requires.tower')
   return undefined
 }

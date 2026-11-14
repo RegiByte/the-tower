@@ -3,7 +3,7 @@
   "version": "1.1",
   "title": "Quota probe",
   "description": "Reads each command's account's rate limits from Claude while no turn of that command does.",
-  "requires": { "tower": "1.153" },
+  "requires": { "tower": "2.0" },
   "server": "server.ts",
   "client": "client",
   "settings": {

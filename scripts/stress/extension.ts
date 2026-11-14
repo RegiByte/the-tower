@@ -16,7 +16,7 @@ const manifest = ({ actions, tabs }: Counts, icons: boolean) => ({
   version: '1.0',
   title: 'Stress',
   description: 'A crowd of actions, badges, lines and tabs on every card, for checking dense regions.',
-  requires: { tower: '1.120' },
+  requires: { tower: '2.0' },
   server: 'server.ts',
   client: 'client',
   folds: { card: { x: { type: 'object' }, adds: ['badges', 'lines'] } },

@@ -606,7 +606,7 @@ settings name, which its server runs with `ctx.run` and whose audio it serves wi
   "id": "pulse",
   "version": "1.0",
   "title": "Pulse",
-  "requires": { "tower": "1.151", "chime": "1.0" },
+  "requires": { "tower": "2.0", "chime": "1.0" },
   "server": "server.ts",
   "settings": { "type": "object", "properties": { "every": { "type": "integer", "default": 60000 } } },
   "verbs": {
@@ -652,10 +652,9 @@ of every key newer than the manifest's `requires.tower` (`under-declared`), nami
 it to. The declarations [`tower types`](#types-outside-the-checkout) writes say it in the comment of each ctx
 member, and of many of the library's names, a view's kit, the subjects and the board's fields, as `@since` or as
 "since" in a type's description; `tower api` lists each verb with its
-description, its `@since` in it where it has one. Anything that imports [the library](#the-library) needs tower 1.151,
-the minor it arrived in, so this document names no version below that outside its samples and [Deprecated until
-2.0](#deprecated-until-20); a newer one it names beside a thing tells you to raise
-`requires.tower`, or is one the tower says nowhere else yet.
+description, its `@since` in it where it has one. Every manifest requires tower 2.0 or later, so a 1.x version this
+document names beside a thing is in every tower that loads it; a 2.x one tells you to raise `requires.tower`, or is
+one the tower says nowhere else yet.
 
 Server code reaches the tower's helpers by name, never by a path into its checkout, so a folder copied anywhere still
 loads: `import { mediaTypeOf } from '/lib/files.js'` imports [the library](#the-library), the same line a client writes
@@ -953,8 +952,7 @@ view of its own says so with `opens: {view, subject?}`, a view by its id and the
 the board with none, any extension's view or the core's. Next-waiting and a click on its notification go there, and a
 viewer already on that view and subject is at the ask, so next-waiting moves past it. The page's ask row still opens
 the ask's subject. The policies extension's offers name
-`{view: 'policies/policies', subject: 'floor:<id>'}`. An extension using it raises `requires.tower` to 1.156: an older
-tower refuses the key as a `shape` problem. A renderer of your own follows it or doesn't.
+`{view: 'policies/policies', subject: 'floor:<id>'}`. A renderer of your own follows it or doesn't.
 
 A command is an action: a place of its own on screen is a view ([Views](#views)). Its module is imported once
 per page and stays loaded between presses until the page reloads (`tower extensions restart` doesn't reach a page

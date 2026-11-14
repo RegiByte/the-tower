@@ -4,7 +4,7 @@
   "title": "Typed",
   "description": "One verb per way a word takes its input, each answering the input as it received it and who called.",
   "requires": {
-    "tower": "1.153"
+    "tower": "2.0"
   },
   "server": "server.ts",
   "verbs": {

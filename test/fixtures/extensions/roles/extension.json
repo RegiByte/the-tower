@@ -3,7 +3,7 @@
   "version": "1.0",
   "title": "Worker roles",
   "description": "Pick a role when hiring: its markdown joins the worker's system prompt and its name shows on the card. The fixture the server test spawns with.",
-  "requires": { "tower": "1.85" },
+  "requires": { "tower": "2.0" },
   "server": "server.ts",
   "settings": { "type": "object", "additionalProperties": false, "properties": { "default": { "type": "string" } } },
   "collections": {
