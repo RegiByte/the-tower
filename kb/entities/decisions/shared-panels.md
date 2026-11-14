@@ -1,7 +1,7 @@
 ---
 {
   "type": "decision",
-  "name": "Shared panels: one Changes, one Reviews, one Stats and one Policies for every renderer",
+  "name": "Shared panels: one Changes, one Reviews and one Stats for every renderer",
   "summary": "The Changes, Reviews and Stats panels are pure views in one served module, `/panels.js`, the Policies panel the policies extension's own, gathered from a module per concern (view model in, html out), with the logic of picking lines and finding an anchor's, one stylesheet and a data-attribute protocol each renderer wires; renderers keep their own state and wiring.",
   "in": "tower-core",
   "status": "accepted",
@@ -67,8 +67,7 @@ are the same view in every renderer; only where they sit, their state and a few 
   pick ([`changesHtml`](ref:hub/src/shared/anchors-legacy.ts#changesHtml)), and its anchor helpers stay exported from
   `/panels.js` as deprecated copies until 2.0; the reviews extension's client holds its own (`/x/reviews/anchors.js`).
 - *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
-  File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]); a
-  policy's presses are calls the board offered (`data-policy-call`). Text boxes are named by attribute, not id, so
+  File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]). Text boxes are named by attribute, not id, so
   one panel can be drawn in two places.
 - *Redraws keep what is being typed.* [`drawPanel`](ref:hub/src/shared/panel-kit.ts#drawPanel) replaces the element's
   html only when it changed, keeps the element's scroll and that of each `data-keep-scroll` inside it (WebKit drops
