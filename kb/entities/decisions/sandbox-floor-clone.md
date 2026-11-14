@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-07",
-  "reviewed": "2026-11-09",
+  "reviewed": "2026-11-14",
   "refs": ["hub/scripts/sandbox.ts#makeFloorClone", "hub/scripts/sandbox.ts#followCheckout", "hub/scripts/sandbox.ts#mendFloorClone", "hub/scripts/sandbox.ts#checkFloorClone", "hub/scripts/sandbox.ts#floorDamage", "hub/extensions/autotidy/server.ts#start", "hub/src/worktrees.ts#tidyable"]
 }
 ---
