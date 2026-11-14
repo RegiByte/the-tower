@@ -30,7 +30,7 @@ export type Project = {
 export type ProjectRuntimeConfig = {
   /** Absolute plugin directories this project's sessions load, beside the ones every session loads. */
   plugins?: string[]
-  /** The `argv` command this project starts with by default; ignored, falling back to `argv`'s first, when it names none of them or `argv` is the legacy array. */
+  /** The `argv` command this project starts with by default; ignored, falling back to `argv`'s first, when it names none of them or `argv` is a single command's array. */
   command?: string
 }
 
@@ -263,7 +263,7 @@ export const hiringConfig = (config: Config, projectId: string): Required<Hiring
 /** The commands `runtime`'s sessions start with (`RuntimeConfig.argv`). */
 const argvOf = (config: Config, runtime: Runtime): RuntimeConfig['argv'] => config.runtimes[runtime].argv
 
-/** Every name `runtime`'s `argv` offers, in write order; `undefined` for the legacy array shape (one unnamed command). */
+/** Every name `runtime`'s `argv` offers, in write order; `undefined` for the array shape (one unnamed command). */
 export const commandNames = (config: Config, runtime: Runtime): string[] | undefined => {
   const argv = argvOf(config, runtime)
   return Array.isArray(argv) ? undefined : Object.keys(argv)
@@ -287,7 +287,7 @@ export const sessionCommand = (config: Config, runtime: Runtime, name: string | 
   return commands.find((c) => c.name === resolved) ?? commands[0]
 }
 
-/** The argv `runtime` actually runs: the legacy array as-is, or the named command when valid, else the object's first. */
+/** The argv `runtime` actually runs: the array as-is, or the named command when valid, else the object's first. */
 export const resolveCommand = (config: Config, runtime: Runtime, name: string | undefined): string[] => {
   const argv = argvOf(config, runtime)
   if (Array.isArray(argv)) return argv
@@ -446,7 +446,7 @@ export type SessionHeader = {
   runtime?: string
   cwd: string
   argv: string[]
-  /** The `argv` command this session was started under, by name; absent for the legacy array shape. */
+  /** The `argv` command this session was started under, by name; absent for the array shape (single-command mode). */
   command?: string
   startedAt: number
   cols: number
