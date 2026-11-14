@@ -57,7 +57,6 @@
  *                                                   tower.js: `<html ${tower.prefs.attributes()}>`
  *   tower.scheme() / tower.onScheme((scheme) => …)   the colour scheme drawn, 'light' or 'dark', the system's when the viewer
  *                                                   chose none; returns unsubscribe
- *   tower.schemeChoice() / tower.chooseScheme(c)    @deprecated: tower.prefs.get().scheme and tower.prefs.set({ scheme })
  *   tower.remember(value) / await tower.recall()    a value kept for this page in the viewer's browser (null if none)
  *   tower.store.set(key, value) / await tower.store.get(key)   a value kept in the viewer's browser under a key every page
  *                                                   shares, the tower page included (null if none), such as the files viewed in a diff
@@ -542,7 +541,6 @@
     addEventListener('message', (e) => {
       if (e.source !== window.parent) return
       if (e.data.t === 'prefs') applyPrefs(e.data.prefs)
-      if (e.data.t === 'scheme') applyPrefs({ ...prefs, scheme: e.data.scheme })
     })
   } else {
     applyPrefs(kept())
@@ -668,8 +666,6 @@
     const towerVerbs = {
       ...ui,
       prefs: ({ prefs }) => api.setPrefs(prefs),
-      /** @deprecated a page's tower.js asks with `prefs` */
-      scheme: ({ scheme }) => api.setPrefs({ scheme }),
     }
     const onLoad = () => {
       if (!helloSinceLoad) (paired = false, closeWatches())
@@ -768,10 +764,6 @@
       attributes,
     },
     scheme,
-    /** @deprecated `tower.prefs.get().scheme` */
-    schemeChoice: () => prefs.scheme,
-    /** @deprecated `tower.prefs.set({ scheme })` */
-    chooseScheme: (scheme) => api.setPrefs({ scheme }),
     onScheme(fn) {
       schemeWatchers.add(fn)
       return () => schemeWatchers.delete(fn)
