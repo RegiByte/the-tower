@@ -62,8 +62,8 @@ then.
   request with `by` is named unless the latest `tower.keys` names the same worker and is less than a minute old
   ([`inBurst`](ref:hub/src/tower/dispatch.ts#inBurst)); the tower waits for its fold of the fact before typing
   ([`keyedBy`](ref:hub/src/tower/dispatch.ts#keyedBy)), so the burst's next request reads it.
-- The `tower` CLI names its caller from `TOWER_SESSION_ID`: it passes it on `hire`, `review`, `send`, `home` and
-  `submit`, and `tower kill`, which speaks to the host directly, appends the fact itself first. The user's
+- The `tower` CLI names its caller from `TOWER_SESSION_ID`: it sends it as a header on every request to the tower
+  ([`callerHeaders`](ref:hub/src/shared/api.ts#callerHeaders)), and as `by` in `submit` and `home`, and `tower kill`, which speaks to the host directly, appends the fact itself first. The user's
   page and terminal pass none, so the user's acts stay unnamed.
 
 **Alternatives considered.**

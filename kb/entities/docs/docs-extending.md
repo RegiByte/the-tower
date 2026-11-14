@@ -2,10 +2,10 @@
 {
   "type": "doc",
   "name": "docs/extending.md",
-  "summary": "How a user extends or copies a renderer and what the core promises it: the renderer API's verbs, reads and errors, the library and what the tower serves beside it, shelf pages, collections, extensions (a manifest and a start, this lane), plugins, what is deprecated until 2.0 and what is not an extension point.",
+  "summary": "How a user extends or copies a renderer and what the core promises it: the renderer API's verbs, reads and errors, the library and what the tower serves beside it, shelf pages, collections, extensions (a manifest and a start, this lane), plugins, keeping a fork and what is not an extension point.",
   "in": "tower",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/tower/served.ts#MODULES", "hub/src/shared/extensions.ts#StartCtx", "hub/src/tower/http.ts#STATIC", "hub/src/tower/tower.js", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/shared/shelf-page.ts", "hub/src/renderers.ts#BUILT_INS", "hub/src/shared/health.ts#whyNot", "hub/scripts/extension-shots.ts", "hub/src/shared/extensions.ts#LEGACY"]
+  "refs": ["hub/src/tower/served.ts#libraryUrls", "hub/src/shared/extensions.ts#StartCtx", "hub/src/tower/http.ts#STATIC", "hub/src/tower/tower.js", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/shared/shelf-page.ts", "hub/src/renderers.ts#BUILT_INS", "hub/src/shared/health.ts#whyNot", "hub/scripts/extension-shots.ts", "hub/src/shared/extensions.ts#LEGACY"]
 }
 ---
 `docs/extending.md` is the contract written for people: a new renderer or a copy of one that ships
@@ -16,14 +16,11 @@ the tower serves beside it (`tower.js`, `/design.css`, extensions' clients, the 
 [`STATIC`](ref:hub/src/tower/http.ts#STATIC)), collections, plugins, the `tower` command and the logs. Every recipe
 and import in it uses the library.
 
-What is deprecated is told once, in one section near its end: each served module
-([`MODULES`](ref:hub/src/tower/served.ts#MODULES)) with the library modules its names are in, and what else is
-deprecated and its replacement. Nothing
-else in the document names one.
+Nothing in it is deprecated: what 2.0 removed is told by `docs/migrating-to-2.md`, not here.
 
-It names an API version only where a sample needs one (`/tower.js?v=`, `requires`), in that section, and beside a
-thing no older than the library (1.151, the floor of anything that imports it) whose version the tower says nowhere
-else. For the rest it says once, under Extensions, where to ask: a manifest
+It names an API version only where a sample needs one (`/tower.js?v=2.0`, `requires`), and beside a thing whose
+version the tower says nowhere else. Every manifest requires 2.0 or later, so a 1.x version it names beside a thing is
+in every tower that loads it, which it says once, under Extensions. For the rest it says once, under Extensions, where to ask: a manifest
 key's and a core hook's `x-since` at `/schema`, the `under-declared` warning of `tower extensions check`, and the
 `@since` in the declarations `tower types` writes.
 

@@ -15,7 +15,7 @@
     "hub/src/shared/markdown.ts#imagePath",
     "hub/src/shared/markdown.ts#relativeHref",
     "hub/src/shared/subjects.ts#linkedFile",
-    "hub/src/tower/served.ts#MODULES",
+    "hub/src/tower/served.ts#libraryUrls",
     "hub/test/markdown.test.ts",
     "hub/src/shared/view-frame.ts#writeLinks",
     "hub/src/shared/view-frame.ts#linkTo",

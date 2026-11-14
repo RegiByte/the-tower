@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The library: one curated surface for code outside the core",
-  "summary": "Code outside the core builds on the library, 24 modules at /lib/<module>.js, each a file of src/lib/ holding only named re-exports and deprecated aliases. One specifier works in a browser, in server code through the resolve hook, and in a bundler through a tsconfig path. API_VERSION versions it, every name with its since, and five checks in npm test hold it: shape, declarations, reach, runtimes and direction.",
+  "summary": "Code outside the core builds on the library, 24 modules at /lib/<module>.js, each a file of src/lib/ holding only named re-exports, and a deprecated alias for a name on its way out. One specifier works in a browser, in server code through the resolve hook, and in a bundler through a tsconfig path. API_VERSION versions it, every name with its since, and five checks in npm test hold it: shape, declarations, reach, runtimes and direction.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
@@ -20,8 +20,8 @@ API.
 contract if authors can find everything they need on it.
 
 **How.**
-- **Files that only name.** Each `src/lib/<module>.ts` holds named re-exports, named re-exports of types, and deprecated
-  aliases with the import each needs. Adding an export to a source file changes no library name until someone writes it
+- **Files that only name.** Each `src/lib/<module>.ts` holds named re-exports and named re-exports of types; a name on its way
+  out stays there as a deprecated alias with the import it needs, until the major that removes it. Adding an export to a source file changes no library name until someone writes it
   into a library file. A name stands in one module.
 - **One specifier.** `/lib/<module>.js` is a URL in a browser ([`LIBRARY`](ref:hub/src/tower/served.ts#LIBRARY) in
   `SOURCE_DIRS`, so a library file is served like any other, once, with its imports as URLs, and a page's import map and

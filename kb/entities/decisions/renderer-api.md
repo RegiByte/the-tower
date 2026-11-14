@@ -25,7 +25,7 @@ page → tower  {t: 'get', id, path}          GET  /<path>
 page → tower  {t: 'text' | 'blob', id, path}  GET  /<path>, as text or as a Blob of its type
 page → tower  {t: 'watch', id, path}        POST /mux/watch {mux, key, path}  (events on GET /mux)
 page → tower  {t: 'unwatch', id}            POST /mux/unwatch {mux, key}
-page → tower  {t: 'tower', verb, …}         —   (select, home, shelf: the framing tower's own view; prefs: the viewer's appearance; scheme, deprecated)
+page → tower  {t: 'tower', verb, …}         —   (select, home, shelf, go, display: the framing tower's own view; prefs: the viewer's appearance)
 page → tower  {t: 'remember', value}        localStorage, keyed by the page's path
 page → tower  {t: 'recall', id}             localStorage, keyed by the page's path
 page → tower  {t: 'store', key, value}      localStorage, keyed by `key`, shared by every page

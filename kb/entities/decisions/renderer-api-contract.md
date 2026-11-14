@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "The renderer API is declared once, as schemas",
-  "summary": "Every verb of the renderer API is a zod schema of its input and reply in one module; the tower parses every request with it and answers failures as typed errors, the board carries ready requests beside its verbs, and the schemas are served as JSON Schema for renderers in any language. Its version is major.minor, and only a major breaks a renderer. What the tower serves for renderers to build on (/tower.js, /design.css and the shared modules) is part of the contract: removing or renaming an export is a major, adding one a minor, held by a test over a checked-in list of every served name.",
+  "summary": "Every verb of the renderer API is a zod schema of its input and reply in one module; the tower parses every request with it and answers failures as typed errors, each action the board offers carries its ready request, and the schemas are served as JSON Schema for renderers in any language. Its version is major.minor, and only a major breaks a renderer. What the tower serves for renderers to build on (/tower.js, /design.css and the shared modules) is part of the contract: removing or renaming an export is a major, adding one a minor, held by a test over a checked-in list of every served name.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/extensions.ts#MANIFEST_SCHEMA", "hub/src/shared/api.ts#ApiError", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#MODULES", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json", "hub/src/shared/views.ts"]
+  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/extensions.ts#MANIFEST_SCHEMA", "hub/src/shared/api.ts#ApiError", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#libraryUrls", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json", "hub/src/shared/views.ts"]
 }
 ---
 **Problem.** The [[renderer-api]] is the contract the next renderer reads, and that renderer may not be written in
@@ -61,14 +61,14 @@ went wrong, and know which changes can break it.
   or an older minor; a page that names none moves with the tower. `tower.version` is the full version. A new
   reserved first segment ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)) is an addition too: a user's
   extension of that name is refused until renamed, the refusal and the changelog saying so (`config`, 1.147).
-- **The served modules are part of the contract.** Every module in [`MODULES`](ref:hub/src/tower/served.ts#MODULES),
+- **The served modules are part of the contract.** Every module of the library ([`/lib/`](ref:hub/src/tower/served.ts#libraryUrls)),
   `/design.css` (its custom properties and classes) and `/tower.js` (the members of `window.tower`) are imported by URL
   by a renderer copied out of the checkout, so they are versioned with the API: removing or renaming a name is a major,
   with a CHANGELOG line saying what to use instead; adding one is a minor; a name on its way out stays `@deprecated`
   until a major. The libraries served beside them (`/xterm.js`, `/marked.js`…) are those libraries' own APIs, outside
   the contract, and so are the internal URLs each served module's files and packages are loaded from (`/shared/…`,
-  `/src/…`, `/vendor/…`, [[renderer-shared-modules]]): a served module is a re-export of its file, and its names are
-  what a renderer imports; the library is the same contract, chosen name by name and held closer ([[library]]).
+  `/src/…`, `/vendor/…`, [[renderer-shared-modules]]): a library module names what it re-exports from those files,
+  and its names are what a renderer imports, chosen name by name ([[library]]).
   [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name as of the major it
   was written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major
   hasn't moved, and on any other difference, so an addition is a deliberate `npm run served:update` that shows in the
