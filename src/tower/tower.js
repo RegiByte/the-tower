@@ -194,12 +194,10 @@
   const stale = () => (serving !== undefined && serving.id !== SERVED.id ? serving : null)
 
   /**
-   * The code the tower serves as a board says it, every `onStale` told when that moves `stale()`. A framing page of a
-   * tower before 1.144 relays none.
-   * @param {Served | undefined} served
+   * The code the tower serves as a board says it, every `onStale` told when that moves `stale()`.
+   * @param {Served} served
    */
   const heardServed = (served) => {
-    if (served === undefined) return
     const was = stale()?.id
     serving = served
     if (stale()?.id !== was) staleWatchers.forEach((fn) => fn(stale()))
@@ -529,12 +527,9 @@
   }
   darkSystem.addEventListener('change', () => prefs.scheme || announceScheme())
   const PREFS_KEY = 'tower.prefs'
-  /** Before `PREFS_KEY`, the scheme alone was kept under this key: a viewer's choice there carries over. */
-  const SCHEME_KEY = 'tower.scheme'
   const kept = () => {
     try {
-      const stored = JSON.parse(localStorage.getItem(PREFS_KEY) ?? 'null')
-      return stored ?? { scheme: localStorage.getItem(SCHEME_KEY) ?? '' }
+      return JSON.parse(localStorage.getItem(PREFS_KEY) ?? '{}')
     } catch { return {} }
   }
   if (framed) {
@@ -643,8 +638,8 @@
     /** @param {ToPage} msg */
     const toPage = (msg) => open && paired && frame.contentWindow?.postMessage(msg, '*')
     const sendBoard = () => {
-      if (!latest) return
-      /** @type {{ t: 'board', v: typeof VERSION, served: Served | undefined, self: ShelfSelf }} */
+      if (!latest || !serving) return
+      /** @type {{ t: 'board', v: typeof VERSION, served: Served, self: ShelfSelf }} */
       const msg = { t: 'board', v: VERSION, served: serving, self }
       toPage(latest.error ? { ...msg, error: { code: latest.error.code, message: latest.error.message } } : { ...msg, board: latest.board })
     }
