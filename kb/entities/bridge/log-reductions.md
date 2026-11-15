@@ -9,7 +9,8 @@
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
-([[fold-checkpoints]]), or one event at a time as it is tailed:
+([[fold-checkpoints]]), or one event at a time as it is tailed. A fold reads a log through its runtime's normalizer,
+never a runtime's raw fields ([[runtime-normalizers]]):
 
 - [`nextState`](ref:hub/src/bridge/status.ts#nextState): `booting | blocked | idle | working | needs_input | watching |
   done | failed | exited`, with `since`. Until Claude raises its first hook, output is read for a screen that holds

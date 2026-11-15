@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-09-30",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/model.ts#LogEvent", "hub/src/bridge/facts.ts#factsOf", "hub/src/bridge/chains.ts#resumes", "hub/src/host/session.ts#hookFact", "hub/src/bridge/status.ts#HOOK_STATUS"]
+  "refs": ["hub/src/shared/model.ts#LogEvent", "hub/src/bridge/facts.ts#factsOf", "hub/src/bridge/chains.ts#resumes", "hub/src/host/session.ts#hookFact", "hub/src/bridge/status.ts#statusOf"]
 }
 ---
 **Context.** Renderers come and go, and what a renderer wants to show keeps changing (status, waiting on
@@ -26,7 +26,7 @@ derived from Claude's `session_id` in the hooks, never written down. The rule:
 - **A fact is what happened, not a copy.** The host appends a hook as [`hookFact`](ref:hub/src/host/session.ts#hookFact)
   of its body: `PostToolUse` without its `tool_response`, everything else as posted. The event stays, with its
   `tool_name`, `tool_input` and `tool_use_id` (the bridge reads it only as a `working` signal,
-  [`HOOK_STATUS`](ref:hub/src/bridge/status.ts#HOOK_STATUS)), and so does the mod's digest `tower.tool.result`. A tool's
+  [`statusOf`](ref:hub/src/bridge/status.ts#statusOf)), and so does the mod's digest `tower.tool.result`. A tool's
   output is a copy of what Claude keeps in its own transcript (`transcript_path` is on every hook); kept in the log it
   was most of its bytes, read by nothing, and a second copy of every secret a tool read. The trim lives where the host
   appends, so it holds for every transport that posts a hook.
