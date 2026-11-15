@@ -9,6 +9,7 @@ The tower's own code is MIT (`LICENSE`). These works ship with it, in the repo o
 | KayKit Bits Bundle 1 (1.1), by Kay Lousberg (www.kaylousberg.com) | `renderers/tower3d/kaykit/` (the models Tower 3D uses, unchanged) | CC0 1.0 (`renderers/tower3d/kaykit/License.txt`) |
 | KayKit Adventurers Character Pack (1.0), Character Animations (1.1), Character Pack: Skeletons (1.1) and Mystery Monthly Characters Series 5, by Kay Lousberg | `renderers/tower3d/kaykit/Characters/` (only the parts and clips Tower 3D uses, repacked by `scripts/tower3d-characters.ts`; the Clanker family's eight variants are generated from the Clanker, `Characters/README.md`) | CC0 1.0 (`renderers/tower3d/kaykit/Characters/License-*.txt`) |
 | Universal Animation Library (Standard), by Quaternius (quaternius.com) | `renderers/tower3d/kaykit/Characters/rig_medium.glb` and `rig_large.glb` (nine of its clips, retargeted onto KayKit's rigs by `scripts/tower3d-characters.ts`, named `UAL_<clip>`) | CC0 1.0 (`renderers/tower3d/kaykit/Characters/License-UAL.txt`) |
+| Datastar's morph (`library/src/plugins/watchers/patchElements.ts`, v1.0.5), by Star Federation; parts of idiomorph (0.8.0), by Big Sky Software | `src/shared/morph.ts` (adapted: the morph alone, its working state passed along, ownership read from a `data-owned` attribute, with idiomorph's focus restore and attribute copy), each notice in the file's header | Datastar: MIT; idiomorph: 0BSD |
 
 ## Bundled or served from `node_modules`
 
