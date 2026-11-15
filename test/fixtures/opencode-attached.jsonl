@@ -1,8 +1,0 @@
-{"id":"20261115-112434-bd84","project":"pantry","runtime":"opencode","cwd":"/tmp/tower-babbage-55/pantry","argv":["opencode"],"startedAt":1794752674927,"cols":120,"rows":36}
-[6.117,"i","What is the tower marker? Answer with the marker only, or NONE."]
-[6.54,"i","\r"]
-[29.19,"i","\u001b"]
-[29.611,"i","\u001b"]
-[32.77,"i","/exit"]
-[33.39,"i","\r"]
-[33.448,"x",{"exitCode":0}]
