@@ -44,6 +44,7 @@ import {
 } from './bridge/worktrees.ts'
 import { changedSince, sinceOf } from './changed-files.ts'
 import { git, gitWith, GitTimeout, run, wholeTree } from './git.ts'
+import { copyIndex } from './private-index.ts'
 import type { RepoLayout, Stale } from './bridge/repo-changes.ts'
 import type { ErrorCode } from './shared/api.ts'
 import { worktreeBrief, type Restored, type WorktreeBrief } from './shared/launch.ts'
@@ -747,7 +748,7 @@ export const snapshot = async (dir: string, message: string): Promise<string> =>
   const scratch = mkdtempSync(path.join(tmpdir(), 'tower-snapshot-'))
   try {
     const index = path.join(scratch, 'index')
-    cpSync(path.resolve(dir, (await git(dir, ['rev-parse', '--git-path', 'index'])).trim()), index)
+    copyIndex(path.resolve(dir, (await git(dir, ['rev-parse', '--git-path', 'index'])).trim()), index)
     const inCopy = gitWith({ GIT_INDEX_FILE: index })
     await inCopy(dir, ['add', '-A'])
     const tree = (await inCopy(dir, ['write-tree'])).trim()

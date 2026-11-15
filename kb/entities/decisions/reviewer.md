@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-15",
   "refs": [
     "hub/src/worktrees.ts#fork",
     "hub/src/worktrees.ts#snapshot",
@@ -51,8 +51,9 @@ and how its findings reach the author.
   worktree that collides with the author still working there. `spawn {cut: {from: <checkout>}}`
   ([`fork`](ref:hub/src/worktrees.ts#fork)) cuts a new worktree in every repo of the project, each started from a
   [`snapshot`](ref:hub/src/worktrees.ts#snapshot) of the source checkout: its HEAD with every staged, unstaged and
-  untracked file on top, committed from a copy of its index (`GIT_INDEX_FILE`), so the author's index, files and
-  refs are never touched. Each branch records the base the source's work counts from (`againstFor`), so the fork's
+  untracked file on top, committed from a copy of its index (`GIT_INDEX_FILE`, dated no later than the real one so a
+  same-second edit isn't read as clean: [`copyIndex`](ref:hub/src/private-index.ts#copyIndex)), so the author's index,
+  files and refs are never touched. Each branch records the base the source's work counts from (`againstFor`), so the fork's
   Changes start as the author's did at the snapshot, plus `towerFork` (the snapshot) and `towerFrom` (the checkout).
   Origin is fetched first, as for a cut (else `offline`); nothing is pushed. The fork is a general primitive: trying an alternative from another worker's state
   takes the same call.
