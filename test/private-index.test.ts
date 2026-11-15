@@ -42,19 +42,20 @@ const identity = (file: string) => {
 /** What the board reads of the checkout through the real index and through its private copy, which must be equal. */
 const readBoth = async ({ dir, index }: Repo) => {
   const before = identity(index)
-  const copy = await privateIndex(dir, dir, path.join(dir, '.git'))
-  assert.ok(copy && existsSync(copy))
+  const held = await privateIndex(dir, dir, path.join(dir, '.git'))
+  assert.ok(held && existsSync(held.index))
   assert.equal(identity(index), before, "the checkout's own index is never written")
-  const through = gitWith({ GIT_INDEX_FILE: copy })
+  const through = gitWith({ GIT_INDEX_FILE: held.index })
   const read = async (gitIn: typeof towerGit) => ({
     status: await gitIn(dir, ['status', '--porcelain']),
     changed: await changedSince(gitIn, dir, 'main'),
   })
-  return { real: await read(towerGit), copy: await read(through), path: copy }
+  return { real: await read(towerGit), copy: await read(through), held }
 }
 
 const equalThroughCopy = async (r: Repo) => {
-  const { real, copy } = await readBoth(r)
+  const { real, copy, held } = await readBoth(r)
+  held.release()
   assert.deepEqual(copy, real)
   return real
 }
@@ -125,7 +126,11 @@ test('a checkout read through its private index answers as its own index does, w
   stale.git('add', 'a')
   stale.write('b', 'changed after the copy\n')
   const second = await readBoth(stale)
-  assert.notEqual(second.path, first.path, 'a changed index is copied again')
-  assert.ok(!existsSync(first.path), "the checkout's older copy goes")
+  const copies = () => execFileSync('ls', [path.dirname(first.held.index)]).toString().split('\n').filter(Boolean)
+  assert.ok(existsSync(first.held.index), 'a read still holding the older copy keeps it')
+  assert.equal(copies().filter((f) => !f.endsWith('.held')).length, 1, 'a changed index is copied again, and the older copy goes')
+  first.held.release()
+  second.held.release()
+  assert.deepEqual(copies().filter((f) => f.endsWith('.held')), [], 'each read lets go of its hold')
   assert.deepEqual(second.copy, second.real)
 })
