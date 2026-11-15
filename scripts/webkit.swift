@@ -119,14 +119,18 @@ func run(_ i: Int) {
     next()
   case "--wheel":
     let v = value.split(separator: ",").compactMap { Double($0) }
-    guard v.count == 3 || v.count == 4 else { fail("--wheel takes x,y,notches[,lines]: one discrete mouse-wheel event at the page's CSS pixels, negative scrolls up; lines, when given, is the accelerated line delta macOS reports for it (0.1 for a slow notch)") }
+    guard (3...5).contains(v.count) else { fail("--wheel takes x,y,notches[,lines[,times]]: one discrete mouse-wheel event at the page's CSS pixels, negative scrolls up; lines, when given, is the accelerated line delta macOS reports for it (0.1 for a slow notch); times repeats it a display frame (16 ms) apart, as one stroke") }
     let inWindow = web.convert(NSPoint(x: v[0], y: v[1]), to: nil)
     let onScreen = window.convertPoint(toScreen: inWindow)
-    let cg = CGEvent(scrollWheelEvent2Source: nil, units: .line, wheelCount: 1, wheel1: Int32(-v[2]), wheel2: 0, wheel3: 0)!
-    if v.count == 4 { cg.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: -v[3]) }
-    cg.location = CGPoint(x: onScreen.x, y: (NSScreen.screens.first?.frame.height ?? 0) - onScreen.y)
-    web.scrollWheel(with: NSEvent(cgEvent: cg)!)
-    next()
+    let turn = {
+      let cg = CGEvent(scrollWheelEvent2Source: nil, units: .line, wheelCount: 1, wheel1: Int32(-v[2]), wheel2: 0, wheel3: 0)!
+      if v.count >= 4 { cg.setDoubleValueField(.scrollWheelEventFixedPtDeltaAxis1, value: -v[3]) }
+      cg.location = CGPoint(x: onScreen.x, y: (NSScreen.screens.first?.frame.height ?? 0) - onScreen.y)
+      web.scrollWheel(with: NSEvent(cgEvent: cg)!)
+    }
+    let times = v.count == 5 ? Int(v[4]) : 1
+    for k in 0..<times { DispatchQueue.main.asyncAfter(deadline: .now() + 0.016 * Double(k)) { turn() } }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.016 * Double(times - 1)) { next() }
   case "--key":
     press(value)
     next()
