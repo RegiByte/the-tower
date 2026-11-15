@@ -38,6 +38,12 @@ export function cellOf(family: string): Cell {
   return { width: width / 32 / 100, height: height / 100 }
 }
 
+/**
+ * The quiet between wheel events that ends a stroke. Inside one, events come a display frame apart (15-20 ms in the
+ * session logs' wheel input); a slow mouse notch comes alone.
+ */
+const STROKE_GAP_MS = 100
+
 /** The parts of an xterm `Terminal` a wheel handler reads. */
 type WheelTerm = {
   cols: number
@@ -50,20 +56,30 @@ type WheelTerm = {
 /**
  * Sends a session's wheel motion to Claude as SGR wheel reports (`\e[<64;col;rowM` up, 65 down), one per row of
  * travel, the remainder carried to the next event, so a flick reaches Claude at its full length and a slow trackpad
- * stroke from its first row. Claude moves its transcript a scroll speed's rows per report (`/scroll-speed`; 1 follows
- * the finger). xterm, left alone, sends one report per wheel event however far it went and damps a trackpad's small
- * deltas. While the program reads no mouse, the wheel stays xterm's.
+ * stroke from its first row. An event that starts a stroke (`STROKE_GAP_MS` after the last) sends at least one report
+ * and drops the stale remainder: a slow mouse notch is a fraction of a row (macOS reports 0.1 line, about 4 px), and
+ * the page can't tell a mouse from a trackpad. Claude moves its transcript a scroll speed's rows per report
+ * (`/scroll-speed`; 1 follows the finger). xterm, left alone, sends one report per wheel event however far it went and
+ * damps a trackpad's small deltas. While the program reads no mouse, the wheel stays xterm's.
  */
 export function reportWheel(term: WheelTerm, send: (data: string) => void) {
   let carry = 0
+  let last = -Infinity
   term.attachCustomWheelEventHandler((e) => {
     if (term.modes.mouseTrackingMode === 'none' || !term.element || e.deltaY === 0) return true
     e.preventDefault()
     const screen = term.element.querySelector('.xterm-screen')!.getBoundingClientRect()
     const rowPx = screen.height / term.rows
-    carry += e.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? e.deltaY / rowPx : e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY : e.deltaY * term.rows
-    const rows = Math.trunc(carry)
-    carry -= rows
+    const travel = e.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? e.deltaY / rowPx : e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY : e.deltaY * term.rows
+    const now = performance.now()
+    const starts = now - last > STROKE_GAP_MS
+    last = now
+    carry = (starts ? 0 : carry) + travel
+    let rows = Math.trunc(carry)
+    if (starts && rows === 0) {
+      rows = Math.sign(carry)
+      carry = 0
+    } else carry -= rows
     if (rows === 0) return false
     const cell = (at: number, start: number, size: number, count: number) => Math.min(count, Math.max(1, Math.floor((at - start) / size) + 1))
     const col = cell(e.clientX, screen.left, screen.width / term.cols, term.cols)
