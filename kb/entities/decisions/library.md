@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "The library: one curated surface for code outside the core",
-  "summary": "Code outside the core builds on the library, 24 modules at /lib/<module>.js, each a file of src/lib/ holding only named re-exports, and a deprecated alias for a name on its way out. One specifier works in a browser, in server code through the resolve hook, and in a bundler through a tsconfig path. API_VERSION versions it, every name with its since, and five checks in npm test hold it: shape, declarations, reach, runtimes and direction.",
+  "summary": "Code outside the core builds on the library, 25 modules at /lib/<module>.js, each a file of src/lib/ holding only named re-exports, and a deprecated alias for a name on its way out. One specifier works in a browser, in server code through the resolve hook, and in a bundler through a tsconfig path. API_VERSION versions it, every name with its since, and five checks in npm test hold it: shape, declarations, reach, runtimes and direction.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
