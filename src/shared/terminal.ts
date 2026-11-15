@@ -39,10 +39,12 @@ export function cellOf(family: string): Cell {
 }
 
 /**
- * The quiet between wheel events that ends a stroke. Inside one, events come a display frame apart (15-20 ms in the
- * session logs' wheel input); a slow mouse notch comes alone.
+ * The quiet between wheel events that ends a stroke: three display frames at 60 Hz. Inside a stroke, events come a
+ * frame apart (15-20 ms in the session logs' wheel input), so every mouse notch turned at up to 20 a second starts its
+ * own stroke and sends a report. A trackpad drag slow enough to leave this much quiet between its events sends a row
+ * per event.
  */
-const STROKE_GAP_MS = 100
+const STROKE_GAP_MS = 50
 
 /** The parts of an xterm `Terminal` a wheel handler reads. */
 type WheelTerm = {
