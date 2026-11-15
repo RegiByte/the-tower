@@ -5,7 +5,7 @@
   "summary": "The opencode v2 TUI, the tower's second runtime: one standalone server per session in a real PTY, configured through its env and read through the tower's plugin on its event bus.",
   "in": "tower",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_SURFACES", "hub/src/shared/launch-opencode.ts", "hub/src/mod/opencode/tui.ts", "hub/src/opencode-state.ts#sweepOpencodeStates", "hub/src/bridge/runtimes/opencode.ts#normalizeOpencode", "hub/test/opencode.test.ts"],
+  "refs": ["hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_SURFACES", "hub/src/shared/launch-opencode.ts", "hub/src/mod/opencode/tui.ts", "hub/src/opencode-state.ts#sweepOpencodeStates", "hub/src/bridge/runtimes/opencode.ts#normalizeOpencode", "hub/test/opencode.test.ts", "hub/src/doctor.ts#readiness", "hub/src/shared/spawn-form.ts#modelNote"],
   "links": [
     { "to": "tower-mod", "verb": "triggers", "carries": "bus events to the tower's opencode plugin (session.*, permission.*, form.*, mcp.status.changed) and its tool, shell and session context hooks" }
   ]
@@ -53,7 +53,17 @@ the title stays in the normalized stream (`conversation.titled`) with no card fi
 status; `absent` rate limits, `watching`, messages between workers, and slash commands
 other than `/compact`, which run in the TUI process the plugin can't see). Its workers are told in their brief that
 they can't message another worker. The models it offers are those its latest session reported, which leaves out
-providers defined in an `opencode.json`. Its events don't say who sent a prompt: each one arrives as text in the session's inbox.
+providers defined in an `opencode.json`, and a model it doesn't know runs on its default without a word: so its list
+is not complete (`absent: modelList`), and the new-worker form and `tower hire` take any model id, saying when it isn't
+in the list ([[web-tower]], [[tower-cli]]). Its default model is the one its spawns that asked for none ran on: the
+model reaches it in env, not argv, so each spawn logs what it asked for as `tower.asked` ([[log-reductions]]). Its
+events don't say who sent a prompt: each one arrives as text in the session's inbox.
+
+**Choosing it.** Claude stays the default and a required dependency. A worker starts on opencode only when picked:
+the form's runtime choice, drawn once the config runs more than one, or `tower hire runtime opencode`. `tower doctor`
+checks each binary `runtimes.opencode.argv` starts, its version against the tested range, only when the config runs it;
+it checks no provider, since any opencode command but `--version` may start or attach to a server. A command that
+isn't installed exits before opencode prints anything, and the card says so (`startFailure`).
 
 The recorded fixtures `test/fixtures/opencode-*.jsonl`, with
 [their expectations](ref:hub/test/opencode.test.ts), are the reference for what the bridge expects of it.

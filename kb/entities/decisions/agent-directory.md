@@ -38,6 +38,9 @@ name belongs to which callsign, floor or task.
   over the floor's offered calls, an extension's spawn fields given as `x.<cap>.<field> <value>`, on a prompt from stdin or from
   any item of the floor's collections by its tag: the core reads an item's text and never what a draft means
   ([[collections]]). `floor <id>` sends it to another floor's calls, when the user asks for work there ([[hire]]).
+  `runtime <id>` starts it on another runtime than Claude's: one the tower doesn't know, or the config doesn't run, is
+  refused with the fix ([`runtimeRefusal`](ref:hub/src/shared/spawn-form.ts#runtimeRefusal)); any `model` id is sent,
+  with a line when it isn't in the runtime's list ([`modelNote`](ref:hub/src/shared/spawn-form.ts#modelNote), [[opencode]]).
 - Its skill (`skills/handbook`) teaches the tower, the command, and how to reach out, and pre-approves `Bash(tower *)`.
   Every Claude spawn and resume also appends a short tower brief to Claude's system prompt (`--append-system-prompt`): the
   session is a tower worker, a callsign is not a `SendMessage` name, and the recipe to reach one ([[brief-first]],

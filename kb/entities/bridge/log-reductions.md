@@ -36,9 +36,13 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   state, context, cost, rate limits, the main loop's latest model and effort, Claude's release, the current tool
   and what Claude said this turn, the [[conversation]]s, what the worker showed and kept, the timed facts
   [`stats`](ref:hub/src/bridge/stats.ts#stats) reduces over a window ([[stats]]), and the subagents it started. The
-  tower's own facts fold here too: `tower.named` is the callsign the session was started under ([[callsign]]), `tower.prompt` makes a worker's typed prompt `peer`, `tower.keys` and `tower.kill`
+  tower's own facts fold here too: `tower.named` is the callsign the session was started under ([[callsign]]),
+  `tower.asked` the model and effort a spawn asked its runtime for (every spawn logs it, as only Claude's argv says
+  them), `tower.prompt` makes a worker's typed prompt `peer`, `tower.keys` and `tower.kill`
   name who typed or killed ([[worker-prompts]]), `tower.leave` a worker asking to go home ([[leave]]). A stop while
-  idle counts no turn, and a manual compaction opens no turn span. Context is a step's tokens over its model's window,
+  idle counts no turn, and a manual compaction opens no turn span. `ran` notes the runtime showed it runs (output, or
+  an event of its own, not a tower fact); a session that exited non-zero by itself before that gets the card's
+  `startFailure`, naming the command and `tower doctor`, as a command that isn't installed does. Context is a step's tokens over its model's window,
   for a runtime that reports its models' windows (`runtime.models`, opencode). Spend is each cost reading's increase on
   its conversation's running total, a resumed conversation's first reading carrying what was spent before; for a
   runtime that says what each request cost (opencode's steps and compactions, `charged`), spend is each charge at its
@@ -73,10 +77,12 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   cards, who waits on you ([[waiting-on-you]]), the verbs each card, conversation and floor offers ([[board-verbs]]),
   each floor's hiring limits, every runtime the config starts sessions of as `runtimes[id]` (its label, its tested
   range, its commands, the releases live workers run outside that range, the statuses its workers can be in, what it
-  can't offer (`absent`: rate limits, `watching`, peer messages, the callsign in its TUI, slash commands), the models it
+  can't offer (`absent`: rate limits, `watching`, peer messages, the callsign in its TUI, slash commands, a complete
+  model list), the models it
   can start a worker on with their efforts (Claude's declared, opencode's as its latest session reported them:
   [`reportedModels`](ref:hub/src/bridge/defaults.ts#reportedModels)), and the model and effort it starts a new worker on when
-  asked for neither, read from that runtime's sessions that asked for none:
+  asked for neither, read from that runtime's spawns that asked for none (`tower.asked`, or Claude's argv in a log
+  from before it):
   [`runtimeDefaults`](ref:hub/src/bridge/defaults.ts#runtimeDefaults); one value for the machine, Claude's per-project
   precedence not modelled), each card's `runtime` (its header's, Claude's for a log from before runtimes were logged),
   whether the host is outdated, the rate limits per `runtimes.claude.argv` command
