@@ -14,6 +14,7 @@ import type { Occupant } from '../bridge/worktrees.ts'
 import { carriesOn, chainsOf, continues, heldBy, heldCallsigns, lineage, resumeName, runsAs } from '../bridge/chains.ts'
 import { AT_COMPOSER, isPlain, promptRefusal } from '../bridge/composer.ts'
 import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts, type Session } from '../bridge/facts.ts'
+import { towerFact } from '../bridge/events.ts'
 import { hireSettled } from './hires.ts'
 import type { Status } from '../bridge/status.ts'
 import { coreFacts, fieldFacts, forkFacts, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
@@ -188,7 +189,7 @@ export const dispatch = defineResource({
         const refused = hostRefused('let a worker go')
         if (refused) return refused
         return boardOf().floors.some((f) => f.cards.some((c) => c.id === id && can(c, 'let-go')))
-          ? host({ t: 'fact', id, fact: { hook_event_name: LET_GO } })
+          ? host({ t: 'fact', id, fact: towerFact(LET_GO) })
           : apiError('refused', `Session "${id}" is not stranded on duty: only a stranded worker (stopped, killed or lost), waiting to be resumed, is let go`)
       })
 
@@ -196,11 +197,11 @@ export const dispatch = defineResource({
     const logFact = (fact: RouteInput['fact'], caller: Caller) => {
       const id = caller.t === 'worker' ? caller.id : undefined
       if (!id || system.live()?.ids.has(id) === false) return apiError('refused', 'A fact is about the caller\'s own session: only a running worker logs one')
-      return hostRefused('log a fact') ?? host({ t: 'fact', id, fact: { hook_event_name: `tower.${fact.name}`, ...('value' in fact && fact.value) } })
+      return hostRefused('log a fact') ?? host({ t: 'fact', id, fact: towerFact(`tower.${fact.name}`, 'value' in fact ? fact.value : {}) })
     }
 
     /** A worker's act on a session is named in the session's log before it lands: the user's acts are the rest. */
-    const actedBy = (id: string, act: string, by: string) => host({ t: 'fact', id, fact: { hook_event_name: act, by } })
+    const actedBy = (id: string, act: string, by: string) => host({ t: 'fact', id, fact: towerFact(act, { by }) })
 
     const PROMPT_FROM_WORKER = 'name the worker a prompt comes from'
 
@@ -369,7 +370,7 @@ export const dispatch = defineResource({
             const answer = await spawning()
             if (answer.t !== 'spawned') return answer
             const { id } = answer as Replies['spawn']
-            const logged = await host({ t: 'fact', id: by, fact: { hook_event_name: HIRED, id } })
+            const logged = await host({ t: 'fact', id: by, fact: towerFact(HIRED, { id }) })
             if (logged.t === 'error') {
               await host({ t: 'kill', id })
               return { ...(logged as ApiError), message: `Session ${id} started but its hire couldn't be logged, so it was killed (it can be resumed): ${(logged as ApiError).message}` }

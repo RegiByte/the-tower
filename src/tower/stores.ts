@@ -9,6 +9,7 @@ import type { z } from 'zod'
 import type { Accepted } from '../bridge/extensions.ts'
 import { chainsOf, continuations, lineage } from '../bridge/chains.ts'
 import { extensionFactName, sessionFacts } from '../bridge/stores.ts'
+import { towerFact } from '../bridge/events.ts'
 import { streamFacts } from '../bridge/streams.ts'
 import { frozen } from '../bridge/frozen.ts'
 import { createItem, deleteItem, itemPath, itemsIn, putItem, readItem, renameItem, writeItem } from '../collections.ts'
@@ -114,7 +115,7 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
   /** A session fact of its own logged through the host, its value as given: whoever calls checks it. */
   const writeFact = async (session: string, name: string, value: unknown) => {
     if (!live.session(session)) throw new Error(`no session ${session}`)
-    const reply = await hostRequest(paths, { t: 'fact', id: session, fact: { hook_event_name: extensionFactName(provides, name), value } })
+    const reply = await hostRequest(paths, { t: 'fact', id: session, fact: towerFact(extensionFactName(provides, name), { value }) })
     if (reply.t === 'error') throw new Error(reply.message)
   }
 

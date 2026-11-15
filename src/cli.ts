@@ -21,6 +21,7 @@ import { bringAllDown, bringAllUp, checkoutHere, daemons, daemonsNamed, isNoHost
 import { runningNamed } from './bridge/chains.ts'
 import { conversationsOf, latestSaved } from './bridge/conversation.ts'
 import { KILLED_BY, type Session } from './bridge/facts.ts'
+import { towerFact } from './bridge/events.ts'
 import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
 import { withLiveness } from './bridge/status.ts'
@@ -161,7 +162,7 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
     const by = process.env.TOWER_SESSION_ID
     const live = await liveIds(paths)
     const target = live.has(id) ? id : (runningNamed(readSessions(), live, id ?? '', callsignsOf(readConfig(paths.config)))?.header.id ?? id)
-    if (by && live.has(target)) print(await request({ t: 'fact', id: target, fact: { hook_event_name: KILLED_BY, by } }))
+    if (by && live.has(target)) print(await request({ t: 'fact', id: target, fact: towerFact(KILLED_BY, { by }) }))
     print(await request({ t: 'kill', id: target }))
   },
   live: async () => print(await request({ t: 'live' })),
