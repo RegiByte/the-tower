@@ -162,7 +162,7 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
     const by = process.env.TOWER_SESSION_ID
     const live = await liveIds(paths)
     const target = live.has(id) ? id : (runningNamed(readSessions(), live, id ?? '', callsignsOf(readConfig(paths.config)))?.header.id ?? id)
-    if (by && live.has(target)) print(await request({ t: 'fact', id: target, fact: towerFact(KILLED_BY, { by }) }))
+    if (live.has(target)) print(await request({ t: 'fact', id: target, fact: towerFact(KILLED_BY, by ? { by } : {}) }))
     print(await request({ t: 'kill', id: target }))
   },
   live: async () => print(await request({ t: 'live' })),

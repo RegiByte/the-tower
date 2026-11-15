@@ -56,8 +56,8 @@ ends with the brief of each extension on the worker's floor that gives guidance 
 
 `submit` asks the tower's `submit`, which refuses a worker that asks something or waits on a screen
 ([[submit-at-prompt]]), and passes `TOWER_SESSION_ID` as `by`, so a worker's prompt is named in the target's log
-first (`tower.prompt`, [[worker-prompts]]). `kill` takes a session id or a running worker's callsign; run by a worker,
-it first has the host append `tower.kill` to the target's log. `attach` puts the
+first (`tower.prompt`, [[worker-prompts]]). `kill` takes a session id or a running worker's callsign; it first has the host
+append `tower.kill` to a running target's log, naming the worker that runs it. `attach` puts the
 terminal at a session (its live screen, your keyboard); Ctrl-] detaches. `up` and `down` take daemons by name
 ([[bring-up]]). `init` and `doctor`: [[setup]]. `update` moves the checkout to the newest release (a branch it descends from is fast-forwarded) and restarts
 the tower, never the host, and refuses while the tower or the jobs daemon runs from another checkout ([[releases]]). `app` builds the Mac app from this checkout when its source changed and opens it

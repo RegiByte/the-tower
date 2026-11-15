@@ -294,10 +294,20 @@ export const dispatch = defineResource({
         }),
       )
 
-    /** Only a running session's kill is named: the host refuses the rest. */
+    /**
+     * A running session's kill is logged first (`tower.kill`, naming `by` when given), so its end reads as the tower's
+     * whatever exit code the runtime gives a signal; the host refuses the rest. A host older than the tower's protocol
+     * takes no fact: a worker's kill, whose point is naming it, is refused, and the user's is killed unlogged, its end
+     * read from the exit code as such a host's always were.
+     */
     const kill = (id: string, by: string | undefined) =>
       withSession(id, () =>
-        namedFirst(id, KILLED_BY, system.live()?.ids.has(id) ? by : undefined, 'name the worker that kills a session', () => host({ t: 'kill', id })),
+        fromWorker(by, async () => {
+          const tooOld = hostRefused('name the worker that kills a session')
+          if (tooOld && by) return tooOld
+          const logged = system.live()?.ids.has(id) && !tooOld ? await host({ t: 'fact', id, fact: towerFact(KILLED_BY, by ? { by } : {}) }) : OK
+          return logged.t === 'error' ? logged : host({ t: 'kill', id })
+        }),
       )
 
     /** The workers being sent home because they asked to, by session id: each is sent once while it is leaving. */

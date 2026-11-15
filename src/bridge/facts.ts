@@ -141,7 +141,9 @@ export type Facts = {
   promptedBy?: string
   /** The latest worker that typed keys into the session (`tower.keys`), with when, in seconds since the session's start. */
   keyedBy?: [at: number, by: string]
-  /** The worker that killed the session (`tower.kill`): a kill no worker named is the user's. */
+  /** When the tower killed the session (`tower.kill`), in seconds since the session's start. */
+  killedAt?: number
+  /** The worker that killed the session (`tower.kill` with `by`): a kill no worker named is the user's. */
   killedBy?: string
   /**
    * When the worker asked to go home (`tower.leave`), in seconds since the session's start: the tower sends it home once
@@ -231,23 +233,31 @@ export type Asked = { model?: string; effort?: string }
 /** The fact the tower appends before a worker's keys reach a session (`keys` with `by`), once per burst. */
 export const KEYED_BY = 'tower.keys'
 
-/** The fact the tower appends before a worker's kill reaches a session (`kill` with `by`). */
+/** The fact the tower appends before its kill reaches a running session, with `by` when a worker kills. */
 export const KILLED_BY = 'tower.kill'
 
 /** The signal the host ends a session with, node-pty's default for a kill. */
 const SIGHUP = 1
 
-/**
- * Whether a session was killed by a signal the host didn't send (`pkill`, `kill <pid>`, `kill -9`): Claude exits 128
- * plus the number of a signal it catches, 143 for SIGTERM, and the host logs one it didn't catch (SIGKILL) as `signal`.
- * The host's own kill is SIGHUP, read as 129 or signal 1. A crash on a signal (SIGSEGV, SIGABRT) reads the same: the
- * worker didn't end by its own or the tower's doing, and stays resumable.
- */
-export const killedOutside = (exitCode: number | undefined, signal: number | undefined) =>
-  signal !== undefined ? signal !== SIGHUP : exitCode !== undefined && exitCode > 128 && exitCode !== 128 + SIGHUP
+/** What a session's end is read from: its exit and whether the tower logged its kill (`tower.kill`). */
+type Ending = Pick<Facts, 'exitCode' | 'signal' | 'killedAt'>
 
-/** Whether a session ended by the host's own kill, SIGHUP, read as 129 or signal 1: the tower's `kill`, of a worker sent home or one ending itself. */
-export const killedByHost = (exitCode: number | undefined, signal: number | undefined) => (signal !== undefined ? signal === SIGHUP : exitCode === 128 + SIGHUP)
+/**
+ * Whether a session was killed by a signal the tower didn't send (`pkill`, `kill <pid>`, `kill -9`). A kill the tower
+ * logged is its own whatever the exit says: opencode exits 130 on every signal. Without that fact the exit tells:
+ * Claude exits 128 plus the number of a signal it catches, 143 for SIGTERM, and the host logs one it didn't catch
+ * (SIGKILL) as `signal`. The host's own kill is SIGHUP, read as 129 or signal 1. A crash on a signal (SIGSEGV, SIGABRT)
+ * reads the same: the worker didn't end by its own or the tower's doing, and stays resumable.
+ */
+export const killedOutside = ({ exitCode, signal, killedAt }: Ending) =>
+  killedAt === undefined && (signal !== undefined ? signal !== SIGHUP : exitCode !== undefined && exitCode > 128 && exitCode !== 128 + SIGHUP)
+
+/**
+ * Whether a session ended by the tower's `kill`, of a worker sent home or one ending itself: its logged `tower.kill`, or,
+ * in a log from before every kill was logged, the host's SIGHUP, read as 129 or signal 1.
+ */
+export const killedByHost = ({ exitCode, signal, killedAt }: Ending) =>
+  exitCode !== undefined && (killedAt !== undefined || (signal !== undefined ? signal === SIGHUP : exitCode === 128 + SIGHUP))
 
 /** The fact the tower appends to a worker's log when it accepts a spawn as that worker's hire (`spawn` with `hire`): `{id}`, the hire. */
 export const HIRED = 'tower.hire'
@@ -418,7 +428,7 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
     case KEYED_BY:
       return { ...facts, keyedBy: [t, String(happening.by)] }
     case KILLED_BY:
-      return { ...facts, killedBy: String(happening.by) }
+      return { ...facts, killedAt: t, ...(happening.by !== undefined && { killedBy: String(happening.by) }) }
     case LEAVE:
       return { ...facts, leaveAt: t }
     case EXEMPT:

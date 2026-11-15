@@ -487,7 +487,8 @@ const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested' | 'statuse
 }
 
 /** The session's process exited with an error, by itself, before its runtime printed anything or raised an event. */
-const startFailed = (facts: Session['facts']): boolean => facts.ran === undefined && facts.exitCode !== undefined && facts.exitCode !== 0 && facts.signal === undefined && !facts.hostStopped
+const startFailed = (facts: Session['facts']): boolean =>
+  facts.ran === undefined && facts.exitCode !== undefined && facts.exitCode !== 0 && facts.signal === undefined && !facts.hostStopped && facts.killedAt === undefined
 
 const startFailure = (header: SessionHeader, label: string, exitCode: number): string =>
   `${header.argv[0]} exited with code ${exitCode} before ${label} started: is it installed, and does the config's argv name it? \`tower doctor\` checks.`
@@ -542,8 +543,8 @@ const card = (
       state: { ...state, since: enteredAt },
       endedFrom: facts.exitedFrom ?? facts.state.status,
       hostStopped: facts.hostStopped === true,
-      killedOutside: killedOutside(facts.exitCode, facts.signal),
-      killedByHost: killedByHost(facts.exitCode, facts.signal),
+      killedOutside: killedOutside(facts),
+      killedByHost: killedByHost(facts),
       broken: facts.broken !== undefined,
       typedAt,
       heardAt,
