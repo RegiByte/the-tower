@@ -281,7 +281,21 @@ export const tailLog = <E>(logPath: string, offset: number, filter: EventFilter<
     for (const event of eventsFrom(read, 0, filter)) if (!closed) onEvent(event)
   })
 
-  const watcher = watchedLoudly(watch(logPath, drain), logPath)
+  /**
+   * On macOS a file's watch is a one-shot kqueue filter that libuv re-arms only after the change callback returns: an
+   * append landing while the callback runs raises no event, and its lines would wait for the next append. Reading after
+   * the callback returns, once the filter is re-armed, reads every append the callback's own event didn't cover.
+   */
+  let woken = false
+  const wake = () => {
+    if (woken) return
+    woken = true
+    setImmediate(() => {
+      woken = false
+      drain()
+    })
+  }
+  const watcher = watchedLoudly(watch(logPath, wake), logPath)
   queueMicrotask(drain)
   return () => {
     if (closed) return
