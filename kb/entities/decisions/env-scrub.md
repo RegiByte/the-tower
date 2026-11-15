@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-09-29",
-  "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/env.ts#withoutTerminal", "hub/src/terms/main.ts", "hub/src/jobs/main.ts#startJob", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/git.ts", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/update.ts#update"]
+  "reviewed": "2026-11-15",
+  "refs": ["hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/env.ts#withoutTerminal", "hub/src/terms/main.ts", "hub/src/jobs/main.ts#startJob", "hub/src/host/session.ts#sessionEnv", "hub/src/machine.ts#startDetached", "hub/src/git.ts", "hub/src/run.ts#runProcess", "hub/extensions/policies/check.ts#runCheck", "hub/src/update.ts#update", "hub/src/shared/launch-opencode.ts#envOf"]
 }
 ---
 **Problem.** The daemons are often started from a shell inside a Claude session. A Claude spawned with that parent's
@@ -28,6 +28,12 @@ by hand: the host's sessions, after the env the spawn gives (the config's `env`,
 caller's `env` is set over it ([`startJob`](ref:hub/src/jobs/main.ts#startJob)); git
 ([`git.ts`](ref:hub/src/git.ts)); the quota extension's Claude (through `ctx.run`); the policies extension's checks (through `ctx.run`); and `tower update`'s npm. One-shot reads (`ps`, `lsof`,
 `open`, the editor command, the doctor's checks) run with the caller's environment.
+
+An opencode session goes through the same [`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv): the env its
+launch gives ([`envOf`](ref:hub/src/shared/launch-opencode.ts#envOf): the contributors' env, the composed config as
+`OPENCODE_CONFIG_CONTENT` and its own state dir as `XDG_STATE_HOME`, [[opencode]]) is merged before the scrub, and the
+host sets `TOWER_SESSION_ID` and `TOWER_HOOKS_SOCKET` after it, which the tower's opencode plugin reads to post its
+lines. The scrub drops only Claude's markers and the tower's own: no opencode variable is dropped.
 
 **The launching terminal.** A daemon started from a terminal carries that terminal's identity (`TERM_PROGRAM`,
 `VSCODE_*`, `CURSOR_*`, `ITERM_*`, `TMUX`, …), and programs tune themselves to it: started from an editor, every

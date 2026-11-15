@@ -5,7 +5,7 @@
   "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, rate-limit readings, stats, and the board that gathers them for every renderer.",
   "in": "bridge",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/bridge/defaults.ts#runtimeDefaults", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/rate-limits.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/src/bridge/screen.ts#headlessTerminal", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/checkouts.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
+  "refs": ["hub/src/bridge/defaults.ts#runtimeDefaults", "hub/src/bridge/defaults.ts#reportedModels", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/rate-limits.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/src/bridge/screen.ts#headlessTerminal", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/checkouts.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
 }
 ---
 `src/bridge`. Each reduction is written as a fold step, so a log can be folded whole, from a checkpoint
@@ -25,7 +25,10 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   since Claude 2.1.323, and is then left out. On an older release nothing tells it apart, so its start can show a
   working main loop as `compacting` until the loop's next step, and its end can end a manual one early (known gaps).
   The mod's `session.compact` names no subagent on any release, so outside an organization a subagent's still reads
-  as the main loop's automatic start, with the same `compacting` gap. A session without an `x` event that the host no longer runs is `lost`
+  as the main loop's automatic start, with the same `compacting` gap. For opencode ([[opencode]]): a session is `idle` once its plugin says it is ready, a question form is
+  `needs_input` like a permission ask, a stop with no turn running leaves the status as it is (opencode runs a manual
+  `/compact` as an execution of its own), and a compaction that fails ends like one that ends; it is never `blocked`
+  or `watching`. A session without an `x` event that the host no longer runs is `lost`
   ([`withLiveness`](ref:hub/src/bridge/status.ts#withLiveness)).
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter), the fold step every reader of facts takes, and the one place
   a bad event is caught: a step that throws leaves the facts as they were with `broken`, and after it only the user
@@ -34,7 +37,12 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   and what Claude said this turn, the [[conversation]]s, what the worker showed and kept, the timed facts
   [`stats`](ref:hub/src/bridge/stats.ts#stats) reduces over a window ([[stats]]), and the subagents it started. The
   tower's own facts fold here too: `tower.prompt` makes a worker's typed prompt `peer`, `tower.keys` and `tower.kill`
-  name who typed or killed ([[worker-prompts]]), `tower.leave` a worker asking to go home ([[leave]]).
+  name who typed or killed ([[worker-prompts]]), `tower.leave` a worker asking to go home ([[leave]]). A stop while
+  idle counts no turn, and a manual compaction opens no turn span. Context is a step's tokens over its model's window,
+  for a runtime that reports its models' windows (`runtime.models`, opencode). Spend is each cost reading's increase on
+  its conversation's running total, a resumed conversation's first reading carrying what was spent before; for a
+  runtime that says what each request cost (opencode's steps and compactions, `charged`), a reading adds what was
+  charged since the previous one, since opencode's total holds the conversation's earlier sessions at any reading.
 - Messages between Claude sessions are folded as digests, never text. [`deliveries`](ref:hub/src/bridge/messages.ts#deliveries)
   joins every send to the session that logged the same text as received, nearest in time, so a brief's message step
   names the recipient whatever the address was (a name, or a reply's socket path, which nothing else ties to a session). A
@@ -62,8 +70,11 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   Code's registrations and the same `ps` output ([[agent-directory]]).
 - [`board`](ref:hub/src/bridge/board.ts#board): the whole system as one view for renderers: projects as floors of
   cards, who waits on you ([[waiting-on-you]]), the verbs each card, conversation and floor offers ([[board-verbs]]),
-  each floor's hiring limits, every runtime the tower knows as `runtimes[id]` (its label, its tested range, its
-  commands, the releases live workers run outside that range, and the model and effort it starts a new worker on when
+  each floor's hiring limits, every runtime the config starts sessions of as `runtimes[id]` (its label, its tested
+  range, its commands, the releases live workers run outside that range, the statuses its workers can be in, what it
+  can't offer (`absent`: rate limits, `watching`, peer messages, the callsign in its TUI, slash commands), the models it
+  can start a worker on with their efforts (Claude's declared, opencode's as its latest session reported them:
+  [`reportedModels`](ref:hub/src/bridge/defaults.ts#reportedModels)), and the model and effort it starts a new worker on when
   asked for neither, read from that runtime's sessions that asked for none:
   [`runtimeDefaults`](ref:hub/src/bridge/defaults.ts#runtimeDefaults); one value for the machine, Claude's per-project
   precedence not modelled), each card's `runtime` (its header's, Claude's for a log from before runtimes were logged),

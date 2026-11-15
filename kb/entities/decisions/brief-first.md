@@ -6,8 +6,8 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-07",
-  "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/launch.ts#towerBrief", "hub/extensions/drafts/server.ts", "hub/src/mod/skills/handbook/SKILL.md"]
+  "reviewed": "2026-11-15",
+  "refs": ["hub/src/shared/launch.ts#towerBrief", "hub/src/shared/launch-opencode.ts#opencodeSpawn", "hub/extensions/drafts/server.ts", "hub/src/mod/skills/handbook/SKILL.md"]
 }
 ---
 **Problem.** A worker learns the tower from two texts: the tower brief in its system prompt, sent on every turn,
@@ -25,6 +25,10 @@ keep its ideas and reach a peer correctly.
   Where the floor has drafts, the drafts extension's launch contributor adds the line that sends off-goal ideas and
   later prompts to `tower keep drafts`. A last line names
   what the skill holds and keeps the worktree rule.
+- An opencode worker's brief shares those lines but one: its runtime carries no messages between workers, so its
+  reaching line says to put what another worker needs in its answer. The tower's opencode plugin adds it to every
+  request, from the option its launch's config gives it
+  ([`opencodeSpawn`](ref:hub/src/shared/launch-opencode.ts#opencodeSpawn)).
 - The skill (`SKILL.md`) is the handbook: the CLI in full, reaching out step by step, reviews, hiring and crews,
   showing and keeping in detail, policies, the floor's shelf and the config, worktree rules, the API. It doesn't
   repeat the brief's prose. Its description triggers on callsigns, workers and reaching another session, and on
@@ -44,6 +48,6 @@ keep its ideas and reach a peer correctly.
 - *The whole skill in the system prompt.* It is sent on every turn of every session, and most turns need none of
   reviews, hiring or the API.
 
-**Impact.** The brief is a little longer, and sent on every turn. A session gets the brief its conversation started
-with: `--resume` ignores a new `--append-system-prompt`, so a changed brief reaches a resumed worker only in a new
-conversation.
+**Impact.** The brief is a little longer, and sent on every turn. A Claude session gets the brief its conversation
+started with: `--resume` ignores a new `--append-system-prompt`, so a changed brief reaches a resumed Claude worker
+only in a new conversation. An opencode resume composes its config again, so it carries the current brief.

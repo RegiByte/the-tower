@@ -2,11 +2,11 @@
 {
   "type": "decision",
   "name": "The tower is a directory for its agents, not a transport",
-  "summary": "Every worker the tower runs can learn who it is and who else is on duty, on every floor, through a tower command the mod puts on its PATH; it reaches another worker through Claude Code's own session messaging, by the peer name the board joins onto each card.",
+  "summary": "Every worker the tower runs can learn who it is and who else is on duty, on every floor, through a tower command the mod puts on its PATH; a Claude worker reaches another through Claude Code's own session messaging, by the peer name the board joins onto each card.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-15",
   "refs": ["hub/src/cli-verbs.ts#CLI_VERBS", "hub/src/directory.ts#cardNamed", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/bridge/resources.ts#peers", "hub/src/machine.ts#peersIn", "hub/src/bridge/board.ts#board", "hub/src/shared/launches.ts#resumeRequest", "hub/src/bridge/chains.ts#resumeName", "hub/src/shared/callsign.ts#callsigns", "hub/src/shared/launches.ts#spawnRequest", "hub/src/shared/spawn-form.ts#spawnCall"]
 }
 ---
@@ -20,7 +20,7 @@ name belongs to which callsign, floor or task.
   `~/.claude/sessions/<pid>.json` with its `name`. A registration whose pid is a host's child carrying the
   session's `TOWER_SESSION_ID` belongs to that session's own Claude ([`peers`](ref:hub/src/bridge/resources.ts#peers)),
   read by the live system with the leftovers, from the same `ps` scan.
-- Every spawn and resume passes the worker's [[callsign]] as Claude's `--name` ([[host-owns-ptys]]), so a worker's
+- Every Claude spawn and resume passes the worker's [[callsign]] as Claude's `--name` ([[host-owns-ptys]]), so a worker's
   peer name is its callsign, across resumes too: a resume that carries a worker on runs under its callsign
   ([`resumeName`](ref:hub/src/bridge/chains.ts#resumeName)), a fork under its own.
   [`cardNamed`](ref:hub/src/directory.ts#cardNamed) finds a callsign on several cards (a worker on duty wins over past
@@ -39,9 +39,12 @@ name belongs to which callsign, floor or task.
   any item of the floor's collections by its tag: the core reads an item's text and never what a draft means
   ([[collections]]). `floor <id>` sends it to another floor's calls, when the user asks for work there ([[hire]]).
 - Its skill (`skills/handbook`) teaches the tower, the command, and how to reach out, and pre-approves `Bash(tower *)`.
-  Every spawn and resume also appends a short tower brief to Claude's system prompt (`--append-system-prompt`): the
+  Every Claude spawn and resume also appends a short tower brief to Claude's system prompt (`--append-system-prompt`): the
   session is a tower worker, a callsign is not a `SendMessage` name, and the recipe to reach one ([[brief-first]],
   [[the-user]]). A resume's is ignored: `--resume` keeps the brief its conversation started with.
+- An opencode worker has no peer: opencode carries no messages between sessions, so its board runtime lists `peers`
+  in `absent`, and its brief, which the tower's opencode plugin adds to every request, tells it to say what another
+  worker needs in its answer for the user or its hirer to pass on.
 - A peer message is Claude Code's, visible in both sessions. Workers hold every verb of the renderer API
   ([[agents-have-every-capability]]).
 
