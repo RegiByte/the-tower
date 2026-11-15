@@ -5,7 +5,8 @@
 // Besides the events, it posts what the bus doesn't say: on start its release, whether it was reloaded and the models
 // it can run, with their efforts and context limits (`plugin.started`); the tool a call runs, which only its
 // `execute.before` hook names (`tool.execute.before`); and an MCP server's status (`mcp.status`). A subagent's session
-// names its parent only on creation, so every line a child session raises carries the `parentID` opencode gave it.
+// names its parent only on creation, so every line a child session raises carries the `parentID` opencode gave it, and
+// a step's end carries the `model` its start named.
 //
 // It also puts the tower command on every shell's PATH, and the tower's brief (its config option `brief`) on every
 // request the model gets.
@@ -42,6 +43,10 @@ const withoutOutput = (event) => {
   return { ...event, data }
 }
 
+/** A step's end names no model: it carries the one its start named, so its tokens are counted against it. */
+const withStepModel = (steps, event) =>
+  event.type === 'session.step.ended' && steps.has(event.data.assistantMessageID) ? { ...event, model: steps.get(event.data.assistantMessageID) } : event
+
 export default {
   id: 'tower',
   async setup(ctx) {
@@ -73,12 +78,15 @@ export default {
       await post('tool.execute.before', await withParent(sessionID, { sessionID, id, tool, input }))
     })
 
+    const steps = new Map()
     const abort = new AbortController()
     ;(async () => {
       for await (const event of ctx.event.subscribe({ signal: abort.signal })) {
         if (SKIPPED.test(event.type)) continue
         if (event.type === 'session.created' && event.data.parentID !== undefined) parents.set(event.data.sessionID, event.data.parentID)
-        await post(event.type, await withParent(event.data?.sessionID, withoutOutput(event)))
+        if (event.type === 'session.step.started') steps.set(event.data.assistantMessageID, event.data.model)
+        await post(event.type, await withParent(event.data?.sessionID, withStepModel(steps, withoutOutput(event))))
+        if (event.type === 'session.step.ended' || event.type === 'session.step.failed') steps.delete(event.data.assistantMessageID)
         if (event.type === 'mcp.status.changed') {
           const server = (await ctx.mcp.list()).data.find((s) => s.name === event.data.server)
           await post('mcp.status', { server: event.data.server, status: server?.status })

@@ -43,7 +43,7 @@ const statusOf = (event: Happening): Unblocked | undefined => {
     case 'permission.requested':
       return 'needs_input'
     case 'notified':
-      return event.kind === 'permission' ? 'needs_input' : undefined
+      return event.kind === 'permission' || event.kind === 'question' ? 'needs_input' : undefined
     case 'turn.stopped':
       return event.wakes ? 'watching' : 'done'
     case 'turn.ended':

@@ -7,6 +7,9 @@ import type { RateLimit, Tokens } from './facts.ts'
  */
 export const towerFact = (name: string, fields: Record<string, unknown> = {}): ModEvent => ({ hook_event_name: name, ...fields })
 
+/** The fact a resume's conversation is logged as, before the session starts: read by a runtime's normalizer that needs it. */
+export const RESUMES = 'tower.resumes'
+
 /** The bytes that open a `tower.*` fact named `name` in a log line, for a reader that skims lines unparsed. */
 export const towerFactBytes = (name: string): string => `"hook_event_name":"${name}"`
 
@@ -49,7 +52,7 @@ export type Neutral =
   | { t: 'tool.checked'; id: string; result: Record<string, unknown> }
   | { t: 'tool.result'; agent?: string; id: string; deny?: unknown; isError?: unknown }
   /** `input`: the call's input as the tool ran it, which can say more than its call did (a question dialog's answers). */
-  | { t: 'tool.done'; agent?: string; id: string; input: Record<string, unknown>; ms?: number }
+  | { t: 'tool.done'; agent?: string; id: string; input?: Record<string, unknown>; ms?: number }
   | { t: 'tool.failed'; agent?: string; id: string; ms?: number; error: string }
   | { t: 'tool.abandoned'; agent?: string; id: string }
   | { t: 'permission.requested'; agent?: string }
@@ -60,10 +63,15 @@ export type Neutral =
   /** `call`, the tool call that spawned it; `id`, the subagent's loop; `resumes`, the loop a resume opens again. */
   | { t: 'agent.spawned'; call: string; type: string; description: string; background: boolean; parent?: string; id?: string; model?: string; deny?: string; resumes?: string }
   | { t: 'runtime.release'; version: string }
+  /** The models the runtime can run, each with its efforts and its context window in tokens, as it reported them. */
+  | { t: 'runtime.models'; models: RuntimeModel[] }
   /** The runtime named the conversation. */
   | { t: 'conversation.titled'; agent?: string; title: string }
   /** Something the runtime raised that no fold reads: it still says the session was heard from. */
   | { t: 'heard' }
+
+/** A model a runtime can run: `id` as a launch names it, the efforts it takes ([] for none), its context window in tokens. */
+export type RuntimeModel = { id: string; efforts: string[]; context: number }
 
 /** One of the tower's own facts, logged in every runtime's log alike: its fields as the tower wrote them. */
 export type TowerFact = { t: `tower.${string}`; [field: string]: unknown }

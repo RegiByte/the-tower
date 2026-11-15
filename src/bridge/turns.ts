@@ -129,7 +129,7 @@ const stepsOf = ({ work, answer }: Opened, agents: Agents, lineOf: LineOf): Step
         const call = calls.get(happening.id)
         if (!call) return { done, pending }
         const ms = 'ms' in happening ? happening.ms : undefined
-        const answered = happening.t === 'tool.done' && call.tool === 'AskUserQuestion' ? { line: lineOf(call.tool, happening.input) } : {}
+        const answered = happening.t === 'tool.done' && happening.input && call.tool === 'AskUserQuestion' ? { line: lineOf(call.tool, happening.input) } : {}
         calls.set(call.id, { ...call, ...answered, outcome: outcomeAfter(call.outcome, happening), ...(typeof ms === 'number' && { ms }) })
         return { done, pending }
       }
@@ -214,7 +214,7 @@ export const toolCallOf = (log: SessionLog, id: string): ToolCall | undefined =>
       case 'tool.checked':
         return { ...call, check: happening.result }
       case 'tool.done':
-        return { ...call, input: happening.input, ms: happening.ms }
+        return { ...call, ...(happening.input && { input: happening.input }), ms: happening.ms }
       case 'tool.failed':
         return { ...call, ms: happening.ms, error: happening.error }
       default:
