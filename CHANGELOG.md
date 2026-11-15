@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.1.1
+
+Reading a floor's worktrees, and removing one, no longer re-hashes every file of a freshly cut worktree on every read
+(#591). Nothing to restart beyond the tower (`tower update` does it).
+
+- **Each checkout's status is read through a private copy of its index** in the system root's `cache/index/`,
+  refreshed once. Git can't trust the file times of a worktree it just wrote (or checked out, rebased, pulled), so
+  every read hashed its files again, and the tower never writes the real index, so it never healed. On a test floor of
+  658 fresh worktrees a full read went from 54 s to 13 s once the copies exist (they survive restarts), a re-read after
+  a saved file from 0.2 s to 0.03 s, and removing a worktree from 56 s to 19 s. The real index is still never written
+  or locked; deleting `cache/index/` costs one slow read.
+- **Discard checks what moved on the real index,** and `worktree remove` keeps git's own check.
+- **A fork's snapshot, or a discarded worktree's noted tip, no longer misses an edit** made in the same second and of
+  the same size as the index's last write.
+
 ## v2.1.0
 
 A floor with many worktrees can cut a new one as soon as the tower starts (#589). Nothing to restart beyond the tower
