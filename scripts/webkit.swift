@@ -128,9 +128,14 @@ func run(_ i: Int) {
       cg.location = CGPoint(x: onScreen.x, y: (NSScreen.screens.first?.frame.height ?? 0) - onScreen.y)
       web.scrollWheel(with: NSEvent(cgEvent: cg)!)
     }
-    let times = v.count == 5 ? Int(v[4]) : 1
-    for k in 0..<times { DispatchQueue.main.asyncAfter(deadline: .now() + 0.016 * Double(k)) { turn() } }
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.016 * Double(times - 1)) { next() }
+    let times = v.count == 5 ? v[4] : 1
+    guard times >= 1, times == times.rounded() else { fail("--wheel's times is a whole number of events, 1 or more: \(value)") }
+    for k in 0..<Int(times) {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.016 * Double(k)) {
+        turn()
+        if k == Int(times) - 1 { next() }
+      }
+    }
   case "--key":
     press(value)
     next()
