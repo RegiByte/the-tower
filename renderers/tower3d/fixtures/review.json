@@ -971,7 +971,62 @@
             "tested": {
               "lowest": "2.1.292",
               "highest": "2.1.323"
-            }
+            },
+            "statuses": [
+              "booting",
+              "blocked",
+              "idle",
+              "working",
+              "needs_input",
+              "watching",
+              "done",
+              "failed",
+              "exited",
+              "lost"
+            ],
+            "models": [
+              {
+                "id": "fable",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "opus",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "sonnet",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "haiku",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              }
+            ],
+            "absent": []
           }
         },
         "shells": [],
@@ -1951,7 +2006,62 @@
             "tested": {
               "lowest": "2.1.292",
               "highest": "2.1.323"
-            }
+            },
+            "statuses": [
+              "booting",
+              "blocked",
+              "idle",
+              "working",
+              "needs_input",
+              "watching",
+              "done",
+              "failed",
+              "exited",
+              "lost"
+            ],
+            "models": [
+              {
+                "id": "fable",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "opus",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "sonnet",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "haiku",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              }
+            ],
+            "absent": []
           }
         },
         "shells": [],
@@ -2931,7 +3041,62 @@
             "tested": {
               "lowest": "2.1.292",
               "highest": "2.1.323"
-            }
+            },
+            "statuses": [
+              "booting",
+              "blocked",
+              "idle",
+              "working",
+              "needs_input",
+              "watching",
+              "done",
+              "failed",
+              "exited",
+              "lost"
+            ],
+            "models": [
+              {
+                "id": "fable",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "opus",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "sonnet",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              },
+              {
+                "id": "haiku",
+                "efforts": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ]
+              }
+            ],
+            "absent": []
           }
         },
         "shells": [],

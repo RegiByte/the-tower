@@ -3870,13 +3870,37 @@
             "type": "string"
           },
           "description": "Every command name of its config's `argv`, in write order; absent in single-command mode (`commandNames`)."
+        },
+        "statuses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Status"
+          },
+          "description": "The statuses its workers can be in: one it leaves out is one the tower can't tell for its sessions."
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModelChoice"
+          },
+          "description": "The models it can start a worker on, each with the efforts it takes: Claude's as the tower declares them; opencode's as its latest session reported them, none until one has run."
+        },
+        "absent": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RuntimeFeature"
+          },
+          "description": "What the tower can't offer for its workers, so a renderer draws nothing rather than a blank."
         }
       },
       "required": [
         "label",
         "defaults",
         "untested",
-        "tested"
+        "tested",
+        "statuses",
+        "models",
+        "absent"
       ],
       "additionalProperties": false,
       "description": "One runtime the tower knows, as the board says it (`board.runtimes`)."
@@ -3910,6 +3934,37 @@
       ],
       "additionalProperties": false,
       "description": "The lowest and the highest release of a runtime the tower ran on with every surface it reads checked, both included."
+    },
+    "ModelChoice": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "efforts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "efforts"
+      ],
+      "additionalProperties": false,
+      "description": "A model a runtime can start a worker on, and the efforts it takes (none: `[]`)."
+    },
+    "RuntimeFeature": {
+      "type": "string",
+      "enum": [
+        "rateLimits",
+        "watching",
+        "peers",
+        "callsignInTui",
+        "slashCommands"
+      ],
+      "description": "A feature a runtime's workers may lack: rate limits read, `watching` (a turn that wakes itself), messages between workers, the callsign shown in its own TUI, slash commands seen in the log."
     },
     "Job": {
       "type": "object",

@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { board } from '../src/bridge/board.ts'
 import { conversationsOf } from '../src/bridge/conversation.ts'
 import { factsOf } from '../src/bridge/facts.ts'
 import { turnsByConversation, type Step } from '../src/bridge/turns.ts'
-import type { SessionLog } from '../src/shared/model.ts'
+import type { Config, SessionLog } from '../src/shared/model.ts'
+import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { fixture, normalized, timeline } from './replay.ts'
+import { viewOf } from './view.ts'
 
 const turnsOf = (log: SessionLog) => Object.values(turnsByConversation(log)).flat()
 
@@ -124,4 +127,18 @@ test('opencode: a subagent runs in a child session: its spawn, its own calls and
 
 test('opencode: a session nobody prompts stays idle, an MCP server waiting on a login included', () => {
   assert.deepEqual(timeline(fixture('opencode-mcp-auth')), [['idle', 0.355], ['exited', 11.93]])
+})
+
+test('opencode: the board says what its workers can show and run, the models as its latest session reported them', () => {
+  const logs = [fixture('opencode-basic'), fixture('opencode-failed')]
+  const config = { runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } }, env: {}, projects: { lab: { name: 'lab', hub: '/hub/lab', repos: [] } } } as unknown as Config
+  const { runtimes } = board(viewOf(config, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set(), protocol: HOST_PROTOCOL } }))
+  assert.deepEqual(runtimes.opencode.statuses, ['booting', 'idle', 'working', 'needs_input', 'done', 'failed', 'exited', 'lost'])
+  assert.deepEqual(runtimes.opencode.absent, ['rateLimits', 'watching', 'peers', 'callsignInTui', 'slashCommands'])
+  assert.deepEqual(runtimes.opencode.models, [
+    { id: 'openrouter/google/gemini-4-hydrogen', efforts: ['low', 'medium', 'high', 'xhigh'] },
+    { id: 'openrouter/google/gemini-4-carbon', efforts: ['low', 'medium', 'high'] },
+    { id: 'openrouter/google/gemini-4-argon', efforts: ['low', 'medium', 'high'] },
+  ])
+  assert.deepEqual([runtimes.claude.statuses.length, runtimes.claude.absent, runtimes.claude.models.map((m) => m.id)], [10, [], ['fable', 'opus', 'sonnet', 'haiku']])
 })

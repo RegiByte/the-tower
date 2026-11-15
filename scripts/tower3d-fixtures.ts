@@ -11,7 +11,7 @@
  *
  * Each fixture is built at one instant, in UTC, which its file records as `at`: the page's wall clock on that fixture.
  */
-import { CLAUDE_LABEL, CLAUDE_TESTED } from '../src/shared/claude.ts'
+import { CLAUDE_EFFORTS, CLAUDE_LABEL, CLAUDE_MODELS, CLAUDE_TESTED } from '../src/shared/claude.ts'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { archiveAtOf, onBoard, waitingOrder, withReports } from '../src/bridge/board.ts'
@@ -303,7 +303,7 @@ function boardOf(floors: FloorFacts[], now: number, extra: Partial<Pick<CommandL
     today: extra.today ?? { since: now - 15 * 60 * MIN, spend: 0, agentHours: 0, waits: { n: 0, p50: 0 } },
     hostUp: true,
     hostOutdated: false,
-    runtimes: { claude: { label: CLAUDE_LABEL, defaults: {}, untested: [], tested: CLAUDE_TESTED } },
+    runtimes: { claude: { label: CLAUDE_LABEL, defaults: {}, untested: [], tested: CLAUDE_TESTED, statuses: ['booting', 'blocked', 'idle', 'working', 'needs_input', 'watching', 'done', 'failed', 'exited', 'lost'], models: CLAUDE_MODELS.map((id) => ({ id, efforts: CLAUDE_EFFORTS })), absent: [] } },
     shells: extra.shells ?? [],
     termsUp: true,
     jobs: [],

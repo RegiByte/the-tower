@@ -27,5 +27,16 @@ const defaultsOf = (sessions: Session[]): RuntimeDefaults => {
   return { model, effort }
 }
 
+/** A model a runtime can start a worker on, and the efforts it takes (none: `[]`). */
+export type ModelChoice = { id: string; efforts: string[] }
+
+/** The models `runtime`'s latest session that reported them said it can run: none until one has. */
+export const reportedModels = (sessions: Session[], runtime: string): ModelChoice[] => {
+  const latest = sessions
+    .filter((s) => runtimeOf(s.header) === runtime && s.facts.models !== undefined)
+    .reduce<Session | undefined>((latest, s) => (latest && latest.header.startedAt >= s.header.startedAt ? latest : s), undefined)
+  return latest?.facts.models!.map(({ id, efforts }) => ({ id, efforts })) ?? []
+}
+
 /** The defaults of `runtime`, from every session, archived included: only its own sessions say what it picks. */
 export const runtimeDefaults = (sessions: Session[], runtime: string): RuntimeDefaults => defaultsOf(sessions.filter((s) => runtimeOf(s.header) === runtime))
