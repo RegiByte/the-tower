@@ -7,10 +7,10 @@
 import { z } from 'zod'
 import type { LaunchParts } from '../shared/extensions.ts'
 import { withoutParentSession } from '../shared/env.ts'
-import { flagName, type Contributed, type ResumeLaunch, type SpawnLaunch } from '../shared/launch.ts'
+import { flagName, type Contributed, type Launch, type ResumeLaunch, type SpawnLaunch } from '../shared/launch.ts'
 import { CORE_FLAGS } from '../shared/launches.ts'
 import { RUNTIMES, type ModEvent, type Runtime } from '../shared/model.ts'
-import { EXEMPT, PROMPTED_BY, REPORTS_TO, type Session } from './facts.ts'
+import { ASKED, EXEMPT, PROMPTED_BY, REPORTS_TO, type Session } from './facts.ts'
 import { RESUMES, towerFact } from './events.ts'
 import type { CompiledField } from './extensions.ts'
 import { extensionFactName } from './stores.ts'
@@ -176,6 +176,12 @@ export const promptedFacts = (prompt: string | undefined, by: string | undefined
  * conversation only once something happens in it (opencode) is read as in it from the start.
  */
 export const resumesFact = (conversation: string): ModEvent => towerFact(RESUMES, { conversation })
+
+/**
+ * A spawn's fact: the model and effort it asks its runtime for, after the launch contributors', logged for every
+ * runtime, as only Claude's argv says them.
+ */
+export const askedFact = ({ model, effort }: Launch): ModEvent => towerFact(ASKED, { ...(model !== undefined && { model }), ...(effort !== undefined && { effort }) })
 
 /** A spawn's field values, by capability, as the facts the host logs: `tower.x.<cap>.<field>`. */
 export const fieldFacts = (x: Record<string, Record<string, unknown>>): ModEvent[] =>
