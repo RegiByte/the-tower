@@ -11,7 +11,7 @@ type Effect = HiringEffect<Note>
 const h = hiringHandlers<Note>()
 const empty: Hiring = noHires()
 
-const form: SpawnForm = { where: 'new', worktree: '', checkout: '/hub', callsign: '', name: '', branch: '', base: '', model: '', effort: '', command: '', prompt: '', x: {} }
+const form: SpawnForm = { runtime: 'claude', where: 'new', worktree: '', checkout: '/hub', callsign: '', name: '', branch: '', base: '', model: '', effort: '', command: '', prompt: '', x: {} }
 const note = { project: 'p', id: 'n1' }
 
 /** Runs events from `state` as the loop does, answering the state they leave and every effect but `state`. */

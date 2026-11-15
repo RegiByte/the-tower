@@ -3916,7 +3916,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "What a runtime runs a new worker on when the launch asks for no model or effort, as observed: for Claude, settings files, env, plan and `/model` decide it. One value for the machine, as a `/model` pick is saved in the user's settings: a project whose own settings pin a model is not told apart. Absent until a session shows it."
+      "description": "What a runtime runs a new worker on when the launch asks for no model or effort, as observed: for Claude, settings files, env, plan and `/model` decide it; for opencode, the user's and the project's `opencode.json`. One value for the machine, as a `/model` pick is saved in the user's settings: a project whose own settings pin a model is not told apart. Absent until a session shows it."
     },
     "TestedRange": {
       "type": "object",
@@ -3962,9 +3962,10 @@
         "watching",
         "peers",
         "callsignInTui",
-        "slashCommands"
+        "slashCommands",
+        "modelList"
       ],
-      "description": "A feature a runtime's workers may lack: rate limits read, `watching` (a turn that wakes itself), messages between workers, the callsign shown in its own TUI, slash commands seen in the log."
+      "description": "A feature a runtime's workers may lack: rate limits read, `watching` (a turn that wakes itself), messages between workers, the callsign shown in its own TUI, slash commands seen in the log, and a model list that holds every model it runs (`modelList`): without one, a model missing from `models` may still run, such as one the user defined, so a form takes any id typed."
     },
     "Job": {
       "type": "object",

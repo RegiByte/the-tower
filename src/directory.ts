@@ -25,8 +25,8 @@ import { helpLines, jsonArgument, jsonRefusal, missingLine, parseWord, printedOf
 import { renderersOf } from './renderers.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
-import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, hireBlocked, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
-import { towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
+import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, workerNamed, modelName, hireBlocked, modelNote, runtimeRefusal, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
+import { RUNTIMES, towerUrl, type Renderer, type ShelfEntry } from './shared/model.ts'
 import { tagOf } from './shared/tags.ts'
 import { titled, titleIn } from './shared/titles.ts'
 import { briefParts, sessionLabel, type BriefPart } from './shared/brief.ts'
@@ -524,7 +524,7 @@ const keepContent = async (file: string | undefined): Promise<{ ext: string; con
 }
 
 const HIRE_USAGE = `${usageLine('hire')}, the prompt on stdin when no item names it`
-const HIRE_FIELDS = ['model', 'effort', 'callsign', 'name', 'base'] as const
+const HIRE_FIELDS = ['runtime', 'model', 'effort', 'callsign', 'name', 'base'] as const
 
 /** `fields`: the spawn form's entries a hire sets, named as the form names them, an extension's `x.<cap>.<field>` included. */
 type HireArgs = { item?: string; floor?: string; fields: [string, string][] }
@@ -883,11 +883,14 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const prompt = named ? await readItem(own, named.collection.id, named.item.id) : await readStdin()
     if (!prompt.trim()) throw new CliError(`The prompt is empty: a hired worker starts on one. ${HIRE_USAGE}`)
     const form = spawnForm(floor, [['prompt', prompt], ...hire.fields])
+    const unrun = runtimeRefusal(board, form.runtime, RUNTIMES)
+    if (unrun) throw new CliError(unrun)
     const [[verbName, body], given] = spawnCall(floor, form)
     const reply = await ask<Replies['spawn']>(verbName, { ...body, ...given, by: me, hire: true })
     if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. A review, \`tower x reviews review\`, is never limited.`)
     if (isFailure(reply)) throw new CliError(refusedLine(verbName, reply))
-    console.log(hiredLines(await readBoard(), floor, reply, form).join('\n'))
+    const note = modelNote(board.runtimes[form.runtime], form.model)
+    console.log([...hiredLines(await readBoard(), floor, reply, form), ...(note ? [`${form.model}: ${note}`] : [])].join('\n'))
   },
   home: async ([callsign]) => {
     if (!callsign) throw new CliError(usageLine('home'))

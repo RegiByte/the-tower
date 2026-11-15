@@ -256,9 +256,11 @@ export type BoardRuntime = {
 
 /**
  * A feature a runtime's workers may lack: rate limits read, `watching` (a turn that wakes itself), messages between
- * workers, the callsign shown in its own TUI, slash commands seen in the log.
+ * workers, the callsign shown in its own TUI, slash commands seen in the log, and a model list that holds every model
+ * it runs (`modelList`): without one, a model missing from `models` may still run, such as one the user defined, so a
+ * form takes any id typed.
  */
-export type RuntimeFeature = 'rateLimits' | 'watching' | 'peers' | 'callsignInTui' | 'slashCommands'
+export type RuntimeFeature = 'rateLimits' | 'watching' | 'peers' | 'callsignInTui' | 'slashCommands' | 'modelList'
 
 /** A floor's part of one runtime (`floor.runtimes`). */
 export type FloorRuntime = {
@@ -475,7 +477,7 @@ const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested' | 'statuse
   opencode: {
     label: OPENCODE_LABEL, tested: OPENCODE_TESTED,
     statuses: EVERY_STATUS.filter((s) => s !== 'blocked' && s !== 'watching'),
-    absent: ['rateLimits', 'watching', 'peers', 'slashCommands'],
+    absent: ['rateLimits', 'watching', 'peers', 'slashCommands', 'modelList'],
   },
 }
 
