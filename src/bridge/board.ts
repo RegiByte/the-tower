@@ -475,7 +475,7 @@ const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested' | 'statuse
   opencode: {
     label: OPENCODE_LABEL, tested: OPENCODE_TESTED,
     statuses: EVERY_STATUS.filter((s) => s !== 'blocked' && s !== 'watching'),
-    absent: ['rateLimits', 'watching', 'peers', 'callsignInTui', 'slashCommands'],
+    absent: ['rateLimits', 'watching', 'peers', 'slashCommands'],
   },
 }
 

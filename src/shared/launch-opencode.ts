@@ -38,8 +38,10 @@ const configOf = (s: Start, place: Place, model: string | undefined) => ({
   ...(model !== undefined && { model }),
 })
 
+/** `TOWER_CALLSIGN`: the callsign the tower plugin's TUI part shows above the composer, which gets no plugin options. */
 const envOf = (s: Start, place: Place, model: string | undefined): Record<string, string> => ({
   ...s.contributed.env,
+  TOWER_CALLSIGN: s.name,
   OPENCODE_CONFIG_CONTENT: JSON.stringify(configOf(s, place, model)),
   XDG_STATE_HOME: place.state,
 })

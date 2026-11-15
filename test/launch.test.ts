@@ -102,16 +102,16 @@ test('resumeRequest: carries the command it is given straight through to the hos
   assert.equal(resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'c', prompt: undefined, ran: {} }, EVERY_PLACE).command, undefined)
 })
 
-test('opencode: its own server, the config and a fresh state dir by env, the model with its effort as a variant, the user config dir left alone', () => {
+test('opencode: its own server, the config, its callsign and a fresh state dir by env, the model with its effort as a variant, the user config dir left alone', () => {
   assert.deepEqual([...CORE_FLAGS.opencode].sort(), ['--prompt', '--standalone', '-s'])
   const part = { ...EVERY_PART, runtime: 'opencode' as const, contributed: { systemPrompt: ['more'], prompt: [], env: { A: '1' }, args: ['--auto'] } }
   const spawned = spawnRequest({ ...part, kind: 'spawn', launch: { model: 'openrouter/m', effort: 'high', prompt: 'go' } }, EVERY_PLACE)
   assert.deepEqual(spawned.args, ['--standalone', '--auto', '--prompt', 'go'])
-  assert.deepEqual(Object.keys(spawned.env).sort(), ['A', 'OPENCODE_CONFIG_CONTENT', 'XDG_STATE_HOME'])
-  assert.equal(spawned.env.XDG_STATE_HOME, 'state')
+  assert.deepEqual(Object.keys(spawned.env).sort(), ['A', 'OPENCODE_CONFIG_CONTENT', 'TOWER_CALLSIGN', 'XDG_STATE_HOME'])
+  assert.deepEqual([spawned.env.XDG_STATE_HOME, spawned.env.TOWER_CALLSIGN], ['state', EVERY_PART.name])
   const config = JSON.parse(spawned.env.OPENCODE_CONFIG_CONTENT)
   assert.deepEqual([config.model, config.skills, config.plugins.map((p: { package?: string } | string) => (typeof p === 'string' ? p : p.package))], ['openrouter/m#high', ['mod/skills'], ['mod/opencode', 'plugin']])
   assert.match(config.plugins[0].options.brief, /tower whoami[\s\S]*Your directories are[\s\S]*more$/)
   const resumed = resumeRequest({ ...part, kind: 'resume', conversation: 'ses_1', prompt: undefined, ran: { model: 'openrouter/m' } }, EVERY_PLACE)
-  assert.deepEqual([resumed.args, JSON.parse(resumed.env.OPENCODE_CONFIG_CONTENT).model], [['--standalone', '--auto', '-s', 'ses_1'], 'openrouter/m'])
+  assert.deepEqual([resumed.args, JSON.parse(resumed.env.OPENCODE_CONFIG_CONTENT).model, resumed.env.TOWER_CALLSIGN], [['--standalone', '--auto', '-s', 'ses_1'], 'openrouter/m', EVERY_PART.name])
 })

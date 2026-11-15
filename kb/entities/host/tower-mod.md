@@ -5,7 +5,7 @@
   "summary": "The Claude Code mod loaded into every Claude session, and its opencode plugin loaded into every opencode session, posting the runtime's events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and two skills, tower:handbook and tower:guide.",
   "in": "host",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/guide/SKILL.md", "hub/src/mod/opencode/index.js", "hub/src/shared/launch-opencode.ts#configOf"],
+  "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/guide/SKILL.md", "hub/src/mod/opencode/index.js", "hub/src/mod/opencode/tui.ts", "hub/src/shared/launch-opencode.ts#configOf"],
   "links": [
     { "to": "host-daemon", "verb": "sends", "carries": "from the opencode plugin: opencode's bus events under their own types (tool output left out, a child session's lines with its parentID, a step's end with its model, a subagent call's first progress with the child it spawned, a session's usage with the total of it and its subagents), plugin.started (release, reloaded, models), tool.execute.before, mcp.status and plugin.failed, POST /hooks/<id> on hooks.sock" },
     { "to": "host-daemon", "verb": "sends", "carries": "mod events under Claude's names (turn.step with usage and the step's visible text, tool.call, session.measure, ...) and tower.tool.result / tower.tool.abandoned / tower.claude, POST /hooks/<id> on hooks.sock" },
@@ -58,4 +58,6 @@ at a time ([[runtime-normalizers]]): its release, whether it was reloaded mid-se
 on every line it raises; a step's model, named at its start, on its end; the child a subagent call spawned, on the
 call's first progress; and a session's cost summed with its subagents' (`total`). Its shell hook puts `bin/tower` on
 every shell's PATH, and its context hook adds the brief to every request. Each post is awaited, so lines keep the bus's
-order. When its subscription dies it posts `plugin.failed`, which nothing reads yet.
+order. When its subscription dies it posts `plugin.failed`, which nothing reads yet. Beside it,
+[`tui.ts`](ref:hub/src/mod/opencode/tui.ts) is the plugin's TUI part, which shows the worker's callsign above the
+composer ([[opencode]]).
