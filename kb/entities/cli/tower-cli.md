@@ -18,7 +18,7 @@
     { "to": "system-root", "verb": "writes", "carries": "cache/types/<API_VERSION>-<hash>/, the declarations tower types builds" },
     { "to": "tower-server", "verb": "calls", "carries": "tower spawn and tower resume: POST /spawn and POST /resume, so every session is started by the tower; refused with the fix `tower up` when it is not running" },
     { "to": "tower-server", "verb": "triggers", "carries": "tower update: stops it, moves the checkout to the newest release, starts it again" },
-    { "to": "log-reductions", "verb": "uses", "carries": "foldLog, factsOf, withLiveness, screenAt, snapshot" }
+    { "to": "log-reductions", "verb": "uses", "carries": "foldLog, withLiveness, screenAt, snapshot, conversationsOf" }
   ]
 }
 ---
