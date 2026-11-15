@@ -5,7 +5,7 @@
   "summary": "The opencode v2 TUI, the tower's second runtime: one standalone server per session in a real PTY, configured through its env and read through the tower's plugin on its event bus.",
   "in": "tower",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_SURFACES", "hub/src/shared/launch-opencode.ts", "hub/src/opencode-state.ts#sweepOpencodeStates", "hub/src/bridge/runtimes/opencode.ts#normalizeOpencode", "hub/test/opencode.test.ts"],
+  "refs": ["hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_SURFACES", "hub/src/shared/launch-opencode.ts", "hub/src/mod/opencode/tui.ts", "hub/src/opencode-state.ts#sweepOpencodeStates", "hub/src/bridge/runtimes/opencode.ts#normalizeOpencode", "hub/test/opencode.test.ts"],
   "links": [
     { "to": "tower-mod", "verb": "triggers", "carries": "bus events to the tower's opencode plugin (session.*, permission.*, form.*, mcp.status.changed) and its tool, shell and session context hooks" }
   ]
@@ -26,6 +26,15 @@ brief as its option, the plugins the config names, the tower's skills, and the m
 global instructions opencode loads by default (its own, and the user's `~/.claude` ones) keep loading. The first
 prompt goes as `--prompt`, which opencode submits once it is ready; a resume opens the saved conversation with `-s`.
 
+**Its callsign in the TUI** ([`tui.ts`](ref:hub/src/mod/opencode/tui.ts)). opencode's TUI loads the TUI part of every
+plugin its server loads, from the same directory, so the tower's plugin shows the worker's callsign right-aligned above
+the composer (the `session.composer.top` slot), where Claude shows `--name`. As of 2.2.5 the server's plugin options
+don't reach a plugin's TUI part: the server hands the TUI only the plugin's path. So every launch, spawn and resume, sets
+the callsign as `TOWER_CALLSIGN`, the name the tower logged as `tower.named`. opencode's home screen, where a worker
+spawned with no prompt waits, has no slot near its composer, so the label shows from the first prompt on. The part is
+plain calls into OpenTUI's Solid renderer, which opencode hands every TUI plugin as `@opentui/solid`, so it needs no JSX
+compile step and is typechecked with the rest of the repo.
+
 **Its state dir.** The TUI keeps preferences that outrank the config (a model's variant), its prompt history and its
 tabs in its state dir, so every session gets a fresh one as its `XDG_STATE_HOME`, under
 `<root>/cache/opencode/<id>/`. Nothing reads it or resumes from it, so it is a cache: before each opencode start the
@@ -41,7 +50,7 @@ count comes from what each step and compaction charged ([[log-reductions]]). ope
 the title stays in the normalized stream (`conversation.titled`) with no card field.
 
 **What it can't offer.** The board says so per runtime (`board.runtimes.opencode`: no `blocked` or `watching`
-status; `absent` rate limits, `watching`, messages between workers, the callsign in its own TUI, and slash commands
+status; `absent` rate limits, `watching`, messages between workers, and slash commands
 other than `/compact`, which run in the TUI process the plugin can't see). Its workers are told in their brief that
 they can't message another worker. The models it offers are those its latest session reported, which leaves out
 providers defined in an `opencode.json`. Its events don't say who sent a prompt: each one arrives as text in the session's inbox.
