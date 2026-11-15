@@ -12,6 +12,22 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.4.0
+
+Fixes for gaps the opencode runtime showed in its first hand-driven sessions (#600). Nothing to restart beyond the
+tower (`tower update` does it). API 2.4.
+
+- **Send Home no longer leaves an opencode worker stranded.** opencode exits 130 on every signal, so its exit read as
+  a kill from outside the tower. The tower now logs each kill it makes of a running session and reads that before the
+  exit code. On a host older than the current protocol, a kill from the page goes ahead unlogged, as before.
+- **How a worker is reached is worded by its runtime** in `tower agents`, `tower agent` and `tower whoami`: an opencode
+  worker is reached with `tower submit`, not by a session name that never comes.
+- **`tower hire` fails when the worker's command never started** (a missing binary), saying why. Best effort: a
+  command slow to fail is hired as usual and its card says so.
+- **An opencode worker whose plugin stopped hearing its events** says so on its card, with how to recover while it
+  runs.
+- **For renderers:** cards gain `eventsLost`.
+
 ## v2.3.0
 
 opencode v2 joins Claude Code as a second runtime (#596, #597, #598). Claude Code stays the default and required;
