@@ -18,11 +18,11 @@ test('the fixtures hold PostToolUse with its tool response, which the fact filte
 
 for (const name of names) {
   test(`${name}: the fact filter folds the same facts as every event`, () => {
-    assert.deepEqual(factsOf(readLog(logPath(name), factEvents(BOOTING)).log), factsOf(fixture(name)))
+    assert.deepEqual(factsOf(readLog(logPath(name), factEvents(fixture(name).header, BOOTING)).log), factsOf(fixture(name)))
   })
 
   test(`${name}: the fact filter passes every status the session went through`, () => {
-    assert.deepEqual(timeline(readLog(logPath(name), factEvents(BOOTING)).log), timeline(fixture(name)))
+    assert.deepEqual(timeline(readLog(logPath(name), factEvents(fixture(name).header, BOOTING)).log), timeline(fixture(name)))
   })
 
   test(`${name}: the screen filter draws the same screen as every event`, async () => {

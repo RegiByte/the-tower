@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { BOOTING, nextState } from '../src/bridge/status.ts'
-import { fixture, timeline } from './replay.ts'
+import { fixture, normalized, timeline } from './replay.ts'
 
 test('a turn the API rejects fails, with no Stop to end it', () => {
   assert.deepEqual(timeline(fixture('api-error')), [
@@ -138,12 +138,12 @@ test("Claude's workspace trust dialog blocks the session until it is answered an
     ['idle', 23.675],
     ['exited', 44.965],
   ])
-  const events = fixture('trust-dialog').events
+  const events = normalized(fixture('trust-dialog'))
   assert.equal(events.filter((e) => e[0] < 23.675).reduce(nextState, BOOTING).blocked, 'trust')
 })
 
 test("Claude's first-run setup blocks the session on login until it exits", () => {
-  const events = fixture('login-screen').events
+  const events = normalized(fixture('login-screen'))
   assert.deepEqual(timeline(fixture('login-screen')), [
     ['blocked', 0.917],
     ['exited', 32.963],

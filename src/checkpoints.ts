@@ -96,8 +96,8 @@ export const foldLog = (cache: string, logPath: string): { session: Session; off
   const { header, unreadable } = head
   const start = unreadable ? { ...initialFacts(header), broken: unreadable } : initialFacts(header)
   const from = checkpointFor(cache, header, logSize(logPath)) ?? { offset: head.offset, facts: start }
-  const { events, offset } = readEvents(logPath, from.offset, from.facts.broken ? afterBreak : factEvents(from.facts.state))
-  const facts = events.reduce(factsAfter(header.startedAt), from.facts)
+  const { events, offset } = readEvents(logPath, from.offset, from.facts.broken ? afterBreak : factEvents(header, from.facts.state))
+  const facts = events.reduce(factsAfter(header), from.facts)
   if (offset > from.offset) writeCheckpoint(cache, { fold: FOLD, header, offset, facts })
   return { session: { header, facts }, offset }
 }

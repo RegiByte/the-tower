@@ -2,7 +2,7 @@
  * What Claude's composer may hold, folded from the log, and whether a worker takes a prompt typed into it from outside
  * its terminal: at its prompt, with nothing in the composer, or else why not.
  */
-import type { LogEvent } from '../shared/model.ts'
+import type { NormalEvent } from './events.ts'
 import { isTyped } from './input.ts'
 import type { Status } from './status.ts'
 
@@ -32,22 +32,22 @@ const fillsComposer = (input: string) => isTyped(input) && input !== ESC && inpu
  * composer empties it, as do Ctrl+C typed at it and a new conversation; a compaction keeps what it held. `status` is the session's before
  * the event; `streamed`, whether the main loop's current turn has stepped or called a tool.
  */
-export const heldAfter = (heldSince: number | undefined, status: Status, streamed: boolean, event: LogEvent): number | undefined => {
+export const heldAfter = (heldSince: number | undefined, status: Status, streamed: boolean, event: NormalEvent): number | undefined => {
   if (event[1] === 'i') {
     if (!AT_COMPOSER.has(status)) return heldSince
     if (event[2] === CTRL_C) return undefined
     return heldSince ?? (fillsComposer(event[2]) ? event[0] : undefined)
   }
-  if (event[1] !== 'h' || event[2].agentId !== undefined) return heldSince
-  const hook = event[2]
-  switch (hook.hook_event_name) {
-    case 'prompt.submit':
-    case 'command.run':
-      return (hook.origin as { kind?: string } | undefined)?.kind === 'composer' ? undefined : heldSince
-    case 'SessionStart':
-      return hook.source === 'compact' ? heldSince : undefined
-    case 'turn.complete':
-      return hook.reason === 'aborted' && !hook.answer && !streamed ? (heldSince ?? event[0]) : heldSince
+  if (event[1] !== 'e' || ('agent' in event[2] && event[2].agent !== undefined)) return heldSince
+  const happening = event[2]
+  switch (happening.t) {
+    case 'prompt':
+    case 'command':
+      return happening.origin === 'composer' ? undefined : heldSince
+    case 'conversation.entered':
+      return undefined
+    case 'turn.ended':
+      return happening.reason === 'aborted' && !happening.answer && !streamed ? (heldSince ?? event[0]) : heldSince
     default:
       return heldSince
   }

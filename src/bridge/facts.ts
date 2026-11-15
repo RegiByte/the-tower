@@ -1,4 +1,6 @@
 import type { LogEvent, SessionHeader } from '../shared/model.ts'
+import { isTowerFact, type Happening, type NormalEvent } from './events.ts'
+import { normalizerOf } from './normalize.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
 import { heldAfter } from './composer.ts'
 import { isTyped } from './input.ts'
@@ -235,14 +237,6 @@ const LINE_CHARS = 280
 
 const clip = (text: string) => (text.length > LINE_CHARS ? `${text.slice(0, LINE_CHARS - 1)}…` : text)
 
-const TOOL_ARG_KEYS = ['command', 'file_path', 'pattern', 'url', 'description', 'prompt']
-
-/** `tool.call` carries the tool's arguments beside `tool` (`command` for Bash), a heredoc's whole script included. */
-const toolLabel = (call: Record<string, unknown>): string => {
-  const arg = TOOL_ARG_KEYS.map((key) => call[key]).find((value) => typeof value === 'string') as string | undefined
-  return arg ? clip(`${call.tool} ${arg}`) : String(call.tool)
-}
-
 /**
  * Claude's cost is its conversation's running total: what a reading adds is its increase on the conversation's
  * previous reading. A conversation's first reading here adds all of it, unless it was resumed: then it carries what
@@ -274,27 +268,17 @@ export const digestOf = (text: string): number => {
 /** Claude gives a subagent's hand-back a peer's origin: only a message from another Claude session is a peer's. */
 const promptOrigin = (kind: string, text: string) => (kind === 'peer' && !delivered(text) ? 'hand-back' : kind)
 
-type Usage = { input_tokens?: number; output_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number }
-
-const tokensOf = (u: Usage): Tokens => ({
-  input: u.input_tokens ?? 0, output: u.output_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0,
-})
-
 const NO_TOKENS: Tokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 
 export const addTokens = (a: Tokens, b: Tokens): Tokens => ({
   input: a.input + b.input, output: a.output + b.output, cacheRead: a.cacheRead + b.cacheRead, cacheWrite: a.cacheWrite + b.cacheWrite,
 })
 
-type SpawnResult = { model?: string; agentId?: string; deny?: string }
+type Spawn = Extract<Happening, { t: 'agent.spawned' }>
 
-const spawned = (hook: Record<string, unknown>, at: number): SubagentRun => {
-  const result = hook.result as SpawnResult | undefined
-  return {
-    id: result?.agentId, type: String(hook.subagentType), description: String(hook.description), background: hook.background === true,
-    parent: hook.parentAgentId as string | undefined, model: result?.model, startedAt: at, tokens: NO_TOKENS,
-  }
-}
+const spawned = ({ id, type, description, background, parent, model }: Spawn, at: number): SubagentRun => ({
+  id, type, description, background, parent, model, startedAt: at, tokens: NO_TOKENS,
+})
 
 /** The run whose loop raised the event, changed by `change`; the runs as they were when none is that loop's. */
 const runOf = (runs: SubagentRun[], id: unknown, change: (run: SubagentRun) => SubagentRun): SubagentRun[] =>
@@ -304,99 +288,95 @@ const runOf = (runs: SubagentRun[], id: unknown, change: (run: SubagentRun) => S
  * A message to a subagent whose turn ended resumes its loop, raising `agent.spawn` again with `resume` and the same
  * `agentId`: the run it resumes is open again. A run this log never saw start begins here.
  */
-const runsSpawned = (runs: SubagentRun[], hook: Record<string, unknown>, at: number): SubagentRun[] => {
-  const resumed = (hook.resume as { agentId: string } | undefined)?.agentId
-  return runs.some((run) => run.id !== undefined && run.id === resumed)
-    ? runOf(runs, resumed, (run) => ({ ...run, endedAt: undefined, ended: undefined }))
-    : [...runs, spawned(hook, at)]
-}
+const runsSpawned = (runs: SubagentRun[], spawn: Spawn, at: number): SubagentRun[] =>
+  runs.some((run) => run.id !== undefined && run.id === spawn.resumes)
+    ? runOf(runs, spawn.resumes, (run) => ({ ...run, endedAt: undefined, ended: undefined }))
+    : [...runs, spawned(spawn, at)]
 
-const hookFacts = (facts: Facts, t: number, startedAt: number, hook: Record<string, unknown>): Facts => {
-  const mainLoop = hook.agentId === undefined
+const happeningFacts = (facts: Facts, t: number, startedAt: number, happening: Happening): Facts => {
+  const mainLoop = !('agent' in happening) || happening.agent === undefined
   const at = startedAt + t * 1000
-  switch (hook.hook_event_name) {
-    case 'session.measure': {
-      const context = hook.context as { percent?: number } | undefined
-      const cost = hook.cost as { usd: number } | undefined
-      const limits = hook.rateLimits as RateLimit[]
+  switch (happening.t) {
+    case 'measured': {
+      const { context, cost, rateLimits: limits } = happening
       const usd = cost && spent(facts, cost.usd)
       return {
         ...facts,
-        context: context?.percent ?? facts.context,
+        context: context ?? facts.context,
         ...(cost && { costUsd: cost.usd, measured: facts.conversations.at(-1)?.id, spend: usd ? [...facts.spend, [at, usd]] : facts.spend }),
         rateLimits: limits.length ? { at, limits } : facts.rateLimits,
         limitReadings: limitsRead(facts.limitReadings, at, limits),
       }
     }
-    case 'prompt.submit': {
-      const { kind } = hook.origin as { kind: string }
+    case 'prompt': {
+      const kind = happening.origin
       const byWorker = facts.promptedBy !== undefined && USER_ORIGINS.has(kind)
-      const origin = byWorker ? 'peer' : promptOrigin(kind, String(hook.text))
+      const origin = byWorker ? 'peer' : promptOrigin(kind, happening.text)
       const prompted = { ...facts, prompts: [...facts.prompts, [at, origin] as [number, string]], promptedBy: byWorker ? undefined : facts.promptedBy, leaveAt: USER_ORIGINS.has(origin) ? undefined : facts.leaveAt }
       return facts.stoppedAt === undefined || !USER_ORIGINS.has(origin)
         ? prompted
         : { ...prompted, waits: [...facts.waits, [at, t - facts.stoppedAt]], stoppedAt: undefined }
     }
-    case 'turn.start':
+    case 'turn.started':
       return mainLoop ? { ...facts, tool: undefined, says: [], turnStartedAt: t, stoppedAt: undefined } : facts
     case 'tool.call':
-      return mainLoop ? { ...facts, tool: toolLabel(hook) } : facts
-    case 'session.send':
-      return { ...facts, sent: [...facts.sent, [at, String(hook.to), digestOf(String(hook.text))]] }
-    case 'session.receive': {
-      const message = delivered(String(hook.text))
+      return mainLoop ? { ...facts, tool: happening.label } : facts
+    case 'claude.sent':
+      return { ...facts, sent: [...facts.sent, [at, happening.to, digestOf(happening.text)]] }
+    case 'claude.received': {
+      const message = delivered(happening.text)
       return message ? { ...facts, received: [...facts.received, [at, digestOf(message.text)]] } : facts
     }
-    case 'PermissionRequest':
+    case 'permission.requested':
       return { ...facts, asks: [...facts.asks, at] }
-    case 'PostToolUseFailure':
+    case 'tool.failed':
       return { ...facts, failures: [...facts.failures, at] }
-    case 'agent.spawn':
-      return (hook.result as SpawnResult | undefined)?.deny ? facts : { ...facts, subagentRuns: runsSpawned(facts.subagentRuns, hook, at) }
+    case 'agent.spawned':
+      return happening.deny ? facts : { ...facts, subagentRuns: runsSpawned(facts.subagentRuns, happening, at) }
     case 'turn.step': {
-      const { answer, usage } = hook.result as { answer?: string; usage?: Usage }
-      const counted = usage ? { ...facts, tokens: [...facts.tokens, [at, String(hook.model), tokensOf(usage)] as Facts['tokens'][number]] } : facts
+      const { answer, tokens } = happening
+      const counted = tokens ? { ...facts, tokens: [...facts.tokens, [at, happening.model, tokens] as Facts['tokens'][number]] } : facts
       if (!mainLoop) {
-        const step = usage ? tokensOf(usage) : NO_TOKENS
-        return { ...counted, subagentRuns: runOf(facts.subagentRuns, hook.agentId, (run) => ({ ...run, tokens: addTokens(run.tokens, step), endedAt: undefined, ended: undefined })) }
+        const step = tokens ?? NO_TOKENS
+        return { ...counted, subagentRuns: runOf(facts.subagentRuns, happening.agent, (run) => ({ ...run, tokens: addTokens(run.tokens, step), endedAt: undefined, ended: undefined })) }
       }
-      const stepped = { ...counted, model: String(hook.model), effort: hook.effort as string | undefined, steppedAt: at }
+      const stepped = { ...counted, model: happening.model, effort: happening.effort, steppedAt: at }
       return answer?.trim() ? { ...stepped, says: [...facts.says, clip(answer.trim())].slice(-SAYS_KEPT) } : stepped
     }
-    case 'turn.complete':
-      if (!mainLoop) return { ...facts, subagentRuns: runOf(facts.subagentRuns, hook.agentId, (run) => ({ ...run, endedAt: at, ended: String(hook.reason) })) }
+    case 'turn.ended':
+      if (!mainLoop) return { ...facts, subagentRuns: runOf(facts.subagentRuns, happening.agent, (run) => ({ ...run, endedAt: at, ended: happening.reason })) }
       return facts.turnStartedAt === undefined
         ? { ...facts, says: [] }
         : { ...facts, says: [], turnSpans: [...facts.turnSpans, [startedAt + facts.turnStartedAt * 1000, t - facts.turnStartedAt]], turnStartedAt: undefined }
-    case 'Stop':
+    case 'turn.stopped':
       return { ...facts, turns: facts.turns + 1, stoppedAt: t }
+    case 'runtime.release':
+      return { ...facts, runtimeRelease: happening.version }
     case 'tower.show': {
-      const { kind, target, title } = hook as Omit<Shown, 'at'>
+      const { kind, target, title } = happening as unknown as Omit<Shown, 'at'>
       return { ...facts, shown: [...facts.shown.filter((s) => s.target !== target), { kind, target, title, at: t }] }
     }
     case 'tower.keep': {
-      const { project, collection, id } = hook as Omit<Kept, 'at' | 'conversation'>
+      const { project, collection, id } = happening as unknown as Omit<Kept, 'at' | 'conversation'>
       return { ...facts, kept: [...facts.kept, { project, collection, id, conversation: facts.conversations.at(-1)?.id, at: t }] }
     }
-    case 'tower.claude':
-      return { ...facts, runtimeRelease: String(hook.version) }
     case HIRED:
-      return { ...facts, hired: [...facts.hired, String(hook.id)] }
+      return { ...facts, hired: [...facts.hired, String(happening.id)] }
     case PROMPTED_BY:
-      return { ...facts, promptedBy: String(hook.by) }
+      return { ...facts, promptedBy: String(happening.by) }
     case KEYED_BY:
-      return { ...facts, keyedBy: [t, String(hook.by)] }
+      return { ...facts, keyedBy: [t, String(happening.by)] }
     case KILLED_BY:
-      return { ...facts, killedBy: String(hook.by) }
+      return { ...facts, killedBy: String(happening.by) }
     case LEAVE:
       return { ...facts, leaveAt: t }
     case EXEMPT:
-      return { ...facts, exempt: [...facts.exempt, { from: hook.from as Exemption['from'], by: String(hook.by) }] }
+      return { ...facts, exempt: [...facts.exempt, { from: happening.from as Exemption['from'], by: String(happening.by) }] }
     case REPORTS_TO:
-      return { ...facts, reportsTo: { callsign: String(hook.callsign), session: String(hook.session), by: String(hook.by) } }
+      return { ...facts, reportsTo: { callsign: String(happening.callsign), session: String(happening.session), by: String(happening.by) } }
     default: {
-      const fact = extensionFactOf(String(hook.hook_event_name))
-      return fact ? { ...facts, extensionFacts: [...facts.extensionFacts, [at, fact.cap, fact.name, hook.value]] } : facts
+      const fact = extensionFactOf(happening.t)
+      return fact ? { ...facts, extensionFacts: [...facts.extensionFacts, [at, fact.cap, fact.name, (happening as { value?: unknown }).value]] } : facts
     }
   }
 }
@@ -409,7 +389,7 @@ const streamed = (startedAt: number, { tool, steppedAt, turnStartedAt }: Facts) 
  * Output draws the screen, and changes no fact but a blocking screen's state: otherwise the same facts come back, so a
  * caller can tell nothing changed.
  */
-const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
+const stepAfter = (startedAt: number, facts: Facts, event: NormalEvent): Facts => {
   if (event[1] === 'o') {
     const state = nextState(facts.state, event)
     return state === facts.state ? facts : { ...facts, state }
@@ -422,26 +402,29 @@ const stepAfter = (startedAt: number, facts: Facts, event: LogEvent): Facts => {
   }
   if (event[1] === 'i') return isTyped(event[2]) ? { ...next, typedAt: event[0], typed: facts.typed + 1 } : next
   if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitCode: event[2].exitCode, signal: event[2].signal, exitedFrom: facts.state.status }
-  if (isLetGo(event)) return { ...next, letGoAt: event[0] }
-  if (event[1] === 'h') return hookFacts({ ...next, heardAt: event[0] }, event[0], startedAt, event[2])
-  return next
+  if (event[1] !== 'e') return next
+  if (event[2].t === LET_GO) return { ...next, letGoAt: event[0] }
+  return happeningFacts({ ...next, heardAt: event[0] }, event[0], startedAt, event[2])
 }
 
-const isLetGo = (event: LogEvent) => event[1] === 'h' && event[2].hook_event_name === LET_GO
+const isLetGo = (event: LogEvent) => isTowerFact(event, LET_GO)
 
 /**
  * The step every fold of a log takes. An event the fold can't follow breaks the session where it stands: its facts
  * stay as they were before it, `broken` says why, and nothing after it is folded but the user letting it go, so one
  * bad line costs its own session and no other reader.
  */
-export const factsAfter = (startedAt: number) => (facts: Facts, event: FoldEvent): Facts => {
-  if ('unreadable' in event) return facts.broken ? facts : { ...facts, broken: event.unreadable }
-  if (facts.broken) return isLetGo(event) ? { ...facts, letGoAt: event[0] } : facts
-  try {
-    return stepAfter(startedAt, facts, event)
-  } catch (err) {
-    return { ...facts, broken: { message: (err as Error).message, at: event[0], code: event[1] } }
+export const factsAfter = (header: SessionHeader) => {
+  const normalize = normalizerOf(header)
+  return (facts: Facts, event: FoldEvent): Facts => {
+    if ('unreadable' in event) return facts.broken ? facts : { ...facts, broken: event.unreadable }
+    if (facts.broken) return isLetGo(event) ? { ...facts, letGoAt: event[0] } : facts
+    try {
+      return normalize(event).reduce((next, normal) => stepAfter(header.startedAt, next, normal), facts)
+    } catch (err) {
+      return { ...facts, broken: { message: (err as Error).message, at: event[0], code: event[1] } }
+    }
   }
 }
 
-export const factsOf = ({ header, events }: { header: SessionHeader; events: FoldEvent[] }): Facts => events.reduce(factsAfter(header.startedAt), initialFacts(header))
+export const factsOf = ({ header, events }: { header: SessionHeader; events: FoldEvent[] }): Facts => events.reduce(factsAfter(header), initialFacts(header))
