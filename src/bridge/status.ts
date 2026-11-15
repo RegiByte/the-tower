@@ -32,9 +32,10 @@ export type SessionState =
  */
 const statusOf = (event: Happening): Unblocked | undefined => {
   switch (event.t) {
-    case 'conversation.entered':
+    case 'ready':
       return 'idle'
     case 'prompt.accepted':
+    case 'permission.answered':
     case 'tool.started':
     case 'tool.done':
     case 'tool.failed':
@@ -65,6 +66,7 @@ const screenAfter = (state: SessionState, event: NormalEvent): BlockedKind | und
 
 /** The status a session moves to as if no screen held it: a blocked session is one that hasn't started. */
 /**
+ * A stop with no turn running ends none: a runtime that runs a manual `/compact` as a turn of its own stops after it.
  * A manual `/compact` works between turns and leaves the session idle when it ends, or watching when it was watching:
  * what can wake the main loop still runs. Any other compaction leaves the status as it was: an automatic one runs
  * inside a turn, which carries on after it, or gives up with no end, and an idle one summarizes the conversation of a
@@ -75,7 +77,8 @@ const statusAfter = (status: Unblocked, compaction: Compaction | undefined, even
   if (event[1] !== 'e' || !ofMainLoop(event[2])) return status
   const happening = event[2]
   if (happening.t === 'compaction.started') return happening.trigger === 'manual' ? 'working' : status
-  if (happening.t === 'compaction.ended') return compaction?.trigger === 'manual' ? (compaction.resumes ?? 'idle') : status
+  if (happening.t === 'compaction.ended' || happening.t === 'compaction.failed') return compaction?.trigger === 'manual' ? (compaction.resumes ?? 'idle') : status
+  if (happening.t === 'turn.stopped' && status === 'idle') return status
   return statusOf(happening) ?? status
 }
 
@@ -97,6 +100,7 @@ const compactionAfter = ({ status, compaction }: SessionState, event: NormalEven
       if (event[2].trigger === 'auto') return AUTO
       return status === 'watching' ? MANUAL_FROM_WATCHING : MANUAL
     case 'compaction.ended':
+    case 'compaction.failed':
     case 'turn.step':
     case 'turn.ended':
       return undefined

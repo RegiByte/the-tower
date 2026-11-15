@@ -194,8 +194,12 @@ const happeningOf = (hook: Hook): Happening => {
   }
 }
 
+/** A conversation's start is also Claude at its prompt: a compaction's ends inside the turn it ran in, or idle as it was. */
+const happeningsOf = (hook: Hook): Happening[] =>
+  hook.hook_event_name === 'SessionStart' && hook.source !== 'compact' ? [{ t: 'ready', ...withAgent(hook) }, happeningOf(hook)] : [happeningOf(hook)]
+
 export const normalizeClaude = (_header: SessionHeader): Normalizer => (event: LogEvent) =>
-  event[1] === 'h' ? [[event[0], 'e', happeningOf(event[2])]] : [event]
+  event[1] === 'h' ? happeningsOf(event[2]).map((happening) => [event[0], 'e', happening]) : [event]
 
 /** Claude's tool calls in words: a path in a line relative to the session's folder. */
 export const claudeTools = ({ cwd }: SessionHeader): ToolFormat => ({ line: (tool, input) => lineOf(tool, input, cwd), label: labelOf })
