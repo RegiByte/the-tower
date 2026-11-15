@@ -10,6 +10,7 @@ import { withoutParentSession } from '../shared/env.ts'
 import { CORE_FLAGS, flagName, type Contributed, type ResumeLaunch, type SpawnLaunch } from '../shared/launch.ts'
 import { RUNTIMES, type ModEvent, type Runtime } from '../shared/model.ts'
 import { EXEMPT, PROMPTED_BY, REPORTS_TO, type Session } from './facts.ts'
+import { towerFact } from './events.ts'
 import type { CompiledField } from './extensions.ts'
 import { extensionFactName } from './stores.ts'
 
@@ -159,19 +160,19 @@ export const mergeParts = (kind: SpawnLaunch['kind'] | ResumeLaunch['kind'], run
 
 /** A spawn's core facts, from what its contributors gave: each exemption, and its crew edge as the session it names now. */
 export const coreFacts = (merged: Merged, reportsTo: string | undefined): ModEvent[] => [
-  ...merged.exempt.map(({ from, by }) => ({ hook_event_name: EXEMPT, from, by })),
-  ...(merged.reportsTo && reportsTo ? [{ hook_event_name: REPORTS_TO, callsign: merged.reportsTo.callsign, session: reportsTo, by: merged.reportsTo.by }] : []),
+  ...merged.exempt.map(({ from, by }) => towerFact(EXEMPT, { from, by })),
+  ...(merged.reportsTo && reportsTo ? [towerFact(REPORTS_TO, { callsign: merged.reportsTo.callsign, session: reportsTo, by: merged.reportsTo.by })] : []),
 ]
 
 /**
  * A spawn on a prompt by another worker: that its first prompt is the worker's, logged with the spawn's other facts,
  * before anything the session does, so no early exit can come between the spawn and its fact.
  */
-export const promptedFacts = (prompt: string | undefined, by: string | undefined): ModEvent[] => (prompt && by ? [{ hook_event_name: PROMPTED_BY, by }] : [])
+export const promptedFacts = (prompt: string | undefined, by: string | undefined): ModEvent[] => (prompt && by ? [towerFact(PROMPTED_BY, { by })] : [])
 
 /** A spawn's field values, by capability, as the facts the host logs: `tower.x.<cap>.<field>`. */
 export const fieldFacts = (x: Record<string, Record<string, unknown>>): ModEvent[] =>
-  Object.entries(x).flatMap(([cap, fields]) => Object.entries(fields).map(([name, value]) => ({ hook_event_name: extensionFactName(cap, name), value })))
+  Object.entries(x).flatMap(([cap, fields]) => Object.entries(fields).map(([name, value]) => towerFact(extensionFactName(cap, name), { value })))
 
 /**
  * What a fork carries of the lineage it forks (oldest first): a copy of every extension's session fact, each session's
@@ -179,5 +180,5 @@ export const fieldFacts = (x: Record<string, Record<string, unknown>>): ModEvent
  */
 export const forkFacts = (lineage: Session[]): ModEvent[] =>
   [...new Map(lineage.map((s) => [s.header.id, s])).values()].flatMap((s) =>
-    s.facts.extensionFacts.map(([, cap, name, value]) => ({ hook_event_name: extensionFactName(cap, name), value })),
+    s.facts.extensionFacts.map(([, cap, name, value]) => towerFact(extensionFactName(cap, name), { value })),
   )
