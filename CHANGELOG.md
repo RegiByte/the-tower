@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.2.0
+
+The bridge reads Claude's session logs through a runtime normalizer, the first step toward a second runtime (#593), and
+the library gains a DOM morph (#594). Nothing to restart beyond the tower (`tower update` does it). API 2.2.
+
+- **Claude is read as one runtime among others.** Its hook and mod events are read only by a pure per-line normalizer
+  chosen by the session's runtime; every fold reads normalized events in log order. Boards are unchanged. A session
+  naming a runtime the tower has no normalizer for breaks alone, with that reason.
+- **A broken log costs only its own session:** the Brief stops at a log's first unreadable line, so a worker resumed
+  from a broken session keeps its Brief, and a change in a tool's shape can no longer break a worker's card.
+- **For renderers and extensions:** `morph(root, html)` in `/lib/morph.js` (provisional) redraws an element from html
+  and keeps the nodes it still describes, so typed text, caret, selection and focus survive. `data-owned` leaves a
+  node whole, `data-owned="children"` leaves its children, for regions, frames and elements that keep their own state.
+  Adapted from Datastar's morph and idiomorph.
+
 ## v2.1.1
 
 Reading a floor's worktrees, and removing one, no longer re-hashes every file of a freshly cut worktree on every read
