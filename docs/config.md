@@ -70,7 +70,7 @@ its floor's preferred one.
 
 | Key | Takes | Unset |
 |---|---|---|
-| `runtimes` | What serves each runtime's own harness, by runtime: only `claude` today, a runtime the tower doesn't know is a fail. See [Runtimes](#runtimes). | required, with `claude.argv` |
+| `runtimes` | What serves each runtime's own harness, by runtime: `claude` and `opencode`; a runtime the tower doesn't know is a fail. See [Runtimes](#runtimes). | required, with `claude.argv` |
 | `env` | Variables added to every session's environment. They are scrubbed with the parent session's: a parent session's markers (`CLAUDECODE`, `CLAUDE_CODE_SESSION*`, `TOWER_SESSION_ID`, …) set here are dropped. | none |
 | `projects` | The floors, by id (letters, digits, `_`, `-`): see [Projects](#projects). | required |
 | `collections` | The collections every project has, by id: see [Collections](#collections). | none |
@@ -136,14 +136,16 @@ Each project is a floor. Its sessions start in the hub; the repos are the other 
 ## Runtimes
 
 `runtimes` holds what serves one runtime's own harness, keyed by the runtime, at the top level and in each project.
-The tower runs one runtime, `claude`, so `runtimes.claude` is the only entry; `env` stays at the top level, since it
-reaches every session.
+The tower runs `claude`, whose entry is required, and `opencode` (v2, tested on 2.2.5), whose entry turns it on: a
+spawn of a runtime the config leaves out is refused. `env` stays at the top level, since it reaches every session.
 
 | Key | Takes | Unset |
 |---|---|---|
 | `runtimes.claude.argv` | The command every Claude session starts with, before the arguments the tower adds: `["claude"]`. Several named commands are also allowed: `{"claude": ["claude"], "mom": ["claude-mom"]}`. A project's `command` picks one by name; naming more than one adds a picker to the New Worker form. | required |
 | `runtimes.claude.plugins` | Absolute plugin directories every Claude session loads, each passed to Claude as `--plugin-dir`. | none |
 | `projects.<id>.runtimes.claude.plugins` | Absolute plugin directories this floor's Claude sessions load, beside every session's. | none |
+| `runtimes.opencode.argv` | The command every opencode session starts with: `["opencode"]`, or several named ones as for Claude. The tower adds `--standalone`, so each session runs its own server, and gives it its config through `OPENCODE_CONFIG_CONTENT` (the tower plugin and skills, the model) and a fresh `XDG_STATE_HOME`; the user's own opencode config, credentials and sessions are left as they are. | opencode not started |
+| `runtimes.opencode.plugins` | Absolute directories of opencode v2 plugins (each holding its `index.js`) every opencode session loads, named in its config's `plugins`. | none |
 | `projects.<id>.runtimes.claude.command` | The `argv` command this floor's workers start with unless told otherwise, by name: a fail if `argv` names more than one and none of them is this, a warning (ignored) if `argv` names only one (or is a single command's array). | `argv`'s first |
 
 ## Extensions

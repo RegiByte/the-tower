@@ -13,28 +13,46 @@ const SPAWN_SIZE = { cols: 120, rows: 40 }
  * they load the tower:handbook skill, which holds the rest. `user`: the name the config gives the person running the tower, said
  * once so a worker knows them by it on review notes and when they name themselves.
  */
+export const opening = (user: string | undefined, sessions: string) =>
+  `You are a worker in the tower, the HQ where the user${user ? ` (${user})` : ''} runs their ${sessions} sessions, ` +
+  'and the `tower` command on your PATH is how you work with it.'
+
+export const WHOAMI_LINE =
+  '- Who you are: run `tower whoami` once as you start: your callsign (like HOLMES-42), your floor, your ' +
+  'directories, who hired you, if anyone, and the address of the tower\'s page and API.'
+
+export const SHOWING_LINE =
+  '- Showing what you made: the user watches you from the tower and sees only what you show. Every file or page you ' +
+  'make for the user (a report, a plan, a picture, an html page) gets `tower show <file>`, which puts it beside ' +
+  'you: naming its path in your answer does not. Keep it where it lasts (the project, or a notes folder the ' +
+  "user's instructions name), not a temporary folder, unless it is truly throwaway. Show it again after you " +
+  'change it. Make pages as local html files; publish a claude.ai artifact only when the user asks for one.'
+
+export const STOPPING_LINE =
+  "- Stopping what you started: other workers' command lines carry their briefs and paths, so `pkill -f` or " +
+  '`killall` with a pattern can end them. Save the PID of anything you start (`… & echo $! > server.pid`) and ' +
+  'stop it with `kill <pid>`.'
+
+export const KEPT_LINE = '- Kept items: to change one, edit its file in place (`tower kept` gives the path): never keep a second copy.'
+
+/** The handbook line, naming the skill as the runtime loads it. */
+export const handbookLine = (skill: string) =>
+  `- Everything else is in the ${skill} skill: review threads and notes, hiring workers and sending them ` +
+  "home, crews, the floor's shelf (the pages the user means by \"shelf\"), the tower's config, worktrees and the " +
+  "tower's API. Load it when the task touches any of them. Don't create or remove " +
+  'git worktrees unless the user asks.'
+
 const towerBrief = (user: string | undefined) =>
   [
-    `You are a worker in the tower, the HQ where the user${user ? ` (${user})` : ''} runs their Claude Code sessions, ` +
-      'and the `tower` command on your PATH is how you work with it.',
-    '- Who you are: run `tower whoami` once as you start: your callsign (like HOLMES-42), your floor, your ' +
-      'directories, who hired you, if anyone, and the address of the tower\'s page and API.',
+    opening(user, 'Claude Code'),
+    WHOAMI_LINE,
     '- Reaching another worker: a callsign is not a SendMessage name. Run `tower agents` (`--all` for every floor) ' +
       'and send to the worker\'s **message as** name. The other worker has none of your context: sign with your ' +
       'callsign, and name the commits and paths involved.',
-    '- Showing what you made: the user watches you from the tower and sees only what you show. Every file or page you ' +
-      'make for the user (a report, a plan, a picture, an html page) gets `tower show <file>`, which puts it beside ' +
-      'you: naming its path in your answer does not. Keep it where it lasts (the project, or a notes folder the ' +
-      "user's instructions name), not a temporary folder, unless it is truly throwaway. Show it again after you " +
-      'change it. Make pages as local html files; publish a claude.ai artifact only when the user asks for one.',
-    "- Stopping what you started: other workers' command lines carry their briefs and paths, so `pkill -f` or " +
-      '`killall` with a pattern can end them. Save the PID of anything you start (`… & echo $! > server.pid`) and ' +
-      'stop it with `kill <pid>`.',
-    '- Kept items: to change one, edit its file in place (`tower kept` gives the path): never keep a second copy.',
-    '- Everything else is in the tower:handbook skill: review threads and notes, hiring workers and sending them ' +
-      "home, crews, the floor's shelf (the pages the user means by \"shelf\"), the tower's config, worktrees and the " +
-      "tower's API. Load it when the task touches any of them. Don't create or remove " +
-      'git worktrees unless the user asks.',
+    SHOWING_LINE,
+    STOPPING_LINE,
+    KEPT_LINE,
+    handbookLine('tower:handbook'),
   ].join('\n')
 
 /**
@@ -58,7 +76,7 @@ export const worktreeBrief = (project: Project, cwd: string, branch: string | un
 
 const list = (paths: string[]) => paths.map((p) => `\`${p}\``).join(', ')
 
-const worktreeLine = ({ name, branch, dirs, mains }: WorktreeBrief): string =>
+export const worktreeLine = ({ name, branch, dirs, mains }: WorktreeBrief): string =>
   `You work in worktree \`${name}\`${branch ? ` on branch \`${branch}\`` : ', on a detached HEAD'}. Your directories are ${list(dirs)}. ` +
   `They are your copies of ${list(mains)}. Paths that point to those main checkouts mean your copies: edit only yours, ` +
   'because the main checkouts belong to the user and other workers.'
@@ -101,7 +119,7 @@ const briefArgs = (user: string | undefined, worktree: WorktreeBrief | undefined
 ]
 
 /** A prompt and what contributors add after it, as one: none when both are empty. */
-const promptOf = (prompt: string | undefined, added: string[]): string | undefined => [prompt, ...added].filter(Boolean).join('\n\n') || undefined
+export const promptOf = (prompt: string | undefined, added: string[]): string | undefined => [prompt, ...added].filter(Boolean).join('\n\n') || undefined
 
 /** The prompt is Claude's positional argument: after `--`, a prompt starting with `-` is not read as a flag. */
 const launchArgs = ({ model, effort, prompt }: Launch): string[] => [
@@ -189,7 +207,7 @@ export const NOTHING_CONTRIBUTED: Contributed = { systemPrompt: [], prompt: [], 
  * (`projectCollectionsPath`). `plugins`: the plugin directories for the project (`runtimePlugins`, and the extensions'
  * on its floor). `facts`: `tower.*` facts the host logs before the session's first event.
  */
-type Start = {
+export type Start = {
   runtime: Runtime
   id: string
   name: string
@@ -211,7 +229,13 @@ export type SpawnLaunch = Start & { kind: 'spawn'; launch: Launch }
  * A resume continues a session's conversation in the directory it ran in, under the same project: as the same worker,
  * or a new one on a fork (`resumeName`). `prompt`: Claude's first prompt in it, as a spawn's.
  */
-export type ResumeLaunch = Start & { kind: 'resume' | 'fork'; conversation: string; prompt: string | undefined; command?: string }
+export type ResumeLaunch = Start & { kind: 'resume' | 'fork'; conversation: string; prompt: string | undefined; command?: string; ran: Ran }
+
+/**
+ * The model and effort the conversation a resume continues last ran on, as its session's facts saw them: Claude's
+ * transcript keeps its own; opencode takes them from its config, which each launch composes again.
+ */
+export type Ran = { model?: string; effort?: string }
 
 const startArgs = (s: Start): string[] => [
   ...s.contributed.args,
@@ -227,36 +251,45 @@ const startArgs = (s: Start): string[] => [
  * A session composed for the host, before it is said as a spawn (`hostSpawn`). `args` are Claude's own, after the
  * command and the mod; `command` names one of the config's `argv`.
  */
-export type HostStart = { id: string; project: string; cwd: string; runtime: Runtime; args: string[]; command?: string; facts: ModEvent[] }
+export type HostStart = { id: string; project: string; cwd: string; runtime: Runtime; args: string[]; env: Record<string, string>; command?: string; facts: ModEvent[] }
 
-const hostStart = (s: Start, args: string[], command: string | undefined): HostStart => ({
+/**
+ * Where a session's runtime finds what the tower gives it: `mod`, the tower mod's directory (`src/mod`); `state`, the
+ * session's own state directory, for a runtime whose own state would otherwise outrank what the tower composes.
+ */
+export type Place = { mod: string; state: string }
+
+export const hostStart = (s: Start, args: string[], env: Record<string, string>, command: string | undefined): HostStart => ({
   id: s.id,
   project: s.project,
   cwd: s.cwd,
   runtime: s.runtime,
   args,
+  env,
   ...(command !== undefined && { command }),
   facts: s.facts,
 })
 
-export const spawnRequest = (s: SpawnLaunch): HostStart =>
-  hostStart(s, [...startArgs(s), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })], s.launch.command)
+/** The tower mod, which posts Claude's events to the host and is read by each Claude as it starts. */
+const modArgs = ({ mod }: Place) => ['--plugin-dir', mod]
 
-export const resumeRequest = (s: ResumeLaunch): HostStart => hostStart(s, [...startArgs(s), ...resumeArgs(s.conversation, s.prompt)], s.command)
+export const claudeSpawn = (s: SpawnLaunch, place: Place): HostStart =>
+  hostStart(s, [...modArgs(place), ...startArgs(s), ...launchArgs({ ...s.launch, prompt: promptOf(s.launch.prompt, s.contributed.prompt) })], {}, s.launch.command)
+
+export const claudeResume = (s: ResumeLaunch, place: Place): HostStart => hostStart(s, [...modArgs(place), ...startArgs(s), ...resumeArgs(s.conversation, s.prompt)], {}, s.command)
 
 /**
- * `start` as a whole command line: `command`'s argv, the tower mod (`modDir`), which posts Claude's events to the host
- * and is read by each Claude as it starts, then its own args, which can end with `-- <prompt>`. The header names the
- * command by the name it resolved to.
+ * `start` as a whole command line: `command`'s argv, then its own args, which for Claude can end with `-- <prompt>`,
+ * with its env over the command's. The header names the command by the name it resolved to.
  */
-export const hostSpawn = ({ id, project, cwd, runtime, args, facts }: HostStart, command: SessionCommand, modDir: string): Extract<ToHost, { t: 'spawn' }> => ({
+export const hostSpawn = ({ id, project, cwd, runtime, args, env, facts }: HostStart, command: SessionCommand): Extract<ToHost, { t: 'spawn' }> => ({
   t: 'spawn',
   id,
   project,
   cwd,
   runtime,
-  argv: [...command.argv, '--plugin-dir', modDir, ...args],
-  env: command.env,
+  argv: [...command.argv, ...args],
+  env: { ...command.env, ...env },
   ...(command.name !== undefined && { command: command.name }),
   ...(facts.length && { facts }),
   ...SPAWN_SIZE,
@@ -271,17 +304,4 @@ export const EVERY_PART: Start = {
   worktree: { name: 'name', branch: 'branch', dirs: ['dir'], mains: ['main'], links: ['link'] }, plugins: ['plugin'], contributed: NOTHING_CONTRIBUTED, facts: [],
 }
 
-/**
- * The flags the core composes, by runtime, read from what it composes: a contributor may pass none of them. `--` ends
- * the flags before a prompt. `--plugin-dir`, which also loads the tower mod (`hostSpawn`), is one of them.
- */
-export const CORE_FLAGS: Record<Runtime, string[]> = {
-  claude: [
-    ...new Set(
-      [
-        ...spawnRequest({ ...EVERY_PART, kind: 'spawn', launch: { model: 'model', effort: 'effort', prompt: 'prompt' } }).args,
-        ...resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'conversation', prompt: 'prompt' }).args,
-      ].flatMap((arg) => (arg.startsWith('-') ? [flagName(arg)] : [])),
-    ),
-  ],
-}
+export const EVERY_PLACE: Place = { mod: 'mod', state: 'state' }

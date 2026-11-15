@@ -17,7 +17,7 @@ import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts,
 import { towerFact } from '../bridge/events.ts'
 import { hireSettled } from './hires.ts'
 import type { Status } from '../bridge/status.ts'
-import { coreFacts, fieldFacts, forkFacts, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
+import { coreFacts, fieldFacts, forkFacts, resumesFact, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
@@ -30,7 +30,9 @@ import { apiError, isApiError, ITEM_EXT, refusal, ROUTES, VERBS, type ApiError, 
 import { callsignRefused, freshId, nameIn, typedCallsign } from '../shared/callsign.ts'
 import { callOf, can, hireRefusal, workerNamed } from '../shared/cards.ts'
 import { uploadRefusal } from '../shared/uploads.ts'
-import { hostSpawn, newSessionId, restoredPrompt, resumeRequest, spawnRequest, worktreeBrief, type HostStart, type Launch, type SpawnLaunch } from '../shared/launch.ts'
+import { hostSpawn, newSessionId, restoredPrompt, worktreeBrief, type HostStart, type Launch, type Place, type SpawnLaunch } from '../shared/launch.ts'
+import { resumeRequest, spawnRequest } from '../shared/launches.ts'
+import { opencodeStateDir, sweepOpencodeStates } from '../opencode-state.ts'
 import { FACT_DOOR, nestedIn, qualifiedOf, tooDeep, type Answered, type Caller, type LaunchRequest, type SessionFact } from '../shared/extensions.ts'
 import {
   callsignsOf,
@@ -39,6 +41,7 @@ import {
   configuredUser,
   editorArgv,
   isRuntime,
+  configuredRuntimes,
   outsideProject,
   projectDirs,
   runtimePlugins,
@@ -114,7 +117,7 @@ const isVerb = (name: string): name is Verb => Object.hasOwn(VERBS, name)
  * A spawn's extension fields by capability and the facts they are logged as; who asked for it, whether it is their hire
  * and its prompt, as its gate weighs it; and `within`, the caller its hooks are raised for.
  */
-type Spawn = { fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; by?: string; hire: boolean; prompt?: string; within: Caller }
+type Spawn = { runtime: Runtime; fields: Map<string, Record<string, unknown>>; facts: ModEvent[]; by?: string; hire: boolean; prompt?: string; within: Caller }
 
 export const dispatch = defineResource({
   dependencies: ['core:config', 'core:system', 'core:publisher', 'core:extensions'],
@@ -170,8 +173,18 @@ export const dispatch = defineResource({
      */
     async function start(s: HostStart): Promise<Answer> {
       await system.refreshLive()
-      return hostRefused('start a session') ?? host(hostSpawn(s, sessionCommand(readConfig(), s.runtime, s.command), MOD_DIR))
+      const refused = hostRefused('start a session')
+      if (refused) return refused
+      if (s.runtime === 'opencode') await sweepOpencodeStates(paths)
+      return host(hostSpawn(s, sessionCommand(readConfig(), s.runtime, s.command)))
     }
+
+    /** Where session `id`'s runtime finds the tower mod and its own state dir. */
+    const placeOf = (id: string): Place => ({ mod: MOD_DIR, state: opencodeStateDir(paths, id) })
+
+    /** Why the config can't start a session of `runtime`, when it leaves the runtime out. */
+    const unconfigured = (config: Config, runtime: Runtime): ApiError | undefined =>
+      configuredRuntimes(config).includes(runtime) ? undefined : apiError('config', `the config names no command for ${runtime} sessions: add runtimes.${runtime}, such as {"argv": ["${runtime}"]}`)
 
     /**
      * Why the running host, older than `HOST_PROTOCOL`, can't start a session or log a fact, so a verb that needs either
@@ -451,6 +464,8 @@ export const dispatch = defineResource({
         if (!project) return apiError('not_found', `No project "${source.header.project}" in the config`)
         const runtime = runtimeOf(source.header)
         if (!isRuntime(runtime)) return apiError('refused', `${source.header.id} ran runtime "${runtime}", which this tower doesn't run: it runs ${RUNTIMES.join(', ')}`)
+        const lacking = unconfigured(config, runtime)
+        if (lacking) return lacking
         const badCommand = commandRefused(config, runtime, source.header.command)
         if (badCommand) return apiError('config', `${source.header.id} ran under command "${source.header.command}": ${badCommand.message}, change config.json's runtimes.${runtime}.argv to bring it back`)
         const { project: projectId, cwd } = source.header
@@ -484,11 +499,12 @@ export const dispatch = defineResource({
               kept: projectCollectionsPath(paths, projectId),
               plugins: [...runtimePlugins(config, projectId, runtime), ...holder.plugins(projectId, runtime)],
               contributed: merged.contributed,
-              facts: kind === 'fork' ? forkFacts(worker) : [],
+              facts: [...(kind === 'fork' ? forkFacts(worker) : []), resumesFact(conversation)],
               conversation,
               prompt: restored ? restoredPrompt(restored, prompt) : prompt,
               command: source.header.command,
-            }),
+              ran: { model: source.facts.model, effort: source.facts.effort },
+            }, placeOf(heir)),
           )
           if (answer.t !== 'spawned' || !restored) return answer
           await system.refreshLive()
@@ -590,7 +606,9 @@ export const dispatch = defineResource({
      * refuses it, or when its crew edge names no worker; its facts are its fields' and the core's.
      */
     const newLaunch = async (config: Config, projectId: string, at: Pick<SpawnLaunch, 'id' | 'name' | 'cwd' | 'dirs' | 'worktree'>, launch: Launch, spawn: Spawn): Promise<SpawnLaunch | ApiError> => {
-      const runtime: Runtime = 'claude'
+      const { runtime } = spawn
+      const lacking = unconfigured(config, runtime)
+      if (lacking) return lacking
       const badCommand = commandRefused(config, runtime, launch.command)
       if (badCommand) return badCommand
       const now = Date.now()
@@ -602,6 +620,9 @@ export const dispatch = defineResource({
       if (gated) return gated
       const lead = merged.reportsTo && workerNamed(cardsNow().filter((c) => !c.continuedBy), merged.reportsTo.callsign)
       if (merged.reportsTo && !lead) return apiError('not_found', `${merged.reportsTo.by} has the worker report to ${merged.reportsTo.callsign}, and no worker is called that`)
+      const launched = launchWithDefaults(config, projectId, runtime, launch, merged.defaults)
+      if (runtime === 'opencode' && launched.effort !== undefined && launched.model === undefined)
+        return apiError('invalid', 'effort: opencode takes an effort as a variant of a model (provider/model#effort): give the model too')
       return {
         kind: 'spawn',
         runtime,
@@ -612,7 +633,7 @@ export const dispatch = defineResource({
         plugins: [...runtimePlugins(config, projectId, runtime), ...holder.plugins(projectId, runtime)],
         contributed: merged.contributed,
         facts: [...spawn.facts, ...fieldFacts(Object.fromEntries(merged.fields)), ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by)],
-        launch: launchWithDefaults(config, projectId, runtime, launch, merged.defaults),
+        launch: launched,
       }
     }
 
@@ -645,7 +666,7 @@ export const dispatch = defineResource({
         const worker = await newWorker(config, typed)
         if ('t' in worker) return worker
         const started = await newLaunch(config, projectId, { id: worker.id, name: worker.callsign, cwd, dirs: sessionDirs(project, cwd), worktree: await briefFor(project, worktreesConfig(config, projectId).links, cwd) }, launch, spawn)
-        return 't' in started ? started : start(spawnRequest(started))
+        return 't' in started ? started : start(spawnRequest(started, placeOf(started.id)))
       })
 
     /** Callsigns until one names a worktree, default branch and recorded name the floor doesn't have: of a hundred per name, few are taken. */
@@ -689,7 +710,7 @@ export const dispatch = defineResource({
           const started = await newLaunch(config, projectId, { id, name: callsign, cwd, dirs: sessionDirs(project, cwd), worktree: worktreeBrief(project, cwd, branch, linkedSources(project, links)) }, launch, spawn)
           if ('t' in started) return started
           const made = await (request.from !== undefined ? fork(project, links, { name, branch, from: request.from }) : cut(project, links, { name, branch, base: request.base }))
-          const answer = await start(spawnRequest(started))
+          const answer = await start(spawnRequest(started, placeOf(started.id)))
           if (answer.t === 'error') {
             await rollback(made.made)
             return apiError('worktree_failed', `The session didn't start in ${cwd}, so the cut was rolled back: ${(answer as ApiError).message}`)
@@ -922,11 +943,11 @@ export const dispatch = defineResource({
       })
 
     const HANDLERS: { [R in Verb]: (input: RouteInput[R], caller: Caller) => Answer | Promise<Answer> } = {
-      spawn: ({ project, cwd, cut, callsign, model, effort, prompt, command, x, by, hire }, caller) => {
+      spawn: ({ project, cwd, cut, callsign, runtime, model, effort, prompt, command, x, by, hire }, caller) => {
         const fields = spawnFields(project, x ?? {})
         if ('t' in fields) return fields
         const launch = spawnLaunchOf({ model, effort, prompt, command })
-        const spawn: Spawn = { ...fields, by, hire: hire ?? false, prompt, within: nestedIn(caller, 'tower/spawn') }
+        const spawn: Spawn = { ...fields, runtime: runtime ?? 'claude', by, hire: hire ?? false, prompt, within: nestedIn(caller, 'tower/spawn') }
         const spawning = () => fromWorker(by, () => (cut ? spawnCut(project, cut, callsign, launch, spawn) : spawnIn(project, cwd, callsign, launch, spawn)))
         return hire ? hired(project, by!, spawning) : spawning()
       },

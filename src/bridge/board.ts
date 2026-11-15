@@ -1,11 +1,12 @@
 import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
-import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, runtimeOf, isRuntime, RUNTIMES, type Runtime, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, runtimeOf, isRuntime, configuredRuntimes, type Runtime, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchOf } from '../shared/launch.ts'
 import { tagOf } from '../shared/tags.ts'
 import { current } from '../shared/status-words.ts'
 import { crewsOf } from '../shared/crews.ts'
 import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
 import { CLAUDE_LABEL, CLAUDE_TESTED, releaseRange, type TestedRange } from '../shared/claude.ts'
+import { OPENCODE_LABEL, OPENCODE_TESTED } from '../shared/opencode.ts'
 import type { SystemPaths } from '../shared/model.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { runtimeDefaults, type RuntimeDefaults } from './defaults.ts'
@@ -448,7 +449,10 @@ const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead
 }
 
 /** What the tower declares of each runtime it knows: the name a renderer prints and the releases it is tested on. */
-const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested'>> = { claude: { label: CLAUDE_LABEL, tested: CLAUDE_TESTED } }
+const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested'>> = {
+  claude: { label: CLAUDE_LABEL, tested: CLAUDE_TESTED },
+  opencode: { label: OPENCODE_LABEL, tested: OPENCODE_TESTED },
+}
 
 /** A release of `runtime` outside its tested range; a runtime the tower doesn't know has none it is tested on to compare. */
 const untested = (runtime: string, release: string | undefined): boolean =>
@@ -877,7 +881,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
         cutByDefault: worktreesConfig(config, id).cutByDefault,
         hiring: hiringConfig(config, id),
         tidy,
-        runtimes: Object.fromEntries(RUNTIMES.map((r) => [r, floorRuntime(config, id, r)])),
+        runtimes: Object.fromEntries(configuredRuntimes(config).map((r) => [r, floorRuntime(config, id, r)])),
         ...(reading.length && { reading }),
         ...floorOffers(id, host !== undefined, shells !== undefined, cuttable(refs), tidy),
       }
@@ -891,7 +895,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     today: today(sessions, weeklyBudget(accounts[0].sessions, accounts[0].streams, now), now),
     hostUp: host !== undefined,
     hostOutdated: host !== undefined && host.protocol !== HOST_PROTOCOL,
-    runtimes: Object.fromEntries(RUNTIMES.map((r) => [r, boardRuntime(config, r, sessions, cards)])),
+    runtimes: Object.fromEntries(configuredRuntimes(config).map((r) => [r, boardRuntime(config, r, sessions, cards)])),
     shells: (shells ?? []).map((shell) => ({ ...shell, activity: shellActivity(shell) })),
     termsUp: shells !== undefined,
     jobs: recentJobs(jobsNow(view.jobs, view.heldJobs && new Set(view.heldJobs.map((j) => j.id))), now),

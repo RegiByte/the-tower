@@ -13,7 +13,7 @@ import type { Restored } from './launch.ts'
  * a read, a stream. The major moves, and the minor returns to 0, when a change breaks a renderer: a rename, a removal, a
  * changed meaning; CHANGELOG.md says why.
  */
-export const API_VERSION = '2.2'
+export const API_VERSION = '2.3'
 
 const id = z.string().min(1)
 
@@ -105,6 +105,10 @@ export const SPAWN_FIELDS = z.strictObject({
     .describe(
       "The new worker's callsign, `NAME` or `NAME-NN`, upper-cased: refused when its name is a worker's on duty. Drawn at random when left out; a cut's worktree is named for it, lowercased, unless `cut.name` names it.",
     ),
+  runtime: z
+    .enum(RUNTIMES)
+    .optional()
+    .describe("The runtime the worker runs, one the config's `runtimes` names: `claude` when left out. @since 2.3"),
   ...launch,
   x: z
     .record(z.string(), z.record(z.string(), z.unknown()))
