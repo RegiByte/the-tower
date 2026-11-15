@@ -6,6 +6,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { discardable, pruneWorktree, readRepo, removeWorktree, tidyable } from '../src/worktrees.ts'
 
+/** The reads keep copies of each checkout's index in the system root's cache: a throwaway one, never the user's. */
+process.env.TOWER_CONFIG = path.join(mkdtempSync(path.join(tmpdir(), 'tower-absorbed-system-')), 'config.json')
+
 const IDENTITY = { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' }
 
 test('a kept branch is absorbed only when its every commit landed on its base as an equal patch', async () => {
