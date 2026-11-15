@@ -36,6 +36,7 @@ const OWNED = /\.(\d+)-[a-z0-9]+\.(tmp|held)$/
 /**
  * Whether the file named `name` is free to delete: a copy no read uses directly, or a staging file or a hold whose
  * process has ended. A live process's own files are removed only by the call that made them, however long it waits.
+ * A pid another user's process now holds counts as alive: its file stays until that process ends.
  */
 const free = (name: string): boolean => {
   const owner = OWNED.exec(name)?.[1]
@@ -44,7 +45,9 @@ const free = (name: string): boolean => {
     process.kill(Number(owner), 0)
     return false
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ESRCH') return true
+    const { code } = err as NodeJS.ErrnoException
+    if (code === 'ESRCH') return true
+    if (code === 'EPERM') return false
     throw err
   }
 }
