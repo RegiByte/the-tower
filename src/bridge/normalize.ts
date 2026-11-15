@@ -1,8 +1,9 @@
 import { runtimeOf, type SessionHeader, type SessionLog } from '../shared/model.ts'
 import type { NormalEvent, Normalizer, RuntimeReader, ToolFormat } from './events.ts'
 import { claude } from './runtimes/claude.ts'
+import { opencode } from './runtimes/opencode.ts'
 
-const READERS: Record<string, RuntimeReader> = { claude }
+const READERS: Record<string, RuntimeReader> = { claude, opencode }
 
 /**
  * A session's log read by the runtime its header names. One the bridge has no reader for breaks wherever it is

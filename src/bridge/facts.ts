@@ -1,5 +1,5 @@
 import type { LogEvent, SessionHeader } from '../shared/model.ts'
-import { isTowerFact, type Happening, type NormalEvent, type ToolFormat } from './events.ts'
+import { isTowerFact, type Happening, type NormalEvent, type RuntimeModel, type ToolFormat } from './events.ts'
 import { normalizerOf, toolFormatOf } from './normalize.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
 import { heldAfter } from './composer.ts'
@@ -72,6 +72,8 @@ export type Facts = {
   steppedAt?: number
   /** The release of the session's runtime: Claude Code's (`claude --version`), as the mod reports it on start. */
   runtimeRelease?: string
+  /** The models the runtime said it can run, for a runtime that reports them (opencode's plugin, on start). */
+  models?: RuntimeModel[]
   /** Claude's conversations this session held, in order: `/clear` moves it to a new one. */
   conversations: Conversation[]
   /** What the worker showed, oldest first: showing a target again moves it last. */
@@ -195,9 +197,6 @@ export const EXEMPT = 'tower.exempt'
 /** The fact a spawn's crew edge is logged as, before the worker starts. */
 export const REPORTS_TO = 'tower.reports-to'
 
-/** The fact a resume's conversation is logged as, before the session starts: read by a runtime's normalizer that needs it. */
-export const RESUMES = 'tower.resumes'
-
 /** The fact the tower appends through the host when the user lets a stranded session go: the user's, not Claude's. */
 export const LET_GO = 'tower.letGo'
 
@@ -270,6 +269,15 @@ export const digestOf = (text: string): number => {
 
 /** Claude gives a subagent's hand-back a peer's origin: only a message from another Claude session is a peer's. */
 const promptOrigin = (kind: string, text: string) => (kind === 'peer' && !delivered(text) ? 'hand-back' : kind)
+
+/**
+ * Percent of `model`'s context window a step's prompt filled, for a runtime that reports its models' windows: the
+ * step's input, read from the cache or not, is the whole conversation sent.
+ */
+const contextOf = (models: RuntimeModel[] | undefined, model: string, { input, cacheRead, cacheWrite }: Tokens): number | undefined => {
+  const window = models?.find((m) => m.id === model)?.context
+  return window ? Math.round(((input + cacheRead + cacheWrite) / window) * 100) : undefined
+}
 
 const NO_TOKENS: Tokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 
@@ -346,7 +354,8 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
         const step = tokens ?? NO_TOKENS
         return { ...counted, subagentRuns: runOf(facts.subagentRuns, happening.agent, (run) => ({ ...run, tokens: addTokens(run.tokens, step), endedAt: undefined, ended: undefined })) }
       }
-      const stepped = { ...counted, model: happening.model, effort: happening.effort, steppedAt: at }
+      const context = tokens && contextOf(facts.models, happening.model, tokens)
+      const stepped = { ...counted, model: happening.model, effort: happening.effort, steppedAt: at, ...(context !== undefined && { context }) }
       return answer?.trim() ? { ...stepped, says: [...facts.says, clip(answer.trim())].slice(-SAYS_KEPT) } : stepped
     }
     case 'said':
@@ -360,6 +369,8 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
       return { ...facts, turns: facts.turns + 1, stoppedAt: t }
     case 'runtime.release':
       return { ...facts, runtimeRelease: happening.version }
+    case 'runtime.models':
+      return { ...facts, models: happening.models }
     case 'tower.show': {
       const { kind, target, title } = happening as unknown as Omit<Shown, 'at'>
       return { ...facts, shown: [...facts.shown.filter((s) => s.target !== target), { kind, target, title, at: t }] }
