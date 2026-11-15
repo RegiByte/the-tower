@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-15",
   "refs": [
     "hub/src/shared/picks.ts",
     "hub/src/shared/picks.ts#PICK_HANDLERS",
