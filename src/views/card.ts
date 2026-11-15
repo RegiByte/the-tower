@@ -62,7 +62,6 @@ const CSS = `:where([data-view="${ID}"]) {
   & .bar-sub { display: flex; align-items: center; gap: var(--sp-l); min-width: 0; white-space: nowrap; color: var(--muted); font-size: var(--fs-s); }
   & .bar-sub .where { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   & .bar-sub:has(.adds-line) .where { flex: none; max-width: 50%; }
-  & .bar-sub .fails { min-width: 0; white-space: normal; color: var(--broken-text); }
   & .bar-sub .adds-line { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
   & .bar-line { gap: var(--sp-s); margin-top: var(--sp-m); color: var(--muted); font-size: var(--fs-m); white-space: nowrap; }
   & .bar-top[hidden] ~ .bar-line { margin-top: 0; }
@@ -264,7 +263,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit, options,
       `<span class="call" role="heading" aria-level="2">${c.callsign}</span>${cell ? pickHtml() : ''}
     <span class="pill ${lampOf(c)}${c.stuck ? ' stuck' : ''}" data-tip="${esc(statusTitle(c))}"><span class="lamp"></span><span class="status-word">${statusName(c)} ·</span><span translate="no" data-since="${c.enteredAt}"></span></span>`,
     )
-    paintOnce($('.where-part'), `<span class="where" data-tuck-text data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, undefined)))}</span>${c.startFailure ? `<span class="fails">× ${esc(c.startFailure)}</span>` : ''}`)
+    paintOnce($('.where-part'), `<span class="where" data-tuck-text data-tip="${esc(c.cwd)}">${withIcons(esc(whereLineOf(c, floor() as Floor, undefined)))}</span>`)
     paintOnce(
       $('.stats-part'),
       `<span class="stats">

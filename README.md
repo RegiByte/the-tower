@@ -173,19 +173,6 @@ Requirements:
 
 Claude Code is required either way: it is the default runtime, and every worker starts on it unless told otherwise.
 
-### opencode, an optional second runtime
-
-opencode lets a worker run on any model opencode supports, picked by hand: the new-worker form shows a runtime choice
-once more than one is configured, and `tower hire runtime opencode model <provider/model>` does the same from a
-worker. It needs:
-
-- opencode 2.2.5 (the v2 line; the tested range is `OPENCODE_TESTED` in `src/shared/opencode.ts`)
-- a provider connected in opencode itself (`opencode auth login`), or one defined in your `opencode.json`
-- `"opencode": {"argv": ["opencode"]}` under `runtimes` in the config ([docs/config.md](docs/config.md#runtimes))
-
-Some of the tower's features are Claude Code's own and opencode workers go without them: messages between workers,
-rate limits, and slash commands other than `/compact`. The board says which (`board.runtimes.opencode.absent`).
-
 ```sh
 git clone --single-branch https://github.com/RegiByte/the-tower.git tower && cd tower
 npm run setup        # install, write a first config, check the machine, start everything, open the tower
@@ -207,6 +194,19 @@ tower types <dir>                    # type an extension outside the checkout ag
 
 Stopping the host ends its sessions (they can be resumed); the tower itself restarts freely. Releases are tags
 `vX.Y.Z`, each with an entry in [CHANGELOG.md](CHANGELOG.md) saying what it asks of you.
+
+### opencode, an optional second runtime
+
+opencode lets a worker run on any model opencode supports, picked by hand: the new-worker form shows a runtime choice
+once more than one is configured, and `tower hire runtime opencode model <provider/model>` does the same from a
+worker. It needs:
+
+- opencode 2.2.5 (the v2 line; the tested range is `OPENCODE_TESTED` in `src/shared/opencode.ts`)
+- a provider connected in opencode itself (`opencode auth login`), or one defined in your `opencode.json`
+- `"opencode": {"argv": ["opencode"]}` under `runtimes` in the config ([docs/config.md](docs/config.md#runtimes))
+
+Some of the tower's features are Claude Code's own and opencode workers go without them: messages between workers,
+rate limits, and slash commands other than `/compact`. The board says which (`board.runtimes.opencode.absent`).
 
 ## A note on stability
 
