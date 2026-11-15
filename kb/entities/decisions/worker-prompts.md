@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-15",
   "refs": [
     "hub/src/cli.ts",
     "hub/src/bridge/facts.ts#PROMPTED_BY",
