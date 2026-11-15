@@ -43,13 +43,16 @@ storing, and the capability belongs in the core, where every renderer and worker
 **How.**
 - **Stranded, three ways** ([`lifeOf`](ref:hub/src/bridge/life.ts#lifeOf)): lost (no `x`, its host gone), stopped
   with the host (`hostStopped`), or killed from outside
-  ([`killedOutside`](ref:hub/src/bridge/facts.ts#killedOutside)): Claude exits 128 plus the number of a signal it
+  ([`killedOutside`](ref:hub/src/bridge/facts.ts#killedOutside)). The tower logs `tower.kill` before every kill of
+  a running session ([[worker-prompts]]), and a logged kill is the tower's whatever the exit says: opencode exits 130
+  on SIGHUP, SIGTERM and SIGINT alike, so its exit can't tell. A log without the fact (older ones, and every kill
+  from outside) is read by its exit: Claude exits 128 plus the number of a signal it
   catches (143 for SIGTERM, raising `SessionEnd` with reason `other`, which moves no status), and the host's own kill
   is SIGHUP, 129, so any other code above 128 is a signal nobody in the tower sent. node-pty reports a signal the
   process didn't catch (SIGKILL) as code 0 with that signal, which the host logs as the `x`'s `signal`: any but
   SIGHUP (the host's kill, uncaught) strands it too. An older host's `x` holds no `signal`, and such a kill there
   reads as an end. The other side of the same read is `card.killed`
-  ([`killedByHost`](ref:hub/src/bridge/facts.ts#killedByHost)): SIGHUP, the tower's `kill` (sent home, gone home by
+  ([`killedByHost`](ref:hub/src/bridge/facts.ts#killedByHost)): a logged `tower.kill`, or SIGHUP, the tower's `kill` (sent home, gone home by
   itself, a hire Tidy ended), with the host not stopping; a worker that exited by itself or crashed is neither.
 - **Derived.** The fold keeps `exitedFrom`, the status a session was in when its `x` arrived
   ([`stepAfter`](ref:hub/src/bridge/facts.ts#stepAfter)); no hook lands between the host's kill and the `x`, as

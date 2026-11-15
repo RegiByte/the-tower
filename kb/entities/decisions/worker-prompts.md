@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A worker's acts on another are named in the target's log before they land",
-  "summary": "submit, spawn, kill and keys take `by`, the requesting worker's session id; the tower has the host append tower.prompt, tower.kill or tower.keys to the target's log before the act, keys once per burst. The fold counts the next composer prompt after a tower.prompt as `peer`, answering no wait, and keeps killedBy and keyedBy. The user's acts pass no `by`. Attribution, not permission.",
+  "summary": "submit, spawn, kill and keys take `by`, the requesting worker's session id; the tower has the host append tower.prompt, tower.kill or tower.keys to the target's log before the act, keys once per burst; every kill of a running session logs tower.kill, the user's without `by`. The fold counts the next composer prompt after a tower.prompt as `peer`, answering no wait, and keeps killedAt, killedBy and keyedBy. The user's acts pass no `by`. Attribution, not permission.",
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
@@ -45,26 +45,29 @@ then.
 
 **How.**
 - `submit`, `spawn`, `kill` and `keys` take an optional `by`, a session id the tower knows (an unknown one is refused
-  before anything happens). With it, [`namedFirst`](ref:hub/src/tower/dispatch.ts#namedFirst) has the host append
+  before anything happens). With it, [`namedFirst`](ref:hub/src/tower/dispatch.ts#namedFirst) (a kill: its own
+  [`kill`](ref:hub/src/tower/dispatch.ts#kill)) has the host append
   `{"hook_event_name": "tower.prompt" | "tower.kill" | "tower.keys", "by": <id>}` to the target's log through the
   host's `fact` request ([`actedBy`](ref:hub/src/tower/dispatch.ts#actedBy)) before the act. A spawn is named only
   when it has a prompt, its `tower.prompt` among the spawn's own facts, which the host logs after the header and
   before anything the session does ([`promptedFacts`](ref:hub/src/bridge/launch.ts#promptedFacts)): a fact appended once the session has started could
-  come while a worker that exited at once is still writing its exit, which the host refuses. A kill is named
-  only while the session runs, so a refused kill names nobody. While a host older than the tower's protocol runs, a
+  come while a worker that exited at once is still writing its exit, which the host refuses. Every kill of a
+  running session logs `tower.kill` first ([`kill`](ref:hub/src/tower/dispatch.ts#kill)), the user's with no `by`,
+  so its end reads as the tower's whatever exit code the runtime gives a signal ([[carry-on]]); a refused kill
+  logs nothing, and on a host older than the tower's protocol the user's kill goes unlogged, read from its exit code. While a host older than the tower's protocol runs, a
   named prompt, kill or keys refuses with `unavailable` and the restart to do, before anything happens
   ([`hostRefused`](ref:hub/src/tower/dispatch.ts#hostRefused)).
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) keeps a `tower.prompt` as `promptedBy` until the next
   `prompt.submit` of a user origin, counts that prompt as `peer`, lets its wait go unanswered, and spends the mark. The
-  conversation's prompt is untouched: a hired worker's card still shows its brief. It keeps `killedBy`, and `keyedBy`
+  conversation's prompt is untouched: a hired worker's card still shows its brief. It keeps `killedAt` (any logged kill) and `killedBy` (a named one), and `keyedBy`
   (the latest worker that typed, with when).
 - Keys come a request per keystroke from a page, so a fact per request would outweigh the input it names. A `keys`
   request with `by` is named unless the latest `tower.keys` names the same worker and is less than a minute old
   ([`inBurst`](ref:hub/src/tower/dispatch.ts#inBurst)); the tower waits for its fold of the fact before typing
   ([`keyedBy`](ref:hub/src/tower/dispatch.ts#keyedBy)), so the burst's next request reads it.
 - The `tower` CLI names its caller from `TOWER_SESSION_ID`: it sends it as a header on every request to the tower
-  ([`callerHeaders`](ref:hub/src/shared/api.ts#callerHeaders)), and as `by` in `submit` and `home`, and `tower kill`, which speaks to the host directly, appends the fact itself first. The user's
-  page and terminal pass none, so the user's acts stay unnamed.
+  ([`callerHeaders`](ref:hub/src/shared/api.ts#callerHeaders)), and as `by` in `submit` and `home`, and `tower kill`, which speaks to the host directly, appends the fact itself first, unnamed when the user
+  runs it. The user's page and terminal pass none, so the user's acts stay unnamed.
 
 **Alternatives considered.**
 - *Match the fact to the prompt by a digest of its text* (as messages are matched): Claude wraps a long paste in

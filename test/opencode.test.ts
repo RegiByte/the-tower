@@ -224,3 +224,13 @@ test('opencode: a worker is named by the callsign it was started under, which it
   assert.equal(callsignOf(named), 'TYPED-7')
   assert.notEqual(callsignOf(log), 'TYPED-7')
 })
+
+test('opencode: a worker the tower killed has gone home, one killed from outside is stranded, though both exit 130', () => {
+  const config = { runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } }, env: {}, projects: { lab: { name: 'lab', hub: '/hub/lab', repos: [] } } } as unknown as Config
+  const cardOf = (log: SessionLog) => {
+    const { status, stranded, killed } = board(viewOf(config, { sessions: [{ header: log.header, facts: factsOf(log) }], host: { ids: new Set(), protocol: HOST_PROTOCOL } })).floors[0].cards[0]
+    return { exit: factsOf(log).exitCode, status, stranded, killed }
+  }
+  assert.deepEqual(cardOf(fixture('opencode-sent-home')), { exit: 130, status: 'exited', stranded: false, killed: true })
+  assert.deepEqual(cardOf(fixture('opencode-killed-outside')), { exit: 130, status: 'exited', stranded: true, killed: false })
+})
