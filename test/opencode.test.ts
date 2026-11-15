@@ -201,6 +201,19 @@ test("opencode: its default model is the one a spawn that asked for none ran on,
   assert.equal(defaultsOf(log).model, undefined)
 })
 
+test('a session whose command exited with an error before its runtime started says so on its card, naming the command', () => {
+  const header = { ...fixture('opencode-basic').header, argv: ['opencode-missing', '--standalone'] }
+  const config = { runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode-missing'] } }, env: {}, projects: { lab: { name: 'lab', hub: header.cwd, repos: [] } } } as unknown as Config
+  const cardOf = (events: unknown[]) => {
+    const log = { header, events } as SessionLog
+    return board(viewOf(config, { sessions: [{ header, facts: factsOf(log) }], host: { ids: new Set(), protocol: HOST_PROTOCOL } })).floors[0].cards[0]
+  }
+  const facts = [[0.001, 'h', { hook_event_name: 'tower.named', callsign: 'MORGAN-87' }], [0.001, 'h', { hook_event_name: 'tower.asked' }]]
+  assert.match(cardOf([...facts, [0.005, 'x', { exitCode: 1 }]]).startFailure ?? '', /^opencode-missing exited with code 1 before opencode started: .*`tower doctor`/)
+  assert.equal(cardOf([...facts, [0.2, 'o', 'error\r\n'], [0.3, 'x', { exitCode: 1 }]]).startFailure, undefined)
+  assert.equal(cardOf([...facts, [0.005, 'x', { exitCode: 0 }]]).startFailure, undefined)
+})
+
 test('opencode: a worker is named by the callsign it was started under, which its TUI never shows', () => {
   const log = fixture('opencode-basic')
   const [header, ...events] = [log.header, ...log.events]

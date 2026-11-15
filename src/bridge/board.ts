@@ -7,7 +7,7 @@ import { crewsOf } from '../shared/crews.ts'
 import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
 import { CLAUDE_EFFORTS, CLAUDE_LABEL, CLAUDE_MODELS, CLAUDE_TESTED, releaseRange, type TestedRange } from '../shared/claude.ts'
 import { OPENCODE_LABEL, OPENCODE_TESTED } from '../shared/opencode.ts'
-import type { SystemPaths } from '../shared/model.ts'
+import type { SessionHeader, SystemPaths } from '../shared/model.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
 import { reportedModels, runtimeDefaults, type ModelChoice, type RuntimeDefaults } from './defaults.ts'
 import { chainsOf, continuations, lineage, namer, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
@@ -70,6 +70,11 @@ export type Unresumable = 'outside' | 'gone'
 export type Card = {
   id: string
   callsign: string
+  /**
+   * Why its process never started the runtime, in words that name the command and the fix: it exited with an error
+   * before printing anything or raising an event, as a command that isn't installed does. @since 2.3
+   */
+  startFailure?: string
   /** The Claude session name its peers message it by (`SendMessage`'s `to`), while its Claude runs. */
   peer?: string
   /** The runtime it runs, the key of its entry in `board.runtimes` (`runtimeOf`): any string, so a renderer reads past one it doesn't know. @since 2.0 */
@@ -481,6 +486,12 @@ const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested' | 'statuse
   },
 }
 
+/** The session's process exited with an error, by itself, before its runtime printed anything or raised an event. */
+const startFailed = (facts: Session['facts']): boolean => facts.ran === undefined && facts.exitCode !== undefined && facts.exitCode !== 0 && facts.signal === undefined && !facts.hostStopped
+
+const startFailure = (header: SessionHeader, label: string, exitCode: number): string =>
+  `${header.argv[0]} exited with code ${exitCode} before ${label} started: is it installed, and does the config's argv name it? \`tower doctor\` checks.`
+
 /** A release of `runtime` outside its tested range; a runtime the tower doesn't know has none it is tested on to compare. */
 const untested = (runtime: string, release: string | undefined): boolean =>
   release !== undefined && isRuntime(runtime) && releaseRange(DECLARED[runtime].tested, release) !== 'tested'
@@ -561,6 +572,7 @@ const card = (
   return {
     id: header.id,
     callsign,
+    ...(startFailed(facts) && { startFailure: startFailure(header, isRuntime(runtime) ? DECLARED[runtime].label : runtime, facts.exitCode!) }),
     peer: peers.find((p) => p.session === header.id)?.name,
     runtime,
     project: header.project,
