@@ -17,7 +17,7 @@ import { HIRED, KEYED_BY, KILLED_BY, leavesNow, LET_GO, PROMPTED_BY, type Facts,
 import { towerFact } from '../bridge/events.ts'
 import { hireSettled } from './hires.ts'
 import type { Status } from '../bridge/status.ts'
-import { coreFacts, fieldFacts, forkFacts, resumesFact, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
+import { askedFact, coreFacts, fieldFacts, forkFacts, resumesFact, mergeParts, parsedFields, placeable, promptedFacts, takenEnv, takenFlags, withFields, type Contribution, type Merged } from '../bridge/launch.ts'
 import type { Prune } from '../bridge/prunable.ts'
 import type { Resource } from '../bridge/resources.ts'
 import { collectionOn, ownedRefusal, sessionFacts, type FloorCollectionType } from '../bridge/stores.ts'
@@ -632,7 +632,7 @@ export const dispatch = defineResource({
         kept: projectCollectionsPath(paths, projectId),
         plugins: [...runtimePlugins(config, projectId, runtime), ...holder.plugins(projectId, runtime)],
         contributed: merged.contributed,
-        facts: [...spawn.facts, ...fieldFacts(Object.fromEntries(merged.fields)), ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by)],
+        facts: [...spawn.facts, ...fieldFacts(Object.fromEntries(merged.fields)), ...coreFacts(merged, lead?.id), ...promptedFacts(spawn.prompt, spawn.by), askedFact(launched)],
         launch: launched,
       }
     }

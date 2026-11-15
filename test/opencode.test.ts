@@ -190,6 +190,17 @@ test('opencode: the board says what its workers can show and run, the models as 
   assert.deepEqual([runtimes.claude.statuses.length, runtimes.claude.absent, runtimes.claude.models.map((m) => m.id)], [10, [], ['fable', 'opus', 'sonnet', 'haiku']])
 })
 
+test("opencode: its default model is the one a spawn that asked for none ran on, as the spawn's fact says", () => {
+  const log = fixture('opencode-basic')
+  const asked = (fact: Record<string, string>): SessionLog => ({ header: log.header, events: [[0, 'h', { hook_event_name: 'tower.asked', ...fact }], ...log.events] as LogEvent[] })
+  const config = { runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } }, env: {}, projects: { lab: { name: 'lab', hub: log.header.cwd, repos: [] } } } as unknown as Config
+  const defaultsOf = (log: SessionLog) => board(viewOf(config, { sessions: [{ header: log.header, facts: factsOf(log) }], host: { ids: new Set(), protocol: HOST_PROTOCOL } })).runtimes.opencode.defaults
+  assert.ok(factsOf(log).model)
+  assert.equal(defaultsOf(asked({})).model, factsOf(log).model)
+  assert.equal(defaultsOf(asked({ model: 'openrouter/google/gemini-4-argon' })).model, undefined)
+  assert.equal(defaultsOf(log).model, undefined)
+})
+
 test('opencode: a worker is named by the callsign it was started under, which its TUI never shows', () => {
   const log = fixture('opencode-basic')
   const [header, ...events] = [log.header, ...log.events]

@@ -103,6 +103,11 @@ export type Facts = {
   /** The callsign the session was started under (`tower.named`); none in a log from before it was logged. */
   callsign?: string
   /**
+   * The model and effort a spawn asked its runtime for (`tower.asked`), each absent when left to the runtime. None for a
+   * resume, and in a log from before it was logged.
+   */
+  asked?: Asked
+  /**
    * What the session spent, each reading's increase on its conversation's running total (`costUsd`) at the reading's
    * time, or, once its runtime charges, each request's charge at its time (epoch ms). A conversation new to the session
    * starts from zero; a resumed one from its first reading here.
@@ -214,6 +219,12 @@ export const leavesNow = (facts: Facts): boolean => facts.leaveAt !== undefined 
 
 /** The fact the tower appends before a worker's prompt reaches a session through its composer (`submit`, `spawn` with `by`). */
 export const PROMPTED_BY = 'tower.prompt'
+
+/** The fact a spawn's model and effort are logged as, before the session starts: what it asked its runtime for. */
+export const ASKED = 'tower.asked'
+
+/** What a spawn asked its runtime for. */
+export type Asked = { model?: string; effort?: string }
 
 /** The fact the tower appends before a worker's keys reach a session (`keys` with `by`), once per burst. */
 export const KEYED_BY = 'tower.keys'
@@ -398,6 +409,10 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
       return { ...facts, hired: [...facts.hired, String(happening.id)] }
     case PROMPTED_BY:
       return { ...facts, promptedBy: String(happening.by) }
+    case ASKED: {
+      const { model, effort } = happening as Asked
+      return { ...facts, asked: { ...(model !== undefined && { model }), ...(effort !== undefined && { effort }) } }
+    }
     case KEYED_BY:
       return { ...facts, keyedBy: [t, String(happening.by)] }
     case KILLED_BY:
