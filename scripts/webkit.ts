@@ -9,8 +9,9 @@
  *     --click <x,y>   press and release the left button at the page's CSS pixels x,y: a real click, with user activation
  *     --drag <x,y,x2,y2>  press the left button at x,y, move to x2,y2 and release there: a real drag, which selects text
  *     --wheel <x,y,notches[,lines[,times]]>  turn a mouse wheel at the page's CSS pixels x,y: one discrete event, as a
- *                     physical wheel sends it, negative scrolls up; lines is the accelerated delta macOS reports (0.1 for
- *                     a slow notch); times repeats it a display frame (16 ms) apart, as one stroke
+ *                     physical wheel sends it, negative scrolls up; lines is the size of the accelerated delta macOS
+ *                     reports, taking notches' sign (0.1 for a slow notch); times repeats it a display frame (16 ms)
+ *                     apart, as one stroke
  *     --key <chord>   press a key where focus is: a key with any of Meta+, Ctrl+, Alt+, Shift+ before it (Meta+k, Escape)
  *     --wait <ms>     wait in real time
  *     --shot <file>   save a PNG of the page
