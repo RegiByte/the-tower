@@ -1227,7 +1227,8 @@ test("server: a spawn's extension field is logged as a fact before the worker's 
   assert.equal((await get('/collection/lab/roles.notes/note.md')).body, '# A note\n', 'a collection named <provides>.<name> reads its items')
 
   const { id } = await command('spawn', { project: 'lab', x: { roles: { role: 'builder.md' } } })
-  const [header, first, ...rest] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8'), (log) => log.includes('"x"'))).trim().split('\n').map((line) => JSON.parse(line))
+  const [header, named, first, ...rest] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8'), (log) => log.includes('"x"'))).trim().split('\n').map((line) => JSON.parse(line))
+  assert.equal(named[2].hook_event_name, 'tower.named')
   assert.deepEqual(first.slice(1), ['h', { hook_event_name: 'tower.x.roles.role', value: 'builder.md' }])
   assert.ok(rest.some(([, code]) => code === 'o'))
   const brief = header.argv[header.argv.indexOf('--append-system-prompt') + 1] as string
@@ -1278,7 +1279,7 @@ test("server: a launch contributor sees a worker's hire as one, its hirer as by,
     assert.equal(hired.status, 0, hired.stderr)
     const id = /, session (\S+), on /.exec(hired.stdout)![1]
     assert.ok(brief(id).endsWith(`\n\nhire true by ${SESSION}\n\n${BUILDER}`), brief(id).slice(-200))
-    const [, first] = readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
+    const [, , first] = readFileSync(path.join(ROOT, 'sessions', `${id}.jsonl`), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
     assert.deepEqual(first.slice(1), ['h', { hook_event_name: 'tower.x.roles.role', value: 'builder.md' }])
   } finally {
     writeFileSync(path.join(ROLES, 'server.ts'), server)
@@ -1636,7 +1637,8 @@ test("server: reviews/hire starts a reviewer in a fork of its author's checkout,
   assert.equal(hired.t, 'spawned')
   const [header, ...events] = (await settled(async () => readFileSync(path.join(ROOT, 'sessions', `${hired.id}.jsonl`), 'utf8'), (log) => log.includes('"o"'))).trim().split('\n').map((line) => JSON.parse(line))
   assert.deepEqual(header.argv.slice(-2), ['--', `/reviews:review ${author.callsign} tell`])
-  assert.deepEqual(events.slice(0, 3).map(([, code, fact]) => [code, fact]), [
+  assert.deepEqual(events.slice(0, 4).map(([, code, fact]) => [code, fact]), [
+    ['h', { hook_event_name: 'tower.named', callsign: cardIn(await boardWhen((b) => cardIn(b, hired.id) !== undefined), hired.id)!.callsign }],
     ['h', { hook_event_name: 'tower.x.reviews.of', value: author.callsign }],
     ['h', { hook_event_name: 'tower.exempt', from: 'hiring', by: 'reviews' }],
     ['h', { hook_event_name: 'tower.reports-to', callsign: author.callsign, session: LAB_AUTHOR, by: 'reviews' }],

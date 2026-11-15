@@ -259,6 +259,12 @@ export type HostStart = { id: string; project: string; cwd: string; runtime: Run
  */
 export type Place = { mod: string; state: string }
 
+/**
+ * The fact a session's callsign is logged as, before the session starts, for every runtime: the tower's surfaces name
+ * the worker from it, whether or not its runtime's TUI can show a name.
+ */
+export const NAMED = 'tower.named'
+
 export const hostStart = (s: Start, args: string[], env: Record<string, string>, command: string | undefined): HostStart => ({
   id: s.id,
   project: s.project,
@@ -267,7 +273,7 @@ export const hostStart = (s: Start, args: string[], env: Record<string, string>,
   args,
   env,
   ...(command !== undefined && { command }),
-  facts: s.facts,
+  facts: [{ hook_event_name: NAMED, callsign: s.name }, ...s.facts],
 })
 
 /** The tower mod, which posts Claude's events to the host and is read by each Claude as it starts. */

@@ -45,8 +45,8 @@ naming the host restart ([[host-daemon]]).
 
 **Consequences.** Changing the host ends every session (each is resumable), so host changes are batched for a
 deliberate restart, and anything that can live in a client does. New Claude options ship with a client change only.
-- Clients mint the id ([`newSessionId`](ref:hub/src/shared/launch.ts#newSessionId)) and compose `--name` (the
-  worker's [[callsign]]): a resume that continues a worker needs the worker's name, which only the board's chains
+- Clients mint the id ([`newSessionId`](ref:hub/src/shared/launch.ts#newSessionId)) and log the worker's
+  [[callsign]] as a `tower.named` fact, passed to Claude as `--name` too: a resume that continues a worker needs the worker's name, which only the board's chains
   know ([[agent-directory]]).
 - The classic hooks that post to the host are declared in the tower mod's `hooks.json` ([[hook-events]]), which each
   Claude reads as it starts, so the list changes with no host restart.
