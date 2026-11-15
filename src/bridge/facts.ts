@@ -1,4 +1,5 @@
 import type { LogEvent, SessionHeader } from '../shared/model.ts'
+import { NAMED } from '../shared/launch.ts'
 import { isTowerFact, type Happening, type NormalEvent, type RuntimeModel, type ToolFormat } from './events.ts'
 import { normalizerOf, toolFormatOf } from './normalize.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
@@ -99,6 +100,8 @@ export type Facts = {
   exitedFrom?: Status
   /** When the user let the stranded session go (`tower.letGo`): its conversation stays resumable, and it is off duty. */
   letGoAt?: number
+  /** The callsign the session was started under (`tower.named`); none in a log from before it was logged. */
+  callsign?: string
   /**
    * What the session spent, each reading's increase on its conversation's running total (`costUsd`) at the reading's
    * time, or, once its runtime charges, each request's charge at its time (epoch ms). A conversation new to the session
@@ -381,6 +384,8 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
       return { ...facts, runtimeRelease: happening.version }
     case 'runtime.models':
       return { ...facts, models: happening.models }
+    case NAMED:
+      return { ...facts, callsign: String(happening.callsign) }
     case 'tower.show': {
       const { kind, target, title } = happening as unknown as Omit<Shown, 'at'>
       return { ...facts, shown: [...facts.shown.filter((s) => s.target !== target), { kind, target, title, at: t }] }

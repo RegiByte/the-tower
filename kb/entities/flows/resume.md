@@ -35,7 +35,7 @@ sequenceDiagram
 - **One Claude per conversation.** A resume is refused while a running session is already in the conversation
   ([`heldBy`](ref:hub/src/bridge/chains.ts#heldBy)): its latest conversation, or, before Claude reports one, the one
   its header's argv resumes, so a resume holds its conversation from the moment the host starts it. The refusal names
-  the holder by the name its Claude runs under ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)). The tower runs
+  the holder by the callsign it runs under ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)). The tower runs
   resumes one at a time ([`resume`](ref:hub/src/tower/dispatch.ts#resume)), each until the system holds the session it
   started, so two requests at once start one session. `tower resume` asks the same queue through `POST /resume` ([`towerCommand`](ref:hub/src/cli.ts#towerCommand)), and fails with the fix `tower up` when no tower runs. Resuming a conversation
   a running session has left (by `/clear`) still forks.

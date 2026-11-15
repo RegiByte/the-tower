@@ -189,3 +189,14 @@ test('opencode: the board says what its workers can show and run, the models as 
   ])
   assert.deepEqual([runtimes.claude.statuses.length, runtimes.claude.absent, runtimes.claude.models.map((m) => m.id)], [10, [], ['fable', 'opus', 'sonnet', 'haiku']])
 })
+
+test('opencode: a worker is named by the callsign it was started under, which its TUI never shows', () => {
+  const log = fixture('opencode-basic')
+  const [header, ...events] = [log.header, ...log.events]
+  const named: SessionLog = { header, events: [[0, 'h', { hook_event_name: 'tower.named', callsign: 'TYPED-7' }], ...events] as LogEvent[] }
+  const config = { runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } }, env: {}, projects: { lab: { name: 'lab', hub: header.cwd, repos: [] } } } as unknown as Config
+  const callsignOf = (log: SessionLog) =>
+    board(viewOf(config, { sessions: [{ header: log.header, facts: factsOf(log) }], host: { ids: new Set(), protocol: HOST_PROTOCOL } })).floors.flatMap((f) => f.cards).find((c) => c.id === header.id)?.callsign
+  assert.equal(callsignOf(named), 'TYPED-7')
+  assert.notEqual(callsignOf(log), 'TYPED-7')
+})

@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "A worker's callsign: drawn free of the names on duty, then read from its log",
-  "summary": "Every spawn that starts a new worker draws session ids until the id's callsign has a name no worker on duty holds, the callsign staying a function of the id; a typed bare NAME follows the same rule and a typed NAME-NN is refused only while that exact callsign is on duty. Once started, the board names a worker by the --name its first session's Claude ran under, read from that log's header, so a changed callsigns list names new workers only.",
+  "summary": "Every spawn that starts a new worker draws session ids until the id's callsign has a name no worker on duty holds, the callsign staying a function of the id; a typed bare NAME follows the same rule and a typed NAME-NN is refused only while that exact callsign is on duty. Once started, the board names a worker by the callsign its first session was started under, that log's tower.named fact (in an older log, the --name in its header's argv), so a changed callsigns list names new workers only.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-10",
@@ -30,8 +30,9 @@ alike when the list changes, while a running worker keeps the `--name` it starte
 split, and review notes signed with the old callsign point at a worker the board calls something else.
 
 **Why.** What removes repeats is a local rule, each new worker avoiding the names its neighbours on duty hold, with no
-central allocator and nothing stored. And every spawn and resume already passes the callsign to Claude as `--name`,
-which the host keeps in the log's header: the name a worker ran under is a fact in its log ([[logs-are-facts]]), and
+central allocator and nothing stored. And every spawn and resume logs the callsign as a `tower.named` fact
+before the session starts, for every runtime, whether or not its TUI can show a name (Claude's also gets it as
+`--name`): the name a worker ran under is a fact in its log ([[logs-are-facts]]), and
 deriving it again from a list that can change can say it wrongly.
 
 **How.**
@@ -53,8 +54,8 @@ deriving it again from a list that can change can say it wrongly.
   [`newWorker`](ref:hub/src/tower/dispatch.ts#newWorker)). The dialog checks it against the board's cards on duty as it is
   typed, the tower again at the spawn.
 - *Read from the log.* [`workerName`](ref:hub/src/bridge/chains.ts#workerName) takes the first session of the worker's
-  lineage and reads its `--name` ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)); a log without one (written before
-  sessions were named) falls back to the id's callsign over the current list. [`namer`](ref:hub/src/bridge/chains.ts#namer)
+  lineage and reads its `tower.named` fact ([`runsAs`](ref:hub/src/bridge/chains.ts#runsAs)), or, in a log written
+  before that fact, the `--name` in its header's argv; a log with neither (written before sessions were named) falls back to the id's callsign over the current list. [`namer`](ref:hub/src/bridge/chains.ts#namer)
   (the board, kept items, hires, briefs) and [`resumeName`](ref:hub/src/bridge/chains.ts#resumeName) (the name a
   carry-on resume runs under) both go through it.
 
@@ -64,7 +65,8 @@ deriving it again from a list that can change can say it wrongly.
   depend on every earlier session, so a deleted log could rename later ones. Choosing the id keeps the name a function
   of the id alone.
 - *Only adding names to the list*: fewer repeats, never none.
-- *A `tower.name` fact in the log*: `--name` in the header argv already records it from the first moment.
+- *The `--name` in the header's argv alone*: it records the name only for a runtime that takes one; opencode's TUI
+  has no name to show, so its workers would lose a typed callsign. Logs from before the fact are still read this way.
 - *Names lists versioned by the start time in the id*: a dated generation concept in the config and code for what the
   log already holds.
 

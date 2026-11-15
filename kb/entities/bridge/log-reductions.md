@@ -36,7 +36,7 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   state, context, cost, rate limits, the main loop's latest model and effort, Claude's release, the current tool
   and what Claude said this turn, the [[conversation]]s, what the worker showed and kept, the timed facts
   [`stats`](ref:hub/src/bridge/stats.ts#stats) reduces over a window ([[stats]]), and the subagents it started. The
-  tower's own facts fold here too: `tower.prompt` makes a worker's typed prompt `peer`, `tower.keys` and `tower.kill`
+  tower's own facts fold here too: `tower.named` is the callsign the session was started under ([[callsign]]), `tower.prompt` makes a worker's typed prompt `peer`, `tower.keys` and `tower.kill`
   name who typed or killed ([[worker-prompts]]), `tower.leave` a worker asking to go home ([[leave]]). A stop while
   idle counts no turn, and a manual compaction opens no turn span. Context is a step's tokens over its model's window,
   for a runtime that reports its models' windows (`runtime.models`, opencode). Spend is each cost reading's increase on
