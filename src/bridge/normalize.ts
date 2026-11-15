@@ -1,5 +1,5 @@
-import { runtimeOf, type SessionHeader } from '../shared/model.ts'
-import type { Normalizer, RuntimeReader } from './events.ts'
+import { runtimeOf, type SessionHeader, type SessionLog } from '../shared/model.ts'
+import type { NormalEvent, Normalizer, RuntimeReader } from './events.ts'
 import { claude } from './runtimes/claude.ts'
 
 const READERS: Record<string, RuntimeReader> = { claude }
@@ -19,3 +19,21 @@ const readerOf = (header: SessionHeader): RuntimeReader => {
 }
 
 export const normalizerOf = (header: SessionHeader): Normalizer => readerOf(header).normalizer(header)
+
+/**
+ * A log's events, normalized up to the first line its runtime's reader can't follow. The facts fold breaks the
+ * session on that line and says so on its card (`factsAfter`); a fold that reads the log whole reads it as far, so
+ * the bad line costs only what follows it.
+ */
+export const readableEvents = ({ header, events }: SessionLog): NormalEvent[] => {
+  const normalize = normalizerOf(header)
+  const read: NormalEvent[] = []
+  for (const event of events) {
+    try {
+      read.push(...normalize(event))
+    } catch {
+      break
+    }
+  }
+  return read
+}

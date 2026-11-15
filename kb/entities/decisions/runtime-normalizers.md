@@ -13,6 +13,7 @@
     "hub/src/bridge/events.ts#towerFact",
     "hub/src/bridge/events.ts#towerFactOf",
     "hub/src/bridge/normalize.ts#normalizerOf",
+    "hub/src/bridge/normalize.ts#readableEvents",
     "hub/src/bridge/runtimes/claude.ts#normalizeClaude",
     "hub/src/bridge/runtimes/claude-lines.ts#skimClaude",
     "hub/src/bridge/facts.ts#factsAfter",
@@ -54,8 +55,10 @@ by its bytes without parsing its tool's input, is Claude's line format too, kept
 
 Each fold normalizes where a raw event enters it, so logs, the tail and the fold checkpoints stay raw.
 [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter) normalizes inside its `try`, so a line the normalizer can't
-read breaks its own session ([[broken-logs]]). [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation)
-and [`toolCallOf`](ref:hub/src/bridge/turns.ts#toolCallOf) add no guard: such a line throws where a brief meets it. A
+read breaks its own session ([[broken-logs]]). [`turnsByConversation`](ref:hub/src/bridge/turns.ts#turnsByConversation),
+[`toolCallOf`](ref:hub/src/bridge/turns.ts#toolCallOf) and `conversationsOf` read the log through
+[`readableEvents`](ref:hub/src/bridge/normalize.ts#readableEvents), which stops at the first line the normalizer
+can't read: a broken session's brief holds what came before that line, as its facts do. A
 header naming a runtime with no normalizer breaks that session at its first event; a header naming none is Claude's.
 
 **Alternatives considered.** Translating Claude's events into a common log format at write time: rejected, the log

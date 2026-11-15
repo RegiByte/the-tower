@@ -23,7 +23,9 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   `blocked` state carries its screen and nothing else, any other the compaction in progress, and the card says
   `compacting` while one runs in a working session. A subagent's compaction raises the same hooks, carrying `agent_id`
   since Claude 2.1.323, and is then left out. On an older release nothing tells it apart, so its start can show a
-  working main loop as `compacting` until the loop's next step, and its end can end a manual one early (known gaps). A session without an `x` event that the host no longer runs is `lost`
+  working main loop as `compacting` until the loop's next step, and its end can end a manual one early (known gaps).
+  The mod's `session.compact` names no subagent on any release, so outside an organization a subagent's still reads
+  as the main loop's automatic start, with the same `compacting` gap. A session without an `x` event that the host no longer runs is `lost`
   ([`withLiveness`](ref:hub/src/bridge/status.ts#withLiveness)).
 - [`factsAfter`](ref:hub/src/bridge/facts.ts#factsAfter), the fold step every reader of facts takes, and the one place
   a bad event is caught: a step that throws leaves the facts as they were with `broken`, and after it only the user
