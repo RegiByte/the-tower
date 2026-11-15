@@ -278,6 +278,9 @@ export function providerHtml(f: Floor, id: string, runtime: BoardRuntime): strin
   return `<div class="provider" data-provider="${esc(id)}">${commandHtml}${choose}</div>`
 }
 
+/** What the first prompt's field says while empty, for the runtime `label`. */
+export const promptPlaceholder = (label: string) => `What should it work on? Left empty, ${label} boots to an idle prompt.`
+
 /** The suggestions of `#spawn-efforts` on `model` (`effortsOn`). */
 export const effortOptions = (runtime: BoardRuntime, model: string): string => effortsOn(runtime, model).map((e) => `<option value="${esc(e)}"></option>`).join('')
 
@@ -301,7 +304,7 @@ export function spawnFormHtml(f: Floor, board: Board, { sign, draft, fields = []
   <header>${sign}<h2>New worker</h2>${draft ? `<span class="draft">on the draft <b>${esc(draft)}</b>, deleted once it starts</span>` : ''}</header>
   <div class="cols">
     <label class="task">${labelHtml('First prompt', true)}
-      <textarea name="prompt" spellcheck="false" placeholder="What should it work on? Left empty, ${esc(label)} boots to an idle prompt.">${esc(v.prompt)}</textarea></label>
+      <textarea name="prompt" spellcheck="false" placeholder="${esc(promptPlaceholder(label))}">${esc(v.prompt)}</textarea></label>
     <div class="setup">
       <fieldset class="where"><legend>${labelHtml('Where')}</legend>
         ${choiceHtml('new', 'New worktree', `its own branch, in ${esc(repos.map(base).join(' + '))}`, { checked: v.where === 'new', disabled: !can(f, 'cut'), aside: esc(cutWhy(f) ?? isDefault('new')) })}

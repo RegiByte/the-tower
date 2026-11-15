@@ -1,6 +1,6 @@
 import type { Board, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
-import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, effortOptions, formFields, modelNote, providerHtml, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
+import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, effortOptions, formFields, modelNote, promptPlaceholder, providerHtml, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
 import { commandOf } from './keymap.ts'
 import { tagOf } from './tags.ts'
 import { loop, type Handlers, type Loop, type StateEffect } from './loop.ts'
@@ -134,6 +134,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     const part = dialog.querySelector<HTMLElement>('[data-provider]')!
     if (part.dataset.provider !== v.runtime) {
       part.outerHTML = providerHtml(f, v.runtime, runtime)
+      prompt().placeholder = promptPlaceholder(runtime.label)
       return spawnForm(f, new FormData(form()))
     }
     const efforts = dialog.querySelector('#spawn-efforts')
