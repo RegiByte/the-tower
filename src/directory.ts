@@ -909,8 +909,11 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const reply = await ask<Replies['spawn']>(verbName, { ...body, ...given, by: me, hire: true })
     if (isFailure(reply) && reply.code === 'limited') throw new CliError(`${reply.message}. Tell the user what you would hire and why. A review, \`tower x reviews review\`, is never limited.`)
     if (isFailure(reply)) throw new CliError(refusedLine(verbName, reply))
+    const hired = await readBoard()
+    const card = hired.floors.flatMap((f) => f.cards).find((c) => c.id === reply.id)!
+    if (card.startFailure) throw new CliError(`Hired ${card.callsign}, session ${reply.id}, and it never started: ${card.startFailure}`)
     const note = modelNote(board.runtimes[form.runtime], form.model)
-    console.log([...hiredLines(await readBoard(), floor, reply, form), ...(note ? [`${form.model}: ${note}`] : [])].join('\n'))
+    console.log([...hiredLines(hired, floor, reply, form), ...(note ? [`${form.model}: ${note}`] : [])].join('\n'))
   },
   home: async ([callsign]) => {
     if (!callsign) throw new CliError(usageLine('home'))
