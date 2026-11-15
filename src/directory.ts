@@ -557,7 +557,9 @@ const hiredLines = (board: Board, floor: Floor, reply: Replies['spawn'], form: S
     : `in ${form.where === 'worktree' ? form.worktree : form.checkout}, beside whoever works there`
   return [
     `Hired ${who}, session ${reply.id}, on ${floorTitle(floor)}, ${place}.`,
-    `\`tower agent ${who}\` follows its work; once its Claude is up, \`tower agents\` names how to message it.`,
+    board.runtimes[form.runtime].absent.includes('peers')
+      ? `\`tower agent ${who}\` follows its work; ${board.runtimes[form.runtime].label} has no messages between workers, so it can't be messaged.`
+      : `\`tower agent ${who}\` follows its work; once its ${board.runtimes[form.runtime].label} is up, \`tower agents\` names how to message it.`,
   ]
 }
 
