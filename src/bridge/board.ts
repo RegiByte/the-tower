@@ -5,11 +5,11 @@ import { tagOf } from '../shared/tags.ts'
 import { current } from '../shared/status-words.ts'
 import { crewsOf } from '../shared/crews.ts'
 import { HOST_PROTOCOL, type HostLive } from '../shared/protocol.ts'
-import { CLAUDE_LABEL, CLAUDE_TESTED, releaseRange, type TestedRange } from '../shared/claude.ts'
+import { CLAUDE_EFFORTS, CLAUDE_LABEL, CLAUDE_MODELS, CLAUDE_TESTED, releaseRange, type TestedRange } from '../shared/claude.ts'
 import { OPENCODE_LABEL, OPENCODE_TESTED } from '../shared/opencode.ts'
 import type { SystemPaths } from '../shared/model.ts'
 import { shellActivity, type Shell } from '../shared/terms.ts'
-import { runtimeDefaults, type RuntimeDefaults } from './defaults.ts'
+import { reportedModels, runtimeDefaults, type ModelChoice, type RuntimeDefaults } from './defaults.ts'
 import { chainsOf, continuations, lineage, namer, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
 import { accountsOf, commandLimits, type ExtraUsage, type LimitFacts, type LimitsFrom } from './rate-limits.ts'
 import { killedByHost, killedOutside, type CrewEdge, type Exemption, type RateLimit, type Session, type Shown, type SubagentRun } from './facts.ts'
@@ -243,7 +243,22 @@ export type BoardRuntime = {
   tested: TestedRange
   /** Every command name of its config's `argv`, in write order; absent in single-command mode (`commandNames`). */
   commands?: string[]
+  /** The statuses its workers can be in: one it leaves out is one the tower can't tell for its sessions. @since 2.3 */
+  statuses: Status[]
+  /**
+   * The models it can start a worker on, each with the efforts it takes: Claude's as the tower declares them; opencode's
+   * as its latest session reported them, none until one has run. @since 2.3
+   */
+  models: ModelChoice[]
+  /** What the tower can't offer for its workers, so a renderer draws nothing rather than a blank. @since 2.3 */
+  absent: RuntimeFeature[]
 }
+
+/**
+ * A feature a runtime's workers may lack: rate limits read, `watching` (a turn that wakes itself), messages between
+ * workers, the callsign shown in its own TUI, slash commands seen in the log.
+ */
+export type RuntimeFeature = 'rateLimits' | 'watching' | 'peers' | 'callsignInTui' | 'slashCommands'
 
 /** A floor's part of one runtime (`floor.runtimes`). */
 export type FloorRuntime = {
@@ -448,10 +463,20 @@ const cardWorktree = (project: Project | undefined, cwd: string, reads: RepoRead
   return name === undefined ? undefined : { name, branch: tree?.branch, from: tree?.from, gone: checkoutGone(project!, cwd, projectRead) }
 }
 
-/** What the tower declares of each runtime it knows: the name a renderer prints and the releases it is tested on. */
-const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested'>> = {
-  claude: { label: CLAUDE_LABEL, tested: CLAUDE_TESTED },
-  opencode: { label: OPENCODE_LABEL, tested: OPENCODE_TESTED },
+const EVERY_STATUS: Status[] = ['booting', 'blocked', 'idle', 'working', 'needs_input', 'watching', 'done', 'failed', 'exited', 'lost']
+
+/**
+ * What the tower declares of each runtime it knows: the name a renderer prints, the releases it is tested on, the
+ * statuses and features its sessions show, and the models when the runtime reports none. opencode has no screen that
+ * blocks before its prompt and nothing that wakes a turn by itself.
+ */
+const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested' | 'statuses' | 'absent'> & { models?: ModelChoice[] }> = {
+  claude: { label: CLAUDE_LABEL, tested: CLAUDE_TESTED, statuses: EVERY_STATUS, absent: [], models: CLAUDE_MODELS.map((id) => ({ id, efforts: CLAUDE_EFFORTS })) },
+  opencode: {
+    label: OPENCODE_LABEL, tested: OPENCODE_TESTED,
+    statuses: EVERY_STATUS.filter((s) => s !== 'blocked' && s !== 'watching'),
+    absent: ['rateLimits', 'watching', 'peers', 'callsignInTui', 'slashCommands'],
+  },
 }
 
 /** A release of `runtime` outside its tested range; a runtime the tower doesn't know has none it is tested on to compare. */
@@ -461,6 +486,7 @@ const untested = (runtime: string, release: string | undefined): boolean =>
 /** The board's entry for `runtime`: what it declares, the defaults and untested releases its sessions show, its commands. */
 const boardRuntime = (config: Config, runtime: Runtime, sessions: Session[], cards: Card[]): BoardRuntime => ({
   ...DECLARED[runtime],
+  models: DECLARED[runtime].models ?? reportedModels(sessions, runtime),
   defaults: runtimeDefaults(sessions, runtime),
   untested: [...new Set(cards.filter((c) => c.live && c.runtime === runtime && c.runtimeUntested).map((c) => c.runtimeRelease!))],
   ...(commandNames(config, runtime) !== undefined && { commands: commandNames(config, runtime) }),

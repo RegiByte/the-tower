@@ -1,6 +1,7 @@
 import type { Board, BoardRuntime, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
 import { callsignRefused } from './callsign.ts'
+import { CLAUDE_EFFORTS, CLAUDE_MODELS } from './claude.ts'
 import { base, esc, modelName } from './format.ts'
 import type { SpawnOption, Words } from './extensions.ts'
 import { can, offeredCall } from './offered.ts'
@@ -59,8 +60,8 @@ export const formFields = (board: Board, f: Floor): FormField[] =>
       }),
     )
 
-export const MODELS = ['fable', 'opus', 'sonnet', 'haiku']
-export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+export const MODELS = CLAUDE_MODELS
+export const EFFORTS = CLAUDE_EFFORTS
 
 /**
  * Why `f` offers no cut, `undefined` while it does: the host is down, a dir's first read failed (what git said), its

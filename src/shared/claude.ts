@@ -14,6 +14,10 @@ export const CLAUDE_TESTED: TestedRange = { lowest: '2.1.292', highest: '2.1.323
 /** What a renderer prints for Claude's runtime instead of naming it. */
 export const CLAUDE_LABEL = 'Claude Code'
 
+/** The models a launch names (`--model`), each taking every effort (`--effort`): Claude reports none of its own. */
+export const CLAUDE_MODELS = ['fable', 'opus', 'sonnet', 'haiku']
+export const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+
 /** The lowest and the highest release of a runtime the tower ran on with every surface it reads checked, both included. */
 export type TestedRange = { lowest: string; highest: string }
 
