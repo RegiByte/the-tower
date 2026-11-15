@@ -10,7 +10,7 @@
  * own state): the morph leaves it whole, and with `data-owned="children"` it updates the node's attributes and leaves
  * its children. Ids below an owned node take no part in matching. An owned node is matched by its id, or, having none,
  * only by a new node marked owned too. A mark of any other value, in the old content or the new, is refused before
- * anything changes.
+ * anything changes. An id repeated in either content is matched by position, as if it were absent.
  *
  * The algorithm is Datastar's morph (`library/src/plugins/watchers/patchElements.ts`, itself a port of idiomorph), with
  * idiomorph's focus and selection restore, its stop at the focused element when scanning for a match, and its
@@ -53,9 +53,9 @@ type Morph = {
   doc: Document
   /** Each element holding persistent ids, old or new, to the ids in its subtree. */
   idMap: Map<Node, Set<string>>
-  /** The old element of each id. */
+  /** The old element of each persistent id. */
   idElements: Map<string, Element>
-  /** The ids found once in the old content and once in the new, on elements of the same tag. */
+  /** The ids found once in the old content and once in the new, on elements of the same tag: a repeated id is matched by position. */
   persistentIds: Set<string>
   /** Where old nodes holding persistent ids wait, still in the document, until the new content claims them. */
   pantry: HTMLElement
@@ -152,24 +152,15 @@ function morphOf(root: Element | ShadowRoot, next: DocumentFragment): Morph {
   for (const el of readMarks(root)) ownershipOf(el)
   for (const el of readMarks(next)) ownershipOf(el)
 
-  const duplicateIds = new Set<string>()
-
   const oldIdElements = [...root.querySelectorAll('[id]')].filter((el) => !isBelowOwned(el, root))
-  for (const el of oldIdElements) {
-    const id = elementId(el)
-    if (!id) continue
-    if (ctx.idElements.has(id)) duplicateIds.add(id)
-    else ctx.idElements.set(id, el)
-  }
-
   const newIdElements = [...next.querySelectorAll('[id]')].filter((el) => !isBelowOwned(el, next))
-  for (const el of newIdElements) {
-    const id = elementId(el)
-    if (ctx.persistentIds.has(id)) duplicateIds.add(id)
-    else if (ctx.idElements.get(id)?.tagName === el.tagName) ctx.persistentIds.add(id)
+  const oldOnce = idsOnce(oldIdElements)
+  for (const [id, el] of idsOnce(newIdElements)) {
+    const old = oldOnce.get(id)
+    if (!old || old.tagName !== el.tagName) continue
+    ctx.persistentIds.add(id)
+    ctx.idElements.set(id, old)
   }
-
-  for (const id of duplicateIds) ctx.persistentIds.delete(id)
 
   populateIdMap(ctx, root, oldIdElements)
   populateIdMap(ctx, next, newIdElements)
@@ -178,6 +169,16 @@ function morphOf(root: Element | ShadowRoot, next: DocumentFragment): Morph {
 
 /** The owned marks the morph reads below `root`: those inside an owned node are its owner's. */
 const readMarks = (root: Element | ShadowRoot | DocumentFragment) => [...root.querySelectorAll(`[${OWNED}]`)].filter((el) => !isBelowOwned(el, root))
+
+/** Each id found on exactly one of `elements`, to its element: a repeated id is matched by position, never by id. */
+function idsOnce(elements: Element[]): Map<string, Element> {
+  const seen = new Map<string, Element | null>()
+  for (const el of elements) {
+    const id = elementId(el)
+    if (id) seen.set(id, seen.has(id) ? null : el)
+  }
+  return new Map([...seen].filter((entry): entry is [string, Element] => entry[1] !== null))
+}
 
 /**
  * Adds each persistent id to the id set of every ancestor of its element, up to `root`. Ids that don't persist are
