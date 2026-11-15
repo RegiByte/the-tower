@@ -100,12 +100,15 @@ export type Facts = {
   /** When the user let the stranded session go (`tower.letGo`): its conversation stays resumable, and it is off duty. */
   letGoAt?: number
   /**
-   * What Claude spent, each reading's increase on its conversation's running total (`costUsd`), at the reading's time
-   * (epoch ms). A conversation new to the session starts from zero; a resumed one from its first reading here.
+   * What the session spent, each reading's increase on its conversation's running total (`costUsd`), or what its
+   * requests charged since the previous reading, at the reading's time (epoch ms). A conversation new to the session
+   * starts from zero; a resumed one from its first reading here.
    */
   spend: [at: number, usd: number][]
   /** The conversation the latest cost reading measured. */
   measured?: string
+  /** What the requests charged since the latest cost reading added up to, for a runtime that says what each cost. */
+  unmeasured?: number
   /** Each model step's tokens, the main loop's and subagents', at the step's time (epoch ms). */
   tokens: [at: number, model: string, tokens: Tokens][]
   /** The main loop's turns that completed: when each started (epoch ms) and how long it ran, in seconds. */
@@ -240,12 +243,15 @@ const LINE_CHARS = 280
 const clip = (text: string) => (text.length > LINE_CHARS ? `${text.slice(0, LINE_CHARS - 1)}…` : text)
 
 /**
- * Claude's cost is its conversation's running total: what a reading adds is its increase on the conversation's
+ * A runtime's cost is its conversation's running total: what a reading adds is its increase on the conversation's
  * previous reading. A conversation's first reading here adds all of it, unless it was resumed: then it carries what
  * was spent before. A reading can come before Claude names the session's first conversation: it is where that
- * conversation's total starts. A total lower than the one before it started again from zero.
+ * conversation's total starts. A total lower than the one before it started again from zero. A runtime that says what
+ * each request cost (opencode) adds what its requests charged since the previous reading instead: its total can hold
+ * the earlier sessions' spend at any reading, not only the first.
  */
 const spent = (facts: Facts, usd: number): number => {
+  if (facts.unmeasured !== undefined) return facts.unmeasured
   const conversation = facts.conversations.at(-1)
   if (!conversation) return 0
   const fresh = facts.costUsd === undefined || (facts.measured !== undefined && facts.measured !== conversation.id)
@@ -314,14 +320,17 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
     case 'measured': {
       const { context, cost, rateLimits: limits } = happening
       const usd = cost && spent(facts, cost.usd)
+      const { unmeasured, ...rest } = facts
       return {
-        ...facts,
+        ...(cost ? rest : facts),
         context: context ?? facts.context,
         ...(cost && { costUsd: cost.usd, measured: facts.conversations.at(-1)?.id, spend: usd ? [...facts.spend, [at, usd]] : facts.spend }),
         rateLimits: limits.length ? { at, limits } : facts.rateLimits,
         limitReadings: limitsRead(facts.limitReadings, at, limits),
       }
     }
+    case 'charged':
+      return { ...facts, unmeasured: (facts.unmeasured ?? 0) + happening.usd }
     case 'prompt': {
       const kind = happening.origin
       const byWorker = facts.promptedBy !== undefined && USER_ORIGINS.has(kind)

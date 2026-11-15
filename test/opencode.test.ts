@@ -88,6 +88,14 @@ test('opencode: a resumed conversation is named from the start; Esc abandons the
   assert.deepEqual([facts.turns, facts.turnSpans.length], [0, 1])
 })
 
+test('opencode: a resumed session spends only what its own requests charged', () => {
+  const resumed = factsOf(fixture('opencode-resume'))
+  assert.equal(resumed.costUsd, 0.05922910000000001)
+  assert.deepEqual(resumed.spend.map(([, usd]) => usd), [0.0055515, 0.024940000000000004])
+  const before = factsOf(fixture('opencode-basic'))
+  assert.equal(before.costUsd! + resumed.spend.reduce((sum, [, usd]) => sum + usd, 0), resumed.costUsd)
+})
+
 test('opencode: the effort a step ran at is its variant', () => {
   const facts = factsOf(fixture('opencode-variant'))
   assert.deepEqual([facts.model, facts.effort, facts.exitCode], ['openrouter/google/gemini-4-argon', 'high', 130])
