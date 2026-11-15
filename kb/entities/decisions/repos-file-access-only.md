@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "A project's other repos are file access only",
-  "summary": "Sessions get the project's other dirs as permissions.additionalDirectories: only the directory a session starts in loads CLAUDE.md, skills, commands and agents.",
+  "summary": "Claude sessions get the project's other dirs as permissions.additionalDirectories: only the directory a session starts in loads CLAUDE.md, skills, commands and agents.",
   "in": "host",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/model.ts#sessionDirs"]
+  "reviewed": "2026-11-15",
+  "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch-opencode.ts#opencodeSpawn"]
 }
 ---
 **Context.** Sessions got the project's other dirs with `--add-dir`, which also loads each dir's `.claude/`
@@ -32,6 +32,8 @@ puts the fix on every repo instead of the tower.
 loaded (that takes `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1`), and still is not. Clients still pass
 `--add-dir` for directories outside the project's repos: the floor's collections directory, and in a [[worktree]] the
 directory sources of its links ([[tower-cuts-worktrees]]); a `.claude/` in one of those would load. The settings are the clients' ([[host-owns-ptys]]).
+An opencode session's launch passes none of these directories
+([`opencodeSpawn`](ref:hub/src/shared/launch-opencode.ts#opencodeSpawn)).
 
 The user-facing docs say it as well: [[docs-config]] (`repos`), [[readme]] and [[docs-usage]]; each refs
 [`settingsArgs`](ref:hub/src/shared/launch.ts#settingsArgs), so a change in how repos are granted re-checks them.

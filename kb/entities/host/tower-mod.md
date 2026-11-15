@@ -2,11 +2,12 @@
 {
   "type": "container",
   "name": "tower mod",
-  "summary": "The Claude Code mod loaded into every session, posting Claude's mod events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and two skills, tower:handbook and tower:guide.",
+  "summary": "The Claude Code mod loaded into every Claude session, and its opencode plugin loaded into every opencode session, posting the runtime's events and a few derived ones to the host, and teaching the session the tower: the tower command on its PATH and two skills, tower:handbook and tower:guide.",
   "in": "host",
-  "reviewed": "2026-11-14",
-  "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/guide/SKILL.md"],
+  "reviewed": "2026-11-15",
+  "refs": ["hub/src/mod/hooks/register.js#register", "hub/src/mod/hooks/register.js#forward", "hub/src/mod/hooks/hooks.json", "hub/src/mod/.claude-plugin/plugin.json", "hub/src/mod/bin/tower", "hub/src/mod/skills/handbook/SKILL.md", "hub/src/mod/skills/guide/SKILL.md", "hub/src/mod/opencode/index.js", "hub/src/shared/launch-opencode.ts#configOf"],
   "links": [
+    { "to": "host-daemon", "verb": "sends", "carries": "from the opencode plugin: opencode's bus events under their own types (tool output left out, a child session's lines with its parentID, a step's end with its model, a subagent call's first progress with the child it spawned, a session's usage with the total of it and its subagents), plugin.started (release, reloaded, models), tool.execute.before, mcp.status and plugin.failed, POST /hooks/<id> on hooks.sock" },
     { "to": "host-daemon", "verb": "sends", "carries": "mod events under Claude's names (turn.step with usage and the step's visible text, tool.call, session.measure, ...) and tower.tool.result / tower.tool.abandoned / tower.claude, POST /hooks/<id> on hooks.sock" },
     { "to": "tower-server", "verb": "reads", "carries": "from the tower command: GET /board, the first event; /conversations/<id> (agent); /archive/<project> for a callsign no worker on duty has; collection items (kept, read); the extensions' reads it names: /reviews/said (thread), /policies/said (policies, runs), /quota/said (probes), any other through `tower x`; /extensions and /schema (extensions, api)" },
     { "to": "tower-server", "verb": "calls", "carries": "from the tower command: collection/create (keep), reviews/append and reviews/resolve (note), reviews/hire (review), spawn (hire), submit (send), the calls a card or a policy offers (home, let-go, policies approve and run), quota/read-now (probes run quota), extension/restart, any extension verb through `tower x`, reveal and edit; and fact, the worker's facts about itself: tower.show (show, open), tower.keep (keep) and tower.leave (`tower home` with the caller's own callsign, [[leave]])" }
@@ -45,3 +46,16 @@ how to keep to it ([[tower-cuts-worktrees]]). A reviewer starts on the reviews e
 tower or for a tour, the session reads [[docs-usage]] from the checkout, the capabilities and patterns the tips show
 (`src/shared/capabilities.ts`, `docs/patterns/`), and the live system (`whoami`, `agents --all`, `kept`), tours their
 own floors, and offers one live demo.
+
+**The opencode plugin.** [`src/mod/opencode/index.js`](ref:hub/src/mod/opencode/index.js) is a v2 opencode plugin
+that an opencode session loads through the config its launch composes
+([`configOf`](ref:hub/src/shared/launch-opencode.ts#configOf), [[opencode]]), with the tower's brief as its option and
+the same `skills/` folder. It subscribes to opencode's bus and posts each event as it is, skipping the streaming
+deltas and the boot's list-changed events, and leaving out a tool's output (what it read, most of a log's bytes, kept
+in opencode's database). What the bus doesn't say it posts or joins on the line, since the normalizer reads one line
+at a time ([[runtime-normalizers]]): its release, whether it was reloaded mid-session and the models it can run
+(`plugin.started`); the tool a call runs (`tool.execute.before`, which alone names it); a child session's `parentID`
+on every line it raises; a step's model, named at its start, on its end; the child a subagent call spawned, on the
+call's first progress; and a session's cost summed with its subagents' (`total`). Its shell hook puts `bin/tower` on
+every shell's PATH, and its context hook adds the brief to every request. Each post is awaited, so lines keep the bus's
+order. When its subscription dies it posts `plugin.failed`, which nothing reads yet.
