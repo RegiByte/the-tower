@@ -92,6 +92,8 @@ export type Facts = {
   /** When Claude last raised a hook or a mod event, its subagents' included. */
   heardAt?: number
   hostStopped?: boolean
+  /** The session's runtime showed it runs: it printed something, or raised an event of its own (not a tower fact). */
+  ran?: true
   /** The code the session's process exited with. */
   exitCode?: number
   /** The signal that ended the session's process, when it didn't catch it. */
@@ -459,6 +461,9 @@ const stepAfter = (reading: Reading, facts: Facts, event: NormalEvent): Facts =>
 
 const isLetGo = (event: LogEvent) => isTowerFact(event, LET_GO)
 
+/** Whether `event` shows the runtime runs: output, or an event it raised, as the tower's own facts are logged before it starts. */
+const runs = (event: LogEvent): boolean => event[1] === 'o' || (event[1] === 'h' && !event[2].hook_event_name.startsWith('tower.'))
+
 /**
  * The step every fold of a log takes. An event the fold can't follow breaks the session where it stands: its facts
  * stay as they were before it, `broken` says why, and nothing after it is folded but the user letting it go, so one
@@ -471,7 +476,7 @@ export const factsAfter = (header: SessionHeader) => {
     if ('unreadable' in event) return facts.broken ? facts : { ...facts, broken: event.unreadable }
     if (facts.broken) return isLetGo(event) ? { ...facts, letGoAt: event[0] } : facts
     try {
-      return normalize(event).reduce((next, normal) => stepAfter(reading, next, normal), facts)
+      return normalize(event).reduce((next, normal) => stepAfter(reading, next, normal), facts.ran || !runs(event) ? facts : { ...facts, ran: true })
     } catch (err) {
       return { ...facts, broken: { message: (err as Error).message, at: event[0], code: event[1] } }
     }
