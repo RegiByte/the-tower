@@ -40,6 +40,11 @@ const spawnOf = (line: Line, { agent, title, model }: Spawned): Happening => {
   }
 }
 
+/** What a step or a compaction cost: a step the provider refused states none. */
+const chargedBy = (data: Record<string, unknown>): Happening[] => (typeof data.cost === 'number' ? [{ t: 'charged', usd: data.cost }] : [])
+
+const heardIfNone = (happenings: Happening[]): Happening[] => (happenings.length ? happenings : [{ t: 'heard' }])
+
 /** What one line means: none, one or several events. */
 const happeningsOf = (line: Line): Happening[] => {
   const data = line.data ?? {}
@@ -74,12 +79,10 @@ const happeningsOf = (line: Line): Happening[] => {
       return [{ t: 'turn.ended', ...agent, reason: 'aborted' }]
     case 'session.execution.failed':
       return [{ t: 'turn.ended', ...agent, reason: 'error' }]
-    case 'session.step.ended': {
-      const charged: Happening = { t: 'charged', usd: Number(data.cost) }
-      return line.model ? [{ t: 'turn.step', ...agent, ...modelOf(line.model), tokens: tokensOf(data.tokens as StepTokens) }, charged] : [charged]
-    }
+    case 'session.step.ended':
+      return heardIfNone([...(line.model ? [{ t: 'turn.step', ...agent, ...modelOf(line.model), tokens: tokensOf(data.tokens as StepTokens) } as const] : []), ...chargedBy(data)])
     case 'session.step.failed':
-      return [{ t: 'charged', usd: Number(data.cost) }]
+      return heardIfNone(chargedBy(data))
     case 'session.text.ended':
       return [{ t: 'said', ...agent, text: String(data.text) }]
     case 'session.retry.scheduled':
@@ -108,7 +111,7 @@ const happeningsOf = (line: Line): Happening[] => {
     case 'session.compaction.started':
       return [{ t: 'compaction.started', ...agent, trigger: data.reason === 'manual' ? 'manual' : 'auto' }]
     case 'session.compaction.ended':
-      return [{ t: 'compaction.ended', ...agent }, { t: 'charged', usd: Number(data.cost) }]
+      return [{ t: 'compaction.ended', ...agent }, ...chargedBy(data)]
     case 'session.compaction.failed':
       return [{ t: 'compaction.failed', ...agent }]
     case 'session.usage.updated': {

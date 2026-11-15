@@ -4,12 +4,14 @@ import { board } from '../src/bridge/board.ts'
 import { conversationsOf } from '../src/bridge/conversation.ts'
 import { factsOf } from '../src/bridge/facts.ts'
 import { turnsByConversation, type Step } from '../src/bridge/turns.ts'
-import type { Config, SessionLog } from '../src/shared/model.ts'
+import type { Config, LogEvent, SessionLog } from '../src/shared/model.ts'
 import { HOST_PROTOCOL } from '../src/shared/protocol.ts'
 import { fixture, normalized, timeline } from './replay.ts'
 import { viewOf } from './view.ts'
 
 const turnsOf = (log: SessionLog) => Object.values(turnsByConversation(log)).flat()
+
+const spentIn = (spend: [number, number][]) => spend.reduce((sum, [, usd]) => sum + usd, 0)
 
 const stepWords = (steps: Step[]) => steps.map((s) => (s.t === 'tool' ? `${s.tool} ${s.outcome}: ${s.line}` : s.t))
 
@@ -91,9 +93,46 @@ test('opencode: a resumed conversation is named from the start; Esc abandons the
 test('opencode: a resumed session spends only what its own requests charged', () => {
   const resumed = factsOf(fixture('opencode-resume'))
   assert.equal(resumed.costUsd, 0.05922910000000001)
-  assert.deepEqual(resumed.spend.map(([, usd]) => usd), [0.0055515, 0.024940000000000004])
+  assert.deepEqual(resumed.spend.map(([, usd]) => usd), [0.0055515, 0.02494])
   const before = factsOf(fixture('opencode-basic'))
-  assert.equal(before.costUsd! + resumed.spend.reduce((sum, [, usd]) => sum + usd, 0), resumed.costUsd)
+  assert.equal((before.costUsd! + spentIn(resumed.spend)).toFixed(9), resumed.costUsd!.toFixed(9))
+})
+
+const SESSION = 'ses_e202c54b1ffeFCLp4CmRTNuMFL'
+const hookLine = (at: number, type: string, data: Record<string, unknown>): LogEvent => [at, 'h', { type, data, hook_event_name: type }] as LogEvent
+const NO_STEP_TOKENS = { input: 1, output: 1, reasoning: 0, cache: { read: 0, write: 0 } }
+const hookIndex = (log: SessionLog, type: string) => log.events.findIndex((e) => e[1] === 'h' && (e[2] as { hook_event_name?: string }).hook_event_name === type)
+
+test('opencode: a step after a compaction adds only its own charge', () => {
+  const log = fixture('opencode-resume')
+  const shutdown = hookIndex(log, 'location.shutdown')
+  const before = factsOf(log)
+  const after = factsOf({
+    ...log,
+    events: [
+      ...log.events.slice(0, shutdown),
+      hookLine(50, 'session.step.ended', { sessionID: SESSION, assistantMessageID: 'msg_x', cost: 0.01, tokens: NO_STEP_TOKENS }),
+      hookLine(50.001, 'session.usage.updated', { sessionID: SESSION, cost: before.costUsd! + 0.01 }),
+      ...log.events.slice(shutdown),
+    ],
+  })
+  assert.equal(Number((spentIn(after.spend) - spentIn(before.spend)).toFixed(6)), 0.01)
+})
+
+test('opencode: a step refused by the provider charges nothing, and the next step still counts', () => {
+  const log = fixture('opencode-failed')
+  const failed = hookIndex(log, 'session.step.failed')
+  const session = (log.events[failed][2] as unknown as { data: { sessionID: string } }).data.sessionID
+  const facts = factsOf({
+    ...log,
+    events: [
+      ...log.events.slice(0, failed + 1),
+      hookLine(2, 'session.step.ended', { sessionID: session, assistantMessageID: 'msg_y', cost: 0.01, tokens: NO_STEP_TOKENS }),
+      hookLine(2.001, 'session.usage.updated', { sessionID: session, cost: 0.01 }),
+      ...log.events.slice(failed + 1),
+    ],
+  })
+  assert.deepEqual(facts.spend.map(([, usd]) => usd), [0.01])
 })
 
 test('opencode: the effort a step ran at is its variant', () => {

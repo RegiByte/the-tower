@@ -41,8 +41,9 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   idle counts no turn, and a manual compaction opens no turn span. Context is a step's tokens over its model's window,
   for a runtime that reports its models' windows (`runtime.models`, opencode). Spend is each cost reading's increase on
   its conversation's running total, a resumed conversation's first reading carrying what was spent before; for a
-  runtime that says what each request cost (opencode's steps and compactions, `charged`), a reading adds what was
-  charged since the previous one, since opencode's total holds the conversation's earlier sessions at any reading.
+  runtime that says what each request cost (opencode's steps and compactions, `charged`), spend is each charge at its
+  time from the first one on, and its readings add nothing, since opencode's total holds the conversation's earlier
+  sessions at any reading and a compaction's reading comes before its charge.
 - Messages between Claude sessions are folded as digests, never text. [`deliveries`](ref:hub/src/bridge/messages.ts#deliveries)
   joins every send to the session that logged the same text as received, nearest in time, so a brief's message step
   names the recipient whatever the address was (a name, or a reply's socket path, which nothing else ties to a session). A

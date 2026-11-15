@@ -1,4 +1,4 @@
-// The tower's plugin for opencode v2 (tested >=2.2.5 <2.3.0), loaded into every opencode session the tower starts
+// The tower's plugin for opencode v2 (the releases it is tested on: OPENCODE_TESTED in src/shared/opencode.ts), loaded into every opencode session the tower starts
 // through the session's OPENCODE_CONFIG_CONTENT. It posts opencode's bus events to the tower host as they are, each an
 // `h` line under its own type, so the log keeps what opencode said and the bridge's opencode normalizer reads it.
 //
