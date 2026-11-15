@@ -74,8 +74,12 @@ const happeningsOf = (line: Line): Happening[] => {
       return [{ t: 'turn.ended', ...agent, reason: 'aborted' }]
     case 'session.execution.failed':
       return [{ t: 'turn.ended', ...agent, reason: 'error' }]
-    case 'session.step.ended':
-      return line.model ? [{ t: 'turn.step', ...agent, ...modelOf(line.model), tokens: tokensOf(data.tokens as StepTokens) }] : [{ t: 'heard' }]
+    case 'session.step.ended': {
+      const charged: Happening = { t: 'charged', usd: Number(data.cost) }
+      return line.model ? [{ t: 'turn.step', ...agent, ...modelOf(line.model), tokens: tokensOf(data.tokens as StepTokens) }, charged] : [charged]
+    }
+    case 'session.step.failed':
+      return [{ t: 'charged', usd: Number(data.cost) }]
     case 'session.text.ended':
       return [{ t: 'said', ...agent, text: String(data.text) }]
     case 'session.retry.scheduled':
@@ -104,7 +108,7 @@ const happeningsOf = (line: Line): Happening[] => {
     case 'session.compaction.started':
       return [{ t: 'compaction.started', ...agent, trigger: data.reason === 'manual' ? 'manual' : 'auto' }]
     case 'session.compaction.ended':
-      return [{ t: 'compaction.ended', ...agent }]
+      return [{ t: 'compaction.ended', ...agent }, { t: 'charged', usd: Number(data.cost) }]
     case 'session.compaction.failed':
       return [{ t: 'compaction.failed', ...agent }]
     case 'session.usage.updated': {

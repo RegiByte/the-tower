@@ -60,6 +60,8 @@ export type Neutral =
   | { t: 'permission.answered'; agent?: string; reply: string }
   | { t: 'notified'; agent?: string; kind: string }
   | { t: 'measured'; context?: number; cost?: { usd: number }; rateLimits: RateLimit[] }
+  /** What one model request cost, for a runtime that says it besides its running total: the next `measured` cost holds it. */
+  | { t: 'charged'; usd: number }
   /** `call`, the tool call that spawned it; `id`, the subagent's loop; `resumes`, the loop a resume opens again. */
   | { t: 'agent.spawned'; call: string; type: string; description: string; background: boolean; parent?: string; id?: string; model?: string; deny?: string; resumes?: string }
   | { t: 'runtime.release'; version: string }
