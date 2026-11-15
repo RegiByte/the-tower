@@ -195,6 +195,9 @@ export const EXEMPT = 'tower.exempt'
 /** The fact a spawn's crew edge is logged as, before the worker starts. */
 export const REPORTS_TO = 'tower.reports-to'
 
+/** The fact a resume's conversation is logged as, before the session starts: read by a runtime's normalizer that needs it. */
+export const RESUMES = 'tower.resumes'
+
 /** The fact the tower appends through the host when the user lets a stranded session go: the user's, not Claude's. */
 export const LET_GO = 'tower.letGo'
 

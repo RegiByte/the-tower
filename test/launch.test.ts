@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { factsOf, type Session } from '../src/bridge/facts.ts'
 import { coreFacts, forkFacts, mergeParts, placeable, takenEnv, takenFlags, type Merged } from '../src/bridge/launch.ts'
-import { CORE_FLAGS, EVERY_PART, hostSpawn, resumeRequest, type HostStart } from '../src/shared/launch.ts'
+import { EVERY_PART, EVERY_PLACE, hostSpawn, type HostStart } from '../src/shared/launch.ts'
+import { CORE_FLAGS, resumeRequest, spawnRequest } from '../src/shared/launches.ts'
 import { sessionCommand, type Config, type LogEvent, type SessionHeader } from '../src/shared/model.ts'
 import { UnsettledError, within } from '../src/tower/extensions.ts'
 
@@ -85,9 +86,9 @@ test("a launch contributor is bound as start is: one that hasn't settled in time
   assert.equal(late, 'parts')
 })
 
-test('hostSpawn: the argv of the array shape always, a named command when given, the first when not or when stale, then the mod and the args; its env and name on the spawn', () => {
-  const start: HostStart = { id: 'id', project: 'p', cwd: '/c', runtime: 'claude', args: ['--x'], facts: [] }
-  const spawn = (config: Config, name?: string) => hostSpawn(start, sessionCommand(config, 'claude', name), '/mods')
+test('hostSpawn: the argv of the array shape always, a named command when given, the first when not or when stale, then the args; its env and name on the spawn', () => {
+  const start: HostStart = { id: 'id', project: 'p', cwd: '/c', runtime: 'claude', args: ['--plugin-dir', '/mods', '--x'], env: {}, facts: [] }
+  const spawn = (config: Config, name?: string) => hostSpawn(start, sessionCommand(config, 'claude', name))
   const arrayShape = { runtimes: { claude: { argv: ['claude'] } }, env: { A: '1' }, projects: {} } as Config
   assert.deepEqual(spawn(arrayShape), { t: 'spawn', id: 'id', project: 'p', cwd: '/c', runtime: 'claude', argv: ['claude', '--plugin-dir', '/mods', '--x'], env: { A: '1' }, cols: 120, rows: 40 })
   const multi = { runtimes: { claude: { argv: { a: ['claude'], b: ['claude-mom'] } } }, projects: {} } as Config
@@ -97,6 +98,20 @@ test('hostSpawn: the argv of the array shape always, a named command when given,
 })
 
 test('resumeRequest: carries the command it is given straight through to the host request', () => {
-  assert.equal(resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'c', prompt: undefined, command: 'b' }).command, 'b')
-  assert.equal(resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'c', prompt: undefined }).command, undefined)
+  assert.equal(resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'c', prompt: undefined, command: 'b', ran: {} }, EVERY_PLACE).command, 'b')
+  assert.equal(resumeRequest({ ...EVERY_PART, kind: 'resume', conversation: 'c', prompt: undefined, ran: {} }, EVERY_PLACE).command, undefined)
+})
+
+test('opencode: its own server, the config and a fresh state dir by env, the model with its effort as a variant, the user config dir left alone', () => {
+  assert.deepEqual([...CORE_FLAGS.opencode].sort(), ['--prompt', '--standalone', '-s'])
+  const part = { ...EVERY_PART, runtime: 'opencode' as const, contributed: { systemPrompt: ['more'], prompt: [], env: { A: '1' }, args: ['--auto'] } }
+  const spawned = spawnRequest({ ...part, kind: 'spawn', launch: { model: 'openrouter/m', effort: 'high', prompt: 'go' } }, EVERY_PLACE)
+  assert.deepEqual(spawned.args, ['--standalone', '--auto', '--prompt', 'go'])
+  assert.deepEqual(Object.keys(spawned.env).sort(), ['A', 'OPENCODE_CONFIG_CONTENT', 'XDG_STATE_HOME'])
+  assert.equal(spawned.env.XDG_STATE_HOME, 'state')
+  const config = JSON.parse(spawned.env.OPENCODE_CONFIG_CONTENT)
+  assert.deepEqual([config.model, config.skills, config.plugins.map((p: { package?: string } | string) => (typeof p === 'string' ? p : p.package))], ['openrouter/m#high', ['mod/skills'], ['mod/opencode', 'plugin']])
+  assert.match(config.plugins[0].options.brief, /tower whoami[\s\S]*Your directories are[\s\S]*more$/)
+  const resumed = resumeRequest({ ...part, kind: 'resume', conversation: 'ses_1', prompt: undefined, ran: { model: 'openrouter/m' } }, EVERY_PLACE)
+  assert.deepEqual([resumed.args, JSON.parse(resumed.env.OPENCODE_CONFIG_CONTENT).model], [['--standalone', '--auto', '-s', 'ses_1'], 'openrouter/m'])
 })

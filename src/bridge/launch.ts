@@ -7,9 +7,10 @@
 import { z } from 'zod'
 import type { LaunchParts } from '../shared/extensions.ts'
 import { withoutParentSession } from '../shared/env.ts'
-import { CORE_FLAGS, flagName, type Contributed, type ResumeLaunch, type SpawnLaunch } from '../shared/launch.ts'
+import { flagName, type Contributed, type ResumeLaunch, type SpawnLaunch } from '../shared/launch.ts'
+import { CORE_FLAGS } from '../shared/launches.ts'
 import { RUNTIMES, type ModEvent, type Runtime } from '../shared/model.ts'
-import { EXEMPT, PROMPTED_BY, REPORTS_TO, type Session } from './facts.ts'
+import { EXEMPT, PROMPTED_BY, REPORTS_TO, RESUMES, type Session } from './facts.ts'
 import { towerFact } from './events.ts'
 import type { CompiledField } from './extensions.ts'
 import { extensionFactName } from './stores.ts'
@@ -169,6 +170,12 @@ export const coreFacts = (merged: Merged, reportsTo: string | undefined): ModEve
  * before anything the session does, so no early exit can come between the spawn and its fact.
  */
 export const promptedFacts = (prompt: string | undefined, by: string | undefined): ModEvent[] => (prompt && by ? [towerFact(PROMPTED_BY, { by })] : [])
+
+/**
+ * A resume's fact: the conversation the session continues, logged before anything it does. A runtime that names its
+ * conversation only once something happens in it (opencode) is read as in it from the start.
+ */
+export const resumesFact = (conversation: string): ModEvent => towerFact(RESUMES, { conversation })
 
 /** A spawn's field values, by capability, as the facts the host logs: `tower.x.<cap>.<field>`. */
 export const fieldFacts = (x: Record<string, Record<string, unknown>>): ModEvent[] =>

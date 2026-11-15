@@ -260,8 +260,18 @@ export const hiringConfig = (config: Config, projectId: string): Required<Hiring
   }
 }
 
+/** The runtimes the config starts sessions of, in `RUNTIMES`' order: Claude's, and each other one it has a key for. */
+export const configuredRuntimes = (config: Config): Runtime[] => RUNTIMES.filter((runtime) => config.runtimes[runtime] !== undefined)
+
+/** `runtime`'s part of the config; a runtime the config leaves out is a config error naming the key to add. */
+export const runtimeConfig = (config: Config, runtime: Runtime): RuntimeConfig => {
+  const own = config.runtimes[runtime]
+  if (own === undefined) throw new ConfigError(`runtimes.${runtime} in the config: the tower starts no ${runtime} sessions until it names their command, such as {"argv": ["${runtime}"]}`)
+  return own
+}
+
 /** The commands `runtime`'s sessions start with (`RuntimeConfig.argv`). */
-const argvOf = (config: Config, runtime: Runtime): RuntimeConfig['argv'] => config.runtimes[runtime].argv
+const argvOf = (config: Config, runtime: Runtime): RuntimeConfig['argv'] => runtimeConfig(config, runtime).argv
 
 /** Every name `runtime`'s `argv` offers, in write order; `undefined` for the array shape (one unnamed command). */
 export const commandNames = (config: Config, runtime: Runtime): string[] | undefined => {
@@ -311,8 +321,11 @@ export const projectPreferredCommand = (config: Config, projectId: string, runti
  * session logs and the host sockets live next to it.
  */
 export type Config = {
-  /** What serves each runtime's own harness, by runtime: its commands and its plugins. */
-  runtimes: Record<Runtime, RuntimeConfig>
+  /**
+   * What serves each runtime's own harness, by runtime: its commands and its plugins. Claude's is required; a runtime
+   * left out is one the tower doesn't start (`configuredRuntimes`).
+   */
+  runtimes: { claude: RuntimeConfig } & Partial<Record<Runtime, RuntimeConfig>>
   /** Added to every session's environment after the parent-session scrub. */
   env?: Record<string, string>
   projects: Record<string, Project>
@@ -354,8 +367,9 @@ export type RuntimeConfig = {
    */
   argv: string[] | Record<string, string[]>
   /**
-   * Absolute plugin directories every session of the runtime loads, each passed to Claude as `--plugin-dir`: Claude
-   * reads a path as written: no `~` expanded, a relative path against the session's cwd.
+   * Absolute plugin directories every session of the runtime loads: each passed to Claude as `--plugin-dir`, read as
+   * written (no `~` expanded, a relative path against the session's cwd); each named in opencode's config `plugins`,
+   * a directory holding a v2 plugin's `index.js`.
    */
   plugins?: string[]
 }
@@ -422,12 +436,12 @@ export const projectCollections = (config: Config, projectId: string): Record<st
 
 /** The plugin directories a project's sessions of `runtime` load: every such session's, then the project's own. */
 export const runtimePlugins = (config: Config, projectId: string, runtime: Runtime): string[] => [
-  ...(config.runtimes[runtime].plugins ?? []),
+  ...(runtimeConfig(config, runtime).plugins ?? []),
   ...(config.projects[projectId].runtimes?.[runtime]?.plugins ?? []),
 ]
 
 /** The agent runtimes the tower launches: a session runs one, fixed for its life and its whole resume chain. */
-export const RUNTIMES = ['claude'] as const
+export const RUNTIMES = ['claude', 'opencode'] as const
 export type Runtime = (typeof RUNTIMES)[number]
 
 export const isRuntime = (runtime: string): runtime is Runtime => (RUNTIMES as readonly string[]).includes(runtime)
