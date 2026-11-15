@@ -16,7 +16,7 @@
     "hub/src/bridge/board.ts#Card",
     "hub/src/bridge/verbs.ts#cardOffers",
     "hub/src/shared/launch.ts#CARRY_ON",
-    "hub/src/shared/launch.ts#resumeRequest",
+    "hub/src/shared/launches.ts#resumeRequest",
     "hub/src/shared/api.ts#VERBS",
     "hub/src/shared/status-words.ts#statusName",
     "hub/src/shared/duty.ts#CARRY_ON_MEANS",
@@ -58,7 +58,7 @@ storing, and the capability belongs in the core, where every renderer and worker
   ([`isMidTurn`](ref:hub/src/bridge/status.ts#isMidTurn)): `working`, compaction included, or `needs_input`, a turn
   held on a permission dialog, which Claude asks again. It stays on the card as history after a resume or a let go.
 - **No waiting for ready.** `resume` takes an optional `prompt`, passed after `--` as a spawn's first prompt is
-  ([`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest)): Claude takes it as it starts, the way a hired
+  ([`resumeRequest`](ref:hub/src/shared/launches.ts#resumeRequest)): Claude takes it as it starts, the way a hired
   worker gets its prompt, so no submit waits for the resumed session to reach its composer.
 - **A card verb with its call.** `carry-on` is offered beside `resume` while the card awaits a resume and is
   `cutOff`; its call is `['resume', {id, conversation, prompt: CARRY_ON}]`

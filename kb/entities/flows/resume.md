@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-11-15",
   "involves": ["operator", "tower-server", "host-daemon", "claude-code", "system-root", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#resumeOnce", "hub/src/tower/dispatch.ts#gate", "hub/src/cli.ts#towerCommand", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/status-words.ts#UNRESUMABLE_NAME", "hub/src/bridge/worktrees.ts#restoreOf", "hub/src/bridge/worktrees.ts#readsSince", "hub/src/worktrees.ts#restoreWorktree", "hub/src/shared/launch.ts#Restored"]
+  "refs": ["hub/src/shared/launches.ts#resumeRequest", "hub/src/shared/launch.ts#CARRY_ON", "hub/src/tower/dispatch.ts#resume", "hub/src/tower/dispatch.ts#resumeOnce", "hub/src/tower/dispatch.ts#gate", "hub/src/cli.ts#towerCommand", "hub/src/bridge/chains.ts#heldBy", "hub/src/bridge/chains.ts#runsAs", "hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#checkoutGone", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#resumes", "hub/src/bridge/chains.ts#resumedBy", "hub/src/bridge/chains.ts#continues", "hub/src/bridge/chains.ts#lineage", "hub/src/bridge/chains.ts#resumeName", "hub/src/worktrees.ts#briefFor", "hub/src/bridge/board.ts#unresumableAt", "hub/src/shared/status-words.ts#UNRESUMABLE_NAME", "hub/src/bridge/worktrees.ts#restoreOf", "hub/src/bridge/worktrees.ts#readsSince", "hub/src/worktrees.ts#restoreWorktree", "hub/src/shared/launch.ts#Restored"]
 }
 ---
 ```mermaid
@@ -44,7 +44,7 @@ sequenceDiagram
   longer names is refused (`config`), saying to bring it back; a header with none, from before named commands or a
   single-command `argv`, resumes under `argv`'s first.
 - **Same directory.** Claude files conversations by directory, so the resume runs in the source's `cwd`
-  under the same project ([`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest)). In a [[worktree]] the
+  under the same project ([`resumeRequest`](ref:hub/src/shared/launches.ts#resumeRequest)). In a [[worktree]] the
   directories follow from `cwd` and the worktree line of the system prompt is composed again, with the branch read
   from git then ([`briefFor`](ref:hub/src/worktrees.ts#briefFor)), though Claude doesn't read it: `--resume` keeps
   the system prompt its conversation started with and ignores a new `--append-system-prompt`. A fork resumes in the same `cwd`, so it shares

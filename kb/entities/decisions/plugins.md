@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/model.ts#runtimePlugins", "hub/src/moved-keys.ts#movedKeys", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/launch.ts#resumeRequest", "hub/src/shared/launch.ts#hostSpawn", "hub/src/tower/extensions.ts#extensions"]
+  "refs": ["hub/src/shared/model.ts#runtimePlugins", "hub/src/moved-keys.ts#movedKeys", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launches.ts#spawnRequest", "hub/src/shared/launches.ts#resumeRequest", "hub/src/shared/launch.ts#hostSpawn", "hub/src/tower/extensions.ts#extensions"]
 }
 ---
 **Problem.** A user's own commands and skills, copied into every repo's `.claude/`, drift apart: one change has to be
@@ -25,8 +25,8 @@ touching any repo.
   first. Each
   is an absolute directory: Claude reads the path as written, with no `~` expanded, and a relative one against each
   session's cwd, which differs between the hub and every worktree.
-- *The flags.* [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest) and
-  [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest) take the list and pass each directory as
+- *The flags.* [`spawnRequest`](ref:hub/src/shared/launches.ts#spawnRequest) and
+  [`resumeRequest`](ref:hub/src/shared/launches.ts#resumeRequest) take the list and pass each directory as
   `--plugin-dir` ([`pluginArgs`](ref:hub/src/shared/launch.ts#pluginArgs)), so spawn, resume, a cut, a fork, `tower
   hire` and `tower x reviews review` all load them. The host composes none of it ([[host-owns-ptys]]): the tower puts the mod's
   `--plugin-dir` before these args ([`hostSpawn`](ref:hub/src/shared/launch.ts#hostSpawn)), and Claude takes the flag repeated. Each Claude reads its plugins as it

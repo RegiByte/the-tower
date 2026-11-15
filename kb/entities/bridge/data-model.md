@@ -5,11 +5,11 @@
   "summary": "The shared types and pure builders: projects and config, the session header and log events, the host and terms protocols, and spawn/resume requests.",
   "in": "bridge",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/shared/launch.ts#launchOf", "hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launch.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#inProject", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#runtimePlugins", "hub/src/shared/model.ts#runtimeOf", "hub/src/moved-keys.ts#movedKeys", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
+  "refs": ["hub/src/shared/launch.ts#launchOf", "hub/src/shared/model.ts", "hub/src/shared/model.ts#projectCollections", "hub/src/shared/protocol.ts#ToHost", "hub/src/shared/protocol.ts#HOST_PROTOCOL", "hub/src/shared/protocol.ts#promptPastes", "hub/src/shared/terms.ts#ToTerms", "hub/src/shared/launches.ts#spawnRequest", "hub/src/shared/env.ts#withoutParentSession", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/model.ts#inProject", "hub/src/shared/model.ts#worktreesConfig", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/model.ts#runtimePlugins", "hub/src/shared/model.ts#runtimeOf", "hub/src/moved-keys.ts#movedKeys", "hub/src/shared/model.ts#editorArgv", "hub/src/shared/model.ts#configuredCallsigns", "hub/src/shared/model.ts#callsignsOf"]
 }
 ---
-`src/shared`. Every client builds host requests with [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest)
-and [`resumeRequest`](ref:hub/src/shared/launch.ts#resumeRequest): the Claude flags a session starts with
+`src/shared`. Every client builds host requests with [`spawnRequest`](ref:hub/src/shared/launches.ts#spawnRequest)
+and [`resumeRequest`](ref:hub/src/shared/launches.ts#resumeRequest): the Claude flags a session starts with
 (model, effort, the first prompt after `--`, `--resume`, `--name`) are composed here, never in the host, and
 the session id is minted here ([`newSessionId`](ref:hub/src/shared/launch.ts#newSessionId)). What the launch composes
 comes after the config's `argv`, its model, effort and prompt last, so one reader,
