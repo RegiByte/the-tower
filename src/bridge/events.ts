@@ -19,16 +19,28 @@ export const towerFactOf = ({ hook_event_name: name, ...fields }: ModEvent): Tow
 
 /** What every runtime raises that the folds read. `agent`: the subagent whose loop raised it, absent for the main loop. */
 export type Neutral =
+  /** The runtime is at its prompt, ready for one: it booted, or a conversation started. */
+  | { t: 'ready'; agent?: string }
   | { t: 'conversation.entered'; agent?: string; id: string; resumed: boolean }
   | { t: 'compaction.started'; agent?: string; trigger: 'manual' | 'auto' }
-  | { t: 'compaction.ended'; agent?: string; conversation: string }
-  /** The runtime took a prompt into its conversation, which it then keeps. */
-  | { t: 'prompt.accepted'; agent?: string }
-  | { t: 'prompt'; origin: string; text: string }
+  /** `conversation`: the one it continues under, when compacting moves it to a new id. */
+  | { t: 'compaction.ended'; agent?: string; conversation?: string }
+  | { t: 'compaction.failed'; agent?: string }
+  /**
+   * The runtime took a prompt into its conversation, which it then keeps. `id`: the queued prompt it delivers, when
+   * the runtime queues a prompt sent mid-turn and delivers it inside the running turn.
+   */
+  | { t: 'prompt.accepted'; agent?: string; id?: string }
+  /** `id`: the prompt waits in a queue until a `prompt.accepted` with the same id delivers it. */
+  | { t: 'prompt'; origin: string; text: string; id?: string }
   | { t: 'command'; origin?: string }
   | { t: 'turn.started'; agent?: string }
   | { t: 'turn.step'; agent?: string; model: string; effort?: string; answer?: string; tokens?: Tokens }
+  /** The text a step said, for a runtime that logs it apart from the step: the last one before a turn ends is its answer. */
+  | { t: 'said'; agent?: string; text: string }
   | { t: 'turn.ended'; agent?: string; reason: string; answer?: string }
+  /** The model's request failed and is tried again at `at` (epoch ms): an outage or a provider's limit. */
+  | { t: 'turn.retrying'; agent?: string; at: number }
   /** The main loop stopped; `wakes`, something it started can start its next turn without the user. */
   | { t: 'turn.stopped'; agent?: string; wakes: boolean }
   /** How the call reads in words is the runtime's `ToolFormat`, derived where it is drawn. */
@@ -41,11 +53,15 @@ export type Neutral =
   | { t: 'tool.failed'; agent?: string; id: string; ms?: number; error: string }
   | { t: 'tool.abandoned'; agent?: string; id: string }
   | { t: 'permission.requested'; agent?: string }
+  /** The user answered an ask: `once`, `always`, `reject`, or a question's answer (`answered`). */
+  | { t: 'permission.answered'; agent?: string; reply: string }
   | { t: 'notified'; agent?: string; kind: string }
   | { t: 'measured'; context?: number; cost?: { usd: number }; rateLimits: RateLimit[] }
   /** `call`, the tool call that spawned it; `id`, the subagent's loop; `resumes`, the loop a resume opens again. */
   | { t: 'agent.spawned'; call: string; type: string; description: string; background: boolean; parent?: string; id?: string; model?: string; deny?: string; resumes?: string }
   | { t: 'runtime.release'; version: string }
+  /** The runtime named the conversation. */
+  | { t: 'conversation.titled'; agent?: string; title: string }
   /** Something the runtime raised that no fold reads: it still says the session was heard from. */
   | { t: 'heard' }
 

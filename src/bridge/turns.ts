@@ -58,7 +58,7 @@ const opened = (kind: string, text: string, at: number, session: string): Opened
 }
 
 /** The events a turn's steps are read from; a subagent's are left out, its steps counted on the call that started it. */
-const WORK = new Set(['tool.call', 'tool.result', 'tool.abandoned', 'tool.done', 'tool.failed', 'turn.step', 'turn.ended', 'claude.sent'])
+const WORK = new Set(['tool.call', 'tool.result', 'tool.abandoned', 'tool.done', 'tool.failed', 'turn.step', 'said', 'turn.ended', 'claude.sent'])
 const ofMainLoop = (happening: Happening) => !('agent' in happening) || happening.agent === undefined
 
 /** How a tool call stands after one of its events: an event that says nothing of how it ended leaves it as it was. */
@@ -74,6 +74,15 @@ const outcomeAfter = (outcome: ToolOutcome, happening: Happening): ToolOutcome =
 }
 
 type ToolStep = Extract<Step, { t: 'tool' }>
+
+/** What the main loop said last since its last turn ended: the answer of a runtime that logs a turn's text apart from its end. */
+const lastSaid = (work: Opened['work']): string | undefined => {
+  for (const [, happening] of work.toReversed()) {
+    if (happening.t === 'turn.ended') return undefined
+    if (happening.t === 'said') return happening.text
+  }
+  return undefined
+}
 
 /** What a turn's steps read of the rest of its log: the steps each `Agent` call's subagent took, and whether an address is a subagent's. */
 type Agents = { stepsOf: (call: string) => number | undefined; isAgent: (to: string) => boolean }
@@ -102,6 +111,8 @@ const stepsOf = ({ work, answer }: Opened, agents: Agents, lineOf: LineOf): Step
         const text = happening.answer
         return { done: [...done, ...(text ? [{ t: 'text' as const, at, text }] : []), ...pending], pending: [] }
       }
+      case 'said':
+        return { done: [...done, ...pending, ...(happening.text ? [{ t: 'text' as const, at, text: happening.text }] : [])], pending: [] }
       case 'turn.ended':
         return { done: [...done, ...pending], pending: [] }
       case 'tool.result':
@@ -142,7 +153,7 @@ export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => 
       case 'conversation.entered':
         return { ...tally, current: data.id }
       case 'compaction.ended':
-        return { ...tally, current: data.conversation }
+        return { ...tally, current: data.conversation ?? tally.current }
       case 'prompt': {
         const turn = tally.current ? opened(data.origin, data.text, at, header.id) : undefined
         return turn ? { ...tally, byConversation: { ...tally.byConversation, [tally.current!]: [...(tally.byConversation[tally.current!] ?? []), turn] } } : tally
@@ -153,9 +164,11 @@ export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => 
         if (data.agent !== undefined) return { ...tally, agentSteps: new Map(tally.agentSteps).set(data.agent, (tally.agentSteps.get(data.agent) ?? 0) + 1) }
         break
       case 'turn.ended': {
-        const { answer } = data
-        if (data.agent === undefined && answer) return withLatest(tally, (turn) => ({ ...turn, answer, answeredAt: at, work: [...turn.work, [at, data]] }))
-        break
+        if (data.agent !== undefined) break
+        return withLatest(tally, (turn) => {
+          const answer = data.answer ?? lastSaid(turn.work)
+          return answer ? { ...turn, answer, answeredAt: at, work: [...turn.work, [at, data]] } : { ...turn, work: [...turn.work, [at, data]] }
+        })
       }
     }
     return WORK.has(data.t) && ofMainLoop(data) ? withLatest(tally, (turn) => ({ ...turn, work: [...turn.work, [at, data]] })) : tally

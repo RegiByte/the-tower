@@ -346,6 +346,8 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
       const stepped = { ...counted, model: happening.model, effort: happening.effort, steppedAt: at }
       return answer?.trim() ? { ...stepped, says: [...facts.says, clip(answer.trim())].slice(-SAYS_KEPT) } : stepped
     }
+    case 'said':
+      return mainLoop && happening.text.trim() ? { ...facts, says: [...facts.says, clip(happening.text.trim())].slice(-SAYS_KEPT) } : facts
     case 'turn.ended':
       if (!mainLoop) return { ...facts, subagentRuns: runOf(facts.subagentRuns, happening.agent, (run) => ({ ...run, endedAt: at, ended: happening.reason })) }
       return facts.turnStartedAt === undefined

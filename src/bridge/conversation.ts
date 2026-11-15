@@ -35,11 +35,13 @@ export const conversationsAfter = (conversations: Conversation[], [t, code, data
     case 'conversation.entered':
       return enter(conversations, data.id, t, data.resumed)
     case 'compaction.ended':
-      return enter(conversations, data.conversation, t, false)
+      return data.conversation === undefined ? conversations : enter(conversations, data.conversation, t, false)
     case 'prompt.accepted':
       return withLatest(conversations, { saved: true })
     case 'prompt':
       return USER_ORIGINS.has(data.origin) ? withLatest(conversations, { prompt: data.text }) : conversations
+    case 'said':
+      return data.agent === undefined ? withLatest(conversations, { answer: data.text }) : conversations
     case 'turn.ended':
       return data.agent === undefined && data.answer ? withLatest(conversations, { answer: data.answer }) : conversations
     default:
