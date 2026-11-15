@@ -94,6 +94,8 @@ export type Facts = {
   hostStopped?: boolean
   /** The session's runtime showed it runs: it printed something, or raised an event of its own (not a tower fact). */
   ran?: true
+  /** The error that stopped the runtime's events reaching the tower (`events.lost`): nothing after it is heard. */
+  eventsLost?: string
   /** The code the session's process exited with. */
   exitCode?: number
   /** The signal that ended the session's process, when it didn't catch it. */
@@ -407,6 +409,8 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
       return { ...facts, runtimeRelease: happening.version }
     case 'runtime.models':
       return { ...facts, models: happening.models }
+    case 'events.lost':
+      return { ...facts, eventsLost: happening.error }
     case NAMED:
       return { ...facts, callsign: String(happening.callsign) }
     case 'tower.show': {

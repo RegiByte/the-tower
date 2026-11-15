@@ -445,6 +445,10 @@
           "type": "string",
           "description": "Why its process never started the runtime, in words that name the command and the fix: it exited with an error before printing anything or raising an event, as a command that isn't installed does."
         },
+        "eventsLost": {
+          "type": "string",
+          "description": "Why the tower stopped hearing the runtime's events while its process ran on, in words that name the error, and the fix while it still runs: its status, tool and answers stand where the events stopped."
+        },
         "peer": {
           "type": "string",
           "description": "The Claude session name its peers message it by (`SendMessage`'s `to`), while its Claude runs."

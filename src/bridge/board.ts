@@ -75,6 +75,11 @@ export type Card = {
    * before printing anything or raising an event, as a command that isn't installed does. @since 2.3
    */
   startFailure?: string
+  /**
+   * Why the tower stopped hearing the runtime's events while its process ran on, in words that name the error, and the
+   * fix while it still runs: its status, tool and answers stand where the events stopped. @since 2.4
+   */
+  eventsLost?: string
   /** The Claude session name its peers message it by (`SendMessage`'s `to`), while its Claude runs. */
   peer?: string
   /** The runtime it runs, the key of its entry in `board.runtimes` (`runtimeOf`): any string, so a renderer reads past one it doesn't know. @since 2.0 */
@@ -490,6 +495,10 @@ const DECLARED: Record<Runtime, Pick<BoardRuntime, 'label' | 'tested' | 'statuse
 const startFailed = (facts: Session['facts']): boolean =>
   facts.ran === undefined && facts.exitCode !== undefined && facts.exitCode !== 0 && facts.signal === undefined && !facts.hostStopped && facts.killedAt === undefined
 
+/** `error`'s first line: the rest is its stack. A session still running is told how to be heard again. */
+const eventsLost = (label: string, error: string, live: boolean): string =>
+  `The tower stopped hearing ${label}'s events (${error.split('\n')[0]}): its status stands where they stopped.${live ? ' Kill it and resume its conversation to hear it again.' : ''}`
+
 const startFailure = (header: SessionHeader, label: string, exitCode: number): string =>
   `${header.argv[0]} exited with code ${exitCode} before ${label} started: is it installed, and does the config's argv name it? \`tower doctor\` checks.`
 
@@ -574,6 +583,7 @@ const card = (
     id: header.id,
     callsign,
     ...(startFailed(facts) && { startFailure: startFailure(header, isRuntime(runtime) ? DECLARED[runtime].label : runtime, facts.exitCode!) }),
+    ...(facts.eventsLost !== undefined && { eventsLost: eventsLost(isRuntime(runtime) ? DECLARED[runtime].label : runtime, facts.eventsLost, life.live) }),
     peer: peers.find((p) => p.session === header.id)?.name,
     runtime,
     project: header.project,

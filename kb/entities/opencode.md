@@ -70,5 +70,11 @@ fails with the card's `startFailure` when that board holds it: a command that is
 milliseconds, before the hire settles, but one that takes longer to fail (a wrapper script) is hired as usual, and
 only its card says so.
 
+**When the plugin stops hearing it.** The plugin's subscribe loop posts `plugin.failed` with its error when it dies;
+the normalizer reads it as `events.lost`, the fold keeps the error, and the card says it (`card.eventsLost`, API 2.4),
+drawn as the shared gist: the tower stopped hearing opencode, its status stands where the events stopped, and, while
+it still runs, a kill and a resume start a fresh plugin; an ended card keeps the fact without the advice. It holds for the rest of the session: a plugin reload after it is not read as
+hearing it again.
+
 The recorded fixtures `test/fixtures/opencode-*.jsonl`, with
 [their expectations](ref:hub/test/opencode.test.ts), are the reference for what the bridge expects of it.

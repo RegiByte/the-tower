@@ -64,7 +64,7 @@ events. How a tool call reads in words is presentation, not what happened, so th
 
 [`normalizeOpencode`](ref:hub/src/bridge/runtimes/opencode.ts#normalizeOpencode) reads the lines the tower's opencode
 plugin posts ([[opencode]]): opencode's bus events, each under its own `type`, and the plugin's own (`plugin.started`,
-`tool.execute.before`, `mcp.status`). Status follows opencode's executions, not its prompts; a child session is a
+`tool.execute.before`, `mcp.status`, `plugin.failed`, read as `events.lost`). Status follows opencode's executions, not its prompts; a child session is a
 subagent, its lines carrying the `parentID` the plugin adds; a call's start and end (`session.tool.called`,
 `.success`) move no status, since calls run in parallel and one ending would pull a pending ask back to working. The
 normalizer stays per line, so what needs two lines is joined in the plugin before it posts (a step's model on its
