@@ -96,12 +96,22 @@ const readBoard = async (): Promise<Board> => {
 
 const floorTitle = (floor: Floor) => `${floor.name} (floor "${floor.id}")`
 
-const cardLines = (card: Card, me: string | undefined, now: number, depth = 0): string[] => {
+/** How another worker reaches this one: its messaging name, or, on a runtime with no messages between workers, its prompt. */
+const reachWords = (runtimes: Board['runtimes'], card: Card): string => {
+  if (card.peer) return `message as "${card.peer}"`
+  const runtime = runtimes[card.runtime]
+  if (!card.live) return `not reachable: its ${runtime.label} is not running`
+  return runtime.absent.includes('peers')
+    ? `no messages between workers on ${runtime.label}: \`tower submit ${card.id} <text>\` types a prompt to it`
+    : `not reachable yet: its ${runtime.label} is not up`
+}
+
+const cardLines = (card: Card, runtimes: Board['runtimes'], me: string | undefined, now: number, depth = 0): string[] => {
   const indent = '    '.repeat(depth)
   const facts = [
     statusName(card),
     `for ${ago(now - card.enteredAt)}`,
-    card.peer ? `message as "${card.peer}"` : 'not reachable: its Claude is not running',
+    reachWords(runtimes, card),
     modelName(card.model),
   ].filter(Boolean)
   const gist = gistLine(card).replace(/\s+/g, ' ')
@@ -129,11 +139,11 @@ const crewRows = (floor: Floor, hiresEverywhere: (c: Card) => Card[]): { card: C
   ])
 
 /** The floor's crews: each worker under the one it reports to, those that went home among them, and its hires on other floors. */
-const floorLines = (floor: Floor, hiresEverywhere: (c: Card) => Card[], me: string | undefined, now: number): string[] => {
+const floorLines = (floor: Floor, runtimes: Board['runtimes'], hiresEverywhere: (c: Card) => Card[], me: string | undefined, now: number): string[] => {
   const onDuty = floor.cards.filter((c) => c.onDuty)
   return [
     `${floorTitle(floor)}: ${onDuty.length} on duty`,
-    ...crewRows(floor, hiresEverywhere).flatMap(({ card, depth, away }) => (away ? [awayLine(card, depth)] : cardLines(card, me, now, depth))),
+    ...crewRows(floor, hiresEverywhere).flatMap(({ card, depth, away }) => (away ? [awayLine(card, depth)] : cardLines(card, runtimes, me, now, depth))),
   ]
 }
 
@@ -144,12 +154,20 @@ const ownCard = (board: Board, me: string | undefined): Card => {
   return card
 }
 
+/** How other workers reach this worker, as its runtime allows. */
+const peerLine = (runtime: Board['runtimes'][string], card: Card): string => {
+  if (card.peer) return `Other Claude sessions message you as "${card.peer}".`
+  return runtime.absent.includes('peers')
+    ? `${runtime.label} has no messages between workers: others reach you with \`tower submit ${card.id} <text>\`, which types a prompt to you.`
+    : `Your ${runtime.label} session name is not known to the tower yet.`
+}
+
 const whoami = (board: Board, me: string | undefined): string[] => {
   const card = ownCard(board, me)
   const floor = board.floors.find((f) => f.id === card.project)!
   return [
     `You are ${card.callsign}, session ${card.id}, a worker on ${floorTitle(floor)}.`,
-    card.peer ? `Other Claude sessions message you as "${card.peer}".` : 'Your Claude session name is not known to the tower yet.',
+    peerLine(board.runtimes[card.runtime], card),
     ...(card.hiredBy ? [`${hirerWords(card)} hired you: \`tower agent ${card.hiredBy.callsign}\` says how to reach it.`] : []),
     ...(card.crew ? [`You are in ${card.crew.callsign}'s crew, by ${card.crew.by}: \`tower agent ${card.crew.callsign}\` says how to reach it.`] : []),
     ...(card.exempt ?? []).map((e) => `You are ${exemptionWords(e)}.`),
@@ -278,7 +296,7 @@ const agent = (board: Board, card: Card, cards: Card[], briefs: Brief[], now: nu
   const [current, ...earlier] = briefParts(briefs)
   return [
     `${card.callsign}, session ${card.id}, on ${floorTitle(floor)}`,
-    `  ${[statusName(card), `for ${ago(now - card.enteredAt)}`, card.peer ? `message as "${card.peer}"` : 'not reachable: its Claude is not running', modelName(card.model)].filter(Boolean).join('  ·  ')}`,
+    `  ${[statusName(card), `for ${ago(now - card.enteredAt)}`, reachWords(board.runtimes, card), modelName(card.model)].filter(Boolean).join('  ·  ')}`,
     `  in ${card.cwd}`,
     ...(card.unresumable ? [`  ${UNRESUMABLE_TITLE[card.unresumable]}`] : []),
     ...(card.hiredBy ? [`  hired by ${hirerName(card.hiredBy, card.project)}`] : []),
@@ -704,7 +722,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
     const board = await readBoard()
     const floors = all === '--all' ? board.floors.filter((f) => f.cards.some((c) => c.onDuty)) : [board.floors.find((f) => f.id === ownCard(board, me).project)!]
     const hiresEverywhere = hiresBy(board.floors.flatMap((f) => f.cards))
-    console.log(floors.map((f) => floorLines(f, hiresEverywhere, me, now).join('\n')).join('\n\n'))
+    console.log(floors.map((f) => floorLines(f, board.runtimes, hiresEverywhere, me, now).join('\n')).join('\n\n'))
   },
   agent: async ([callsign, conversation]) => {
     if (!callsign) throw new CliError(usageLine('agent'))
