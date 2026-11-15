@@ -1,6 +1,6 @@
 import type { SessionLog } from '../shared/model.ts'
-import type { Happening } from './events.ts'
-import { readableEvents } from './normalize.ts'
+import type { Happening, ToolFormat } from './events.ts'
+import { readableEvents, toolFormatOf } from './normalize.ts'
 import { chainsOf, continuations, lineage, namer, resumes, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
 import { USER_ORIGINS, type Conversation } from './conversation.ts'
 import { digestOf, type Session } from './facts.ts'
@@ -78,19 +78,22 @@ type ToolStep = Extract<Step, { t: 'tool' }>
 /** What a turn's steps read of the rest of its log: the steps each `Agent` call's subagent took, and whether an address is a subagent's. */
 type Agents = { stepsOf: (call: string) => number | undefined; isAgent: (to: string) => boolean }
 
+/** A tool call in one line, as its session's runtime words it. */
+type LineOf = ToolFormat['line']
+
 /**
  * A turn's steps from its work: a step's words come before the calls it made, which Claude logs first since they run
  * while it streams; the turn's answer, its last words, is left out. A message to another worker is a `sent` step and
  * its `SendMessage` call is not drawn again; one to a subagent is the call, its address no worker's.
  */
-const stepsOf = ({ work, answer }: Opened, agents: Agents): Step[] => {
+const stepsOf = ({ work, answer }: Opened, agents: Agents, lineOf: LineOf): Step[] => {
   const calls = new Map<string, ToolStep>()
   const read = work.reduce<{ done: Step[]; pending: Step[] }>(({ done, pending }, [at, happening]) => {
     switch (happening.t) {
       case 'tool.call': {
         if (happening.tool === 'SendMessage' && !agents.isAgent(String(happening.input.to))) return { done, pending }
-        const { id, tool, line } = happening
-        calls.set(id, { t: 'tool', at, id, tool, line, outcome: 'running' })
+        const { id, tool, input } = happening
+        calls.set(id, { t: 'tool', at, id, tool, line: lineOf(tool, input), outcome: 'running' })
         return { done, pending: [...pending, calls.get(id)!] }
       }
       case 'claude.sent':
@@ -108,7 +111,7 @@ const stepsOf = ({ work, answer }: Opened, agents: Agents): Step[] => {
         const call = calls.get(happening.id)
         if (!call) return { done, pending }
         const ms = 'ms' in happening ? happening.ms : undefined
-        const answered = happening.t === 'tool.done' && call.tool === 'AskUserQuestion' && happening.line !== undefined ? { line: happening.line } : {}
+        const answered = happening.t === 'tool.done' && call.tool === 'AskUserQuestion' ? { line: lineOf(call.tool, happening.input) } : {}
         calls.set(call.id, { ...call, ...answered, outcome: outcomeAfter(call.outcome, happening), ...(typeof ms === 'number' && { ms }) })
         return { done, pending }
       }
@@ -158,6 +161,7 @@ export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => 
     return WORK.has(data.t) && ofMainLoop(data) ? withLatest(tally, (turn) => ({ ...turn, work: [...turn.work, [at, data]] })) : tally
   }, { byConversation: {}, spawned: new Map(), agentSteps: new Map() })
   const spawnedAgents = new Set(tally.spawned.values())
+  const lineOf = toolFormatOf(header).line
   const agents: Agents = {
     stepsOf: (call) => {
       const agent = tally.spawned.get(call)
@@ -166,7 +170,7 @@ export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => 
     isAgent: (to) => spawnedAgents.has(to),
   }
   return Object.fromEntries(Object.entries(tally.byConversation).map(([id, turns]) =>
-    [id, turns.map(({ work: _, ...turn }, i) => ({ ...turn, steps: stepsOf(turns[i], agents) }))]))
+    [id, turns.map(({ work: _, ...turn }, i) => ({ ...turn, steps: stepsOf(turns[i], agents, lineOf) }))]))
 }
 
 /** One tool call as its session logged it: its input, the permission check it met, how it ended, and how long it ran. @since 1.133 */

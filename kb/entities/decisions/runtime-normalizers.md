@@ -15,6 +15,8 @@
     "hub/src/bridge/normalize.ts#normalizerOf",
     "hub/src/bridge/normalize.ts#readableEvents",
     "hub/src/bridge/runtimes/claude.ts#normalizeClaude",
+    "hub/src/bridge/events.ts#ToolFormat",
+    "hub/src/bridge/runtimes/claude.ts#claudeTools",
     "hub/src/bridge/runtimes/claude-lines.ts#skimClaude",
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/tail.ts#factEvents",
@@ -49,7 +51,10 @@ internal to the bridge (it never reaches the board, the API or a log) and was dr
 runtime's recorded fixtures reshape it.
 
 [`normalizeClaude`](ref:hub/src/bridge/runtimes/claude.ts#normalizeClaude) reads Claude's classic hooks and its mod's
-events, and renders a tool call in one line (it knows Claude's tools). The tail's skim of a `PostToolUse` line, read
+events. How a tool call reads in words is presentation, not what happened, so the normalizer leaves it out: a
+`tool.call` carries its tool and input, and the runtime's [`ToolFormat`](ref:hub/src/bridge/events.ts#ToolFormat)
+([`claudeTools`](ref:hub/src/bridge/runtimes/claude.ts#claudeTools)) words it where it is drawn, the brief's line in
+`stepsOf` and the card's label in the facts fold. A shape the line can't word costs only the brief. The tail's skim of a `PostToolUse` line, read
 by its bytes without parsing its tool's input, is Claude's line format too, kept apart in
 [`skimClaude`](ref:hub/src/bridge/runtimes/claude-lines.ts#skimClaude) because the bridge also runs in the browser.
 

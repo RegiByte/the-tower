@@ -1,5 +1,5 @@
 import { runtimeOf, type SessionHeader, type SessionLog } from '../shared/model.ts'
-import type { NormalEvent, Normalizer, RuntimeReader } from './events.ts'
+import type { NormalEvent, Normalizer, RuntimeReader, ToolFormat } from './events.ts'
 import { claude } from './runtimes/claude.ts'
 
 const READERS: Record<string, RuntimeReader> = { claude }
@@ -15,10 +15,12 @@ const readerOf = (header: SessionHeader): RuntimeReader => {
   const unread = () => {
     throw new Error(`no normalizer for runtime "${runtime}": the tower reads ${Object.keys(READERS).join(', ')} logs`)
   }
-  return { normalizer: () => unread }
+  return { normalizer: () => unread, tools: () => ({ line: unread, label: unread }) }
 }
 
 export const normalizerOf = (header: SessionHeader): Normalizer => readerOf(header).normalizer(header)
+
+export const toolFormatOf = (header: SessionHeader): ToolFormat => readerOf(header).tools(header)
 
 /**
  * A log's events, normalized up to the first line its runtime's reader can't follow. The facts fold breaks the

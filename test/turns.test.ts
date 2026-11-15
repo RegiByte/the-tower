@@ -133,6 +133,13 @@ test('a brief reads a log as far as its first unreadable line, so a session resu
   assert.equal(toolCallOf(broken, 'toolu_none'), undefined)
 })
 
+test('a tool call its runtime can\'t word in a line costs only the brief, never the session\'s facts', () => {
+  const source = fixture('resume-source')
+  const called = source.events.at(-1)![0] + 1
+  const log: SessionLog = { ...source, events: [...source.events, [called, 'h', { hook_event_name: 'tool.call', tool: 'AskUserQuestion', tool_use_id: 'toolu_1', questions: [{ text: 'Which?' }] }]] }
+  assert.equal(factsOf(log).broken, undefined)
+})
+
 test('a message to a subagent is its SendMessage call, not a message to a worker', () => {
   const steps = Object.values(turnsByConversation(fixture('subagent-resume'))).flat().flatMap((t) => t.steps)
   assert.equal(steps.some((s) => s.t === 'sent'), false)

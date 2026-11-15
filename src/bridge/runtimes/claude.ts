@@ -3,7 +3,7 @@
  * here into what it means. Every other reader of a log works on what this gives, so Claude's field names stay here.
  */
 import type { ClaudeHookInput, LogEvent, ModEvent, SessionHeader } from '../../shared/model.ts'
-import { towerFactOf, type Happening, type Normalizer, type RuntimeReader } from '../events.ts'
+import { towerFactOf, type Happening, type Normalizer, type RuntimeReader, type ToolFormat } from '../events.ts'
 import type { RateLimit, Tokens } from '../facts.ts'
 
 type Hook = ClaudeHookInput | ModEvent
@@ -114,7 +114,7 @@ const withAgent = (hook: Hook) => {
  * organization also with the mod's `session.compact`: both carry the trigger, a trigger other than `manual` read as an
  * automatic one. It ends with `SessionStart` and `source: compact`, under the conversation it compacted.
  */
-const happeningOf = (hook: Hook, cwd: string): Happening => {
+const happeningOf = (hook: Hook): Happening => {
   const agent = withAgent(hook)
   switch (hook.hook_event_name) {
     case 'SessionStart':
@@ -147,24 +147,16 @@ const happeningOf = (hook: Hook, cwd: string): Happening => {
       return { t: 'turn.ended', ...agent, reason: String(hook.reason), ...(hook.answer ? { answer: String(hook.answer) } : {}) }
     case 'Stop':
       return { t: 'turn.stopped', ...agent, wakes: wakes(hook) }
-    case 'tool.call': {
-      const tool = String(hook.tool)
-      const input = inputOf(hook)
-      return { t: 'tool.call', ...agent, id: String(hook.tool_use_id), tool, input, line: lineOf(tool, input, cwd), label: labelOf(tool, input) }
-    }
+    case 'tool.call':
+      return { t: 'tool.call', ...agent, id: String(hook.tool_use_id), tool: String(hook.tool), input: inputOf(hook) }
     case 'PreToolUse':
       return { t: 'tool.started', ...agent }
     case 'tool.check':
       return { t: 'tool.checked', id: String(hook.tool_use_id), result: hook.result as Record<string, unknown> }
     case 'tower.tool.result':
       return { t: 'tool.result', ...agent, id: String(hook.tool_use_id), deny: hook.deny, isError: hook.isError }
-    case 'PostToolUse': {
-      const input = hook.tool_input as Record<string, unknown>
-      return {
-        t: 'tool.done', ...agent, id: String(hook.tool_use_id), input, ms: hook.duration_ms as number | undefined,
-        ...(hook.tool_name === 'AskUserQuestion' && { line: lineOf('AskUserQuestion', input, cwd) }),
-      }
-    }
+    case 'PostToolUse':
+      return { t: 'tool.done', ...agent, id: String(hook.tool_use_id), input: hook.tool_input as Record<string, unknown>, ms: hook.duration_ms as number | undefined }
     case 'PostToolUseFailure':
       return { t: 'tool.failed', ...agent, id: String(hook.tool_use_id), ms: hook.duration_ms as number | undefined, error: String(hook.error) }
     case 'tower.tool.abandoned':
@@ -202,7 +194,10 @@ const happeningOf = (hook: Hook, cwd: string): Happening => {
   }
 }
 
-export const normalizeClaude = ({ cwd }: SessionHeader): Normalizer => (event: LogEvent) =>
-  event[1] === 'h' ? [[event[0], 'e', happeningOf(event[2], cwd)]] : [event]
+export const normalizeClaude = (_header: SessionHeader): Normalizer => (event: LogEvent) =>
+  event[1] === 'h' ? [[event[0], 'e', happeningOf(event[2])]] : [event]
 
-export const claude: RuntimeReader = { normalizer: normalizeClaude }
+/** Claude's tool calls in words: a path in a line relative to the session's folder. */
+export const claudeTools = ({ cwd }: SessionHeader): ToolFormat => ({ line: (tool, input) => lineOf(tool, input, cwd), label: labelOf })
+
+export const claude: RuntimeReader = { normalizer: normalizeClaude, tools: claudeTools }
