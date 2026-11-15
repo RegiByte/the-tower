@@ -509,7 +509,8 @@ To redraw a view from html without losing what the viewer holds in it, use `morp
 (provisional): it makes `el`'s children what `html` describes and keeps every node that still matches, so text typed,
 a caret, a selection, focus and scroll survive. Nodes are matched by id, then by tag and position: give an id to a
 node that must stay itself while its siblings come, go or move. Mark a node another piece of code fills (a region you
-mount, a frame, a terminal, an element with its own state) `data-owned` to have the morph leave it whole, or
+mount, a frame, a terminal, an element with its own state) `data-owned` to have the morph leave it whole, its
+attributes and the mark itself included, or
 `data-owned="children"` to have it update the node's attributes and leave its children; ids inside an owned node take
 no part in matching. The mark is plain html, so a pure function drawing the view can emit it.
 
