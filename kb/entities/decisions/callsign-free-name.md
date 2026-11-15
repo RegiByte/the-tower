@@ -16,7 +16,7 @@
     "hub/src/bridge/chains.ts#runsAs",
     "hub/src/bridge/chains.ts#namer",
     "hub/src/bridge/chains.ts#resumeName",
-    "hub/src/shared/launch.ts#spawnRequest",
+    "hub/src/shared/launches.ts#spawnRequest",
     "hub/src/tower/dispatch.ts#newWorker",
     "hub/src/tower/dispatch.ts#workerIds",
     "hub/src/tower/dispatch.ts#freeName"

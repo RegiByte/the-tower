@@ -6,7 +6,7 @@
   "in": "tower",
   "reviewed": "2026-11-15",
   "involves": ["operator", "web-tower", "tower-server", "host-daemon", "claude-code", "system-root", "live-system", "log-reductions"],
-  "refs": ["hub/src/shared/launch.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/http.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/tower/dispatch.ts#newLaunch", "hub/src/tower/dispatch.ts#contribute"]
+  "refs": ["hub/src/shared/launches.ts#spawnRequest", "hub/src/host/main.ts#spawnSession", "hub/src/host/session.ts#sessionEnv", "hub/src/system.ts#watchSystem", "hub/src/bridge/facts.ts#factsAfter", "hub/src/tower/http.ts#streamScreen", "hub/src/shared/model.ts#sessionDirs", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/tower/dispatch.ts#newLaunch", "hub/src/tower/dispatch.ts#contribute"]
 }
 ---
 ```mermaid
@@ -52,7 +52,7 @@ sequenceDiagram
 
 - **Triggers.** The `spawn` verb, from a renderer's spawn dialog or `tower spawn`. The tower draws the session id
   ([`newWorker`](ref:hub/src/tower/dispatch.ts#newWorker), [[callsign-free-name]]) and builds the request with
-  [`spawnRequest`](ref:hub/src/shared/launch.ts#spawnRequest), which names Claude by its [[callsign]] and composes its
+  [`spawnRequest`](ref:hub/src/shared/launches.ts#spawnRequest), which names Claude by its [[callsign]] and composes its
   `--settings` ([[repos-file-access-only]], [[fullscreen-tui]]), then the whole command line and env in the running
   host's shape ([`start`](ref:hub/src/tower/dispatch.ts#start)); the host adds only its own wiring
   ([`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv)). Before it, [`newLaunch`](ref:hub/src/tower/dispatch.ts#newLaunch)
