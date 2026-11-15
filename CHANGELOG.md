@@ -12,6 +12,27 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.3.0
+
+opencode v2 joins Claude Code as a second runtime (#596, #597, #598). Claude Code stays the default and required;
+opencode is optional and appears only once `runtimes.opencode` is in the config. Nothing to restart beyond the tower
+(`tower update` does it). API 2.3. **config:** `runtimes.opencode` is new (see `docs/config.md`).
+
+- **Start a worker on opencode:** the new-worker form shows a runtime picker once more than one runtime is
+  configured, with opencode's model (its reported list as suggestions, any id accepted) and effort; `tower hire
+  runtime opencode model … effort …` does the same. With Claude alone the form is unchanged.
+- **opencode workers are watched like Claude's:** status, the Brief, cost and context, subagents, permission asks,
+  send home and resume. Each starts with `--standalone` and its own state, so it never attaches to a running opencode
+  server. What opencode doesn't expose (rate limits, who sent a prompt, slash commands) is declared absent on
+  `board.runtimes`, not guessed. Its callsign shows above its composer, as Claude's does.
+- **Tested range:** opencode 2.2.5 up to, not including, 2.3. `tower doctor` checks an installed opencode against it
+  when it is configured. A future opencode release may break its support before the tower catches up.
+- **A worker whose command exits before its runtime starts** says why on its card (a missing binary, a wrong argv),
+  pointing at `tower doctor`, instead of only "exited".
+- **A worker's callsign is a fact logged at every start,** for every runtime, and workers are named from it.
+- **For renderers:** `board.runtimes[id]` gains `statuses`, `models` and `absent`; cards gain `startFailure`; the
+  spawn takes `runtime`.
+
 ## v2.2.0
 
 The bridge reads Claude's session logs through a runtime normalizer, the first step toward a second runtime (#593), and
