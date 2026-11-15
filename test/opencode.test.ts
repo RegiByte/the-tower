@@ -181,7 +181,7 @@ test('opencode: the board says what its workers can show and run, the models as 
   const config = { runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } }, env: {}, projects: { lab: { name: 'lab', hub: '/hub/lab', repos: [] } } } as unknown as Config
   const { runtimes } = board(viewOf(config, { sessions: logs.map((log) => ({ header: log.header, facts: factsOf(log) })), host: { ids: new Set(), protocol: HOST_PROTOCOL } }))
   assert.deepEqual(runtimes.opencode.statuses, ['booting', 'idle', 'working', 'needs_input', 'done', 'failed', 'exited', 'lost'])
-  assert.deepEqual(runtimes.opencode.absent, ['rateLimits', 'watching', 'peers', 'slashCommands'])
+  assert.deepEqual(runtimes.opencode.absent, ['rateLimits', 'watching', 'peers', 'slashCommands', 'modelList'])
   assert.deepEqual(runtimes.opencode.models, [
     { id: 'openrouter/google/gemini-4-hydrogen', efforts: ['low', 'medium', 'high', 'xhigh'] },
     { id: 'openrouter/google/gemini-4-carbon', efforts: ['low', 'medium', 'high'] },

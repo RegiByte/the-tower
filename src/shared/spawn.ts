@@ -1,6 +1,6 @@
 import type { Board, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
-import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, formFields, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
+import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, effortOptions, formFields, modelNote, providerHtml, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
 import { commandOf } from './keymap.ts'
 import { tagOf } from './tags.ts'
 import { loop, type Handlers, type Loop, type StateEffect } from './loop.ts'
@@ -128,14 +128,28 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     const s = machine.state()
     return floorOf(s.t === 'closed' ? '' : s.project)!
   }
+  /** The runtime's part of the form, drawn again when another runtime is picked; its effort suggestions and model note follow the model. */
+  const syncProvider = (f: Floor, v: SpawnForm) => {
+    const runtime = io.board().runtimes[v.runtime]
+    const part = dialog.querySelector<HTMLElement>('[data-provider]')!
+    if (part.dataset.provider !== v.runtime) {
+      part.outerHTML = providerHtml(f, v.runtime, runtime)
+      return spawnForm(f, new FormData(form()))
+    }
+    const efforts = dialog.querySelector('#spawn-efforts')
+    if (efforts) efforts.innerHTML = effortOptions(runtime, v.model)
+    const note = dialog.querySelector('[data-model-note]')
+    if (note) note.textContent = modelNote(runtime, v.model)
+    return v
+  }
   const sync = () => {
     const f = shownFloor()
-    const v = spawnForm(f, new FormData(form()))
+    const v = syncProvider(f, spawnForm(f, new FormData(form())))
     const refused = callsignRefusal(io.board(), v)
     field('branch').placeholder = branchPlaceholder(f, cutNameOf(v))
     field('callsign').setCustomValidity(refused)
     dialog.querySelector('[data-callsign-why]')!.textContent = refused
-    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v, io.board().runtimes.claude, formFields(io.board(), f))
+    dialog.querySelector('[data-summary]')!.innerHTML = spawnSummaryHtml(f, v, io.board().runtimes[v.runtime], formFields(io.board(), f))
     return v
   }
   const keep = async ({ project, on, text }: Extract<SpawnEffect<D>, { type: 'keep' }>) => {
@@ -177,7 +191,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     execute: {
       show: ({ project, text, on }) => {
         const f = floorOf(project)!
-        dialog.innerHTML = spawnFormHtml(f, { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts?.titleOf(text), runtime: io.board().runtimes.claude, fields: formFields(io.board(), f) })
+        dialog.innerHTML = spawnFormHtml(f, io.board(), { sign: io.sign(f), draft: on === undefined ? undefined : io.drafts?.titleOf(text), fields: formFields(io.board(), f) })
         prompt().value = text
         sync()
         dialog.showModal()
