@@ -25,8 +25,11 @@ release that renames the setting or its value drops sessions back to arrow keys.
 A session's terminal sends the wheel itself ([`reportWheel`](ref:hub/src/shared/terminal.ts#reportWheel), through
 the shared terminal view every renderer mounts, [`term-view.ts`](ref:hub/src/shared/term-view.ts)): one SGR report
 per row of travel, the remainder carried, since xterm left alone sends one report per wheel event however far it
-went, so a flick would reach Claude as a fraction of its travel. Claude moves its transcript a scroll speed's rows per
-report (`/scroll-speed`; 1 follows the finger). A shell's terminal keeps xterm's wheel: xterm does not say which
+went, so a flick would reach Claude as a fraction of its travel. An event after 100 ms of quiet starts a stroke: it
+drops the remainder and sends at least one report, since a slow mouse notch on macOS is 0.1 line (about 4 px) and took
+4-5 notches to move the TUI, and the page can't tell a mouse from a trackpad (both pixel deltas). Inside a stroke,
+events come a display frame apart (15-20 ms in the logs' wheel input), so a trackpad's feel is kept. Claude moves its
+transcript a scroll speed's rows per report (`/scroll-speed`; 1 follows the finger). A shell's terminal keeps xterm's wheel: xterm does not say which
 mouse encoding a shell's program asked for.
 
 **Alternatives considered.**
