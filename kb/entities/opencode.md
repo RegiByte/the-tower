@@ -63,7 +63,12 @@ events don't say who sent a prompt: each one arrives as text in the session's in
 the form's runtime choice, drawn once the config runs more than one, or `tower hire runtime opencode`. `tower doctor`
 checks each binary `runtimes.opencode.argv` starts, its version against the tested range, only when the config runs it;
 it checks no provider, since any opencode command but `--version` may start or attach to a server. A command that
-isn't installed exits before opencode prints anything, and the card says so (`startFailure`).
+isn't installed exits before opencode prints anything, and the card says so (`startFailure`). The spawn still
+answers `spawned`: the host runs the command, and only its exit tells, so dispatch checks no PATH of its own (its PATH
+can differ from the host's). `tower hire` reads the board once the hire has settled (logged and live, or exited), and
+fails with the card's `startFailure` when that board holds it: a command that isn't installed exits within
+milliseconds, before the hire settles, but one that takes longer to fail (a wrapper script) is hired as usual, and
+only its card says so.
 
 The recorded fixtures `test/fixtures/opencode-*.jsonl`, with
 [their expectations](ref:hub/test/opencode.test.ts), are the reference for what the bridge expects of it.
