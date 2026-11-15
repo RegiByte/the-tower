@@ -4,14 +4,15 @@
   "name": "Live system",
   "summary": "watchSystem: every session log folded and tailed, every stream an extension folds kept current, every collection's items and review threads (the policies extension's runs and approvals among the streams), the host's live set, the terms daemon's shells, the jobs log and the jobs daemon's jobs, leftover processes, the peer names of running Claudes and every project dir's git, read as it changes, with an onChange for renderers.",
   "in": "bridge",
-  "reviewed": "2026-11-14",
-  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo", "hub/src/bridge/worktrees.ts#readsSince", "hub/src/worktrees.ts#rereadRefs", "hub/src/worktrees.ts#rereadCheckouts", "hub/src/git.ts#ahead", "hub/src/bridge/worktrees.ts#projectRefs", "hub/src/bridge/worktrees.ts#projectReading"],
+  "reviewed": "2026-11-15",
+  "refs": ["hub/src/system.ts#watchSystem", "hub/src/collections.ts#scanCollections", "hub/src/tail.ts#tailLog", "hub/src/tail.ts#factEvents", "hub/src/checkpoints.ts#foldLog", "hub/src/machine.ts#hostLive", "hub/src/machine.ts#scanProcesses", "hub/src/machine.ts#resourcesIn", "hub/src/machine.ts#peersIn", "hub/src/logged.ts#serially", "hub/src/tower/stores.ts#storesOf", "hub/src/system.ts#foldOn", "hub/src/bridge/streams.ts#streamFacts", "hub/src/worktrees.ts#readRepo", "hub/src/logged.ts", "hub/src/repo-reader.ts", "hub/src/repo-watch.ts#watchRepos", "hub/src/subscribe.ts#subscribe", "hub/src/logged.ts#exitUnwatched", "hub/src/bridge/repo-changes.ts#staleOf", "hub/src/bridge/repo-changes.ts#settleHandlers", "hub/src/worktrees.ts#rereadRepo", "hub/src/bridge/worktrees.ts#readsSince", "hub/src/worktrees.ts#rereadRefs", "hub/src/worktrees.ts#rereadCheckouts", "hub/src/git.ts#ahead", "hub/src/bridge/worktrees.ts#projectRefs", "hub/src/bridge/worktrees.ts#projectReading", "hub/src/private-index.ts#privateIndex", "hub/src/private-index.ts#copyIndex", "hub/src/private-index.ts#sweepIndexes"],
   "links": [
     { "to": "system-root", "verb": "reads", "carries": "every sessions/*.jsonl, folded from its checkpoint, then tailed while the session runs; collections/ rescanned on any change" },
     { "to": "system-root", "verb": "reads", "carries": "streams/*/<folder>/YYYY-MM.jsonl, each stream an extension folds stepped on once a write settles" },
     { "to": "system-root", "verb": "reads", "carries": "streams/projects/<project>/<stream>/YYYY-MM.jsonl (the policies extension's in runs/ and approvals/) and collections/<project>/<collection>/*, folded and parsed again once a write settles" },
     { "to": "system-root", "verb": "reads", "carries": "an extension's streams, streams/{system|projects/<p>}/<cap>.<name>/YYYY-MM.jsonl, each folded by its reduce once a write settles" },
     { "to": "system-root", "verb": "writes", "carries": "cache/facts/<id>.v8, each log's checkpoint" },
+    { "to": "system-root", "verb": "writes", "carries": "cache/index/, a refreshed copy of each checkout's index its reads go through" },
     { "to": "host-daemon", "verb": "calls", "carries": "live (ids of running sessions and the host protocol it speaks) every 1 s" },
     { "to": "terms-daemon", "verb": "calls", "carries": "list (shells with foreground process and title) every 1 s" },
     { "to": "jobs-daemon", "verb": "calls", "carries": "list (the jobs it holds, running or kept) every 1 s, and after every job request" },
@@ -70,6 +71,18 @@ tower runs no `ps`, `lsof` or git, and watches no repo.
 ([`repo-reader.ts`](ref:hub/src/repo-reader.ts)) so its spawns never hold the tower's event loop: worktrees, kept
 branches and origin's branches, without fetching, with `--no-optional-locks` (every git the tower runs goes through
 `src/git.ts`) so a read neither takes the index lock a worker's git needs nor writes into what it watches.
+
+- **Each checkout is read through a private copy of its index**
+  ([`privateIndex`](ref:hub/src/private-index.ts#privateIndex)). A cut, a checkout, a rebase or a pull writes files and
+  the index in the same second, so git can't trust their stat and every `status` and `diff` hashes them again; a read
+  that never writes the index would pay that forever. The copy, in `cache/index/`, is named by the real index's inode,
+  mtime and size (stated before copying), dated no later than it ([`copyIndex`](ref:hub/src/private-index.ts#copyIndex):
+  a later date would read a same-second, same-size edit as clean), refreshed once with `update-index --refresh`
+  (`core.splitIndex=false`), and read with `GIT_INDEX_FILE` by `status`, `diff` and `ls-files`: a refresh changes only
+  the stat of entries whose content matches, so every answer is the real index's. A new copy replaces the checkout's
+  older ones, and copies of checkouts a repo no longer lists are swept
+  ([`sweepIndexes`](ref:hub/src/private-index.ts#sweepIndexes)). The verbs' reads go through the same copies
+  ([[tower-cuts-worktrees]]); the Changes and what discard throws away read the real index.
 
 - **A repo that hangs delays only its own reads.** A hook or an fsmonitor can hold a git call to its timeout, a minute
   ([`src/git.ts`](ref:hub/src/git.ts)). Each dir has one read at a time and each read is answered as it settles, so

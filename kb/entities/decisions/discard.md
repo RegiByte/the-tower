@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-15",
   "refs": [
     "hub/src/worktrees.ts#discardable",
     "hub/src/worktrees.ts#discard",
@@ -36,7 +36,8 @@ thread ([[review-threads]]).
   extension's `answers` beside its stores, [`answeredOn`](ref:hub/src/bridge/stores.ts#answeredOn)). Its call carries `held`, each repo's HEAD and count
   of uncommitted files as shown; the renderer adds `author`, as for a note.
 - [`discardable`](ref:hub/src/worktrees.ts#discardable) fetches, finds the worktree `at-risk`, refuses (`refused`)
-  when any repo's head or uncommitted count differs from `held`, and gives each repo's tip: its HEAD, or a
+  when any repo's head or uncommitted count differs from `held` (counted on each checkout's own index, not the copy
+  the reads go through: [[live-system]]), and gives each repo's tip: its HEAD, or a
   [`snapshot`](ref:hub/src/worktrees.ts#snapshot) with its uncommitted files committed on top (on no branch), with
   every unpushed commit named.
 - [`discardWorktree`](ref:hub/src/tower/dispatch.ts#discardWorktree) raises the core's hook `tower/discard.record`

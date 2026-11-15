@@ -11,8 +11,13 @@ export const MAX_UNTRACKED = 300
 /** Every config of the user's that changes what `git diff` prints, set back to what the parser reads. */
 export const DIFF = ['-c', 'core.quotepath=false', '-c', 'diff.suppressBlankEmpty=false', '-c', 'diff.submodule=short', '-c', 'diff.relative=false', 'diff', '-U3', '-M', '--no-color', '--no-ext-diff', '--no-textconv', '--src-prefix=a/', '--dst-prefix=b/']
 
+/** Git run in a dir, its output returned: `git`, or `gitWith` an index of its own. */
+export type Git = (dir: string, args: string[]) => Promise<string>
+
+const untrackedBy = async (gitIn: Git, dir: string): Promise<string[]> => (await gitIn(dir, ['ls-files', '-z', '--others', '--exclude-standard'])).split('\0').filter(Boolean)
+
 /** The files git doesn't track and doesn't ignore, by their paths from `dir`. */
-export const untrackedIn = async (dir: string): Promise<string[]> => (await git(dir, ['ls-files', '-z', '--others', '--exclude-standard'])).split('\0').filter(Boolean)
+export const untrackedIn = (dir: string): Promise<string[]> => untrackedBy(git, dir)
 
 /**
  * The commit a checkout's work is counted from: where `head` left `against`; `undefined` when the two share no history.
@@ -25,9 +30,10 @@ export const sinceOf = async (dir: string, against: string, head: string): Promi
 
 /**
  * How many files the working tree changed since commit `since`, committed and not: the files of its diff, renames as
- * one, and untracked files up to `MAX_UNTRACKED`. The Changes' files under scope `all`, counted without their diffs.
+ * one, and untracked files up to `MAX_UNTRACKED`, as `gitIn` reads them. The Changes' files under scope `all`, counted
+ * without their diffs.
  */
-export const changedSince = async (dir: string, since: string): Promise<number> => {
-  const [names, untracked] = await Promise.all([git(dir, [...DIFF, '--name-only', '-z', since]), untrackedIn(dir)])
+export const changedSince = async (gitIn: Git, dir: string, since: string): Promise<number> => {
+  const [names, untracked] = await Promise.all([gitIn(dir, [...DIFF, '--name-only', '-z', since]), untrackedBy(gitIn, dir)])
   return names.split('\0').filter(Boolean).length + Math.min(untracked.length, MAX_UNTRACKED)
 }

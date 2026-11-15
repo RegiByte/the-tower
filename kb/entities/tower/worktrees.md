@@ -4,7 +4,7 @@
   "name": "Worktrees",
   "summary": "Git for the tower: cutting and forking a worktree per name in every repo of a project, reading each repo's worktrees and branches, tidying what has landed, and reading what a worker changed.",
   "in": "tower-core",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-15",
   "refs": ["hub/src/worktrees.ts#cut", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#rereadRepo", "hub/src/worktrees.ts#rereadRefs", "hub/src/worktrees.ts#rereadCheckouts", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#tidyable", "hub/src/worktrees.ts#linksIn", "hub/src/worktrees.ts#linkedSources", "hub/src/worktrees.ts#againstFor", "hub/src/worktrees.ts#rollback", "hub/src/worktrees.ts#recutBranch", "hub/src/worktrees.ts#recutWorktree", "hub/src/worktrees.ts#restoreWorktree", "hub/src/worktrees.ts#pruneWorktree", "hub/src/worktrees.ts#removeWorktree", "hub/src/worktrees.ts#deleteBranch", "hub/src/repo-reader.ts", "hub/src/worktrees.ts#landingOf", "hub/src/worktrees.ts#discardable", "hub/src/worktrees.ts#discard", "hub/src/changes.ts#changesIn", "hub/src/changes.ts#repoChanges", "hub/src/changed-files.ts#changedSince"]
 }
 ---
@@ -34,7 +34,9 @@ as old as the last fetch.
   before its checkouts are read. Both remember what never changes for a commit: whether it is [[absorbed]] or [[carried]], what
   is unpushed, and where a head left its base. Each checkout's read carries `changed`, the files its Changes count
   ([`changedSince`](ref:hub/src/changed-files.ts#changedSince), [[changes-view]]), counted again only when its status is
-  read again or where it left its base moved.
+  read again or where it left its base moved. Each checkout's status and count are read through a refreshed private
+  copy of its index ([`privateIndex`](ref:hub/src/private-index.ts#privateIndex), [[live-system]]); a discard counts
+  what it throws away on the real one.
   [`landingOf`](ref:hub/src/worktrees.ts#landingOf) reads what landing changed on a carried branch.
 - **A failed read costs only its checkout.** A checkout whose own read fails (a corrupt index, a commit gone, a `.git`
   that names nothing, a hook past the timeout) reads as [`UnreadTree`](ref:hub/src/bridge/worktrees.ts#UnreadTree) with
