@@ -3,7 +3,8 @@
 **An HQ for running many Claude Code sessions at once, on your own machine.** Every session is the full Claude Code
 terminal in a real PTY, kept alive by a small host process and recorded to a log. Everything you see is derived from
 those logs, so the presentation is swappable: three views ship with it, and you can write your own without losing a
-single capability.
+single capability. Claude Code is the default runtime and the one the tower is built around; [opencode](https://opencode.ai)
+can run beside it as an optional second runtime, for workers on any model opencode supports.
 
 ![The tower page: three projects as floors in the sidebar, one worker asking permission to run a migration in the main pane](docs/tower-page.png)
 
@@ -168,6 +169,22 @@ Requirements:
 - `git` 2.38 or later, `curl` and `lsof` (Xcode's command line tools on a Mac; `apt` under WSL)
 - Optional: VS Code's `code` on the PATH, or another editor set in the config, to open projects and files from the
   tower
+- Optional: opencode, as a second runtime beside Claude Code (see below)
+
+Claude Code is required either way: it is the default runtime, and every worker starts on it unless told otherwise.
+
+### opencode, an optional second runtime
+
+opencode lets a worker run on any model opencode supports, picked by hand: the new-worker form shows a runtime choice
+once more than one is configured, and `tower hire runtime opencode model <provider/model>` does the same from a
+worker. It needs:
+
+- opencode 2.2.5 (the v2 line; the tested range is `OPENCODE_TESTED` in `src/shared/opencode.ts`)
+- a provider connected in opencode itself (`opencode auth login`), or one defined in your `opencode.json`
+- `"opencode": {"argv": ["opencode"]}` under `runtimes` in the config ([docs/config.md](docs/config.md#runtimes))
+
+Some of the tower's features are Claude Code's own and opencode workers go without them: messages between workers,
+rate limits, and slash commands other than `/compact`. The board says which (`board.runtimes.opencode.absent`).
 
 ```sh
 git clone --single-branch https://github.com/RegiByte/the-tower.git tower && cd tower
@@ -195,7 +212,9 @@ Stopping the host ends its sessions (they can be resumed); the tower itself rest
 
 The tower is a personal project in daily use. It drives Claude Code's terminal, hooks and plugin system, and a
 future Claude Code release may break it before the tower catches up; `tower doctor` says when you are outside the
-tested range.
+tested range. The same holds for opencode: the tower reads its v2 plugin API and bus events, which change between
+releases, so a future opencode release may break its support before the tower catches up; `tower doctor` says when
+your opencode is outside the tested range.
 
 ## Read more
 
