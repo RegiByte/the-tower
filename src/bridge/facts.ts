@@ -333,6 +333,8 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
     }
     case 'turn.started':
       return mainLoop ? { ...facts, tool: undefined, says: [], turnStartedAt: t, stoppedAt: undefined } : facts
+    case 'compaction.started':
+      return mainLoop && happening.trigger === 'manual' ? { ...facts, turnStartedAt: undefined } : facts
     case 'tool.call':
       return mainLoop ? { ...facts, tool: label(happening.tool, happening.input) } : facts
     case 'claude.sent':
@@ -366,7 +368,7 @@ const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, 
         ? { ...facts, says: [] }
         : { ...facts, says: [], turnSpans: [...facts.turnSpans, [startedAt + facts.turnStartedAt * 1000, t - facts.turnStartedAt]], turnStartedAt: undefined }
     case 'turn.stopped':
-      return { ...facts, turns: facts.turns + 1, stoppedAt: t }
+      return facts.state.status === 'idle' ? facts : { ...facts, turns: facts.turns + 1, stoppedAt: t }
     case 'runtime.release':
       return { ...facts, runtimeRelease: happening.version }
     case 'runtime.models':

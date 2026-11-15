@@ -11,7 +11,10 @@ import type { LogEvent, ModEvent, SessionHeader } from '../../shared/model.ts'
 import { RESUMES, towerFactOf, type Happening, type Normalizer, type RuntimeModel, type RuntimeReader, type ToolFormat } from '../events.ts'
 import type { Tokens } from '../facts.ts'
 
-type Line = ModEvent & { data?: Record<string, unknown>; parentID?: string; model?: ModelRef }
+type Line = ModEvent & { data?: Record<string, unknown>; parentID?: string; model?: ModelRef; spawned?: Spawned; total?: number }
+
+/** A subagent's session as the plugin reports it on the first progress of the call that runs it. */
+type Spawned = { agent: string; title: string; model: ModelRef }
 
 type ModelRef = { id: string; providerID: string; variant?: string }
 
@@ -28,10 +31,20 @@ const failedExit = (data: Record<string, unknown>) => {
   return exit !== undefined && exit !== 0
 }
 
+/** The subagent a call started: the call's session is its parent, when that is a subagent's too. */
+const spawnOf = (line: Line, { agent, title, model }: Spawned): Happening => {
+  const data = line.data as { sessionID: string; id: string; metadata: { sessionID: string } }
+  return {
+    t: 'agent.spawned', call: data.id, id: data.metadata.sessionID, type: agent, description: title, background: false,
+    model: modelOf(model).model, ...(line.parentID !== undefined && { parent: data.sessionID }),
+  }
+}
+
 /** What one line means: none, one or several events. */
 const happeningsOf = (line: Line): Happening[] => {
   const data = line.data ?? {}
-  const agent = line.parentID === undefined ? {} : { agent: String(data.sessionID) }
+  const session = data.sessionID ?? (data.form as { sessionID?: string } | undefined)?.sessionID ?? line.sessionID
+  const agent = line.parentID === undefined ? {} : { agent: String(session) }
   const main = line.parentID === undefined
   switch (line.hook_event_name) {
     case 'plugin.started': {
@@ -46,6 +59,7 @@ const happeningsOf = (line: Line): Happening[] => {
     case 'session.created':
       return main ? [{ t: 'conversation.entered', id: String(data.sessionID), resumed: false }] : [{ t: 'heard' }]
     case 'session.inbox.enqueued': {
+      if (!main) return [{ t: 'heard' }]
       const item = data.item as { type: string; payload: { text?: string } }
       if (item.type === 'user') return [{ t: 'prompt', origin: 'composer', text: String(item.payload.text), id: String(data.inboxID) }]
       return [{ t: 'command', origin: 'composer' }]
@@ -68,10 +82,10 @@ const happeningsOf = (line: Line): Happening[] => {
       return [{ t: 'turn.retrying', ...agent, at: Number(data.at) }]
     case 'tool.execute.before':
       return [{ t: 'tool.call', ...agent, id: String(line.id), tool: String(line.tool), input: line.input as Record<string, unknown> }]
-    case 'session.tool.called':
-      return [{ t: 'tool.started', ...agent }]
     case 'session.tool.success':
-      return [{ t: 'tool.done', ...agent, id: String(data.id) }, { t: 'tool.result', ...agent, id: String(data.id), isError: failedExit(data) }]
+      return [{ t: 'tool.result', ...agent, id: String(data.id), isError: failedExit(data) }]
+    case 'session.tool.progress':
+      return line.spawned ? [spawnOf(line, line.spawned)] : [{ t: 'heard' }]
     case 'session.tool.failed': {
       const error = data.error as { type: string; message: string }
       if (error.type === 'aborted') return [{ t: 'tool.abandoned', ...agent, id: String(data.id) }]
@@ -93,8 +107,10 @@ const happeningsOf = (line: Line): Happening[] => {
       return [{ t: 'compaction.ended', ...agent }]
     case 'session.compaction.failed':
       return [{ t: 'compaction.failed', ...agent }]
-    case 'session.usage.updated':
-      return main ? [{ t: 'measured', cost: { usd: Number(data.cost) }, rateLimits: [] }] : [{ t: 'heard' }]
+    case 'session.usage.updated': {
+      const usd = line.total ?? (main ? Number(data.cost) : undefined)
+      return usd === undefined ? [{ t: 'heard' }] : [{ t: 'measured', cost: { usd }, rateLimits: [] }]
+    }
     case 'session.renamed':
       return [{ t: 'conversation.titled', ...agent, title: String(data.title) }]
     default:
