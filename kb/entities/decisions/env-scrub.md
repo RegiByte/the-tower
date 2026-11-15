@@ -31,9 +31,13 @@ caller's `env` is set over it ([`startJob`](ref:hub/src/jobs/main.ts#startJob));
 
 An opencode session goes through the same [`sessionEnv`](ref:hub/src/host/session.ts#sessionEnv): the env its
 launch gives ([`envOf`](ref:hub/src/shared/launch-opencode.ts#envOf): the contributors' env, the composed config as
-`OPENCODE_CONFIG_CONTENT` and its own state dir as `XDG_STATE_HOME`, [[opencode]]) is merged before the scrub, and the
-host sets `TOWER_SESSION_ID` and `TOWER_HOOKS_SOCKET` after it, which the tower's opencode plugin reads to post its
-lines. The scrub drops only Claude's markers and the tower's own: no opencode variable is dropped.
+`OPENCODE_CONFIG_CONTENT`, the worker's callsign as `TOWER_CALLSIGN` and its own state dir as `XDG_STATE_HOME`,
+[[opencode]]) is merged before the scrub, and the host sets `TOWER_SESSION_ID` and `TOWER_HOOKS_SOCKET` after it, which
+the tower's opencode plugin reads to post its lines. The scrub drops only Claude's markers and the tower's own: no
+opencode variable is dropped. `TOWER_CALLSIGN` is not among the scrubbed names: the scrub runs over the given env too,
+so naming it would drop the launch's own value, and the host would have to set it after the scrub as it does the
+session id. A process started from an opencode worker's shell inherits it; only the plugin's TUI part reads it, and
+every opencode launch sets its own.
 
 **The launching terminal.** A daemon started from a terminal carries that terminal's identity (`TERM_PROGRAM`,
 `VSCODE_*`, `CURSOR_*`, `ITERM_*`, `TMUX`, …), and programs tune themselves to it: started from an editor, every
