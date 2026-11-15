@@ -35,6 +35,8 @@ jobs:
         run: npm run test:tower3d-boot
       - name: The tower page boots in headless Chrome
         run: npm run test:page-boot
+      - name: The morph keeps what the DOM holds, in headless Chrome
+        run: npm run test:morph
       - name: Tests and builds added and rewrote no file
         run: test -z "$(git status --porcelain)" || { git status; git diff; exit 1; }
       - name: A pull request's base is the one its merge commit was made on
