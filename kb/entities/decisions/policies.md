@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-13",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-15",
   "refs": [
     "hub/src/shared/slots.ts#cronFields",
     "hub/src/shared/slots.ts#ruleWords",
