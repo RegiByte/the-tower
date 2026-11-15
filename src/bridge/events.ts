@@ -31,13 +31,13 @@ export type Neutral =
   | { t: 'turn.ended'; agent?: string; reason: string; answer?: string }
   /** The main loop stopped; `wakes`, something it started can start its next turn without the user. */
   | { t: 'turn.stopped'; agent?: string; wakes: boolean }
-  /** `line`, the call in one line for a brief; `label`, the tool and its telling argument for a card. */
-  | { t: 'tool.call'; agent?: string; id: string; tool: string; input: Record<string, unknown>; line: string; label: string }
+  /** How the call reads in words is the runtime's `ToolFormat`, derived where it is drawn. */
+  | { t: 'tool.call'; agent?: string; id: string; tool: string; input: Record<string, unknown> }
   | { t: 'tool.started'; agent?: string }
   | { t: 'tool.checked'; id: string; result: Record<string, unknown> }
   | { t: 'tool.result'; agent?: string; id: string; deny?: unknown; isError?: unknown }
-  /** `line`: the call in one line again, when only its end can say it (a question dialog's answers). */
-  | { t: 'tool.done'; agent?: string; id: string; input: Record<string, unknown>; ms?: number; line?: string }
+  /** `input`: the call's input as the tool ran it, which can say more than its call did (a question dialog's answers). */
+  | { t: 'tool.done'; agent?: string; id: string; input: Record<string, unknown>; ms?: number }
   | { t: 'tool.failed'; agent?: string; id: string; ms?: number; error: string }
   | { t: 'tool.abandoned'; agent?: string; id: string }
   | { t: 'permission.requested'; agent?: string }
@@ -69,5 +69,15 @@ export type NormalEvent = Exclude<LogEvent, [number, 'h', unknown]> | [t: number
 /** A runtime's reading of its sessions' logs: one line in, what it means out, in log order. */
 export type Normalizer = (event: LogEvent) => NormalEvent[]
 
-/** How the bridge reads one runtime's logs. */
-export type RuntimeReader = { normalizer: (header: SessionHeader) => Normalizer }
+/**
+ * How a runtime says one of its tool calls in words: `line`, the call in one line for a brief; `label`, the tool and
+ * its telling argument for a card. Presentation, not what happened: the normalizer leaves it out, so a call it can't
+ * word costs only what draws it.
+ */
+export type ToolFormat = {
+  line: (tool: string, input: Record<string, unknown>) => string
+  label: (tool: string, input: Record<string, unknown>) => string
+}
+
+/** How the bridge reads one runtime's logs, and words its tool calls. */
+export type RuntimeReader = { normalizer: (header: SessionHeader) => Normalizer; tools: (header: SessionHeader) => ToolFormat }

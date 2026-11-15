@@ -1,6 +1,6 @@
 import type { LogEvent, SessionHeader } from '../shared/model.ts'
-import { isTowerFact, type Happening, type NormalEvent } from './events.ts'
-import { normalizerOf } from './normalize.ts'
+import { isTowerFact, type Happening, type NormalEvent, type ToolFormat } from './events.ts'
+import { normalizerOf, toolFormatOf } from './normalize.ts'
 import { conversationsAfter, USER_ORIGINS, type Conversation } from './conversation.ts'
 import { heldAfter } from './composer.ts'
 import { isTyped } from './input.ts'
@@ -293,7 +293,10 @@ const runsSpawned = (runs: SubagentRun[], spawn: Spawn, at: number): SubagentRun
     ? runOf(runs, spawn.resumes, (run) => ({ ...run, endedAt: undefined, ended: undefined }))
     : [...runs, spawned(spawn, at)]
 
-const happeningFacts = (facts: Facts, t: number, startedAt: number, happening: Happening): Facts => {
+/** What a fold step reads of its session besides the event: when it started, and how its runtime labels a tool call. */
+type Reading = { startedAt: number; label: ToolFormat['label'] }
+
+const happeningFacts = (facts: Facts, t: number, { startedAt, label }: Reading, happening: Happening): Facts => {
   const mainLoop = !('agent' in happening) || happening.agent === undefined
   const at = startedAt + t * 1000
   switch (happening.t) {
@@ -320,7 +323,7 @@ const happeningFacts = (facts: Facts, t: number, startedAt: number, happening: H
     case 'turn.started':
       return mainLoop ? { ...facts, tool: undefined, says: [], turnStartedAt: t, stoppedAt: undefined } : facts
     case 'tool.call':
-      return mainLoop ? { ...facts, tool: happening.label } : facts
+      return mainLoop ? { ...facts, tool: label(happening.tool, happening.input) } : facts
     case 'claude.sent':
       return { ...facts, sent: [...facts.sent, [at, happening.to, digestOf(happening.text)]] }
     case 'claude.received': {
@@ -389,7 +392,8 @@ const streamed = (startedAt: number, { tool, steppedAt, turnStartedAt }: Facts) 
  * Output draws the screen, and changes no fact but a blocking screen's state: otherwise the same facts come back, so a
  * caller can tell nothing changed.
  */
-const stepAfter = (startedAt: number, facts: Facts, event: NormalEvent): Facts => {
+const stepAfter = (reading: Reading, facts: Facts, event: NormalEvent): Facts => {
+  const { startedAt } = reading
   if (event[1] === 'o') {
     const state = nextState(facts.state, event)
     return state === facts.state ? facts : { ...facts, state }
@@ -404,7 +408,7 @@ const stepAfter = (startedAt: number, facts: Facts, event: NormalEvent): Facts =
   if (event[1] === 'x') return { ...next, hostStopped: event[2].hostStopped, exitCode: event[2].exitCode, signal: event[2].signal, exitedFrom: facts.state.status }
   if (event[1] !== 'e') return next
   if (event[2].t === LET_GO) return { ...next, letGoAt: event[0] }
-  return happeningFacts({ ...next, heardAt: event[0] }, event[0], startedAt, event[2])
+  return happeningFacts({ ...next, heardAt: event[0] }, event[0], reading, event[2])
 }
 
 const isLetGo = (event: LogEvent) => isTowerFact(event, LET_GO)
@@ -416,11 +420,12 @@ const isLetGo = (event: LogEvent) => isTowerFact(event, LET_GO)
  */
 export const factsAfter = (header: SessionHeader) => {
   const normalize = normalizerOf(header)
+  const reading: Reading = { startedAt: header.startedAt, label: toolFormatOf(header).label }
   return (facts: Facts, event: FoldEvent): Facts => {
     if ('unreadable' in event) return facts.broken ? facts : { ...facts, broken: event.unreadable }
     if (facts.broken) return isLetGo(event) ? { ...facts, letGoAt: event[0] } : facts
     try {
-      return normalize(event).reduce((next, normal) => stepAfter(header.startedAt, next, normal), facts)
+      return normalize(event).reduce((next, normal) => stepAfter(reading, next, normal), facts)
     } catch (err) {
       return { ...facts, broken: { message: (err as Error).message, at: event[0], code: event[1] } }
     }
