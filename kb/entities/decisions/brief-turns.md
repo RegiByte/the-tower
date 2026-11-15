@@ -12,7 +12,7 @@
     "hub/src/bridge/turns.ts#turnsOf",
     "hub/src/bridge/turns.ts#stepsOf",
     "hub/src/bridge/turns.ts#Step",
-    "hub/src/bridge/turns.ts#toolLine",
+    "hub/src/bridge/runtimes/claude.ts#lineOf",
     "hub/src/bridge/turns.ts#toolCallOf",
     "hub/src/bridge/turns.ts#wholeConversation",
     "hub/src/bridge/messages.ts#deliveries",
@@ -96,7 +96,7 @@ renderer can draw the brief alike, inline.
 - *Steps, since 1.133.* A turn carries `steps` ([`Step`](ref:hub/src/bridge/turns.ts#Step)), what Claude did between
   its prompt and its answer, read from the log by [`stepsOf`](ref:hub/src/bridge/turns.ts#stepsOf): its words between
   tool calls (`turn.step`'s `answer`), each main-loop tool call in one line
-  ([`toolLine`](ref:hub/src/bridge/turns.ts#toolLine): its telling field, a path relative to the session's folder)
+  ([`lineOf`](ref:hub/src/bridge/runtimes/claude.ts#lineOf): its telling field, a path relative to the session's folder)
   with how it ended (`tower.tool.result`, `tower.tool.abandoned`) and how long it ran (`PostToolUse`), and each message
   it sent another worker (`session.send`, its recipient named through
   [`deliveries`](ref:hub/src/bridge/messages.ts#deliveries); its `SendMessage` call is not drawn again). A step's calls

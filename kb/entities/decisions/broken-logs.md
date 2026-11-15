@@ -55,6 +55,10 @@ the session's start) and its code. A broken session's facts fold nothing more.
   before the bad line meets it again, one after it reads on with [`afterBreak`](ref:hub/src/tail.ts#afterBreak), which folds only the user letting the
   session go ([[let-go]]). Nothing
   is stored beyond the cache.
+- **The normalizer** ([[runtime-normalizers]]) runs inside the step, so a line a runtime's normalizer can't read
+  breaks the session the same way. `tower resume` takes the conversation to resume from these facts. A brief reads
+  the log with no break of its own: a broken session's brief, and that of a session resumed from it, fails where it
+  meets the line.
 - **The live tail** ([[live-system]]) stops when its session breaks, as it does when one exits; a broken log is not
   tailed at the next start. `tower ls` reads `broken` and the reason; archiving folds through the same step.
 - **The board** ([`Card.broken`](ref:hub/src/bridge/board.ts#Card), epoch ms) makes a broken card's attention

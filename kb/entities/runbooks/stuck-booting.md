@@ -5,7 +5,7 @@
   "summary": "A session that stays booting is Claude on a startup screen the bridge does not recognize (an external CLAUDE.md imports prompt, new dialog copy), or a launch that never drew Claude; recognized screens (trust, login) show as blocked.",
   "in": "host",
   "reviewed": "2026-11-14",
-  "refs": ["hub/src/bridge/status.ts#BOOTING", "hub/src/bridge/status.ts#HOOK_STATUS", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/composer.ts#AT_COMPOSER", "hub/src/cli.ts"]
+  "refs": ["hub/src/bridge/status.ts#BOOTING", "hub/src/bridge/status.ts#statusOf", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/composer.ts#AT_COMPOSER", "hub/src/cli.ts"]
 }
 ---
 **Symptom.** A card reads `booting` and does not move on. The workspace trust dialog and Claude's first-run setup
@@ -19,7 +19,7 @@ from the log) or `tower attach <id>` ([`cli.ts`](ref:hub/src/cli.ts)). Its log h
 
 **Likely causes.**
 - Every session starts [`booting`](ref:hub/src/bridge/status.ts#BOOTING) and leaves it on the first
-  `SessionStart` ([`HOOK_STATUS`](ref:hub/src/bridge/status.ts#HOOK_STATUS)). Startup dialogs come before
+  `SessionStart` ([`statusOf`](ref:hub/src/bridge/status.ts#statusOf)). Startup dialogs come before
   `SessionStart`, so no hook fires while one waits.
 - The workspace trust dialog, shown the first time Claude runs in a directory (a new hub, a new worktree).
   It preselects "No, exit".

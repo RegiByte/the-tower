@@ -19,13 +19,13 @@ export type TestedRange = { lowest: string; highest: string }
 
 /** What the tower reads of Claude's, each where it is read: what to check again before the range moves. */
 export const CLAUDE_SURFACES: { surface: string; read: string }[] = [
-  { surface: 'mod events (session, prompt, turn, tool) and their payloads', read: 'src/mod/hooks/register.js, src/bridge/facts.ts, src/bridge/status.ts' },
+  { surface: 'mod events (session, prompt, turn, tool) and their payloads', read: 'src/mod/hooks/register.js, src/bridge/runtimes/claude.ts' },
   { surface: 'the mods API: $.env, $.http.fetch over a unix socket, $.session.version', read: 'src/mod/hooks/register.js' },
-  { surface: 'classic hook events and their payload fields (session_id, source, trigger, notification_type, background_tasks, session_crons)', read: 'src/mod/hooks/hooks.json, src/bridge/conversation.ts, src/bridge/status.ts' },
+  { surface: 'classic hook events and their payload fields (session_id, source, trigger, notification_type, background_tasks, session_crons)', read: 'src/mod/hooks/hooks.json, src/bridge/runtimes/claude.ts, src/bridge/runtimes/claude-lines.ts' },
   { surface: "the trust and sign-in screens' text", read: 'src/bridge/blocked.ts' },
   { surface: 'bracketed pastes kept short enough to stay out of the pasted-content wrapping', read: 'src/shared/protocol.ts' },
   { surface: 'the peer registry ~/.claude/sessions/<pid>.json', read: 'src/machine.ts, src/bridge/resources.ts' },
-  { surface: 'a transcript saved with the first prompt, so a conversation can be resumed', read: 'src/bridge/conversation.ts' },
+  { surface: 'a transcript saved with the first prompt, so a conversation can be resumed', read: 'src/bridge/runtimes/claude.ts, src/bridge/conversation.ts' },
   { surface: "print mode's get_usage control request and its answer (rate_limits.five_hour and seven_day: utilization, resets_at; rate_limits_available), recorded in test/fixtures/probe-usage.out", read: 'extensions/quota/server.ts, extensions/quota/usage.ts' },
   { surface: "the tui: fullscreen setting: the alternate screen and SGR mouse reports, so a viewer's wheel scrolls Claude's transcript", read: 'src/shared/launch.ts' },
 ]

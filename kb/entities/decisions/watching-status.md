@@ -27,7 +27,7 @@ wake, though the worker hasn't finished and needs nothing.
 
 **How.** Claude's `Stop` carries `background_tasks` (`id`, `type`: `subagent` or `shell`, `status`, …) and
 `session_crons`. A `Stop` with a running task or any cron makes the session `watching`, one with neither `done`. Every
-wake runs a turn and ends in its own `Stop`, which decides again, so the status needs no stored state ([`stopStatus`](ref:hub/src/bridge/status.ts#stopStatus)). One fixture each:
+wake runs a turn and ends in its own `Stop`, which decides again, so the status needs no stored state ([`wakes`](ref:hub/src/bridge/runtimes/claude.ts#wakes)). One fixture each:
 
 | Started by | In `Stop` | Wakes as `prompt.submit` origin |
 |---|---|---|

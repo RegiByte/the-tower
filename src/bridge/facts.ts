@@ -286,7 +286,7 @@ const runOf = (runs: SubagentRun[], id: unknown, change: (run: SubagentRun) => S
 
 /**
  * A message to a subagent whose turn ended resumes its loop, raising `agent.spawn` again with `resume` and the same
- * `agentId`: the run it resumes is open again. A run this log never saw start begins here.
+ * subagent: the run it resumes is open again. A run this log never saw start begins here.
  */
 const runsSpawned = (runs: SubagentRun[], spawn: Spawn, at: number): SubagentRun[] =>
   runs.some((run) => run.id !== undefined && run.id === spawn.resumes)
