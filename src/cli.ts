@@ -19,8 +19,8 @@ import { foldLog } from './checkpoints.ts'
 import { notHere, notHereLine } from './checkouts.ts'
 import { bringAllDown, bringAllUp, checkoutHere, daemons, daemonsNamed, isNoHost, liveIds, hostRequest, reap, resourcesOf, runningCheckouts } from './machine.ts'
 import { runningNamed } from './bridge/chains.ts'
-import { latestSaved } from './bridge/conversation.ts'
-import { factsOf, KILLED_BY, type Session } from './bridge/facts.ts'
+import { conversationsOf, latestSaved } from './bridge/conversation.ts'
+import { KILLED_BY, type Session } from './bridge/facts.ts'
 import { towerFact } from './bridge/events.ts'
 import type { Resource } from './bridge/resources.ts'
 import { lastFrame, screenAt } from './bridge/screen.ts'
@@ -151,7 +151,7 @@ const USER_RUNS: Record<VerbOf<'user'>, Run> = {
     const { values } = parseArgs({ args: rest, options: { 'carry-on': { type: 'boolean' } } })
     const prompt = values['carry-on'] ? CARRY_ON : undefined
     const log = readSessionLog('resume', id)
-    const conversation = latestSaved(factsOf(log).conversations)
+    const conversation = latestSaved(conversationsOf(log))
     if (!conversation) throw new CliError(`Session "${id}" never started a conversation: nothing to resume`)
     print(await towerCommand('resume', { id: log.header.id, conversation: conversation.id, prompt }))
   },
