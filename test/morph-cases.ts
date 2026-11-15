@@ -346,6 +346,36 @@ const CASES: Case[] = [
       check(one(work, 'rect').namespaceURI === 'http://www.w3.org/2000/svg', 'the new rect is not an svg element')
     },
   },
+  {
+    name: 'refuses an unknown owned mark in the html that introduces it',
+    run(work) {
+      let error: unknown
+      try {
+        morph(work, '<div data-owned="mine">y</div>')
+      } catch (err) {
+        error = err
+      }
+      check(error instanceof Error, `the morph accepted it: ${work.innerHTML}`)
+    },
+  },
+  {
+    name: 'leaves the content untouched when it refuses an owned mark',
+    run(work) {
+      work.innerHTML = '<p>a</p><div data-owned="mine">x</div>'
+      try {
+        morph(work, '<p>b</p><div data-owned="mine">y</div>')
+      } catch {}
+      check(work.innerHTML === '<p>a</p><div data-owned="mine">x</div>', `the work area was half morphed: ${work.innerHTML}`)
+    },
+  },
+  {
+    name: 'draws every element of html whose id repeats with another tag',
+    run(work) {
+      work.innerHTML = '<p id="x">p</p>'
+      morph(work, '<div id="x">d</div><p id="x">p</p>')
+      check(work.innerHTML === '<div id="x">d</div><p id="x">p</p>', `the work area is ${work.innerHTML}`)
+    },
+  },
 ]
 
 /** Runs every case in `work`, each from an empty work area with nothing focused or selected. */
