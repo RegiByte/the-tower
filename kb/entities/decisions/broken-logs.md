@@ -29,7 +29,9 @@
     "hub/src/shared/launch.ts#startOfSessionId",
     "hub/src/shared/model.ts#floorOf",
     "hub/src/bridge/board.ts#placedOn",
-    "hub/test/server.test.ts"
+    "hub/test/server.test.ts",
+    "hub/src/bridge/normalize.ts#readableEvents",
+    "hub/test/turns.test.ts"
   ]
 }
 ---
@@ -56,9 +58,10 @@ the session's start) and its code. A broken session's facts fold nothing more.
   session go ([[let-go]]). Nothing
   is stored beyond the cache.
 - **The normalizer** ([[runtime-normalizers]]) runs inside the step, so a line a runtime's normalizer can't read
-  breaks the session the same way. `tower resume` takes the conversation to resume from these facts. A brief reads
-  the log with no break of its own: a broken session's brief, and that of a session resumed from it, fails where it
-  meets the line.
+  breaks the session the same way. `tower resume` takes the conversation to resume from these facts. A brief, a
+  tool call and a log's conversations read it through [`readableEvents`](ref:hub/src/bridge/normalize.ts#readableEvents),
+  which stops at the same line: a broken session's brief holds its turns before the break, and a worker resumed from
+  it keeps its brief, the turns of its lineage included ([`test/turns.test.ts`](ref:hub/test/turns.test.ts)).
 - **The live tail** ([[live-system]]) stops when its session breaks, as it does when one exits; a broken log is not
   tailed at the next start. `tower ls` reads `broken` and the reason; archiving folds through the same step.
 - **The board** ([`Card.broken`](ref:hub/src/bridge/board.ts#Card), epoch ms) makes a broken card's attention

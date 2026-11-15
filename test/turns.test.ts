@@ -117,6 +117,22 @@ test('a conversation with turns before those a brief gives says so, and reads wh
   assert.equal(wholeConversation(sessions[1], sessions, logOf, 'no-such-conversation', callsign), undefined)
 })
 
+test('a brief reads a log as far as its first unreadable line, so a session resumed from a broken one keeps its brief', () => {
+  const source = fixture('resume-source')
+  const stopped = source.events.at(-1)![0] + 1
+  const broken: SessionLog = { ...source, events: [...source.events, [stopped, 'h', { hook_event_name: 'Stop', session_id: 'unread' }]] }
+  const logs = [broken, fixture('resumed')]
+  const sessions = logs.map((log) => ({ header: log.header, facts: factsOf(log) }))
+  assert.ok(sessions[0].facts.broken)
+  const logOf = (id: string) => logs.find((l) => l.header.id === id)!
+  const [resumed] = briefOf(sessions[1], sessions, logOf, 2, callsign)
+  assert.deepEqual(resumed.turns.map((t) => [t.prompt, t.answer]), [
+    ['-reply with exactly the word PONG and nothing else', 'PONG'],
+    ['what single word did you answer before? reply with it lowercase', 'pong'],
+  ])
+  assert.equal(toolCallOf(broken, 'toolu_none'), undefined)
+})
+
 test('a message to a subagent is its SendMessage call, not a message to a worker', () => {
   const steps = Object.values(turnsByConversation(fixture('subagent-resume'))).flat().flatMap((t) => t.steps)
   assert.equal(steps.some((s) => s.t === 'sent'), false)

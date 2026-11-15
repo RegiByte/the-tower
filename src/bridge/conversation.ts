@@ -1,6 +1,6 @@
 import type { SessionLog } from '../shared/model.ts'
 import type { NormalEvent } from './events.ts'
-import { normalizerOf } from './normalize.ts'
+import { readableEvents } from './normalize.ts'
 
 /**
  * One of Claude's conversations held by a session. A session starts in one and moves to another on `/clear`
@@ -47,7 +47,7 @@ export const conversationsAfter = (conversations: Conversation[], [t, code, data
   }
 }
 
-export const conversationsOf = ({ header, events }: SessionLog): Conversation[] => events.flatMap(normalizerOf(header)).reduce(conversationsAfter, [])
+export const conversationsOf = (log: SessionLog): Conversation[] => readableEvents(log).reduce(conversationsAfter, [])
 
 /** The conversation a resume would continue: the latest one Claude saved. */
 export const latestSaved = (conversations: Conversation[]): Conversation | undefined => conversations.findLast((c) => c.saved)

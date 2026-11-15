@@ -1,6 +1,6 @@
 import type { SessionLog } from '../shared/model.ts'
 import type { Happening } from './events.ts'
-import { normalizerOf } from './normalize.ts'
+import { readableEvents } from './normalize.ts'
 import { chainsOf, continuations, lineage, namer, resumes, threads, type Chains, type SessionRef, type Thread } from './chains.ts'
 import { USER_ORIGINS, type Conversation } from './conversation.ts'
 import { digestOf, type Session } from './facts.ts'
@@ -130,8 +130,9 @@ const stepsOf = ({ work, answer }: Opened, agents: Agents): Step[] => {
  * Every conversation of one session's log with its turns: a turn opens on a prompt the user gave or another worker
  * sent, and takes the main loop's steps and latest answer until the next.
  */
-export const turnsByConversation = ({ header, events }: SessionLog): Record<string, Turn[]> => {
-  const tally = events.flatMap(normalizerOf(header)).reduce<Tally>((tally, [t, code, data]) => {
+export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => {
+  const { header } = log
+  const tally = readableEvents(log).reduce<Tally>((tally, [t, code, data]) => {
     if (code !== 'e') return tally
     const at = header.startedAt + t * 1000
     switch (data.t) {
@@ -172,8 +173,8 @@ export const turnsByConversation = ({ header, events }: SessionLog): Record<stri
 export type ToolCall = { tool: string; input: Record<string, unknown>; check?: Record<string, unknown>; outcome: ToolOutcome; error?: string; ms?: number }
 
 /** The tool call `id` of a session's log, `undefined` when it logged none. */
-export const toolCallOf = ({ header, events }: SessionLog, id: string): ToolCall | undefined =>
-  events.flatMap(normalizerOf(header)).reduce<ToolCall | undefined>((call, [, code, happening]) => {
+export const toolCallOf = (log: SessionLog, id: string): ToolCall | undefined =>
+  readableEvents(log).reduce<ToolCall | undefined>((call, [, code, happening]) => {
     if (code !== 'e' || !happening.t.startsWith('tool.') || !('id' in happening) || happening.id !== id) return call
     if (happening.t === 'tool.call') return { tool: happening.tool, input: happening.input, outcome: 'running' }
     if (!call) return call
