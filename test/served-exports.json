@@ -2006,6 +2006,16 @@
       },
       "types": {}
     },
+    "/lib/morph.js": {
+      "runtime": "browser",
+      "values": {
+        "morph": {
+          "since": "2.2",
+          "stability": "provisional"
+        }
+      },
+      "types": {}
+    },
     "/lib/palette.js": {
       "runtime": "browser",
       "values": {

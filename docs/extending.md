@@ -434,7 +434,7 @@ curl -sN -m 2 $B/board | grep -m1 '^data:'      # the board, once: /board is a s
 
 ## The library
 
-The library is what code outside the core builds on: 24 modules at `/lib/<module>.js`, each a file of `src/lib/` that
+The library is what code outside the core builds on: 25 modules at `/lib/<module>.js`, each a file of `src/lib/` that
 names what it re-exports and holds nothing else (API 1.151). One line works everywhere, so a module an extension's
 server and client share can use it:
 
@@ -464,6 +464,7 @@ joins as a minor the day something uses it.
 | `/lib/time.js` | generic | authors | crons and periods: slots and their words |
 | `/lib/files.js` | generic | authors | media types, a floor's checkouts and repo names |
 | `/lib/keys.js` | browser | authors | the keymap: commands, chords and their labels |
+| `/lib/morph.js` | browser | authors | new html morphed into an element, keeping the nodes it still describes and the nodes others own |
 | `/lib/design.js` | generic | authors | palettes, type, the terminal theme, the sky |
 | `/lib/cards.js` | generic | renderers | a worker and a floor in words: status, health, duty, waits, rings, tidy, worktrees, limits |
 | `/lib/layout.js` | browser | renderers | regions, contributions ranked and fitted, views picked, locations and display |
@@ -503,6 +504,14 @@ scripts included (only markdown links are checked), so frame its html without `a
 A renderer that draws any of the library's views installs the shared tooltip once, `watchTips(document)` from
 `/lib/chrome.js`: the views explain their controls with `data-tip` (the Stats bars their readouts), and the settings
 popover stays hidden until it is placed.
+
+To redraw a view from html without losing what the viewer holds in it, use `morph(el, html)` of `/lib/morph.js`
+(provisional): it makes `el`'s children what `html` describes and keeps every node that still matches, so text typed,
+a caret, a selection, focus and scroll survive. Nodes are matched by id, then by tag and position: give an id to a
+node that must stay itself while its siblings come, go or move. Mark a node another piece of code fills (a region you
+mount, a frame, a terminal, an element with its own state) `data-owned` to have the morph leave it whole, or
+`data-owned="children"` to have it update the node's attributes and leave its children; ids inside an owned node take
+no part in matching. The mark is plain html, so a pure function drawing the view can emit it.
 
 ### Beside the library
 

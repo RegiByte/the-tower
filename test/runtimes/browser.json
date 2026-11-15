@@ -27,6 +27,7 @@
     "../../src/lib/palette.ts",
     "../../src/lib/chrome.ts",
     "../../src/lib/viewer.ts",
-    "../../src/lib/client.ts"
+    "../../src/lib/client.ts",
+    "../../src/lib/morph.ts"
   ]
 }
