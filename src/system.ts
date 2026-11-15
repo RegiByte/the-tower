@@ -309,8 +309,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     measure()
     awaited.get(id)?.()
     if (session.facts.state.status === 'exited' || session.facts.broken || session.facts.letGoAt !== undefined || isArchived(logPath)) return
-    const step = factsAfter(session.header.startedAt)
-    const stop = tailLog(logPath, offset, factEvents(session.facts.state), (event) => {
+    const step = factsAfter(session.header)
+    const stop = tailLog(logPath, offset, factEvents(session.header, session.facts.state), (event) => {
       const facts = step(session.facts, event)
       if (facts.broken) {
         stop()

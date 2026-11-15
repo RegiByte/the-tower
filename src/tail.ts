@@ -2,8 +2,12 @@ import { closeSync, existsSync, fstatSync, openSync, readFileSync, readSync, wat
 import path from 'node:path'
 import { constants, gunzipSync } from 'node:zlib'
 import { nextState, readsOutput, type SessionState } from './bridge/status.ts'
+import { towerFactBytes } from './bridge/events.ts'
+import { normalizerOf } from './bridge/normalize.ts'
+import { skimClaude } from './bridge/runtimes/claude-lines.ts'
+import { LET_GO } from './bridge/facts.ts'
 import type { Broken, FoldEvent, Unreadable } from './bridge/facts.ts'
-import type { LogEvent, SessionHeader } from './shared/model.ts'
+import { runtimeOf, type LogEvent, type SessionHeader } from './shared/model.ts'
 import { startOfSessionId } from './shared/launch.ts'
 import { firstLine } from './shared/log-file.ts'
 import { sessionLogPath } from './shared/paths.ts'
@@ -61,40 +65,37 @@ const codeOf = (line: Buffer): string => String.fromCharCode(line[line.indexOf('
 
 export const everyEvent: EventFilter = parseWhole
 
+/**
+ * Each runtime's reading of a hook line as the event its facts need without parsing all of it, or `undefined` to
+ * parse it whole: a runtime's lines can carry large payloads no fold reads. A runtime with none is parsed whole.
+ */
+const SKIMS: Record<string, EventFilter> = { claude: skimClaude }
+
+const skimOf = (header: SessionHeader): EventFilter => SKIMS[runtimeOf(header)] ?? (() => undefined)
+
 /** What a broken session's facts fold from: only the user letting it go (`tower.letGo`), as nothing else after its break is folded. */
-export const afterBreak: EventFilter = (line) => (codeOf(line) === 'h' && line.includes('"hook_event_name":"tower.letGo"') ? parseWhole(line) : undefined)
+export const afterBreak: EventFilter = (line) => (codeOf(line) === 'h' && line.includes(towerFactBytes(LET_GO)) ? parseWhole(line) : undefined)
 
 /** What draws a session's screen, and the exit that ends it. */
 export const screenEvents: EventFilter = (line) => ('orx'.includes(codeOf(line)) ? parseWhole(line) : undefined)
 
-/** What a worker's brief and its tool calls are read from (`turns.ts`): Claude's hooks and the mod's events, its output and input unread. */
+/** What a worker's brief and its tool calls are read from (`turns.ts`): its runtime's hook lines, its output and input unread. */
 export const hookEvents: EventFilter = (line) => (codeOf(line) === 'h' ? parseWhole(line) : undefined)
-
-const HOOK_NAME = '"hook_event_name":"'
-const POST_TOOL_USE = `${HOOK_NAME}PostToolUse"`
-const AGENT_ID = /"agent_id":"([^"]*)"/
-
-/**
- * A hook line's own event is `PostToolUse` when the payload's first `hook_event_name` key says so and no object opens
- * before it: the key can't sit inside a string with its quotes unescaped, so it is a key of the payload itself.
- */
-const isPostToolUse = (line: Buffer): boolean => {
-  const name = line.indexOf(HOOK_NAME)
-  return name !== -1 && line.toString('latin1', name, name + POST_TOOL_USE.length) === POST_TOOL_USE && line.lastIndexOf('{', name) === line.indexOf('{')
-}
 
 /**
  * Everything a session's facts fold from, for one log read on from where its state was `state` (`BOOTING` at its
- * start): output only until the session starts (a blocking screen is the only fact output holds), and of a
- * `PostToolUse` only its name, its tool's response unread. The filter folds the session's state over what it keeps to
- * know when it has started. An event whose state it can't follow is kept, and a line that holds no event is read as
- * `Unreadable`, for the fold to break on it (`factsAfter`); after it, only what `afterBreak` keeps.
+ * start): output only until the session starts (a blocking screen is the only fact output holds), and of a hook line
+ * what its runtime's skim keeps (Claude's `PostToolUse`, only its name). The filter folds the session's state over what
+ * it keeps to know when it has started. An event whose state it can't follow is kept, and a line that holds no event
+ * is read as `Unreadable`, for the fold to break on it (`factsAfter`); after it, only what `afterBreak` keeps.
  */
-export const factEvents = (from: SessionState): EventFilter<FoldEvent> => {
+export const factEvents = (header: SessionHeader, from: SessionState): EventFilter<FoldEvent> => {
+  const normalize = normalizerOf(header)
+  const skim = skimOf(header)
   let state: SessionState | undefined = from
   const keep = (event: FoldEvent) => {
     try {
-      state = 'unreadable' in event ? undefined : nextState(state!, event)
+      state = 'unreadable' in event ? undefined : normalize(event).reduce(nextState, state!)
     } catch {
       state = undefined
     }
@@ -103,11 +104,8 @@ export const factEvents = (from: SessionState): EventFilter<FoldEvent> => {
   const follow = (line: Buffer): FoldEvent | undefined => {
     const code = codeOf(line)
     if (code === 'o') return readsOutput(state!) ? keep(eventOf(line)) : undefined
-    if (code === 'h' && isPostToolUse(line)) {
-      const agent = AGENT_ID.exec(line.toString('latin1', 0, line.indexOf(HOOK_NAME)))?.[1]
-      return keep([Number(line.subarray(1, line.indexOf(',')).toString()), 'h', { hook_event_name: 'PostToolUse', ...(agent && { agent_id: agent }) }])
-    }
-    return keep(eventOf(line))
+    const skimmed = code === 'h' ? skim(line) : undefined
+    return keep(skimmed ?? eventOf(line))
   }
   return (line) => (state ? follow(line) : afterBreak(line))
 }

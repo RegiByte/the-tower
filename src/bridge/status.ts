@@ -1,4 +1,4 @@
-import type { ClaudeHookInput, LogEvent, ModEvent } from '../shared/model.ts'
+import type { Happening, NormalEvent } from './events.ts'
 import { blockedBy, type BlockedKind } from './blocked.ts'
 
 /**
@@ -12,7 +12,7 @@ export type Status = 'booting' | 'blocked' | 'idle' | 'working' | 'needs_input' 
 type Unblocked = Exclude<Status, 'blocked'>
 
 /**
- * The compaction in progress: its trigger decides what the `SessionStart` that ends it means. A manual one that started
+ * The compaction in progress: its trigger decides what its end means. A manual one that started
  * while the session was watching `resumes` watching when it ends.
  */
 type Compaction = { trigger: 'auto' } | { trigger: 'manual'; resumes?: 'watching' }
@@ -26,83 +26,57 @@ export type SessionState =
   | { status: Unblocked; since: number; compaction?: Compaction; blocked?: undefined }
 
 /**
- * Classic hooks (posted by curl) decide these; the mod's `turn.complete` and `tower.tool.abandoned` decide
- * interrupts and failures. Claude awaits each post in turn, so both reach the log in the order Claude raised them.
+ * The status the main loop's event moves it to, when it moves it. A turn the user interrupts ends with no stop (Esc
+ * aborts it, a denied permission abandons its tool call), and Claude raises no stop after a failed turn. Claude awaits
+ * each of its posts in turn, so they reach the log in the order Claude raised them.
  */
-const HOOK_STATUS: Record<string, Unblocked> = {
-  SessionStart: 'idle',
-  UserPromptSubmit: 'working',
-  PreToolUse: 'working',
-  PostToolUse: 'working',
-  PostToolUseFailure: 'working',
-  PermissionRequest: 'needs_input',
+const statusOf = (event: Happening): Unblocked | undefined => {
+  switch (event.t) {
+    case 'conversation.entered':
+      return 'idle'
+    case 'prompt.accepted':
+    case 'tool.started':
+    case 'tool.done':
+    case 'tool.failed':
+      return 'working'
+    case 'permission.requested':
+      return 'needs_input'
+    case 'notified':
+      return event.kind === 'permission' ? 'needs_input' : undefined
+    case 'turn.stopped':
+      return event.wakes ? 'watching' : 'done'
+    case 'turn.ended':
+      return event.reason === 'aborted' ? 'idle' : event.reason === 'error' || event.reason === 'refusal' ? 'failed' : undefined
+    case 'tool.abandoned':
+      return 'idle'
+    default:
+      return undefined
+  }
 }
 
-/**
- * Claude's `Stop` lists the background tasks (subagents, shells, monitors) still running and the session's crons
- * (`/loop`, `ScheduleWakeup`, `CronCreate`): each can wake the main loop into a new turn, which ends in its own `Stop`.
- */
-const stopStatus = (hook: ClaudeHookInput | ModEvent): 'watching' | 'done' => {
-  const tasks = hook.background_tasks as { status: string }[]
-  const crons = hook.session_crons as unknown[]
-  return tasks.some((task) => task.status === 'running') || crons.length ? 'watching' : 'done'
-}
-
-const NOTIFICATION_STATUS: Record<string, Unblocked> = {
-  permission_prompt: 'needs_input',
-}
-
-/**
- * The user interrupted the main loop's turn, which ends with no Stop: Esc aborts the turn, and a denied
- * permission abandons its tool call.
- */
-const isInterrupt = (hook: ClaudeHookInput | ModEvent): boolean =>
-  hook.agentId === undefined &&
-  ((hook.hook_event_name === 'turn.complete' && hook.reason === 'aborted') || hook.hook_event_name === 'tower.tool.abandoned')
-
-/** Claude raises no Stop after a failed turn. */
-const isFailure = (hook: ClaudeHookInput | ModEvent): boolean =>
-  hook.agentId === undefined && hook.hook_event_name === 'turn.complete' && (hook.reason === 'error' || hook.reason === 'refusal')
-
-/**
- * A compaction starts with the classic `PreCompact`, and outside a Team or Enterprise organization also with the mod's
- * `session.compact` (Claude's built-in `sec-default` mod keeps it from user mods inside one): both carry the trigger,
- * and the second changes nothing.
- */
-const isCompactionStart = (hook: ClaudeHookInput | ModEvent): boolean =>
-  hook.hook_event_name === 'PreCompact' || hook.hook_event_name === 'session.compact'
-
-/** A trigger other than `manual` keeps the status, as an automatic one does. */
-const triggerOf = (hook: ClaudeHookInput | ModEvent): Compaction['trigger'] => (hook.trigger === 'manual' ? 'manual' : 'auto')
-
-/**
- * Claude raises `SessionStart` with `source: compact` when a compaction is done. A manual `/compact` works between
- * turns and leaves the session idle, or watching when it was watching: what can wake the main loop still runs. Any other leaves the status as it was: an automatic one runs inside a turn,
- * which carries on after it, or gives up with no `SessionStart`, and an idle one (its `PreCompact` says `auto`)
- * summarizes the conversation of a session that waits, which keeps waiting.
- */
-const isCompactionEnd = (hook: ClaudeHookInput | ModEvent): boolean =>
-  hook.hook_event_name === 'SessionStart' && hook.source === 'compact'
+/** Only the main loop's events move the status: a subagent's, its compactions included, are left out. */
+const ofMainLoop = (event: Happening) => !('agent' in event) || event.agent === undefined
 
 /** Only a session that hasn't started reads its output: a blocking screen shows before Claude raises any hook. */
 export const readsOutput = ({ status }: SessionState) => status === 'booting' || status === 'blocked'
 
-const screenAfter = (state: SessionState, event: LogEvent): BlockedKind | undefined =>
+const screenAfter = (state: SessionState, event: NormalEvent): BlockedKind | undefined =>
   event[1] === 'o' && readsOutput(state) ? (blockedBy(event[2]) ?? state.blocked) : state.blocked
 
 /** The status a session moves to as if no screen held it: a blocked session is one that hasn't started. */
-const statusAfter = (status: Unblocked, compaction: Compaction | undefined, event: LogEvent): Unblocked => {
+/**
+ * A manual `/compact` works between turns and leaves the session idle when it ends, or watching when it was watching:
+ * what can wake the main loop still runs. Any other compaction leaves the status as it was: an automatic one runs
+ * inside a turn, which carries on after it, or gives up with no end, and an idle one summarizes the conversation of a
+ * session that waits, which keeps waiting.
+ */
+const statusAfter = (status: Unblocked, compaction: Compaction | undefined, event: NormalEvent): Unblocked => {
   if (event[1] === 'x') return 'exited'
-  if (event[1] !== 'h') return status
-  const hook = event[2]
-  if (hook.agent_id !== undefined) return status
-  if (isInterrupt(hook)) return 'idle'
-  if (isFailure(hook)) return 'failed'
-  if (isCompactionStart(hook)) return triggerOf(hook) === 'manual' ? 'working' : status
-  if (isCompactionEnd(hook)) return compaction?.trigger === 'manual' ? (compaction.resumes ?? 'idle') : status
-  if (hook.hook_event_name === 'Stop') return stopStatus(hook)
-  if (hook.hook_event_name === 'Notification') return NOTIFICATION_STATUS[String(hook.notification_type)] ?? status
-  return HOOK_STATUS[hook.hook_event_name] ?? status
+  if (event[1] !== 'e' || !ofMainLoop(event[2])) return status
+  const happening = event[2]
+  if (happening.t === 'compaction.started') return happening.trigger === 'manual' ? 'working' : status
+  if (happening.t === 'compaction.ended') return compaction?.trigger === 'manual' ? (compaction.resumes ?? 'idle') : status
+  return statusOf(happening) ?? status
 }
 
 const AUTO: Compaction = { trigger: 'auto' }
@@ -110,29 +84,31 @@ const MANUAL: Compaction = { trigger: 'manual' }
 const MANUAL_FROM_WATCHING: Compaction = { trigger: 'manual', resumes: 'watching' }
 
 /**
- * A compaction ends with its `SessionStart`, or, when it gives up, with the main loop's next step of the turn. A
- * subagent's compaction raises the same `PreCompact` and `SessionStart` as the main loop's, carrying `agent_id` since
- * Claude 2.1.323, and is left out. Before it they carry none: an automatic start during a manual `/compact` can only
- * be a subagent's, and keeps the manual compaction.
+ * A compaction ends with its end, or, when it gives up, with the main loop's next step of the turn. A subagent's
+ * compaction names its subagent (Claude's since 2.1.323) and is left out. Claude's before it name none: an automatic
+ * start during a manual `/compact` can only be a subagent's, and keeps the manual compaction.
  */
-const compactionAfter = ({ status, compaction }: SessionState, event: LogEvent): Compaction | undefined => {
+const compactionAfter = ({ status, compaction }: SessionState, event: NormalEvent): Compaction | undefined => {
   if (event[1] === 'x') return undefined
-  if (event[1] !== 'h') return compaction
-  const hook = event[2]
-  if (hook.agent_id !== undefined) return compaction
-  if (isCompactionStart(hook)) {
-    if (compaction?.trigger === 'manual') return compaction
-    if (triggerOf(hook) === 'auto') return AUTO
-    return status === 'watching' ? MANUAL_FROM_WATCHING : MANUAL
+  if (event[1] !== 'e' || !ofMainLoop(event[2])) return compaction
+  switch (event[2].t) {
+    case 'compaction.started':
+      if (compaction?.trigger === 'manual') return compaction
+      if (event[2].trigger === 'auto') return AUTO
+      return status === 'watching' ? MANUAL_FROM_WATCHING : MANUAL
+    case 'compaction.ended':
+    case 'turn.step':
+    case 'turn.ended':
+      return undefined
+    default:
+      return compaction
   }
-  const turnMoves = hook.agentId === undefined && (hook.hook_event_name === 'turn.step' || hook.hook_event_name === 'turn.complete')
-  return isCompactionEnd(hook) || turnMoves ? undefined : compaction
 }
 
 export const BOOTING: SessionState = { status: 'booting', since: 0 }
 
 /** A screen that blocks holds the session until the hook that starts it, or its exit. */
-export const nextState = (state: SessionState, event: LogEvent): SessionState => {
+export const nextState = (state: SessionState, event: NormalEvent): SessionState => {
   const held = state.status === 'blocked' ? 'booting' : state.status
   const status = statusAfter(held, state.compaction, event)
   const screen = status === held ? screenAfter(state, event) : undefined

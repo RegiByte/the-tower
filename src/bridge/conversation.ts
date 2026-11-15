@@ -1,8 +1,10 @@
-import type { LogEvent, SessionLog } from '../shared/model.ts'
+import type { SessionLog } from '../shared/model.ts'
+import type { NormalEvent } from './events.ts'
+import { normalizerOf } from './normalize.ts'
 
 /**
  * One of Claude's conversations held by a session. A session starts in one and moves to another on `/clear`
- * (or an in-session `/resume`); the id is the `session_id` of Claude's classic hooks, which mod events don't carry.
+ * (or an in-session `/resume`), under the runtime's id for it.
  */
 export type Conversation = {
   id: string
@@ -23,29 +25,29 @@ export const USER_ORIGINS = new Set(['composer', 'bridge'])
 const withLatest = (conversations: Conversation[], change: Partial<Conversation>): Conversation[] =>
   conversations.length ? [...conversations.slice(0, -1), { ...conversations.at(-1)!, ...change }] : conversations
 
-/** `SessionStart` comes again on `/compact` under the same id: only a new id is a new conversation. */
+/** A compaction ends under the conversation it compacted: only a new id is a new conversation. */
 const enter = (conversations: Conversation[], id: string, at: number, resumed: boolean): Conversation[] =>
   conversations.at(-1)?.id === id ? conversations : [...conversations, { id, at, resumed, saved: resumed }]
 
-export const conversationsAfter = (conversations: Conversation[], [t, code, data]: LogEvent): Conversation[] => {
-  if (code !== 'h') return conversations
-  switch (data.hook_event_name) {
-    case 'SessionStart':
-      return enter(conversations, String(data.session_id), t, data.source === 'resume')
-    case 'UserPromptSubmit':
+export const conversationsAfter = (conversations: Conversation[], [t, code, data]: NormalEvent): Conversation[] => {
+  if (code !== 'e') return conversations
+  switch (data.t) {
+    case 'conversation.entered':
+      return enter(conversations, data.id, t, data.resumed)
+    case 'compaction.ended':
+      return enter(conversations, data.conversation, t, false)
+    case 'prompt.accepted':
       return withLatest(conversations, { saved: true })
-    case 'prompt.submit': {
-      const origin = data.origin as { kind: string }
-      return USER_ORIGINS.has(origin.kind) ? withLatest(conversations, { prompt: String(data.text) }) : conversations
-    }
-    case 'turn.complete':
-      return data.agentId === undefined && data.answer ? withLatest(conversations, { answer: String(data.answer) }) : conversations
+    case 'prompt':
+      return USER_ORIGINS.has(data.origin) ? withLatest(conversations, { prompt: data.text }) : conversations
+    case 'turn.ended':
+      return data.agent === undefined && data.answer ? withLatest(conversations, { answer: data.answer }) : conversations
     default:
       return conversations
   }
 }
 
-export const conversationsOf = ({ events }: SessionLog): Conversation[] => events.reduce(conversationsAfter, [])
+export const conversationsOf = ({ header, events }: SessionLog): Conversation[] => events.flatMap(normalizerOf(header)).reduce(conversationsAfter, [])
 
 /** The conversation a resume would continue: the latest one Claude saved. */
 export const latestSaved = (conversations: Conversation[]): Conversation | undefined => conversations.findLast((c) => c.saved)

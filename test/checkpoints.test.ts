@@ -30,7 +30,7 @@ for (const name of names) {
     const starts = lineStarts(name)
     const end = statSync(logPath(name)).size
     const cache = freshCache()
-    const step = factsAfter(log.header.startedAt)
+    const step = factsAfter(log.header)
     let facts = initialFacts(log.header)
     for (let k = 0; k <= log.events.length; k++) {
       writeCheckpoint(cache, { fold: FOLD, header: log.header, offset: starts[k + 1], facts })

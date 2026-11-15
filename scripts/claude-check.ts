@@ -174,7 +174,7 @@ function readTail(tail: Tail) {
     }
     const event: LogEvent = JSON.parse(line)
     const before = tail.facts!.state
-    tail.facts = factsAfter(tail.header!.startedAt)(tail.facts!, event)
+    tail.facts = factsAfter(tail.header!)(tail.facts!, event)
     tail.events.push(event)
     const after = tail.facts.state
     if (after.status !== before.status || after.blocked !== before.blocked) tail.entered.push({ at: tail.events.length - 1, status: after.status, ...(after.blocked && { blocked: after.blocked }) })
