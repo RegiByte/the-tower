@@ -58,6 +58,6 @@ at a time ([[runtime-normalizers]]): its release, whether it was reloaded mid-se
 on every line it raises; a step's model, named at its start, on its end; the child a subagent call spawned, on the
 call's first progress; and a session's cost summed with its subagents' (`total`). Its shell hook puts `bin/tower` on
 every shell's PATH, and its context hook adds the brief to every request. Each post is awaited, so lines keep the bus's
-order. When its subscription dies it posts `plugin.failed`, which nothing reads yet. Beside it,
+order. When its subscription dies it posts `plugin.failed`, read as `events.lost` and said on the card (`eventsLost`, [[opencode]]). Beside it,
 [`tui.ts`](ref:hub/src/mod/opencode/tui.ts) is the plugin's TUI part, which shows the worker's callsign above the
 composer ([[opencode]]).

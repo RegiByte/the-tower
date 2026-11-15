@@ -67,6 +67,8 @@ export type Neutral =
   | { t: 'runtime.release'; version: string }
   /** The models the runtime can run, each with its efforts and its context window in tokens, as it reported them. */
   | { t: 'runtime.models'; models: RuntimeModel[] }
+  /** The runtime's events stopped reaching the tower: what posts them failed, with its error. */
+  | { t: 'events.lost'; error: string }
   /** The runtime named the conversation. */
   | { t: 'conversation.titled'; agent?: string; title: string }
   /** Something the runtime raised that no fold reads: it still says the session was heard from. */

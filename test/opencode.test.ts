@@ -234,3 +234,17 @@ test('opencode: a worker the tower killed has gone home, one killed from outside
   assert.deepEqual(cardOf(fixture('opencode-sent-home')), { exit: 130, status: 'exited', stranded: false, killed: true })
   assert.deepEqual(cardOf(fixture('opencode-killed-outside')), { exit: 130, status: 'exited', stranded: true, killed: false })
 })
+
+test('opencode: a plugin whose subscribe loop died says on its card that the tower stopped hearing it', () => {
+  const log = fixture('opencode-basic')
+  const cut = log.events.findIndex((e) => e[1] === 'h' && (e[2] as { hook_event_name?: string }).hook_event_name === 'session.execution.started')
+  const at = log.events[cut][0] as number
+  const failed: SessionLog = { header: log.header, events: [...log.events.slice(0, cut + 1), [at, 'h', { hook_event_name: 'plugin.failed', message: 'Error: stream closed\n    at subscribe (index.js:90:11)' }]] as LogEvent[] }
+  const config = { runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } }, env: {}, projects: { lab: { name: 'lab', hub: log.header.cwd, repos: [] } } } as unknown as Config
+  const cardOf = (log: SessionLog) => board(viewOf(config, { sessions: [{ header: log.header, facts: factsOf(log) }], host: { ids: new Set([log.header.id]), protocol: HOST_PROTOCOL } })).floors[0].cards[0]
+  const card = cardOf(failed)
+  assert.equal(card.eventsLost, "The tower stopped hearing opencode's events (Error: stream closed): its status stands where they stopped. Kill it and resume its conversation to hear it again.")
+  assert.equal(cardOf(log).eventsLost, undefined)
+  const ended: SessionLog = { ...failed, events: [...failed.events, [at + 1, 'x', { exitCode: 0 }]] as LogEvent[] }
+  assert.equal(cardOf(ended).eventsLost, "The tower stopped hearing opencode's events (Error: stream closed): its status stands where they stopped.")
+})

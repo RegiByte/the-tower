@@ -109,6 +109,7 @@ export function gistOf(c: Card): Gist | undefined {
   const conv = current(c)
   if (c.broken) return { kind: 'broken', text: brokenText(c) }
   if (c.startFailure) return { kind: 'broken', text: c.startFailure }
+  if (c.eventsLost) return { kind: 'broken', text: c.eventsLost }
   if (c.blocked) return { kind: 'blocked', text: BLOCKED_TEXT[c.blocked] }
   if (c.status === 'needs_input' && c.tool) return { kind: 'asks', text: c.tool }
   if (c.compacting) return { kind: 'compacts', text: 'compacting the conversation' }

@@ -118,6 +118,8 @@ const happeningsOf = (line: Line): Happening[] => {
       const usd = line.total ?? (main ? Number(data.cost) : undefined)
       return usd === undefined ? [{ t: 'heard' }] : [{ t: 'measured', cost: { usd }, rateLimits: [] }]
     }
+    case 'plugin.failed':
+      return [{ t: 'events.lost', error: String(line.message) }]
     case 'session.renamed':
       return [{ t: 'conversation.titled', ...agent, title: String(data.title) }]
     default:
