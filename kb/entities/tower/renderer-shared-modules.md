@@ -109,7 +109,8 @@ behavior ([[renderer-is-disposable]]):
   by id, then by tag and position, a text box that lost focus given it back by its id. A node marked `data-owned` is
   left whole, or with `data-owned="children"` has only its attributes updated, and ids inside it take no part in
   matching, so a mounted view, a frame or a terminal inside drawn html keeps its own nodes. Datastar's morph with
-  parts of idiomorph (`THIRD_PARTY.md`). No panel draws with it yet: `drawPanel` still replaces its element's html.
+  parts of idiomorph (`THIRD_PARTY.md`); `npm run test:morph` runs its cases in headless Chrome, `test:morph-webkit`
+  in WebKit. No panel draws with it yet: `drawPanel` still replaces its element's html.
 - `press.ts`: a control that asks the tower something stays `aria-busy` while its request is in flight, found again
   by its identity in html drawn anew ([`pressing`](ref:hub/src/shared/press.ts#pressing), [[press-feedback]]).
 - `toasts.ts`: a few words about what just happened, stacked at the bottom of the page, each with at most one action
