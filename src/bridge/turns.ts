@@ -43,12 +43,19 @@ export type Brief = Thread & { turns: Turn[]; earlier: boolean; session: BriefSe
 type Opened = Omit<Turn, 'steps'> & { work: [number, Happening][] }
 
 /** `spawned`: the subagent each `Agent` call started, by the call's id; `agentSteps`: the steps each subagent took. */
-type Tally = { current?: string; byConversation: Record<string, Opened[]>; spawned: Map<string, string>; agentSteps: Map<string, number> }
+type Tally = { current?: string; byConversation: Record<string, Opened[]>; spawned: Map<string, string>; agentSteps: Map<string, number>; queued: Map<string, Queued> }
+
+/** A prompt the runtime holds in its queue until it delivers it into a turn. */
+type Queued = { origin: string; text: string }
 
 const withLatest = (tally: Tally, change: (turn: Opened) => Opened): Tally => {
   const turns = tally.current ? tally.byConversation[tally.current] : undefined
   return turns?.length ? { ...tally, byConversation: { ...tally.byConversation, [tally.current!]: [...turns.slice(0, -1), change(turns.at(-1)!)] } } : tally
 }
+
+/** The tally with `turn` opened in the current conversation, when a prompt opened one there. */
+const withOpened = (tally: Tally, turn: Opened | undefined): Tally =>
+  turn && tally.current ? { ...tally, byConversation: { ...tally.byConversation, [tally.current]: [...(tally.byConversation[tally.current] ?? []), turn] } } : tally
 
 /** A turn a prompt opens: one the user gave, or a message from another Claude session, named by its sender's peer name. */
 const opened = (kind: string, text: string, at: number, session: string): Opened | undefined => {
@@ -142,7 +149,8 @@ const stepsOf = ({ work, answer }: Opened, agents: Agents, lineOf: LineOf): Step
 
 /**
  * Every conversation of one session's log with its turns: a turn opens on a prompt the user gave or another worker
- * sent, and takes the main loop's steps and latest answer until the next.
+ * sent, and takes the main loop's steps and latest answer until the next. A prompt the runtime queued opens its turn
+ * where the runtime delivers it, which can be inside the turn that was running: the work before it is that turn's.
  */
 export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => {
   const { header } = log
@@ -155,8 +163,15 @@ export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => 
       case 'compaction.ended':
         return { ...tally, current: data.conversation ?? tally.current }
       case 'prompt': {
-        const turn = tally.current ? opened(data.origin, data.text, at, header.id) : undefined
-        return turn ? { ...tally, byConversation: { ...tally.byConversation, [tally.current!]: [...(tally.byConversation[tally.current!] ?? []), turn] } } : tally
+        if (data.id !== undefined) return { ...tally, queued: new Map(tally.queued).set(data.id, { origin: data.origin, text: data.text }) }
+        return withOpened(tally, opened(data.origin, data.text, at, header.id))
+      }
+      case 'prompt.accepted': {
+        const queued = data.id === undefined ? undefined : tally.queued.get(data.id)
+        if (!queued) break
+        const rest = new Map(tally.queued)
+        rest.delete(data.id!)
+        return withOpened({ ...tally, queued: rest }, opened(queued.origin, queued.text, at, header.id))
       }
       case 'agent.spawned':
         return data.id ? { ...tally, spawned: new Map(tally.spawned).set(data.call, data.id) } : tally
@@ -172,7 +187,7 @@ export const turnsByConversation = (log: SessionLog): Record<string, Turn[]> => 
       }
     }
     return WORK.has(data.t) && ofMainLoop(data) ? withLatest(tally, (turn) => ({ ...turn, work: [...turn.work, [at, data]] })) : tally
-  }, { byConversation: {}, spawned: new Map(), agentSteps: new Map() })
+  }, { byConversation: {}, spawned: new Map(), agentSteps: new Map(), queued: new Map() })
   const spawnedAgents = new Set(tally.spawned.values())
   const lineOf = toolFormatOf(header).line
   const agents: Agents = {
