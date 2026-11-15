@@ -79,8 +79,9 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   mtime and size (stated before copying), dated no later than it ([`copyIndex`](ref:hub/src/private-index.ts#copyIndex):
   a later date would read a same-second, same-size edit as clean), refreshed once with `update-index --refresh`
   (`core.splitIndex=false`), and read with `GIT_INDEX_FILE` by `status`, `diff` and `ls-files`: a refresh changes only
-  the stat of entries whose content matches, so every answer is the real index's. A new copy replaces the checkout's
-  older ones, and copies of checkouts a repo no longer lists are swept
+  the stat of entries whose content matches, so every answer is the real index's. Each read holds its copy through a
+  hard link of its own until its checkout is read, since git reads a `GIT_INDEX_FILE` that is gone as an empty index,
+  so a new copy replaces the checkout's older ones at once, and copies of checkouts a repo no longer lists are swept
   ([`sweepIndexes`](ref:hub/src/private-index.ts#sweepIndexes)). The verbs' reads go through the same copies
   ([[tower-cuts-worktrees]]); the Changes and what discard throws away read the real index.
 

@@ -44,7 +44,7 @@ import {
 } from './bridge/worktrees.ts'
 import { changedSince, sinceOf, type Git } from './changed-files.ts'
 import { git, gitWith, GitTimeout, run, wholeTree } from './git.ts'
-import { copyIndex, privateIndex, sweepIndexes } from './private-index.ts'
+import { copyIndex, privateIndex, sweepIndexes, type HeldIndex } from './private-index.ts'
 import type { RepoLayout, Stale } from './bridge/repo-changes.ts'
 import type { ErrorCode } from './shared/api.ts'
 import { worktreeBrief, type Restored, type WorktreeBrief } from './shared/launch.ts'
@@ -398,12 +398,17 @@ const factsOf = async (dir: string): Promise<RepoFacts> => {
 const statusOf = async (gitIn: Git, dir: string) => lines(await gitIn(dir, ['status', '--porcelain']))
 
 /**
- * Git reading checkout `checkout` of repo `repo` through its private index (`privateIndex`), made on the first call:
- * a checkout whose parts are all kept is never copied.
+ * Git reading checkout `checkout` of repo `repo` through its private index (`privateIndex`), held from the first call
+ * until `release`: a checkout whose parts are all kept is never copied.
  */
-const throughCopy = (repo: string, checkout: string, gitDir: string): (() => Promise<Git>) => {
-  let made: Promise<Git> | undefined
-  return () => (made ??= privateIndex(repo, checkout, gitDir).then((index) => (index ? gitWith({ GIT_INDEX_FILE: index }) : git)))
+const throughCopy = (repo: string, checkout: string, gitDir: string) => {
+  let held: Promise<HeldIndex | undefined> | undefined
+  const gitIn = async (): Promise<Git> => {
+    const h = await (held ??= privateIndex(repo, checkout, gitDir))
+    return h ? gitWith({ GIT_INDEX_FILE: h.index }) : git
+  }
+  const release = async () => (await held?.catch(() => undefined))?.release()
+  return { gitIn, release }
 }
 
 /** A dir's refs read (`rereadRefs`): where its git lives and its own facts, which a checkouts read is judged on; none for a dir that is no repo. */
@@ -449,13 +454,15 @@ export const rereadCheckouts = async ({ read: { dir }, layout: located, facts }:
     const mainEntry = entries[0]
     const bare = located.gitDir === located.root
     const keptMain = prior && !fresh!.main ? prior.main : undefined
+    const { gitIn, release } = throughCopy(located.root, dir, located.gitDir)
     try {
-      const gitIn = throughCopy(located.root, dir, located.gitDir)
       const status = keptMain ?? (bare ? [] : await statusOf(await gitIn(), dir))
       const counted = !bare && mainEntry?.head ? await countedIn(round, gitIn, dir, mainEntry.branch, mainEntry.head, records, prior?.counted.get(MAIN_CHECKOUT), keptMain !== undefined, refsKept) : undefined
       return { read: { dirty: status.length, ahead: facts.ahead, ...(counted && { changed: counted.changed }) }, status, counted }
     } catch (err) {
       return { read: { unread: (err as Error).message, ahead: facts.ahead } }
+    } finally {
+      await release()
     }
   }
 
@@ -465,11 +472,16 @@ export const rereadCheckouts = async ({ read: { dir }, layout: located, facts }:
       if (prunable && existsSync(tree)) throw new Error(`git lists ${tree} as prunable though its folder is here: its .git file is gone or names nothing`)
       const kept = keptStatus(name)
       const admin = prunable ? undefined : adminOf(tree)
-      const gitIn = admin ? throughCopy(located.root, tree, admin) : async () => git
-      const status = prunable ? undefined : kept || (await statusOf(await gitIn(), tree))
-      const created = branch && head ? await creation(branch) : undefined
-      const counted = !prunable && head ? await countedIn(round, gitIn, tree, branch, head, records, prior?.counted.get(name), Boolean(kept), refsKept) : undefined
-      return { read: await treeRead(round, name, entry, records, status ?? [], created, counted), admin, status, created, counted }
+      const copy = admin ? throughCopy(located.root, tree, admin) : undefined
+      const gitIn = copy ? copy.gitIn : async () => git
+      try {
+        const status = prunable ? undefined : kept || (await statusOf(await gitIn(), tree))
+        const created = branch && head ? await creation(branch) : undefined
+        const counted = !prunable && head ? await countedIn(round, gitIn, tree, branch, head, records, prior?.counted.get(name), Boolean(kept), refsKept) : undefined
+        return { read: await treeRead(round, name, entry, records, status ?? [], created, counted), admin, status, created, counted }
+      } finally {
+        await copy?.release()
+      }
     } catch (err) {
       const why = (err as Error).message
       return { read: { ...listedTree(round, name, entry, recordOf(entry, records)), unread: why, risk: [why] } }
