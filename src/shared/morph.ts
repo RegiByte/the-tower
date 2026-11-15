@@ -9,7 +9,8 @@
  * belongs to someone other than the html (a mounted view, a framed document, a terminal, a custom element keeping its
  * own state): the morph leaves it whole, and with `data-owned="children"` it updates the node's attributes and leaves
  * its children. Ids below an owned node take no part in matching. An owned node is matched by its id, or, having none,
- * only by a new node marked owned too.
+ * only by a new node marked owned too. A mark of any other value, in the old content or the new, is refused before
+ * anything changes.
  *
  * The algorithm is Datastar's morph (`library/src/plugins/watchers/patchElements.ts`, itself a port of idiomorph), with
  * idiomorph's focus and selection restore, its stop at the focused element when scanning for a match, and its
@@ -148,6 +149,9 @@ function morphOf(root: Element | ShadowRoot, next: DocumentFragment): Morph {
       ? (parent, node, before) => (parent as ParentNode & { moveBefore(node: Node, child: Node | null): void }).moveBefore(node, before)
       : (parent, node, before) => parent.insertBefore(node, before),
   }
+  for (const el of readMarks(root)) ownershipOf(el)
+  for (const el of readMarks(next)) ownershipOf(el)
+
   const duplicateIds = new Set<string>()
 
   const oldIdElements = [...root.querySelectorAll('[id]')].filter((el) => !isBelowOwned(el, root))
@@ -171,6 +175,9 @@ function morphOf(root: Element | ShadowRoot, next: DocumentFragment): Morph {
   populateIdMap(ctx, next, newIdElements)
   return ctx
 }
+
+/** The owned marks the morph reads below `root`: those inside an owned node are its owner's. */
+const readMarks = (root: Element | ShadowRoot | DocumentFragment) => [...root.querySelectorAll(`[${OWNED}]`)].filter((el) => !isBelowOwned(el, root))
 
 /**
  * Adds each persistent id to the id set of every ancestor of its element, up to `root`. Ids that don't persist are
