@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.4.1
+
+Terminals draw what the TUI drew, and a slow mouse wheel scrolls (#602, #603). Nothing to restart beyond the tower
+(`tower update` does it).
+
+- **No more half-drawn frames.** On macOS, output appended while the tower read a session's log waited for the
+  log's next append, so a frame split across writes showed half-applied (a duplicated line, a missed Shift+Enter,
+  rows crammed together while scrolling) until the next keystroke or pointer motion. Every viewer, every runtime.
+- **A slow mouse notch scrolls the TUI.** A wheel event after a short quiet sends at least one scroll report, so a
+  slow notch is no longer swallowed until several add up to a row; a trackpad stroke scrolls as before.
+
 ## v2.4.0
 
 Fixes for gaps the opencode runtime showed in its first hand-driven sessions (#600). Nothing to restart beyond the
