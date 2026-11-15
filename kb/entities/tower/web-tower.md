@@ -37,7 +37,11 @@ its waits on you, its offers and its workers lamped by their loudest attention
 what waits on them flash, with an arrow at the sidebar's edge to those scrolled out of sight ([[viewer-prefs]]). Every collection a floor declares has
 a tray under its workers ([[collection-trays]]). Drafts are the drafts extension's ([[collections]], [[corkboard]]):
 a draft starts a worker through the page's new-worker dialog or is submitted to a running one; a view starts a worker
-through the same dialog with `kit.spawn` and stays where it is. A floor's policy offers sit above its workers as its
+through the same dialog with `kit.spawn` and stays where it is. The dialog draws a choice of runtime only when the
+config runs more than one, Claude first and picked, and redraws its runtime part (commands, model, effort) from
+`board.runtimes[id]` ([`providerHtml`](ref:hub/src/shared/spawn-form.ts#providerHtml)): a runtime whose list may miss
+models it runs takes any id typed, the list as suggestions, with a note when the id isn't in it ([[opencode]]). A
+worker whose command never started its runtime says why in its header (`card.startFailure`). A floor's policy offers sit above its workers as its
 other asks do ([[policies]], [[attention-list]]). The shell dock starts a shell in any directory of a floor.
 
 **The main pane** shows one value, a `MainView` ([`view.js`](ref:hub/renderers/page/view.js)): a view mounted at a

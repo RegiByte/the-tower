@@ -5,13 +5,14 @@
   "summary": "The repository's front page: what the tower is, the renderers that ship, requirements, setup, the user's tower verbs, a config example and where the rest is documented; it restates the code below, so a change there re-checks it.",
   "in": "tower",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/renderers.ts#BUILT_INS", "hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/doctor.ts#readiness", "hub/scripts/setup.ts", "hub/src/cli.ts#main", "hub/src/app.ts#openApp", "hub/src/init.ts#initialConfig", "hub/src/shared/model.ts#PROJECT_KEYS", "hub/src/shared/launch.ts#settingsArgs"]
+  "refs": ["hub/src/renderers.ts#BUILT_INS", "hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/doctor.ts#readiness", "hub/scripts/setup.ts", "hub/src/cli.ts#main", "hub/src/app.ts#openApp", "hub/src/init.ts#initialConfig", "hub/src/shared/model.ts#PROJECT_KEYS", "hub/src/shared/launch.ts#settingsArgs"]
 }
 ---
 `README.md` at the repository root is the first thing a person who forks the tower reads. It names claims that live
 in code: the renderers that ship ([`BUILT_INS`](ref:hub/src/renderers.ts#BUILT_INS): the tower page, The Week and
 Tower 3D, [[renderers-in-config]]), the Claude Code range
-([`CLAUDE_TESTED`](ref:hub/src/shared/claude.ts#CLAUDE_TESTED)) and the rest of what [[setup]] checks, the user's
+([`CLAUDE_TESTED`](ref:hub/src/shared/claude.ts#CLAUDE_TESTED)), opencode's as the optional second runtime
+([`OPENCODE_TESTED`](ref:hub/src/shared/opencode.ts#OPENCODE_TESTED), [[opencode]]) and the rest of what [[setup]] checks, the user's
 verbs of the `tower` command ([[tower-cli]]), `tower app` ([[macos-app]]), and a config whose keys are documented in
 full by [[docs-config]].
 
