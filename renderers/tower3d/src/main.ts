@@ -57,7 +57,8 @@ import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
 import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
 import * as loading from './loading.ts'
-import { archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, onArchives, readArchives, rereadArchive } from './archive.ts'
+import { archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, onArchives, readArchives, rereadArchive, watchArchives } from './archive.ts'
+import { eventRecord, EVENTS_KEPT } from './record.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
 import { poseFiling } from './filing.ts'
@@ -767,6 +768,10 @@ const statsPollHandlers: Handlers<null, StatsPollEvent, StatsPollEffect> = {
   poll: () => [{ type: 'read' }, STATS_POLL],
   stop: () => [{ type: 'timer/cancel', id: 'poll' }],
 }
+/** What Tower 3D's loops handled, newest last, for the door (`tower3d.events()`). */
+const events = eventRecord(EVENTS_KEPT, () => s.simNow)
+watchArchives(events.listen('archives'))
+
 const statsPolling = loop({
   state: null,
   handlers: statsPollHandlers,
@@ -775,6 +780,7 @@ const statsPolling = loop({
     read: () => void readStats(),
   },
 })
+statsPolling.subscribe(events.listen('statsPolling'))
 
 /** Every floor's stats in the reader where you stand: the overview first, each floor a tab. */
 function openStats() {
@@ -1369,6 +1375,7 @@ const seeing = loop({
     keep: ({ field, value }) => keepViewer(field, value),
   },
 })
+seeing.subscribe(events.listen('seeing'))
 addEventListener('focus', () => {
   seeing.dispatch({ type: 'focus', focused: true })
   const desk = panelAs('desk')
@@ -2921,6 +2928,7 @@ const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
   toast,
   upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
 })
+spawning.subscribe(events.listen('spawning'))
 spawn.addEventListener('close', showPaused)
 
 function openSpawn(project: string, draft?: { note: Held; text: string }) {
@@ -2947,6 +2955,7 @@ const hiring = loop({
     draw: () => s.board && reconcile(STATIONS, s.stations, s.plan, discard),
   },
 })
+hiring.subscribe(events.listen('hiring'))
 s.hiring = hiring.state
 
 async function openSpawnOnNote(project: string, note: Held) {
@@ -3105,5 +3114,6 @@ const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuil
 
 installDoor({
   ready, update, render, onKey, run, place, leaveOverview, captured, captureChanged, pick, showPrompt, startHold, floorY, pickables, advance, panel: panelNow,
+  events: events.read,
   play: () => (lastFrame = performance.now()),
 })

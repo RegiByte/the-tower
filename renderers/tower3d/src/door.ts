@@ -8,6 +8,7 @@ import { pictured } from './showing.ts'
 import { shell } from './shell.ts'
 import { s, type Panel, type Standing, type View } from './state.ts'
 import type { CatName } from './life.ts'
+import type { EventRecord } from './record.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
 
 const { camera, canvas, scene } = shell().stage
@@ -35,6 +36,9 @@ const { drive } = shell().input
  *   await tower3d.pictured()               every picture being read is painted (one a later board brought too)
  *   tower3d.state()                        where you are, what you aim at, what's open, frame times, what the last frame drew and counters
  *   tower3d.shot()                         the scene alone as a PNG data URL (no DOM panels: use CDP for those)
+ *   tower3d.events()                       the last 200 events Tower 3D's loops handled (seeing, hiring, spawning,
+ *                                          statsPolling, archives), each with its effects and the simulated time it ran
+ *                                          at, as plain data; events(n) only those after record n
  */
 export type Door = {
   ready(): Promise<void>
@@ -53,6 +57,7 @@ export type Door = {
   advance(): void
   state(): DoorState
   shot(): string
+  events(after?: number): EventRecord[]
 }
 
 export type DoorState = {
@@ -111,6 +116,8 @@ export type Engine = {
   pickables(): THREE.Object3D[]
   /** Delivers a fixture's next board. */
   advance(): void
+  /** The events recorded after record `after`, as plain data (`record.ts`). */
+  events(after: number): EventRecord[]
 }
 
 const STEP = 1 / 60
@@ -259,5 +266,6 @@ export function installDoor(e: Engine) {
       e.render()
       return canvas.toDataURL('image/png')
     },
+    events: (after = 0) => e.events(after),
   } satisfies Door)
 }

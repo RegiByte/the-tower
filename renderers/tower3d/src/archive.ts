@@ -1,4 +1,4 @@
-import { failureAt, failureOf, heldHandlers, noReads, reading, valueAt, valueOf, loop } from '/lib/machine.js'
+import { failureAt, failureOf, heldHandlers, noReads, reading, valueAt, valueOf, loop, type Listener } from '/lib/machine.js'
 import type { Board, Card, Floor } from './api.ts'
 import { archivedCard, archiveKey, type ArchiveReads, archiveWant } from './cards.ts'
 import { readArchive } from './fixtures.ts'
@@ -34,6 +34,9 @@ const archives = loop({
     toast: () => arrived(),
   },
 })
+
+/** Calls `listener` with each event the archive reads handle (`Loop.subscribe`). */
+export const watchArchives = (listener: Listener<unknown>) => archives.subscribe(listener)
 
 /** Reads every floor's archive that moved since it was read, or was never read. */
 export function readArchives(board: Board) {
