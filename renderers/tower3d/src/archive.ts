@@ -56,12 +56,19 @@ export const archiveOf = (project: string) => valueOf(archives.state().held[proj
 /** Why a floor's archive can't be read, while none of it is. */
 export const archiveFailure = (project: string) => failureOf(archives.state().held[project])
 
-/**
- * A floor's history as `board` stands: every card it has had, the board's and its archive's as read at the board's
- * `archiveKey`. `undefined` until that read lands, and while it failed.
- */
-export function historyOf(board: Board, f: Floor): Card[] | undefined {
-  const archive = valueAt(archives.state().held[f.id], archiveKey(board, f))
+/** Each floor's archive, by floor, as read for a board: what the building's seats and galleries are derived from. */
+export type Archived = ReadonlyMap<string, Card[]>
+
+/** Each floor's archive as read at `board`'s `archiveKey`: a floor whose read hasn't landed, or failed, is left out. */
+export const archivedAt = (board: Board): Archived =>
+  new Map(board.floors.flatMap((f) => {
+    const archive = valueAt(archives.state().held[f.id], archiveKey(board, f))
+    return archive ? [[f.id, archive] as const] : []
+  }))
+
+/** A floor's history: every card it has had, the board's and its archive's as `archived` holds it; `undefined` without its archive. */
+export function historyOf(f: Floor, archived: Archived): Card[] | undefined {
+  const archive = archived.get(f.id)
   return archive && historyFrom(f.cards, archive)
 }
 

@@ -59,18 +59,18 @@ import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
 import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
 import * as loading from './loading.ts'
-import { archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, onArchives, readArchives, rereadArchive, watchArchives } from './archive.ts'
+import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, onArchives, type Archived, readArchives, rereadArchive, watchArchives } from './archive.ts'
 import { eventRecord, EVENTS_KEPT } from './record.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
 import { poseFiling } from './filing.ts'
-import { ARCADE_SIGNS, CABINETS, DANCE, DESKS, FILINGS, GALLERY, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, reconcile, slotsAt } from './layers.ts'
+import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, PIGEONHOLES, RUNNING, STATIONS, WALLS, desksAfter, galleryAfter, reconcile, shownOn, slotsAt } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
 import { noteText, noteTitle, onTitles, pruneNoteTitles } from './notes.ts'
 import { SCREEN, onGameTitles, pruneGameTitles } from './arcade.ts'
 import { GAMES, gameItem } from './games.ts'
 import { keptText, keptTitle, onKeptTitles, pruneKeptTitles } from './kept.ts'
-import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
+import { NO_PLAN, s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
 import { aim, eyes, fallTo, jump, look, walk, type Walker } from './walker.ts'
 import { DECK, groundAt, layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, panelGrid, setDoors, setLimits, setShellTitles } from './world.ts'
@@ -104,7 +104,7 @@ const statsBoard = boardFace(640, 400)
 let screensAt: { plan?: Plan; level: number; overview: boolean; spots: Map<string, THREE.Vector3[]> } = { level: -1, overview: false, spots: new Map() }
 function screensHere() {
   const overview = viewNow() === 'overview'
-  if (screensAt.plan === s.plan && screensAt.level === s.me.level && screensAt.overview === overview) return screensAt.spots
+  if (screensAt.plan === planNow() && screensAt.level === s.me.level && screensAt.overview === overview) return screensAt.spots
   const spots = new Map<string, THREE.Vector3[]>()
   const levels = overview ? [...s.levels.map((l) => l.group), ...s.world!.levels] : [s.levels[s.me.level]?.group, s.world!.levels[s.me.level]]
   for (const group of levels) {
@@ -114,7 +114,7 @@ function screensHere() {
       if (path) spots.set(path, [...(spots.get(path) ?? []), o.getWorldPosition(new THREE.Vector3())])
     })
   }
-  screensAt = { plan: s.plan, level: s.me.level, overview, spots }
+  screensAt = { plan: planNow(), level: s.me.level, overview, spots }
   return spots
 }
 
@@ -127,12 +127,12 @@ const screenDistance = (path: string) => {
 let boxesAt: { plan?: Plan; level: number; layer?: Layer; boxes: Box[] } = { level: -1, boxes: [] }
 function boxesHere() {
   const layer = layerAt(s.me.y)
-  if (boxesAt.plan === s.plan && boxesAt.level === s.me.level && boxesAt.layer === layer) return boxesAt.boxes
-  boxesAt = { plan: s.plan, level: s.me.level, layer, boxes: collidersOn(s.plan, here(), layer) }
+  if (boxesAt.plan === planNow() && boxesAt.level === s.me.level && boxesAt.layer === layer) return boxesAt.boxes
+  boxesAt = { plan: planNow(), level: s.me.level, layer, boxes: collidersOn(planNow(), here(), layer) }
   return boxesAt.boxes
 }
 
-const here = () => s.plan.levels[s.me.level]
+const here = () => planNow().levels[s.me.level]
 const keepTexture = (t: THREE.Texture) => isScreenTexture(t) || isStillScreen(t) || isPosterTexture(t) || t === directory.texture || t === statsBoard.texture
 const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTexture))
 
@@ -189,26 +189,26 @@ const limitsKey = (b: Board) => JSON.stringify([defaultLimits(b).rateLimits, b.t
 function rebuildWorld() {
   if (s.world) discard(s.world.group)
   s.rebuilds++
-  s.world = buildWorld(s.plan, s.board!, directory, statsBoard, s.models!)
+  s.world = buildWorld(planNow(), s.board!, directory, statsBoard, s.models!)
   scene.add(s.world.group)
-  for (const level of s.plan.levels) fillLayer(s.kit!, onLevel(level.index).zones, zonesPlaced(s.kit!, level))
-  for (const root of s.levels.slice(s.plan.levels.length)) fillLayer(s.kit!, root.zones, [])
+  for (const level of planNow().levels) fillLayer(s.kit!, onLevel(level.index).zones, zonesPlaced(s.kit!, level))
+  for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
   const built = s.world
   for (const b of s.world.bookcases) {
     shelfFiles(b.project, b.n).then((files) => s.world === built && fillBooks(b, files, built.pickables), (err: Error) => toast(`shelf: ${err.message}`))
   }
 }
 
-/** A firework over the roof party for every turn finished since the last board, in its worker's color: over its project's dance floor, else the roof's middle. */
-function celebrate(next: Board) {
-  const roof = s.plan.levels.at(-1)!
+/** A firework over the roof party for every turn finished since `was`, in its worker's color: over its project's dance floor, else the roof's middle. */
+function celebrate(was: Board | undefined, next: Board) {
+  const roof = planNow().levels.at(-1)!
   const floors = roof.kind === 'roof' ? roof.floors : []
+  const working = new Set(was ? cardsOf(was).filter((c) => c.status === 'working').map((c) => c.id) : [])
   for (const c of cardsOf(next)) {
-    if (s.lastStatus.get(c.id) !== 'working' || (c.status !== 'done' && c.status !== 'idle')) continue
+    if (!working.has(c.id) || (c.status !== 'done' && c.status !== 'idle')) continue
     const at = floors.find((f) => f.projects.includes(c.project)) ?? { x: 0, z: 0 }
     launch(scene, new THREE.Vector3(at.x + (random() - 0.5) * 8, roof.y + 1, at.z + (random() - 0.5) * 6), hueOf(c.id))
   }
-  s.lastStatus = new Map(cardsOf(next).map((c) => [c.id, c.status] as const))
 }
 
 /** Where you stood, kept by the tower for this page so a reload puts you back, with the music on or off and what you've seen shown. */
@@ -221,15 +221,15 @@ let primeSeen = false
 const everyShown = (b: Board) => cardsOf(b).flatMap((c) => c.shown.map((sh) => ({ c, sh, key: shownKey(sh) })))
 const isFresh = (c: Card, sh: Shown) => !s.seenShown.has(shownKey(sh))
 /** The showings you have yet to open, of workers at a desk, newest first. */
-const freshShown = () => everyShown(s.board!).filter(({ c, sh }) => deskOf(s.plan, c.id) && isFresh(c, sh)).sort((a, b) => b.sh.at - a.sh.at)
+const freshShown = () => everyShown(s.board!).filter(({ c, sh }) => deskOf(planNow(), c.id) && isFresh(c, sh)).sort((a, b) => b.sh.at - a.sh.at)
 
 /**
  * Each desk's second monitor, its worker's latest showing, ribboned while any of its showings is new to you; and every
- * gallery, its pictures ribboned while new.
+ * gallery, its pictures ribboned while new, a showing `was` didn't hold flying in.
  */
-function dressSides() {
+function dressSides(was: Board | undefined) {
   for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)))
-  reconcile(GALLERY, s.pictures, s.plan, discard)
+  reconcile(galleryAfter(was), s.pictures, planNow(), discard)
   keepPosters(new Set([...[...s.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...s.pictures.keys()]))
 }
 
@@ -256,7 +256,7 @@ const archiveFailed = (message: string) => toast(`The archive can't be read: ${m
 /** An archive read landed or failed: a board waiting for it draws, the cabinets file it, and a panel listing it shows it. */
 function archiveArrived() {
   drawSettled()
-  reconcile(FILINGS, s.filings, s.plan, discard)
+  reconcile(FILINGS, s.filings, planNow(), discard)
   renderPanel()
 }
 
@@ -282,16 +282,35 @@ function drawSettled() {
 }
 
 /**
- * What Tower 3D derives from each floor's history as `board` stands: every seated worker's seat and each floor's
- * gallery. A floor whose archive can't be read has neither: its workers on duty have no desks.
+ * What Tower 3D derives from each floor's history, its archive as `archived` holds it: every seated worker's seat and
+ * each floor's gallery. A floor whose archive can't be read has neither: its workers on duty have no desks.
  */
-function historyReads(board: Board) {
+function historyReads(board: Board, archived: Archived) {
   const histories = new Map(board.floors.flatMap((f) => {
-    const history = historyOf(board, f)
+    const history = historyOf(f, archived)
     return history ? [[f.id, history] as const] : []
   }))
   return { seats: buildingSeats(histories), galleries: new Map([...histories].map(([id, history]) => [id, galleryOf(history)])) }
 }
+
+/** The plan last derived, and what from: the same board, archives and instant give the same plan. */
+let planned: { board: Board; archived: Archived; at: number; plan: Plan } | undefined
+
+/**
+ * The building for `board` at the wall time `at`, each floor's history from its archive as `archived` holds it: who
+ * sits where, who is on a break or in a meeting, the galleries, the party, furnished from the kit.
+ */
+function planOf(board: Board, archived: Archived, at: number): Plan {
+  if (planned?.board === board && planned.archived === archived && planned.at === at) return planned.plan
+  const prefabs = s.kit!.prefabs
+  const reads = { draftsOf, keepsThreads: floorKeepsThreads, floorThreadsOf, ...historyReads(board, archived) }
+  const p = furnish(plan(board, at, (author) => besideOf(slotsAt(author)), meetingKit(prefabs), (room) => standingIn(room, prefabs), reads), prefabs, tintsOf(board), new Date(at).getMonth())
+  planned = { board, archived, at, plan: p }
+  return p
+}
+
+/** The plan the building stands on: its board's, as planned when the building took it. */
+const planNow = () => (s.board ? planOf(s.board, s.archived, s.plannedAt) : NO_PLAN)
 
 /** A showing new since the last board: its worker holds it up, and you hear it; at its desk, it opens. */
 function shownArrives(c: Card, sh: Shown) {
@@ -302,17 +321,18 @@ function shownArrives(c: Card, sh: Shown) {
   toast(`${c.callsign} showed you “${shownTitle(sh)}” · V to look`)
 }
 
-function noticeShown(next: Board) {
-  const all = everyShown(next)
-  if (!s.first) for (const { c, sh, key } of all) if (!s.lastShown.has(key)) shownArrives(c, sh)
-  s.lastShown = new Set(all.map(({ key }) => key))
+/** Every showing on `next` that `was` didn't hold arrives; on the first board, none does. */
+function noticeShown(was: Board | undefined, next: Board) {
+  if (!was) return
+  const before = shownOn(was)
+  for (const { c, sh, key } of everyShown(next)) if (!before.has(key)) shownArrives(c, sh)
 }
 
 /** Seen again, it moves last: the oldest are the first to go once more than `SEEN_KEPT` are kept. */
 function see(sh: Shown) {
   s.seenShown.delete(shownKey(sh))
   s.seenShown.add(shownKey(sh))
-  dressSides()
+  dressSides(s.board)
   renderHud()
 }
 
@@ -345,8 +365,8 @@ const frameAt = (x: number, y: number, z: number, turn: number) => new THREE.Mat
  */
 function dressLevels(board: Board) {
   const month = new Date(wallNow()).getMonth()
-  const placed = s.plan.levels.map((level): Placed[] => {
-    if (level.kind === 'lobby') return cityModel(s.plan, tintsOf(board)).map(({ item, theme }) => ({ item, frame: LOBBY, theme }))
+  const placed = planNow().levels.map((level): Placed[] => {
+    if (level.kind === 'lobby') return cityModel(planNow(), tintsOf(board)).map(({ item, theme }) => ({ item, frame: LOBBY, theme }))
     if (level.kind === 'roof') return []
     return [
       ...level.desks.filter((slot) => !slot.beside && !slot.meeting).flatMap((slot) => {
@@ -370,9 +390,9 @@ function dressLevels(board: Board) {
 
 /** Every level's empty meeting chairs, instanced on its root. */
 function seatChairs() {
-  const levels = Math.max(s.plan.levels.length, s.chairs.length)
+  const levels = Math.max(planNow().levels.length, s.chairs.length)
   for (let i = 0; i < levels; i++) {
-    const level = s.plan.levels[i]
+    const level = planNow().levels[i]
     const at = level?.kind === 'floor' ? emptyChairs(level).map((pl) => ({ x: pl.x, y: level.y, z: pl.z, turn: pl.turn })) : []
     s.chairs[i] ??= makeChairs()
     hangOn(i, s.chairs[i].group)
@@ -395,38 +415,40 @@ function onBoardError(err: Error & { code: string }) {
 function onBoard(next: Board, at: ShelfSelf | undefined) {
   const sheet = keymapSheetHtml(sheetKeys(next))
   if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
-  const { began } = transitions(s.board, next)
-  const asked = askTransitions(s.board, next).began.filter((a) => !heed().dismissed.has(a.key))
+  const was = s.board
+  const { began } = transitions(was, next)
+  const asked = askTransitions(was, next).began.filter((a) => !heed().dismissed.has(a.key))
   s.boards++
   s.board = next
   s.self = at
   desk.update(next)
-  s.plan = furnish(plan(next, wallNow(), (author) => besideOf(slotsAt(author)), meetingKit(s.kit!.prefabs), (room) => standingIn(room, s.kit!.prefabs), { draftsOf, keepsThreads: floorKeepsThreads, floorThreadsOf, ...historyReads(next) }), s.kit!.prefabs, tintsOf(next), new Date(wallNow()).getMonth())
-  celebrate(next)
+  s.archived = archivedAt(next)
+  s.plannedAt = wallNow()
+  celebrate(was, next)
   if (began.length) s.waitedAt = s.simNow
   for (const a of asked) toast(`${a.title}, asked by ${a.cap}`, { label: 'Go', run: () => goToAsk(a) })
   rereadViewer()
-  const key = structureKey(s.plan, next)
+  const key = structureKey(planNow(), next)
   if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
-  if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, s.plan, defaultLimits(next).rateLimits, next.today))
+  if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today))
   setShellTitles(s.world!, next.shells)
-  reconcile(DESKS, s.desks, s.plan, discard)
+  reconcile(desksAfter(was), s.desks, planNow(), discard)
   hiring.dispatch({ type: 'board', board: next })
-  reconcile(STATIONS, s.stations, s.plan, discard)
+  reconcile(STATIONS, s.stations, planNow(), discard)
   dressLevels(next)
   seatChairs()
-  reconcile(WALLS, s.walls, s.plan, discard)
-  reconcile(RUNNING, s.running, s.plan, discard)
-  reconcile(PIGEONHOLES, s.pigeonholes, s.plan, discard)
-  reconcile(ARCADE_SIGNS, s.arcadeSigns, s.plan, discard)
-  reconcile(FILINGS, s.filings, s.plan, discard)
+  reconcile(WALLS, s.walls, planNow(), discard)
+  reconcile(RUNNING, s.running, planNow(), discard)
+  reconcile(PIGEONHOLES, s.pigeonholes, planNow(), discard)
+  reconcile(ARCADE_SIGNS, s.arcadeSigns, planNow(), discard)
+  reconcile(FILINGS, s.filings, planNow(), discard)
   readArchives(next)
   dressAllPapers()
-  reconcile(DANCE, s.dance, s.plan, discard)
-  reconcile(GUESTS, s.guests, s.plan, discard)
-  if (s.first && primeSeen) for (const { key } of everyShown(next)) s.seenShown.add(key)
-  dressSides()
-  noticeShown(next)
+  reconcile(DANCE, s.dance, planNow(), discard)
+  reconcile(GUESTS, s.guests, planNow(), discard)
+  if (!was && primeSeen) for (const { key } of everyShown(next)) s.seenShown.add(key)
+  dressSides(was)
+  noticeShown(was, next)
   pruneNoteTitles(next.floors)
   pruneKeptTitles(next.floors)
   syncNotes()
@@ -436,29 +458,27 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   if (s.draft?.id) followDraft(s.draft)
   const replaying = replayNow()
   keepScreens(new Set([
-    ...s.plan.levels.flatMap((l) => (l.kind === 'floor' ? l.desks.filter((d) => d.card.live).map((d) => `screen/${d.card.id}`) : [])),
+    ...planNow().levels.flatMap((l) => (l.kind === 'floor' ? l.desks.filter((d) => d.card.live).map((d) => `screen/${d.card.id}`) : [])),
     ...next.shells.map((sh) => `shell/${sh.id}`),
     ...(replaying ? [`screen/${replaying.session}`] : []),
   ]))
   if (replaying && !s.desks.has(replaying.id)) app.dispatch({ type: 'replay-left' })
   dressReplays()
-  paintDirectory(directory, s.plan, heededWaits(next, heed()))
-  if (s.first) {
+  paintDirectory(directory, planNow(), heededWaits(next, heed()))
+  if (!was) {
     for (const name of CATS) {
       const cat = makeCat(s.models!, name)
       s.cats.set(name, cat)
     }
-    s.me = { x: 0, z: coreFront(s.plan) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...s.saved }
+    s.me = { x: 0, z: coreFront(planNow()) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...s.saved }
     if (location.hash === '#tv') {
-      const couch = loungeSpots(s.plan).couch
+      const couch = loungeSpots(planNow()).couch
       s.me = { ...s.me, level: 0, x: couch.x, z: couch.z - 1.4, yaw: Math.PI, pitch: 0.12 }
       history.replaceState(null, '', location.pathname)
     }
     show('paused', !captured())
   }
-  const wasFirst = s.first
-  s.first = false
-  if (s.me.level >= s.plan.levels.length) s.me = { ...s.me, level: 0 }
+  if (s.me.level >= planNow().levels.length) s.me = { ...s.me, level: 0 }
   renderHud()
   app.dispatch({ type: 'board-applied', board: next })
   followCabinet()
@@ -469,10 +489,10 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   freshLogbooks(next)
   renderElevator()
   const { desk: pendingDesk } = app.state().pending
-  if (pendingDesk && deskOf(s.plan, pendingDesk)) goDesk(pendingDesk)
+  if (pendingDesk && deskOf(planNow(), pendingDesk)) goDesk(pendingDesk)
   const { shell: pendingShell } = app.state().pending
-  if (pendingShell && kioskOf(s.plan, pendingShell)) goShell(pendingShell)
-  if (wasFirst) pictured().then(built)
+  if (pendingShell && kioskOf(planNow(), pendingShell)) goShell(pendingShell)
+  if (!was) pictured().then(built)
 }
 
 /**
@@ -501,9 +521,9 @@ function renderHud() {
 
 function renderElevator() {
   const { ride } = motionNow()
-  const inCar = viewNow() === 'walk' && (ride !== undefined || inside(carBox(s.plan), s.me.x, s.me.z))
+  const inCar = viewNow() === 'walk' && (ride !== undefined || inside(carBox(planNow()), s.me.x, s.me.z))
   show('elevator', inCar)
-  if (inCar) $('elevator').innerHTML = elevatorHtml(s.plan, ride ? ride.to : s.me.level, ride !== undefined, heededWaits(s.board!, heed()))
+  if (inCar) $('elevator').innerHTML = elevatorHtml(planNow(), ride ? ride.to : s.me.level, ride !== undefined, heededWaits(s.board!, heed()))
 }
 
 const viewDeps = {
@@ -578,8 +598,8 @@ function renderPanel() {
     $('archive-count').textContent = count
     if ($('archive-list').innerHTML !== html) $('archive-list').innerHTML = html
   }
-  if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(s.plan, held, heededWaits(board, heed()))
-  if (panel.kind === 'shell-pick') keepingFocus($('shell-pick'), () => ($('shell-pick').innerHTML = shellPickHtml(s.plan, board, panel.first, held)))
+  if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(planNow(), held, heededWaits(board, heed()))
+  if (panel.kind === 'shell-pick') keepingFocus($('shell-pick'), () => ($('shell-pick').innerHTML = shellPickHtml(planNow(), board, panel.first, held)))
   if (panel.kind === 'drawer') {
     const f = board.floors.find((f) => f.id === panel.project)
     const d = drawersAt(panel.project)?.[panel.n]
@@ -622,7 +642,7 @@ function renderPanel() {
     showSince($('doc-body'))
   }
   if (panel.kind === 'picture') {
-    const picture = pictureOf(s.plan.galleries, board, panel.id, panel.target)
+    const picture = pictureOf(planNow().galleries, board, panel.id, panel.target)
     // A picture's gallery is the archive read's, not the board's alone: its draw closes it until that read is an event.
     if (!picture) return closeDoc()
     $('doc-head').innerHTML = pictureHeadHtml(picture.worker, picture.card?.onDuty ?? false, picture.shown, `#${hueOf(panel.id).getHexString()}`)
@@ -884,7 +904,7 @@ function closePanels() {
  * right half in a sandboxed frame and takes the keys, and the music stops until it closes.
  */
 function openGame(project: string, id: string) {
-  const at = cabinetOf(s.plan, project, id)
+  const at = cabinetOf(planNow(), project, id)
   if (at) go({ kind: 'game', project, id, x: at.cabinet.x })
 }
 
@@ -898,7 +918,7 @@ function gameEntered({ project, id }: GamePanel) {
   const frame = $('game-body').querySelector('iframe')!
   frame.addEventListener('load', () => frame.focus())
   frame.focus()
-  frameCabinet(cabinetOf(s.plan, project, id)!)
+  frameCabinet(cabinetOf(planNow(), project, id)!)
 }
 
 /** Leaving a game: its frame emptied, the music back. */
@@ -912,7 +932,7 @@ function gameLeft() {
 function followCabinet() {
   const game = panelAs('game')
   if (!game) return
-  const at = cabinetOf(s.plan, game.project, game.id)
+  const at = cabinetOf(planNow(), game.project, game.id)
   if (!at) return go(undefined)
   if (at.cabinet.x !== game.x) (patchPanel({ ...game, x: at.cabinet.x }), frameCabinet(at))
 }
@@ -1017,7 +1037,7 @@ async function deleteKept(panel: Extract<Panel, { kind: 'kept' }>) {
 
 /** A gallery's picture in the reader where you stand, as its desk's tab shows it; it counts as seen once opened. */
 function openPicture(id: string, target: string) {
-  if (!pictureOf(s.plan.galleries, s.board!, id, target)) return
+  if (!pictureOf(planNow().galleries, s.board!, id, target)) return
   go({ kind: 'picture', id, target })
 }
 
@@ -1025,7 +1045,7 @@ function openPicture(id: string, target: string) {
 async function pictureEntered(panel: Extract<Panel, { kind: 'picture' }>, from: Panel | undefined) {
   readerEntered(panel, from)
   const { id, target } = panel
-  const { worker, shown: sh } = pictureOf(s.plan.galleries, s.board!, id, target)!
+  const { worker, shown: sh } = pictureOf(planNow().galleries, s.board!, id, target)!
   see(sh)
   $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes())
   if (!isMarkdown(sh)) return
@@ -1112,7 +1132,7 @@ const pastCard = (id: string) =>
   findCard(s.board!, id) ?? archivedOf(id)!
 
 function focusShell(id: string) {
-  if (!kioskOf(s.plan, id)) return
+  if (!kioskOf(planNow(), id)) return
   go({ kind: 'shell', id })
 }
 
@@ -1137,7 +1157,7 @@ const watch = (n: number) => go({ kind: 'tv', n })
 
 /** Entering a big screen: the drawer and the picker closed, as they don't leave by the app yet, the screen filling the view. */
 function tvEntered({ n }: { n: number }) {
-  const screen = bigScreens(s.plan)[n]
+  const screen = bigScreens(planNow())[n]
   sideClosed()
   show('paused', false)
   show('watch', true)
@@ -1167,8 +1187,8 @@ function endShare() {
 /** To a worker's desk, wherever it is, and sit down. */
 function goDesk(id: string) {
   app.dispatch({ type: 'pend', pending: { desk: undefined } })
-  const level = levelOfCard(s.plan, id)
-  const slot = deskOf(s.plan, id)
+  const level = levelOfCard(planNow(), id)
+  const slot = deskOf(planNow(), id)
   if (!level || !slot) return toast(`${findCard(s.board!, id)?.callsign ?? id} is not on duty`)
   if (viewNow() === 'overview') leaveOverview()
   closeSide()
@@ -1177,8 +1197,8 @@ function goDesk(id: string) {
 
 function goShell(id: string) {
   app.dispatch({ type: 'pend', pending: { shell: undefined } })
-  const level = levelOfShell(s.plan, id)
-  const k = kioskOf(s.plan, id)
+  const level = levelOfShell(planNow(), id)
+  const k = kioskOf(planNow(), id)
   if (!level || !k) return
   if (viewNow() === 'overview') leaveOverview()
   closeSide()
@@ -1201,7 +1221,7 @@ async function throwAway(project: string, id: string) {
 function arriveAt(index: number, then: AppEvent) {
   if (viewNow() === 'overview') leaveOverview()
   closePanels()
-  travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, then)
+  travel(index, { x: 0, z: coreFront(planNow()) + 1.6, yaw: 0 }, then)
 }
 
 /** Out of the elevator on a level, facing its floor. */
@@ -1379,9 +1399,9 @@ function goMove(m: Move) {
  */
 function goToAsk(a: Board['asks'][number]) {
   const id = a.subject.startsWith('card:') ? a.subject.slice('card:'.length) : undefined
-  if (id && deskOf(s.plan, id)) return goDesk(id)
+  if (id && deskOf(planNow(), id)) return goDesk(id)
   const project = projectOfKey(s.board!, a.subject)
-  const level = project && s.plan.levels.find((l) => l.kind === 'floor' && l.floor.id === project)
+  const level = project && planNow().levels.find((l) => l.kind === 'floor' && l.floor.id === project)
   if (level) return arriveAt(level.index, { type: 'arrived', at: { kind: 'ask', project, said: askSaid(a) } })
   toast(askSaid(a))
 }
@@ -1567,7 +1587,7 @@ function dismissWait(key: string) {
 function drawWaits() {
   renderPanel()
   renderElevator()
-  paintDirectory(directory, s.plan, heededWaits(s.board!, heed()))
+  paintDirectory(directory, planNow(), heededWaits(s.board!, heed()))
 }
 
 function chooseRing(ring: Ring) {
@@ -1663,7 +1683,7 @@ function commandKey(e: KeyboardEvent) {
 const nextWaiting = () => goMove('waiting')
 
 function startRide(to: number) {
-  if (motionNow().ride || to === s.me.level || !inside(carBox(s.plan), s.me.x, s.me.z)) return
+  if (motionNow().ride || to === s.me.level || !inside(carBox(planNow()), s.me.x, s.me.z)) return
   app.dispatch({ type: 'ride', ride: { from: s.me.level, to, start: s.simNow, move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) } })
 }
 
@@ -1686,9 +1706,9 @@ function overview() {
   app.dispatch({ type: 'view', view: 'overview' })
   aimAt(undefined)
   show('paused', false)
-  const top = s.plan.levels.at(-1)!.y
+  const top = planNow().levels.at(-1)!.y
   const center = new THREE.Vector3(0, top / 2, 0)
-  const from = new THREE.Vector3(s.plan.width * 0.85, top * 0.6 + 8, s.plan.depth * 1.4 + top * 0.45)
+  const from = new THREE.Vector3(planNow().width * 0.85, top * 0.6 + 8, planNow().depth * 1.4 + top * 0.45)
   flyTo(from, lookQuaternion(from, center), 900, { type: 'arrived', at: { kind: 'overview', center: vec3(center) } })
 }
 
@@ -1720,10 +1740,10 @@ const pickables = () => [
 let occluders: { plan?: Plan; level: number; boxes: THREE.Box3[] } = { level: -1, boxes: [] }
 /** What stops a look across the level, as boxes in the world, rebuilt when the plan or your level changes. */
 function occludersHere() {
-  if (occluders.plan === s.plan && occluders.level === s.me.level) return occluders.boxes
+  if (occluders.plan === planNow() && occluders.level === s.me.level) return occluders.boxes
   const y = levelY(s.me.level)
-  const boxes = solids(s.plan, here()).map((b) => new THREE.Box3(new THREE.Vector3(b.minX, y + b.bottom, b.minZ), new THREE.Vector3(b.maxX, y + b.top, b.maxZ)))
-  occluders = { plan: s.plan, level: s.me.level, boxes }
+  const boxes = solids(planNow(), here()).map((b) => new THREE.Box3(new THREE.Vector3(b.minX, y + b.bottom, b.minZ), new THREE.Vector3(b.maxX, y + b.top, b.maxZ)))
+  occluders = { plan: planNow(), level: s.me.level, boxes }
   return boxes
 }
 
@@ -1766,7 +1786,7 @@ const aimNow = () => app.state().aim
 /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
 function offersNow() {
   const a = aimNow().offered
-  return a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: s.plan.galleries }) : []
+  return a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: planNow().galleries }) : []
 }
 
 /** The crosshair or the pointer is on `a`, and the prompt offers its verbs, drawn by `at` when the pointer gives one. */
@@ -1793,7 +1813,7 @@ function drawPrompt(at?: { x: number; y: number }) {
   const key = a ? `${aim.offeredKey}|${JSON.stringify(offers)}|${marked}|${Math.floor(s.simNow / 1000)}` : ''
   if (key !== promptKey) {
     promptKey = key
-    const html = a && s.board ? promptHtml(a, s.board, offers, marked, s.catNames, s.plan.galleries) : ''
+    const html = a && s.board ? promptHtml(a, s.board, offers, marked, s.catNames, planNow().galleries) : ''
     $('prompt').innerHTML = html
     show('prompt', Boolean(html))
   }
@@ -1871,7 +1891,7 @@ function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
   app.dispatch({ type: 'lost', lost: false })
   app.dispatch({ type: 'board', board: next })
   if (!loaded || starting) return void (latest = [next, at])
-  if (!s.first) return whenSettled(next, () => onBoard(next, at))
+  if (s.board) return whenSettled(next, () => onBoard(next, at))
   start(next, at)
 }
 
@@ -1938,19 +1958,19 @@ function frameScene() {
 
 /** The lighting's passes before the scene is drawn: the rig fitted to what is seen, and the contact shadows under your level, all counted on the meter. */
 function lightFrame() {
-  const y = s.plan.levels[s.me.level]?.y ?? 0
+  const y = planNow().levels[s.me.level]?.y ?? 0
   const near = cameraOnLevel()
-  rigFrame(scene, { ...s.plan, top: s.plan.levels.at(-1)?.y ?? 0, y, height: levelHeight(s.me.level), whole: !near, panels: panelGrid(s.plan) })
+  rigFrame(scene, { ...planNow(), top: planNow().levels.at(-1)?.y ?? 0, y, height: levelHeight(s.me.level), whole: !near, panels: panelGrid(planNow()) })
   renderer.info.autoReset = false
   renderer.info.reset()
-  contactShadows(renderer, scene, near ? standingOn() : [], { ...s.plan, y })
+  contactShadows(renderer, scene, near ? standingOn() : [], { ...planNow(), y })
 }
 
 /** The camera is within your level's storey, out of the elevator: walking, seated, petting, or flying between those. */
 function cameraOnLevel() {
   const { x, y, z } = camera.position
   const floor = levelY(s.me.level)
-  return !motionNow().ride && Math.abs(x) < s.plan.width / 2 && Math.abs(z) < s.plan.depth / 2 && y > floor && y < floor + levelHeight(s.me.level)
+  return !motionNow().ride && Math.abs(x) < planNow().width / 2 && Math.abs(z) < planNow().depth / 2 && y > floor && y < floor + levelHeight(s.me.level)
 }
 
 /** What stands on your level and its own part of the building. */
@@ -1991,14 +2011,14 @@ function tickWalker(f: Frame) {
 }
 
 function stepWalker({ dt, turned }: Frame) {
-  s.me = fallTo(s.me, here().kind === 'floor' ? groundAt(s.plan.loft, s.me.x, s.me.z, s.me.y) : 0, dt)
+  s.me = fallTo(s.me, here().kind === 'floor' ? groundAt(planNow().loft, s.me.x, s.me.z, s.me.y) : 0, dt)
   if (viewNow() !== 'walk' || !captured()) return
   s.me = look(s.me, turned)
   if (motionNow().ride || motionNow().flight) return
-  const wasInCar = inside(carBox(s.plan), s.me.x, s.me.z)
+  const wasInCar = inside(carBox(planNow()), s.me.x, s.me.z)
   const m = move()
   s.me = walk(jump(s.me, m), m, dt, boxesHere())
-  if (wasInCar !== inside(carBox(s.plan), s.me.x, s.me.z)) renderElevator()
+  if (wasInCar !== inside(carBox(planNow()), s.me.x, s.me.z)) renderElevator()
 }
 
 /**
@@ -2038,7 +2058,7 @@ function doorTarget(level: number) {
 }
 
 function tickDoors({ dt }: Frame) {
-  for (const level of s.plan.levels) {
+  for (const level of planNow().levels) {
     const target = doorTarget(level.index)
     const open = s.doorOpen.get(level.index) ?? 0
     const next = open + Math.sign(target - open) * Math.min(Math.abs(target - open), dt * 2.2)
@@ -2117,9 +2137,9 @@ const petHeight = (cat: Cat, waiter: Desk | undefined) =>
   cat.watching && cat.root.position.y > levelY(cat.level) + DESK.height / 2 ? deskPerch(waiter!).at.y : levelY(cat.level)
 
 function tickCats(dt: number, t: number) {
-  const places = new Map(CATS.map((name) => [name, catAt(name, opened + t, s.plan)]))
+  const places = new Map(CATS.map((name) => [name, catAt(name, opened + t, planNow())]))
   const waiter = heededWaits(s.board!, heed()).map((w) => s.desks.get(w.id)).find(Boolean)
-  const level = waiter && levelOfCard(s.plan, waiter.card.id)!.index
+  const level = waiter && levelOfCard(planNow(), waiter.card.id)!.index
   const watcher = waiter && watcherOf(s.cats.values(), places, waiter.card.id, level!)
   const follower = motionNow().ride ? undefined : followerOf(places, s.me.level)
   for (const cat of s.cats.values()) {
@@ -2132,10 +2152,10 @@ function tickCats(dt: number, t: number) {
       leanIn(cat, stroke?.reach ?? 0, stroke?.press ?? 0, petHeight(cat, waiter), t)
     } else if (cat.watching) {
       const perch = deskPerch(waiter!)
-      chase(cat, s.plan, level!, perch.at, perch.face, dt, t)
+      chase(cat, planNow(), level!, perch.at, perch.face, dt, t)
     }
-    else if (cat.following) tagAlong(cat, s.plan, s.me, dt, t)
-    else if (cat.returning) cat.returning = !steer(cat, s.plan, place.level, place, 0.05, CAT_SPEED, dt, t)
+    else if (cat.following) tagAlong(cat, planNow(), s.me, dt, t)
+    else if (cat.returning) cat.returning = !steer(cat, planNow(), place.level, place, 0.05, CAT_SPEED, dt, t)
     else roam(cat, place, levelY(place.level), t)
     hangOn(cat.level, cat.root)
   }
@@ -2145,10 +2165,10 @@ function tickParty({ dt, t }: Frame) {
   setRoom(here().kind === 'roof' ? 'roof' : 'inside')
   duck(viewNow() === 'focus')
   const beat = beatAt(t)
-  const roof = s.plan.levels.at(-1)!
+  const roof = planNow().levels.at(-1)!
   const posing = levelsShown(viewNow(), motionNow(), s.me.level)(roof.index)
   for (const g of s.guests.values()) {
-    const at = guestAt(g.card, t, s.plan)
+    const at = guestAt(g.card, t, planNow())
     placeGuest(g, at, roof.y)
     if (posing) poseGuest(g, at, beat, t)
   }
@@ -2164,7 +2184,7 @@ const head = new THREE.Vector3()
 /** While you walk a floor, an arrow on the screen's edge toward each worker on it waiting on you that you can't see. */
 function tickCompass() {
   const walking = viewNow() === 'walk' && !motionNow().ride
-  const waits = walking ? heededWaits(s.board!, heed()).filter((w) => levelOfCard(s.plan, w.id)?.index === s.me.level && s.desks.has(w.id)) : []
+  const waits = walking ? heededWaits(s.board!, heed()).filter((w) => levelOfCard(planNow(), w.id)?.index === s.me.level && s.desks.has(w.id)) : []
   const targets = waits.map((w) => ({ id: w.id, at: s.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(s.me.level) + HEAD_Y) }))
   const card = (id: string) => findCard(s.board!, id)!
   camera.updateMatrixWorld()
@@ -2187,7 +2207,7 @@ function tickLamps({ t }: Frame) {
   const pulse = still && t - s.waitedAt / 1000 > PULSE_S ? 1 : 0.55 + Math.abs(Math.sin(t * 4)) * 0.45
   const flash = tower.prefs.get().waits === 'flash'
   const glow = (cards: Card[]) => (flash || loudest(cards) === 'needs' ? pulse : 1)
-  for (const level of s.plan.levels) {
+  for (const level of planNow().levels) {
     if (level.kind !== 'floor') continue
     const waits = heeded.filter((c) => level.desks.some((d) => d.card.id === c.id))
     s.world!.waitLamps.get(level.index)!.color.set(waits.length ? WORLD[loudest(waits)!] : '#2a2f3a').multiplyScalar(glow(waits))
@@ -2231,7 +2251,7 @@ function tickTraffic({ t }: Frame) {
 function tickFilings({ dt }: Frame) {
   const pulled = panelAs('drawer')
   for (const [index, filing] of s.filings) {
-    const level = s.plan.levels[Number(index)]
+    const level = planNow().levels[Number(index)]
     poseFiling(filing, level?.kind === 'floor' && level.floor.id === pulled?.project ? pulled.n : undefined, dt)
   }
 }
@@ -2242,7 +2262,7 @@ function update(dt: number) {
   s.simNow += dt * 1000
   const turned = takeTurn()
   if (!s.board || !s.world) return
-  if (wallNow() >= s.plan.until) onBoard(s.board, s.self)
+  if (wallNow() >= planNow().until) onBoard(s.board, s.self)
   const f: Frame = { dt, t: s.simNow / 1000, turned }
   for (const tick of TICKS) tick(f)
 }
@@ -2318,9 +2338,9 @@ function onKey(code: string, repeat: boolean): boolean {
   if (code === 'Escape' && viewNow() === 'overview') return (leaveOverview(), true)
   if (code === 'Escape' && replayNow() !== undefined && replayNow()!.id === atDesk()) return (replay(replayNow()!.id, undefined), true)
   if (code === 'Escape' && panelNow()) return (closePanels(), true)
-  const to = levelForKey(s.plan, code)
+  const to = levelForKey(planNow(), code)
   if (to === undefined || to === s.me.level || motionNow().ride) return false
-  if (viewNow() === 'walk' && inside(carBox(s.plan), s.me.x, s.me.z)) startRide(to)
+  if (viewNow() === 'walk' && inside(carBox(planNow()), s.me.x, s.me.z)) startRide(to)
   else goLevel(to)
   return true
 }
@@ -2943,11 +2963,11 @@ function drop() {
   syncNotes()
 }
 
-const syncNotes = () => s.board && reconcile(NOTES, s.notes, s.plan, discard)
+const syncNotes = () => s.board && reconcile(NOTES, s.notes, planNow(), discard)
 onTitles(() => (syncNotes(), renderPanel()))
 onKeptTitles(renderPanel)
 
-const syncCabinets = () => s.board && reconcile(CABINETS, s.cabinets, s.plan, discard)
+const syncCabinets = () => s.board && reconcile(CABINETS, s.cabinets, planNow(), discard)
 onGameTitles(() => (syncCabinets(), renderPanel()))
 
 /** The editor's last save, which a note's text is read after. */
@@ -3012,7 +3032,7 @@ const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
     hiring.dispatch({ type: 'board', board: s.board! })
     return reply
   },
-  sign: (f) => floorSignHtml(s.plan, f.id),
+  sign: (f) => floorSignHtml(planNow(), f.id),
   drafts: { draftsOf, keepUnsent, titleOf },
   draftIo,
   held: async (note) => {
@@ -3052,7 +3072,7 @@ const hiring = loop({
     },
     open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
     toast: ({ text }) => toast(text),
-    draw: () => s.board && reconcile(STATIONS, s.stations, s.plan, discard),
+    draw: () => s.board && reconcile(STATIONS, s.stations, planNow(), discard),
   },
 })
 hiring.subscribe(events.listen('hiring'))
@@ -3231,7 +3251,7 @@ let unbuilt: (err: Error) => void
 const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
 
 installDoor({
-  ready, update, render, onKey, run, place, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
+  ready, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
   events: events.read,
   play: () => (lastFrame = performance.now()),
 })

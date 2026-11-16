@@ -10,6 +10,7 @@ import type { Desk, Station } from './desk.ts'
 import type { Picture } from './gallery.ts'
 import type { Hands } from './hands.ts'
 import type { Plan } from './layout.ts'
+import type { Archived } from './archive.ts'
 import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
 import type { Models } from './models.ts'
 import type { Kit } from './kit.ts'
@@ -73,14 +74,14 @@ export type WallItem = { key: string; wall: VideoWall }
 
 /** Tower 3D's state: everything the page knows and is doing, in one record the shell's modules read and write. */
 export type State = {
-  /** The board as last received, its plan, and the shelf entry this page is, when it is one. */
+  /** The board the building stands on, and the shelf entry this page is, when it is one. */
   board: Board | undefined
   /** The tower stopped answering: the board on show is how it stood, and daemon verbs are held back. */
   lost: boolean
-  plan: Plan
+  /** What the plan was derived from besides the board (`planOf`): each floor's archive as read for it, and the wall time it was planned at. */
+  archived: Archived
+  plannedAt: number
   self: ShelfSelf | undefined
-  /** No board has been built yet. */
-  first: boolean
   /** The Blender models, parsed before the first board is built. */
   models: Models | undefined
   /** The KayKit models, loaded before the first board is built. */
@@ -130,8 +131,6 @@ export type State = {
   lighting: boolean
   /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
   waitedAt: number
-  /** Each card's status at the last board: working to done or idle is a finished turn. */
-  lastStatus: Map<string, Board['floors'][number]['cards'][number]['status']>
 
   /** Where you stand and look: what the frames move, as walking, riding, petting or a cut moves you (the app's `Motion`). */
   me: Walker
@@ -139,9 +138,8 @@ export type State = {
   doorOpen: Map<number, number>
   /** The hires in flight by floor, as the hiring machine in main holds them: read by the open workstations. */
   hiring: () => Hiring<Held>
-  /** Every showing you have opened, by `shownKey`, kept with your spot; and every one on the last board, to spot new ones. */
+  /** Every showing you have opened, by `shownKey`, kept with your spot. */
   seenShown: Set<string>
-  lastShown: Set<string>
   /** The actions the open desk drew with a "new" dot: drawn so until its panel closes, though seen once drawn. */
   dotted: Set<string>
   /** The draft taken off a corkboard, and the one open in the editor (extensions/drafts/client/drafts.ts). */
@@ -184,15 +182,16 @@ export type State = {
 const NO_PLATE = { width: 0, depth: 0 }
 const NO_LOFT = loftOf(NO_PLATE, 0)
 const NO_ROOMS = roomsOf(NO_PLATE)
-const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
+/** The plan of no board: no levels, nothing to stand on. */
+export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
 
 export const s: State = {
-  board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
+  board: undefined, lost: false, archived: new Map(), plannedAt: 0, self: undefined, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
-  visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: shell().lighting.lit, waitedAt: 0, lastStatus: new Map(),
+  visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: shell().lighting.lit, waitedAt: 0,
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 },
-  doorOpen: new Map(), hiring: noHires, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
+  doorOpen: new Map(), hiring: noHires, seenShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined,
   down: undefined,
   doorMode: false,

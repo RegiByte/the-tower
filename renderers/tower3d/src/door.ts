@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { HELD, HOLD_MS, holdFill, type Act, type Held, type Offer, type Verb } from './acts.ts'
 import { levelsShown, showLevels } from './levels.ts'
 import type { Move } from './input.ts'
+import type { Plan } from './layout.ts'
 import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
@@ -98,6 +99,8 @@ declare global {
 /** What the door drives: the functions the page's own input and frames call. */
 export type Engine = {
   ready: Promise<void>
+  /** The plan the building stands on. */
+  plan(): Plan
   update(dt: number): void
   render(): void
   /** Real frames run again, from now. */
@@ -224,14 +227,14 @@ export function installDoor(e: Engine) {
       e.dispatch({ type: 'capture', by: 'door', held: false })
     },
     teleport({ level, x, z, yaw = s.me.yaw, pitch = 0, y = 0 }) {
-      if (!s.plan.levels[level]) throw new Error(`no level ${level}: the tower has ${s.plan.levels.length}`)
+      if (!e.plan().levels[level]) throw new Error(`no level ${level}: the tower has ${e.plan().levels.length}`)
       if (e.app().view === 'overview') e.leaveOverview()
       e.place(level, { x, z, yaw, pitch, y })
     },
     acts: (kind) => everyAct(kind),
     locate(target) {
       const at = centerOf(target)
-      return { level: s.plan.levels.findLast((l) => l.y <= at.y)!.index, x: at.x, y: at.y, z: at.z }
+      return { level: e.plan().levels.findLast((l) => l.y <= at.y)!.index, x: at.x, y: at.y, z: at.z }
     },
     aimAt(target) {
       if (e.app().view !== 'walk') throw new Error(`aimAt works while walking; the view is ${e.app().view}`)
