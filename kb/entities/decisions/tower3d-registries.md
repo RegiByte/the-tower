@@ -44,8 +44,8 @@ A refactor of these shapes is checked with `npm run tool:frames` ([[tower3d-door
   and the shell stays imperative (three.js objects, the DOM).
 - A full split by concern (navigation, panels, aim in their own modules): a cleaner end state, but cycles between
   panels and navigation to untangle first. `RUN` stays in `main.ts` for the same reason: its entries call
-  navigation and panels. Superseded by [[tower3d-system]]: the split now goes by resource, wired as data, with no
-  import cycles allowed.
+  navigation and panels. Superseded in direction by [[tower3d-system]]: a split goes by resource, wired as data, with no
+  import cycles allowed. It is not carried out yet: `main.ts` is still one resource.
 
 **Impact.** `main.ts` keeps boot, the board, navigation, panels and input; adding a layer, an act kind or a tick
 is one entry each.
