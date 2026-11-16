@@ -101,6 +101,9 @@ const FOCUSED = new Set<Panel['kind']>(['desk', 'shell', 'tv'])
 const focused = (p: Panel | undefined) => p !== undefined && FOCUSED.has(p.kind)
 const sameRoom = (from: Panel | undefined, to: Panel | undefined) => from?.kind === to?.kind || (focused(from) && focused(to))
 
+/** What a panel's keys go to once it is entered and drawn: the picker's first place, the archive's filter. */
+const FOCUS_ON: Partial<Record<Panel['kind'], string>> = { 'shell-pick': '#shell-pick [data-shell-dir]', archive: '#archive-filter' }
+
 /** The worker whose desk is open. */
 export const atDesk = (db: Db) => (db.panel?.kind === 'desk' ? db.panel.id : undefined)
 
@@ -146,13 +149,15 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
     ...(to ? [{ type: 'enter', panel: to, from } as const] : []),
     ...(steps?.effects ?? []),
     DRAW,
-    ...(to?.kind === 'shell-pick' ? [{ type: 'focus', selector: '#shell-pick [data-shell-dir]' } as const] : []),
+    ...(to && FOCUS_ON[to.kind] ? [{ type: 'focus', selector: FOCUS_ON[to.kind]! } as const] : []),
   ]
 }
 
-/** The panel whose subject the board no longer holds: a desk's worker gone, a shell ended. */
+/** The panel whose subject the board no longer holds: a desk's worker gone, a shell ended, a floor removed. */
 const subjectLeft = (panel: Panel | undefined, board: Board) =>
-  (panel?.kind === 'desk' && !findCard(board, panel.id)) || (panel?.kind === 'shell' && !board.shells.some((sh) => sh.id === panel.id))
+  (panel?.kind === 'desk' && !findCard(board, panel.id)) ||
+  (panel?.kind === 'shell' && !board.shells.some((sh) => sh.id === panel.id)) ||
+  ((panel?.kind === 'floor' || panel?.kind === 'archive') && !board.floors.some((f) => f.id === panel.id))
 
 /** What is pending, less what `board` no longer holds: a tab of a worker gone, a showing withdrawn. */
 const pendingOn = (pending: Pending, board: Board): Pending => ({

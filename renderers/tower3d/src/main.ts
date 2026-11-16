@@ -563,12 +563,12 @@ function renderPanel() {
   if (panel.kind === 'floor') {
     const id = panel.id
     const f = board.floors.find((f) => f.id === id)
-    if (!f) return closeSide()
+    if (!f) return
     $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, held, panel.tray)
   }
   if (panel.kind === 'archive') {
     const f = board.floors.find((f) => f.id === panel.id)
-    if (!f) return closeSide()
+    if (!f) return
     if (!$('side').querySelector(`[data-archive-of="${CSS.escape(f.id)}"]`)) $('side').innerHTML = archiveSideHtml(f)
     const { count, html } = archiveListHtml(board, f, archiveOf(f.id), archiveFailure(f.id), panel.words, held)
     $('archive-count').textContent = count
@@ -730,6 +730,19 @@ function sideClosed() {
   show('side', false)
   show('shell-pick', false)
 }
+
+/**
+ * Entering the side (a floor's panel, its archive, the directory): every other panel's place closed, as the panels
+ * they hold don't leave by the app yet, the mouse let go.
+ */
+function sideEntered(_: Panel, from: Panel | undefined) {
+  sideClosed()
+  docClosed(from)
+  draftClosed()
+  show('side', true)
+  unlock()
+}
+const sideLeft = () => show('side', false)
 
 /** The picker of where a new shell starts, `first`'s floor ahead, its first place focused for the keyboard. */
 const openShellPick = (first: string) => go({ kind: 'shell-pick', first })
@@ -1007,6 +1020,7 @@ function goShown(id: string, target: string) {
   goDesk(id)
 }
 
+/** A panel of the side the app doesn't move yet, opened over what is open: a drawer. */
 function openSide(next: Panel) {
   unfocus()
   closeDoc()
@@ -1259,9 +1273,9 @@ const RUN: ByKind<unknown, [Verb]> = {
     return verb === 'use' ? focusDesk(a.id) : runOnWorker(a, verb)
   },
   guest: (a, verb) => verb !== 'use' && runOnWorker(a, verb),
-  tidy: (a, verb) => (verb === 'use' ? openSide({ kind: 'floor', id: a.project, tray: undefined }) : tried(() => tidy(offeredCall(floorOf(a.project), 'tidy', floorOf(a.project).name)))),
+  tidy: (a, verb) => (verb === 'use' ? go({ kind: 'floor', id: a.project, tray: undefined }) : tried(() => tidy(offeredCall(floorOf(a.project), 'tidy', floorOf(a.project).name)))),
   landed(a, verb) {
-    if (verb === 'use') return openSide({ kind: 'floor', id: a.project, tray: undefined })
+    if (verb === 'use') return go({ kind: 'floor', id: a.project, tray: undefined })
     if (verb === 'goto') return goDesk(a.id)
     const row = landedRow(floorOf(a.project), a.id, wallNow())
     return row && tidy(row.call)
@@ -1273,7 +1287,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   },
   shell: (a, verb) => (verb === 'use' ? goShell(a.id) : killShell(s.board!.shells.find((sh) => sh.id === a.id)!)),
   floor(a, verb) {
-    if (verb === 'use') return openSide({ kind: 'floor', id: a.id, tray: undefined })
+    if (verb === 'use') return go({ kind: 'floor', id: a.id, tray: undefined })
     const f = s.board!.floors.find((f) => f.id === a.id)!
     if (verb === 'spawn') return openSpawn(f.id)
     if (verb === 'shell') return openShellPick(f.id)
@@ -1290,7 +1304,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   arcade: (a) => openGame(a.project, a.id),
   cat: (a, verb) => (verb === 'use' ? startPet(a.name) : a.watching && goDesk(a.watching)),
   tv: (a) => useScreen(a.n),
-  directory: () => openSide({ kind: 'directory' }),
+  directory: () => go({ kind: 'directory' }),
   stats: () => openStats(),
   dj: () => toggleMusic(),
   bar: () => (s.beer = !s.beer),
@@ -1350,7 +1364,7 @@ function goToAsk(a: Board['asks'][number]) {
   if (id && deskOf(s.plan, id)) return goDesk(id)
   const project = projectOfKey(s.board!, a.subject)
   const level = project && s.plan.levels.find((l) => l.kind === 'floor' && l.floor.id === project)
-  if (level) return arriveAt(level.index, () => (openSide({ kind: 'floor', id: project, tray: undefined }), toast(askSaid(a))))
+  if (level) return arriveAt(level.index, () => (go({ kind: 'floor', id: project, tray: undefined }), toast(askSaid(a))))
   toast(askSaid(a))
 }
 
@@ -1364,7 +1378,8 @@ const heed = (): Heed => ({ dismissed: app.state().attending.dismissed, visited:
 const closesItself = () => {}
 const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => void } = {
   desk: focusLeft, shell: focusLeft, tv: focusLeft,
-  floor: closesItself, archive: closesItself, doc: closesItself, kept: closesItself, picture: closesItself, directory: closesItself, elevator: closesItself,
+  floor: sideLeft, archive: sideLeft, directory: sideLeft,
+  doc: closesItself, kept: closesItself, picture: closesItself, elevator: closesItself,
   'shell-pick': closesItself, logbook: closesItself, drawer: closesItself, draft: closesItself, thread: closesItself, stats: closesItself, game: closesItself,
 }
 
@@ -1372,7 +1387,8 @@ const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => voi
 const opensItself = () => {}
 const ENTER: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>, from: Panel | undefined) => void } = {
   desk: deskEntered, shell: shellEntered, 'shell-pick': shellPickEntered,
-  floor: opensItself, archive: opensItself, doc: opensItself, kept: opensItself, picture: opensItself, directory: opensItself, elevator: opensItself,
+  floor: sideEntered, archive: sideEntered, directory: sideEntered,
+  doc: opensItself, kept: opensItself, picture: opensItself, elevator: opensItself,
   tv: opensItself, logbook: opensItself, drawer: opensItself, draft: opensItself, thread: opensItself, stats: opensItself, game: opensItself,
 }
 
@@ -2234,7 +2250,7 @@ function onKey(code: string, repeat: boolean): boolean {
   if (code === 'KeyP' && captured()) return (letGo(), true)
   if (code === 'KeyN') return (nextWaiting(), true)
   if (code === 'KeyV') return (lookAtNew(), true)
-  if (code === 'KeyM') return (panelNow()?.kind === 'directory' ? (closeSide(), lock()) : openSide({ kind: 'directory' }), true)
+  if (code === 'KeyM') return (panelNow()?.kind === 'directory' ? (closeSide(), lock()) : go({ kind: 'directory' }), true)
   if (code === 'KeyH') return (viewNow() === 'overview' ? (leaveOverview(), lock()) : overview(), true)
   if (code === 'Escape' && viewNow() === 'overview') return (leaveOverview(), true)
   if (code === 'Escape' && replayNow() !== undefined && replayNow()!.id === atDesk()) return (replay(replayNow()!.id, undefined), true)
@@ -2746,10 +2762,10 @@ $('side').addEventListener('click', async (e) => {
     const f = floorOf(floor.id)
     return pressing(el, () => tried(() => tidy(offeredCall(f, 'tidy', f.name))))
   }
-  if (d.tray && floor) return (patchPanel({ ...floor, tray: floor.tray === d.tray ? undefined : d.tray }), renderPanel())
+  if (d.tray && floor) return patchPanel({ ...floor, tray: floor.tray === d.tray ? undefined : d.tray })
   if (d.kept && floor) return openKept(keptOf(d.kept))
-  if (d.archive !== undefined && floor) return (openSide({ kind: 'archive', id: floor.id, words: [] }), $('archive-filter').focus())
-  if (d.floor !== undefined && archive) return openSide({ kind: 'floor', id: archive.id, tray: undefined })
+  if (d.archive !== undefined && floor) return go({ kind: 'archive', id: floor.id, words: [] })
+  if (d.floor !== undefined && archive) return go({ kind: 'floor', id: archive.id, tray: undefined })
   if (d.archiveRead !== undefined && archive) return (rereadArchive(s.board, archive.id), renderPanel())
 })
 $('side').addEventListener('input', (e) => {
@@ -2757,7 +2773,6 @@ $('side').addEventListener('input', (e) => {
   const archive = panelAs('archive')
   if (el.id !== 'archive-filter' || !archive) return
   patchPanel({ ...archive, words: wordsOf(el.value) })
-  renderPanel()
 })
 
 async function worktreeVerb(c: Call<'worktree/recut' | 'worktree/prune' | 'worktree/remove' | 'branch/delete'>, done: string) {
