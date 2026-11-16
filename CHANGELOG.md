@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.6.1
+
+Tower 3D runs on one app loop, and a held key no longer beeps in Tower.app (#619, #620, #621, #622, #623, #624, #625,
+#626). Nothing to restart beyond the tower (`tower update` does it). API 2.7.
+
+- **A held verb's key no longer beeps in Tower.app.** Once a held verb ran (letting a worker go, say), each repeat of
+  the key still down went back to the app, which beeped until the key was released.
+- **A game is left when you go to any other panel** in Tower 3D: its frame clears and the music comes back.
+- **Tower 3D's panels, motion, aim and board handling run through one app loop**: every panel opens and closes by
+  events, a panel whose subject left closes in the board's handler, rides, flights and cuts are kept as when they
+  started, the plan is derived from the board it was made from, and the archive, titles and stats reads arrive as
+  events. Nothing else changes in what you see; `tower3d.events()` shows each step.
+- **For contributors:** `tool:frames`' panels scenario waits for the Stats answer before taking its stage.
+
 ## v2.6.0
 
 Tower 3D starts as a system of resources, and the loop can be watched (#614, #615, #616, #617). Nothing to restart
