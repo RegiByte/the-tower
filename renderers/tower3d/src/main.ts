@@ -59,17 +59,17 @@ import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
 import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
 import * as loading from './loading.ts'
-import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, onArchives, type Archived, readArchives, rereadArchive, watchArchives } from './archive.ts'
+import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, type Archived, readArchives, rereadArchive, settledArchives, watchArchives } from './archive.ts'
 import { eventRecord, EVENTS_KEPT } from './record.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
 import { poseFiling } from './filing.ts'
 import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, PIGEONHOLES, STATIONS, WALLS, desksAfter, galleryAfter, reconcile, runningOn, slotsAt } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
-import { noteText, noteTitle, onTitles, pruneNoteTitles } from './notes.ts'
-import { SCREEN, onGameTitles, pruneGameTitles } from './arcade.ts'
+import { noteText, noteTitle, pruneNoteTitles } from './notes.ts'
+import { SCREEN, pruneGameTitles } from './arcade.ts'
 import { GAMES, gameItem } from './games.ts'
-import { keptText, keptTitle, onKeptTitles, pruneKeptTitles } from './kept.ts'
+import { keptText, keptTitle, pruneKeptTitles } from './kept.ts'
 import { NO_PLAN, s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
 import { aim, eyes, fallTo, jump, look, walk, type Walker } from './walker.ts'
 import { DECK, groundAt, layerAt, type Layer } from './floorplan.ts'
@@ -249,36 +249,6 @@ function dressReplays() {
   screensAt = { ...screensAt, plan: undefined }
 }
 
-const archiveFailed = (message: string) => toast(`The archive can't be read: ${message}`)
-
-/** An archive read landed or failed: a board waiting for it draws, the cabinets file it, and a panel listing it shows it. */
-function archiveArrived() {
-  drawSettled()
-  reconcile(FILINGS, s.filings, planNow(), discard)
-  renderPanel()
-}
-
-/** The latest board waiting for its floors' archives to be read at its keys (`archivesSettled`), and what draws it then. */
-let unsettled: { board: Board; draw: () => void } | undefined
-
-/**
- * Draws `board` with `draw` once every floor's archive is read at its keys, or failed to be: seats and galleries are
- * derived from the floors' histories (`historyOf`), so a board never draws with an archive older than itself. A later
- * board waiting replaces an earlier one.
- */
-function whenSettled(board: Board, draw: () => void) {
-  readArchives(board)
-  unsettled = { board, draw }
-  drawSettled()
-}
-
-function drawSettled() {
-  if (!unsettled || !archivesSettled(unsettled.board)) return
-  const { draw } = unsettled
-  unsettled = undefined
-  draw()
-}
-
 /**
  * What Tower 3D derives from each floor's history, its archive as `archived` holds it: every seated worker's seat and
  * each floor's gallery. A floor whose archive can't be read has neither: its workers on duty have no desks.
@@ -416,7 +386,7 @@ function onBoardError(err: Error & { code: string }) {
 }
 
 /**
- * The world takes the board the building took (`board-settled`), `was` the board before: rebuilt when its shape
+ * The world takes the board the building took once its archives are read (`board/arrived`), `was` the board before: rebuilt when its shape
  * changed, every layer reconciled against the plan, and what it shows outside the panels written. It dispatches nothing.
  */
 function worldApplied(was: Board | undefined) {
@@ -479,8 +449,8 @@ function worldApplied(was: Board | undefined) {
   if (!was) pictured().then(built)
 }
 
-/** The building takes `next`, its floors' archives read, planned now. */
-const takeBoard = (next: Board, self: ShelfSelf | undefined) => app.dispatch({ type: 'board-settled', building: { board: next, self, archived: archivedAt(next), at: wallNow() } })
+/** `next` arrives: the building takes it once its floors' archives are read at its keys, planned then. */
+const boardArrived = (next: Board, self: ShelfSelf | undefined) => app.dispatch({ type: 'board/arrived', board: next, self })
 
 /**
  * Music unless you turned it off, kept with your spot, and never over a game, which may play its own. The door plays
@@ -623,7 +593,7 @@ function renderPanel() {
     $('doc-head').innerHTML = statsHeadHtml()
     const projects = board.floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
     const tabs = [{ id: STATS_ALL, label: 'Overview' }, ...projects.map(({ id, label }) => ({ id, label }))]
-    const { read: stats, failed, at, scope } = s.stats
+    const { read: stats, failed, at, scope } = app.state().stats
     const range = s.viewer.statsRange
     drawPanel($('doc-body'), statsHtml({ stats, failed, at, range, projects, tabs, scope: tabs.some((t) => t.id === scope) ? scope : STATS_ALL }), {})
     showSince($('doc-body'))
@@ -830,7 +800,7 @@ const statsPolling = loop({
   handlers: statsPollHandlers,
   execute: {
     ...(timers<StatsPollEvent>() as Executors<TimerEffect<StatsPollEvent>, StatsPollEvent>),
-    read: () => void readStats(),
+    read: () => app.dispatch({ type: 'stats/read' }),
   },
 })
 statsPolling.subscribe(events.listen('statsPolling'))
@@ -854,30 +824,12 @@ const readerLeft = (panel: Panel) => docClosed(panel)
 function statsEntered(panel: Panel, from: Panel | undefined) {
   readerEntered(panel, from)
   $('doc-body').dataset.stats = ''
-  readStats()
+  app.dispatch({ type: 'stats/read' })
   statsPolling.dispatch({ type: 'start' })
 }
 
 /** The Stats panel over your range: a read over another, held or in flight, is dropped. */
-function rangeStats() {
-  s.stats = { ...s.stats, read: undefined, reading: s.stats.reading + 1 }
-  if (panelNow()?.kind !== 'stats') return
-  renderPanel()
-  readStats()
-}
-
-async function readStats() {
-  const reading = ++s.stats.reading
-  const read = await tower.stats(statsQuery(s.viewer.statsRange, wallNow())).catch((err: Error) => {
-    if (reading !== s.stats.reading) return
-    if (s.stats.read) return void toast(err.message)
-    s.stats = { ...s.stats, failed: err.message }
-    renderPanel()
-  })
-  if (!read || reading !== s.stats.reading) return
-  s.stats = { ...s.stats, read, failed: undefined, at: wallNow() }
-  renderPanel()
-}
+const rangeStats = () => app.dispatch({ type: 'stats/range' })
 
 /** Whatever panel is open left, back to walking: the drawer and the picker hidden as they close, since they don't leave by the app yet. */
 function closePanels() {
@@ -1444,7 +1396,7 @@ function drawPending() {
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
 const app = loop({
   state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
-  handlers: appHandlers({ planOf, clockMoves, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
+  handlers: appHandlers({ planOf, clockMoves, archivesSettled, archivedAt, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
   execute: {
     ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
     announce: () => {},
@@ -1468,6 +1420,15 @@ const app = loop({
     elevator: () => renderElevator(),
     arrived: ({ at }) => (ARRIVED[at.kind] as (at: Arrival) => void)(at),
     toast: ({ text }) => toast(text),
+    'archives/read': ({ board }, dispatch) => (readArchives(board), dispatch({ type: 'archives/asked', at: wallNow() })),
+    filings: () => void reconcile(FILINGS, s.filings, planNow(), discard),
+    notes: () => void syncNotes(),
+    cabinets: () => void syncCabinets(),
+    'stats/fetch': ({ reading }, dispatch) =>
+      void tower.stats(statsQuery(s.viewer.statsRange, wallNow())).then(
+        (read) => dispatch({ type: 'stats/landed', reading, read, at: wallNow() }),
+        (err: Error) => dispatch({ type: 'stats/failed', reading, message: err.message }),
+      ),
     'world/apply': ({ was }) => worldApplied(was),
     fireworks: ({ cards }) => celebrate(cards),
     'waits/began': () => void (s.waitedAt = s.simNow),
@@ -1484,6 +1445,7 @@ const app = loop({
   },
 })
 app.subscribe(events.listen('app'))
+shell().port.attach(app)
 addEventListener('focus', () => {
   app.dispatch({ type: 'focus', focused: true })
   const desk = panelAs('desk')
@@ -1881,14 +1843,14 @@ let drawing = FIXTURE !== undefined
  */
 let loaded = false
 let starting = false
-let latest: Parameters<typeof takeBoard> | undefined
+let latest: Parameters<typeof boardArrived> | undefined
 function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
   show('board-error', false)
   s.lost = false
   app.dispatch({ type: 'lost', lost: false })
   app.dispatch({ type: 'board', board: next })
   if (!loaded || starting) return void (latest = [next, at])
-  if (boardNow()) return whenSettled(next, () => takeBoard(next, at))
+  if (boardNow()) return boardArrived(next, at)
   start(next, at)
 }
 
@@ -1908,7 +1870,7 @@ function start(next: Board, at: ShelfSelf | undefined) {
     starting = false
     const waiting = latest
     latest = undefined
-    if (waiting) whenSettled(waiting[0], () => takeBoard(...waiting))
+    if (waiting) boardArrived(...waiting)
   }, failStart)
 }
 
@@ -1922,8 +1884,8 @@ const failStart = (err: Error) => (toast(`start: ${err.message}`), loading.fail(
 async function startOn(next: Board, at: ShelfSelf | undefined) {
   loading.stage('building')
   await painted()
-  await new Promise<void>((settled) => whenSettled(next, settled))
-  takeBoard(next, at)
+  await settledArchives(next)
+  boardArrived(next, at)
   loading.stage('lighting')
   await painted()
   frameScene()
@@ -2671,7 +2633,6 @@ setInterval(() => {
   if (panelNow()?.kind === 'stats') showSince($('doc-body'))
 }, 1000)
 
-onArchives(archiveArrived, archiveFailed)
 
 /**
  * The logbook of a worker with no desk in the reader, opened on its conversations, read at once, the latest at the
@@ -2801,10 +2762,10 @@ $('doc-body').addEventListener('click', (e) => {
 
 function onStatsClick(el: HTMLElement) {
   const scope = el.closest<HTMLElement>('[data-stats-scope]')?.dataset.statsScope
-  if (scope) return ((s.stats = { ...s.stats, scope }), renderPanel())
+  if (scope) return app.dispatch({ type: 'stats/scope', scope })
   const range = el.closest<HTMLElement>('[data-stats-range]')?.dataset.statsRange as StatsRange | undefined
   if (range) return (keepViewer('statsRange', range), rangeStats())
-  if (el.closest('[data-stats-read]')) ((s.stats = { ...s.stats, failed: undefined }), renderPanel(), readStats())
+  if (el.closest('[data-stats-read]')) app.dispatch({ type: 'stats/again' })
 }
 
 $('side').addEventListener('click', async (e) => {
@@ -2960,11 +2921,8 @@ function drop() {
 }
 
 const syncNotes = () => boardNow() && reconcile(NOTES, s.notes, planNow(), discard)
-onTitles(() => (syncNotes(), renderPanel()))
-onKeptTitles(renderPanel)
 
 const syncCabinets = () => boardNow() && reconcile(CABINETS, s.cabinets, planNow(), discard)
-onGameTitles(() => (syncCabinets(), renderPanel()))
 
 /** The editor's last save, which a note's text is read after. */
 let saving: Promise<boolean> = Promise.resolve(true)
@@ -3226,7 +3184,7 @@ function advance() {
 
 function onFixtureBoard(next: Board) {
   app.dispatch({ type: 'board', board: next })
-  whenSettled(next, () => takeBoard(next, undefined))
+  boardArrived(next, undefined)
 }
 
 /** The HUD's limits count down to their resets and age between boards. */

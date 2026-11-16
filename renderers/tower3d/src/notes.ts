@@ -14,9 +14,5 @@ export const noteText = (project: string, id: string): Promise<string> => {
   return text === undefined ? Promise.reject(Object.assign(new Error(`No draft "${id}"`), { code: 'not_found' })) : Promise.resolve(text)
 }
 
-let titlesArrived = () => {}
-/** Runs `fn` whenever a note's text arrives, to draw its title. */
-export const onTitles = (fn: () => void) => void (titlesArrived = fn)
-
-/** Each note's title, `…` until its draft's text has arrived; `pruneNoteTitles` with each board. */
-export const { title: noteTitle, prune: pruneNoteTitles } = draftTitles(noteText, () => titlesArrived())
+/** Each note's title, `…` until its draft's text has arrived (`titles/arrived`); `pruneNoteTitles` with each board. */
+export const { title: noteTitle, prune: pruneNoteTitles } = draftTitles(noteText, () => shell().port.dispatch({ type: 'titles/arrived', of: 'notes' }))

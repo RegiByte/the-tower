@@ -12,6 +12,7 @@
 import { attendNext, type AttendEvent, type AttendOut, type Attending } from '/lib/attend.js'
 import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
 import { subjectAt, type Lines } from '/lib/board.js'
+import { STATS_ALL, type Stats } from '/lib/stats.js'
 import { askTransitions, cardsOf, findCard, shownKey, transitions } from './cards.ts'
 import { gameItem } from './games.ts'
 import { cabinetOf, deskOf, kioskOf, type Plan } from './layout.ts'
@@ -109,8 +110,22 @@ export const captured = (c: Capture) => c.locked || c.door
  */
 export type Building = { board: Board; self: ShelfSelf | undefined; archived: Archived; at: number }
 
+/** A board arrived and waiting for its floors' archives to be read at its keys, and the shelf entry this page is with it. */
+export type Waiting = { board: Board; self: ShelfSelf | undefined }
+
+/**
+ * The Stats panel's read: the last read over the viewer's range and when, why it failed while none is held, the scope
+ * shown, and the number of the read whose answer is taken; an answer to an earlier one lands on nothing.
+ */
+export type StatsRead = { read: Stats | undefined; failed: string | undefined; at: number | undefined; scope: string; reading: number }
+
+/** Which titles arrived: notes' (drafts), kept items', games'. */
+export type Titles = 'notes' | 'kept' | 'games'
+
 export type Db = {
   building: Building | undefined
+  /** The latest board arrived whose archives aren't all read yet: a later one replaces it, and it is taken once they are. */
+  waiting: Waiting | undefined
   panel: Panel | undefined
   /** Whether the window has your eye, and what asks for you, said and rung as every renderer does (`attend.ts`). */
   attending: Attending
@@ -121,6 +136,7 @@ export type Db = {
   motion: Motion
   aim: Aim
   capture: Capture
+  stats: StatsRead
 }
 
 export type AppEvent =
@@ -133,8 +149,27 @@ export type AppEvent =
   | { type: 'pend'; pending: Partial<Pending> }
   /** The view, set by what isn't a panel: the overview, petting. */
   | { type: 'view'; view: View }
-  /** A board whose floors' archives are read: the building takes it, planned as `building` says. */
-  | { type: 'board-settled'; building: Building }
+  /** A board arrived: it waits for its floors' archives, read at its keys, and the building takes it once they are. */
+  | { type: 'board/arrived'; board: Board; self: ShelfSelf | undefined }
+  /** The archives the board waiting needs were asked for at wall time `at`: if every one was held already, it is taken now. */
+  | { type: 'archives/asked'; at: number }
+  /** A floor's archive read landed or failed at wall time `at`: the board waiting is taken if it was the last. */
+  | { type: 'archive/landed'; at: number }
+  /** A floor's archive can't be read. */
+  | { type: 'archive/failed'; message: string }
+  /** A text arrived that titles are drawn from: notes on the boards, kept items in the trays, games on the cabinets. */
+  | { type: 'titles/arrived'; of: Titles }
+  /** The Stats panel read again over the viewer's range: on entering it, every minute while it is open. */
+  | { type: 'stats/read' }
+  /** The Stats panel's Read again: its failure forgotten, read again. */
+  | { type: 'stats/again' }
+  /** The viewer's stats range changed: what is held or in flight was over another, so it is dropped. */
+  | { type: 'stats/range' }
+  /** The Stats panel shows `scope`: the overview or a floor. */
+  | { type: 'stats/scope'; scope: string }
+  /** Read `reading` answered `read` at wall time `at`. */
+  | { type: 'stats/landed'; reading: number; read: Stats; at: number }
+  | { type: 'stats/failed'; reading: number; message: string }
   /** The plan stops holding by time alone at wall time `until`: its timer fired, maybe late. */
   | { type: 'replan-due'; until: number }
   /** The building plans its board again at wall time `at`, `until` or later when the timer fired late. */
@@ -181,6 +216,16 @@ export type AppEffect =
   | { type: 'replays' }
   | { type: 'fly-home' }
   | { type: 'toast'; text: string }
+  /** Every floor's archive read at `board`'s keys, then `archives/asked` dispatched. */
+  | { type: 'archives/read'; board: Board }
+  /** The filing cabinets file what the archives read now hold. */
+  | { type: 'filings' }
+  /** The notes on the floors' boards, titled as their drafts' texts say. */
+  | { type: 'notes' }
+  /** The arcade's cabinets, titled as their games' texts say. */
+  | { type: 'cabinets' }
+  /** The stats read over the viewer's range, answered as `stats/landed` or `stats/failed` with `reading`. */
+  | { type: 'stats/fetch'; reading: number }
   /** The world takes the building's board: its layers reconciled, what it shows outside panels written. `was` is the board before. */
   | { type: 'world/apply'; was: Board | undefined }
   /** A firework over the roof party for each worker whose turn finished. */
@@ -223,6 +268,7 @@ export type AppEffect =
 
 export const startingDb = (attending: Attending): Db => ({
   building: undefined,
+  waiting: undefined,
   panel: undefined,
   attending,
   view: 'walk',
@@ -232,6 +278,7 @@ export const startingDb = (attending: Attending): Db => ({
   motion: { ride: undefined, flight: undefined, cut: undefined, pet: undefined },
   aim: { aimed: undefined, aimedKey: actKey(undefined), offered: undefined, offeredKey: actKey(undefined), marked: 0, hold: undefined },
   capture: { locked: false, door: false, still: false },
+  stats: { read: undefined, failed: undefined, at: undefined, scope: STATS_ALL, reading: 0 },
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
@@ -326,6 +373,10 @@ export type AppReads = {
   planOf: (b: Building) => Plan
   /** Whether the wall clock moves: a pinned one (`?at=`, a fixture) never replans. */
   clockMoves: boolean
+  /** Whether every floor's archive is read, or failed to be, at `board`'s keys. */
+  archivesSettled: (board: Board) => boolean
+  /** Each floor's archive as read at `board`'s keys: the snapshot a building takes with it. */
+  archivedAt: (board: Board) => Archived
   /** A floor's review threads, by checkout and the key their subject is named by. */
   threadsOf: (f: Floor) => { checkout: string; key: string }[]
   /** Whether a floor keeps drafts: the drafts extension is on there. */
@@ -460,6 +511,24 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
   )
 }
 
+/** The board waiting taken at wall time `at`, once every floor's archive is read at its keys: a floor's history is then as current as the board. */
+function settled(db: Db, at: number, reads: AppReads): AppEffect[] {
+  const w = db.waiting
+  if (!w || !reads.archivesSettled(w.board)) return []
+  return took({ ...db, waiting: undefined }, { board: w.board, self: w.self, archived: reads.archivedAt(w.board), at }, reads)
+}
+
+/** What a title's text arriving draws again besides the panels: the notes' boards, the cabinets. */
+const TITLED: Record<Titles, AppEffect[]> = { notes: [{ type: 'notes' }], kept: [], games: [{ type: 'cabinets' }] }
+
+/** The Stats panel read again: an answer to any read before this one lands on nothing. */
+function statsRead(db: Db): AppEffect[] {
+  const reading = db.stats.reading + 1
+  return [into({ ...db, stats: { ...db.stats, reading } }), { type: 'stats/fetch', reading }]
+}
+
+const withStats = (db: Db, stats: Partial<StatsRead>): Db => ({ ...db, stats: { ...db.stats, ...stats } })
+
 /**
  * The building planned again once its plan stops holding by time alone, while the clock moves; a plan with no end
  * cancels the timer an earlier plan started.
@@ -500,7 +569,23 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   },
   pend: (db, { pending }) => [into({ ...db, pending: { ...db.pending, ...pending } })],
   view: (db, { view }) => [into({ ...db, view })],
-  'board-settled': (db, { building }) => took(db, building, reads),
+  'board/arrived': (db, { board, self }) => [into({ ...db, waiting: { board, self } }), { type: 'archives/read', board }],
+  'archives/asked': (db, { at }) => settled(db, at, reads),
+  'archive/landed': (db, { at }) => [...settled(db, at, reads), { type: 'filings' }, DRAW],
+  'archive/failed': (_, { message }) => [{ type: 'toast', text: `The archive can't be read: ${message}` }],
+  'titles/arrived': (_, { of }) => [...TITLED[of], DRAW],
+  'stats/read': (db) => statsRead(db),
+  'stats/again': (db) => [...statsRead(withStats(db, { failed: undefined })), DRAW],
+  'stats/range': (db) => {
+    const dropped = withStats(db, { read: undefined, reading: db.stats.reading + 1 })
+    return db.panel?.kind === 'stats' ? [into(dropped), DRAW, ...statsRead(dropped)] : [into(dropped)]
+  },
+  'stats/scope': (db, { scope }) => [into(withStats(db, { scope })), DRAW],
+  'stats/landed': (db, { reading, read, at }) => (reading === db.stats.reading ? [into(withStats(db, { read, failed: undefined, at })), DRAW] : []),
+  'stats/failed': (db, { reading, message }) => {
+    if (reading !== db.stats.reading) return []
+    return db.stats.read ? [{ type: 'toast', text: message }] : [into(withStats(db, { failed: message })), DRAW]
+  },
   'replan-due': (_db, { until }) => [{ type: 'replan/at', until }],
   /** The same board planned again at `at`, its archive as read for it kept: only a new board takes a new read. */
   replan: (db, { at }) => (db.building ? took(db, { ...db.building, at }, reads) : []),

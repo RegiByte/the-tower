@@ -20,9 +20,5 @@ export const keptText = (project: string, collection: string, id: string): Promi
   return text === undefined ? Promise.reject(Object.assign(new Error(`No item "${id}"`), { code: 'not_found' })) : Promise.resolve(text)
 }
 
-let titlesArrived = () => {}
-/** Runs `fn` whenever an item's text arrives, to draw its title. */
-export const onKeptTitles = (fn: () => void) => void (titlesArrived = fn)
-
-/** Each item's title, `…` until its text has arrived; `pruneKeptTitles` with each board. */
-export const { title: keptTitle, prune: pruneKeptTitles } = keptTitles(keptText, () => titlesArrived())
+/** Each item's title, `…` until its text has arrived (`titles/arrived`); `pruneKeptTitles` with each board. */
+export const { title: keptTitle, prune: pruneKeptTitles } = keptTitles(keptText, () => shell().port.dispatch({ type: 'titles/arrived', of: 'kept' }))

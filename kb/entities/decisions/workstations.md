@@ -13,7 +13,7 @@
     "hub/renderers/tower3d/src/layout.ts#openStation",
     "hub/renderers/tower3d/src/seating.ts#seatsOf",
     "hub/renderers/tower3d/src/archive.ts#historyOf",
-    "hub/renderers/tower3d/src/main.ts#whenSettled",
+    "hub/renderers/tower3d/src/app.ts#settled",
     "hub/renderers/tower3d/src/layers.ts#STATIONS",
     "hub/renderers/tower3d/src/desk.ts#makeStation",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
@@ -45,7 +45,7 @@ defaults, and the new-worker form as the optional path.
   input because a long-running worker keeps its desk at midnight: the workers who came before it leave the board for
   the archive then, and a replay of the board alone would move it to a desk one of them left. A board is drawn only
   once every floor's archive is read at its key, or failed to be
-  ([`whenSettled`](ref:hub/renderers/tower3d/src/main.ts#whenSettled)), so no board draws with an archive older than
+  ([`settled`](ref:hub/renderers/tower3d/src/app.ts#settled)), so no board draws with an archive older than
   itself and a reload seats everyone where they were; a floor whose archive can't be read draws its workers on duty
   without desks. The seats are a map by card id, so a layer of placements by hand can later sit over them. A worker whose crew edge names a seated
   worker ([[crews]]: a [[reviewer]] and its author) sits beside it, taking no workstation; one whose lead leaves first
