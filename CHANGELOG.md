@@ -12,6 +12,25 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.7.0
+
+A shown file's tab follows the file as it changes, and Tower 3D's page is split into resources (#628, #629, #630,
+#631). Nothing to restart beyond the tower (`tower update` does it). API 2.9.
+
+- **A shown file's tab draws it again as it changes on disk**, whether the file is written in place or replaced by a
+  rename, and keeps where you had scrolled. Before, the tab kept its first draw until the file was shown again or the
+  page reloaded. The file is watched only while a tab shows it.
+- **Tower 3D's page is split into the resources it is made of** (the world, the views, hiring, the HUD, navigation,
+  the panels, the app, the controls, the frames, the feed, the door and the kept spot), each started once what it
+  needs has. `main.ts` is gone. Nothing changes in what you see.
+- **Tower 3D's fixture pages are steady:** a worker that was never prompted shows an empty logbook, and the Changes
+  panel's "read … ago" counts from the page's own clock.
+- **For renderers:** the kit lends a view its renderer's clock as `now()` (API 2.8), and a renderer passes the clock
+  it draws with. `tower.versions(read, fn)` calls `fn` with a file read's `modifiedAt` each time the file changes,
+  `null` while it is gone, over a `version/<read>` stream on the mux (API 2.9).
+- **For contributors:** `tool:frames`' panels scenario closes each panel whose subject leaves, on a new `leaving`
+  fixture.
+
 ## v2.6.1
 
 Tower 3D runs on one app loop, and a held key no longer beeps in Tower.app (#619, #620, #621, #622, #623, #624, #625,
