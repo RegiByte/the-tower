@@ -462,8 +462,10 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   renderHud()
   app.dispatch({ type: 'board-applied', board: next })
   followCabinet()
-  // The panels the app doesn't move yet close in their draw when their subject left: drawn at once, as the board lands.
-  renderPanel()
+  // A drawer or a picture closes in its draw: whether its folder or its gallery is still there is the archive read's
+  // as well as the board's. Drawn at once as the board lands, until that read is an event.
+  const open = panelNow()?.kind
+  if (open === 'drawer' || open === 'picture') renderPanel()
   freshLogbooks(next)
   renderElevator()
   const { desk: pendingDesk } = app.state().pending
