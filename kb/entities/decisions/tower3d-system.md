@@ -68,7 +68,8 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   `loaded`, which settles once all are in. Its start does not wait for them: the page reads its viewer and subscribes
   to the board while they load, so a page behind another tab still rings ([[tower3d-start]]). The page handles a
   failed load only once it is imported, after every other resource, so `loaded` is marked handled: a resource that
-  fails first skips the page, and the loading screen already says why. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
+  fails first skips the page, and the loading screen already says why. The loading screen's models stage is lit by
+  `shell` as it starts, so "your settings" shows while the settings are read. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
   `assets.ts` would shadow it.
 - *Moving an import can move pixels.* three.js orders opaque draws by `material.id`, and ids are handed out as
   materials are made, many of them as their module is evaluated. A change to what is imported first renumbers them,
