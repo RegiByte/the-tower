@@ -18,7 +18,7 @@ import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Ca
 import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
-import { appHandlers, startingDb, type AppEvent, type TabTo } from './app.ts'
+import { appHandlers, startingDb, threadSubjectKey, type AppEvent, type TabTo } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
@@ -605,9 +605,9 @@ function renderPanel() {
   }
   if (panel.kind === 'thread') {
     const f = board.floors.find((f) => f.id === panel.project)
-    // The app closes a thread gone from the board once the building takes the board (`board-applied`).
-    if (!f || !floorThreadsOf(f).some((t) => t.checkout === panel.checkout)) return
-    reader.update(board)
+    // The view is handed the board while its thread's subject is on it; the app closes it once the building takes a
+    // board without it (`board-applied`).
+    if (!f || !reader.update(board)) return
     const worker = workerIn(f!, panel.checkout)
     $('doc-head').innerHTML = threadHeadHtml(f!, panel.checkout, worker?.onDuty ? worker : undefined)
   }
@@ -2583,7 +2583,7 @@ function threadEntered(panel: Extract<Panel, { kind: 'thread' }>, from: Panel | 
   readerEntered(panel, from)
   const { project, checkout } = panel
   const t = floorThreadsOf(floorOf(project)).find((t) => t.checkout === checkout)!
-  reader.open($('doc-body'), `reviews.thread:floor:${project}/${t.key}`)
+  reader.open($('doc-body'), threadSubjectKey(project, t.key))
 }
 
 /**

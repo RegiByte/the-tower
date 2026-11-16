@@ -11,7 +11,7 @@
  */
 import { attendNext, type AttendEvent, type AttendOut, type Attending } from '/lib/attend.js'
 import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
-import type { Lines } from '/lib/board.js'
+import { subjectAt, type Lines } from '/lib/board.js'
 import { findCard } from './cards.ts'
 import { gameItem } from './games.ts'
 import type { Board, Floor } from './api.ts'
@@ -161,8 +161,8 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
 
 /** What the handlers read of a board through an extension's client, handed in once: pure reads of the board's data. */
 export type AppReads = {
-  /** The checkouts with a review thread on a floor. */
-  threadsOf: (f: Floor) => { checkout: string }[]
+  /** A floor's review threads, by checkout and the key their subject is named by. */
+  threadsOf: (f: Floor) => { checkout: string; key: string }[]
   /** Whether a floor keeps drafts: the drafts extension is on there. */
   keepsDrafts: (f: Floor) => boolean
 }
@@ -187,11 +187,15 @@ function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
     }
     case 'thread': {
       const f = floor(panel.project)
-      return !f || !reads.threadsOf(f).some((t) => t.checkout === panel.checkout)
+      const t = f && reads.threadsOf(f).find((t) => t.checkout === panel.checkout)
+      return !t || !subjectAt(board, threadSubjectKey(panel.project, t.key))
     }
     default: return false
   }
 }
+
+/** The subject a floor's review thread is read as, its view mounted on it. */
+export const threadSubjectKey = (project: string, key: string) => `reviews.thread:floor:${project}/${key}`
 
 const keptItem = (board: Board, k: Extract<Panel, { kind: 'kept' }>) =>
   board.floors.find((f) => f.id === k.project)?.collections.find((c) => c.id === k.collection)?.items.find((i) => i.id === k.id)
