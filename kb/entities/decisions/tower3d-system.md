@@ -36,10 +36,10 @@
     "hub/renderers/tower3d/src/app.ts#Arrival",
     "hub/renderers/tower3d/src/main.ts#ARRIVED",
     "hub/renderers/tower3d/src/main.ts#tickCamera",
-    "hub/renderers/tower3d/src/main.ts#travel",
+    "hub/renderers/tower3d/src/navigation.ts#travel",
     "hub/renderers/tower3d/src/app.ts#Aim",
     "hub/renderers/tower3d/src/app.ts#Capture",
-    "hub/renderers/tower3d/src/main.ts#offersNow",
+    "hub/renderers/tower3d/src/navigation.ts#offersNow",
     "hub/renderers/tower3d/src/main.ts#tickAim",
     "hub/renderers/tower3d/src/main.ts#tickHold",
     "hub/renderers/tower3d/src/main.ts#RUN",
@@ -65,7 +65,8 @@
     "hub/renderers/tower3d/src/door.ts#Engine",
     "hub/renderers/tower3d/src/views.ts#startViews",
     "hub/renderers/tower3d/src/spawn.ts#startSpawn",
-    "hub/renderers/tower3d/src/hud.ts#startHud"
+    "hub/renderers/tower3d/src/hud.ts#startHud",
+    "hub/renderers/tower3d/src/navigation.ts#startNavigation"
   ]
 }
 ---
@@ -245,7 +246,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   ([`Arrival`](ref:hub/renderers/tower3d/src/app.ts#Arrival)): an ask's floor opened by `went`, the rest by
   [`ARRIVED`](ref:hub/renderers/tower3d/src/main.ts#ARRIVED), since whether a desk or a kiosk still stands, the mouse,
   the orbit and a purr are the building's. A cut to where you already are fires its `then` at once
-  ([`travel`](ref:hub/renderers/tower3d/src/main.ts#travel)). The walker stays the frames': riding turns it to the doors
+  ([`travel`](ref:hub/renderers/tower3d/src/navigation.ts#travel)). The walker stays the frames': riding turns it to the doors
   and sets its level as the ride ends, before `ride-arrived`; a `place` stands it where a cut or the door says, the ride
   and flight ended. The pet's hearts are three.js sprites, kept beside the frames that place them. A flight an
   executor starts (`fly-home`, a big screen or a game entered) is dispatched from it, so it lands in the db once the
@@ -262,7 +263,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   but dispatches `aimed` only when the act's key changes ([`Aim`](ref:hub/renderers/tower3d/src/app.ts#Aim)). The db
   keeps the act last aimed at and the act the prompt offers verbs for apart: the prompt empties when the view leaves
   walking, while the act last aimed at is kept (`offered`). A different act starts the wheel's mark and the hold over.
-  What the prompt offers is never kept: [`offersNow`](ref:hub/renderers/tower3d/src/main.ts#offersNow) derives it from
+  What the prompt offers is never kept: [`offersNow`](ref:hub/renderers/tower3d/src/navigation.ts#offersNow) derives it from
   the board and what you hold on every read, and the mark is read within it (`markedIn`). A hold is its start time:
   [`tickHold`](ref:hub/renderers/tower3d/src/main.ts#tickHold) writes the ring's `--hold` every frame, dispatches
   `hold-filled` once, then runs the verb itself, outside the loop, as a key does. A verb runs outside the loop because

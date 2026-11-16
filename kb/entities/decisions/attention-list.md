@@ -27,7 +27,7 @@
     "hub/src/shared/attend.ts#watching",
     "hub/src/shared/viewer.ts#VIEWER_KEYS",
     "hub/renderers/tower3d/src/compass.ts#pointers",
-    "hub/renderers/tower3d/src/main.ts#goToAsk",
+    "hub/renderers/tower3d/src/navigation.ts#goToAsk",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js"
   ]
 }
@@ -82,7 +82,7 @@ only by typing, one chime covered a question and an answer alike, and every wait
 - Tower 3D gives asks no place in the world yet. Its HUD counts them beside the waits, its tab title counts both, a
   new one says itself in a toast, and N goes round them after the waits
   ([`nextAttended`](ref:hub/src/shared/waits.ts#nextAttended)) to the ask's subject
-  ([`goToAsk`](ref:hub/renderers/tower3d/src/main.ts#goToAsk)): a worker's desk, else the console of the floor it is
+  ([`goToAsk`](ref:hub/renderers/tower3d/src/navigation.ts#goToAsk)): a worker's desk, else the console of the floor it is
   on with its title and hint in a toast (the console draws no ask), else that toast alone. A view an ask opens on the page stands for its subject there.
 
 **Alternatives considered.**
