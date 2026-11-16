@@ -104,7 +104,9 @@ the desk, the shell and the shell picker are in, the rest still open and close t
 - *`go` moves a panel* ([`went`](ref:hub/renderers/tower3d/src/app.ts#went)), the page's `go` over Tower 3D's
   `Panel` union: the open panel is left unless the next stays in its room (desks, shells and the big screen share
   one, the view focused on them), the next is entered, and a `draw` follows. Entering a desk or shell focuses the
-  view; leaving that room for anything else walks again, with a `fly-home`. A desk opens on its screen, then on the
+  view; leaving that room for anything else walks again, with a `fly-home`. `go` is a transition: a change to the
+  open panel's own data (a read landing, a filter typed, a tray unfolded) is `panel`, which patches it and draws,
+  never leaving or entering, and throws for a panel that isn't the open one's kind. A desk opens on its screen, then on the
   tab and the showing pending for it, all in the same transition. A desk's tabs move the same way inside it (`tab`,
   with `tab/leave` and `tab/enter`); a tab entered again is entered again, so the logbook is read again.
 - *Leave and enter are tables by kind* ([`LEAVE`](ref:hub/renderers/tower3d/src/main.ts#LEAVE),
@@ -123,18 +125,27 @@ the desk, the shell and the shell picker are in, the rest still open and close t
 - *Draw is state to DOM, once a frame.* `draw` asks for the panels to be drawn at the next animation frame, however
   many transitions asked; [`drawPending`](ref:hub/renderers/tower3d/src/main.ts#drawPending) draws them now, which a
   stepped door frame does as a real frame would, and which a `focus` effect does first, since it needs what the draw
-  writes. Each visible change has its `draw` in `tower3d.events()`, so a missing one shows ([[tower3d-door]]).
+  writes. An effect that needs the drawn DOM calls it first; a handler never does. Each visible change has its `draw` in `tower3d.events()`, so a missing one shows ([[tower3d-door]]).
 - *A panel whose subject left closes in the board handler, not the draw.* `board-applied`, dispatched where
   [`onBoard`](ref:hub/renderers/tower3d/src/main.ts#onBoard) used to draw the panel, closes a desk whose worker left or
-  a shell that ended ([`subjectLeft`](ref:hub/renderers/tower3d/src/app.ts#subjectLeft)). `onBoard` still draws at
+  a shell that ended ([`subjectLeft`](ref:hub/renderers/tower3d/src/app.ts#subjectLeft)), and drops what is pending
+  that the board no longer holds (a tab of a worker gone, a showing withdrawn), so what a desk opens on is derived
+  from the board it arrives on; the db keeps a showing's target, never a copy of it. `onBoard` still draws at
   once after it, for the kinds whose draw still closes them; it dispatches `replay-left` where a replay's desk left the
   building, and goes to a pending desk or shell, until the board itself is an event.
 - *What sets the view outside a panel* (the overview, petting, a game, the big screen) sends a `view` event until it
   moves.
-- *A leg that moves a family* gives its kinds `LEAVE` and `ENTER` entries, folds its opener and closer into them and
-  `go`, takes its subject-gone close from the draw into `board-applied`, drops it from the bridge closes the moved
-  kinds' enters run, and records `tool:frames` before and after: state, panel markup and pictures identical, the
-  events changed as the transitions say.
+- *A leg that moves a family*:
+  - gives its kinds `LEAVE` and `ENTER` entries and folds its opener and closer into them and `go`, its data
+    updates into `panel`;
+  - for a kind the view focuses on (the big screen, a game), adds it to `FOCUSED` and to what `went` enters focused,
+    and drops its `view` event, in one change;
+  - adds a clause for each kind to `subjectLeft` and deletes the draw's own close for it (`return closeX()` in
+    `renderPanel`) in the same commit, or it closes twice;
+  - drops its close from the bridge closes the moved kinds' enters run;
+  - records `tool:frames` before and after: state, panel markup and pictures identical, the events changed as the
+    transitions say.
+  When the last family moves, `onBoard`'s synchronous draw after `board-applied` goes, and its `draw` is the only one.
 
 **Alternatives considered.**
 - *esbuild's `--splitting`*: main becomes a real ES module chunk and native ESM tolerates cycles. It treats the
