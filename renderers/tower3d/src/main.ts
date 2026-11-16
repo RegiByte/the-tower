@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { Deleted, Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, VerbAction } from '/lib/extension.js'
-import { HELD, byKind, keepsThreads, holdFill, offerForKey, offersOf, reviewAction, type Act, type ActOf, type ByKind, type CatNames, type Offer, type Verb } from './acts.ts'
+import { HELD, byKind, keepsThreads, holdFill, offerForKey, reviewAction, type Act, type ActOf, type ByKind, type CatNames, type Verb } from './acts.ts'
 import { briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText } from '/lib/markdown.js'
@@ -9,12 +9,12 @@ import { ask, asking } from '/lib/chrome.js'
 import { keepShownTabs, drawPanel, keepingFocus, failedHtml, fileCall, pressing, itemKind, itemPath, keptOf, readsText } from '/lib/view.js'
 import { readViewer, seenOf, reducedMotion } from '/lib/viewer.js'
 import { actionId, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
-import { projectOfKey, type Lines, type Subject } from '/lib/board.js'
-import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { can, runVerb, boardErrorTitle, bubbleOf, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, attentionOrder, isAsk, loudest, nextAttended, type Move, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml } from './cards.ts'
+import { type Lines, type Subject } from '/lib/board.js'
+import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf } from './api.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, loudest, current, findCard, gistLine, wordsOf, sendTarget, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
-import { actKey, appHandlers, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type TabTo } from './app.ts'
+import { appHandlers, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type TabTo } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
@@ -26,7 +26,7 @@ import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from '.
 import { tintOf } from './palette.ts'
 import { PET_IN, PET_MS, dropHearts, makeHearts, petProgress, petSpot, placeHearts, strokeAt } from './pet.ts'
 import { idle, sharing, startShare, stopShare } from './tv.ts'
-import { DESK, bigScreens, cabinetOf, carBox, coreFront, deskOf, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY } from './layout.ts'
+import { DESK, bigScreens, cabinetOf, carBox, inside, kioskOf, levelHeight, levelOfCard, levelY } from './layout.ts'
 import { chairKit } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
@@ -37,7 +37,7 @@ import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } fr
 import { paintScreens } from './screens.ts'
 import { isMarkdown, isVideo, playFilms, type Shown } from './showing.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
-import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, levelForKey, pictureHeadHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { addedCommandOf, commandOf, panesOf } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
 import { clockMoves, wallNow } from './clock.ts'
@@ -53,7 +53,7 @@ import { GAMES, gameItem } from './games.ts'
 import { keptText, keptTitle } from './kept.ts'
 import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
 import { aim, fallTo, jump, look, walk, type Walker } from './walker.ts'
-import { DECK, groundAt } from './floorplan.ts'
+import { groundAt } from './floorplan.ts'
 import { paintDirectory, panelGrid, setDoors } from './world.ts'
 import type { Shell } from './shell.ts'
 import type { Music } from './music.ts'
@@ -70,8 +70,10 @@ import type { Spawn } from './spawn.ts'
 
 import type { Hud } from './hud.ts'
 
+import type { Navigation } from './navigation.ts'
+
 /** The resources the page reads as it starts: the leaves' binding (`Shell`), and those only the page reads. */
-export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud }
+export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
 
 /**
  * The page: what it draws, the listeners and timers it keeps, and the loops it runs, started by the `main` resource once
@@ -88,9 +90,10 @@ export function startMain(started: Main) {
   const { events } = started
   const { desk, reader, deskNow } = started.views
   const { draftIo, hire, saving, handOver, hireOnNote, openSpawn, hiring, openSpawnOnNote } = started.spawn
-  const { directory, screenDistance, boxesHere, here, discard, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs } = started.world
+  const { directory, screenDistance, boxesHere, here, discard, celebrate, isFresh, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs } = started.world
   const { boardNow, selfNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed, aimNow } = nowOf(started.port)
   const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, sawActions, sawDesk, drawSettings, toggleFps } = started.hud
+  const { see, lookAtNew, closeSide, sideClosed, unfocus, closePanels, goShown, goDesk, toDesk, goShell, toShell, goLevel, goMove, goToAsk, nextWaiting, startRide, overview, leaveOverview, offersNow, aimAt, offerNothing, startHold, unhold, markedOffer, openShown } = started.navigation
 
 
 
@@ -108,21 +111,6 @@ export function startMain(started: Main) {
 
 
 
-  /** Seen again, it moves last: the oldest are the first to go once more than `SEEN_KEPT` are kept. */
-  function see(sh: Shown) {
-    s.seenShown.delete(shownKey(sh))
-    s.seenShown.add(shownKey(sh))
-    dressSides(boardNow())
-    renderHud()
-  }
-
-  /** To the newest showing you have yet to open, at its worker's desk. */
-  function lookAtNew() {
-    const newest = freshShown()[0]
-    if (!newest) return toast('Nothing new shown to you')
-    if (atDesk() === newest.c.id) return openShown(newest.sh)
-    goShown(newest.c.id, newest.sh.target)
-  }
   const spotOf = ({ level, x, z, yaw, pitch, y }: Walker): Spot => ({ level, x, z, yaw, pitch, y })
 
 
@@ -284,12 +272,6 @@ export function startMain(started: Main) {
     renderElevator()
   }
 
-  /** A cut to elsewhere in the building: out to black, there (once `CUT_MS` have passed), back in, `then` fired. */
-  const CUT_MS = 200
-  function travel(level: number, spot: Standing, then: AppEvent) {
-    if (level === s.me.level) return app.dispatch(then)
-    app.dispatch({ type: 'cut', cut: { at: s.simNow + CUT_MS, level, spot, then } })
-  }
 
   /** What arriving somewhere does that only the building can say: whether the desk or the kiosk still stands, the mouse, the orbit, a purr. */
   const ARRIVED: { [K in Exclude<Arrival, { kind: 'ask' }>['kind']]: (at: Extract<Arrival, { kind: K }>) => void } = {
@@ -301,16 +283,6 @@ export function startMain(started: Main) {
       orbit.enabled = true
     },
     pet: () => s.muted || purr(PET_MS / 1000),
-  }
-
-  function closeSide() {
-    if (panelNow()?.kind === 'floor' || panelNow()?.kind === 'archive' || panelNow()?.kind === 'directory' || panelNow()?.kind === 'elevator' || panelNow()?.kind === 'drawer' || panelNow()?.kind === 'shell-pick') go(undefined)
-    sideClosed()
-  }
-
-  function sideClosed() {
-    show('side', false)
-    show('shell-pick', false)
   }
 
   /**
@@ -330,13 +302,6 @@ export function startMain(started: Main) {
   function shellPickEntered() {
     sideClosed()
     show('shell-pick', true)
-  }
-
-  /** Back to walking: the terminal closes and the camera returns to your eyes. */
-  function unfocus() {
-    const panel = panelNow()
-    if (panel?.kind === 'desk' || panel?.kind === 'shell' || panel?.kind === 'tv') return go(undefined)
-    showPaused()
   }
 
   /** What leaving the focused room does: the terminal closes, and what the desk mounted and showed with it. */
@@ -418,13 +383,6 @@ export function startMain(started: Main) {
 
   /** The Stats panel over your range: a read over another, held or in flight, is dropped. */
   const rangeStats = () => app.dispatch({ type: 'stats/range' })
-
-  /** Whatever panel is open left, back to walking: the picker hidden as it closes, since it doesn't leave by the app yet. */
-  function closePanels() {
-    closeSide()
-    if (panelNow()) go(undefined)
-    showPaused()
-  }
 
   /**
    * A game beside its cabinet: the camera faces the cabinet's screen in the left half of the view, the game fills the
@@ -571,12 +529,6 @@ export function startMain(started: Main) {
     if (picture) openPicture(picture.id, picture.target)
   })
 
-  /** To the worker's desk, on the tab of its showing of `target`. */
-  function goShown(id: string, target: string) {
-    if (findCard(boardNow()!, id)?.shown.some((sh) => sh.target === target)) app.dispatch({ type: 'pend', pending: { shown: { id, target } } })
-    goDesk(id)
-  }
-
   /** A panel of the side whose enter doesn't show it, opened over what is open: a drawer. */
   function openSide(next: Panel) {
     unfocus()
@@ -696,35 +648,6 @@ export function startMain(started: Main) {
     if (panelNow()?.kind === 'tv') (unfocus(), lock())
   }
 
-  /** To a worker's desk, wherever it is, and sit down. */
-  function goDesk(id: string) {
-    app.dispatch({ type: 'pend', pending: { desk: undefined } })
-    toDesk(id)
-  }
-
-  function toDesk(id: string) {
-    const level = levelOfCard(planNow(), id)
-    const slot = deskOf(planNow(), id)
-    if (!level || !slot) return toast(`${findCard(boardNow()!, id)?.callsign ?? id} is not on duty`)
-    if (viewNow() === 'overview') leaveOverview()
-    closeSide()
-    travel(level.index, deskSpot(slot), { type: 'arrived', at: { kind: 'desk', id } })
-  }
-
-  function goShell(id: string) {
-    app.dispatch({ type: 'pend', pending: { shell: undefined } })
-    toShell(id)
-  }
-
-  function toShell(id: string) {
-    const level = levelOfShell(planNow(), id)
-    const k = kioskOf(planNow(), id)
-    if (!level || !k) return
-    if (viewNow() === 'overview') leaveOverview()
-    closeSide()
-    travel(level.index, { x: k.x + 1.9, z: k.z, y: DECK.top, yaw: -Math.PI / 2 }, { type: 'arrived', at: { kind: 'shell', id } })
-  }
-
   /** A draft deleted, said with an Undo that puts its file back under its id. */
   function deleted(gone: Deleted | undefined) {
     if (gone) toast(`Deleted “${titleOf(gone.text)}” from Drafts`, { label: 'Undo', run: () => undoDelete(gone) })
@@ -736,16 +659,6 @@ export function startMain(started: Main) {
     const text = await readDraft(draftIo, project, id).catch((err: Error) => (toast(err.message), undefined))
     if (text !== undefined && (await discardItem(draftIo, project, id))) deleted({ project, id, text })
   }
-
-  /** To a level, in front of the elevator, `then` once there. */
-  function arriveAt(index: number, then: AppEvent) {
-    if (viewNow() === 'overview') leaveOverview()
-    closePanels()
-    travel(index, { x: 0, z: coreFront(planNow()) + 1.6, yaw: 0 }, then)
-  }
-
-  /** Out of the elevator on a level, facing its floor. */
-  const goLevel = (index: number) => arriveAt(index, { type: 'arrived', at: { kind: 'level' } })
 
   /** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
   async function sendHome(c: Card) {
@@ -877,39 +790,6 @@ export function startMain(started: Main) {
     if (event) app.dispatch(event)
   }
 
-
-  /**
-   * To the desk a move key names, in the order every renderer moves in (src/shared/cards.ts): N goes round the waits and
-   * the asks you haven't dismissed (`attentionOrder`), each once a round.
-   */
-  function goMove(m: Move) {
-    if (m !== 'waiting') {
-      const to = neighboursIn(boardNow()!, s.viewer.crewsOrder, atDesk(), heed())[m]
-      return to && goDesk(to.id)
-    }
-    const step = nextAttended(attentionOrder(boardNow()!, heed()), s.visited, { id: atDesk() })
-    s.visited = step.visited
-    if (!step.to) return
-    if (isAsk(step.to)) return goToAsk(step.to)
-    goDesk((step.to as Wait).id)
-  }
-
-  /**
-   * Goes to what an ask is about: a worker's desk, else the floor its subject is on, its console open and the ask said
-   * in a toast, since the console doesn't show it. The views an ask opens on the page have no place in the building
-   * yet, so its subject stands for them; an ask about nothing on a floor is said in a toast alone.
-   */
-  function goToAsk(a: Board['asks'][number]) {
-    const id = a.subject.startsWith('card:') ? a.subject.slice('card:'.length) : undefined
-    if (id && deskOf(planNow(), id)) return goDesk(id)
-    const project = projectOfKey(boardNow()!, a.subject)
-    const level = project && planNow().levels.find((l) => l.kind === 'floor' && l.floor.id === project)
-    if (level) return arriveAt(level.index, { type: 'arrived', at: { kind: 'ask', project, said: askSaid(a) } })
-    toast(askSaid(a))
-  }
-
-  /** An ask in words: its title, and its hint after a blank line when it has one. */
-  const askSaid = (a: Board['asks'][number]) => (a.hint ? `${a.title}\n\n${a.hint}` : a.title)
 
   /** What leaving a panel does, by its kind; the panels the app doesn't move yet close themselves. */
   const closesItself = () => {}
@@ -1111,87 +991,10 @@ export function startMain(started: Main) {
     return true
   }
 
-  const nextWaiting = () => goMove('waiting')
-
-  function startRide(to: number) {
-    if (motionNow().ride || to === s.me.level || !inside(carBox(planNow()), s.me.x, s.me.z)) return
-    app.dispatch({ type: 'ride', ride: { from: s.me.level, to, start: s.simNow, move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) } })
-  }
-
-
-  function overview() {
-    closePanels()
-    unlock()
-    app.dispatch({ type: 'view', view: 'overview' })
-    aimAt(undefined)
-    show('paused', false)
-    const top = planNow().levels.at(-1)!.y
-    const center = new THREE.Vector3(0, top / 2, 0)
-    const from = new THREE.Vector3(planNow().width * 0.85, top * 0.6 + 8, planNow().depth * 1.4 + top * 0.45)
-    flyTo(from, lookQuaternion(from, center), 900, { type: 'arrived', at: { kind: 'overview', center: vec3(center) } })
-  }
-
-  function leaveOverview() {
-    orbit.enabled = false
-    app.dispatch({ type: 'view', view: 'walk' })
-    show('prompt', false)
-    flyHome()
-  }
 
 
 
 
-  /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
-  function offersNow() {
-    const a = aimNow().offered
-    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: planNow().galleries }) : []
-  }
-
-  /** The crosshair or the pointer is on `a`, and the prompt offers its verbs, drawn by `at` when the pointer gives one. */
-  function aimAt(a: Act | undefined, at?: { x: number; y: number }) {
-    const key = actKey(a)
-    const aim = aimNow()
-    if (key !== aim.aimedKey || key !== aim.offeredKey) app.dispatch({ type: 'aimed', act: a, key })
-    drawPrompt(at)
-  }
-
-  /** The prompt offers nothing, what was last aimed at kept. */
-  function offerNothing() {
-    if (aimNow().offeredKey !== actKey(undefined)) app.dispatch({ type: 'offered', act: undefined, key: actKey(undefined) })
-    drawPrompt()
-  }
-
-  let promptKey = ''
-  function drawPrompt(at?: { x: number; y: number }) {
-    const aim = aimNow()
-    const a = aim.offered
-    $('crosshair').classList.toggle('on', Boolean(a) && viewNow() === 'walk')
-    const offers = offersNow()
-    const marked = markedIn(aim, offers.length)
-    const key = a ? `${aim.offeredKey}|${JSON.stringify(offers)}|${marked}|${Math.floor(s.simNow / 1000)}` : ''
-    if (key !== promptKey) {
-      promptKey = key
-      const html = a && boardNow() ? promptHtml(a, boardNow()!, offers, marked, s.catNames, planNow().galleries) : ''
-      $('prompt').innerHTML = html
-      show('prompt', Boolean(html))
-    }
-    const el = $('prompt')
-    if (at) Object.assign(el.style, { left: `${Math.min(at.x + 20, innerWidth - el.offsetWidth - 10)}px`, top: `${at.y + 20}px`, right: 'auto', bottom: 'auto' })
-    else Object.assign(el.style, { left: '', top: '', right: '', bottom: '' })
-  }
-
-  function startHold(a: Act, o: Offer, by: string) {
-    app.dispatch({ type: 'hold', hold: { act: a, verb: o.verb, start: s.simNow, by } })
-  }
-
-  /** A hold let go of: the key or the button released, or the page no longer seeing it held. */
-  const unhold = () => void (aimNow().hold && app.dispatch({ type: 'unhold' }))
-
-  /** The offer the wheel marked, among those offered now. */
-  function markedOffer() {
-    const offers = offersNow()
-    return offers[markedIn(aimNow(), offers.length)]
-  }
 
   /** Runs the marked offer on a click; a held one starts filling instead. */
   function pressMarked(a: Act) {
@@ -1751,13 +1554,6 @@ export function startMain(started: Main) {
     if (what === 'stop') return endShare()
     if (what === 'close') return (unfocus(), lock())
   })
-  $('elevator').addEventListener('click', (e) => {
-    const to = (e.target as HTMLElement).closest<HTMLElement>('[data-ride]')?.dataset.ride
-    if (to === undefined) return
-    if (panelNow()?.kind === 'elevator') go(undefined)
-    startRide(Number(to))
-    lock()
-  })
 
   /**
    * The read each open logbook last started, by where it is open, as `<card> <briefKey>`: a read that lands after a later
@@ -1897,7 +1693,6 @@ export function startMain(started: Main) {
   }, true)
 
   const openScreen = () => app.dispatch({ type: 'tab', to: { tab: 'screen' } })
-  const openShown = (shown: Shown) => app.dispatch({ type: 'tab', to: { tab: 'shown', target: shown.target } })
 
   /** A showing lies over the terminal like the brief, and counts as seen once opened. */
   async function shownEntered(id: string, sh: Shown) {
