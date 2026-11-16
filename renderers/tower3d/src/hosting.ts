@@ -1,7 +1,7 @@
 import { cardSubject, linesSubject, subjectAt, type Board, type Card, type Lines, type Renderer, type Subject } from '/lib/board.js'
 import { viewsOf, type Layout } from '/lib/layout.js'
 import { viewHost, type Hosted, type TabWords, type View, type ViewHost } from '/lib/view.js'
-import type { tower } from './api.ts'
+import type { Tower } from './api.ts'
 import { wallNow } from './clock.ts'
 
 /**
@@ -11,7 +11,7 @@ import { wallNow } from './clock.ts'
  */
 
 export type DeskViewsDeps = {
-  tower: typeof tower
+  tower: Tower
   board: () => Board
   layout: () => Layout
   declared: () => Renderer

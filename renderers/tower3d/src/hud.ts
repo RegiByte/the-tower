@@ -7,12 +7,12 @@ import { ICON, panelsCss, itemsCss } from '/lib/view.js'
 import { VIEWER_KEYS, sawAll, seenOf, type Viewer } from '/lib/viewer.js'
 import { isFresh as isNewAction, offeredIds } from '/lib/layout.js'
 import { deskVerbs } from './desk-verbs.ts'
-import { tower, type Board, type Card } from './api.ts'
+import type { Board, Card, Tower } from './api.ts'
 import { untestedHtml, heededWaits, heededAsks, type Ring, type Sound, type DaemonVerb } from './cards.ts'
 import { ring } from './life.ts'
 import { sharing } from './tv.ts'
 import { carBox, inside } from './layout.ts'
-import { chooseLighting, lightingSection } from './light/setting.ts'
+import { lightingSection } from './light/setting.ts'
 import { elevatorHtml, hudHtml } from './ui.ts'
 import { FIXTURE } from './fixtures.ts'
 import { s } from './state.ts'
@@ -29,7 +29,7 @@ import type { Clients } from './clients.ts'
 import type { Port } from './port.ts'
 
 /** What the hud resource is started with. */
-export type HudDeps = { lighting: Lighting; clients: Clients; stage: Stage; music: Music; port: Port; toasts: Toasts; world: World; views: Views; spawn: Spawn }
+export type HudDeps = { tower: Tower; lighting: Lighting; clients: Clients; stage: Stage; music: Music; port: Port; toasts: Toasts; world: World; views: Views; spawn: Spawn }
 
 export type Hud = ReturnType<typeof startHud>
 
@@ -38,8 +38,9 @@ export type Hud = ReturnType<typeof startHud>
  * music and frame-rate toggles, and the viewer's record of what was seen.
  */
 export function startHud(started: HudDeps) {
+  const { tower } = started
   const { port } = started
-  const { lit } = started.lighting
+  const { lit, choose: chooseLighting } = started.lighting
   const { canvas } = started.stage
   const { pause, play, playing } = started.music
   const { boardNow, captured, unlock, panelNow, viewNow, motionNow, heed } = nowOf(port)

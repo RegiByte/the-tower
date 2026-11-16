@@ -1,5 +1,5 @@
 import { choice, section } from '/lib/settings.js'
-import { tower } from '../api.ts'
+import type { Tower } from '../api.ts'
 import { FIXTURE } from '../fixture-name.ts'
 import { lightRamp } from '../toon.ts'
 
@@ -15,10 +15,12 @@ import { lightRamp } from '../toon.ts'
 export const LIGHTING_KEY = 'tower3d.lighting'
 
 /** Reads the setting: `lit` is whether this page draws the lighting until it reloads. */
-export async function startLighting() {
+export async function startLighting({ tower }: { tower: Tower }) {
   const lit = FIXTURE === undefined ? (await tower.store.get(LIGHTING_KEY)) !== false : new URLSearchParams(location.search).get('lighting') !== 'off'
   if (lit) lightRamp()
-  return { lit }
+  /** Keeps `on` for the next load: this page draws `lit` until it reloads. */
+  const choose = (on: boolean) => void (FIXTURE === undefined && tower.store.set(LIGHTING_KEY, on))
+  return { lit, choose }
 }
 
 export type Lighting = Awaited<ReturnType<typeof startLighting>>
@@ -33,7 +35,3 @@ export const lightingSection = (chosen: boolean, lit: boolean) =>
   section('Lighting', 'sun, shadows and night glow',
     `<div class="seg" role="group" aria-label="lighting">${CHOICES.map(({ on, label, means }) => choice('data-lighting', String(on), label, means, on === chosen)).join('')}</div>` +
     (chosen === lit ? '' : '<div class="row"><button data-lighting-reload data-tip="the lighting is set as the page loads">Reload to apply</button></div>'))
-
-export function chooseLighting(on: boolean) {
-  if (FIXTURE === undefined) tower.store.set(LIGHTING_KEY, on)
-}

@@ -1,7 +1,7 @@
 import type { Call, Verb as ApiVerb, Verbs } from '/lib/extension.js'
 import { closableNoticer, toaster, type Notice } from '/lib/chrome.js'
 import { copyTelling } from '/lib/view.js'
-import { tower } from './api.ts'
+import type { Tower } from './api.ts'
 import { $ } from './dom.ts'
 
 /**
@@ -10,7 +10,7 @@ import { $ } from './dom.ts'
  */
 export type Toasts = ReturnType<typeof startToasts>
 
-export function startToasts() {
+export function startToasts({ tower }: { tower: Tower }) {
   /** Tells what just happened, with an action that follows it up when given (`toasts.ts`). */
   const toast = toaster($('toasts'))
 
@@ -35,7 +35,7 @@ export function startToasts() {
       })
     })
 
-  const call = <K extends Parameters<typeof tower.call>[0]>(verb: K, body: Parameters<typeof tower.call<K>>[1]) =>
+  const call = <K extends Parameters<Tower['call']>[0]>(verb: K, body: Parameters<typeof tower.call<K>>[1]) =>
     tower.call(verb, body).catch((err: Error) => (toast(err.message), undefined))
 
   /** A call the board offers, with the fields the user supplied. */

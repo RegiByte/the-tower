@@ -25,7 +25,7 @@
     "hub/renderers/tower3d/src/avatar.ts#fitted",
     "hub/renderers/tower3d/src/wardrobe.ts#fitFrom",
     "hub/renderers/tower3d/src/wardrobe.ts#formatWardrobe",
-    "hub/renderers/tower3d/src/api.ts#tower",
+    "hub/renderers/tower3d/src/system.ts",
     "hub/package.json"
   ],
   "links": [
@@ -82,5 +82,6 @@ that data by eye, and the same surface for agents, so a fit is judged from a pic
   size is a slider too.
 
 **Impact.** Fits, outfits and the mix are adjusted by eye and saved as a reviewed diff of `wardrobe.json`; agents
-check a fit from a picture. Tower 3D's modules use [`window.tower`](ref:hub/renderers/tower3d/src/api.ts#tower) only
-when a read is called, so a Tower 3D page loads where no tower serves it.
+check a fit from a picture. Tower 3D reads `window.tower` only in its `tower` resource's start
+([`system.ts`](ref:hub/renderers/tower3d/src/system.ts)), and its modules are handed it, so a page that imports them
+without starting Tower 3D loads where no tower serves it.

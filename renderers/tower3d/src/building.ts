@@ -3,7 +3,7 @@ import { reachOf, type Act, type Carried } from './acts.ts'
 import { sessionWhen } from '/lib/brief.js'
 import { reducedMotion } from '/lib/viewer.js'
 import { defaultLimits } from '/lib/board.js'
-import { shelfFiles, type Board, type Card } from './api.ts'
+import { shelfFiles, type Board, type Card, type Tower } from './api.ts'
 import { cardsOf, heededWaits, findCard, shownTitle, shownKey } from './cards.ts'
 import { type Building, type AppEvent, type Quat, type Ride, type Vec3 } from './app.ts'
 import { hueOf } from './avatar.ts'
@@ -46,7 +46,7 @@ import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -55,6 +55,7 @@ export type World = ReturnType<typeof startWorld>
  * app took, the caches of what can be seen, bumped into and picked, and the camera's flights.
  */
 export function startWorld(started: WorldDeps) {
+  const { tower } = started
   const { draftItem, draftsOf, cardReviews, floorThreadsOf, keepsThreads: floorKeepsThreads, reviewerOf } = started.clients
   const { camera, scene } = started.stage
   const { noteTitle, pruneNoteTitles, pruneKeptTitles, gameTitle, pruneGameTitles } = started.titles
@@ -139,7 +140,7 @@ export function startWorld(started: WorldDeps) {
     for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
     const built = s.world
     for (const b of s.world.bookcases) {
-      shelfFiles(b.project, b.n).then((files) => s.world === built && fillBooks(b, files, built.pickables), (err: Error) => toast(`shelf: ${err.message}`))
+      shelfFiles(tower, b.project, b.n).then((files) => s.world === built && fillBooks(b, files, built.pickables), (err: Error) => toast(`shelf: ${err.message}`))
     }
   }
 

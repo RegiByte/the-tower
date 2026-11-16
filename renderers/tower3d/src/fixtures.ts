@@ -1,4 +1,4 @@
-import { tower, type Board, type Brief, type Card } from './api.ts'
+import type { Board, Brief, Card } from './api.ts'
 import { bytesOf, FILM_FILE } from './files.ts'
 import type { FixtureFile } from './fixture-file.ts'
 import { FIXTURE } from './fixture-name.ts'
@@ -11,6 +11,8 @@ import { FIXTURE } from './fixture-name.ts'
  */
 
 export { FIXTURE }
+
+const tower = window.tower
 
 async function readFixture(name: string): Promise<FixtureFile> {
   const res = await fetch(new URL(`fixtures/${name}.json`, import.meta.url))
