@@ -1,7 +1,7 @@
 import type { ChairKit, Chairs } from './chairs.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Verb } from './acts.ts'
-import type { Board, Brief, Card, ShelfSelf, Stats, tower } from './api.ts'
+import type { Brief, Card, Stats, tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
 import type { Renderer } from '/lib/board.js'
 import type { Note } from './cork.ts'
@@ -10,7 +10,6 @@ import type { Desk, Station } from './desk.ts'
 import type { Picture } from './gallery.ts'
 import type { Hands } from './hands.ts'
 import type { Plan } from './layout.ts'
-import type { Archived } from './archive.ts'
 import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
 import type { Models } from './models.ts'
 import type { Kit } from './kit.ts'
@@ -74,14 +73,8 @@ export type WallItem = { key: string; wall: VideoWall }
 
 /** Tower 3D's state: everything the page knows and is doing, in one record the shell's modules read and write. */
 export type State = {
-  /** The board the building stands on, and the shelf entry this page is, when it is one. */
-  board: Board | undefined
   /** The tower stopped answering: the board on show is how it stood, and daemon verbs are held back. */
   lost: boolean
-  /** What the plan was derived from besides the board (`planOf`): each floor's archive as read for it, and the wall time it was planned at. */
-  archived: Archived
-  plannedAt: number
-  self: ShelfSelf | undefined
   /** The Blender models, parsed before the first board is built. */
   models: Models | undefined
   /** The KayKit models, loaded before the first board is built. */
@@ -186,7 +179,7 @@ const NO_ROOMS = roomsOf(NO_PLATE)
 export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
 
 export const s: State = {
-  board: undefined, lost: false, archived: new Map(), plannedAt: 0, self: undefined, models: undefined, kit: undefined, levels: [], hands: undefined,
+  lost: false, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
   visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: shell().lighting.lit, waitedAt: 0,

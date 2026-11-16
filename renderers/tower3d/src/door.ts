@@ -257,7 +257,7 @@ export function installDoor(e: Engine) {
       e.run(aimed, verb)
     },
     key(code) {
-      if (!s.board) throw new Error('no board yet: await ready()')
+      if (!e.app().building) throw new Error('no board yet: await ready()')
       e.onKey(code, false)
     },
     drive(m) {
