@@ -1,13 +1,13 @@
 import * as THREE from 'three'
 import type { Deleted, Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts'
-import type { Call, Verb as ApiVerb, Verbs, VerbAction } from '/lib/extension.js'
+import type { Call, VerbAction } from '/lib/extension.js'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
 import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText, markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
-import { placeOnOpen, watchTips, toaster, toastsCss, ask, asking, closableNoticer, type Notice } from '/lib/chrome.js'
-import { ICON, copyTelling, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
+import { placeOnOpen, watchTips, toastsCss, ask, asking } from '/lib/chrome.js'
+import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
 import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer, reducedMotion } from '/lib/viewer.js'
 import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey, layoutOf, usableConfigLayout, type Layout } from '/lib/layout.js'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
@@ -15,10 +15,10 @@ import { wireSpawn } from '/lib/spawn.js'
 import { hiringHandlers, noHires } from './hiring.ts'
 import { defaultLimits, projectOfKey, type Lines, type Subject } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, isAsk, loudest, nextAttended, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, isAsk, loudest, nextAttended, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
-import { actKey, appHandlers, type Building, captured as capturedBy, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
+import { actKey, appHandlers, type Building, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
@@ -51,7 +51,7 @@ import { SHELL_SCROLLBACK } from '/lib/terminal.js'
 import { dispose } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
-import { addedCommandOf, commandOf, COMMANDS, keymapSheetHtml, panesOf, type Keys } from '/lib/keys.js'
+import { addedCommandOf, commandOf, keymapSheetHtml, panesOf } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { clockMoves, wallNow } from './clock.ts'
@@ -59,8 +59,7 @@ import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
 import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
 import * as loading from './loading.ts'
-import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, type Archived, readArchives, rereadArchive, settledArchives, watchArchives } from './archive.ts'
-import { eventRecord, EVENTS_KEPT } from './record.ts'
+import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, type Archived, readArchives, rereadArchive, settledArchives } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
 import { poseFiling } from './filing.ts'
@@ -78,9 +77,14 @@ import type { Shell } from './shell.ts'
 import type { Music } from './music.ts'
 import type { Term } from './term.ts'
 import type { Assets } from './loads.ts'
+import type { Toasts } from './toasts.ts'
+import type { Events } from './events.ts'
+import { $, onAppearance, show } from './dom.ts'
+import { DRAWN_PANES, MOVE_OF, sheetKeys } from './keymap-here.ts'
+import { nowOf } from './now.ts'
 
 /** The resources the page reads as it starts: the leaves' binding (`Shell`), and those only the page reads. */
-export type Main = Shell & { music: Music; terminal: Term; assets: Assets }
+export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events }
 
 /**
  * The page: what it draws, the listeners and timers it keeps, and the loops it runs, started by the `main` resource once
@@ -93,14 +97,10 @@ export function startMain(started: Main) {
   const { move, releaseKeys, takeTurn } = started.input
   const { beatAt, duck, pause, play, playing, setRoom } = started.music
   const { closeTerm, mountTerm } = started.terminal
+  const { toast, call, tried, offered, copiedAs } = started.toasts
+  const { events } = started
+  const { buildingNow, boardNow, selfNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed, aimNow } = nowOf(started.port)
 
-  const $ = (id: string) => document.getElementById(id)!
-  const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
-  /**
-   * A document drawn in a frame follows the viewer's appearance: drawn again when the record changes, or the system's
-   * scheme while the viewer chose none.
-   */
-  const onAppearance = (fn: () => void) => (tower.onScheme(() => tower.prefs.get().scheme || fn()), tower.prefs.on(fn))
 
   document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss + toastsCss + itemsCss }))
   watchTips(document)
@@ -147,35 +147,7 @@ export function startMain(started: Main) {
   const keepTexture = (t: THREE.Texture) => isScreenTexture(t) || isStillScreen(t) || isPosterTexture(t) || t === directory.texture || t === statsBoard.texture
   const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTexture))
 
-  /** Tells what just happened, with an action that follows it up when given (`toasts.ts`). */
-  const toast = toaster($('toasts'))
 
-  /**
-   * While the tower serves other code than this page loaded with (`tower.stale()`), a notice offers to reload the page,
-   * never reloading it alone: a draft in progress would be lost. Its × hides it until the tower serves other code again.
-   * Framed, the page framing Tower 3D says so, and its Reload reloads the frame.
-   */
-  const staleNotice: { shown?: Notice; hiddenFor?: string } = {}
-  const closableNotice = closableNoticer($('toasts'))
-  if (!tower.framed)
-    tower.onStale((served) => {
-      staleNotice.shown?.close()
-      staleNotice.shown = undefined
-      if (served === null || served.id === staleNotice.hiddenFor) return
-      const words = served.version && served.version !== tower.served.version ? `The tower was updated to ${served.version}` : 'The tower was updated'
-      staleNotice.shown = closableNotice(words, { label: 'Reload', run: () => location.reload() }, () => {
-        staleNotice.hiddenFor = served.id
-        staleNotice.shown = undefined
-      })
-    })
-
-  const call = <K extends Parameters<typeof tower.call>[0]>(verb: K, body: Parameters<typeof tower.call<K>>[1]) =>
-    tower.call(verb, body).catch((err: Error) => (toast(err.message), undefined))
-
-  /** A call the board offers, with the fields the user supplied. */
-  /** `request` with its failure told in a toast, a throw before anything is sent too: answers undefined then. */
-  const tried = <R>(request: () => R | Promise<R>) => Promise.resolve().then(request).catch((err: Error) => (toast(err.message), undefined))
-  const offered = <V extends ApiVerb>(c: Call<V>, fields?: Partial<Verbs[V]>) => tried(() => tower.run(c, fields))
 
   /** Why a daemon verb is held back now, for the panels' buttons. */
   const held = (verb: DaemonVerb) => heldWhy(boardNow()!, s.lost, verb)
@@ -291,10 +263,6 @@ export function startMain(started: Main) {
     return p
   }
 
-  /** What the building took, the board it stands on and the shelf entry this page is. */
-  const buildingNow = () => app.state().building
-  const boardNow = () => buildingNow()?.board
-  const selfNow = () => buildingNow()?.self
 
   /** The plan the building stands on: its board's, as planned when the building took it. */
   function planNow() {
@@ -637,7 +605,6 @@ export function startMain(started: Main) {
     }
   }
 
-  const captured = () => capturedBy(app.state().capture)
   /** The pause card stands for the free mouse only while nothing else holds it: a panel, the spawn dialog, or P. */
   const showPaused = () => show('paused', !captured() && viewNow() === 'walk' && !panelNow() && !app.state().capture.still && !spawn.open)
 
@@ -657,8 +624,6 @@ export function startMain(started: Main) {
     if (s.doorMode) return app.dispatch({ type: 'capture', by: 'door', held: true })
     canvas.requestPointerLock().catch((err: Error) => (show('paused', true), toast(`pointer lock: ${err.message}`)))
   }
-  const unlock = () => app.dispatch({ type: 'unlock' })
-  const letGo = () => app.dispatch({ type: 'let-go' })
 
   /** The mouse let go of: the door's capture released, pointer lock exited. */
   function unlocked() {
@@ -803,9 +768,6 @@ export function startMain(started: Main) {
     poll: () => [{ type: 'read' }, STATS_POLL],
     stop: () => [{ type: 'timer/cancel', id: 'poll' }],
   }
-  /** What Tower 3D's loops handled, newest last, for the door (`tower3d.events()`). */
-  const events = eventRecord(EVENTS_KEPT, () => s.simNow)
-  watchArchives(events.listen('archives'))
 
   const statsPolling = loop({
     state: null,
@@ -1307,24 +1269,6 @@ export function startMain(started: Main) {
     if (event) app.dispatch(event)
   }
 
-  /** The worker whose desk you sit at. */
-  const atDesk = () => panelAs('desk')?.id
-
-  /** The panel open beside the world. */
-  const panelNow = () => app.state().panel
-  /** The panel open while it is a `kind`. */
-  const panelAs = <K extends Panel['kind']>(kind: K) => {
-    const p = panelNow()
-    return p?.kind === kind ? (p as Extract<Panel, { kind: K }>) : undefined
-  }
-  /** The panel goes to `to` (`go` in app.ts). */
-  const go = (to: Panel | undefined) => app.dispatch({ type: 'go', to })
-  /** The open panel's own data changes; it stays open, neither left nor entered. */
-  const patchPanel = (to: Panel) => app.dispatch({ type: 'panel', to })
-  const viewNow = () => app.state().view
-  const motionNow = () => app.state().motion
-  const deskTabNow = () => app.state().deskTab
-  const replayNow = () => app.state().replay
 
   /**
    * To the desk a move key names, in the order every renderer moves in (src/shared/cards.ts): N goes round the waits and
@@ -1358,9 +1302,6 @@ export function startMain(started: Main) {
 
   /** An ask in words: its title, and its hint after a blank line when it has one. */
   const askSaid = (a: Board['asks'][number]) => (a.hint ? `${a.title}\n\n${a.hint}` : a.title)
-
-  /** What you did about the waits (`Heed`): dismissed, the attention machine's, and visited by N this round. */
-  const heed = (): Heed => ({ dismissed: app.state().attending.dismissed, visited: s.visited })
 
   /** What leaving a panel does, by its kind; the panels the app doesn't move yet close themselves. */
   const closesItself = () => {}
@@ -1593,23 +1534,6 @@ export function startMain(started: Main) {
   wirePrefs(settingsEl, tower.prefs.set)
   tower.prefs.on(() => drawSettings())
 
-  const MOVE_OF: Record<string, Move> = { 'prev-worker': 'prev', 'next-worker': 'next', 'next-waiting': 'waiting' }
-
-  /** The panes Tower 3D draws, by the keymap's names: a desk's tabs, the logbook reader's Screen and Logbook among them. */
-  const DRAWN_PANES = new Set(['screen', 'brief', 'changes', 'reviews'])
-
-  const GLOBAL_COMMANDS = new Set<string>(COMMANDS.filter((c) => c.scope === 'global').map((c) => c.id))
-
-  /**
-   * Whether Tower 3D runs a keymap command: every terminal and field command, each by the terminal or field it works in,
-   * and the global ones `runCommand` runs. The others are the tower page's alone.
-   */
-  const runsHere = (board: Board, id: string) =>
-    !GLOBAL_COMMANDS.has(id) || id in MOVE_OF || panesOf(board).some((p) => p.command === id && p.name !== undefined && DRAWN_PANES.has(p.name))
-
-  /** The keys of the commands Tower 3D runs, which its pause card's sheet lists. */
-  const sheetKeys = (board: Board): Keys => Object.fromEntries(Object.entries(board.keys).filter(([id]) => runsHere(board, id)))
-
   /**
    * A pane of the open panel, by the keymap's names for the tower page's panes: a desk's tabs, the logbook reader's Screen
    * and Logbook. Answers whether the panel has that pane: a pane Tower 3D doesn't draw does nothing.
@@ -1746,12 +1670,6 @@ export function startMain(started: Main) {
     if (!a || viewNow() === 'overview') return a
     return hit!.distance <= reachOf(a) && !blocked(hit!.distance) ? a : undefined
   }
-
-  /**
-   * What the aimed thing offers, each verb on its own key. The mouse wheel marks one and a click runs it; a verb that
-   * ends something runs only once its key or the button has been held for `HOLD_MS`.
-   */
-  const aimNow = () => app.state().aim
 
   /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
   function offersNow() {
@@ -2637,8 +2555,6 @@ export function startMain(started: Main) {
     })
     if (sent) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
   }
-
-  const copiedAs = (text: string, what: string) => copyTelling(text, what, toast)
 
   setInterval(() => {
     if (panelNow()?.kind === 'desk' && deskTabNow() === 'changes') showSince($('desk-view'))

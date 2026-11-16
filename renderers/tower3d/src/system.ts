@@ -10,6 +10,7 @@ import { bindShell, type Shell } from './shell.ts'
 import type { Main } from './main.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
+import { startToasts } from './toasts.ts'
 
 /**
  * Tower 3D as a system of braided resources, each started once its dependencies have (decision `tower3d-system`).
@@ -23,7 +24,9 @@ import { startTerminal } from './term.ts'
  *   terminal  the desk's terminal, mounted in the panel (term.ts)
  *   assets    the models, the kit and the faces, loading; the page draws once they are in (loads.ts)
  *   port      where the reads that land send their events, the app attached once it is made (port.ts)
+ *   toasts    what tells the user what happened, and the API calls whose failure it tells (toasts.ts)
  *   shell     what the leaf modules read as they load, bound before any page resource loads its module (shell.ts)
+ *   events    what the page's loops handled, kept for the door (events.ts)
  *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
@@ -60,12 +63,20 @@ const shell = defineResource({
   halt: () => {},
 })
 
+const toasts = defineResource({ start: startToasts, halt: () => {} })
+
 /**
  * A page resource imports its module as it starts, once `shell` is bound: the leaf modules it imports read the binding
  * as they load. Transitional, with the binding.
  */
+const events = defineResource({
+  dependencies: ['shell'],
+  start: async () => (await import('./events.ts')).startEvents(),
+  halt: () => {},
+})
+
 const main = defineResource({
-  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port'],
+  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events'],
   start: async (started: Main & { shell: Shell }) => {
     stageShown('models')
     ;(await import('./main.ts')).startMain(started)
@@ -73,4 +84,4 @@ const main = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, shell, main }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, main }
