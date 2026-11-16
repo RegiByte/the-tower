@@ -734,12 +734,11 @@ function sideClosed() {
 }
 
 /**
- * Entering the side (a floor's panel, its archive, the directory): every other panel's place closed, as the panels
- * they hold don't leave by the app yet, the mouse let go.
+ * Entering the side (a floor's panel, its archive, the directory): the drawer, the picker and the draft editor
+ * closed, as they don't leave by the app yet, the mouse let go.
  */
-function sideEntered(_: Panel, from: Panel | undefined) {
+function sideEntered() {
   sideClosed()
-  docClosed(from)
   draftClosed()
   show('side', true)
   unlock()
@@ -749,10 +748,9 @@ const sideLeft = () => show('side', false)
 /** The picker of where a new shell starts, `first`'s floor ahead, its first place focused for the keyboard. */
 const openShellPick = (first: string) => go({ kind: 'shell-pick', first })
 
-/** Entering the picker: every other panel's place closed, as the panels they hold don't leave by the app yet. */
-function shellPickEntered(_: { first: string }, from: Panel | undefined) {
+/** Entering the picker: the side and the draft editor closed, as the drawer and the draft don't leave by the app yet. */
+function shellPickEntered() {
   sideClosed()
-  docClosed(from)
   draftClosed()
   show('shell-pick', true)
   unlock()
@@ -780,13 +778,12 @@ function focusLeft() {
 
 function closeDoc() {
   const open = panelNow()
-  if (open?.kind === 'logbook') docClosed(open)
   if (open?.kind === 'doc' || open?.kind === 'kept' || open?.kind === 'picture' || open?.kind === 'thread' || open?.kind === 'stats' || open?.kind === 'logbook') go(undefined)
 }
 
 /** The reader closed as `open` leaves it, the logbook's screen among it. */
-function docClosed(open: Panel | undefined) {
-  if (open?.kind === 'logbook' && open.tab === 'screen') closeTerm($('logbook-screen'))
+function docClosed(open: Panel) {
+  if (open.kind === 'logbook' && open.tab === 'screen') closeTerm($('logbook-screen'))
   show('doc', false)
   closeDocRelay()
   reader.close()
@@ -828,12 +825,12 @@ statsPolling.subscribe(events.listen('statsPolling'))
 const openStats = () => (closeGame(), go({ kind: 'stats' }))
 
 /**
- * Entering the reader: every other panel's place closed, as the panels they hold don't leave by the app yet, the
- * mouse let go, the reader shown.
+ * Entering the reader: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the
+ * mouse let go, the reader shown. Entered again from its own kind, which isn't left, the reader is closed first.
  */
-function readerEntered(from: Panel | undefined) {
+function readerEntered(panel: Panel, from: Panel | undefined) {
   sideClosed()
-  docClosed(from)
+  if (from?.kind === panel.kind) docClosed(from)
   draftClosed()
   unlock()
   show('paused', false)
@@ -842,8 +839,8 @@ function readerEntered(from: Panel | undefined) {
 const readerLeft = (panel: Panel) => docClosed(panel)
 
 /** Entering the Stats panel: read now, and again every minute while it is open. */
-function statsEntered(_: Panel, from: Panel | undefined) {
-  readerEntered(from)
+function statsEntered(panel: Panel, from: Panel | undefined) {
+  readerEntered(panel, from)
   $('doc-body').dataset.stats = ''
   readStats()
   statsPolling.dispatch({ type: 'start' })
@@ -934,8 +931,9 @@ function openShelf(project: string, n: number, file?: string) {
 }
 
 /** Entering a shelf entry in the reader: an `html` entry's page relayed, else its files listed and one read, the first unless `file` names one. */
-async function docEntered({ project, n, file }: Extract<Panel, { kind: 'doc' }>, from: Panel | undefined) {
-  readerEntered(from)
+async function docEntered(panel: Extract<Panel, { kind: 'doc' }>, from: Panel | undefined) {
+  readerEntered(panel, from)
+  const { project, n, file } = panel
   const entry = s.board!.floors.find((f) => f.id === project)!.shelf![n]
   if (shelfKind(entry) === 'html') return relayDoc(shelfUrl(project, n, shelfPage(entry)), { project, n })
   const files = await shelfFiles(project, n).catch((err: Error) => (toast(err.message), []))
@@ -978,7 +976,7 @@ function openKept(k: { project: string; collection: string; id: string }) {
  * item changes or is read again, the reader stays open on the body it shows until the new one is read.
  */
 async function keptEntered(panel: Extract<Panel, { kind: 'kept' }>, from: Panel | undefined) {
-  if (from?.kind !== 'kept') readerEntered(from)
+  if (from?.kind !== 'kept') readerEntered(panel, from)
   const c = floorOf(panel.project).collections.find((c) => c.id === panel.collection)!
   const item = c.items.find((i) => i.id === panel.id)!
   if (!readsText(itemKind(item.id))) return ($('doc-body').innerHTML = keptFileHtml(c, item, `/${itemPath(panel.project, c.id, item.id)}`))
@@ -1014,8 +1012,9 @@ function openPicture(id: string, target: string) {
 }
 
 /** Entering a picture: seen, and drawn in the reader, a markdown one once its text is read. */
-async function pictureEntered({ id, target }: Extract<Panel, { kind: 'picture' }>, from: Panel | undefined) {
-  readerEntered(from)
+async function pictureEntered(panel: Extract<Panel, { kind: 'picture' }>, from: Panel | undefined) {
+  readerEntered(panel, from)
+  const { id, target } = panel
   const { worker, shown: sh } = pictureOf(s.plan.galleries, s.board!, id, target)!
   see(sh)
   $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes())
@@ -1054,12 +1053,11 @@ function focusDesk(id: string) {
 }
 
 /**
- * Entering the desk: the side, the reader and the draft editor closed, as the panels they hold don't leave by the
- * app yet, the mouse let go, the desk's panel shown on its screen.
+ * Entering the desk: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the
+ * mouse let go, the desk's panel shown on its screen.
  */
-function deskEntered({ id }: { id: string }, from: Panel | undefined) {
+function deskEntered({ id }: { id: string }) {
   sideClosed()
-  docClosed(from)
   draftClosed()
   s.dotted.clear()
   unlock()
@@ -1111,12 +1109,11 @@ function focusShell(id: string) {
   go({ kind: 'shell', id })
 }
 
-/** Entering a shell: the desk's panel over its terminal, the side, the reader and the draft editor closed as at a desk. */
-function shellEntered({ id }: { id: string }, from: Panel | undefined) {
+/** Entering a shell: the desk's panel over its terminal, the drawer, the picker and the draft editor closed as at a desk. */
+function shellEntered({ id }: { id: string }) {
   $('desk-screen').classList.remove('replay')
   show('desk-stamp', false)
   sideClosed()
-  docClosed(from)
   draftClosed()
   unlock()
   show('paused', false)
@@ -1396,8 +1393,8 @@ const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => voi
   desk: focusLeft, shell: focusLeft, tv: focusLeft,
   floor: sideLeft, archive: sideLeft, directory: sideLeft,
   elevator: closesItself,
-  'shell-pick': closesItself, logbook: closesItself, drawer: closesItself, draft: closesItself, game: closesItself,
-  stats: readerLeft, doc: readerLeft, kept: readerLeft, picture: readerLeft, thread: readerLeft,
+  'shell-pick': closesItself, drawer: closesItself, draft: closesItself, game: closesItself,
+  stats: readerLeft, logbook: readerLeft, doc: readerLeft, kept: readerLeft, picture: readerLeft, thread: readerLeft,
 }
 
 /** What entering a panel does, by its kind, `from` the one open before; the panels the app doesn't move yet open themselves. */
@@ -1406,8 +1403,8 @@ const ENTER: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>, from: 
   desk: deskEntered, shell: shellEntered, 'shell-pick': shellPickEntered,
   floor: sideEntered, archive: sideEntered, directory: sideEntered,
   elevator: opensItself,
-  tv: opensItself, logbook: opensItself, drawer: opensItself, draft: opensItself, game: opensItself,
-  stats: statsEntered, thread: threadEntered,
+  tv: opensItself, drawer: opensItself, draft: opensItself, game: opensItself,
+  stats: statsEntered, thread: threadEntered, logbook: logbookEntered,
   doc: (panel, from) => void docEntered(panel, from),
   kept: (panel, from) => void keptEntered(panel, from),
   picture: (panel, from) => void pictureEntered(panel, from),
@@ -2455,7 +2452,7 @@ function readWhole(key: string, atDeskBrief: boolean) {
   tower.conversation(session, conversation).then((whole) => {
     if (atDeskBrief && deskBrief) return (deskBrief = { ...deskBrief, threads: withWhole(deskBrief.threads, whole), wholes: [...deskBrief.wholes, whole] }), drawDeskBrief(true)
     const open = panelAs('logbook')
-    if (open?.threads) patchPanel({ ...open, threads: withWhole(open.threads, whole), wholes: [...open.wholes, whole] }), renderPanel()
+    if (open?.threads) patchPanel({ ...open, threads: withWhole(open.threads, whole), wholes: [...open.wholes, whole] })
   }, (err: Error) => toast(err.message))
 }
 
@@ -2579,8 +2576,9 @@ function openThread(project: string, checkout: string) {
 }
 
 /** Entering a review thread read away from any desk: its view mounted in the reader. */
-function threadEntered({ project, checkout }: Extract<Panel, { kind: 'thread' }>, from: Panel | undefined) {
-  readerEntered(from)
+function threadEntered(panel: Extract<Panel, { kind: 'thread' }>, from: Panel | undefined) {
+  readerEntered(panel, from)
+  const { project, checkout } = panel
   const t = floorThreadsOf(floorOf(project)).find((t) => t.checkout === checkout)!
   reader.open($('doc-body'), `reviews.thread:floor:${project}/${t.key}`)
 }
@@ -2613,21 +2611,16 @@ onArchives(archiveArrived, archiveFailed)
  * The logbook of a worker with no desk in the reader, opened on its conversations, read at once, the latest at the
  * bottom; the Screen tab replays its sessions' last screens, its own session's first.
  */
-function openLogbook(c: Card) {
-  closeSide()
-  unfocus()
-  closeDraftPanel()
-  closeDoc()
-  go({ kind: 'logbook', card: c, threads: undefined, wholes: [], tab: 'brief', on: c.id })
+const openLogbook = (c: Card) => go({ kind: 'logbook', card: c, threads: undefined, wholes: [], tab: 'brief', on: c.id })
+
+/** Entering a logbook: the reader laid out for its tabs, and its conversations read. */
+function logbookEntered(panel: Extract<Panel, { kind: 'logbook' }>, from: Panel | undefined) {
+  readerEntered(panel, from)
   $('doc-body').dataset.logbook = ''
   $('doc-body').innerHTML = `<div class="desk-bar tab-row"><span class="desk-tabs tab-set" id="logbook-tabs"></span></div>
     <div class="logbook-shot" id="logbook-shot"><div id="logbook-sessions"></div><div class="logbook-frame"><div class="logbook-screen" id="logbook-screen"></div><div class="stamp" id="logbook-stamp"></div></div></div>
     <div class="logbook-text" id="logbook-text"></div>`
-  show('doc', true)
-  unlock()
-  show('paused', false)
-  renderPanel()
-  readReader(c)
+  readReader(panel.card)
 }
 
 /** The reader's logbook read now, drawn as it lands while it is open on that worker, and kept at its end while you read there. */
@@ -2640,7 +2633,7 @@ function readReader(c: Card) {
     if (open?.card.id !== c.id) return
     const atEnd = open.threads === undefined || readsAtEnd($('logbook-text'))
     patchPanel({ ...open, threads: briefs, wholes })
-    renderPanel()
+    drawPending()
     if (atEnd) $('logbook-text').scrollTop = $('logbook-text').scrollHeight
   })
 }
@@ -2652,7 +2645,7 @@ function logbookTab(tab: LogbookTab) {
   patchPanel({ ...panel, tab })
   if (tab === 'screen') showLogbookScreen(panel.card, panel.on)
   else closeTerm($('logbook-screen'))
-  renderPanel()
+  drawPending()
   if (tab === 'brief') $('logbook-text').scrollTop = $('logbook-text').scrollHeight
 }
 
@@ -2732,8 +2725,7 @@ $('doc-body').addEventListener('click', (e) => {
     const session = (e.target as HTMLElement).closest<HTMLElement>('[data-replay]')?.dataset.replay
     if (!session) return
     patchPanel({ ...logbook, on: session })
-    showLogbookScreen(logbook.card, session)
-    return renderPanel()
+    return showLogbookScreen(logbook.card, session)
   }
   if (panelNow()?.kind === 'stats') return onStatsClick(e.target as HTMLElement)
   const file = (e.target as HTMLElement).closest<HTMLElement>('[data-file]')?.dataset.file
