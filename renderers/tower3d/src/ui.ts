@@ -29,7 +29,7 @@ const metaOf = (c: Card) =>
     .filter(Boolean)
     .join(' · ')
 
-/** The panels' contents as HTML, from the board and where you are. main.ts puts them on the page and wires them. */
+/** The panels' contents as HTML, from the board and where you are. panels.ts puts them on the page and wires them. */
 
 const NO_BAND = '#d8e1f0'
 const tint = (l: Level) => (l.kind === 'floor' ? (l.floor.color ?? NO_BAND) : LOBBY_BAND)
@@ -278,7 +278,7 @@ const heldButton = (why: string, cls: string, label: string, inner: string) =>
 
 /**
  * A button that asks before it acts: a press opens the library's dialog (`ask`) with `ask` as its question and `verb`
- * on the button that goes ahead, and the panel acts on yes (`answered` in main.ts).
+ * on the button that goes ahead, and the panel acts on yes (`answered` in hud.ts).
  */
 const askingButton = (attrs: string, label: string, tip: string, ask: string, verb: string) =>
   `<button ${attrs} data-tip="${esc(tip)}" data-ask="${esc(ask)}" data-ask-verb="${esc(verb)}">${label}</button>`

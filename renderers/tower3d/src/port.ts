@@ -17,11 +17,11 @@ export function startPort(): Port {
   let app: { dispatch: (event: AppEvent) => void; state: () => Db } | undefined
   return {
     dispatch: (event) => {
-      if (!app) throw new Error(`Tower 3D's port took a ${event.type} before the app attached: a source dispatched before main.ts made the app`)
+      if (!app) throw new Error(`Tower 3D's port took a ${event.type} before the app attached: a source dispatched before the app resource started`)
       app.dispatch(event)
     },
     state: () => {
-      if (!app) throw new Error("Tower 3D read its app's state before the app attached: a resource read the db while it started, before main.ts made the app")
+      if (!app) throw new Error("Tower 3D read its app's state before the app attached: a resource read the db while it started, before the app resource started")
       return app.state()
     },
     attach: (next) => {

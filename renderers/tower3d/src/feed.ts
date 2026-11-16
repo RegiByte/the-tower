@@ -9,11 +9,12 @@ import { checkWardrobe } from './closet.ts'
 import { FIXTURE, fixtureBoards } from './fixtures.ts'
 import * as loading from './loading.ts'
 import { settledArchives } from './archive.ts'
-import { s, type Spot } from './state.ts'
+import { s } from './state.ts'
 import type { Assets } from './loads.ts'
 import type { Toasts } from './toasts.ts'
 import { $, show } from './dom.ts'
 import { nowOf } from './now.ts'
+import type { Kept } from './keeper.ts'
 import type { World } from './building.ts'
 import type { Spawn } from './spawn.ts'
 
@@ -24,9 +25,6 @@ import type { Panels } from './panels.ts'
 import type { Frames } from './frames.ts'
 import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
-
-/** Where you stood, kept by the tower for this page so a reload puts you back, with the music on or off and what you've seen shown. */
-export type Kept = { spot: Spot; muted: boolean; fps?: boolean; seen?: string[] }
 
 /** What the feed resource is started with. */
 export type FeedDeps = { stage: Stage; assets: Assets; port: Port; toasts: Toasts; world: World; spawn: Spawn; hud: Hud; panels: Panels; frames: Frames }

@@ -22,7 +22,7 @@
     "hub/renderers/tower3d/src/kit.ts#fillLayer",
     "hub/renderers/tower3d/src/layout.ts#RETURN",
     "hub/scripts/tower3d-kit.ts",
-    "hub/renderers/tower3d/src/main.ts"
+    "hub/renderers/tower3d/src/building.ts"
   ]
 }
 ---

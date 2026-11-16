@@ -7,7 +7,6 @@ import { startLighting } from './light/setting.ts'
 import { stage as stageShown } from './loading.ts'
 import { startPort } from './port.ts'
 import { bindShell, type Shell } from './shell.ts'
-import type { Main } from './main.ts'
 import type { WorldDeps } from './building.ts'
 import type { ViewsDeps } from './views.ts'
 import type { SpawnDeps } from './spawn.ts'
@@ -19,6 +18,7 @@ import type { ControlsDeps } from './controls.ts'
 import type { FramesDeps } from './frames.ts'
 import type { FeedDeps } from './feed.ts'
 import type { DoorDeps } from './door.ts'
+import type { KeeperDeps } from './keeper.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
@@ -49,7 +49,7 @@ import { startToasts } from './toasts.ts'
  *   frames    each frame's update of what moves on its own, and its render (frames.ts)
  *   feed      the boards the page is fed, live or a fixture's, the first started once the models are in (feed.ts)
  *   door      what agents drive the page by, filled once what it drives has started (door.ts)
- *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
+ *   keeper    where you stand and what you have seen, kept by the tower for the next visit (keeper.ts)
  */
 
 const lighting = defineResource({ start: startLighting, halt: () => {} })
@@ -168,10 +168,11 @@ const door = defineResource({
   halt: () => {},
 })
 
-const main = defineResource({
-  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
-  start: async (started: Main & { shell: Shell }) => (await import('./main.ts')).startMain(started),
+/** After the app: it reads the app's db every second. */
+const keeper = defineResource({
+  dependencies: ['shell', 'port', 'app'],
+  start: async (started: KeeperDeps & { shell: Shell; app: unknown }) => (await import('./keeper.ts')).startKeeper(started),
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, main }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }

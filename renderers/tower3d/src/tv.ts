@@ -9,7 +9,7 @@ import { glows, loadFaces } from './toon.ts'
  * it here or in the browser's bar.
  *
  * Capture needs a page of a real origin: a shelf page framed in the tower has an opaque one, so there the screens
- * send you to this renderer in a tab of its own (src/main.ts).
+ * send you to this renderer in a tab of its own (src/panels.ts).
  */
 
 const W = 1920

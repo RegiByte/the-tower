@@ -2,7 +2,7 @@
  * Tower 3D's app: one machine over what the page has decided (decision `tower3d-system`). Its db holds the panel open
  * beside the world, the view, the desk's tab, where to go once the board shows it, a replay, and attention. Handlers
  * are pure: each returns every effect of a transition at once, the next db first, so no executor dispatches while one
- * runs. The executors live where the DOM and the building are (main.ts).
+ * runs. The executors live where the DOM and the building are (app-loop.ts).
  *
  * A panel moves by `go`, as the page's views do: the panel open is left, unless the next stays in its room, and the
  * next entered, then drawn. Desks, shells and the big screen share one room; they and a game focus the view. Leaving or
