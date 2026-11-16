@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { holdFill } from './acts.ts'
 import { reducedMotion } from '/lib/viewer.js'
-import { tower, type Card } from './api.ts'
+import type { Card, Tower } from './api.ts'
 import { bubbleOf, WORLD, heededWaits, loudest, findCard, statusColor, onStatusColor, shownKey } from './cards.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { poseDesk, poseRigs, type Desk } from './desk.ts'
@@ -40,7 +40,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the frames resource is started with. */
-export type FramesDeps = { lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels }
+export type FramesDeps = { tower: Tower; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type Frames = ReturnType<typeof startFrames>
 
@@ -49,6 +49,7 @@ export type Frames = ReturnType<typeof startFrames>
  * and its render.
  */
 export function startFrames(started: FramesDeps) {
+  const { tower } = started
   const { port } = started
   const { lit } = started.lighting
   const { camera, orbit, renderer, scene, tickOutside } = started.stage

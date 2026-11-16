@@ -3,7 +3,7 @@ import type { Call } from '/lib/extension.js'
 import { type Held } from './acts.ts'
 import { wireSpawn } from '/lib/spawn.js'
 import { hiringHandlers, noHires } from './hiring.ts'
-import { tower } from './api.ts'
+import type { Tower } from './api.ts'
 import { type SpawnForm, spawnCall, spawnDefaults } from './cards.ts'
 import { loop } from '/lib/machine.js'
 import { floorSignHtml } from './ui.ts'
@@ -19,7 +19,7 @@ import type { Clients } from './clients.ts'
 import type { Port } from './port.ts'
 
 /** What the hires are started with. */
-export type SpawnDeps = { clients: Clients; titles: Titles; port: Port; toasts: Toasts; events: Events; world: World }
+export type SpawnDeps = { tower: Tower; clients: Clients; titles: Titles; port: Port; toasts: Toasts; events: Events; world: World }
 
 export type Spawn = ReturnType<typeof startSpawn>
 
@@ -28,6 +28,7 @@ export type Spawn = ReturnType<typeof startSpawn>
  * the carried note handed to a session or hired on.
  */
 export function startSpawn(started: SpawnDeps) {
+  const { tower } = started
   const { discardItem, draftItem, draftsOf, keepUnsent, openDraft, readDraft, titleOf } = started.clients
   const { port } = started
   const { toast, offered } = started.toasts

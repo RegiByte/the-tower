@@ -4,7 +4,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import { modeText, mountTermView, type TermViewHandle, terminalFont } from '/lib/terminal.js'
 import type { Keys } from '/lib/keys.js'
-import { tower, type StreamMsg } from './api.ts'
+import type { StreamMsg, Tower } from './api.ts'
 import { watchStream } from './fixtures.ts'
 
 /**
@@ -35,7 +35,7 @@ type Target = {
 }
 
 /** The terminal: one mounted at a time, redrawn when the viewer's scheme or terminal face changes. */
-export function startTerminal() {
+export function startTerminal({ tower }: { tower: Tower }) {
   let open: TermViewHandle | undefined
 
   function closeTerm(host: HTMLElement) {
@@ -53,7 +53,7 @@ export function startTerminal() {
       send: (data) => t.sendKeys(t.id, data),
       wheelReports: t.wheelReports,
       scrollback: t.scrollback,
-      font: termFont,
+      font: () => terminalFont(tower.prefs.get()),
       scheme: () => tower.scheme(),
       keymap: t.keys,
       run: t.run,
@@ -70,5 +70,3 @@ export function startTerminal() {
 }
 
 export type Term = ReturnType<typeof startTerminal>
-
-const termFont = () => terminalFont(tower.prefs.get())

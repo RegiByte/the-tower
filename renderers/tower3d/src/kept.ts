@@ -1,5 +1,5 @@
 import { itemPath, keptTitles } from '/lib/view.js'
-import { tower } from './api.ts'
+import type { Tower } from './api.ts'
 import { FIXTURE, FIXTURE_DRAFTS, FIXTURE_GAMES } from './fixtures.ts'
 import { GAMES } from './games.ts'
 
@@ -8,7 +8,7 @@ import { GAMES } from './games.ts'
  * item's title from its text where its type names itself, `…` until its text has arrived (`arrived`), pruned with each
  * board. A fixture board reads its own drafts (the collection `drafts` names) and games, the same on every load.
  */
-export function keptTitled(drafts: string, arrived: () => void) {
+export function keptTitled(tower: Tower, drafts: string, arrived: () => void) {
   const fixtureTexts: Record<string, Record<string, string>> = { [drafts]: FIXTURE_DRAFTS, [GAMES]: FIXTURE_GAMES }
   const keptText = (project: string, collection: string, id: string): Promise<string> => {
     if (FIXTURE === undefined) return tower.text(itemPath(project, collection, id))

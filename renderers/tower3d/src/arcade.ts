@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { type } from '/lib/design.js'
 import { itemTitles, titleIn } from '/lib/words.js'
 import { act } from './acts.ts'
-import { tower } from './api.ts'
+import type { Tower } from './api.ts'
 import { FIXTURE, FIXTURE_GAMES } from './fixtures.ts'
 import { GAMES, gamePath } from './games.ts'
 import { WORLD } from './cards.ts'
@@ -17,15 +17,16 @@ import { block, glowing, glows, mesh, toon } from './toon.ts'
  * keeper, its screen inviting you to play.
  */
 
-/** A game's text, rejecting as the API does. A fixture board reads its own games, the same on every load. */
-const gameText = (project: string, id: string): Promise<string> => {
-  if (FIXTURE === undefined) return tower.text(gamePath(project, id))
-  const text = FIXTURE_GAMES[`${project}/${id}`]
-  return text === undefined ? Promise.reject(Object.assign(new Error(`No game "${id}"`), { code: 'not_found' })) : Promise.resolve(text)
-}
-
-/** Each game's title, its `<title>` or else its tag, `…` until its text has arrived (`arrived`); `pruneGameTitles` with each board. */
-export function gamesTitled(arrived: () => void) {
+/**
+ * Each game's title, its `<title>` or else its tag, `…` until its text has arrived (`arrived`); `pruneGameTitles` with
+ * each board. A game's text rejects as the API does; a fixture board reads its own games, the same on every load.
+ */
+export function gamesTitled(tower: Tower, arrived: () => void) {
+  const gameText = (project: string, id: string): Promise<string> => {
+    if (FIXTURE === undefined) return tower.text(gamePath(project, id))
+    const text = FIXTURE_GAMES[`${project}/${id}`]
+    return text === undefined ? Promise.reject(Object.assign(new Error(`No game "${id}"`), { code: 'not_found' })) : Promise.resolve(text)
+  }
   const { title: gameTitle, prune: pruneGameTitles } = itemTitles(GAMES, gameText, (item, text) => titleIn(item.id, text) ?? item.tag, arrived)
   return { gameTitle, pruneGameTitles }
 }

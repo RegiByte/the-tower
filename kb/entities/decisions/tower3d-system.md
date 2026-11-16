@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads, the port its reads send their events through, the titles read from items' texts and the archive's reads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the views, the world, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot. The modules below them read nothing as they load: what they draw by is handed to them, as arguments or a start's dependencies, and system.ts imports every module statically. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
+  "summary": "Tower 3D's long-lived pieces (the tower's API, its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads, the port its reads send their events through, the titles read from items' texts and the archive's reads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the views, the world, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot. The modules below them read nothing as they load: what they draw by is handed to them, as arguments or a start's dependencies, and system.ts imports every module statically. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
@@ -104,6 +104,9 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   the load event before a module that takes long to evaluate has run, and an agent awaits `tower3d.ready()` from the
   load event on ([[tower3d-door]]). braided collects each failed start and skips its dependents; boot writes every one
   on the loading screen with the resource's name and rejects `ready()` with them ([[tower3d-start]]).
+- *The tower is a resource.* The API the page reads and writes through is the `tower` resource, `window.tower` on the
+  live page, handed to every resource that calls it; `api.ts` exports its type and helpers that take it
+  (`shelfFiles(tower, …)`), never the object, so no module reaches the API except through the record.
 - *The lighting bands the ramp.* Lit, the lighting's start bands every toon material by the rig's ramp
   ([`lightRamp`](ref:hub/renderers/tower3d/src/toon.ts#lightRamp)) before anything draws; the stage gets `lit` as an
   argument. The pages that never start it (the lab, the dresser, the editor) stay unlit.

@@ -9,7 +9,7 @@ import { keepShownTabs, drawPanel, keepingFocus, failedHtml, fileCall, pressing,
 import { readViewer, seenOf } from '/lib/viewer.js'
 import { actionId, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
 import { type Lines, type Subject } from '/lib/board.js'
-import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf } from './api.ts'
+import { shelfFiles, shelfText, shelfUrl, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Tower } from './api.ts'
 import { can, runVerb, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, ago, cardsOf, heededWaits, current, findCard, gistLine, wordsOf, sendTarget, sentHome, shownHref, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { threadSubjectKey, type AppEvent, type TabTo } from './app.ts'
@@ -49,7 +49,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the panels resource is started with. */
-export type PanelsDeps = { clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
+export type PanelsDeps = { tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
 
 export type Panels = ReturnType<typeof startPanels>
 
@@ -58,6 +58,7 @@ export type Panels = ReturnType<typeof startPanels>
  * briefs read for it, the draft editor, and the pet's hearts.
  */
 export function startPanels(started: PanelsDeps) {
+  const { tower } = started
   const { port } = started
   const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
   const { camera, scene } = started.stage
@@ -360,9 +361,9 @@ export function startPanels(started: PanelsDeps) {
     const { project, n, file } = panel
     const entry = boardNow()!.floors.find((f) => f.id === project)!.shelf![n]
     if (shelfKind(entry) === 'html') return relayDoc(shelfUrl(project, n, shelfPage(entry)), { project, n })
-    const files = await shelfFiles(project, n).catch((err: Error) => (toast(err.message), []))
+    const files = await shelfFiles(tower, project, n).catch((err: Error) => (toast(err.message), []))
     const shown = file ?? files[0]
-    const text = shown ? await shelfText(project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
+    const text = shown ? await shelfText(tower, project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
     const doc = panelAs('doc')
     if (doc?.project !== project || doc.n !== n) return
     patchPanel({ ...doc, file: shown })
@@ -1498,14 +1499,14 @@ export function startPanels(started: PanelsDeps) {
    * attaches, so none can run before it.
    */
   function listen() {
-    onAppearance(() => {
+    onAppearance(tower, () => {
       const doc = panelAs('doc')
       if (doc?.file) openShelf(doc.project, doc.n, doc.file)
     })
 
-    onAppearance(() => redrawKept())
+    onAppearance(tower, () => redrawKept())
 
-    onAppearance(() => {
+    onAppearance(tower, () => {
       const picture = panelAs('picture')
       if (picture) openPicture(picture.id, picture.target)
     })
@@ -1531,7 +1532,7 @@ export function startPanels(started: PanelsDeps) {
       if (earlier) readWhole(earlier, !!el.closest('#desk-brief'))
     })
 
-    onAppearance(() => {
+    onAppearance(tower, () => {
       const desk = atDesk()
       if (!desk) return
       const sh = findCard(boardNow()!, desk)?.shown.find((sh) => shownTab(sh) === deskTabNow())

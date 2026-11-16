@@ -1,7 +1,7 @@
 import type { ChairKit, Chairs } from './chairs.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Verb } from './acts.ts'
-import type { Brief, Card, tower } from './api.ts'
+import type { Brief, Card, Tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
 import type { Renderer } from '/lib/board.js'
 import type { Note } from './cork.ts'
@@ -29,7 +29,7 @@ import type { World } from './world.ts'
 export type View = 'walk' | 'focus' | 'overview' | 'pet'
 /** Where to stand: `y` is how high over the level's floor, on a stair or the loft's deck, 0 unless given. */
 export type Standing = { x: number; z: number; yaw: number; pitch?: number; y?: number }
-export type Threads = Awaited<ReturnType<typeof tower.conversations>>
+export type Threads = Awaited<ReturnType<Tower['conversations']>>
 /** A game played beside its cabinet; `x` is where the camera framed it. */
 export type GamePanel = { kind: 'game'; project: string; id: string; x: number }
 export type Panel =

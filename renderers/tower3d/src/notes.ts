@@ -1,4 +1,4 @@
-import { tower } from './api.ts'
+import type { Tower } from './api.ts'
 import { FIXTURE, FIXTURE_DRAFTS } from './fixtures.ts'
 import type { Clients } from './clients.ts'
 
@@ -7,7 +7,7 @@ import type { Clients } from './clients.ts'
  * (`not_found` once it is gone), and each note's title, `…` until its draft's text has arrived (`arrived`), pruned
  * with each board. A fixture board reads its own drafts, the same on every load.
  */
-export function notesTitled({ draftPath, draftTitles }: Pick<Clients, 'draftPath' | 'draftTitles'>, arrived: () => void) {
+export function notesTitled(tower: Tower, { draftPath, draftTitles }: Pick<Clients, 'draftPath' | 'draftTitles'>, arrived: () => void) {
   const noteText = (project: string, id: string): Promise<string> => {
     if (FIXTURE === undefined) return tower.text(draftPath(project, id))
     const text = FIXTURE_DRAFTS[`${project}/${id}`]

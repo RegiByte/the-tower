@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { marked, type Token } from 'marked'
 import { type } from '/lib/design.js'
 import { imagePath } from '/lib/markdown.js'
-import { tower, type Card } from './api.ts'
+import type { Card } from './api.ts'
 import { WORLD, base, shownHref, shownKey, shownTitle } from './cards.ts'
 import { FIXTURE, readBlob } from './fixtures.ts'
 
@@ -244,7 +244,7 @@ export function posterOf(c: Pick<Card, 'callsign'>, s: Shown) {
       const pictures = await pageImages(tokens, url)
       if (pictures.size) paint(pictures)
     }
-    read(tower.text(url.slice(1)).then(typeset, () => undefined))
+    read(window.tower.text(url.slice(1)).then(typeset, () => undefined))
   }
   if (isImage(s)) {
     const hang = (image: HTMLCanvasElement) => {

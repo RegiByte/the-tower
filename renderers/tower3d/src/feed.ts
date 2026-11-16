@@ -1,6 +1,6 @@
 import { type CatNames } from './acts.ts'
 import { readViewer } from '/lib/viewer.js'
-import { tower, type Board, type ShelfSelf } from './api.ts'
+import type { Board, ShelfSelf, Tower } from './api.ts'
 import { boardErrorTitle } from './cards.ts'
 import { fitHands, makeHands } from './hands.ts'
 import { idle } from './tv.ts'
@@ -24,7 +24,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the feed resource is started with. */
-export type FeedDeps = { archive: Archive; stage: Stage; assets: Assets; port: Port; toasts: Toasts; world: World; spawn: Spawn; hud: Hud; panels: Panels; frames: Frames }
+export type FeedDeps = { tower: Tower; archive: Archive; stage: Stage; assets: Assets; port: Port; toasts: Toasts; world: World; spawn: Spawn; hud: Hud; panels: Panels; frames: Frames }
 
 export type Feed = ReturnType<typeof startFeed>
 
@@ -33,6 +33,7 @@ export type Feed = ReturnType<typeof startFeed>
  * under the loading screen once the models are in, and the promise the door's ready answers.
  */
 export function startFeed(started: FeedDeps) {
+  const { tower } = started
   const { port } = started
   const { camera, flyPlane, renderer, scene } = started.stage
   const { boardNow } = nowOf(port)

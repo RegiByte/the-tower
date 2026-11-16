@@ -1,6 +1,6 @@
 import { statsQuery } from '/lib/stats.js'
 import { ask } from '/lib/chrome.js'
-import { tower } from './api.ts'
+import type { Tower } from './api.ts'
 import { findCard } from './cards.ts'
 import { attending } from '/lib/attend.js'
 import { appHandlers, startingDb, type AppEvent, type Arrival, type TabTo } from './app.ts'
@@ -28,7 +28,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the app resource is started with. */
-export type AppLoopDeps = { clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
+export type AppLoopDeps = { tower: Tower; clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type AppLoop = ReturnType<typeof startAppLoop>
 
@@ -37,6 +37,7 @@ export type AppLoop = ReturnType<typeof startAppLoop>
  * window's focus and visibility it is told of.
  */
 export function startAppLoop(started: AppLoopDeps) {
+  const { tower } = started
   const { port } = started
   const { draftsOf, floorThreadsOf } = started.clients
   const { camera, orbit } = started.stage

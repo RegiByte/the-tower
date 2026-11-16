@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { offersOf, type Act, type Offer } from './acts.ts'
 import { projectOfKey } from '/lib/board.js'
-import { tower, type Board, type Wait } from './api.ts'
+import type { Board, Wait, Tower } from './api.ts'
 import { attentionOrder, isAsk, nextAttended, type Move, findCard, neighboursIn, shownKey } from './cards.ts'
 import { actKey, markedIn, type AppEvent } from './app.ts'
 import { sharing } from './tv.ts'
@@ -23,7 +23,7 @@ import type { Archive } from './archive.ts'
 import type { Titles } from './titles.ts'
 
 /** What the navigation resource is started with. */
-export type NavigationDeps = { clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
+export type NavigationDeps = { tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
 
 export type Navigation = ReturnType<typeof startNavigation>
 
@@ -32,6 +32,7 @@ export type Navigation = ReturnType<typeof startNavigation>
  * and aiming at what the prompt offers.
  */
 export function startNavigation(started: NavigationDeps) {
+  const { tower } = started
   const reads = { ...started.clients, ...started.titles, drawersAt: started.archive.drawersAt }
   const { port } = started
   const { orbit } = started.stage
