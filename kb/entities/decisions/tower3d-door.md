@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-16",
   "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
@@ -49,7 +49,7 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   between steps would make frames differ.
 - The tools around it ([[tower3d]]): `npm run drive` (headless Chrome, page errors collected), `npm run sandbox`,
   `npm run tool:frames` (a fixed walk on every fixture board, each stage's state and PNG compared byte for byte; it
-  refuses a walk that does not repeat), model names as data checked against every `.glb` by `npm test`, and in CI
+  refuses a walk that does not repeat, and keeps both walks to diff), model names as data checked against every `.glb` by `npm test`, and in CI
   `npm run test:tower3d-boot`, the built bundle booted on a fixture board through `ready()` with no page error.
 
 **Alternatives considered.**
@@ -58,4 +58,6 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
 - Boards recorded from the real system: real shapes, but client prompts and paths would land in git and a
   scrubber would have to follow every new text field.
 
-**Impact.** Two loads with one seed, clock and steps give identical pixels.
+**Impact.** Two loads with one seed, clock and steps give identical pixels, in a Chrome that draws its 2D canvases
+in software: rasterized on the GPU, a canvas's text now and then lands a glyph's edge a few pixels apart from one load
+to the next, so frames opens Chrome with `--disable-accelerated-2d-canvas`.
