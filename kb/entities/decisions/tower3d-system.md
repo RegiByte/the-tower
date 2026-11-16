@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads and the port its reads send their events through) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, shell, and reads the others through one binding set as it starts. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
+  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads and the port its reads send their events through) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, main, handed what it reads; the leaf modules read theirs through one transitional binding, shell. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
@@ -12,6 +12,7 @@
     "hub/renderers/tower3d/src/boot.ts",
     "hub/renderers/tower3d/src/shell.ts",
     "hub/renderers/tower3d/src/shell.ts#shell",
+    "hub/renderers/tower3d/src/main.ts#startMain",
     "hub/renderers/tower3d/src/clients.ts#startClients",
     "hub/renderers/tower3d/src/light/setting.ts#startLighting",
     "hub/renderers/tower3d/src/toon.ts#lightRamp",
@@ -92,10 +93,14 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 - *The lighting bands the ramp.* Lit, the lighting's start bands every toon material by the rig's ramp
   ([`lightRamp`](ref:hub/renderers/tower3d/src/toon.ts#lightRamp)) before anything draws; the stage gets `lit` as an
   argument. The pages that never start it (the lab, the dresser, the editor) stay unlit.
-- *The page is the last resource, through a temporary seam.* `shell` binds what it depends on
-  ([`shell()`](ref:hub/renderers/tower3d/src/shell.ts#shell)) and then imports `main.ts`; `main.ts` and the modules it
-  imports read their resources from that binding as they load, and a read before it is bound throws, naming why. This
-  binding is transitional: later passes move what `main.ts` holds into resources of their own and dissolve it.
+- *The leaves read a temporary binding; the page resources import their modules as they start.* Twelve leaf modules
+  (`acts`, `arcade`, `archive`, `desk`, `door`, `kept`, `notes`, `pigeonhole`, `state`, `world`, `ui`, `levels`) read
+  the clients, the lighting, the stage, the input or the port as they load. `shell` binds those five
+  ([`shell()`](ref:hub/renderers/tower3d/src/shell.ts#shell)) once they have started, and a read before it is bound
+  throws, naming why. A page resource lists `shell` among its dependencies and imports its module in its start
+  (`await import(…)`), so no leaf loads before the binding; the page itself is the `main` resource,
+  [`startMain`](ref:hub/renderers/tower3d/src/main.ts#startMain), handed what it reads. Both are transitional: once the
+  leaves take what they read as arguments, the binding goes and the imports are static again.
 - *No cycles.* [`importCycles`](ref:hub/scripts/tower3d-boot.ts#importCycles) in `test:tower3d-boot` walks the import
   graph esbuild reads for the four pages and fails, naming the modules, on any cycle. The one there was (`layout`,
   `meetings`, `zones`, `breaks`) is broken by [`prefab.ts`](ref:hub/renderers/tower3d/src/prefab.ts).
@@ -105,7 +110,7 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   to the board while they load, so a page behind another tab still rings ([[tower3d-start]]). The page handles a
   failed load only once it is imported, after every other resource, so `loaded` is marked handled: a resource that
   fails first skips the page, and the loading screen already says why. The loading screen's models stage is lit by
-  `shell` as it starts, so "your settings" shows while the settings are read. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
+  `main` as it starts, so "your settings" shows while the settings are read. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
   `assets.ts` would shadow it.
 - *Moving an import can move pixels.* three.js orders opaque draws by `material.id`, and ids are handed out as
   materials are made, many of them as their module is evaluated. A change to what is imported first renumbers them,
@@ -118,7 +123,8 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   items' and games' texts start before the app that handles what they bring. They send their events to `port`
   ([`startPort`](ref:hub/renderers/tower3d/src/port.ts#startPort)), a resource with no dependencies, and `main.ts`
   attaches the app to it once it is made: the one late binding between the page's event sources and its app. An
-  event sent before the app attached throws, naming the source.
+  event sent before the app attached throws, naming the source. A resource that starts before the app and reads its
+  db reads it through the port too (`state`), which throws the same way before the app attached.
 
 **The app loop.** The page's decisions live in one machine, `app` (the shared loop, [[machines]]), as the tower page's
 do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/renderers/tower3d/src/app.ts); its
