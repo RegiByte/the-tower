@@ -3,7 +3,6 @@ import { act } from './acts.ts'
 import { random } from './random.ts'
 import type { Card } from './api.ts'
 import { WORLD, shownKey, branchLine, bubbleOf, pairLineOf, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
-import { reviewerOf } from './clients.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
 import { DESK, SEAT_OFFSET } from './layout.ts'
 import { ASLEEP, HIRING, OFFLINE, OPEN_DESK, awayScreen, screenTexture } from './screens.ts'
@@ -15,6 +14,9 @@ import { lookOf, lookOfWorker } from './wardrobe.ts'
 import { clipLength, pose, type Pose } from './rig.ts'
 import { posterOf, type Shown } from './showing.ts'
 import { block, dispose, glowing, glows, mesh, sprite, toon } from './toon.ts'
+import { shell } from './shell.ts'
+
+const { reviewerOf } = shell().clients
 
 /**
  * A desk and the worker at it, in desk space: the desk centered on the origin, its monitor at the far edge (+z)

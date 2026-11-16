@@ -1,8 +1,10 @@
-import { DRAFTS } from './clients.ts'
 import { itemPath, keptTitles } from '/lib/view.js'
 import { tower } from './api.ts'
 import { FIXTURE, FIXTURE_DRAFTS, FIXTURE_GAMES } from './fixtures.ts'
 import { GAMES } from './games.ts'
+import { shell } from './shell.ts'
+
+const { DRAFTS } = shell().clients
 
 /**
  * Any collection's items as the floor panel's trays list them, titled from their text where their type names itself.

@@ -1,12 +1,14 @@
 import * as THREE from 'three'
 import { type } from '/lib/design.js'
-import { cardReviews } from './clients.ts'
 import { act } from './acts.ts'
 import { WORLD, workerIn } from './cards.ts'
 import { PIGEONHOLE, type Level, type PigeonholeSlot } from './layout.ts'
 import { tintOf } from './palette.ts'
 import { fitted } from './sign.ts'
 import { block, mesh, toon } from './toon.ts'
+import { shell } from './shell.ts'
+
+const { cardReviews } = shell().clients
 
 type FloorLevel = Extract<Level, { kind: 'floor' }>
 

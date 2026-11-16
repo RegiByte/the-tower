@@ -1,5 +1,4 @@
 import type * as THREE from 'three'
-import { draftItem, cardReviews, floorThreadsOf, keepsThreads as floorKeepsThreads, threadCheckout } from './clients.ts'
 import type { ShelfEntry } from '/lib/board.js'
 import type { Board, Card, GalleryShowing } from './api.ts'
 import type { Added, VerbAction } from '/lib/extension.js'
@@ -8,6 +7,9 @@ import { wallNow } from './clock.ts'
 import { drawerLabel, drawersAt } from './archive.ts'
 import { gameItem } from './games.ts'
 import type { CatName } from './life.ts'
+import { shell } from './shell.ts'
+
+const { draftItem, cardReviews, floorThreadsOf, keepsThreads: floorKeepsThreads, threadCheckout } = shell().clients
 
 /** A thing in the world you can aim at, by what it stands for. Its verbs are worked out from the board each time. */
 export type Act =

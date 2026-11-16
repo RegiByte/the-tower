@@ -1,6 +1,8 @@
-import { draftPath, draftTitles } from './clients.ts'
 import { tower } from './api.ts'
 import { FIXTURE, FIXTURE_DRAFTS } from './fixtures.ts'
+import { shell } from './shell.ts'
+
+const { draftPath, draftTitles } = shell().clients
 
 /**
  * A draft's text, rejecting as the API does (`not_found` once it is gone). A fixture board reads its own drafts, the

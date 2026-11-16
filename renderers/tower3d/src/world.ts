@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { type } from '/lib/design.js'
-import { draftsOf } from './clients.ts'
 import { defaultLimits, type CommandLimits } from '/lib/board.js'
 import type { Board, Shell, Today, Wait } from './api.ts'
 import { duration, hours, usd, WEEKLY } from '/lib/stats.js'
@@ -24,6 +23,9 @@ import { mastLight } from './exterior/beacons.ts'
 import { frame, parapet as shellParapet, spandrel as shellSpandrel } from './exterior/shell.ts'
 import { screenMaterial } from './tv.ts'
 import { LOBBY_BAND, paintSign, signOf, signPlate } from './sign.ts'
+import { shell } from './shell.ts'
+
+const { draftsOf } = shell().clients
 
 export type Doors = { left: THREE.Object3D; right: THREE.Object3D }
 type RateLimit = CommandLimits['rateLimits'][number]
