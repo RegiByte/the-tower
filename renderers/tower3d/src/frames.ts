@@ -31,13 +31,9 @@ import type { Music } from './music.ts'
 import { $ } from './dom.ts'
 import { nowOf } from './now.ts'
 import type { World } from './building.ts'
-
 import type { Hud } from './hud.ts'
-
 import type { Navigation } from './navigation.ts'
-
 import type { Panels } from './panels.ts'
-
 import type { Lighting } from './light/setting.ts'
 import type { Stage } from './stage.ts'
 import type { Input } from './input.ts'

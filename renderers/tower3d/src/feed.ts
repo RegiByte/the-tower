@@ -17,11 +17,8 @@ import { nowOf } from './now.ts'
 import type { Kept } from './keeper.ts'
 import type { World } from './building.ts'
 import type { Spawn } from './spawn.ts'
-
 import type { Hud } from './hud.ts'
-
 import type { Panels } from './panels.ts'
-
 import type { Frames } from './frames.ts'
 import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'

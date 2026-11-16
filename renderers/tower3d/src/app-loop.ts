@@ -20,11 +20,8 @@ import { nowOf } from './now.ts'
 import type { World } from './building.ts'
 import type { Views } from './views.ts'
 import type { Spawn } from './spawn.ts'
-
 import type { Hud } from './hud.ts'
-
 import type { Navigation } from './navigation.ts'
-
 import type { Panels } from './panels.ts'
 import type { Clients } from './clients.ts'
 import type { Stage } from './stage.ts'
@@ -112,14 +109,14 @@ export function startAppLoop(started: AppLoopDeps) {
           (err: Error) => dispatch({ type: 'stats/failed', reading, message: err.message }),
         ),
       'world/apply': ({ was }) => {
-      desk.update(boardNow()!)
-      rereadViewer()
-      worldRebuilt(was)
-      hiring.dispatch({ type: 'board', board: boardNow()! })
-      worldFurnished(was)
-      if (s.draft?.id) followDraft(s.draft)
-      renderHud()
-    },
+        desk.update(boardNow()!)
+        rereadViewer()
+        worldRebuilt(was)
+        hiring.dispatch({ type: 'board', board: boardNow()! })
+        worldFurnished(was)
+        if (s.draft?.id) followDraft(s.draft)
+        renderHud()
+      },
       fireworks: ({ cards }) => celebrate(cards),
       'waits/began': () => void (s.waitedAt = s.simNow),
       asked: ({ ask }) => toast(`${ask.title}, asked by ${ask.cap}`, { label: 'Go', run: () => goToAsk(ask) }),
