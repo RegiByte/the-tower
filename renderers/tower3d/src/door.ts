@@ -1,18 +1,18 @@
 import * as THREE from 'three'
 import { HELD, HOLD_MS, holdFill, type Act, type Held, type Offer, type Verb } from './acts.ts'
 import { levelsShown, showLevels } from './levels.ts'
-import type { Move } from './input.ts'
+import type { Input, Move } from './input.ts'
 import type { Plan } from './layout.ts'
 import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
-import { shell } from './shell.ts'
 import { s, type Standing, type View } from './state.ts'
 import { markedIn, type AppEvent, type Db } from './app.ts'
 import type { CatName } from './life.ts'
 import type { EventRecord } from './record.ts'
 import { nowOf } from './now.ts'
 import type { Port } from './port.ts'
+import type { Stage } from './stage.ts'
 import type { Events } from './events.ts'
 import type { World } from './building.ts'
 import type { Navigation } from './navigation.ts'
@@ -22,9 +22,6 @@ import type { Controls } from './controls.ts'
 import type { Frames } from './frames.ts'
 import type { Feed } from './feed.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
-
-const { camera, canvas, scene } = shell().stage
-const { drive } = shell().input
 
 /**
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
@@ -116,6 +113,8 @@ export type Engine = {
   /** Real frames run again, from now. */
   play(): void
   onKey(code: string, repeat: boolean): boolean
+  /** Holds `move` as the walker's until the next drive; `undefined` hands it back to the keyboard. */
+  drive(move: Move | undefined): void
   run(a: Act, verb: Verb): void
   place(level: number, spot: Standing): void
   leaveOverview(): void
@@ -148,7 +147,7 @@ const isAncestor = (a: THREE.Object3D, o: THREE.Object3D): boolean => !!o.parent
 const actKey = (a: Act) => JSON.stringify(Object.entries(a).sort(([x], [y]) => x.localeCompare(y)))
 
 /** Fills the door the entry opened (`boot.ts`), so whoever held it from the first script on now holds the whole door. */
-export function installDoor(e: Engine) {
+export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'camera' | 'canvas' | 'scene'>) {
   /**
    * The outermost object standing for `target`, among everything pickable that is drawn on its level (a desk's second
    * monitor is hidden until its worker shows something); a level you are not on still counts. A thing drawn twice
@@ -233,7 +232,7 @@ export function installDoor(e: Engine) {
     },
     release() {
       s.doorMode = false
-      drive(undefined)
+      e.drive(undefined)
       e.dispatch({ type: 'capture', by: 'door', held: false })
     },
     teleport({ level, x, z, yaw = s.me.yaw, pitch = 0, y = 0 }) {
@@ -271,7 +270,7 @@ export function installDoor(e: Engine) {
       e.onKey(code, false)
     },
     drive(m) {
-      drive(m && { ahead: 0, side: 0, run: false, jump: false, ...m })
+      e.drive(m && { ahead: 0, side: 0, run: false, jump: false, ...m })
     },
     step(frames = 1, dt = STEP) {
       s.stepped = true
@@ -295,7 +294,7 @@ export function installDoor(e: Engine) {
 }
 
 /** What the door is started with: every resource whose functions it drives. */
-export type DoorDeps = { port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
+export type DoorDeps = { stage: Stage; input: Input; port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
 
 /** The door filled, once every resource it drives has started (the `door` resource). */
 export function startDoor(started: DoorDeps) {
@@ -316,5 +315,6 @@ export function startDoor(started: DoorDeps) {
     ready, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
     events: events.read,
     play,
-  })
+    drive: started.input.drive,
+  }, started.stage)
 }
