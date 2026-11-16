@@ -71,7 +71,8 @@
     "hub/renderers/tower3d/src/app-loop.ts#startAppLoop",
     "hub/renderers/tower3d/src/controls.ts#startControls",
     "hub/renderers/tower3d/src/frames.ts#startFrames",
-    "hub/renderers/tower3d/src/feed.ts#startFeed"
+    "hub/renderers/tower3d/src/feed.ts#startFeed",
+    "hub/renderers/tower3d/src/door.ts#startDoor"
   ]
 }
 ---

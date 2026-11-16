@@ -18,6 +18,7 @@ import type { AppLoopDeps } from './app-loop.ts'
 import type { ControlsDeps } from './controls.ts'
 import type { FramesDeps } from './frames.ts'
 import type { FeedDeps } from './feed.ts'
+import type { DoorDeps } from './door.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
@@ -47,6 +48,7 @@ import { startToasts } from './toasts.ts'
  *   controls  the pointer and the keys: what a click, a wheel or a key does (controls.ts)
  *   frames    each frame's update of what moves on its own, and its render (frames.ts)
  *   feed      the boards the page is fed, live or a fixture's, the first started once the models are in (feed.ts)
+ *   door      what agents drive the page by, filled once what it drives has started (door.ts)
  *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
@@ -160,10 +162,16 @@ const feed = defineResource({
   halt: () => {},
 })
 
+const door = defineResource({
+  dependencies: ['shell', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
+  start: async (started: DoorDeps & { shell: Shell }) => (await import('./door.ts')).startDoor(started),
+  halt: () => {},
+})
+
 const main = defineResource({
   dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
   start: async (started: Main & { shell: Shell }) => (await import('./main.ts')).startMain(started),
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, main }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, main }

@@ -1,6 +1,5 @@
 import { tower } from './api.ts'
-import { installDoor } from './door.ts'
-import { s, type Spot, type Standing } from './state.ts'
+import { s, type Spot } from './state.ts'
 import { type Walker } from './walker.ts'
 import type { Shell } from './shell.ts'
 import type { Music } from './music.ts'
@@ -35,15 +34,7 @@ export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toast
  * every resource it reads has (system.ts).
  */
 export function startMain(started: Main) {
-  const { events } = started
-  const { planNow, floorY, pickables, pick } = started.world
-  const { boardNow, captured, viewNow, motionNow } = nowOf(started.port)
-  const { leaveOverview, offersNow, aimAt, startHold } = started.navigation
-  const { run, drawPending } = started.panels
-  const { app } = started.app
-  const { onKey } = started.controls
-  const { play, render, update } = started.frames
-  const { advance, ready } = started.feed
+  const { boardNow, viewNow, motionNow } = nowOf(started.port)
 
 
 
@@ -68,8 +59,6 @@ export function startMain(started: Main) {
 
 
 
-  /** Standing at `spot` on `level` at once, out of any ride or flight. */
-  const place = (level: number, spot: Standing) => app.dispatch({ type: 'place', level, spot })
 
 
 
@@ -128,9 +117,4 @@ export function startMain(started: Main) {
   }, 1000)
 
 
-  installDoor({
-    ready, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
-    events: events.read,
-    play,
-  })
 }
