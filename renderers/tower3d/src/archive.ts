@@ -2,7 +2,7 @@ import { failureAt, failureOf, heldHandlers, noReads, reading, valueAt, valueOf,
 import type { Board, Card, Floor } from './api.ts'
 import { archivedCard, archiveKey, type ArchiveReads, archiveWant } from './cards.ts'
 import { readArchive } from './fixtures.ts'
-import { wallNow } from './clock.ts'
+import type { Clock } from './clock.ts'
 import type { Port } from './port.ts'
 import { historyFrom } from './seating.ts'
 import { FILING } from './layout.ts'
@@ -24,7 +24,8 @@ export function historyOf(f: Floor, archived: Archived): Card[] | undefined {
 }
 
 /** Starts the archive reads, telling the port as each lands or fails. */
-export function startArchive({ port }: { port: Port }) {
+export function startArchive({ port, clock }: { port: Port; clock: Clock }) {
+  const { now: wallNow } = clock
   /** The board the reads were last asked against: a fixture board serves its own archive. */
   let readBoard: Board | undefined
 

@@ -8,7 +8,7 @@ import { loop, timers, type Executors, type TimerEffect } from '/lib/machine.js'
 import { purr, ring } from './life.ts'
 import { PET_MS } from './pet.ts'
 import { cabinetOf } from './layout.ts'
-import { clockMoves, wallNow } from './clock.ts'
+import type { Clock } from './clock.ts'
 import type { Archive } from './archive.ts'
 import { s, type Panel, type Standing } from './state.ts'
 import { aim } from './walker.ts'
@@ -28,7 +28,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the app resource is started with. */
-export type AppLoopDeps = { tower: Tower; clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
+export type AppLoopDeps = { clock: Clock; tower: Tower; clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type AppLoop = ReturnType<typeof startAppLoop>
 
@@ -37,6 +37,7 @@ export type AppLoop = ReturnType<typeof startAppLoop>
  * window's focus and visibility it is told of.
  */
 export function startAppLoop(started: AppLoopDeps) {
+  const { now: wallNow, moves: clockMoves } = started.clock
   const { tower } = started
   const { port } = started
   const { draftsOf, floorThreadsOf } = started.clients

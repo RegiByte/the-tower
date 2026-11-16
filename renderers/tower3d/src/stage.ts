@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { wallNow } from './clock.ts'
 import { skyAt } from '/lib/design.js'
 import { glowKit } from './kit.ts'
 import { outside } from './outside.ts'
@@ -9,7 +8,7 @@ import { outside } from './outside.ts'
  * The page's one renderer, scene and camera on its canvas, the sky outside following the wall clock, and the orbit used
  * from outside. `lit` is the lighting setting (light/setting.ts).
  */
-export function startStage(lit: boolean) {
+export function startStage(lit: boolean, wallNow: () => number) {
   const canvas = document.getElementById('scene') as HTMLCanvasElement
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2))

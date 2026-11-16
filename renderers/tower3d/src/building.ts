@@ -26,7 +26,7 @@ import { dispose } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { keymapSheetHtml } from '/lib/keys.js'
 import { random } from './random.ts'
-import { wallNow } from './clock.ts'
+import type { Clock } from './clock.ts'
 import { historyOf, type Archive, type Archived } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
@@ -46,7 +46,7 @@ import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { tower: Tower; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { clock: Clock; tower: Tower; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -55,6 +55,7 @@ export type World = ReturnType<typeof startWorld>
  * app took, the caches of what can be seen, bumped into and picked, and the camera's flights.
  */
 export function startWorld(started: WorldDeps) {
+  const { now: wallNow } = started.clock
   const { tower } = started
   const { isScreenTexture, keepScreens, replayTexture, screenPathOf, screenTexture, monitorOf } = started.screens
   const { isPosterTexture, keepPosters, pictured, posterOf } = started.pictures
@@ -137,7 +138,7 @@ export function startWorld(started: WorldDeps) {
   function rebuildWorld() {
     if (s.world) discard(s.world.group)
     s.rebuilds++
-    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!, draftsOf, screenTexture)
+    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!, draftsOf, screenTexture, wallNow())
     scene.add(s.world.group)
     for (const level of planNow().levels) fillLayer(s.kit!, onLevel(scene, level.index).zones, zonesPlaced(s.kit!, level))
     for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
@@ -175,7 +176,7 @@ export function startWorld(started: WorldDeps) {
    */
   function dressSides(was: Board | undefined) {
     for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)), posterOf)
-    reconcile(galleryAfter(was, posterOf), s.pictures)
+    reconcile(galleryAfter(was, posterOf, wallNow()), s.pictures)
     keepPosters(new Set([...[...s.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...s.pictures.keys()]))
   }
 
@@ -223,7 +224,7 @@ export function startWorld(started: WorldDeps) {
     if (planned?.board === board && planned.archived === archived && planned.at === at) return planned.plan
     const prefabs = s.kit!.prefabs
     const reads = { draftsOf, keepsThreads: floorKeepsThreads, floorThreadsOf, ...historyReads(board, archived) }
-    const p = furnish(plan(board, at, (author) => besideOf(slotsAt(author)), meetingKit(prefabs), (room) => standingIn(room, prefabs), reads), prefabs, tintsOf(board), new Date(at).getMonth())
+    const p = furnish(plan(board, at, (author) => besideOf(slotsAt(author, wallNow())), meetingKit(prefabs), (room) => standingIn(room, prefabs), reads), prefabs, tintsOf(board), new Date(at).getMonth())
     planned = { board, archived, at, plan: p }
     return p
   }
@@ -313,9 +314,9 @@ export function startWorld(started: WorldDeps) {
     s.boards++
     const key = structureKey(planNow(), next)
     if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
-    if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today))
+    if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
     setShellTitles(s.world!, next.shells)
-    reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }), s.desks)
+    reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow()), s.desks)
   }
 
   function worldFurnished(was: Board | undefined) {

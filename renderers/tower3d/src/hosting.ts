@@ -2,7 +2,6 @@ import { cardSubject, linesSubject, subjectAt, type Board, type Card, type Lines
 import { viewsOf, type Layout } from '/lib/layout.js'
 import { viewHost, type Hosted, type TabWords, type View, type ViewHost } from '/lib/view.js'
 import type { Tower } from './api.ts'
-import { wallNow } from './clock.ts'
 
 /**
  * The page's views a desk mounts (decision `ui-model`): Tower 3D decides where a view appears, the view what it shows
@@ -12,6 +11,8 @@ import { wallNow } from './clock.ts'
 
 export type DeskViewsDeps = {
   tower: Tower
+  /** The wall clock the views are lent. */
+  now: () => number
   board: () => Board
   layout: () => Layout
   declared: () => Renderer
@@ -45,7 +46,7 @@ export function viewHosting(deps: DeskViewsDeps) {
         layout: deps.layout,
         declared: () => deps.declared().regions ?? [],
         kit: deps.declared().kit ?? [],
-        lent: { toast: deps.toast, display: deps.display, now: wallNow },
+        lent: { toast: deps.toast, display: deps.display, now: deps.now },
         fills: {
           contributions: (_, id) => {
             throw new Error(`Tower 3D draws nothing extensions add inside a view, so it can't draw ${id}`)
