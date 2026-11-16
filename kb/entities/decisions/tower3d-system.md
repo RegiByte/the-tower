@@ -70,7 +70,8 @@
     "hub/renderers/tower3d/src/panels.ts#startPanels",
     "hub/renderers/tower3d/src/app-loop.ts#startAppLoop",
     "hub/renderers/tower3d/src/controls.ts#startControls",
-    "hub/renderers/tower3d/src/frames.ts#startFrames"
+    "hub/renderers/tower3d/src/frames.ts#startFrames",
+    "hub/renderers/tower3d/src/feed.ts#startFeed"
   ]
 }
 ---
@@ -116,10 +117,10 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 - *The loads are a resource that hands out a promise.* [`startAssets`](ref:hub/renderers/tower3d/src/loads.ts#startAssets)
   starts loading the models, the kit, the faces, the viewer's kept spot and the renderer's settings, and returns
   `loaded`, which settles once all are in. Its start does not wait for them: the page reads its viewer and subscribes
-  to the board while they load, so a page behind another tab still rings ([[tower3d-start]]). The page handles a
-  failed load only once it is imported, after every other resource, so `loaded` is marked handled: a resource that
-  fails first skips the page, and the loading screen already says why. The loading screen's models stage is lit by
-  `main` as it starts, so "your settings" shows while the settings are read. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
+  to the board while they load, so a page behind another tab still rings ([[tower3d-start]]). The feed, which
+  starts the first board once the models are in, handles a failed load only once it is imported, after most other
+  resources, so `loaded` is marked handled: a resource that fails first skips the feed, and the loading screen already
+  says why. The loading screen's models stage is lit by `feed` as it starts, so "your settings" shows while the settings are read. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
   `assets.ts` would shadow it.
 - *Moving an import can move pixels.* three.js orders opaque draws by `material.id`, and ids are handed out as
   materials are made, many of them as their module is evaluated. A change to what is imported first renumbers them,

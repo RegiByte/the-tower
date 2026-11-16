@@ -17,6 +17,7 @@ import type { PanelsDeps } from './panels.ts'
 import type { AppLoopDeps } from './app-loop.ts'
 import type { ControlsDeps } from './controls.ts'
 import type { FramesDeps } from './frames.ts'
+import type { FeedDeps } from './feed.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
@@ -41,10 +42,11 @@ import { startToasts } from './toasts.ts'
  *   spawn     hiring: the new-worker dialog, the hires in flight, the carried note handed over (spawn.ts)
  *   hud       what is drawn over the world outside the panels: the HUD, the pause card, the settings (hud.ts)
  *   navigation  getting about: travel, the overview, the elevator's ride, what the prompt offers (navigation.ts)
- *   panels    what is drawn beside the world: each panel's enter, leave and draw, and the verbs its buttons run (panels.ts)
- *   app       the page's app loop (app.ts's handlers) with the executors that carry its effects out, attached to the port, and the window's focus and visibility it is told of (app-loop.ts)
- *   controls  the pointer and the keys: what a click, a wheel or a key does in the world, and the keys a panel takes (controls.ts)
- *   frames    the frames: each one's update of what moves on its own, the walker, the camera, the aim and the life of the building, and its render (frames.ts)
+ *   panels    what is drawn beside the world: each panel's enter, leave and draw, its verbs (panels.ts)
+ *   app       the page's app loop with its executors, attached to the port (app-loop.ts)
+ *   controls  the pointer and the keys: what a click, a wheel or a key does (controls.ts)
+ *   frames    each frame's update of what moves on its own, and its render (frames.ts)
+ *   feed      the boards the page is fed, live or a fixture's, the first started once the models are in (feed.ts)
  *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
@@ -149,13 +151,19 @@ const frames = defineResource({
   halt: () => {},
 })
 
-const main = defineResource({
-  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels', 'app', 'controls', 'frames'],
-  start: async (started: Main & { shell: Shell }) => {
+const feed = defineResource({
+  dependencies: ['shell', 'stage', 'assets', 'port', 'toasts', 'world', 'spawn', 'hud', 'panels', 'frames'],
+  start: async (started: FeedDeps & { shell: Shell }) => {
     stageShown('models')
-    ;(await import('./main.ts')).startMain(started)
+    return (await import('./feed.ts')).startFeed(started)
   },
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, main }
+const main = defineResource({
+  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
+  start: async (started: Main & { shell: Shell }) => (await import('./main.ts')).startMain(started),
+  halt: () => {},
+})
+
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, main }

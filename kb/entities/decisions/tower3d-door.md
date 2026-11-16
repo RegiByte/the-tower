@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/frames.scenario.js", "hub/scripts/frames.panels.js", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
+  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/feed.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/frames.scenario.js", "hub/scripts/frames.panels.js", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
 **Problem.** Agents build Tower 3D, and tested it by brute force: stubbing pointer lock, dispatching synthetic
@@ -31,7 +31,7 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   [`door.ts`](ref:hub/renderers/tower3d/src/door.ts). `locate`, `teleport` and `aimAt` work over the world as the
   next frame draws it, so they hold with no frame between them. A verb used wrongly throws with what to do instead
   (a verb not offered, a held verb pressed, a thing placed only by a frame not yet run). `ready()` resolves once the
-  first board is built and rejects with why a start failed ([`failStart`](ref:hub/renderers/tower3d/src/main.ts#failStart),
+  first board is built and rejects with why a start failed ([`failStart`](ref:hub/renderers/tower3d/src/feed.ts#failStart),
   [[tower3d-start]]), so a check fails at once on a file that would not load. The door plays no music, rings nothing
   and never stores the walker's spot.
 - `events()` is what Tower 3D's machines did: the last 200 events its loops handled (`app`, `hiring`, `spawning`,
