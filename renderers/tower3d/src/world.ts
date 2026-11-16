@@ -23,9 +23,7 @@ import { mastLight } from './exterior/beacons.ts'
 import { frame, parapet as shellParapet, spandrel as shellSpandrel } from './exterior/shell.ts'
 import { screenMaterial } from './tv.ts'
 import { LOBBY_BAND, paintSign, signOf, signPlate } from './sign.ts'
-import { shell } from './shell.ts'
-
-const { draftsOf } = shell().clients
+import type { Clients } from './clients.ts'
 
 export type Doors = { left: THREE.Object3D; right: THREE.Object3D }
 type RateLimit = CommandLimits['rateLimits'][number]
@@ -230,7 +228,7 @@ function landingRug(p: Plan, number: string, tint: string, color: string) {
   return g
 }
 
-function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: Models, pickables: THREE.Object3D[], bookcases: Bookcase[]) {
+function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: Models, pickables: THREE.Object3D[], bookcases: Bookcase[], draftsOf: Clients['draftsOf']) {
   const g = new THREE.Group()
   const tint = tintOf(level.floor)
   const colors = floorPalette(tint)
@@ -536,7 +534,7 @@ function elevatorPanel(p: Plan) {
   return { material: new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }), aspect: cv.width / cv.height }
 }
 
-export function buildWorld(p: Plan, board: Board, directory: World['directory'], statsBoard: World['statsBoard'], models: Models): World {
+export function buildWorld(p: Plan, board: Board, directory: World['directory'], statsBoard: World['statsBoard'], models: Models, draftsOf: Clients['draftsOf']): World {
   const group = new THREE.Group()
   const pickables: THREE.Object3D[] = []
   const bookcases: Bookcase[] = []
@@ -555,7 +553,7 @@ export function buildWorld(p: Plan, board: Board, directory: World['directory'],
     const facing = level.kind === 'floor' ? floorPalette(tint).facing : '#343c4c'
     if (level.kind === 'lobby') g.add(lobbyLevel(p, directory, models, pickables), lounge(p, models, pickables))
     if (level.kind === 'floor') {
-      g.add(floorLevel(p, level, models, pickables, bookcases))
+      g.add(floorLevel(p, level, models, pickables, bookcases, draftsOf))
       const lamp = glowing('#2a2f3a')
       g.add(mesh(new THREE.SphereGeometry(0.12, 12, 10), lamp, 0, DOOR_HEIGHT + 0.25, coreFront(p) + WALL + 0.1))
       waitLamps.set(level.index, lamp)
