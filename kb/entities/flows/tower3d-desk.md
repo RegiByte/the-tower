@@ -6,7 +6,7 @@
   "in": "tower-core",
   "reviewed": "2026-11-16",
   "involves": ["operator", "tower3d", "tower-server", "host-daemon", "claude-code", "system-root"],
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#keyWrites", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/hosting.ts#deskViews", "hub/renderers/tower3d/src/main.ts#openChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#startInput", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/main.ts#layoutNow", "hub/renderers/tower3d/src/main.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/main.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#keyWrites", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/hosting.ts#deskViews", "hub/renderers/tower3d/src/main.ts#openChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#startInput", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/views.ts#layoutNow", "hub/renderers/tower3d/src/main.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
 }
 ---
 ```mermaid
@@ -85,7 +85,7 @@ sequenceDiagram
   first, the lines and the actions its region holds, verbs alone as its `renderer.json` says (never a client command:
   [`deskVerbs`](ref:hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs)),
   ranked by the shared code over Tower 3D's own layout of `card.desk`
-  ([`layoutNow`](ref:hub/renderers/tower3d/src/main.ts#layoutNow): its `renderer.json`'s, the config's less a region whose entry fails its
+  ([`layoutNow`](ref:hub/renderers/tower3d/src/views.ts#layoutNow): its `renderer.json`'s, the config's less a region whose entry fails its
   check, then the viewer's `layout.tower3d`), pins first and the hidden left out ([[region-overflow]]). The region draws everything
   (`wrap`, the one form [its `renderer.json`](ref:hub/renderers/tower3d/renderer.json) declares). A verb new to the
   viewer carries a dot and counts as seen once drawn in a focused window, the dot staying until the panel closes
@@ -100,8 +100,8 @@ sequenceDiagram
   `reviews/thread` view, mounted the same way, [`openReviews`](ref:hub/renderers/tower3d/src/main.ts#openReviews)) and
   each thing the worker showed lie over the terminal, which keeps its size. Changes and Reviews are each hidden and
   kept while another tab shows, their reads stopped, and closed with the desk; each tab is tallied by its view's `tab`.
-  A note's lines, which the thread hands Tower 3D to display, open in the desk's Changes
-  ([`display`](ref:hub/renderers/tower3d/src/main.ts#display)): at the open desk, or, from the reader, at the desk of the
+  A note's lines, which the thread hands Tower 3D to display (a `display` event, through the port), open in the
+  desk's Changes ([`display`](ref:hub/renderers/tower3d/src/main.ts#display)): at the open desk, or, from the reader, at the desk of the
   worker whose lines they are, gone to; a subject Tower 3D has no place for is said in a toast. A terminal that ends while its tab
   shows gives way to the Logbook, as the page's gives way to the Brief, and the Terminal tab then shows its last screen
   ([`terminalEnded`](ref:hub/renderers/tower3d/src/main.ts#terminalEnded)). While a text box has focus, keys

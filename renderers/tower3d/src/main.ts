@@ -9,8 +9,8 @@ import { changesSection, faceInstalled, markdownSection, prefSections, settingsC
 import { placeOnOpen, watchTips, toastsCss, ask, asking } from '/lib/chrome.js'
 import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
 import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer, reducedMotion } from '/lib/viewer.js'
-import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey, layoutOf, usableConfigLayout, type Layout } from '/lib/layout.js'
-import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
+import { actionId, isFresh as isNewAction, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
+import { deskVerbs } from './desk-verbs.ts'
 import { wireSpawn } from '/lib/spawn.js'
 import { hiringHandlers, noHires } from './hiring.ts'
 import { projectOfKey, type Lines, type Subject } from '/lib/board.js'
@@ -47,8 +47,8 @@ import { addedCommandOf, commandOf, panesOf } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
 import { clockMoves, wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
-import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
-import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
+import { FIXTURE, fixtureBoards, readArchive, readConversations } from './fixtures.ts'
+import { CHANGES, THREAD } from './hosting.ts'
 import * as loading from './loading.ts'
 import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, readArchives, rereadArchive, settledArchives } from './archive.ts'
 import { poseFiling } from './filing.ts'
@@ -71,9 +71,10 @@ import { $, onAppearance, show } from './dom.ts'
 import { DRAWN_PANES, MOVE_OF } from './keymap-here.ts'
 import { nowOf } from './now.ts'
 import type { World } from './building.ts'
+import type { Views } from './views.ts'
 
 /** The resources the page reads as it starts: the leaves' binding (`Shell`), and those only the page reads. */
-export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World }
+export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views }
 
 /**
  * The page: what it draws, the listeners and timers it keeps, and the loops it runs, started by the `main` resource once
@@ -88,6 +89,7 @@ export function startMain(started: Main) {
   const { closeTerm, mountTerm } = started.terminal
   const { toast, call, tried, offered, copiedAs } = started.toasts
   const { events } = started
+  const { desk, reader, deskNow } = started.views
   const { directory, screenDistance, boxesHere, here, discard, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs } = started.world
   const { boardNow, selfNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed, aimNow } = nowOf(started.port)
 
@@ -184,21 +186,6 @@ export function startMain(started: Main) {
     show('elevator', inCar)
     if (inCar) $('elevator').innerHTML = elevatorHtml(planNow(), ride ? ride.to : s.me.level, ride !== undefined, heededWaits(boardNow()!, heed()))
   }
-
-  const viewDeps = {
-    tower: viewTower,
-    board: () => boardNow()!,
-    layout: () => layoutNow(boardNow()!),
-    declared: () => s.declared!,
-    toast: (message: string) => toast(message),
-    display: (subject: Subject | string) => display(subject),
-    redraw: () => renderPanel(),
-  }
-  const hosting = viewHosting(viewDeps)
-  /** The page's views the desk mounts. */
-  const desk = deskViews(viewDeps, hosting)
-  /** The page's thread view the reader mounts, on a checkout's thread where no worker's desk is. */
-  const reader = readerView(viewDeps, hosting)
 
   /**
    * Places a subject a mounted view hands Tower 3D (the kit's `display`): a worker's lines show in its desk's Changes,
@@ -1093,6 +1080,7 @@ export function startMain(started: Main) {
       'desk/go': ({ id }) => toDesk(id),
       'shell/go': ({ id }) => toShell(id),
       draw: () => void (drawAsked || ((drawAsked = true), requestAnimationFrame(drawPending))),
+      display: ({ subject }) => display(subject),
       focus: ({ selector }) => (drawPending(), document.querySelector<HTMLElement>(selector)?.focus()),
     },
   })
@@ -1150,14 +1138,6 @@ export function startMain(started: Main) {
       renderPanel()
     })
   }
-
-  /**
-   * The layout Tower 3D draws by (decision `region-overflow`): its `renderer.json`'s over what started extensions give
-   * their own regions, then the config's less the regions whose layout fails its check, then yours.
-   */
-  const layoutNow = (board: Board) => layoutOf(declaredLayout(board, s.declared?.layout ?? {}), s.declared ? usableConfigLayout(s.declared) : {}, s.storedLayout)
-  /** The desk's region as Tower 3D draws it now: what its `renderer.json` says it holds, and its entry in the layout. */
-  const deskNow = (board: Board): DeskRegion => ({ holds: s.declared?.regions?.find((r) => r.id === 'card.desk')?.holds ?? [], entry: layoutNow(board)['card.desk'] })
 
   /** The actions you have seen, by `actionId`, across every renderer of yours. */
   const seenNow = (board: Board) => seenOf(s.viewer.seen, offeredIds(board))

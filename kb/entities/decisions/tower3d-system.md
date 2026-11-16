@@ -62,7 +62,8 @@
     "hub/renderers/tower3d/src/archive.ts#archivedAt",
     "hub/renderers/tower3d/src/layers.ts#desksAfter",
     "hub/renderers/tower3d/src/layers.ts#galleryAfter",
-    "hub/renderers/tower3d/src/door.ts#Engine"
+    "hub/renderers/tower3d/src/door.ts#Engine",
+    "hub/renderers/tower3d/src/views.ts#startViews"
   ]
 }
 ---
@@ -222,6 +223,10 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   [`galleryAfter`](ref:hub/renderers/tower3d/src/layers.ts#galleryAfter)). The caches of what the walker bumps
   into, what blocks a look and where the monitors stand stay keyed by the plan: they read the desks, the meeting
   chairs and the meshes, which change with any board, not only with the building's shape.
+- *The views mounted in panels tell the app.* A view that changed what it draws sends `views/changed`, whose
+  handler returns a `draw`, and a subject it hands Tower 3D to place sends `display`, whose effect places it; both go
+  through the port, since the views ([`startViews`](ref:hub/renderers/tower3d/src/views.ts#startViews)) start before
+  the panels that draw them.
 - *Reads that land are events.* A title's text arriving (`titles/arrived`, through the port) draws the panels, and
   the notes' boards or the arcade's cabinets again (`notes`, `cabinets`). The Stats panel's read is the db's
   (`stats`): entering the panel and its minute's poll send `stats/read`, which numbers the read and returns

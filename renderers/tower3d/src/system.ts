@@ -9,6 +9,7 @@ import { startPort } from './port.ts'
 import { bindShell, type Shell } from './shell.ts'
 import type { Main } from './main.ts'
 import type { WorldDeps } from './building.ts'
+import type { ViewsDeps } from './views.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
@@ -29,6 +30,7 @@ import { startToasts } from './toasts.ts'
  *   shell     what the leaf modules read as they load, bound before any page resource loads its module (shell.ts)
  *   events    what the page's loops handled, kept for the door (events.ts)
  *   world     the building in the scene: its plan, its layers, what can be seen and picked (building.ts)
+ *   views     the views the panels mount, and the layout they are drawn by (views.ts)
  *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
@@ -83,8 +85,14 @@ const world = defineResource({
   halt: () => {},
 })
 
+const views = defineResource({
+  dependencies: ['shell', 'port', 'toasts'],
+  start: async (started: ViewsDeps & { shell: Shell }) => (await import('./views.ts')).startViews(started),
+  halt: () => {},
+})
+
 const main = defineResource({
-  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world'],
+  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views'],
   start: async (started: Main & { shell: Shell }) => {
     stageShown('models')
     ;(await import('./main.ts')).startMain(started)
@@ -92,4 +100,4 @@ const main = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, main }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, main }
