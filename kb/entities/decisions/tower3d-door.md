@@ -39,8 +39,11 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   `subscribe` ([[machines]]), so an effect a handler forgot (a draw) shows as missing. The record keeps references and
   makes them plain only when read ([`plain`](ref:hub/renderers/tower3d/src/record.ts#plain)): a Set, Map, Date or
   three.js object comes through `drive --eval`'s JSON as a tagged object (`{ $set: [...] }`, `{ $three: type, name }`)
-  rather than `{}`. Each record is numbered, and `events(n)` answers only those after `n`: a `seeing` state carries the
-  whole board, so a reader stepping through a walk asks for what is new. `main.ts` builds the record and hands its read
+  rather than `{}`. A board anywhere in an event or effect (a `board` event, the board a `seeing` state holds) is kept
+  only as its summary, `{ $board, floors, cards, waiting }`, numbered so the same board reads the same in two records:
+  the record is always on, in the user's own Tower 3D, and a board is a fresh tree on each arrival, so keeping them
+  would hold the last 200 events' boards alive. Each record is numbered, and `events(n)` answers only those after `n`,
+  for a reader stepping through a walk. `main.ts` builds the record and hands its read
   to the door through the `Engine`, so no module imports another for it.
 - `?board=<name>` renders a fabricated board, one of [`FIXTURES`](ref:hub/scripts/tower3d-fixtures.ts#FIXTURES),
   a list of boards delivered one by one through `advance`, so what happens between boards can be recorded. Scenarios

@@ -6,7 +6,10 @@ import type { Listener } from '/lib/machine.js'
  * ran and what they called for, and a missing effect (a draw) shows as one.
  */
 
-/** One event a loop handled. `at` is the simulated clock (`s.simNow`), which a stepped page steps. */
+/**
+ * One event a loop handled. `at` is the simulated clock (`s.simNow`), which a stepped page steps. A board anywhere in
+ * the event or its effects is kept as its summary, `{ $board, floors, cards, waiting }`.
+ */
 export type EventRecord = { n: number; loop: string; at: number; event: unknown; effects: readonly unknown[] }
 
 /** Anything JSON carries as it is: what `plain` makes of a value, so a read through JSON loses nothing silently. */
@@ -51,15 +54,42 @@ export function plain(value: unknown, above: object[] = []): Plain {
   return proto === Object.prototype || proto === null ? fields : { $class: flagged(o) ?? proto.constructor?.name ?? 'object', ...fields }
 }
 
+/** A board, by its shape: every board the tower sends has its floors, its waits and whether the host is up. */
+const isBoard = (o: Record<string, unknown>) => Array.isArray(o.floors) && Array.isArray(o.waiting) && typeof o.hostUp === 'boolean'
+
 /**
- * The last `size` events of every loop `watch` was given, keeping the events and effects as they were and making them
- * plain only when read. `clock` stamps each record's `at`.
+ * `value` with every board in it replaced by `summary(board)`, its plain objects and arrays copied and everything else
+ * kept by reference: a board, a fresh tree on each arrival, is most of what an event weighs, and a record that kept it
+ * would hold every board of the last 200 events alive.
+ */
+function lean(value: unknown, summary: (board: object) => unknown, above: object[] = []): unknown {
+  if (typeof value !== 'object' || value === null || above.includes(value)) return value
+  const inner = [...above, value]
+  if (Array.isArray(value)) return value.map((v) => lean(v, summary, inner))
+  const proto = Object.getPrototypeOf(value)
+  if (proto !== Object.prototype && proto !== null) return value
+  const o = value as Record<string, unknown>
+  if (isBoard(o)) return summary(o)
+  return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, lean(v, summary, inner)]))
+}
+
+/**
+ * The last `size` events of every loop given its `listen`, the events and effects kept as they were but for their
+ * boards (`lean`), and made plain only when read. `clock` stamps each record's `at`.
  */
 export function eventRecord(size: number, clock: () => number) {
   const kept: EventRecord[] = []
   let n = 0
+  /** Each board met, numbered in the order met: the same board in two records has the same number. */
+  const boards = new WeakMap<object, number>()
+  let met = 0
+  const summary = (board: object) => {
+    if (!boards.has(board)) boards.set(board, ++met)
+    const b = board as { floors: { cards: unknown[] }[]; waiting: unknown[] }
+    return { $board: boards.get(board), floors: b.floors.length, cards: b.floors.reduce((sum, f) => sum + f.cards.length, 0), waiting: b.waiting.length }
+  }
   const listen = (loop: string): Listener<unknown> => (event, effects) => {
-    kept.push({ n: ++n, loop, at: clock(), event, effects })
+    kept.push({ n: ++n, loop, at: clock(), event: lean(event, summary), effects: effects.map((f) => lean(f, summary)) })
     if (kept.length > size) kept.shift()
   }
   return {
