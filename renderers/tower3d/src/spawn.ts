@@ -8,7 +8,7 @@ import { type SpawnForm, spawnCall, spawnDefaults } from './cards.ts'
 import { loop } from '/lib/machine.js'
 import { floorSignHtml } from './ui.ts'
 import { STATIONS } from './layers.ts'
-import { noteText } from './notes.ts'
+import type { Titles } from './titles.ts'
 import { s } from './state.ts'
 import type { Toasts } from './toasts.ts'
 import type { Events } from './events.ts'
@@ -19,7 +19,7 @@ import type { Clients } from './clients.ts'
 import type { Port } from './port.ts'
 
 /** What the hires are started with. */
-export type SpawnDeps = { clients: Clients; port: Port; toasts: Toasts; events: Events; world: World }
+export type SpawnDeps = { clients: Clients; titles: Titles; port: Port; toasts: Toasts; events: Events; world: World }
 
 export type Spawn = ReturnType<typeof startSpawn>
 
@@ -33,6 +33,7 @@ export function startSpawn(started: SpawnDeps) {
   const { toast, offered } = started.toasts
   const { events } = started
   const { reconcile, planNow, floorOf, drop } = started.world
+  const { noteText } = started.titles
   const { boardNow, unlock } = nowOf(port)
 
   /** The drafts collection over the renderer API. */

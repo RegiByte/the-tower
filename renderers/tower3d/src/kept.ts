@@ -2,23 +2,19 @@ import { itemPath, keptTitles } from '/lib/view.js'
 import { tower } from './api.ts'
 import { FIXTURE, FIXTURE_DRAFTS, FIXTURE_GAMES } from './fixtures.ts'
 import { GAMES } from './games.ts'
-import { shell } from './shell.ts'
-
-const { DRAFTS } = shell().clients
 
 /**
- * Any collection's items as the floor panel's trays list them, titled from their text where their type names itself.
- * A fixture board reads its own drafts and games, the same on every load.
+ * Any collection's items as the floor panel's trays list them: an item's text, rejecting as the API does, and each
+ * item's title from its text where its type names itself, `…` until its text has arrived (`arrived`), pruned with each
+ * board. A fixture board reads its own drafts (the collection `drafts` names) and games, the same on every load.
  */
-
-const FIXTURE_TEXTS: Record<string, Record<string, string>> = { [DRAFTS]: FIXTURE_DRAFTS, [GAMES]: FIXTURE_GAMES }
-
-/** An item's text, rejecting as the API does. */
-export const keptText = (project: string, collection: string, id: string): Promise<string> => {
-  if (FIXTURE === undefined) return tower.text(itemPath(project, collection, id))
-  const text = FIXTURE_TEXTS[collection]?.[`${project}/${id}`]
-  return text === undefined ? Promise.reject(Object.assign(new Error(`No item "${id}"`), { code: 'not_found' })) : Promise.resolve(text)
+export function keptTitled(drafts: string, arrived: () => void) {
+  const fixtureTexts: Record<string, Record<string, string>> = { [drafts]: FIXTURE_DRAFTS, [GAMES]: FIXTURE_GAMES }
+  const keptText = (project: string, collection: string, id: string): Promise<string> => {
+    if (FIXTURE === undefined) return tower.text(itemPath(project, collection, id))
+    const text = fixtureTexts[collection]?.[`${project}/${id}`]
+    return text === undefined ? Promise.reject(Object.assign(new Error(`No item "${id}"`), { code: 'not_found' })) : Promise.resolve(text)
+  }
+  const { title: keptTitle, prune: pruneKeptTitles } = keptTitles(keptText, arrived)
+  return { keptText, keptTitle, pruneKeptTitles }
 }
-
-/** Each item's title, `…` until its text has arrived (`titles/arrived`); `pruneKeptTitles` with each board. */
-export const { title: keptTitle, prune: pruneKeptTitles } = keptTitles(keptText, () => shell().port.dispatch({ type: 'titles/arrived', of: 'kept' }))

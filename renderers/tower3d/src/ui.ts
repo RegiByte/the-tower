@@ -2,7 +2,6 @@ import { documentCss } from '/lib/design.js'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import { type TabWords, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, failedHtml, fileButtonsHtml, fileSpansHtml, ICON, SHELF_ICON, originIcon, withIcons } from '/lib/view.js'
 import { type FloorCollection, type FloorItem, defaultLimits } from '/lib/board.js'
-import type { keptTitle } from './kept.ts'
 import { usd } from '/lib/stats.js'
 import { documentHtml, markdownHtml } from '/lib/markdown.js'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '/lib/brief.js'
@@ -14,8 +13,7 @@ import { verbLabel } from '/lib/cards.js'
 import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, untestedFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { waitingAt, type Level, type Plan } from './layout.ts'
-import type { noteTitle } from './notes.ts'
-import type { gameTitle } from './arcade.ts'
+import type { Titles } from './titles.ts'
 import type { Clients } from './clients.ts'
 import { gameItem, gamePath, gamesOf } from './games.ts'
 import { isImage, isMarkdown, isVideo, type Shown } from './showing.ts'
@@ -27,9 +25,7 @@ export type HudReads = Pick<Clients, 'commandProbes' | 'PROBE_ATTENTION' | 'PROB
 /** What the prompt reads beyond the board to name the aimed thing: the extensions' words, the archive's drawers, the titles. */
 export type PromptReads = Pick<Clients, 'draftItem' | 'draftsOf' | 'cardReviews' | 'floorThreadsOf' | 'reviewerOf'> & {
   drawersAt: (project: string) => Drawer[] | undefined
-  noteTitle: typeof noteTitle
-  gameTitle: typeof gameTitle
-}
+} & Pick<Titles, 'noteTitle' | 'gameTitle'>
 
 /** A worker's model, effort, context, cost, folder and pair, as its card's meta line says them. */
 const metaOf = (c: Card, reviewerOf: Clients['reviewerOf']) =>
@@ -624,7 +620,7 @@ const spawnButton = (f: Floor, held: HeldWhy) =>
  * A floor's desk: its dirs, its shelf, who's on duty, what they left running, and what it keeps beside them folded to
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
-export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, held: HeldWhy, tray: string | undefined, reads: Pick<Clients, 'draftsOf'> & { noteTitle: typeof noteTitle; keptTitle: typeof keptTitle }) {
+export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, held: HeldWhy, tray: string | undefined, reads: Pick<Clients, 'draftsOf'> & Pick<Titles, 'noteTitle' | 'keptTitle'>) {
   const { draftsOf, noteTitle, keptTitle } = reads
   const places = shellPlaces([f])
   const edited = editedRows(f)
@@ -730,7 +726,7 @@ export function draftHeadHtml(f: Floor, d: Draft, held: HeldWhy, carrying: boole
 }
 
 /** A game's panel head: its title and keeper, a way to play it in a browser tab, and close, the way out while the game holds the keys. */
-export function gameHeadHtml(f: Floor, project: string, id: string, reads: { gameTitle: typeof gameTitle }) {
+export function gameHeadHtml(f: Floor, project: string, id: string, reads: Pick<Titles, 'gameTitle'>) {
   const { gameTitle } = reads
   const item = gameItem([f], project, id)!
   const acts = [

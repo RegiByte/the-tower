@@ -8,7 +8,6 @@ import { GAMES, gamePath } from './games.ts'
 import { WORLD } from './cards.ts'
 import { CABINET, type ArcadeSignSlot, type Level } from './layout.ts'
 import { tintOf } from './palette.ts'
-import { shell } from './shell.ts'
 import { wrapped } from './running.ts'
 import { picture } from './room.ts'
 import { block, glowing, glows, mesh, toon } from './toon.ts'
@@ -25,8 +24,11 @@ const gameText = (project: string, id: string): Promise<string> => {
   return text === undefined ? Promise.reject(Object.assign(new Error(`No game "${id}"`), { code: 'not_found' })) : Promise.resolve(text)
 }
 
-/** Each game's title, its `<title>` or else its tag, `…` until its text has arrived (`titles/arrived`); `pruneGameTitles` with each board. */
-export const { title: gameTitle, prune: pruneGameTitles } = itemTitles(GAMES, gameText, (item, text) => titleIn(item.id, text) ?? item.tag, () => shell().port.dispatch({ type: 'titles/arrived', of: 'games' }))
+/** Each game's title, its `<title>` or else its tag, `…` until its text has arrived (`arrived`); `pruneGameTitles` with each board. */
+export function gamesTitled(arrived: () => void) {
+  const { title: gameTitle, prune: pruneGameTitles } = itemTitles(GAMES, gameText, (item, text) => titleIn(item.id, text) ?? item.tag, arrived)
+  return { gameTitle, pruneGameTitles }
+}
 
 /** The cabinet's parts, from its own origin on the floor, facing +z: the screen's center and size. */
 export const SCREEN = { y: 1.38, w: 0.62, h: 0.46, tilt: 0.12 }

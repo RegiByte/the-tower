@@ -30,10 +30,8 @@ import { wallNow } from './clock.ts'
 import { historyOf, type Archived, readArchives } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
-import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, pigeonholesOf, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
-import { noteTitle, pruneNoteTitles } from './notes.ts'
-import { SCREEN, pruneGameTitles } from './arcade.ts'
-import { pruneKeptTitles } from './kept.ts'
+import { ARCADE_SIGNS, cabinetsOf, DANCE, FILINGS, GUESTS, notesOf, pigeonholesOf, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
+import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
 import { eyes, type Walker } from './walker.ts'
 import { layerAt, type Layer } from './floorplan.ts'
@@ -45,9 +43,10 @@ import { nowOf } from './now.ts'
 import type { Clients } from './clients.ts'
 import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
+import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { clients: Clients; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { clients: Clients; titles: Titles; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -58,6 +57,7 @@ export type World = ReturnType<typeof startWorld>
 export function startWorld(started: WorldDeps) {
   const { draftItem, draftsOf, cardReviews, floorThreadsOf, keepsThreads: floorKeepsThreads, reviewerOf } = started.clients
   const { camera, scene } = started.stage
+  const { noteTitle, pruneNoteTitles, pruneKeptTitles, gameTitle, pruneGameTitles } = started.titles
   const { port } = started
   const { toast } = started.toasts
   const { buildingNow, boardNow, captured, viewNow, motionNow, replayNow, heed } = nowOf(started.port)
@@ -116,6 +116,8 @@ export function startWorld(started: WorldDeps) {
   const reconcile = <S, T>(layer: SceneLayer<S, T>, items: Map<string, T>) => reconcileLayer(layer, items, planNow(), hang, discard)
 
   const pigeonholes = pigeonholesOf(cardReviews)
+  const notes = notesOf(noteTitle)
+  const cabinets = cabinetsOf(gameTitle)
 
   /** What changes the building's shape: shell titles and limit readings are redrawn on their own. */
   const structureKey = (pl: Plan, b: Board) => JSON.stringify([
@@ -495,9 +497,9 @@ export function startWorld(started: WorldDeps) {
     syncNotes()
   }
 
-  const syncNotes = () => boardNow() && reconcile(NOTES, s.notes)
+  const syncNotes = () => boardNow() && reconcile(notes, s.notes)
 
-  const syncCabinets = () => boardNow() && reconcile(CABINETS, s.cabinets)
+  const syncCabinets = () => boardNow() && reconcile(cabinets, s.cabinets)
 
   /** Settles once the first board's building is pictured, the start's last wait (`ready`). */
   let firstPictured: () => void

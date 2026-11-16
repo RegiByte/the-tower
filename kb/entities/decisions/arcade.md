@@ -13,7 +13,7 @@
     "hub/renderers/tower3d/src/layout.ts#arcadeSignFor",
     "hub/renderers/tower3d/src/arcade.ts#buildArcadeSign",
     "hub/renderers/tower3d/src/arcade.ts",
-    "hub/renderers/tower3d/src/layers.ts#CABINETS",
+    "hub/renderers/tower3d/src/layers.ts#cabinetsOf",
     "hub/renderers/tower3d/src/zones.ts#controlZones",
     "hub/renderers/tower3d/src/panels.ts#openGame",
     "hub/renderers/tower3d/src/panels.ts#gameEntered",
@@ -55,7 +55,7 @@ meaning by one renderer, with no change to the core.
   (the room's `picture`) with the game's title and its keeper, an attract screen with the tag. The title is the
   html's `<title>`, else the tag, read once per `modifiedAt` through
   [`itemTitles`](ref:hub/src/shared/titles.ts) (shared with drafts and `tower kept`). A
-  [`CABINETS`](ref:hub/renderers/tower3d/src/layers.ts#CABINETS) layer keyed by project and id redraws one when its
+  [`cabinetsOf`](ref:hub/renderers/tower3d/src/layers.ts#cabinetsOf) layer keyed by project and id redraws one when its
   title, keeper or tint changes.
 - **Playing** ([`openGame`](ref:hub/renderers/tower3d/src/panels.ts#openGame), entered by
   [`gameEntered`](ref:hub/renderers/tower3d/src/panels.ts#gameEntered) as the app loop goes to it, [[tower3d-system]]): the act `{kind: 'arcade', project,
