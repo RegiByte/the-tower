@@ -8,7 +8,8 @@
   "date": "2026-10-10",
   "reviewed": "2026-11-16",
   "refs": [
-    "hub/renderers/tower3d/src/boot.ts",
+    "hub/renderers/tower3d/src/system.ts",
+    "hub/renderers/tower3d/src/toon.ts#lightRamp",
     "hub/renderers/tower3d/src/light/setting.ts#startLighting",
     "hub/renderers/tower3d/src/light/setting.ts#LIGHTING_KEY",
     "hub/renderers/tower3d/src/light/setting.ts#lightingSection",
@@ -62,8 +63,9 @@ way to turn it off.
   material's own shader patch, so the windows keep their hours with the lighting on.
 - *The lighting is one setting.* [`startLighting`](ref:hub/renderers/tower3d/src/light/setting.ts#startLighting)
   reads `tower.store` under [`LIGHTING_KEY`](ref:hub/renderers/tower3d/src/light/setting.ts#LIGHTING_KEY) (on
-  unless `false`) in [`boot.ts`](ref:hub/renderers/tower3d/src/boot.ts), the bundle's entry, and only then loads
-  `main.ts`. Every lighting path reads that one value, `LIT`:
+  unless `false`) as the first resource of the page's system ([[tower3d-system]]), before anything draws. Every
+  lighting path reads the one value it returns, `lit`, handed to the stage and the page; lit, it bands the toon ramp
+  by the rig's ([`lightRamp`](ref:hub/renderers/tower3d/src/toon.ts#lightRamp)):
   - [`riseRig`](ref:hub/renderers/tower3d/src/light/rig.ts#riseRig) takes over the outside's lights and turns on a
     sun shadow map, which [`rigFrame`](ref:hub/renderers/tower3d/src/light/rig.ts#rigFrame) fits to what is seen
     each frame; the interior's ceiling light is patched into every lit material's shader, and the toon ramp is
