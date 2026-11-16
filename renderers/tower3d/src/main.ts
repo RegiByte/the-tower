@@ -778,8 +778,9 @@ function focusLeft() {
 
 function closeDoc() {
   const open = panelNow()
+  if (open?.kind === 'stats') return go(undefined)
   docClosed(open)
-  if (open?.kind === 'doc' || open?.kind === 'kept' || open?.kind === 'picture' || open?.kind === 'thread' || open?.kind === 'stats' || open?.kind === 'logbook') go(undefined)
+  if (open?.kind === 'doc' || open?.kind === 'kept' || open?.kind === 'picture' || open?.kind === 'thread' || open?.kind === 'logbook') go(undefined)
 }
 
 /** The reader closed as `open` leaves it, the logbook's screen among it. */
@@ -822,15 +823,27 @@ const statsPolling = loop({
 })
 statsPolling.subscribe(events.listen('statsPolling'))
 
-/** Every floor's stats in the reader where you stand: the overview first, each floor a tab. */
-function openStats() {
-  closePanels()
-  go({ kind: 'stats' })
+/** Every floor's stats in the reader where you stand: the overview first, each floor a tab. A game open closes first, as it doesn't leave by the app yet. */
+const openStats = () => (closeGame(), go({ kind: 'stats' }))
+
+/**
+ * Entering the reader: every other panel's place closed, as the panels they hold don't leave by the app yet, the
+ * mouse let go, the reader shown.
+ */
+function readerEntered(from: Panel | undefined) {
+  sideClosed()
+  docClosed(from)
+  draftClosed()
   unlock()
   show('paused', false)
   show('doc', true)
+}
+const readerLeft = (panel: Panel) => docClosed(panel)
+
+/** Entering the Stats panel: read now, and again every minute while it is open. */
+function statsEntered(_: Panel, from: Panel | undefined) {
+  readerEntered(from)
   $('doc-body').dataset.stats = ''
-  renderPanel()
   readStats()
   statsPolling.dispatch({ type: 'start' })
 }
@@ -1380,7 +1393,8 @@ const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => voi
   desk: focusLeft, shell: focusLeft, tv: focusLeft,
   floor: sideLeft, archive: sideLeft, directory: sideLeft,
   doc: closesItself, kept: closesItself, picture: closesItself, elevator: closesItself,
-  'shell-pick': closesItself, logbook: closesItself, drawer: closesItself, draft: closesItself, thread: closesItself, stats: closesItself, game: closesItself,
+  'shell-pick': closesItself, logbook: closesItself, drawer: closesItself, draft: closesItself, thread: closesItself, game: closesItself,
+  stats: readerLeft,
 }
 
 /** What entering a panel does, by its kind, `from` the one open before; the panels the app doesn't move yet open themselves. */
@@ -1389,7 +1403,8 @@ const ENTER: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>, from: 
   desk: deskEntered, shell: shellEntered, 'shell-pick': shellPickEntered,
   floor: sideEntered, archive: sideEntered, directory: sideEntered,
   doc: opensItself, kept: opensItself, picture: opensItself, elevator: opensItself,
-  tv: opensItself, logbook: opensItself, drawer: opensItself, draft: opensItself, thread: opensItself, stats: opensItself, game: opensItself,
+  tv: opensItself, logbook: opensItself, drawer: opensItself, draft: opensItself, thread: opensItself, game: opensItself,
+  stats: statsEntered,
 }
 
 /** What leaving and entering a desk's tab does: each lies over the terminal, which keeps its size. */
