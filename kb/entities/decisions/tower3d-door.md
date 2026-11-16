@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
+  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/frames.scenario.js", "hub/scripts/frames.panels.js", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
 **Problem.** Agents build Tower 3D, and tested it by brute force: stubbing pointer lock, dispatching synthetic
@@ -57,9 +57,19 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   fixture's screens open no streams: there is no host behind it, and replies landing
   between steps would make frames differ.
 - The tools around it ([[tower3d]]): `npm run drive` (headless Chrome, page errors collected), `npm run sandbox`,
-  `npm run tool:frames` (a fixed walk on every fixture board, each stage's state and PNG compared byte for byte; it
-  refuses a walk that does not repeat, and keeps both walks to diff), model names as data checked against every `.glb` by `npm test`, and in CI
+  `npm run tool:frames` (two fixed scenarios compared byte for byte; it refuses one that does not repeat, and keeps
+  both walks to diff), model names as data checked against every `.glb` by `npm test`, and in CI
   `npm run test:tower3d-boot`, the built bundle booted on a fixture board through `ready()` with no page error.
+- Frames' two scenarios. The walk ([`frames.scenario.js`](ref:hub/scripts/frames.scenario.js)) crosses the building on
+  every fixture board, each stage's state and scene PNG. The panel routes
+  ([`frames.panels.js`](ref:hub/scripts/frames.panels.js)) run on the boards that reach them (busy, logbook, review):
+  each kind of panel opened the way a user does, worked and closed, each route starting from walking with nothing
+  open. A stage keeps the door's state, a hash of each panel shown (its markup normalized to tags, kept attributes,
+  text and input values, written beside the recording to diff) and the events Tower 3D's loops handled since the stage
+  before, as `<loop>:<event>→<effects>`, so a panel that draws differently or a machine that does something else shows
+  as such. What the real clock decides is left out: toasts, which leave on a timer, and a read's `data-since`.
+  Handing a note to a desk reaches the sandbox's API, which knows no fixture session and refuses it, so that route
+  records the note still carried and puts it back.
 
 **Alternatives considered.**
 - Keep driving real input over CDP: fragile and slow.
