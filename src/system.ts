@@ -50,14 +50,23 @@ const configText = (file: string): string => {
   }
 }
 
-/** The config as the file holds it now; a file it can't read, or JSON it can't parse, is a config error naming the file. */
-export const readConfig = (file: string): Config => {
-  const text = configText(file)
+/** The JSON the file holds: text it can't parse is a config error naming the file. */
+const configJson = (file: string, text: string): unknown => {
   try {
     return JSON.parse(text)
   } catch (err) {
     throw new ConfigError(`${file} is not valid JSON: ${(err as Error).message}`)
   }
+}
+
+/**
+ * The config as the file holds it now; a file it can't read, JSON it can't parse, or JSON holding no object (`null`,
+ * a list, a string) is a config error naming the file.
+ */
+export const readConfig = (file: string): Config => {
+  const config = configJson(file, configText(file))
+  if (!isObject(config)) throw new ConfigError(`${file} holds no JSON object: the config is one object of keys, each documented in docs/config.md`)
+  return config as Config
 }
 
 export const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -81,7 +90,6 @@ export const probesGone = (probes: unknown): string => {
 
 /** What `config` lacks of the keys every read of it stands on, `undefined` when it has them. */
 export const configLack = (config: Config): string | undefined => {
-  if (!isObject(config)) return 'it holds no JSON object'
   if ('probes' in config) return probesGone(config.probes)
   const [moved] = movedKeys(config)
   if (moved) return movedLine(moved)
