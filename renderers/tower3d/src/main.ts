@@ -29,14 +29,13 @@ import { tintOf } from './palette.ts'
 import { PET_IN, PET_MS, dropHearts, makeHearts, petProgress, petSpot, placeHearts, strokeAt } from './pet.ts'
 import { idle, sharing, startShare, stopShare } from './tv.ts'
 import { CABINET, DESK, bigScreens, cabinetOf, carBox, collidersOn, coreFront, deskOf, emptyChairs, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, solids, type Box, type Plan } from './layout.ts'
-import { loadModels } from './models.ts'
 import { chairKit, makeChairs, placeChairs } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
 import { chooseLighting, lightingSection } from './light/setting.ts'
-import { fillLayer, loadKit, zonesPlaced, type Placed } from './kit.ts'
+import { fillLayer, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, levelOf, levelsShown, onLevel, showLevels } from './levels.ts'
 import { DESK_DRESS, dress, pickOf } from './dress.ts'
 import { cityModel, furnish, type PrefabItem } from './zones.ts'
@@ -47,7 +46,7 @@ import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } fr
 import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
 import { isMarkdown, isPosterTexture, isVideo, keepPosters, pictured, playFilms, type Shown } from './showing.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
-import { dispose, loadFaces } from './toon.ts'
+import { dispose } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { addedCommandOf, commandOf, COMMANDS, keymapSheetHtml, panesOf, type Keys } from '/lib/keys.js'
@@ -3048,7 +3047,7 @@ $('draft-note').addEventListener('click', (e) => {
 })
 
 idle(tower.framed)
-Promise.all([loadModels(), tower.recall(), loadFaces(), loadKit(), tower.renderer()]).then(([m, kept, , kit, renderer]) => {
+shell().assets.loaded.then(({ models: m, kept, kit, declared: renderer }) => {
   s.declared = renderer ?? undefined
   checkWardrobe(m.catalogue)
   s.models = m
