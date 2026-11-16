@@ -92,13 +92,26 @@ export function reportWheel(term: WheelTerm, send: (data: string) => void) {
 }
 
 /**
+ * A cell of `family` at `size` px, as xterm lays it out: a W's advance wide, and as tall as the face's box rounded up
+ * to whole device pixels. Measured at the size itself, since a face's ascent and descent round per size: JetBrains Mono
+ * is 132 px tall at 100 px but 17 px, not 17.16, at 13 px.
+ */
+const cellAt = (text: OffscreenCanvasRenderingContext2D, family: string, size: number) => {
+  text.font = `${size}px ${family}`
+  const w = text.measureText('W')
+  return { width: w.width, height: Math.ceil((w.fontBoundingBoxAscent + w.fontBoundingBoxDescent) * devicePixelRatio) / devicePixelRatio }
+}
+
+/**
  * The largest whole size, at most `font.size` and at least `MIN_SIZE`, at which `cols`×`rows` cells of its face fit in
- * `box`. xterm draws a row in whole device pixels, a cell's width as measured.
+ * `box`: at the size a driving terminal draws, the cells it fitted to a box of the same size.
  */
 export function fitSize(box: Box, cols: number, rows: number, font: TermFont): number {
-  const cell = cellOf(font.family)
-  const rowHeight = (size: number) => Math.ceil(cell.height * size * devicePixelRatio) / devicePixelRatio
-  const fits = (size: number) => cols * cell.width * size <= box.clientWidth - 4 && rows * rowHeight(size) <= box.clientHeight - 4
+  const text = new OffscreenCanvas(1, 1).getContext('2d')!
+  const fits = (size: number) => {
+    const cell = cellAt(text, font.family, size)
+    return cols * cell.width <= box.clientWidth && rows * cell.height <= box.clientHeight
+  }
   let size = font.size
   while (size > MIN_SIZE && !fits(size)) size--
   return size
