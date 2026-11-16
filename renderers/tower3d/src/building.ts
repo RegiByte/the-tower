@@ -7,7 +7,7 @@ import { shelfFiles, type Board, type Card, type Tower } from './api.ts'
 import { cardsOf, heededWaits, findCard, shownTitle, shownKey } from './cards.ts'
 import { type Building, type AppEvent, type Quat, type Ride, type Vec3 } from './app.ts'
 import { hueOf } from './avatar.ts'
-import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, monitorOf, showOnMonitor } from './desk.ts'
+import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, showOnMonitor } from './desk.ts'
 import { launch } from './fireworks.ts'
 import { CATS, makeCat, tada } from './life.ts'
 import { tintOf } from './palette.ts'
@@ -20,8 +20,8 @@ import { cityModel, furnish, type PrefabItem } from './zones.ts'
 import { stateKey } from './prefab.ts'
 import { standingIn } from './breaks.ts'
 import { TABLE, meetingKit } from './meetings.ts'
-import { isScreenTexture, isStillScreen, keepScreens, replayTexture, screenPathOf } from './screens.ts'
-import { isPosterTexture, keepPosters, pictured, type Shown } from './showing.ts'
+import { isStillScreen, type Screens } from './screens.ts'
+import type { Pictures, Shown } from './showing.ts'
 import { dispose } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { keymapSheetHtml } from '/lib/keys.js'
@@ -30,7 +30,7 @@ import { wallNow } from './clock.ts'
 import { historyOf, type Archive, type Archived } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
-import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, GUESTS, notesOf, pigeonholesOf, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
+import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, GUESTS, notesOf, pigeonholesOf, STATIONS, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
 import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
 import { eyes, type Walker } from './walker.ts'
@@ -46,7 +46,7 @@ import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { tower: Tower; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -56,6 +56,8 @@ export type World = ReturnType<typeof startWorld>
  */
 export function startWorld(started: WorldDeps) {
   const { tower } = started
+  const { isScreenTexture, keepScreens, replayTexture, screenPathOf, screenTexture, monitorOf } = started.screens
+  const { isPosterTexture, keepPosters, pictured, posterOf } = started.pictures
   const { draftItem, draftsOf, cardReviews, floorThreadsOf, keepsThreads: floorKeepsThreads, reviewerOf } = started.clients
   const { camera, scene } = started.stage
   const { noteTitle, pruneNoteTitles, pruneKeptTitles, gameTitle, pruneGameTitles } = started.titles
@@ -121,6 +123,7 @@ export function startWorld(started: WorldDeps) {
   const notes = notesOf(noteTitle)
   const cabinets = cabinetsOf(gameTitle)
   const filings = filingsOf(drawersAt)
+  const walls = wallsOf(screenTexture)
 
   /** What changes the building's shape: shell titles and limit readings are redrawn on their own. */
   const structureKey = (pl: Plan, b: Board) => JSON.stringify([
@@ -134,7 +137,7 @@ export function startWorld(started: WorldDeps) {
   function rebuildWorld() {
     if (s.world) discard(s.world.group)
     s.rebuilds++
-    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!, draftsOf)
+    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!, draftsOf, screenTexture)
     scene.add(s.world.group)
     for (const level of planNow().levels) fillLayer(s.kit!, onLevel(scene, level.index).zones, zonesPlaced(s.kit!, level))
     for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
@@ -171,8 +174,8 @@ export function startWorld(started: WorldDeps) {
    * gallery, its pictures ribboned while new, a showing `was` didn't hold flying in.
    */
   function dressSides(was: Board | undefined) {
-    for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)))
-    reconcile(galleryAfter(was), s.pictures)
+    for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)), posterOf)
+    reconcile(galleryAfter(was, posterOf), s.pictures)
     keepPosters(new Set([...[...s.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...s.pictures.keys()]))
   }
 
@@ -236,7 +239,7 @@ export function startWorld(started: WorldDeps) {
     const c = findCard(boardNow()!, id)!
     const sh = c.shown.find((sh) => sh.target === target)!
     const desk = s.desks.get(c.id)
-    if (desk) holdUp(desk, sh, s.simNow / 1000)
+    if (desk) holdUp(desk, sh, s.simNow / 1000, posterOf)
     tada()
     if (!atItsDesk) toast(`${c.callsign} showed you “${shownTitle(sh)}” · V to look`)
   }
@@ -312,7 +315,7 @@ export function startWorld(started: WorldDeps) {
     if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
     if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today))
     setShellTitles(s.world!, next.shells)
-    reconcile(desksAfter(was, hang, reviewerOf), s.desks)
+    reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }), s.desks)
   }
 
   function worldFurnished(was: Board | undefined) {
@@ -320,7 +323,7 @@ export function startWorld(started: WorldDeps) {
     reconcile(STATIONS, s.stations)
     dressLevels(next)
     seatChairs()
-    reconcile(WALLS, s.walls)
+    reconcile(walls, s.walls)
     reconcile(runningOn(next), s.running)
     reconcile(pigeonholes, s.pigeonholes)
     reconcile(ARCADE_SIGNS, s.arcadeSigns)

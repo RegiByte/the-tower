@@ -5,14 +5,14 @@ import type { Card } from './api.ts'
 import { WORLD, shownKey, branchLine, bubbleOf, pairLineOf, glanceOf, onStatusColor, speechLines, speechOf, statusColor, statusName } from './cards.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
 import { DESK, SEAT_OFFSET } from './layout.ts'
-import { ASLEEP, HIRING, OFFLINE, OPEN_DESK, awayScreen, screenTexture } from './screens.ts'
+import { ASLEEP, HIRING, OPEN_DESK, awayScreen, type Screens } from './screens.ts'
 import { avatar, seatedAt, type Avatar, type Look } from './avatar.ts'
 import { WARDROBE } from './closet.ts'
 import { CHAIR } from './chair.ts'
 import { instance, type Models } from './models.ts'
 import { lookOf, lookOfWorker } from './wardrobe.ts'
 import { clipLength, pose, type Pose } from './rig.ts'
-import { posterOf, type Shown } from './showing.ts'
+import type { Pictures, Shown } from './showing.ts'
 import { block, dispose, glowing, glows, mesh, sprite, toon } from './toon.ts'
 import type { Clients } from './clients.ts'
 
@@ -305,7 +305,7 @@ export function dressBinder(desk: Desk, sessions: number) {
 const PAPERS = { sheet: { width: 0.26, depth: 0.18, thick: 0.012 }, most: 8, flag: 0.36, above: 0.4 }
 
 /** The worker in its chair at a desk's seat, its subagents, speech and the papers it hasn't read, around `furniture`. */
-function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 'group' | 'chair' | 'swivel' | 'strip' | 'screen' | 'side' | 'binder'>, reviewerOf: Clients['reviewerOf']): Desk {
+function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 'group' | 'chair' | 'swivel' | 'strip' | 'screen' | 'side' | 'binder'>, reads: DeskReads): Desk {
   const look = lookOfWorker(card.id, card.callsign, WARDROBE, models.catalogue)
   const w = avatar(models, look, WARDROBE)
   w.root.position.copy(SEAT)
@@ -323,12 +323,12 @@ function seated(card: Card, models: Models, marks: Marks, furniture: Pick<Desk, 
     ...furniture, marks, card, models, look, avatar: w, minis, speech, papers, papersCount: 0, binderSessions: 0,
     tagText: '', gistText: '', bubbleText: '', speechText: '', sideText: '', summoned: { count: 0 }, turn: 0, phase: random() * 10,
   }
-  syncDesk(desk, card, reviewerOf)
+  syncDesk(desk, card, reads)
   desk.summoned.count = desk.minis.avatars.length
   return desk
 }
 
-export function makeDesk(card: Card, models: Models, slots: DeskSlots, reviewerOf: Clients['reviewerOf']): Desk {
+export function makeDesk(card: Card, models: Models, slots: DeskSlots, reads: DeskReads): Desk {
   const { group, strip, screen, chair } = furniture(models)
   chair.position.copy(SEAT)
   const side = sideMonitor(slots.side)
@@ -337,7 +337,7 @@ export function makeDesk(card: Card, models: Models, slots: DeskSlots, reviewerO
   binder.position.copy(vector(slots.logbook.at))
   binder.rotation.y = slots.logbook.turn * DEG
   group.add(binder)
-  return seated(card, models, ownMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip, screen, side, binder }, reviewerOf)
+  return seated(card, models, ownMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip, screen, side, binder }, reads)
 }
 
 /** A notebook open on a desk, its base's near edge toward -z; its screen faces the one sitting there. */
@@ -398,23 +398,23 @@ const meetingMarks = (stand: boolean, slots: DeskSlots): Marks => {
 }
 
 /** A crew member at its place in a meeting room: its own chair and its laptop, whose screen is its terminal; standing, neither, at a cabinet it `play`s or not. */
-export function makeSeat(card: Card, models: Models, slots: DeskSlots, stand: boolean, play: boolean, reviewerOf: Clients['reviewerOf']): Desk {
+export function makeSeat(card: Card, models: Models, slots: DeskSlots, stand: boolean, play: boolean, reads: DeskReads): Desk {
   const group = new THREE.Group()
   if (stand) {
     const none = new THREE.Group()
     group.add(none)
-    return { ...seated(card, models, meetingMarks(true, slots), { group, chair: none, swivel: none, strip: new THREE.MeshBasicMaterial(), screen: mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false })) }, reviewerOf), meeting: { stand, play } }
+    return { ...seated(card, models, meetingMarks(true, slots), { group, chair: none, swivel: none, strip: new THREE.MeshBasicMaterial(), screen: mesh(new THREE.PlaneGeometry(0.01, 0.01), new THREE.MeshBasicMaterial({ visible: false })) }, reads), meeting: { stand, play } }
   }
   const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
   group.add(chair)
   const laptop = notebook(MEETING.laptop)
   group.add(laptop.group)
-  return { ...seated(card, models, meetingMarks(false, slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: laptop.strip, screen: laptop.screen }, reviewerOf), notebook: laptop.group, meeting: { stand, play } }
+  return { ...seated(card, models, meetingMarks(false, slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: laptop.strip, screen: laptop.screen }, reads), notebook: laptop.group, meeting: { stand, play } }
 }
 
 /** A reviewer beside its author: its own chair at the author's desk, and its notebook on it. */
-export function makeVisitor(card: Card, models: Models, slots: DeskSlots, reviewerOf: Clients['reviewerOf']): Desk {
+export function makeVisitor(card: Card, models: Models, slots: DeskSlots, reads: DeskReads): Desk {
   const group = new THREE.Group()
   const chair = instance(models.desk).part('chair')
   chair.position.copy(SEAT)
@@ -423,7 +423,7 @@ export function makeVisitor(card: Card, models: Models, slots: DeskSlots, review
   const book = notebook(place.at)
   book.group.rotation.y = place.turn
   group.add(book.group)
-  return { ...seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen }, reviewerOf), notebook: book.group, besideTurn: slots.reviewer.turn * DEG }
+  return { ...seated(card, models, visitMarks(slots), { group, chair, swivel: chair.getObjectByName('swivel')!, strip: book.strip, screen: book.screen }, reads), notebook: book.group, besideTurn: slots.reviewer.turn * DEG }
 }
 
 /**
@@ -453,15 +453,19 @@ function relabel(desk: Desk, key: 'tag' | 'gist' | 'bubble', next: THREE.Sprite 
   desk[key] = next
 }
 
-/** What a worker's monitor shows: its live screen while it runs. */
-export const monitorOf = (card: Card) => (!card.live ? OFFLINE : screenTexture(`screen/${card.id}`))
-
 export function showOnMonitor(desk: Desk, map: THREE.Texture) {
   if (desk.screen.material.map !== map) (desk.screen.material.map = map, (desk.screen.material.needsUpdate = true))
 }
 
-/** Dresses the desk for its card: what changed since the last board. A pair's line names the reviewer `reviewerOf` gives. */
-export function syncDesk(desk: Desk, card: Card, reviewerOf: Clients['reviewerOf']) {
+/**
+ * What a desk is dressed by: the reviewer a pair's line names (`reviewerOf`) and what its monitor shows (`monitorOf`,
+ * its live screen while it runs).
+ */
+export type DeskReads = { reviewerOf: Clients['reviewerOf']; monitorOf: Screens['monitorOf'] }
+
+/** Dresses the desk for its card: what changed since the last board, by `reads`. */
+export function syncDesk(desk: Desk, card: Card, reads: DeskReads) {
+  const { reviewerOf, monitorOf } = reads
   desk.card = card
   const color = statusColor(card)
   desk.avatar.bulb.color.set(color)
@@ -543,7 +547,7 @@ function seatTwin(desk: Desk, run: string | undefined) {
 }
 
 /** Puts what the worker last showed on its second monitor, ribboned NEW until you open it. */
-export function dressSide(desk: Desk, latest: Shown | undefined, fresh: boolean) {
+export function dressSide(desk: Desk, latest: Shown | undefined, fresh: boolean, posterOf: Pictures['posterOf']) {
   const text = latest ? `${shownKey(latest)}|${fresh}` : ''
   if (!desk.side || text === desk.sideText) return
   desk.sideText = text
@@ -555,7 +559,7 @@ export function dressSide(desk: Desk, latest: Shown | undefined, fresh: boolean)
 }
 
 /** The worker stands it up for you: `latest` held over its head from `t` (seconds), then laid on its second monitor. */
-export function holdUp(desk: Desk, latest: Shown, t: number) {
+export function holdUp(desk: Desk, latest: Shown, t: number, posterOf: Pictures['posterOf']) {
   lower(desk)
   const picture = new THREE.Sprite(new THREE.SpriteMaterial({ map: posterOf(desk.card, latest), toneMapped: false }))
   picture.scale.set(0.01, 0.01, 1)

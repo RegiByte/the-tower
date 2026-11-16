@@ -8,7 +8,7 @@ import { DECK } from './floorplan.ts'
 import { GLASS_PAST, ROOM, ROOM_HEIGHT, VIDEO_WALL, WALL, consoleSpot, roomBox, roomDoor, videoWallBand, videoWallSpot } from './layout.ts'
 import { instance, type Models } from './models.ts'
 import { tintOf } from './palette.ts'
-import { OFFLINE, screenTexture } from './screens.ts'
+import { OFFLINE, type Screens } from './screens.ts'
 import { block, glowing, glows, mesh, plate, sprite, toon } from './toon.ts'
 
 /**
@@ -99,7 +99,7 @@ export function shellTag(shell: Shell, tint: string) {
   return tag
 }
 
-function kiosk(shell: Shell, tint: string, models: Models, pickables: THREE.Object3D[]) {
+function kiosk(shell: Shell, tint: string, models: Models, pickables: THREE.Object3D[], screenTexture: Screens['screenTexture']) {
   const g = new THREE.Group()
   g.add(instance(models.kiosk).root)
   g.add(mesh(new THREE.PlaneGeometry(1.4, 0.86), glows(new THREE.MeshBasicMaterial({ map: screenTexture(`shell/${shell.id}`), toneMapped: false })), 0, 1.62, 0.16))
@@ -107,7 +107,7 @@ function kiosk(shell: Shell, tint: string, models: Models, pickables: THREE.Obje
   return act(g, { kind: 'shell', id: shell.id }, pickables)
 }
 
-export function buildRoom(p: Plan, level: FloorLevel, models: Models, pickables: THREE.Object3D[]) {
+export function buildRoom(p: Plan, level: FloorLevel, models: Models, pickables: THREE.Object3D[], screenTexture: Screens['screenTexture']) {
   const g = new THREE.Group()
   const tint = tintOf(level.floor)
   const r = roomBox(p)
@@ -152,7 +152,7 @@ export function buildRoom(p: Plan, level: FloorLevel, models: Models, pickables:
   g.add(act(desk.root, { kind: 'floor', id: level.floor.id }, pickables))
 
   for (const k of level.kiosks) {
-    const piece = kiosk(k.shell, tint, models, pickables)
+    const piece = kiosk(k.shell, tint, models, pickables, screenTexture)
     piece.position.set(k.x, 0, k.z)
     piece.scale.setScalar(k.scale)
     piece.rotation.y = Math.PI / 2
@@ -207,7 +207,7 @@ export type VideoWall = { group: THREE.Group; frames: { id: string; material: TH
 /** The video wall's faces, each turned about +y: into the room (-x) for the console, out (+x) over the floor. */
 const FACES = [-Math.PI / 2, Math.PI / 2]
 
-export function buildVideoWall(p: Plan, level: FloorLevel): VideoWall {
+export function buildVideoWall(p: Plan, level: FloorLevel, screenTexture: Screens['screenTexture']): VideoWall {
   const group = new THREE.Group()
   const frames: VideoWall['frames'] = []
   const at = videoWallSpot(p)

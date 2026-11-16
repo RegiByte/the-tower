@@ -9,7 +9,7 @@
   "reviewed": "2026-11-16",
   "refs": [
     "hub/renderers/tower3d/src/desk.ts#dressBinder",
-    "hub/renderers/tower3d/src/desk.ts#monitorOf",
+    "hub/renderers/tower3d/src/screens.ts#monitorOf",
     "hub/renderers/tower3d/src/ui.ts#logbookHtml",
     "hub/renderers/tower3d/src/ui.ts#sessionsHtml",
     "hub/renderers/tower3d/src/ui.ts#logbookTabsHtml",

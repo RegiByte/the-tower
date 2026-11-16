@@ -118,7 +118,9 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   ([`OfferReads`](ref:hub/renderers/tower3d/src/acts.ts#OfferReads): the clients' words and the archive's drawers),
   the panel builders in `ui.ts` take theirs, a layer that draws by a read is made from it
   ([`pigeonholesOf`](ref:hub/renderers/tower3d/src/layers.ts#pigeonholesOf), `notesOf`, `cabinetsOf`, `filingsOf`),
-  built once by the world, and the levels hang on the scene they are handed. The world exposes `hang`, `reconcile`
+  built once by the world, and the levels hang on the scene they are handed. The monitors' streams and the pictures of
+  what workers showed are caches too, so each is a resource (`screens`, `pictures`) the world, the frames and the door
+  are handed, and the builders take what they paint by as arguments (a desk's `DeskReads`, `wallsOf`, `galleryAfter`). The world exposes `hang`, `reconcile`
   and `syncFilings` to the resources after it. A resource composes the record it hands on (`{ ...clients, ...titles,
   drawersAt }`) in its own start. No module reads a started resource as it loads, so `system.ts` imports every
   module statically and evaluating one starts nothing.

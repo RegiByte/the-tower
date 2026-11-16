@@ -21,6 +21,9 @@ import { startDoor } from './door.ts'
 import { startKeeper, type KeeperDeps } from './keeper.ts'
 import { startStage, type Stage } from './stage.ts'
 import { startTerminal } from './term.ts'
+import { screensOf } from './screens.ts'
+import { picturesOf } from './showing.ts'
+import { watchStream } from './fixtures.ts'
 import { startToasts } from './toasts.ts'
 import { startTitles } from './titles.ts'
 import { startArchive } from './archive.ts'
@@ -36,6 +39,8 @@ import { startEvents } from './events.ts'
  *   stage     the renderer, scene, camera and the city outside, on the page's canvas (stage.ts)
  *   input     the keys held and the mouse's travel under the pointer lock (input.ts)
  *   music     the band, made on the first play (music.ts)
+ *   screens   the monitors' streams, each painted while it changes (screens.ts)
+ *   pictures  what workers showed, painted: posters, pages, images and films (showing.ts)
  *   terminal  the desk's terminal, mounted in the panel (term.ts)
  *   assets    the models, the kit and the faces, loading; the page draws once they are in (loads.ts)
  *   port      where the reads that land send their events, the app attached once it is made (port.ts)
@@ -77,6 +82,11 @@ const input = defineResource({
 
 const music = defineResource({ start: startMusic, halt: (started) => started.stop() })
 
+/** Its streams are read through the fixture's shim until the fixture page is a record of its own. */
+const screens = defineResource({ start: () => screensOf(watchStream), halt: () => {} })
+
+const pictures = defineResource({ dependencies: ['tower'], start: ({ tower }: { tower: Tower }) => picturesOf(tower), halt: () => {} })
+
 const terminal = defineResource({ dependencies: ['tower'], start: startTerminal, halt: (started) => started.stop() })
 
 const assets = defineResource({ dependencies: ['tower'], start: startAssets, halt: () => {} })
@@ -96,7 +106,7 @@ const events = defineResource({
 })
 
 const world = defineResource({
-  dependencies: ['tower', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
+  dependencies: ['tower', 'screens', 'pictures', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
   start: startWorld,
   halt: () => {},
 })
@@ -146,7 +156,7 @@ const controls = defineResource({
 
 /** After the app and the controls: the frames it starts read the app's db, and the order is the page's. */
 const frames = defineResource({
-  dependencies: ['tower', 'lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
+  dependencies: ['tower', 'screens', 'pictures', 'lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
   start: (started: FramesDeps & { app: unknown; controls: unknown }) => startFrames(started),
   halt: () => {},
 })
@@ -161,7 +171,7 @@ const feed = defineResource({
 })
 
 const door = defineResource({
-  dependencies: ['stage', 'input', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
+  dependencies: ['pictures', 'stage', 'input', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
   start: startDoor,
   halt: () => {},
 })
@@ -173,4 +183,4 @@ const keeper = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { tower, lighting, clients, stage, input, music, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+export const tower3d = { tower, lighting, clients, stage, input, music, screens, pictures, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }

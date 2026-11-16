@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { marked, type Token } from 'marked'
 import { type } from '/lib/design.js'
 import { imagePath } from '/lib/markdown.js'
-import type { Card } from './api.ts'
+import type { Card, Tower } from './api.ts'
 import { WORLD, base, shownHref, shownKey, shownTitle } from './cards.ts'
 import { FIXTURE, readBlob } from './fixtures.ts'
 
@@ -195,10 +195,6 @@ async function load(blob: Blob) {
   return video
 }
 
-/** A video showing: its element, and how to paint its current frame where it hangs. */
-type Film = { video: HTMLVideoElement; paint: () => void }
-const films = new Map<string, Film>()
-
 const textureOf = (canvas: HTMLCanvasElement) => {
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
@@ -206,121 +202,135 @@ const textureOf = (canvas: HTMLCanvasElement) => {
   return texture
 }
 
-const posters = new Map<string, THREE.CanvasTexture>()
-/** The pictures being read: a texture changes when one settles. */
-const reading = new Set<Promise<unknown>>()
-const read = (p: Promise<unknown>) => (reading.add(p), p.finally(() => reading.delete(p)))
-/** Settles once every picture being read has been painted, or left a poster. */
-export const pictured = () => Promise.allSettled([...reading]).then(() => undefined)
-/** Each image showing's picture as the image alone, at its own proportions, by `shownKey`. */
-const images = new Map<string, THREE.CanvasTexture>()
-
 /**
- * A showing's picture, painted on first use: its poster; for markdown the page once its text arrives, and again with
- * its images; for an image the image fitted to the sheet, kept bare for the gallery too (`imageOf`); for a video its
- * frames, the same two ways (`playFilms`). A fixture board
- * has no host to read from, so its markdown stays a poster. A file gone since it was shown keeps its poster.
+ * The pictures of what workers showed, read through `tower`: each showing's poster and picture, the videos playing,
+ * and what is still being read.
  */
-export function posterOf(c: Pick<Card, 'callsign'>, s: Shown) {
-  const key = shownKey(s)
-  const known = posters.get(key)
-  if (known) return known
-  const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H })
-  const g = canvas.getContext('2d')!
-  paintPoster(g, s, c.callsign)
-  const texture = textureOf(canvas)
-  posters.set(key, texture)
-  const current = () => posters.get(key) === texture
-  const url = shownHref(s)
-  if (isMarkdown(s) && FIXTURE === undefined) {
-    const typeset = async (md: string) => {
-      const tokens = marked.lexer(md)
-      const paint = (pictures: Map<string, HTMLCanvasElement>) => {
+export function picturesOf(tower: Tower) {
+  /** A video showing: its element, and how to paint its current frame where it hangs. */
+  type Film = { video: HTMLVideoElement; paint: () => void }
+  const films = new Map<string, Film>()
+
+  const posters = new Map<string, THREE.CanvasTexture>()
+  /** The pictures being read: a texture changes when one settles. */
+  const reading = new Set<Promise<unknown>>()
+  const read = (p: Promise<unknown>) => (reading.add(p), p.finally(() => reading.delete(p)))
+  /** Settles once every picture being read has been painted, or left a poster. */
+  const pictured = () => Promise.allSettled([...reading]).then(() => undefined)
+  /** Each image showing's picture as the image alone, at its own proportions, by `shownKey`. */
+  const images = new Map<string, THREE.CanvasTexture>()
+
+  /**
+   * A showing's picture, painted on first use: its poster; for markdown the page once its text arrives, and again with
+   * its images; for an image the image fitted to the sheet, kept bare for the gallery too (`imageOf`); for a video its
+   * frames, the same two ways (`playFilms`). A fixture board
+   * has no host to read from, so its markdown stays a poster. A file gone since it was shown keeps its poster.
+   */
+  function posterOf(c: Pick<Card, 'callsign'>, s: Shown) {
+    const key = shownKey(s)
+    const known = posters.get(key)
+    if (known) return known
+    const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H })
+    const g = canvas.getContext('2d')!
+    paintPoster(g, s, c.callsign)
+    const texture = textureOf(canvas)
+    posters.set(key, texture)
+    const current = () => posters.get(key) === texture
+    const url = shownHref(s)
+    if (isMarkdown(s) && FIXTURE === undefined) {
+      const typeset = async (md: string) => {
+        const tokens = marked.lexer(md)
+        const paint = (pictures: Map<string, HTMLCanvasElement>) => {
+          if (!current()) return
+          paintPage(g, s, c.callsign, tokens, pictures)
+          texture.needsUpdate = true
+        }
+        paint(new Map())
+        const pictures = await pageImages(tokens, url)
+        if (pictures.size) paint(pictures)
+      }
+      read(tower.text(url.slice(1)).then(typeset, () => undefined))
+    }
+    if (isImage(s)) {
+      const hang = (image: HTMLCanvasElement) => {
         if (!current()) return
-        paintPage(g, s, c.callsign, tokens, pictures)
+        paintImage(g, image)
         texture.needsUpdate = true
+        images.set(key, textureOf(image))
       }
-      paint(new Map())
-      const pictures = await pageImages(tokens, url)
-      if (pictures.size) paint(pictures)
+      read(readBlob(url.slice(1)).then(decode).then(hang, () => undefined))
     }
-    read(window.tower.text(url.slice(1)).then(typeset, () => undefined))
-  }
-  if (isImage(s)) {
-    const hang = (image: HTMLCanvasElement) => {
-      if (!current()) return
-      paintImage(g, image)
-      texture.needsUpdate = true
-      images.set(key, textureOf(image))
-    }
-    read(readBlob(url.slice(1)).then(decode).then(hang, () => undefined))
-  }
-  if (isVideo(s)) {
-    const film = (video: HTMLVideoElement) => {
-      if (!current()) return URL.revokeObjectURL(video.src)
-      const k = Math.min(1, VIDEO_SIDE / Math.max(video.videoWidth, video.videoHeight))
-      const frame = Object.assign(document.createElement('canvas'), { width: Math.round(video.videoWidth * k), height: Math.round(video.videoHeight * k) })
-      const bare = textureOf(frame)
-      const paint = () => {
-        frame.getContext('2d')!.drawImage(video, 0, 0, frame.width, frame.height)
-        paintImage(g, frame)
-        texture.needsUpdate = true
-        bare.needsUpdate = true
+    if (isVideo(s)) {
+      const film = (video: HTMLVideoElement) => {
+        if (!current()) return URL.revokeObjectURL(video.src)
+        const k = Math.min(1, VIDEO_SIDE / Math.max(video.videoWidth, video.videoHeight))
+        const frame = Object.assign(document.createElement('canvas'), { width: Math.round(video.videoWidth * k), height: Math.round(video.videoHeight * k) })
+        const bare = textureOf(frame)
+        const paint = () => {
+          frame.getContext('2d')!.drawImage(video, 0, 0, frame.width, frame.height)
+          paintImage(g, frame)
+          texture.needsUpdate = true
+          bare.needsUpdate = true
+        }
+        paint()
+        images.set(key, bare)
+        films.set(key, { video, paint })
       }
-      paint()
-      images.set(key, bare)
-      films.set(key, { video, paint })
+      read(readBlob(url.slice(1)).then(load).then(film, () => undefined))
     }
-    read(readBlob(url.slice(1)).then(load).then(film, () => undefined))
+    return texture
   }
-  return texture
-}
 
-/**
- * Plays the videos `playing` names (by `shownKey`) and pauses every other where it stands. A playing video paints
- * each new frame it presents.
- */
-export function playFilms(playing: ReadonlySet<string>) {
-  for (const [key, { video, paint }] of films) {
-    if (!playing.has(key)) {
-      if (!video.paused) video.pause()
-      continue
+  /**
+   * Plays the videos `playing` names (by `shownKey`) and pauses every other where it stands. A playing video paints
+   * each new frame it presents.
+   */
+  function playFilms(playing: ReadonlySet<string>) {
+    for (const [key, { video, paint }] of films) {
+      if (!playing.has(key)) {
+        if (!video.paused) video.pause()
+        continue
+      }
+      if (!video.paused) continue
+      const onFrame = () => {
+        if (video.paused || films.get(key)?.video !== video) return
+        paint()
+        video.requestVideoFrameCallback(onFrame)
+      }
+      video.play().then(
+        () => video.requestVideoFrameCallback(onFrame),
+        (err: DOMException) => {
+          if (err.name !== 'AbortError') throw err
+        },
+      )
     }
-    if (!video.paused) continue
-    const onFrame = () => {
-      if (video.paused || films.get(key)?.video !== video) return
-      paint()
-      video.requestVideoFrameCallback(onFrame)
-    }
-    video.play().then(
-      () => video.requestVideoFrameCallback(onFrame),
-      (err: DOMException) => {
-        if (err.name !== 'AbortError') throw err
-      },
-    )
   }
-}
 
-/** The showing's image alone, once it has been read: an image or video showing's picture for the gallery. */
-export const imageOf = (c: Pick<Card, 'callsign'>, s: Shown) => images.get(shownKey(s))
+  /** The showing's image alone, once it has been read: an image or video showing's picture for the gallery. */
+  const imageOf = (c: Pick<Card, 'callsign'>, s: Shown) => images.get(shownKey(s))
 
-export const isPosterTexture = (t: THREE.Texture) => [...posters.values(), ...images.values()].includes(t as THREE.CanvasTexture)
+  const isPosterTexture = (t: THREE.Texture) => [...posters.values(), ...images.values()].includes(t as THREE.CanvasTexture)
 
-/** Lets go of every picture not in `keys`: only what stands in the building is kept. */
-export function keepPosters(keys: ReadonlySet<string>) {
-  for (const [key, { video }] of films) {
-    if (keys.has(key)) continue
-    video.pause()
-    URL.revokeObjectURL(video.src)
-    video.removeAttribute('src')
-    video.load()
-    films.delete(key)
-  }
-  for (const map of [posters, images]) {
-    for (const [key, texture] of map) {
+  /** Lets go of every picture not in `keys`: only what stands in the building is kept. */
+  function keepPosters(keys: ReadonlySet<string>) {
+    for (const [key, { video }] of films) {
       if (keys.has(key)) continue
-      texture.dispose()
-      map.delete(key)
+      video.pause()
+      URL.revokeObjectURL(video.src)
+      video.removeAttribute('src')
+      video.load()
+      films.delete(key)
+    }
+    for (const map of [posters, images]) {
+      for (const [key, texture] of map) {
+        if (keys.has(key)) continue
+        texture.dispose()
+        map.delete(key)
+      }
     }
   }
+
+  return { posterOf, playFilms, imageOf, isPosterTexture, keepPosters, pictured }
 }
+
+export type Pictures = ReturnType<typeof picturesOf>

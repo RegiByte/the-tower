@@ -6,7 +6,7 @@ import { hueOf } from './avatar.ts'
 import { WORLD, ago, shownTitle } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { PICTURE_ASPECT, type WallSlot } from './layout.ts'
-import { imageOf, posterOf, type Shown } from './showing.ts'
+import type { Pictures, Shown } from './showing.ts'
 import { block, plate, sprite, toon } from './toon.ts'
 
 /**
@@ -84,7 +84,7 @@ export type Picture = {
 }
 
 /** A showing in its frame, at unit width, standing for itself when aimed at. */
-export function makePicture(worker: SessionRef, s: Shown): Picture {
+export function makePicture(worker: SessionRef, s: Shown, posterOf: Pictures['posterOf']): Picture {
   const group = new THREE.Group()
   const h = 1 / PICTURE_ASPECT
   const frame = block(1 + FRAME * 2, h + FRAME * 2, 0.05, toon(hueOf(worker.id)), 0, -h / 2 - FRAME, -0.03)
@@ -108,7 +108,7 @@ function frameAround(pic: Picture, w: number, h: number) {
 }
 
 /** An image, once read, hangs bare at its own proportions, as large as its place allows. */
-export function fitPicture(pic: Picture) {
+export function fitPicture(pic: Picture, imageOf: Pictures['imageOf']) {
   const image = imageOf(pic.worker, pic.shown)
   if (!image || pic.face.material.map === image) return
   const { width, height } = image.image as HTMLCanvasElement

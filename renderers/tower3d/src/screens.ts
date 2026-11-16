@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { Terminal, type IBufferCell } from '@xterm/xterm'
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import { terminalTheme, type } from '/lib/design.js'
-import { watchStream } from './fixtures.ts'
+import type { Card, Tower } from './api.ts'
 
 /**
  * Live monitors: each stream (`screen/<id>`, `shell/<id>`) feeds a terminal nobody sees, painted onto a canvas
@@ -51,61 +51,6 @@ type Screen = {
   /** A past session's screen replayed: washed sepia under this stamp. */
   stamp?: string
   unwatch: () => void
-}
-
-const screens = new Map<string, Screen>()
-
-function open(path: string): Screen {
-  const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H })
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.colorSpace = THREE.SRGBColorSpace
-  texture.anisotropy = 8
-  const screen: Screen = { canvas, texture, dirty: true, drawnAt: 0, ended: false, unwatch: () => {} }
-  screen.unwatch = watchStream(path, (msg) => {
-    if (msg.t === 'snapshot') {
-      screen.term?.dispose()
-      screen.term = new Terminal({ cols: msg.cols, rows: msg.rows, scrollback: 0, allowProposedApi: true })
-      screen.term.loadAddon(new UnicodeGraphemesAddon())
-      screen.term.onWriteParsed(() => (screen.dirty = true))
-      screen.term.write(msg.data)
-    }
-    if (msg.t === 'o') screen.term?.write(msg.data)
-    if (msg.t === 'r') {
-      const [cols, rows] = 'size' in msg ? msg.size.split('x').map(Number) : [msg.cols, msg.rows]
-      screen.term?.resize(cols, rows)
-    }
-    if (msg.t === 'x' || msg.t === 'error') screen.ended = true
-    screen.dirty = true
-  })
-  screens.set(path, screen)
-  return screen
-}
-
-/** The texture of a stream's monitor, its stream opened on first use. */
-export const screenTexture = (path: string) => (screens.get(path) ?? open(path)).texture
-
-/** A past session's last screen on a monitor, sepia, stamped `stamp` ("REPLAY · Oct 6, 21:40"). */
-export function replayTexture(path: string, stamp: string) {
-  const screen = screens.get(path) ?? open(path)
-  screen.stamp = stamp
-  screen.dirty = true
-  return screen.texture
-}
-
-export const isScreenTexture = (t: THREE.Texture) => [...screens.values()].some((s) => s.texture === t)
-
-/** The stream a monitor's texture shows. */
-export const screenPathOf = (t: THREE.Texture) => [...screens].find(([, s]) => s.texture === t)?.[0]
-
-/** Ends every stream not in `paths`: only what stands in the building streams. */
-export function keepScreens(paths: ReadonlySet<string>) {
-  for (const [path, s] of screens) {
-    if (paths.has(path)) continue
-    s.unwatch()
-    s.term?.dispose()
-    s.texture.dispose()
-    screens.delete(path)
-  }
 }
 
 function paint(s: Screen) {
@@ -193,20 +138,6 @@ function paint(s: Screen) {
   s.texture.needsUpdate = true
 }
 
-/**
- * Paints the screens that changed and can be seen, each at its distance's rate; the rest stay dirty until they can.
- * `distance`: how far the stream's nearest monitor stands from the eye, `undefined` for one out of sight.
- */
-export function paintScreens(now: number, distance: (path: string) => number | undefined) {
-  for (const [path, s] of screens) {
-    const d = distance(path)
-    if (!s.dirty || d === undefined || now - s.drawnAt < repaintMs(d)) continue
-    s.dirty = false
-    s.drawnAt = now
-    paint(s)
-  }
-}
-
 /** A monitor showing a word and the keys that answer it, drawn once. */
 function still(title: string, color: string, lines: string[]) {
   const cv = Object.assign(document.createElement('canvas'), { width: 512, height: 320 })
@@ -242,3 +173,85 @@ export const awayScreen = (room: string) => {
 }
 
 export const isStillScreen = (t: THREE.Texture) => t === OFFLINE || t === OPEN_DESK || t === ASLEEP || [...away.values()].includes(t)
+
+/**
+ * The building's monitors, each stream read through `watch` (the tower's `watch`): its texture, opened on first use,
+ * painted while it changes, ended once nothing stands that shows it.
+ */
+export function screensOf(watch: Tower['watch']) {
+  const screens = new Map<string, Screen>()
+
+  function open(path: string): Screen {
+    const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H })
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.anisotropy = 8
+    const screen: Screen = { canvas, texture, dirty: true, drawnAt: 0, ended: false, unwatch: () => {} }
+    screen.unwatch = watch(path, (msg) => {
+      if (msg.t === 'snapshot') {
+        screen.term?.dispose()
+        screen.term = new Terminal({ cols: msg.cols, rows: msg.rows, scrollback: 0, allowProposedApi: true })
+        screen.term.loadAddon(new UnicodeGraphemesAddon())
+        screen.term.onWriteParsed(() => (screen.dirty = true))
+        screen.term.write(msg.data)
+      }
+      if (msg.t === 'o') screen.term?.write(msg.data)
+      if (msg.t === 'r') {
+        const [cols, rows] = 'size' in msg ? msg.size.split('x').map(Number) : [msg.cols, msg.rows]
+        screen.term?.resize(cols, rows)
+      }
+      if (msg.t === 'x' || msg.t === 'error') screen.ended = true
+      screen.dirty = true
+    })
+    screens.set(path, screen)
+    return screen
+  }
+
+  /** The texture of a stream's monitor, its stream opened on first use. */
+  const screenTexture = (path: string) => (screens.get(path) ?? open(path)).texture
+
+  /** A past session's last screen on a monitor, sepia, stamped `stamp` ("REPLAY · Oct 6, 21:40"). */
+  function replayTexture(path: string, stamp: string) {
+    const screen = screens.get(path) ?? open(path)
+    screen.stamp = stamp
+    screen.dirty = true
+    return screen.texture
+  }
+
+  const isScreenTexture = (t: THREE.Texture) => [...screens.values()].some((s) => s.texture === t)
+
+  /** The stream a monitor's texture shows. */
+  const screenPathOf = (t: THREE.Texture) => [...screens].find(([, s]) => s.texture === t)?.[0]
+
+  /** Ends every stream not in `paths`: only what stands in the building streams. */
+  function keepScreens(paths: ReadonlySet<string>) {
+    for (const [path, s] of screens) {
+      if (paths.has(path)) continue
+      s.unwatch()
+      s.term?.dispose()
+      s.texture.dispose()
+      screens.delete(path)
+    }
+  }
+
+  /**
+   * Paints the screens that changed and can be seen, each at its distance's rate; the rest stay dirty until they can.
+   * `distance`: how far the stream's nearest monitor stands from the eye, `undefined` for one out of sight.
+   */
+  function paintScreens(now: number, distance: (path: string) => number | undefined) {
+    for (const [path, s] of screens) {
+      const d = distance(path)
+      if (!s.dirty || d === undefined || now - s.drawnAt < repaintMs(d)) continue
+      s.dirty = false
+      s.drawnAt = now
+      paint(s)
+    }
+  }
+
+  /** A desk's monitor: its worker's stream, or the screen that says it is off. */
+  const monitorOf = (card: Card) => (!card.live ? OFFLINE : screenTexture(`screen/${card.id}`))
+
+  return { screenTexture, replayTexture, isScreenTexture, screenPathOf, keepScreens, paintScreens, monitorOf }
+}
+
+export type Screens = ReturnType<typeof screensOf>
