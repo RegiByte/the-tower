@@ -42,9 +42,7 @@ import { nowOf } from './now.ts'
 import type { World } from './building.ts'
 import type { Views } from './views.ts'
 import type { Spawn } from './spawn.ts'
-
 import type { Hud } from './hud.ts'
-
 import type { Navigation } from './navigation.ts'
 import type { Clients } from './clients.ts'
 import type { Stage } from './stage.ts'
