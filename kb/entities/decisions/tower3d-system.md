@@ -111,6 +111,15 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   ([`startClock`](ref:hub/renderers/tower3d/src/clock.ts#startClock)): `now` and whether it `moves`. The resources
   that stamp or draw an age read it from their start; the pure builders below them (`ui.ts`'s, the gallery's, the
   desks' dressing, the stats board) take the instant they draw at as an argument.
+- *A fixture page is a record, not a mode.* `system.ts` exports the live record (`liveTower3d`) and
+  `fixtureTower3d(name)`, the live one with the resources that differ swapped: a `fixture` resource that reads the
+  file ([`startFixture`](ref:hub/renderers/tower3d/src/fixtures.ts#startFixture)), the `tower` that answers from it
+  with the live one's interface ([`fixtureTower`](ref:hub/renderers/tower3d/src/fixtures.ts#fixtureTower)), a clock
+  pinned at the instant it was built at ([`fixtureClock`](ref:hub/renderers/tower3d/src/clock.ts#fixtureClock)), and a
+  feed that delivers its boards ([`startFixtureFeed`](ref:hub/renderers/tower3d/src/feed.ts#startFixtureFeed)) over the
+  live feed's core. `boot.ts` reads `?board=` once and starts one record or the other, and no module asks which page
+  it is on. What a fixture page writes stays in it: its store is kept in the page, its calls and runs are refused,
+  and it recalls no kept spot, so the sandbox it is served by never reaches it.
 - *The lighting bands the ramp.* Lit, the lighting's start bands every toon material by the rig's ramp
   ([`lightRamp`](ref:hub/renderers/tower3d/src/toon.ts#lightRamp)) before anything draws; the stage gets `lit` as an
   argument. The pages that never start it (the lab, the dresser, the editor) stay unlit.

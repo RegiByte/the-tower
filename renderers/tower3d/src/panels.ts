@@ -25,7 +25,7 @@ import { SHELL_SCROLLBACK } from '/lib/terminal.js'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, pictureHeadHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, panesOf } from '/lib/keys.js'
 import type { Clock } from './clock.ts'
-import { FIXTURE, readArchive, readConversations } from './fixtures.ts'
+import { FIXTURE } from './fixture-name.ts'
 import { CHANGES, THREAD } from './hosting.ts'
 import type { Archive } from './archive.ts'
 import { GAMES, gameItem } from './games.ts'
@@ -597,7 +597,7 @@ export function startPanels(started: PanelsDeps) {
 
   /** A worker sent home, resumed from the board or its floor's archive, read again. */
   async function resumeSentHome(c: Card) {
-    const dead = findCard(boardNow()!, c.id) ?? (await readArchive(boardNow()!, c.project).catch((err: Error) => (toast(err.message), [])))?.find((d) => d.id === c.id)
+    const dead = findCard(boardNow()!, c.id) ?? (await tower.archive(c.project).catch((err: Error) => (toast(err.message), [])))?.find((d) => d.id === c.id)
     const call = dead && callOf(dead, 'resume')
     if (!call) return toast(`${c.callsign} can't be resumed now`)
     resume(call)
@@ -908,7 +908,7 @@ export function startPanels(started: PanelsDeps) {
   function readLogbook(where: keyof typeof logbookReads, c: Card, held: boolean, wholes: () => Brief[], land: (threads: Threads, wholes: Brief[]) => void) {
     const key = readKey(c)
     logbookReads[where] = key
-    readConversations(boardNow()!, c.id)
+    tower.conversations(c.id)
       .then((threads) => withWholesRead(threads, wholes, (session, id) => tower.conversation(session, id)))
       .then(
         (read) => {

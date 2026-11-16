@@ -6,7 +6,7 @@ import { fitHands, makeHands } from './hands.ts'
 import { idle } from './tv.ts'
 import { chairKit } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
-import { FIXTURE, fixtureBoards } from './fixtures.ts'
+import type { Fixture } from './fixtures.ts'
 import * as loading from './loading.ts'
 import type { Archive } from './archive.ts'
 import { s } from './state.ts'
@@ -26,23 +26,65 @@ import type { Port } from './port.ts'
 /** What the feed resource is started with. */
 export type FeedDeps = { tower: Tower; archive: Archive; stage: Stage; assets: Assets; port: Port; toasts: Toasts; world: World; spawn: Spawn; hud: Hud; panels: Panels; frames: Frames }
 
-export type Feed = ReturnType<typeof startFeed>
+/** The boards the page is fed, and the promise the door's ready answers: `advance` delivers a fixture's next. */
+export type Feed = { advance: () => void; ready: Promise<void> }
 
 /**
- * The boards the page is fed: the live board and its errors, or a fixture's boards one after another, the first started
- * under the loading screen once the models are in, and the promise the door's ready answers.
+ * What either feed does: the models taken in once they load, `onModels` then, a board sent into the building, a
+ * failed start said, and `ready` once the first board is built.
  */
-export function startFeed(started: FeedDeps) {
-  const { tower } = started
+function feedOf(started: FeedDeps, onModels: () => void) {
   const { port } = started
-  const { camera, flyPlane, renderer, scene } = started.stage
-  const { boardNow } = nowOf(port)
+  const { camera, flyPlane } = started.stage
   const { toast } = started.toasts
   const { firstBuilt, primeSeenAs } = started.world
-  const { hiring } = started.spawn
   const { toggleFps } = started.hud
+
+  let built: () => void
+
+  let unbuilt: (err: Error) => void
+
+  const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
+
+  /** `next` arrives: the building takes it once its floors' archives are read at its keys, planned then. */
+  const boardArrived = (next: Board, self: ShelfSelf | undefined) => port.dispatch({ type: 'board/arrived', board: next, self })
+
+  const failStart = (err: Error) => (toast(`start: ${err.message}`), loading.fail(`start: ${err.message}`), unbuilt(err))
+
+  idle(started.tower.framed)
+
+  started.assets.loaded.then(({ models: m, kept, kit, declared: renderer }) => {
+    s.declared = renderer ?? undefined
+    checkWardrobe(m.catalogue)
+    s.models = m
+    s.chairKit = chairKit(m.desk.getObjectByName('chair')!)
+    s.catNames = (renderer?.settings.cats ?? {}) as CatNames
+    s.kit = kit
+    flyPlane(m.plane)
+    s.hands = makeHands(m)
+    fitHands(s.hands, camera.aspect)
+    s.saved = (kept as Kept | null)?.spot
+    s.muted = (kept as Kept | null)?.muted ?? false
+    s.seenShown = new Set((kept as Kept | null)?.seen)
+    primeSeenAs((kept as Kept | null)?.seen === undefined)
+    if ((kept as Kept | null)?.fps) toggleFps()
+    onModels()
+  }, failStart)
+
+  firstBuilt.then(() => built())
+
+  return { ready, boardArrived, failStart }
+}
+
+/** The live board and its errors, the first started under the loading screen once the models are in. */
+export function startFeed(started: FeedDeps): Feed {
+  const { tower, port } = started
+  const { camera, renderer, scene } = started.stage
+  const { boardNow } = nowOf(port)
+  const { hiring } = started.spawn
   const { renderPanel } = started.panels
   const { beginDrawing, frameScene } = started.frames
+  const { ready, boardArrived, failStart } = feedOf(started, onLoaded)
 
   /** The board's failure stays over the last board drawn, until the tower sends a board again. */
   function onBoardError(err: Error & { code: string }) {
@@ -55,9 +97,6 @@ export function startFeed(started: FeedDeps) {
     if (s.lost) hiring.dispatch({ type: 'lost' })
     renderPanel()
   }
-
-  /** `next` arrives: the building takes it once its floors' archives are read at its keys, planned then. */
-  const boardArrived = (next: Board, self: ShelfSelf | undefined) => port.dispatch({ type: 'board/arrived', board: next, self })
 
   /**
    * Boards that arrive while the models load or the first is built supersede one another: the latest is drawn once the
@@ -100,8 +139,6 @@ export function startFeed(started: FeedDeps) {
     }, failStart)
   }
 
-  const failStart = (err: Error) => (toast(`start: ${err.message}`), loading.fail(`start: ${err.message}`), unbuilt(err))
-
   /**
    * The first board under the loading screen: a paint so the screen shows each stage, the building, then every program
    * its first frame draws with compiled off the main thread (KHR_parallel_shader_compile), the scene set as that frame
@@ -123,55 +160,29 @@ export function startFeed(started: FeedDeps) {
 
   const painted = () => new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve)))
 
-  idle(tower.framed)
-
-  started.assets.loaded.then(({ models: m, kept, kit, declared: renderer }) => {
-    s.declared = renderer ?? undefined
-    checkWardrobe(m.catalogue)
-    s.models = m
-    s.chairKit = chairKit(m.desk.getObjectByName('chair')!)
-    s.catNames = (renderer?.settings.cats ?? {}) as CatNames
-    s.kit = kit
-    flyPlane(m.plane)
-    s.hands = makeHands(m)
-    fitHands(s.hands, camera.aspect)
-    s.saved = (kept as Kept | null)?.spot
-    s.muted = (kept as Kept | null)?.muted ?? false
-    s.seenShown = new Set((kept as Kept | null)?.seen)
-    primeSeenAs((kept as Kept | null)?.seen === undefined)
-    if ((kept as Kept | null)?.fps) toggleFps()
-    if (fixture) onFixtureBoard(fixture[0])
-    else onLoaded()
-  }, failStart)
-
   /** How waits ring and what you dismissed are known before the first board, which may come long before the models. */
-  if (FIXTURE === undefined) readViewer(tower.store.get).then((viewer) => (port.dispatch({ type: 'stored', viewer }), tower.subscribe(onLiveBoard), tower.onBoardError(onBoardError)))
+  readViewer(tower.store.get).then((viewer) => (port.dispatch({ type: 'stored', viewer }), tower.subscribe(onLiveBoard), tower.onBoardError(onBoardError)))
 
-  /** A fixture's boards, delivered by the door one after another: the first on load. */
-  const fixture = fixtureBoards()
-
-  let fixtureAt = 0
-
-  function advance() {
-    if (!fixture) throw new Error('advance works on a fixture board: open the page with ?board=')
-    const next = fixture[fixtureAt + 1]
-    if (!next) throw new Error(`the ${FIXTURE} fixture has ${fixture.length} board${fixture.length === 1 ? '' : 's'}, all delivered`)
-    fixtureAt++
-    onFixtureBoard(next)
+  const advance = () => {
+    throw new Error('advance works on a fixture board: open the page with ?board=')
   }
+
+  return { advance, ready }
+}
+
+/** What the fixture feed is started with: the feed's, and the fixture whose boards it delivers. */
+export type FixtureFeedDeps = FeedDeps & { fixture: Fixture }
+
+/** A fixture's boards, delivered by the door one after another (`advance`): the first once the models are in. */
+export function startFixtureFeed(started: FixtureFeedDeps): Feed {
+  const { port, fixture } = started
 
   function onFixtureBoard(next: Board) {
     port.dispatch({ type: 'board', board: next })
     boardArrived(next, undefined)
   }
 
-  let built: () => void
+  const { ready, boardArrived } = feedOf(started, () => onFixtureBoard(fixture.delivered().board))
 
-  let unbuilt: (err: Error) => void
-
-  const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
-
-  firstBuilt.then(() => built())
-
-  return { advance, ready }
+  return { advance: () => onFixtureBoard(fixture.advance()), ready }
 }

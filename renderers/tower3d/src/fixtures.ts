@@ -1,47 +1,41 @@
-import type { Board, Brief, Card } from './api.ts'
+import type { Board, Brief, Card, Tower } from './api.ts'
+import type { Clients } from './clients.ts'
 import { bytesOf, FILM_FILE } from './files.ts'
 import type { FixtureFile } from './fixture-file.ts'
-import { FIXTURE } from './fixture-name.ts'
+import { GAMES } from './games.ts'
 
 /**
  * A fixture board (`?board=<name>`): states the renderer draws with no host behind them and none of the real system's
  * text, read from `fixtures/<name>.json`, which `npm run tower3d:fixtures` builds with the bridge
- * (scripts/tower3d-fixtures.ts holds the scenarios). The file is fetched only on a fixture page, before the page
- * builds anything.
+ * (scripts/tower3d-fixtures.ts holds the scenarios). A fixture page is its own record (`fixtureTower3d`, system.ts):
+ * the file is its `fixture` resource, and the tower the page reads through answers from it.
  */
 
-export { FIXTURE }
+export type Fixture = Awaited<ReturnType<typeof startFixture>>
 
-const tower = window.tower
-
-async function readFixture(name: string): Promise<FixtureFile> {
+/** The fixture `name`'s file, and its boards as the door delivers them, one after another, the first on load. */
+export async function startFixture(name: string) {
   const res = await fetch(new URL(`fixtures/${name}.json`, import.meta.url))
   if (!res.ok) throw new Error(`no fixture board "${name}": fixtures/${name}.json answered ${res.status}. The fixtures are renderers/tower3d/fixtures/*.json, copied by npm run tower3d`)
-  return (await res.json()) as FixtureFile
+  const file = (await res.json()) as FixtureFile
+  let at = 0
+  return {
+    name,
+    file,
+    /** The board delivered last, with its floors' archived cards, newest first. */
+    delivered: () => file.boards[at],
+    /** The next board, delivered now. */
+    advance(): Board {
+      const next = file.boards[at + 1]
+      if (!next) throw new Error(`the ${name} fixture has ${file.boards.length} board${file.boards.length === 1 ? '' : 's'}, all delivered`)
+      at++
+      return next.board
+    },
+  }
 }
 
-const file = FIXTURE === undefined ? undefined : await readFixture(FIXTURE)
-
-/** The instant the fixture board was built at: the page's wall clock on it. */
-export const FIXTURE_AT = file && Date.parse(file.at)
-
-/** The fixture board's review threads, by `<project>/<id>` (`threadSlot`): what their files read. */
-export const FIXTURE_THREADS: Record<string, string> = file?.threads ?? {}
-
-/** The fixture board's drafts' texts, by `<project>/<id>`: what its notes read. */
-export const FIXTURE_DRAFTS: Record<string, string> = file?.drafts ?? {}
-
-/** The fixture board's games' texts, by `<project>/<id>`: what their marquees read. */
-export const FIXTURE_GAMES: Record<string, string> = file?.games ?? {}
-
-/** Each fixture worker's Changes, by session id. */
-export const FIXTURE_CHANGES: FixtureFile['changes'] = file?.changes ?? {}
-
-/** Each fixture board's archived cards, newest first: what `GET /archive/<project>` would serve with it. */
-const archives = new Map(file?.boards.map(({ board, archive }) => [board, archive]))
-
 /** A fixture tower's `tower.store`: kept in the page, so nothing the viewer's browser keeps reaches a fixture. */
-function storeInPage(): typeof tower.store {
+function storeInPage(): Tower['store'] {
   const kept = new Map<string, unknown>()
   const watchers = new Set<(key: string) => void>()
   return {
@@ -51,63 +45,9 @@ function storeInPage(): typeof tower.store {
   }
 }
 
-/** Where each fixture worker's thread's anchors stand among its Changes, by session id. */
-const FIXTURE_ANCHORS: FixtureFile['anchors'] = file?.anchors ?? {}
-
-/**
- * What a fixture answers a view's `get`: a worker's Changes as `changes/<id>` reads them, the same under every scope,
- * none for a worker without; where its thread's anchors stand as `reviews/anchors/<project>?card=<id>` reads them.
- */
-const gotAt = (path: string): unknown => {
-  const changes = /^changes\/([^?]+)/.exec(path)?.[1]
-  if (changes !== undefined) return FIXTURE_CHANGES[changes] ?? []
-  const card = /^reviews\/anchors\/[^?]+\?card=([^&]+)$/.exec(path)?.[1]
-  if (card !== undefined) return { states: FIXTURE_ANCHORS[decodeURIComponent(card)] ?? {} }
-  return undefined
-}
-
-/** A fixture's review thread as `collection/<project>/reviews/<id>` reads it, by its slot `<project>/<id>`. */
-const textAt = (path: string): string | undefined => {
-  const [, project, id] = /^collection\/([^/]+)\/reviews\/([^/]+)$/.exec(path) ?? []
-  return project === undefined ? undefined : FIXTURE_THREADS[`${project}/${decodeURIComponent(id)}`]
-}
-
-/**
- * The tower the views Tower 3D mounts read through: on a fixture board, one answering a worker's Changes, its review
- * thread and where the thread's anchors stand from the fixture, and keeping `store` in the page, with no tower behind
- * anything else.
- */
-export const viewTower: typeof tower =
-  FIXTURE === undefined
-    ? tower
-    : {
-        ...tower,
-        get: ((path: string) => {
-          const got = gotAt(path)
-          return got === undefined ? Promise.reject(new Error(`a fixture board answers no ${path}`)) : Promise.resolve(got)
-        }) as typeof tower.get,
-        text: (path: string) => {
-          const text = textAt(path)
-          return text === undefined ? Promise.reject(new Error(`a fixture board answers no ${path}`)) : Promise.resolve(text)
-        },
-        store: storeInPage(),
-        call: (() => Promise.reject(new Error('a fixture board has no tower behind it'))) as typeof tower.call,
-        run: () => Promise.reject(new Error('a fixture board has no tower behind it')),
-      }
-
-/** A fixture board has no host behind it: its streams are never opened, so monitors stay blank and desks stay open. */
-export const watchStream: typeof tower.watch = FIXTURE === undefined ? (...a) => tower.watch(...a) : () => () => {}
-
-/** The test pattern, fetched as the fixture page boots so it is at hand before any frame shows it. */
-const film = FIXTURE === undefined ? undefined : bytesOf(FILM_FILE).then((bytes) => new Blob([bytes], { type: 'video/webm' }))
-
-/** A fixture board's files are read from no host: every video it shows is the same test pattern, every image the same plot. */
-export const readBlob: typeof tower.blob =
-  FIXTURE === undefined ? (path) => tower.blob(path) : (path) => (path.endsWith('.webm') ? film! : fixturePlot())
-
-/** A floor's archive (`GET /archive/<project>`), read beside `board`: a fixture board's own on a fixture. */
-export const readArchive = (board: Board, project: string): Promise<Card[]> =>
-  FIXTURE === undefined ? tower.archive(project) : Promise.resolve(archives.get(board)!.filter((c) => c.project === project))
+const answersNo = (path: string) => Promise.reject(Object.assign(new Error(`a fixture board answers no ${path}`), { code: 'not_found' }))
+const noTower = () => Promise.reject(new Error('a fixture board has no tower behind it'))
+const notFound = (message: string) => Promise.reject(Object.assign(new Error(message), { code: 'not_found' }))
 
 /**
  * A fixture worker's saved conversations: one per session it ran as, each resuming the one before, the latest first.
@@ -128,13 +68,6 @@ function fixtureBriefs(c: Card): Brief[] {
   }).reverse()
 }
 
-/** A worker's saved conversations (`GET /conversations/<id>`), read beside `board`: a fixture worker's own, from its card. */
-export const readConversations = (board: Board, id: string): Promise<Brief[]> => {
-  if (FIXTURE === undefined) return tower.conversations(id)
-  const c = [...board.floors.flatMap((f) => f.cards), ...archives.get(board)!].find((c) => c.id === id)
-  return c ? Promise.resolve(fixtureBriefs(c)) : Promise.reject(new Error(`No session "${id}"`))
-}
-
 function fixturePlot(): Promise<Blob> {
   const cv = Object.assign(document.createElement('canvas'), { width: 900, height: 700 })
   const g = cv.getContext('2d')!
@@ -151,6 +84,71 @@ function fixturePlot(): Promise<Blob> {
   return new Promise((resolve) => cv.toBlob((blob) => resolve(blob!), 'image/png'))
 }
 
+/**
+ * The tower a fixture page reads through, with the live one's interface: what the fixture holds it answers (a worker's
+ * Changes and where its thread's anchors stand, the floors' origins as none, the review threads', drafts' and games'
+ * texts, each board's archive and its workers' conversations), `store` is kept in the page, its streams never open,
+ * every video it shows is the same test pattern and every image the same plot, and nothing is written anywhere.
+ */
+export function fixtureTower({ fixture, clients }: { fixture: Fixture; clients: Pick<Clients, 'DRAFTS'> }): Tower {
+  const live = window.tower
+  const { file } = fixture
+  const film = bytesOf(FILM_FILE).then((bytes) => new Blob([bytes], { type: 'video/webm' }))
+  const texts: Record<string, Record<string, string>> = { reviews: file.threads, [clients.DRAFTS]: file.drafts, [GAMES]: file.games }
+  const missing: Record<string, string> = { [clients.DRAFTS]: 'draft', [GAMES]: 'game' }
 
-/** The fixture's boards, in the order the door's `advance` delivers them. */
-export const fixtureBoards = (): Board[] | undefined => file?.boards.map(({ board }) => board)
+  const get = (path: string): Promise<unknown> => {
+    if (path === 'renderers') return (live.get as (path: string) => Promise<unknown>)(path)
+    if (path === 'origins') return Promise.resolve({})
+    const changes = /^changes\/([^?]+)/.exec(path)?.[1]
+    if (changes !== undefined) return Promise.resolve(file.changes[changes] ?? [])
+    const card = /^reviews\/anchors\/[^?]+\?card=([^&]+)$/.exec(path)?.[1]
+    if (card !== undefined) return Promise.resolve({ states: file.anchors[decodeURIComponent(card)] ?? {} })
+    return answersNo(path)
+  }
+
+  const text = (path: string): Promise<string> => {
+    const [, project, collection, encoded] = /^collection\/([^/]+)\/([^/]+)\/([^/]+)$/.exec(path) ?? []
+    if (project === undefined) return answersNo(path)
+    const id = decodeURIComponent(encoded)
+    const found = texts[collection]?.[`${project}/${id}`]
+    if (found !== undefined) return Promise.resolve(found)
+    if (collection === 'reviews') return answersNo(path)
+    return notFound(`No ${missing[collection] ?? 'item'} "${id}"`)
+  }
+
+  const conversations = (id: string): Promise<Brief[]> => {
+    const { board, archive } = fixture.delivered()
+    const c = [...board.floors.flatMap((f) => f.cards), ...archive].find((c) => c.id === id)
+    return c ? Promise.resolve(fixtureBriefs(c)) : Promise.reject(new Error(`No session "${id}"`))
+  }
+
+  const fromFile = () => {
+    throw new Error("a fixture page's boards come from its file: the fixture feed delivers them")
+  }
+
+  return {
+    ...live,
+    /**
+     * These pass to the live tower: they read the tower's own config and the sandbox's settings (the renderers it
+     * serves, this renderer's settings, the viewer's appearance, the stats), not a floor's data. So does `get`'s
+     * `renderers`.
+     */
+    renderer: live.renderer,
+    prefs: live.prefs,
+    stats: live.stats,
+    get: get as Tower['get'],
+    text,
+    store: storeInPage(),
+    call: noTower as Tower['call'],
+    run: noTower,
+    watch: () => () => {},
+    blob: (path) => (path.endsWith('.webm') ? film : fixturePlot()),
+    archive: (project) => Promise.resolve(fixture.delivered().archive.filter((c) => c.project === project)),
+    conversations,
+    recall: () => Promise.resolve(null),
+    remember: () => {},
+    subscribe: fromFile,
+    onBoardError: fromFile,
+  }
+}

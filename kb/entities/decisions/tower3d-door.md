@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/feed.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/frames.scenario.js", "hub/scripts/frames.panels.js", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
+  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/feed.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#startFixture", "hub/renderers/tower3d/src/fixtures.ts#fixtureTower", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/frames.scenario.js", "hub/scripts/frames.panels.js", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
 **Problem.** Agents build Tower 3D, and tested it by brute force: stubbing pointer lock, dispatching synthetic
@@ -54,8 +54,10 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   ([`FixtureFile`](ref:hub/renderers/tower3d/src/fixture-file.ts#FixtureFile), `renderers/tower3d/fixtures/<name>.json`)
   with the instant it was built at. A [test](ref:hub/test/tower3d-fixtures.test.ts) fails when the committed files
   differ from what the script writes, so a change to what the bridge derives regenerates them, and a fixture draws
-  what the board would while the page reaches nothing in `src/`. The page fetches the file only on a fixture page
-  ([`fixtureBoards`](ref:hub/renderers/tower3d/src/fixtures.ts#fixtureBoards)), and its wall clock is the fixture's
+  what the board would while the page reaches nothing in `src/`. A fixture page is its own record
+  (`fixtureTower3d`, system.ts): its `fixture` resource fetches the file
+  ([`startFixture`](ref:hub/renderers/tower3d/src/fixtures.ts#startFixture)), the tower it reads through answers from it
+  with the live one's interface ([`fixtureTower`](ref:hub/renderers/tower3d/src/fixtures.ts#fixtureTower)), and its wall clock is the fixture's
   instant ([`clock.ts`](ref:hub/renderers/tower3d/src/clock.ts)): an `?at` naming another is refused. Tower 3D lends
   that clock to the views it hosts as the kit's `now` ([`viewHosting`](ref:hub/renderers/tower3d/src/hosting.ts#viewHosting)),
   so a read a view stamps (the Changes') is as old on every load. Fixtures are
@@ -77,8 +79,8 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   as such. What the real clock decides is left out: toasts, which leave on a timer, and a read's `data-since`. A stage
   is taken once the panels hold still for 150 ms of real time; one still changing after 3 s carries an `error`, so a
   slow read shows as a failed step rather than a stray difference.
-  Handing a note to a desk reaches the sandbox's API, which knows no fixture session and refuses it, so that route
-  records the note still carried and puts it back.
+  Handing a note to a desk is a call the fixture's tower refuses (it has no tower behind it), so that route records
+  the note still carried and puts it back.
   On `leaving`, whose boards alternate between holding every subject a panel can show and holding none of them, the
   panel routes end with a stage pair per close: each panel opened on a board holding its subject
   (`<route>-before-leaving`), then the next board delivered (`<route>-left`), so the close a panel's subject leaving

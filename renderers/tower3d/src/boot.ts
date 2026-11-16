@@ -1,16 +1,17 @@
 import { startSystem } from 'braided'
 import { prefetch } from './files.ts'
-import { FIXTURE } from './fixture-name.ts'
 import { drop, fail } from './loading.ts'
 import type { Door } from './door.ts'
 
 /**
- * Tower 3D's entry: its system started (system.ts), the page its last resource. A resource that fails, and every one
- * that needs it, is said on the loading screen by name.
+ * Tower 3D's entry: its system started (system.ts), the page its last resource, from the live record or, on a fixture
+ * board (`?board=<name>`), the fixture's, which shows no loading screen. A resource that fails, and every one that
+ * needs it, is said on the loading screen by name.
  */
-if (FIXTURE !== undefined) drop()
+const board = new URLSearchParams(location.search).get('board')
+if (board !== null) drop()
 prefetch()
-const started = import('./system.ts').then(({ tower3d }) => startSystem(tower3d)).then(({ errors }) => {
+const started = import('./system.ts').then(({ liveTower3d, fixtureTower3d }) => startSystem(board === null ? liveTower3d : fixtureTower3d(board))).then(({ errors }) => {
   if (errors.size === 0) return
   const why = [...errors].map(([id, err]) => `${id}: ${err.message}`).join(' · ')
   fail(`start: ${why}`)

@@ -4,7 +4,6 @@ import { type } from '/lib/design.js'
 import { imagePath } from '/lib/markdown.js'
 import type { Card, Tower } from './api.ts'
 import { WORLD, base, shownHref, shownKey, shownTitle } from './cards.ts'
-import { FIXTURE, readBlob } from './fixtures.ts'
 
 /**
  * What a worker showed the user, painted for the world: a poster naming it, for markdown the page itself, typeset with
@@ -174,12 +173,12 @@ async function decode(blob: Blob) {
 }
 
 /** The images a markdown page served at `url` shows beside it, by `href`; one that can't be read is left out. */
-async function pageImages(tokens: Token[], url: string) {
+async function pageImages(tokens: Token[], url: string, blob: Tower['blob']) {
   const hrefs = new Set<string>()
   marked.walkTokens(tokens, (t) => void (t.type === 'image' && hrefs.add(t.href)))
   const read = [...hrefs].map(async (href): Promise<[string, HTMLCanvasElement][]> => {
     const path = imagePath(href, url)
-    return path ? [[href, await decode(await readBlob(path.slice(1)))]] : []
+    return path ? [[href, await decode(await blob(path.slice(1)))]] : []
   })
   const settled = await Promise.allSettled(read)
   return new Map(settled.flatMap((r) => (r.status === 'fulfilled' ? r.value : [])))
@@ -223,8 +222,8 @@ export function picturesOf(tower: Tower) {
   /**
    * A showing's picture, painted on first use: its poster; for markdown the page once its text arrives, and again with
    * its images; for an image the image fitted to the sheet, kept bare for the gallery too (`imageOf`); for a video its
-   * frames, the same two ways (`playFilms`). A fixture board
-   * has no host to read from, so its markdown stays a poster. A file gone since it was shown keeps its poster.
+   * frames, the same two ways (`playFilms`). A file that can't
+   * be read (gone since it was shown, or on a fixture board, which answers no markdown) keeps its poster.
    */
   function posterOf(c: Pick<Card, 'callsign'>, s: Shown) {
     const key = shownKey(s)
@@ -237,7 +236,7 @@ export function picturesOf(tower: Tower) {
     posters.set(key, texture)
     const current = () => posters.get(key) === texture
     const url = shownHref(s)
-    if (isMarkdown(s) && FIXTURE === undefined) {
+    if (isMarkdown(s)) {
       const typeset = async (md: string) => {
         const tokens = marked.lexer(md)
         const paint = (pictures: Map<string, HTMLCanvasElement>) => {
@@ -246,7 +245,7 @@ export function picturesOf(tower: Tower) {
           texture.needsUpdate = true
         }
         paint(new Map())
-        const pictures = await pageImages(tokens, url)
+        const pictures = await pageImages(tokens, url, tower.blob)
         if (pictures.size) paint(pictures)
       }
       read(tower.text(url.slice(1)).then(typeset, () => undefined))
@@ -258,7 +257,7 @@ export function picturesOf(tower: Tower) {
         texture.needsUpdate = true
         images.set(key, textureOf(image))
       }
-      read(readBlob(url.slice(1)).then(decode).then(hang, () => undefined))
+      read(tower.blob(url.slice(1)).then(decode).then(hang, () => undefined))
     }
     if (isVideo(s)) {
       const film = (video: HTMLVideoElement) => {
@@ -276,7 +275,7 @@ export function picturesOf(tower: Tower) {
         images.set(key, bare)
         films.set(key, { video, paint })
       }
-      read(readBlob(url.slice(1)).then(load).then(film, () => undefined))
+      read(tower.blob(url.slice(1)).then(load).then(film, () => undefined))
     }
     return texture
   }
