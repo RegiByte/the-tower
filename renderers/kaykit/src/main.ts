@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { MapControls } from 'three/examples/jsm/controls/MapControls.js'
-import { copyText } from '../../../src/shared/clipboard.ts'
+import { copyText } from '/lib/view.js'
 import { fit, PACKS, type Catalog } from './catalog.ts'
 import { loadAtlases } from './atlas.ts'
 import { build, cameraFor, type Assets, type Built } from './draw.ts'
