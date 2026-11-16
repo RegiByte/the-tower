@@ -122,8 +122,8 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 
 **The app loop.** The page's decisions live in one machine, `app` (the shared loop, [[machines]]), as the tower page's
 do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/renderers/tower3d/src/app.ts); its
-executors are in `main.ts`, where the DOM and the building are. Every panel kind moves through it but a filing
-cabinet's drawer, which still opens and closes itself through a bridge (`openSide`, `closeSide`).
+executors are in `main.ts`, where the DOM and the building are. Every panel kind moves through it; a filing
+cabinet's drawer still opens through a bridge (`openSide`), which shows the side its enter doesn't.
 - *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): what the building took (below), the panel open, attention, the view, the desk's tab,
   what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on), a replay, and
   what moves on its own (`motion`), what is aimed at and held (`aim`), whether walking has the mouse (`capture`), each
@@ -143,8 +143,8 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   with `tab/leave` and `tab/enter`); a tab entered again is entered again, so the logbook is read again.
 - *Leave and enter are tables by kind* ([`LEAVE`](ref:hub/renderers/tower3d/src/main.ts#LEAVE),
   [`ENTER`](ref:hub/renderers/tower3d/src/main.ts#ENTER), [`TAB_ENTER`](ref:hub/renderers/tower3d/src/main.ts#TAB_ENTER)),
-  total over `Panel['kind']`. An opener is a check and a `go`; a closer is a `go(undefined)`. The drawer's entries
-  are empty (`closesItself`, `opensItself`) and its opener still shows the side; the shell picker's leave is empty
+  total over `Panel['kind']`. An opener is a check and a `go`; a closer is a `go(undefined)`. The drawer's enter
+  is empty (`opensItself`), its opener showing the side, and its leave hides it; the shell picker's leave is empty
   and the side hides it; the elevator's are empty, since it draws nothing of its own (`renderElevator` shows the car's
   panel from where you stand). So every enter still hides the side and the picker (`sideClosed`), as
   [`deskEntered`](ref:hub/renderers/tower3d/src/main.ts#deskEntered) does. The reader's kinds share one enter and
@@ -183,21 +183,22 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   [`worldApplied`](ref:hub/renderers/tower3d/src/main.ts#worldApplied), the `world/apply` executor, rebuilds and
   reconciles the world and writes what it shows outside the panels, and dispatches nothing: it reads the db the
   handler left, with the panel still the one open before the board, as the world did before the panels close. Steps
-  run on the db the step before left (`steps`). `world/apply` dispatches nothing; what `redraw`, `desk/go` and
+  run on the db the step before left (`steps`). `world/apply` dispatches nothing; what `desk/go` and
   `shell/go` dispatch (a close, a cut, an arrival) is handled after the transition.
 - *A panel whose subject left closes in the board handler, not the draw.* The board handler closes the panel whose
   subject the board no longer holds ([`subjectLeft`](ref:hub/renderers/tower3d/src/app.ts#subjectLeft)): a desk's worker gone, a
   shell ended, a floor removed, a shelf entry, a kept item, a game or a review thread gone, a floor no longer keeping
-  drafts. A kept item deleted says so in a `toast` effect. What it reads through an extension's client (a floor's
+  drafts, a drawer its floor's archive no longer fills (`AppReads.drawersAt`, the archive's latest read), a picture
+  its gallery, derived with the plan, no longer hangs. An archive read landing with no board to take checks the same
+  (`archive/landed`), which only a drawer's subject can then fail. A kept item deleted says so in a `toast` effect. What it reads through an extension's client (a floor's
   review threads, whether it keeps drafts) is handed to the handlers once, as pure reads
   ([`AppReads`](ref:hub/renderers/tower3d/src/app.ts#AppReads)), so `app.ts` never reaches `shell()`. It drops what
   is pending that the board no longer holds (a tab of a worker gone, a showing withdrawn), so what a desk opens on is
   derived from the board it arrives on; the db keeps a showing's target, never a copy of it. A kept item whose file
   changed is entered again, so its body is read again (`drawn` names the `modifiedAt` it was read for); no draw
   reads a body or writes the db.
-- *What the board handler can't decide yet.* A drawer whose folder left and a picture that left its gallery (both the
-  archive read's) still close in their draw: the handler returns a `redraw`, drawing at once, only while one of them is
-  open. [`followCabinet`](ref:hub/renderers/tower3d/src/app.ts#followCabinet) is the handler's: it closes a game whose
+- *Nothing in the board flow draws at once.* Each close is the handler's, so the draw only writes the DOM, at the
+  next frame. [`followCabinet`](ref:hub/renderers/tower3d/src/app.ts#followCabinet) is the handler's: it closes a game whose
   cabinet the arcade no longer stands and frames again (`game/frame`) one a game kept since moved along.
 - *The plan is derived, the boards before it too.* The db keeps what the building's plan comes from, not the plan: the
   board, each floor's archive as read for it ([`archivedAt`](ref:hub/renderers/tower3d/src/archive.ts#archivedAt))
@@ -270,7 +271,8 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   - drops its close from the bridge closes the moved kinds' enters run;
   - records `tool:frames` before and after: state, panel markup and pictures identical, the events changed as the
     transitions say.
-  The drawer is the last to move, with P3; then the board handler's `redraw` goes, and `draw` is the only one.
+  The drawer moved last, with P3: its close is `subjectLeft`'s, the board handler's `redraw` is gone, and `draw` is
+  the only draw.
 
 **Alternatives considered.**
 - *esbuild's `--splitting`*: main becomes a real ES module chunk and native ESM tolerates cycles. It treats the
@@ -285,8 +287,7 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
 
 **Impact.** The start order is the graph, and a failure names its resource. The import-time effects left the leaf
 modules; `main.ts` keeps its own (its listeners, timers, the board's subscription) until later
-passes move them. Every panel changes state only through the app loop, and the draw writes nothing back, but the
-drawer and the picture, whose draws still close them. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
+passes move them. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`), it stays out of the panel union. Motion, aim and capture are in the db as well. What is left outside it
 is the walker, which the frames own, the door's mode and a pointer press.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.

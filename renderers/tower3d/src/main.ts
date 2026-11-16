@@ -520,7 +520,7 @@ function renderPanel() {
   if (!board || !panel) return
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
-    // The app closes a desk whose worker left once the building takes the board (`board-applied`): a draw before then draws nothing.
+    // The app closes a desk whose worker left once the building takes the board (`subjectLeft`): a draw before then draws nothing.
     if (!c) return
     $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), dottedNow(board), held, tower.framed)
     sawDesk(board, c)
@@ -560,7 +560,8 @@ function renderPanel() {
   if (panel.kind === 'drawer') {
     const f = board.floors.find((f) => f.id === panel.project)
     const d = drawersAt(panel.project)?.[panel.n]
-    if (!f || !d) return closeSide()
+    // The app closes a drawer its floor's archive no longer fills (`subjectLeft`).
+    if (!f || !d) return
     $('side').innerHTML = drawerSideHtml(f, d)
   }
   if (panel.kind === 'logbook') {
@@ -575,7 +576,7 @@ function renderPanel() {
   if (panel.kind === 'draft') {
     const d = s.draft!
     const f = board.floors.find((f) => f.id === d.project)
-    // The app closes the editor on a floor no longer keeping drafts once the building takes the board (`board-applied`).
+    // The app closes the editor on a floor no longer keeping drafts once the building takes the board (`subjectLeft`).
     if (!f || !draftsOf(f)) return
     $('draft-head').innerHTML = draftHeadHtml(f, d, held, Boolean(s.carrying))
     $('draft-note').innerHTML = d.conflict !== undefined ? draftNoteHtml : ''
@@ -584,7 +585,7 @@ function renderPanel() {
   if (panel.kind === 'thread') {
     const f = board.floors.find((f) => f.id === panel.project)
     // The view is handed the board while its thread's subject is on it; the app closes it once the building takes a
-    // board without it (`board-applied`).
+    // board without it (`subjectLeft`).
     if (!f || !reader.update(board)) return
     const worker = workerIn(f!, panel.checkout)
     $('doc-head').innerHTML = threadHeadHtml(f!, panel.checkout, worker?.onDuty ? worker : undefined)
@@ -600,13 +601,13 @@ function renderPanel() {
   }
   if (panel.kind === 'picture') {
     const picture = pictureOf(planNow().galleries, board, panel.id, panel.target)
-    // A picture's gallery is the archive read's, not the board's alone: its draw closes it until that read is an event.
-    if (!picture) return closeDoc()
+    // The app closes a picture its gallery no longer hangs once the building takes the board (`subjectLeft`).
+    if (!picture) return
     $('doc-head').innerHTML = pictureHeadHtml(picture.worker, picture.card?.onDuty ?? false, picture.shown, `#${hueOf(panel.id).getHexString()}`)
   }
   if (panel.kind === 'game') {
     const f = board.floors.find((f) => f.id === panel.project)
-    // The app closes a game no longer kept once the building takes the board (`board-applied`).
+    // The app closes a game no longer kept once the building takes the board (`subjectLeft`).
     if (!f || !gameItem([f], panel.project, panel.id)) return
     $('game-head').innerHTML = gameHeadHtml(f, panel.project, panel.id)
   }
@@ -1356,7 +1357,7 @@ const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => voi
   desk: focusLeft, shell: focusLeft, tv: focusLeft,
   floor: sideLeft, archive: sideLeft, directory: sideLeft,
   elevator: closesItself,
-  'shell-pick': closesItself, drawer: closesItself,
+  'shell-pick': closesItself, drawer: sideLeft,
   game: gameLeft, draft: draftLeft,
   stats: readerLeft, logbook: readerLeft, doc: readerLeft, kept: readerLeft, picture: readerLeft, thread: readerLeft,
 }
@@ -1396,7 +1397,7 @@ function drawPending() {
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
 const app = loop({
   state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
-  handlers: appHandlers({ planOf, clockMoves, archivesSettled, archivedAt, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
+  handlers: appHandlers({ planOf, clockMoves, archivesSettled, archivedAt, drawersAt, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
   execute: {
     ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
     announce: () => {},
@@ -1435,7 +1436,6 @@ const app = loop({
     asked: ({ ask }) => toast(`${ask.title}, asked by ${ask.cap}`, { label: 'Go', run: () => goToAsk(ask) }),
     'shown/arrived': ({ id, target, atDesk }) => shownArrives(id, target, atDesk),
     'game/frame': ({ project, id }) => frameCabinet(cabinetOf(planNow(), project, id)!),
-    redraw: () => renderPanel(),
     logbooks: () => freshLogbooks(boardNow()!),
     'replan/at': ({ until }, dispatch) => dispatch({ type: 'replan', at: Math.max(until, wallNow()) }),
     'desk/go': ({ id }) => toDesk(id),
