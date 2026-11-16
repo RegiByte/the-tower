@@ -19,6 +19,7 @@ export {
 export type {
   Executors,
   Handlers,
+  Listener,
   Loop,
   StateEffect,
   TimerEffect,
