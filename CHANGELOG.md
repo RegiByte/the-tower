@@ -12,6 +12,27 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.6.0
+
+Tower 3D starts as a system of resources, and the loop can be watched (#614, #615, #616, #617). Nothing to restart
+beyond the tower (`tower update` does it). API 2.7.
+
+- **Tower 3D's big screens show their picture from afar.** From the overview, a screen's frame could draw over part of
+  its picture, or all of it, depending on the order its materials were made.
+- **Tower 3D starts its long-lived parts in dependency order:** the extension clients, the lighting setting, the
+  stage, input, music, the terminal and the model loads, then the page. A part that fails to start is named on the
+  loading screen, with what it held back, and `tower3d.ready()` rejects with the same words. Nothing waits at the top
+  level of a module any more, so an import cycle can no longer hang the page silently at boot.
+- **For renderers:** a loop from `/lib/machine.js` gains `subscribe(listener)`, called with each event it handled and
+  the effects its handler returned, in the order handled; it returns the unsubscribe. A listener that throws leaves
+  the loop as it was and rejects on its own.
+- **For agents:** Tower 3D's door adds `tower3d.events(after?)`, the last 200 events its loops handled with their
+  effects, as plain data; a board in them reads as a short summary.
+- **For contributors:** `test:tower3d-boot` fails on any import cycle among Tower 3D's modules, naming them.
+  `tool:frames` draws canvases in software (Chrome's GPU text varied a few pixels between loads), keeps both walks
+  when a scenario does not repeat, and records a `panels` scenario: each panel route opened, worked and closed, with
+  a hash of the panel's markup and the events between stages (`record <label> panels`).
+
 ## v2.5.0
 
 Smoother Tower 3D, terminals sized to their pane, copy buttons that work everywhere, and a reviewer hired like any
