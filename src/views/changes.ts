@@ -62,7 +62,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
         readChanges({
           repos: (id, scope) => tower.get(changesPath(id, scope) as 'changes/<id>'),
           viewed: (key) => tower.store.get(key) as Promise<Record<string, string> | undefined>,
-          now: Date.now,
+          now: kit.now ?? Date.now,
         }),
       ),
       draw: () => draw(),
