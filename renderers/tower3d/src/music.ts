@@ -229,52 +229,61 @@ export const toneOf = (room: Room) => (room === 'roof' ? 7000 : 2400)
 /** When sixteenth `step` lands, from the song's start: the off-sixteenths a little late. */
 export const stepTime = (start: number, step: number) => start + step * SIXTEENTH + (step % 2 ? SWING * SIXTEENTH : 0)
 
-/** The music playing in this page: one, made on the first play, suspended while muted. */
 type Engine = { ctx: AudioContext; level: GainNode; tone: BiquadFilterNode; start: number; step: number }
-let engine: Engine | undefined
-let room: Room = 'inside'
-let ducked = false
 
-function boot(): Engine {
-  const ctx = new AudioContext()
-  const level = ctx.createGain()
-  level.gain.value = VOLUME * (ducked ? DUCKED : 1)
-  level.connect(ctx.destination)
-  const { play: playStep, tone } = band(ctx, level)
-  tone.frequency.value = toneOf(room)
-  const e: Engine = { ctx, level, tone, start: ctx.currentTime + 0.1, step: 0 }
-  setInterval(() => {
-    if (ctx.state !== 'running') return
-    const now = ctx.currentTime
-    if (stepTime(e.start, e.step) < now) e.step = Math.ceil((now - e.start) / SIXTEENTH)
-    for (; stepTime(e.start, e.step) < now + 0.2; e.step++) playStep(e.step, stepTime(e.start, e.step), room)
-  }, 25)
-  return e
+/** The music playing in this page: one band, made on the first play, suspended while muted. */
+export function startMusic() {
+  let engine: Engine | undefined
+  let room: Room = 'inside'
+  let ducked = false
+  let stepping: ReturnType<typeof setInterval> | undefined
+
+  function boot(): Engine {
+    const ctx = new AudioContext()
+    const level = ctx.createGain()
+    level.gain.value = VOLUME * (ducked ? DUCKED : 1)
+    level.connect(ctx.destination)
+    const { play: playStep, tone } = band(ctx, level)
+    tone.frequency.value = toneOf(room)
+    const e: Engine = { ctx, level, tone, start: ctx.currentTime + 0.1, step: 0 }
+    stepping = setInterval(() => {
+      if (ctx.state !== 'running') return
+      const now = ctx.currentTime
+      if (stepTime(e.start, e.step) < now) e.step = Math.ceil((now - e.start) / SIXTEENTH)
+      for (; stepTime(e.start, e.step) < now + 0.2; e.step++) playStep(e.step, stepTime(e.start, e.step), room)
+    }, 25)
+    return e
+  }
+
+  const playing = () => engine?.ctx.state === 'running'
+
+  return {
+    /** Starts or resumes the music: call it from a click or a key, or the browser keeps it silent. */
+    play: () => {
+      engine ??= boot()
+      return engine.ctx.resume()
+    },
+    pause: () => engine?.ctx.suspend(),
+    playing,
+    /** Where you are: the roof's music is the party's. */
+    setRoom: (next: Room) => {
+      if (next === room) return
+      room = next
+      engine?.tone.frequency.setTargetAtTime(toneOf(room), engine.ctx.currentTime, 0.8)
+    },
+    /** Softer while you're talking to a worker. */
+    duck: (on: boolean) => {
+      if (on === ducked) return
+      ducked = on
+      engine?.level.gain.setTargetAtTime(VOLUME * (on ? DUCKED : 1), engine.ctx.currentTime, 0.4)
+    },
+    /** The music's beat, counted from its start (zero until it starts); the wall clock's at its tempo while it's quiet. */
+    beatAt: (seconds: number) => (playing() ? Math.max(0, engine!.ctx.currentTime - engine!.start) * (BPM / 60) : seconds * (BPM / 60)),
+    stop: () => {
+      clearInterval(stepping)
+      return engine?.ctx.close()
+    },
+  }
 }
 
-/** Starts or resumes the music: call it from a click or a key, or the browser keeps it silent. */
-export function play() {
-  engine ??= boot()
-  return engine.ctx.resume()
-}
-
-export const pause = () => engine?.ctx.suspend()
-
-export const playing = () => engine?.ctx.state === 'running'
-
-/** Where you are: the roof's music is the party's. */
-export function setRoom(next: Room) {
-  if (next === room) return
-  room = next
-  engine?.tone.frequency.setTargetAtTime(toneOf(room), engine.ctx.currentTime, 0.8)
-}
-
-/** Softer while you're talking to a worker. */
-export function duck(on: boolean) {
-  if (on === ducked) return
-  ducked = on
-  engine?.level.gain.setTargetAtTime(VOLUME * (on ? DUCKED : 1), engine.ctx.currentTime, 0.4)
-}
-
-/** The music's beat, counted from its start (zero until it starts); the wall clock's at its tempo while it's quiet. */
-export const beatAt = (seconds: number) => (playing() ? Math.max(0, engine!.ctx.currentTime - engine!.start) * (BPM / 60) : seconds * (BPM / 60))
+export type Music = ReturnType<typeof startMusic>
