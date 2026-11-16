@@ -11,6 +11,7 @@ import type { Main } from './main.ts'
 import type { WorldDeps } from './building.ts'
 import type { ViewsDeps } from './views.ts'
 import type { SpawnDeps } from './spawn.ts'
+import type { HudDeps } from './hud.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
@@ -33,6 +34,7 @@ import { startToasts } from './toasts.ts'
  *   world     the building in the scene: its plan, its layers, what can be seen and picked (building.ts)
  *   views     the views the panels mount, and the layout they are drawn by (views.ts)
  *   spawn     hiring: the new-worker dialog, the hires in flight, the carried note handed over (spawn.ts)
+ *   hud       what is drawn over the world outside the panels: the HUD, the pause card, the settings (hud.ts)
  *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
@@ -99,8 +101,14 @@ const spawn = defineResource({
   halt: () => {},
 })
 
+const hud = defineResource({
+  dependencies: ['shell', 'lighting', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
+  start: async (started: HudDeps & { shell: Shell }) => (await import('./hud.ts')).startHud(started),
+  halt: () => {},
+})
+
 const main = defineResource({
-  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn'],
+  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud'],
   start: async (started: Main & { shell: Shell }) => {
     stageShown('models')
     ;(await import('./main.ts')).startMain(started)
@@ -108,4 +116,4 @@ const main = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, main }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, main }

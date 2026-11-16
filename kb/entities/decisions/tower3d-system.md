@@ -64,7 +64,8 @@
     "hub/renderers/tower3d/src/layers.ts#galleryAfter",
     "hub/renderers/tower3d/src/door.ts#Engine",
     "hub/renderers/tower3d/src/views.ts#startViews",
-    "hub/renderers/tower3d/src/spawn.ts#startSpawn"
+    "hub/renderers/tower3d/src/spawn.ts#startSpawn",
+    "hub/renderers/tower3d/src/hud.ts#startHud"
   ]
 }
 ---
