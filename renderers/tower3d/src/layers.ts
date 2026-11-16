@@ -16,6 +16,7 @@ import { buildVideoWall, videoWallKey } from './room.ts'
 import { buildRunning, runningKey, type Running } from './running.ts'
 import { buildPigeonhole, pigeonholeKey, type Pigeonhole } from './pigeonhole.ts'
 import { drawersAt } from './archive.ts'
+import type { Clients } from './clients.ts'
 import { buildFiling, filingKey, type Filing } from './filing.ts'
 import { s, type WallItem } from './state.ts'
 import type { Board, Card } from './api.ts'
@@ -28,7 +29,7 @@ import { wallNow } from './clock.ts'
  * goes, before it is discarded. Each is handed the plan being reconciled.
  */
 /** Puts an object on a level of the scene, out of wherever it hung before (`hangOn`). */
-export type Hang = (level: number, o: THREE.Object3D) => void
+export type ToLevel = (level: number, o: THREE.Object3D) => void
 
 export type Layer<S, T> = {
   slots: (p: Plan) => [key: string, slot: S][]
@@ -39,17 +40,17 @@ export type Layer<S, T> = {
   leave?: (item: T, key: string, p: Plan) => void
 }
 
-export function reconcile<S, T>(layer: Layer<S, T>, items: Map<string, T>, p: Plan, hang: Hang, discard: (o: THREE.Object3D) => void) {
+export function reconcile<S, T>(layer: Layer<S, T>, items: Map<string, T>, p: Plan, toLevel: ToLevel, discard: (o: THREE.Object3D) => void) {
   const wanted = layer.slots(p)
   for (const [key, slot] of wanted) {
     const old = items.get(key)
     if (old && layer.keep(old, slot, p)) {
-      hang(layer.level(slot, p), layer.root(old))
+      toLevel(layer.level(slot, p), layer.root(old))
       continue
     }
     if (old) discard(layer.root(old))
     const item = layer.make(slot, key, p)
-    hang(layer.level(slot, p), layer.root(item))
+    toLevel(layer.level(slot, p), layer.root(item))
     items.set(key, item)
   }
   const keys = new Set(wanted.map(([key]) => key))
@@ -89,7 +90,7 @@ const seatedAt = (desk: Desk, id: string) => {
 /** The dressing's slots of the desk a worker sits at, in that desk's states: a reviewer's are its author's. */
 export const slotsAt = (author: Card) => deskSlots(pickOf(author, new Date(wallNow()).getMonth(), s.kit!.prefabs[DESK_DRESS]).slots)
 
-export const desksAfter = (was: Board | undefined, hang: Hang): Layer<DeskAt, Desk> => ({
+export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reviewerOf: Clients['reviewerOf']): Layer<DeskAt, Desk> => ({
   slots: (p) => floors(p).flatMap((level) => level.desks.map((slot) => {
     const author = slot.beside ? level.desks.find((d) => d.card.id === slot.beside)!.card : slot.card
     return [slot.card.id, { slot, level: level.index, y: level.y, author }] as [string, DeskAt]
@@ -97,7 +98,7 @@ export const desksAfter = (was: Board | undefined, hang: Hang): Layer<DeskAt, De
   level: (at) => at.level,
   make({ slot, y, author }, _key, p) {
     const slots = slotsAt(author)
-    const desk = slot.meeting ? makeSeat(slot.card, s.models!, slots, slot.meeting.stand, slot.meeting.play) : slot.beside ? makeVisitor(slot.card, s.models!, slots) : makeDesk(slot.card, s.models!, slots)
+    const desk = slot.meeting ? makeSeat(slot.card, s.models!, slots, slot.meeting.stand, slot.meeting.play, reviewerOf) : slot.beside ? makeVisitor(slot.card, s.models!, slots, reviewerOf) : makeDesk(slot.card, s.models!, slots, reviewerOf)
     act(desk.group, { kind: 'desk', id: slot.card.id }, [])
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
     desk.group.position.set(slot.x, y, slot.z)
@@ -116,7 +117,7 @@ export const desksAfter = (was: Board | undefined, hang: Hang): Layer<DeskAt, De
       return false
     }
     situate(desk, slotsAt(author))
-    syncDesk(desk, slot.card)
+    syncDesk(desk, slot.card, reviewerOf)
     desk.group.position.set(slot.x, y, slot.z)
     desk.group.rotation.y = slot.turn * DEG
     return true
@@ -127,7 +128,7 @@ export const desksAfter = (was: Board | undefined, hang: Hang): Layer<DeskAt, De
       const level = p.levels.find((l) => l.y === desk.group.position.y)!.index
       const l = leaver(p, desk, level, seatedAt(desk, id), s.models!)
       s.leavers.add(l)
-      hang(level, l.group)
+      toLevel(level, l.group)
       if (kindOfDesk(desk) === 'beside') carryChair(l, desk)
     }
     s.arrivals.delete(id)
@@ -279,14 +280,14 @@ export const runningOn = (board: Board): Layer<{ level: FloorLevel; added: Added
   root: (item) => item.group,
 })
 
-/** Each floor's pigeonhole, while it keeps review threads, rebuilt when what it shows changes. */
-export const PIGEONHOLES: Layer<{ level: FloorLevel; key: string }, Pigeonhole> = {
-  slots: (p) => floors(p).filter((level) => level.pigeonhole).map((level) => [String(level.index), { level, key: pigeonholeKey(level) }]),
+/** Each floor's pigeonhole, while it keeps review threads, rebuilt when what it shows changes; what is new to a worker is `cardReviews`'. */
+export const pigeonholesOf = (cardReviews: Clients['cardReviews']): Layer<{ level: FloorLevel; key: string }, Pigeonhole> => ({
+  slots: (p) => floors(p).filter((level) => level.pigeonhole).map((level) => [String(level.index), { level, key: pigeonholeKey(level, cardReviews) }]),
   level: (at) => at.level.index,
-  make: ({ level }) => buildPigeonhole(level, level.pigeonhole!),
+  make: ({ level }) => buildPigeonhole(level, level.pigeonhole!, cardReviews),
   keep: (item, { key }) => item.key === key,
   root: (item) => item.group,
-}
+})
 
 /** Each floor's arcade sign, while its game room holds no cabinet. */
 export const ARCADE_SIGNS: Layer<{ level: FloorLevel; key: string }, ArcadeSign> = {

@@ -6,9 +6,7 @@ import { PIGEONHOLE, type Level, type PigeonholeSlot } from './layout.ts'
 import { tintOf } from './palette.ts'
 import { fitted } from './sign.ts'
 import { block, mesh, toon } from './toon.ts'
-import { shell } from './shell.ts'
-
-const { cardReviews } = shell().clients
+import type { Clients } from './clients.ts'
 
 type FloorLevel = Extract<Level, { kind: 'floor' }>
 
@@ -22,22 +20,22 @@ const SHEETS = 6
 export type Pigeonhole = { group: THREE.Group; key: string }
 
 /** What a slot says and how: its checkout, its notes, and how many are new to the worker on duty there. */
-const slotsOf = (level: FloorLevel, slot: PigeonholeSlot) =>
+const slotsOf = (level: FloorLevel, slot: PigeonholeSlot, cardReviews: Clients['cardReviews']) =>
   slot.threads.map((t) => {
     const worker = workerIn(level.floor, t.checkout)
     return { ...t, unseen: worker?.onDuty ? (cardReviews(worker)?.unseen ?? 0) : 0 }
   })
 
 /** What the rack shows: rebuilt only when this changes. */
-export const pigeonholeKey = (level: FloorLevel) =>
-  level.pigeonhole ? JSON.stringify([level.pigeonhole.x, level.pigeonhole.z, level.y, tintOf(level.floor), level.pigeonhole.more, slotsOf(level, level.pigeonhole)]) : ''
+export const pigeonholeKey = (level: FloorLevel, cardReviews: Clients['cardReviews']) =>
+  level.pigeonhole ? JSON.stringify([level.pigeonhole.x, level.pigeonhole.z, level.y, tintOf(level.floor), level.pigeonhole.more, slotsOf(level, level.pigeonhole, cardReviews)]) : ''
 
 /**
  * A floor's pigeonhole on the control room's outer wall: a wooden rack, a slot per checkout's review thread with a
  * sheet in it per note, its label below it (the checkout, how many notes, how many are new to its worker), each slot
  * its own `thread` act. Labels are one canvas over the rack's face.
  */
-export function buildPigeonhole(level: FloorLevel, slot: PigeonholeSlot): Pigeonhole {
+export function buildPigeonhole(level: FloorLevel, slot: PigeonholeSlot, cardReviews: Clients['cardReviews']): Pigeonhole {
   const { columns, rows, cell, height, depth, bottom } = PIGEONHOLE
   const width = columns * cell
   const tall = rows * height
@@ -72,7 +70,7 @@ export function buildPigeonhole(level: FloorLevel, slot: PigeonholeSlot): Pigeon
   g.fillText(total ? `${total} thread${total === 1 ? '' : 's'}${slot.more ? ` · ${slot.more} more in the console` : ''}` : 'no threads yet', W - m(0.1), m((HEADER - 0.04) / 2))
   g.textAlign = 'left'
 
-  slotsOf(level, slot).forEach((t, i) => {
+  slotsOf(level, slot, cardReviews).forEach((t, i) => {
     const col = i % columns
     const row = Math.floor(i / columns)
     const x = -width / 2 + (col + 0.5) * cell
@@ -104,5 +102,5 @@ export function buildPigeonhole(level: FloorLevel, slot: PigeonholeSlot): Pigeon
   group.add(face)
   group.position.set(slot.x, level.y, slot.z)
   group.rotation.y = Math.PI / 2
-  return { group, key: pigeonholeKey(level) }
+  return { group, key: pigeonholeKey(level, cardReviews) }
 }

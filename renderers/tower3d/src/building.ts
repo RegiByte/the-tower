@@ -30,7 +30,7 @@ import { wallNow } from './clock.ts'
 import { historyOf, type Archived, readArchives } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
-import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, PIGEONHOLES, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
+import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, pigeonholesOf, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
 import { noteTitle, pruneNoteTitles } from './notes.ts'
 import { SCREEN, pruneGameTitles } from './arcade.ts'
 import { pruneKeptTitles } from './kept.ts'
@@ -56,7 +56,7 @@ export type World = ReturnType<typeof startWorld>
  * app took, the caches of what can be seen, bumped into and picked, and the camera's flights.
  */
 export function startWorld(started: WorldDeps) {
-  const { draftItem, draftsOf, cardReviews, floorThreadsOf, keepsThreads: floorKeepsThreads } = started.clients
+  const { draftItem, draftsOf, cardReviews, floorThreadsOf, keepsThreads: floorKeepsThreads, reviewerOf } = started.clients
   const { camera, scene } = started.stage
   const { port } = started
   const { toast } = started.toasts
@@ -115,6 +115,8 @@ export function startWorld(started: WorldDeps) {
   /** Brings `layer`'s items in `items` in step with the plan as it stands now. */
   const reconcile = <S, T>(layer: SceneLayer<S, T>, items: Map<string, T>) => reconcileLayer(layer, items, planNow(), hang, discard)
 
+  const pigeonholes = pigeonholesOf(cardReviews)
+
   /** What changes the building's shape: shell titles and limit readings are redrawn on their own. */
   const structureKey = (pl: Plan, b: Board) => JSON.stringify([
     pl.width, pl.depth, b.hostUp, new Date(wallNow()).getMonth(),
@@ -127,7 +129,7 @@ export function startWorld(started: WorldDeps) {
   function rebuildWorld() {
     if (s.world) discard(s.world.group)
     s.rebuilds++
-    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!)
+    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!, draftsOf)
     scene.add(s.world.group)
     for (const level of planNow().levels) fillLayer(s.kit!, onLevel(scene, level.index).zones, zonesPlaced(s.kit!, level))
     for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
@@ -305,7 +307,7 @@ export function startWorld(started: WorldDeps) {
     if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
     if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today))
     setShellTitles(s.world!, next.shells)
-    reconcile(desksAfter(was, hang), s.desks)
+    reconcile(desksAfter(was, hang, reviewerOf), s.desks)
   }
 
   function worldFurnished(was: Board | undefined) {
@@ -315,7 +317,7 @@ export function startWorld(started: WorldDeps) {
     seatChairs()
     reconcile(WALLS, s.walls)
     reconcile(runningOn(next), s.running)
-    reconcile(PIGEONHOLES, s.pigeonholes)
+    reconcile(pigeonholes, s.pigeonholes)
     reconcile(ARCADE_SIGNS, s.arcadeSigns)
     reconcile(FILINGS, s.filings)
     readArchives(next)
