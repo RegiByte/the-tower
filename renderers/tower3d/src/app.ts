@@ -11,7 +11,7 @@
  */
 import { attendNext, type AttendEvent, type AttendOut, type Attending } from '/lib/attend.js'
 import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
-import { subjectAt, type Lines } from '/lib/board.js'
+import { subjectAt, type Lines, type Subject } from '/lib/board.js'
 import { STATS_ALL, type Stats } from '/lib/stats.js'
 import { askTransitions, cardsOf, findCard, pictureOf, shownKey, transitions } from './cards.ts'
 import { gameItem } from './games.ts'
@@ -201,6 +201,10 @@ export type AppEvent =
   | { type: 'let-go' }
   /** The held verb's ring filled: the frame that saw it runs the verb, as a key does, once this is handled. */
   | { type: 'hold-filled' }
+  /** A view mounted in a panel changed what it draws. */
+  | { type: 'views/changed' }
+  /** A view mounted in a panel handed `subject` to be placed (the kit's `display`). */
+  | { type: 'display'; subject: Subject | string }
 
 export type AppEffect =
   | AttendOut
@@ -249,6 +253,8 @@ export type AppEffect =
   | { type: 'draw' }
   /** Focus on the first element `selector` names once the panels are drawn. */
   | { type: 'focus'; selector: string }
+  /** `subject` placed: a worker's lines in its desk's Changes, anything else said in a toast. */
+  | { type: 'display'; subject: Subject | string }
   /** `event` dispatched, once this transition's effects have run: what a cut or a flight fires as it ends. */
   | { type: 'fire'; event: AppEvent }
   /** You stand at `spot` on `level`, the camera at your eyes, the HUD and the elevator's panel drawn for where you are. */
@@ -628,5 +634,7 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   },
   unlock: (db) => [into(withCapture(db, { still: false })), UNLOCK],
   'let-go': (db) => [into(withCapture(db, { still: true })), UNLOCK],
+  'views/changed': () => [DRAW],
+  display: (_, { subject }) => [{ type: 'display', subject }],
   arrived: (db, { at }) => (at.kind === 'ask' ? [...went(db, { kind: 'floor', id: at.project, tray: undefined }), { type: 'toast', text: at.said }] : [{ type: 'arrived', at }]),
 })
