@@ -293,7 +293,10 @@ function historyReads(board: Board, archived: Archived) {
   return { seats: buildingSeats(histories), galleries: new Map([...histories].map(([id, history]) => [id, galleryOf(history)])) }
 }
 
-/** The plan last derived, and what from: the same board, archives and instant give the same plan. */
+/**
+ * The plan last derived, and what from. The building takes a fresh archive snapshot and instant with every board and
+ * replan, so the plan is derived once for each of those and reused by every read until the next.
+ */
 let planned: { board: Board; archived: Archived; at: number; plan: Plan } | undefined
 
 /**
@@ -420,10 +423,10 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   const asked = askTransitions(was, next).began.filter((a) => !heed().dismissed.has(a.key))
   s.boards++
   s.board = next
-  s.self = at
-  desk.update(next)
   s.archived = archivedAt(next)
   s.plannedAt = wallNow()
+  s.self = at
+  desk.update(next)
   celebrate(was, next)
   if (began.length) s.waitedAt = s.simNow
   for (const a of asked) toast(`${a.title}, asked by ${a.cap}`, { label: 'Go', run: () => goToAsk(a) })
