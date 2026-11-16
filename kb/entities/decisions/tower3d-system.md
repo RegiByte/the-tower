@@ -56,8 +56,9 @@
     "hub/renderers/tower3d/src/port.ts#startPort",
     "hub/renderers/tower3d/src/archive.ts#settledArchives",
     "hub/renderers/tower3d/src/app.ts#Building",
-    "hub/renderers/tower3d/src/main.ts#worldApplied",
-    "hub/renderers/tower3d/src/main.ts#planOf",
+    "hub/renderers/tower3d/src/building.ts#worldRebuilt",
+    "hub/renderers/tower3d/src/building.ts#worldFurnished",
+    "hub/renderers/tower3d/src/building.ts#planOf",
     "hub/renderers/tower3d/src/archive.ts#archivedAt",
     "hub/renderers/tower3d/src/layers.ts#desksAfter",
     "hub/renderers/tower3d/src/layers.ts#galleryAfter",
@@ -186,8 +187,11 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   firework for each turn finished, `waits/began` for the lamps, an `asked` toast for each ask begun and not dismissed,
   `world/apply`, each showing arrived (opened on its tab at its open desk), the replay ended if its desk left, the
   panel closes below, `logbooks` and `elevator`, and the desk or shell pending gone to once the plan stands it.
-  [`worldApplied`](ref:hub/renderers/tower3d/src/main.ts#worldApplied), the `world/apply` executor, rebuilds and
-  reconciles the world and writes what it shows outside the panels, and dispatches nothing: it reads the db the
+  The `world/apply` executor has the `world` resource rebuild and reconcile the building and write what it shows
+  outside the panels, in two steps with the hires told of the board between them, as the stations they open are
+  reconciled after the desks ([`worldRebuilt`](ref:hub/renderers/tower3d/src/building.ts#worldRebuilt),
+  [`worldFurnished`](ref:hub/renderers/tower3d/src/building.ts#worldFurnished)); the desk's views, the viewer's
+  record, a draft open in the editor and the HUD are told by the executor around them. It dispatches nothing: it reads the db the
   handler left, with the panel still the one open before the board, as the world did before the panels close. Steps
   run on the db the step before left (`steps`). `world/apply` dispatches nothing; what `desk/go` and
   `shell/go` dispatch (a close, a cut, an arrival) is handled after the transition.
@@ -208,7 +212,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   cabinet the arcade no longer stands and frames again (`game/frame`) one a game kept since moved along.
 - *The plan is derived, the boards before it too.* The db keeps what the building's plan comes from, not the plan: the
   board, each floor's archive as read for it ([`archivedAt`](ref:hub/renderers/tower3d/src/archive.ts#archivedAt))
-  and the wall time it was planned at; [`planOf`](ref:hub/renderers/tower3d/src/main.ts#planOf) derives the plan,
+  and the wall time it was planned at; [`planOf`](ref:hub/renderers/tower3d/src/building.ts#planOf) derives the plan,
   memoized on the identity of those three, not on their value: each board taken brings a fresh snapshot and instant,
   and each replan a fresh instant, so the memo misses then, as the stored plan was rebuilt then, and serves every read until the next; it is handed to the handlers as a read (`AppReads.planOf`). The archive is a snapshot taken with the board: read live, the standing board's archive
   goes undefined once a newer board's read lands, and its plan would lose its seats while that board waits. What

@@ -18,7 +18,7 @@
     "hub/renderers/tower3d/src/main.ts#openGame",
     "hub/renderers/tower3d/src/main.ts#gameEntered",
     "hub/renderers/tower3d/src/app.ts#followCabinet",
-    "hub/renderers/tower3d/src/main.ts#frameAside",
+    "hub/renderers/tower3d/src/building.ts#frameAside",
     "hub/renderers/tower3d/src/ui.ts#gameHtml",
     "hub/src/shared/titles.ts",
     "hub/src/tower/http.ts#collectionItem",
@@ -62,7 +62,7 @@ meaning by one renderer, with no change to the core.
   id}` offers E play. The panel takes the right half of the screen (head: title, keeper, ↗ to play it in a browser
   tab, ✕); the body is `<iframe sandbox="allow-scripts allow-pointer-lock">` on
   `/collection/<project>/games/<id>`, focused at once. The camera flies to face the cabinet straight on in the
-  left half of the view ([`frameAside`](ref:hub/renderers/tower3d/src/main.ts#frameAside)). The music pauses and
+  left half of the view ([`frameAside`](ref:hub/renderers/tower3d/src/building.ts#frameAside)). The music pauses and
   nothing restarts it while a game is open (B unmutes without playing); closing (✕, a click on the world, Esc when the page has the keys) flies
   home and resumes it unless muted. While the game has focus the page gets no keys, so ✕ is the way out. A
   game kept meanwhile moves every cabinet along: the camera follows the open game's cabinet, and a game pushed off the
