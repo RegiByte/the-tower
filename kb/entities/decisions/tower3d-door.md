@@ -22,7 +22,8 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   door injects the same. `capture()` stands in for pointer lock. Building keys go through one `onKey`, which the
   door's `key()` calls.
 - A frame is `update(dt)` then `render()` over a simulated clock that every hold, flight, fade and animation reads.
-  `step(n)` stops it and runs n frames; `?stepped` starts it stopped. One seeded `random` (`?seed=`) replaces
+  `step(n)` stops it and runs n frames, and draws the panels a transition asked for, as a real frame does
+  ([[tower3d-system]]); `?stepped` starts it stopped. One seeded `random` (`?seed=`) replaces
   `Math.random` wherever chance reaches a frame. `?at=<ISO time>` pins the wall clock (`clock.ts`), so repeats hold
   on any day.
 - `window.tower3d` is typed and present from the page's first script, holding only `ready` until the page's
@@ -33,13 +34,13 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   first board is built and rejects with why a start failed ([`failStart`](ref:hub/renderers/tower3d/src/main.ts#failStart),
   [[tower3d-start]]), so a check fails at once on a file that would not load. The door plays no music, rings nothing
   and never stores the walker's spot.
-- `events()` is what Tower 3D's machines did: the last 200 events its loops handled (`seeing`, `hiring`, `spawning`,
+- `events()` is what Tower 3D's machines did: the last 200 events its loops handled (`app`, `hiring`, `spawning`,
   `statsPolling` in `main.ts`, `archives` in `archive.ts`), each with the effects its handler returned and `at`, the
   simulated clock, kept by [`eventRecord`](ref:hub/renderers/tower3d/src/record.ts#eventRecord) through each loop's
   `subscribe` ([[machines]]), so an effect a handler forgot (a draw) shows as missing. The record keeps references and
   makes them plain only when read ([`plain`](ref:hub/renderers/tower3d/src/record.ts#plain)): a Set, Map, Date or
   three.js object comes through `drive --eval`'s JSON as a tagged object (`{ $set: [...] }`, `{ $three: type, name }`)
-  rather than `{}`. A board anywhere in an event or effect (a `board` event, the board a `seeing` state holds) is kept
+  rather than `{}`. A board anywhere in an event or effect (a `board` event, the board the `app` state's attention holds) is kept
   only as its summary, `{ $board, floors, cards, waiting }`, numbered so the same board reads the same in two records:
   the record is always on, in the user's own Tower 3D, and a board is a fresh tree on each arrival, so keeping them
   would hold the last 200 events' boards alive. Each record is numbered, and `events(n)` answers only those after `n`,
