@@ -7,7 +7,7 @@ import { tower } from './api.ts'
 import { type SpawnForm, spawnCall, spawnDefaults } from './cards.ts'
 import { loop } from '/lib/machine.js'
 import { floorSignHtml } from './ui.ts'
-import { STATIONS, reconcile } from './layers.ts'
+import { STATIONS } from './layers.ts'
 import { noteText } from './notes.ts'
 import { s } from './state.ts'
 import type { Toasts } from './toasts.ts'
@@ -32,7 +32,7 @@ export function startSpawn(started: SpawnDeps) {
   const { port } = started
   const { toast, offered } = started.toasts
   const { events } = started
-  const { discard, planNow, floorOf, drop } = started.world
+  const { reconcile, planNow, floorOf, drop } = started.world
   const { boardNow, unlock } = nowOf(port)
 
   /** The drafts collection over the renderer API. */
@@ -155,7 +155,7 @@ export function startSpawn(started: SpawnDeps) {
       },
       open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
       toast: ({ text }) => toast(text),
-      draw: () => boardNow() && reconcile(STATIONS, s.stations, planNow(), discard),
+      draw: () => boardNow() && reconcile(STATIONS, s.stations),
     },
   })
 

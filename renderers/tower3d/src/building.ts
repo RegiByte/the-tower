@@ -30,7 +30,7 @@ import { wallNow } from './clock.ts'
 import { historyOf, type Archived, readArchives } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
-import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, PIGEONHOLES, STATIONS, WALLS, desksAfter, galleryAfter, reconcile, runningOn, slotsAt } from './layers.ts'
+import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, PIGEONHOLES, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
 import { noteTitle, pruneNoteTitles } from './notes.ts'
 import { SCREEN, pruneGameTitles } from './arcade.ts'
 import { pruneKeptTitles } from './kept.ts'
@@ -109,6 +109,12 @@ export function startWorld(started: WorldDeps) {
 
   const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTexture))
 
+  /** Puts `o` on level `index` of the building, out of wherever it hung before. */
+  const hang = (index: number, o: THREE.Object3D) => hangOn(scene, index, o)
+
+  /** Brings `layer`'s items in `items` in step with the plan as it stands now. */
+  const reconcile = <S, T>(layer: SceneLayer<S, T>, items: Map<string, T>) => reconcileLayer(layer, items, planNow(), hang, discard)
+
   /** What changes the building's shape: shell titles and limit readings are redrawn on their own. */
   const structureKey = (pl: Plan, b: Board) => JSON.stringify([
     pl.width, pl.depth, b.hostUp, new Date(wallNow()).getMonth(),
@@ -123,7 +129,7 @@ export function startWorld(started: WorldDeps) {
     s.rebuilds++
     s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!)
     scene.add(s.world.group)
-    for (const level of planNow().levels) fillLayer(s.kit!, onLevel(level.index).zones, zonesPlaced(s.kit!, level))
+    for (const level of planNow().levels) fillLayer(s.kit!, onLevel(scene, level.index).zones, zonesPlaced(s.kit!, level))
     for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
     const built = s.world
     for (const b of s.world.bookcases) {
@@ -159,7 +165,7 @@ export function startWorld(started: WorldDeps) {
    */
   function dressSides(was: Board | undefined) {
     for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)))
-    reconcile(galleryAfter(was), s.pictures, planNow(), discard)
+    reconcile(galleryAfter(was), s.pictures)
     keepPosters(new Set([...[...s.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...s.pictures.keys()]))
   }
 
@@ -268,7 +274,7 @@ export function startWorld(started: WorldDeps) {
         }),
       ]
     })
-    placed.forEach((list, i) => fillLayer(s.kit!, onLevel(i).dressing, list))
+    placed.forEach((list, i) => fillLayer(s.kit!, onLevel(scene, i).dressing, list))
     for (const root of s.levels.slice(placed.length)) fillLayer(s.kit!, root.dressing, [])
   }
 
@@ -279,7 +285,7 @@ export function startWorld(started: WorldDeps) {
       const level = planNow().levels[i]
       const at = level?.kind === 'floor' ? emptyChairs(level).map((pl) => ({ x: pl.x, y: level.y, z: pl.z, turn: pl.turn })) : []
       s.chairs[i] ??= makeChairs()
-      hangOn(i, s.chairs[i].group)
+      hang(i, s.chairs[i].group)
       placeChairs(s.chairs[i], s.chairKit!, at)
     }
   }
@@ -299,23 +305,23 @@ export function startWorld(started: WorldDeps) {
     if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
     if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today))
     setShellTitles(s.world!, next.shells)
-    reconcile(desksAfter(was), s.desks, planNow(), discard)
+    reconcile(desksAfter(was, hang), s.desks)
   }
 
   function worldFurnished(was: Board | undefined) {
     const next = boardNow()!
-    reconcile(STATIONS, s.stations, planNow(), discard)
+    reconcile(STATIONS, s.stations)
     dressLevels(next)
     seatChairs()
-    reconcile(WALLS, s.walls, planNow(), discard)
-    reconcile(runningOn(next), s.running, planNow(), discard)
-    reconcile(PIGEONHOLES, s.pigeonholes, planNow(), discard)
-    reconcile(ARCADE_SIGNS, s.arcadeSigns, planNow(), discard)
-    reconcile(FILINGS, s.filings, planNow(), discard)
+    reconcile(WALLS, s.walls)
+    reconcile(runningOn(next), s.running)
+    reconcile(PIGEONHOLES, s.pigeonholes)
+    reconcile(ARCADE_SIGNS, s.arcadeSigns)
+    reconcile(FILINGS, s.filings)
     readArchives(next)
     dressAllPapers()
-    reconcile(DANCE, s.dance, planNow(), discard)
-    reconcile(GUESTS, s.guests, planNow(), discard)
+    reconcile(DANCE, s.dance)
+    reconcile(GUESTS, s.guests)
     if (!was && primeSeen) for (const { key } of everyShown(next)) s.seenShown.add(key)
     dressSides(was)
     pruneNoteTitles(next.floors)
@@ -487,13 +493,13 @@ export function startWorld(started: WorldDeps) {
     syncNotes()
   }
 
-  const syncNotes = () => boardNow() && reconcile(NOTES, s.notes, planNow(), discard)
+  const syncNotes = () => boardNow() && reconcile(NOTES, s.notes)
 
-  const syncCabinets = () => boardNow() && reconcile(CABINETS, s.cabinets, planNow(), discard)
+  const syncCabinets = () => boardNow() && reconcile(CABINETS, s.cabinets)
 
   /** Settles once the first board's building is pictured, the start's last wait (`ready`). */
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { directory, screenDistance, boxesHere, here, discard, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs }
+  return { directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs }
 }

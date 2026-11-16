@@ -14,7 +14,7 @@ import { DESK, carBox, inside, levelHeight, levelOfCard, levelY } from './layout
 import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
-import { hangOn, levelOf, levelsShown, showLevels } from './levels.ts'
+import { levelOf, levelsShown, showLevels } from './levels.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { paintScreens } from './screens.ts'
 import { isVideo, playFilms } from './showing.ts'
@@ -55,7 +55,7 @@ export function startFrames(started: FramesDeps) {
   const { move, takeTurn } = started.input
   const { beatAt, duck, setRoom } = started.music
   const { boardNow, captured, panelNow, panelAs, viewNow, motionNow, heed, aimNow } = nowOf(port)
-  const { screenDistance, boxesHere, here, discard, planNow, ease, riddenFor, DOORS_SHUT, floorY, pick, floorOf, carried } = started.world
+  const { screenDistance, boxesHere, here, discard, hang, planNow, ease, riddenFor, DOORS_SHUT, floorY, pick, floorOf, carried } = started.world
   const { renderElevator } = started.hud
   const { aimAt, offerNothing } = started.navigation
   const { run, tickPet } = started.panels
@@ -288,7 +288,7 @@ export function startFrames(started: FramesDeps) {
       else if (cat.following) tagAlong(cat, planNow(), s.me, dt, t)
       else if (cat.returning) cat.returning = !steer(cat, planNow(), place.level, place, 0.05, CAT_SPEED, dt, t)
       else roam(cat, place, levelY(place.level), t)
-      hangOn(cat.level, cat.root)
+      hang(cat.level, cat.root)
     }
   }
 
