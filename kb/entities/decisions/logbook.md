@@ -18,7 +18,7 @@
     "hub/renderers/tower3d/src/ui.ts#drawerSideHtml",
     "hub/renderers/tower3d/src/main.ts#replay",
     "hub/renderers/tower3d/src/main.ts#mountDeskScreen",
-    "hub/renderers/tower3d/src/main.ts#dressReplays",
+    "hub/renderers/tower3d/src/building.ts#dressReplays",
     "hub/renderers/tower3d/src/main.ts#openLogbook",
     "hub/renderers/tower3d/src/screens.ts#replayTexture",
     "hub/renderers/tower3d/src/archive.ts#readArchives",
@@ -58,7 +58,7 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   last screen in the panel, read-only (`screen/<session>`, which the tower rebuilds from its log), sepia and stamped
   with its time ([`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen)), and on the desk's
   monitor in the world ([`replayTexture`](ref:hub/renderers/tower3d/src/screens.ts#replayTexture),
-  [`dressReplays`](ref:hub/renderers/tower3d/src/main.ts#dressReplays)), where it stays after the panel closes until
+  [`dressReplays`](ref:hub/renderers/tower3d/src/building.ts#dressReplays)), where it stays after the panel closes until
   live is chosen again or the worker leaves. A replay is the session's last screen, not a playback over time: the API
   serves a screen rebuilt from the whole log and has no read of the screen at a time. Since Claude runs in the
   alternate screen ([[fullscreen-tui]]), the last screen is its final frame before it left to exit

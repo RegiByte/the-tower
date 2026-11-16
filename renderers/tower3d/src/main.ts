@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import type { Deleted, Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, VerbAction } from '/lib/extension.js'
-import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
-import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, sessionWhen, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
+import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reviewAction, type Act, type ActOf, type ByKind, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
+import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText, markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
@@ -13,66 +13,54 @@ import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { wireSpawn } from '/lib/spawn.js'
 import { hiringHandlers, noHires } from './hiring.ts'
-import { defaultLimits, projectOfKey, type Lines, type Subject } from '/lib/board.js'
+import { projectOfKey, type Lines, type Subject } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, isAsk, loudest, nextAttended, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, isAsk, loudest, nextAttended, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
-import { actKey, appHandlers, type Building, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
+import { actKey, appHandlers, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type TabTo } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
-import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
-import { launch, tickFireworks } from './fireworks.ts'
-import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, makeCat, nearDoors, purr, ring, roam, steer, tada, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat, type CatName } from './life.ts'
+import { poseDesk, poseRigs, type Desk } from './desk.ts'
+import { tickFireworks } from './fireworks.ts'
+import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, nearDoors, purr, ring, roam, steer, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat, type CatName } from './life.ts'
 import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from './hands.ts'
 import { tintOf } from './palette.ts'
 import { PET_IN, PET_MS, dropHearts, makeHearts, petProgress, petSpot, placeHearts, strokeAt } from './pet.ts'
 import { idle, sharing, startShare, stopShare } from './tv.ts'
-import { CABINET, DESK, bigScreens, cabinetOf, carBox, collidersOn, coreFront, deskOf, emptyChairs, loungeSpots, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY, plan, solids, type Box, type Plan } from './layout.ts'
-import { chairKit, makeChairs, placeChairs } from './chairs.ts'
+import { DESK, bigScreens, cabinetOf, carBox, coreFront, deskOf, deskSpot, inside, kioskOf, levelHeight, levelOfCard, levelOfShell, levelY } from './layout.ts'
+import { chairKit } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
 import { chooseLighting, lightingSection } from './light/setting.ts'
-import { fillLayer, zonesPlaced, type Placed } from './kit.ts'
-import { hangOn, levelOf, levelsShown, onLevel, showLevels } from './levels.ts'
-import { DESK_DRESS, dress, pickOf } from './dress.ts'
-import { cityModel, furnish, type PrefabItem } from './zones.ts'
-import { stateKey } from './prefab.ts'
-import { standingIn } from './breaks.ts'
-import { TABLE, meetingKit } from './meetings.ts'
+import { hangOn, levelOf, levelsShown, showLevels } from './levels.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
-import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
-import { isMarkdown, isPosterTexture, isVideo, keepPosters, pictured, playFilms, type Shown } from './showing.ts'
+import { paintScreens } from './screens.ts'
+import { isMarkdown, isVideo, playFilms, type Shown } from './showing.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
-import { dispose } from './toon.ts'
-import { fillBooks } from './room.ts'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
-import { addedCommandOf, commandOf, keymapSheetHtml, panesOf } from '/lib/keys.js'
+import { addedCommandOf, commandOf, panesOf } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
-import { random } from './random.ts'
 import { clockMoves, wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
 import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
 import * as loading from './loading.ts'
-import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, historyOf, type Archived, readArchives, rereadArchive, settledArchives } from './archive.ts'
-import { buildingSeats } from './seating.ts'
-import { galleryOf } from './showings.ts'
+import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, readArchives, rereadArchive, settledArchives } from './archive.ts'
 import { poseFiling } from './filing.ts'
-import { ARCADE_SIGNS, CABINETS, DANCE, FILINGS, GUESTS, NOTES, PIGEONHOLES, STATIONS, WALLS, desksAfter, galleryAfter, reconcile, runningOn, slotsAt } from './layers.ts'
+import { FILINGS, STATIONS, reconcile } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
-import { noteText, noteTitle, pruneNoteTitles } from './notes.ts'
-import { SCREEN, pruneGameTitles } from './arcade.ts'
+import { noteText } from './notes.ts'
 import { GAMES, gameItem } from './games.ts'
-import { keptText, keptTitle, pruneKeptTitles } from './kept.ts'
-import { NO_PLAN, s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
-import { aim, eyes, fallTo, jump, look, walk, type Walker } from './walker.ts'
-import { DECK, groundAt, layerAt, type Layer } from './floorplan.ts'
-import { boardFace, buildWorld, paintDirectory, panelGrid, setDoors, setLimits, setShellTitles } from './world.ts'
+import { keptText, keptTitle } from './kept.ts'
+import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
+import { aim, fallTo, jump, look, walk, type Walker } from './walker.ts'
+import { DECK, groundAt } from './floorplan.ts'
+import { paintDirectory, panelGrid, setDoors } from './world.ts'
 import type { Shell } from './shell.ts'
 import type { Music } from './music.ts'
 import type { Term } from './term.ts'
@@ -80,18 +68,19 @@ import type { Assets } from './loads.ts'
 import type { Toasts } from './toasts.ts'
 import type { Events } from './events.ts'
 import { $, onAppearance, show } from './dom.ts'
-import { DRAWN_PANES, MOVE_OF, sheetKeys } from './keymap-here.ts'
+import { DRAWN_PANES, MOVE_OF } from './keymap-here.ts'
 import { nowOf } from './now.ts'
+import type { World } from './building.ts'
 
 /** The resources the page reads as it starts: the leaves' binding (`Shell`), and those only the page reads. */
-export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events }
+export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World }
 
 /**
  * The page: what it draws, the listeners and timers it keeps, and the loops it runs, started by the `main` resource once
  * every resource it reads has (system.ts).
  */
 export function startMain(started: Main) {
-  const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, cardReviews, floorThreadsOf, threadCheckout, keepsThreads: floorKeepsThreads, probedLines } = started.clients
+  const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
   const { lit } = started.lighting
   const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = started.stage
   const { move, releaseKeys, takeTurn } = started.input
@@ -99,53 +88,16 @@ export function startMain(started: Main) {
   const { closeTerm, mountTerm } = started.terminal
   const { toast, call, tried, offered, copiedAs } = started.toasts
   const { events } = started
-  const { buildingNow, boardNow, selfNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed, aimNow } = nowOf(started.port)
+  const { directory, screenDistance, boxesHere, here, discard, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs } = started.world
+  const { boardNow, selfNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed, aimNow } = nowOf(started.port)
 
 
   document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss + toastsCss + itemsCss }))
   watchTips(document)
 
-  const directory = boardFace(640, 480)
-  const statsBoard = boardFace(640, 400)
 
-  /**
-   * Where each stream's monitors stand in what can be seen, in world space: a worker's screen is on its desk and on the
-   * control room's video wall. Your level's, or every level's over the city.
-   */
-  let screensAt: { plan?: Plan; level: number; overview: boolean; spots: Map<string, THREE.Vector3[]> } = { level: -1, overview: false, spots: new Map() }
-  function screensHere() {
-    const overview = viewNow() === 'overview'
-    if (screensAt.plan === planNow() && screensAt.level === s.me.level && screensAt.overview === overview) return screensAt.spots
-    const spots = new Map<string, THREE.Vector3[]>()
-    const levels = overview ? [...s.levels.map((l) => l.group), ...s.world!.levels] : [s.levels[s.me.level]?.group, s.world!.levels[s.me.level]]
-    for (const group of levels) {
-      group?.traverse((o) => {
-        const map = o instanceof THREE.Mesh ? (o.material as THREE.MeshBasicMaterial).map : undefined
-        const path = map && screenPathOf(map)
-        if (path) spots.set(path, [...(spots.get(path) ?? []), o.getWorldPosition(new THREE.Vector3())])
-      })
-    }
-    screensAt = { plan: planNow(), level: s.me.level, overview, spots }
-    return spots
-  }
 
-  const screenDistance = (path: string) => {
-    const at = screensHere().get(path)
-    return at && Math.min(...at.map((p) => p.distanceTo(camera.position)))
-  }
 
-  /** What the walker bumps into on its level and layer. */
-  let boxesAt: { plan?: Plan; level: number; layer?: Layer; boxes: Box[] } = { level: -1, boxes: [] }
-  function boxesHere() {
-    const layer = layerAt(s.me.y)
-    if (boxesAt.plan === planNow() && boxesAt.level === s.me.level && boxesAt.layer === layer) return boxesAt.boxes
-    boxesAt = { plan: planNow(), level: s.me.level, layer, boxes: collidersOn(planNow(), here(), layer) }
-    return boxesAt.boxes
-  }
-
-  const here = () => planNow().levels[s.me.level]
-  const keepTexture = (t: THREE.Texture) => isScreenTexture(t) || isStillScreen(t) || isPosterTexture(t) || t === directory.texture || t === statsBoard.texture
-  const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTexture))
 
 
 
@@ -161,124 +113,13 @@ export function startMain(started: Main) {
   /** The drafts collection over the renderer API. */
   const draftIo: DraftIo = { call: tower.call, read: noteText, failed: (err) => toast(err.message) }
 
-  /** What changes the building's shape: shell titles and limit readings are redrawn on their own. */
-  const structureKey = (pl: Plan, b: Board) => JSON.stringify([
-    pl.width, pl.depth, b.hostUp, new Date(wallNow()).getMonth(),
-    pl.levels.map((l) => [l.kind, l.name, l.kind === 'floor' ? [l.floor.color, l.floor.shelf, l.kiosks.map((k) => k.shell.id), Boolean(l.cork), Boolean(l.arcade?.cabinets.length)] : 0]),
-    defaultLimits(b).rateLimits.map((r) => r.kind),
-  ])
-  const limitsKey = (b: Board) => JSON.stringify([defaultLimits(b).rateLimits, b.today])
-
-  function rebuildWorld() {
-    if (s.world) discard(s.world.group)
-    s.rebuilds++
-    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!)
-    scene.add(s.world.group)
-    for (const level of planNow().levels) fillLayer(s.kit!, onLevel(level.index).zones, zonesPlaced(s.kit!, level))
-    for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
-    const built = s.world
-    for (const b of s.world.bookcases) {
-      shelfFiles(b.project, b.n).then((files) => s.world === built && fillBooks(b, files, built.pickables), (err: Error) => toast(`shelf: ${err.message}`))
-    }
-  }
-
-  /** A firework over the roof party for each of `cards`, a turn finished, in its worker's color: over its project's dance floor, else the roof's middle. */
-  function celebrate(cards: { id: string; project: string }[]) {
-    const roof = planNow().levels.at(-1)!
-    const floors = roof.kind === 'roof' ? roof.floors : []
-    for (const c of cards) {
-      const at = floors.find((f) => f.projects.includes(c.project)) ?? { x: 0, z: 0 }
-      launch(scene, new THREE.Vector3(at.x + (random() - 0.5) * 8, roof.y + 1, at.z + (random() - 0.5) * 6), hueOf(c.id))
-    }
-  }
 
   /** Where you stood, kept by the tower for this page so a reload puts you back, with the music on or off and what you've seen shown. */
   type Kept = { spot: Spot; muted: boolean; fps?: boolean; seen?: string[] }
   /** How many showings opened are kept: enough to cover every worker on duty. */
   const SEEN_KEPT = 300
-  /** Nothing seen was kept (a first visit): what is shown already counts as seen, and only what comes after is new. */
-  let primeSeen = false
-
-  const everyShown = (b: Board) => cardsOf(b).flatMap((c) => c.shown.map((sh) => ({ c, sh, key: shownKey(sh) })))
-  const isFresh = (c: Card, sh: Shown) => !s.seenShown.has(shownKey(sh))
-  /** The showings you have yet to open, of workers at a desk, newest first. */
-  const freshShown = () => everyShown(boardNow()!).filter(({ c, sh }) => deskOf(planNow(), c.id) && isFresh(c, sh)).sort((a, b) => b.sh.at - a.sh.at)
-
-  /**
-   * Each desk's second monitor, its worker's latest showing, ribboned while any of its showings is new to you; and every
-   * gallery, its pictures ribboned while new, a showing `was` didn't hold flying in.
-   */
-  function dressSides(was: Board | undefined) {
-    for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)))
-    reconcile(galleryAfter(was), s.pictures, planNow(), discard)
-    keepPosters(new Set([...[...s.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...s.pictures.keys()]))
-  }
-
-  /** The review notes new to each worker, stacked on its own desk, beside its logbook; a reviewer beside its author has neither. */
-  function dressAllPapers() {
-    for (const desk of s.desks.values()) {
-      dressPapers(desk, desk.side ? (cardReviews(desk.card)?.unseen ?? 0) : 0)
-      dressBinder(desk, desk.card.lineage.length)
-    }
-  }
-
-  /** The replayed past session on its worker's monitor, every other monitor on its own screen. */
-  function dressReplays() {
-    const replaying = replayNow()
-    for (const desk of s.desks.values()) {
-      const session = replaying?.id === desk.card.id ? desk.card.lineage.find((l) => l.id === replaying.session) : undefined
-      showOnMonitor(desk, session ? replayTexture(`screen/${session.id}`, `REPLAY · ${sessionWhen(session.startedAt)}`) : monitorOf(desk.card))
-    }
-    screensAt = { ...screensAt, plan: undefined }
-  }
-
-  /**
-   * What Tower 3D derives from each floor's history, its archive as `archived` holds it: every seated worker's seat and
-   * each floor's gallery. A floor whose archive can't be read has neither: its workers on duty have no desks.
-   */
-  function historyReads(board: Board, archived: Archived) {
-    const histories = new Map(board.floors.flatMap((f) => {
-      const history = historyOf(f, archived)
-      return history ? [[f.id, history] as const] : []
-    }))
-    return { seats: buildingSeats(histories), galleries: new Map([...histories].map(([id, history]) => [id, galleryOf(history)])) }
-  }
-
-  /**
-   * The plan last derived, and what from. The building takes a fresh archive snapshot with every board and a fresh
-   * instant with every board and replan, so the plan is derived once for each of those and reused by every read until the next.
-   */
-  let planned: { board: Board; archived: Archived; at: number; plan: Plan } | undefined
-
-  /**
-   * The building for its board at the wall time `at`, each floor's history from its archive as `archived` holds it: who
-   * sits where, who is on a break or in a meeting, the galleries, the party, furnished from the kit.
-   */
-  function planOf({ board, archived, at }: Building): Plan {
-    if (planned?.board === board && planned.archived === archived && planned.at === at) return planned.plan
-    const prefabs = s.kit!.prefabs
-    const reads = { draftsOf, keepsThreads: floorKeepsThreads, floorThreadsOf, ...historyReads(board, archived) }
-    const p = furnish(plan(board, at, (author) => besideOf(slotsAt(author)), meetingKit(prefabs), (room) => standingIn(room, prefabs), reads), prefabs, tintsOf(board), new Date(at).getMonth())
-    planned = { board, archived, at, plan: p }
-    return p
-  }
 
 
-  /** The plan the building stands on: its board's, as planned when the building took it. */
-  function planNow() {
-    const b = buildingNow()
-    return b ? planOf(b) : NO_PLAN
-  }
-
-  /** A showing new since the last board: its worker holds it up, and you hear it; away from its desk, you're told. */
-  function shownArrives(id: string, target: string, atItsDesk: boolean) {
-    const c = findCard(boardNow()!, id)!
-    const sh = c.shown.find((sh) => sh.target === target)!
-    const desk = s.desks.get(c.id)
-    if (desk) holdUp(desk, sh, s.simNow / 1000)
-    tada()
-    if (!atItsDesk) toast(`${c.callsign} showed you “${shownTitle(sh)}” · V to look`)
-  }
 
   /** Seen again, it moves last: the oldest are the first to go once more than `SEEN_KEPT` are kept. */
   function see(sh: Shown) {
@@ -297,60 +138,6 @@ export function startMain(started: Main) {
   }
   const spotOf = ({ level, x, z, yaw, pitch, y }: Walker): Spot => ({ level, x, z, yaw, pitch, y })
 
-  /** Every project's colour as `#rrggbb`, by id. */
-  const tintsOf = (b: Board) => Object.fromEntries(b.floors.map((f) => [f.id, tintOf(f)]))
-  /** The lobby's frame: level space at the ground. */
-  const LOBBY = new THREE.Matrix4()
-
-  /** A workstation's models in its desk's frame. */
-  function inDesk(desk: THREE.Object3D, items: PrefabItem[]): Placed[] {
-    desk.updateMatrix()
-    return items.map((item) => ({ item, frame: desk.matrix, theme: item.theme }))
-  }
-
-  /** A model's frame on a level: at (x, z) over the level's floor at `y`, turned `turn` degrees about +y. */
-  const frameAt = (x: number, y: number, z: number, turn: number) => new THREE.Matrix4().makeRotationY((turn * Math.PI) / 180).setPosition(x, y, z)
-
-  /**
-   * Every level's workstations in their KayKit models (a worker's dressing on its own, also while it is in a meeting
-   * room), the meeting rooms' long tables in their states, and the city model in the lobby.
-   */
-  function dressLevels(board: Board) {
-    const month = new Date(wallNow()).getMonth()
-    const placed = planNow().levels.map((level): Placed[] => {
-      if (level.kind === 'lobby') return cityModel(planNow(), tintsOf(board)).map(({ item, theme }) => ({ item, frame: LOBBY, theme }))
-      if (level.kind === 'roof') return []
-      return [
-        ...level.desks.filter((slot) => !slot.beside && !slot.meeting).flatMap((slot) => {
-          const pick = pickOf(slot.card, month, s.kit!.prefabs[DESK_DRESS])
-          return inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, s.kit!.models))
-        }),
-        ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, s.kit!.prefabs[DESK_DRESS].items)),
-        ...level.away.flatMap((slot) => {
-          const pick = pickOf(slot.card, month, s.kit!.prefabs[DESK_DRESS])
-          return inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, s.kit!.models))
-        }),
-        ...level.tables.flatMap((t) => {
-          const frame = frameAt(t.x, level.y, t.z, t.turn)
-          return s.kit!.prefabs[TABLE].states[stateKey([t.state])].items.map((item) => ({ item, frame, theme: item.theme }))
-        }),
-      ]
-    })
-    placed.forEach((list, i) => fillLayer(s.kit!, onLevel(i).dressing, list))
-    for (const root of s.levels.slice(placed.length)) fillLayer(s.kit!, root.dressing, [])
-  }
-
-  /** Every level's empty meeting chairs, instanced on its root. */
-  function seatChairs() {
-    const levels = Math.max(planNow().levels.length, s.chairs.length)
-    for (let i = 0; i < levels; i++) {
-      const level = planNow().levels[i]
-      const at = level?.kind === 'floor' ? emptyChairs(level).map((pl) => ({ x: pl.x, y: level.y, z: pl.z, turn: pl.turn })) : []
-      s.chairs[i] ??= makeChairs()
-      hangOn(i, s.chairs[i].group)
-      placeChairs(s.chairs[i], s.chairKit!, at)
-    }
-  }
 
   /** The board's failure stays over the last board drawn, until the tower sends a board again. */
   function onBoardError(err: Error & { code: string }) {
@@ -362,70 +149,6 @@ export function startMain(started: Main) {
     app.dispatch({ type: 'lost', lost: s.lost })
     if (s.lost) hiring.dispatch({ type: 'lost' })
     renderPanel()
-  }
-
-  /**
-   * The world takes the board the building took once its archives are read (`board/arrived`), `was` the board before: rebuilt when its shape
-   * changed, every layer reconciled against the plan, and what it shows outside the panels written. It dispatches nothing.
-   */
-  function worldApplied(was: Board | undefined) {
-    const next = boardNow()!
-    const sheet = keymapSheetHtml(sheetKeys(next))
-    if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
-    s.boards++
-    desk.update(next)
-    rereadViewer()
-    const key = structureKey(planNow(), next)
-    if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
-    if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today))
-    setShellTitles(s.world!, next.shells)
-    reconcile(desksAfter(was), s.desks, planNow(), discard)
-    hiring.dispatch({ type: 'board', board: next })
-    reconcile(STATIONS, s.stations, planNow(), discard)
-    dressLevels(next)
-    seatChairs()
-    reconcile(WALLS, s.walls, planNow(), discard)
-    reconcile(runningOn(next), s.running, planNow(), discard)
-    reconcile(PIGEONHOLES, s.pigeonholes, planNow(), discard)
-    reconcile(ARCADE_SIGNS, s.arcadeSigns, planNow(), discard)
-    reconcile(FILINGS, s.filings, planNow(), discard)
-    readArchives(next)
-    dressAllPapers()
-    reconcile(DANCE, s.dance, planNow(), discard)
-    reconcile(GUESTS, s.guests, planNow(), discard)
-    if (!was && primeSeen) for (const { key } of everyShown(next)) s.seenShown.add(key)
-    dressSides(was)
-    pruneNoteTitles(next.floors)
-    pruneKeptTitles(next.floors)
-    syncNotes()
-    pruneGameTitles(next.floors)
-    syncCabinets()
-    if (s.carrying && !draftItem(next.floors, s.carrying.project, s.carrying.id)) (toast('The draft in your hand is gone'), drop())
-    if (s.draft?.id) followDraft(s.draft)
-    const replaying = replayNow()
-    keepScreens(new Set([
-      ...planNow().levels.flatMap((l) => (l.kind === 'floor' ? l.desks.filter((d) => d.card.live).map((d) => `screen/${d.card.id}`) : [])),
-      ...next.shells.map((sh) => `shell/${sh.id}`),
-      ...(replaying ? [`screen/${replaying.session}`] : []),
-    ]))
-    dressReplays()
-    paintDirectory(directory, planNow(), heededWaits(next, heed()))
-    if (!was) {
-      for (const name of CATS) {
-        const cat = makeCat(s.models!, name)
-        s.cats.set(name, cat)
-      }
-      s.me = { x: 0, z: coreFront(planNow()) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...s.saved }
-      if (location.hash === '#tv') {
-        const couch = loungeSpots(planNow()).couch
-        s.me = { ...s.me, level: 0, x: couch.x, z: couch.z - 1.4, yaw: Math.PI, pitch: 0.12 }
-        history.replaceState(null, '', location.pathname)
-      }
-      show('paused', !captured())
-    }
-    if (s.me.level >= planNow().levels.length) s.me = { ...s.me, level: 0 }
-    renderHud()
-    if (!was) pictured().then(built)
   }
 
   /** `next` arrives: the building takes it once its floors' archives are read at its keys, planned then. */
@@ -631,33 +354,8 @@ export function startMain(started: Main) {
     if (document.pointerLockElement) document.exitPointerLock()
   }
 
-  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
-  const eyeQuaternion = (w: Walker) => new THREE.Quaternion().setFromEuler(new THREE.Euler(w.pitch, w.yaw + Math.PI, 0, 'YXZ'))
-  const lookQuaternion = (from: THREE.Vector3, at: THREE.Vector3) => new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(from, at, camera.up))
 
-  const vec3 = (v: THREE.Vector3): Vec3 => [v.x, v.y, v.z]
-  const quat = (q: THREE.Quaternion): Quat => [q.x, q.y, q.z, q.w]
 
-  function flyTo(to: THREE.Vector3, toQ: THREE.Quaternion, ms = 700, then?: AppEvent) {
-    app.dispatch({ type: 'fly', flight: { from: vec3(camera.position), to: vec3(to), fromQ: quat(camera.quaternion), toQ: quat(toQ), start: s.simNow, ms: reducedMotion() ? 0 : ms, then } })
-  }
-  const flyHome = () => flyTo(eyes(s.me, floorY(), new THREE.Vector3()), eyeQuaternion(s.me), 600)
-
-  /** Frames a face `size` wide in the middle of the view, straight out from it: the camera stays in front, never in a wall. */
-  function frameOn(point: THREE.Vector3, normal: THREE.Vector3, size: number) {
-    const span = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect
-    const from = point.clone().addScaledVector(normal, size / 0.7 / span).add(new THREE.Vector3(0, 0.08, 0))
-    flyTo(from, lookQuaternion(from, point))
-  }
-
-  /** Frames a face `size` wide straight on, in the middle of the view's left half: the right half holds a panel. */
-  function frameAside(point: THREE.Vector3, normal: THREE.Vector3, size: number) {
-    const span = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect
-    const distance = size / 0.7 / (span / 2)
-    const right = normal.clone().negate().cross(camera.up).normalize()
-    const from = point.clone().addScaledVector(normal, distance).addScaledVector(right, (distance * span) / 4)
-    flyTo(from, lookQuaternion(from, from.clone().sub(normal)))
-  }
 
   /** Standing at `spot` on `level` at once, out of any ride or flight. */
   const place = (level: number, spot: Standing) => app.dispatch({ type: 'place', level, spot })
@@ -839,12 +537,6 @@ export function startMain(started: Main) {
     show('game', false)
     $('game-body').innerHTML = ''
     startMusic()
-  }
-
-  /** The camera on the game's cabinet, in the left half of the view. */
-  function frameCabinet({ cabinet, level }: NonNullable<ReturnType<typeof cabinetOf>>) {
-    const front = new THREE.Vector3(cabinet.x, level.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
-    frameAside(front, new THREE.Vector3(0, 0, -1), 2 * CABINET.width)
   }
 
   function closeGame() {
@@ -1382,7 +1074,15 @@ export function startMain(started: Main) {
           (read) => dispatch({ type: 'stats/landed', reading, read, at: wallNow() }),
           (err: Error) => dispatch({ type: 'stats/failed', reading, message: err.message }),
         ),
-      'world/apply': ({ was }) => worldApplied(was),
+      'world/apply': ({ was }) => {
+      desk.update(boardNow()!)
+      rereadViewer()
+      worldRebuilt(was)
+      hiring.dispatch({ type: 'board', board: boardNow()! })
+      worldFurnished(was)
+      if (s.draft?.id) followDraft(s.draft)
+      renderHud()
+    },
       fireworks: ({ cards }) => celebrate(cards),
       'waits/began': () => void (s.waitedAt = s.simNow),
       asked: ({ ask }) => toast(`${ask.title}, asked by ${ask.cap}`, { label: 'Go', run: () => goToAsk(ask) }),
@@ -1581,18 +1281,6 @@ export function startMain(started: Main) {
     app.dispatch({ type: 'ride', ride: { from: s.me.level, to, start: s.simNow, move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) } })
   }
 
-  /** How long the car has been riding, in seconds. */
-  const riddenFor = (ride: Ride) => (s.simNow - ride.start) / 1000
-
-  const DOORS_SHUT = 0.55
-  /** The car's ride: the seconds it takes to get going and stop, its speed in metres a second, and the longest a ride takes. */
-  const RIDE = { start: 0.9, speed: 14, most: 3.5 }
-  function floorY() {
-    const { ride } = motionNow()
-    if (!ride) return levelY(s.me.level)
-    const k = ease(THREE.MathUtils.clamp((riddenFor(ride) - DOORS_SHUT) / ride.move, 0, 1))
-    return THREE.MathUtils.lerp(levelY(ride.from), levelY(ride.to), k)
-  }
 
   function overview() {
     closePanels()
@@ -1613,63 +1301,8 @@ export function startMain(started: Main) {
     flyHome()
   }
 
-  const raycaster = new THREE.Raycaster()
-  /** Whether `o` is drawn: it and every parent visible. Rays hit hidden objects too. */
-  const shown = (o: THREE.Object3D | null): boolean => !o || (o.visible && shown(o.parent))
-  const pickables = () => [
-    ...(s.world?.pickables ?? []),
-    ...[...s.desks.values()].map((d) => d.group),
-    ...[...s.stations.values()].map((st) => st.group),
-    ...[...s.walls.values()].map((w) => w.wall.group),
-    ...[...s.running.values()].map((r) => r.group),
-    ...[...s.pigeonholes.values()].map((r) => r.group),
-    ...[...s.filings.values()].map((f) => f.group),
-    ...[...s.guests.values()].map((g) => g.group),
-    ...[...s.notes.values()].map((n) => n.group),
-    ...[...s.cabinets.values()].map((c) => c.group),
-    ...[...s.pictures.values()].map((p) => p.group),
-    ...[...s.cats.values()].map((c) => c.root),
-  ]
 
-  let occluders: { plan?: Plan; level: number; boxes: THREE.Box3[] } = { level: -1, boxes: [] }
-  /** What stops a look across the level, as boxes in the world, rebuilt when the plan or your level changes. */
-  function occludersHere() {
-    if (occluders.plan === planNow() && occluders.level === s.me.level) return occluders.boxes
-    const y = levelY(s.me.level)
-    const boxes = solids(planNow(), here()).map((b) => new THREE.Box3(new THREE.Vector3(b.minX, y + b.bottom, b.minZ), new THREE.Vector3(b.maxX, y + b.top, b.maxZ)))
-    occluders = { plan: planNow(), level: s.me.level, boxes }
-    return boxes
-  }
 
-  /** Things hung on a wall stand within this of its face and still count as in front of it. */
-  const ON_THE_WALL = 0.15
-  const hitPoint = new THREE.Vector3()
-  /** Whether a wall or a shut landing door stands between the ray's origin and `distance`. */
-  function blocked(distance: number): boolean {
-    const doors = [...(s.world?.doors.values() ?? [])].flatMap((d) => [d.left, d.right])
-    const nearest = Math.min(
-      ...occludersHere().map((b) => (raycaster.ray.intersectBox(b, hitPoint) ? hitPoint.distanceTo(raycaster.ray.origin) : Infinity)),
-      ...raycaster.intersectObjects(doors.filter((d) => shown(d)), true).map((h) => h.distance),
-    )
-    return nearest < distance - ON_THE_WALL
-  }
-
-  /**
-   * What's under the screen point (x, y in -1..1): within its reach and on your level while walking, anywhere from outside.
-   * Walking, a wall or a shut door in front of it hides it; glass included.
-   */
-  function pick(x: number, y: number): Act | undefined {
-    raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
-    raycaster.far = viewNow() === 'overview' ? Infinity : 9
-    const floor = floorY()
-    const hit = raycaster.intersectObjects(pickables(), true).find((h) => {
-      if (!shown(h.object) || !h.object.userData.act) return false
-      return viewNow() === 'overview' || (h.point.y > floor - 0.2 && h.point.y < floor + levelHeight(s.me.level))
-    })
-    const a: Act | undefined = hit?.object.userData.act
-    if (!a || viewNow() === 'overview') return a
-    return hit!.distance <= reachOf(a) && !blocked(hit!.distance) ? a : undefined
-  }
 
   /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
   function offersNow() {
@@ -2813,8 +2446,6 @@ export function startMain(started: Main) {
     places[(at + (e.key === 'ArrowDown' ? 1 : places.length - 1)) % places.length]?.focus()
   })
 
-  const floorOf = (project: string) => boardNow()!.floors.find((f) => f.id === project)!
-
   /** The floor the dialog's Start waits on, if it does. */
   const dialogStarting = () => {
     const d = spawning.state()
@@ -2827,30 +2458,6 @@ export function startMain(started: Main) {
 
   /** A worker where the floor starts one unless told, its own worktree or the hub: you sit down at it once its desk shows. */
   const hire = (project: string) => hireWith(project, spawnDefaults(floorOf(project)), undefined)
-
-  /** The note in your hand, titled as its text shows it now. */
-  function carried(): Carried | undefined {
-    const held = s.carrying
-    const item = held && boardNow() && draftItem(boardNow()!.floors, held.project, held.id)
-    return item && { ...held!, title: noteTitle(held!.project, item), tag: item.tag }
-  }
-
-  /** The note in your hand, drawn by your hands; its draft stays pinned, hidden, until it is handed over. */
-  function carry(project: string, id: string) {
-    s.carrying = { project, id }
-    s.beer = false
-    syncNotes()
-  }
-
-  /** Empty hands: the note goes back on its board. */
-  function drop() {
-    s.carrying = undefined
-    syncNotes()
-  }
-
-  const syncNotes = () => boardNow() && reconcile(NOTES, s.notes, planNow(), discard)
-
-  const syncCabinets = () => boardNow() && reconcile(CABINETS, s.cabinets, planNow(), discard)
 
   /** The editor's last save, which a note's text is read after. */
   let saving: Promise<boolean> = Promise.resolve(true)
@@ -3089,7 +2696,7 @@ export function startMain(started: Main) {
     s.saved = (kept as Kept | null)?.spot
     s.muted = (kept as Kept | null)?.muted ?? false
     s.seenShown = new Set((kept as Kept | null)?.seen)
-    primeSeen = (kept as Kept | null)?.seen === undefined
+    primeSeenAs((kept as Kept | null)?.seen === undefined)
     if ((kept as Kept | null)?.fps) toggleFps()
     if (fixture) onFixtureBoard(fixture[0])
     else onLoaded()
@@ -3131,6 +2738,7 @@ export function startMain(started: Main) {
   let built: () => void
   let unbuilt: (err: Error) => void
   const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
+  firstBuilt.then(() => built())
 
   installDoor({
     ready, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,

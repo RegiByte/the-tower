@@ -17,7 +17,7 @@
     "hub/renderers/tower3d/src/world.ts#foot",
     "hub/renderers/tower3d/src/world.ts#buildWorld",
     "hub/renderers/tower3d/src/kit.ts#zonesPlaced",
-    "hub/renderers/tower3d/src/main.ts#dressLevels",
+    "hub/renderers/tower3d/src/building.ts#dressLevels",
     "hub/renderers/tower3d/src/door.ts#DoorState"
   ]
 }
