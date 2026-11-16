@@ -3,10 +3,15 @@
  * work it, close it. Each `snap` is a stage: `state()` (without the real-time fps and frame ms, and what the last frame
  * drew), `dom` (a hash of each panel shown, its normalized markup in `texts`, which frames keeps beside the recording)
  * and `events`, the events Tower 3D's loops handled since the stage before, as `<loop>:<event>→<effects>`. A route
- * whose thing the board lacks is left out; a step that throws is recorded as `<name>:error` and the walk goes on.
+ * whose thing the board lacks is left out; a step that throws is recorded as `<name>:error` and the walk goes on, and a
+ * stage whose panels were still changing after 3 s of real time carries an `error` saying so.
  *
- * Each route starts from walking with no panel open, so one changing leaves the others' stages alone. Extend it at the
- * end, so older recordings still line up stage by stage.
+ * Each route ends with one Escape and a `<route>-closed` stage, the way a user leaves it, then starts the next from
+ * walking with no panel open, so one changing leaves the others' stages alone. Extend it at the end, so older
+ * recordings still line up stage by stage.
+ *
+ * Not reached: the landing, the watch panel and the board-lost banner (no fixture board shows them), the settings
+ * panel, a desk's Reviews tab with a thread on it, and a draft edited (closing an edited draft saves it).
  */
 (async () => {
   const t = window.tower3d
@@ -14,7 +19,7 @@
    * The panels beside the world, by element id: each shown one is a stage's DOM fact. Toasts are left out: they leave
    * on the real clock, so whether one is still up at a stage depends on how long the walk took to get there.
    */
-  const PANELS = ['prompt', 'elevator', 'shell-pick', 'side', 'hud', 'desk', 'doc', 'draft', 'game', 'paused', 'spawn', 'landing', 'watch', 'keys-sheet', 'board-error', 'fade']
+  const PANELS = ['prompt', 'elevator', 'shell-pick', 'rail', 'side', 'hud', 'settings', 'desk', 'doc', 'draft', 'game', 'paused', 'spawn', 'landing', 'watch', 'keys-sheet', 'board-error', 'fade']
   /**
    * The attributes a panel's markup is compared by: what it says and is, not where it is drawn or what it loads.
    * `data-since` is a real time a read landed at, and the "ago" written from it is left out with it.
@@ -65,7 +70,8 @@
     const records = t.events(seen)
     seen = records.at(-1)?.n ?? seen
     const events = records.map((r) => `${r.loop}:${r.event.type}→${r.effects.map((f) => f.type).join(',')}`)
-    out.push({ name, state: s, dom: Object.fromEntries(Object.entries(texts).map(([id, text]) => [id, hash(text)])), texts, events })
+    out.push({ name, state: s, dom: Object.fromEntries(Object.entries(texts).map(([id, text]) => [id, hash(text)])), texts, events, ...(unsettled && { error: 'the panels kept changing for 3 s' }) })
+    unsettled = false
   }
   const tryDo = (name, f) => {
     try {
@@ -76,15 +82,19 @@
       return false
     }
   }
+  /** Whether the last `settle` gave up: the next stage says so. */
+  let unsettled = false
   /** Waits, in real time and up to 3 s, until the panels are drawn the same over 150 ms: what a read fills in arrives after its reply. */
   const settle = async () => {
     let last = ''
-    for (let waited = 0, still = 0; still < 3 && waited < 3000; waited += 50) {
+    let still = 0
+    for (let waited = 0; still < 3 && waited < 3000; waited += 50) {
       await new Promise((resolve) => setTimeout(resolve, 50))
       const now = JSON.stringify(panels())
       still = now === last ? still + 1 : 0
       last = now
     }
+    if (still < 3) unsettled = true
   }
   const same = (a, b) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort())
   /** Stands within reach of `target` (beside it, on the floor or the deck) and aims at it; throws if no spot reaches it. */
@@ -119,6 +129,11 @@
     t.step(30)
     t.capture()
   }
+  /** Leaves a route as a user does, one Escape, and records what that left; then back to walking. */
+  const closed = async (route) => {
+    t.key('Escape'); t.step(30); await settle(); snap(`${route}-closed`)
+    await walking()
+  }
 
   t.step(1)
   snap('start')
@@ -126,28 +141,26 @@
   if (t.state().counts.desks) {
     t.key('KeyN'); t.step(10); snap('desk-going')
     t.step(120); await settle(); snap('desk-open')
-    for (const tab of ['brief', 'changes', 'screen']) {
+    for (const tab of ['brief', 'changes', 'reviews', 'screen']) {
       if (!document.querySelector(`#desk-tabs [data-tab=${tab}]`)) continue
       tryDo(`desk-tab-${tab}`, () => click(`#desk-tabs [data-tab=${tab}]`)); t.step(5); await settle(); snap(`desk-tab-${tab}`)
     }
     if (document.querySelector('#desk-tabs [data-tab^="shown:"]')) {
       tryDo('desk-tab-shown', () => click('#desk-tabs [data-tab^="shown:"]')); t.step(5); await settle(); snap('desk-tab-shown')
     }
-    t.key('Escape'); t.step(60); snap('desk-closed')
-    await walking()
+    await closed('desk')
   }
 
   const shell = t.acts('shell')[0]
   if (shell) {
     tryDo('shell', () => use(shell)); t.step(60); await settle(); snap('shell-open')
-    t.key('Escape'); t.step(60); snap('shell-closed')
-    await walking()
+    await closed('shell')
   }
 
   const floor = t.acts('floor')[0]
   if (floor) {
     tryDo('shell-pick', () => use(floor, 'shell')); t.step(5); await settle(); snap('shell-pick')
-    await walking()
+    await closed('shell-pick')
     tryDo('floor', () => use(floor)); t.step(5); await settle(); snap('floor-panel')
     const tray = document.querySelector('#side [data-tray]')?.dataset.tray
     if (tray) {
@@ -156,30 +169,30 @@
         tryDo('kept', () => click('#side [data-kept]')); t.step(5); await settle(); snap('kept-open')
       }
     }
-    await walking()
+    await closed(t.state().panel?.kind === 'floor' ? 'floor' : 'kept')
     tryDo('floor-again', () => use(floor)); t.step(5)
     if (document.querySelector('#side [data-archive]')) {
       tryDo('archive', () => click('#side [data-archive]')); t.step(5); await settle(); snap('archive')
     }
-    await walking()
+    await closed('archive')
   }
 
   const shelf = t.acts('shelf')[0]
   if (shelf) {
     tryDo('shelf', () => use(shelf)); t.step(5); await settle(); snap('shelf-doc')
-    await walking()
+    await closed('shelf-doc')
   }
 
   const shown = t.acts('shown')[0]
   if (shown) {
     tryDo('shown', () => use(shown)); t.step(60); await settle(); snap('showing')
-    await walking()
+    await closed('showing')
   }
 
   const picture = t.acts('picture').find((a) => !/\.(mp4|webm)$/.test(a.target))
   if (picture) {
     tryDo('picture', () => use(picture)); t.step(5); await settle(); snap('picture-open')
-    await walking()
+    await closed('picture')
   }
 
   const guest = t.acts('guest')[0]
@@ -188,13 +201,18 @@
     if (document.querySelector('#logbook-tabs [data-tab=screen]')) {
       tryDo('logbook-screen', () => click('#logbook-tabs [data-tab=screen]')); t.step(5); await settle(); snap('logbook-screen')
     }
-    await walking()
+    await closed('logbook')
   }
 
   const binder = t.acts('binder')[0]
   if (binder) {
     tryDo('binder', () => use(binder)); t.step(5); await settle(); snap('binder')
-    await walking()
+    const past = document.querySelector('#desk-brief [data-replay]:not([data-replay=""])')
+    if (past) {
+      past.click(); t.step(5); await settle(); snap('replaying')
+      t.key('Escape'); t.step(5); await settle(); snap('replay-ended')
+    }
+    await closed('binder')
   }
 
   const cabinet = t.acts('arcade')[0]
@@ -208,6 +226,11 @@
   const handTo = note && t.acts('desk').find((d) => t.acts('binder').some((b) => b.id === d.id) && t.locate(d).level === t.locate(note).level)
   if (note && handTo) {
     tryDo('carry', () => use(note)); t.step(40); snap('carrying')
+    const hireAt = t.acts('station').find((a) => a.open && a.project === note.project)
+    if (hireAt) {
+      tryDo('spawn-on-note', () => use(hireAt, 'spawn')); t.step(5); await settle(); snap('spawn-on-note')
+      tryDo('spawn-on-note-cancel', () => click('#spawn [data-close=cancel]')); t.step(5); await settle(); snap('spawn-on-note-cancelled')
+    }
     tryDo('hand', () => use(handTo, 'hand')); t.step(60); await settle(); snap('handed')
     if (t.state().carrying) {
       const cork = t.acts('cork').find((c) => c.project === note.project)
@@ -231,14 +254,13 @@
       tryDo('ride', () => click(`#elevator [data-ride="${to}"]`)); t.step(30); snap('riding')
       t.step(600); await settle(); snap('rode')
     }
-    await walking()
+    await closed('elevator')
   }
 
   const stats = t.acts('stats')[0]
   if (stats) {
     tryDo('stats', () => use(stats)); t.step(5); await settle(); snap('stats-open')
-    t.key('Escape'); t.step(10); snap('stats-closed')
-    await walking()
+    await closed('stats')
   }
 
   const drawer = t.acts('drawer')[0]
@@ -247,13 +269,19 @@
     if (document.querySelector('#side [data-logbook]')) {
       tryDo('folder', () => click('#side [data-logbook]')); t.step(5); await settle(); snap('folder-logbook')
     }
-    await walking()
+    await closed('drawer')
   }
 
   const slot = t.acts('thread')[0]
   if (slot) {
     tryDo('thread', () => use(slot, 'thread')); t.step(5); await settle(); snap('thread')
-    await walking()
+    await closed('thread')
+  }
+
+  const draft = t.acts('note')[0]
+  if (draft) {
+    tryDo('draft', () => use(draft, 'brief')); t.step(5); await settle(); snap('draft-open')
+    await closed('draft')
   }
 
   return out
