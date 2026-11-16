@@ -15,7 +15,7 @@
     "hub/renderers/tower3d/src/notes.ts",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
     "hub/renderers/tower3d/src/spawn.ts#sendCarried",
-    "hub/renderers/tower3d/src/main.ts#openDraftPanel",
+    "hub/renderers/tower3d/src/panels.ts#openDraftPanel",
     "hub/renderers/tower3d/src/hands.ts#holdNote",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
     "hub/src/tower/http.ts#clientFile"
@@ -52,7 +52,7 @@ tower page.
 - **Sent, then deleted** ([`sendCarried`](ref:hub/renderers/tower3d/src/spawn.ts#sendCarried)): the text is read
   after the editor's last save, then submitted or spawned as the prompt. Only a success deletes the draft and empties
   your hand; a failure keeps the note in hand.
-- **The panel** ([`openDraftPanel`](ref:hub/renderers/tower3d/src/main.ts#openDraftPanel)) lies on the right like
+- **The panel** ([`openDraftPanel`](ref:hub/renderers/tower3d/src/panels.ts#openDraftPanel)) lies on the right like
   the reader, saving as you type, on leaving, and before a carry or a send; deleting offers Undo ([[press-feedback]]).
 
 **Alternatives considered.**

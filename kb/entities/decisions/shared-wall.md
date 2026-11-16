@@ -16,7 +16,7 @@
     "hub/renderers/tower3d/src/layers.ts#galleryAfter",
     "hub/renderers/tower3d/src/desk.ts#heldUpAt",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
-    "hub/renderers/tower3d/src/main.ts#openPicture",
+    "hub/renderers/tower3d/src/panels.ts#openPicture",
     "hub/scripts/tower3d-fixtures.ts#FIXTURES",
     "hub/scripts/frames.scenario.js"
   ]
@@ -46,7 +46,7 @@ it goes home.
   to their new places; a showing new since the last board waits while its worker holds it up at the desk, then flies
   to the centre ([`heldUpAt`](ref:hub/renderers/tower3d/src/desk.ts#heldUpAt)).
 - **Verbs** ([`OFFERS`](ref:hub/renderers/tower3d/src/acts.ts#OFFERS)): a picture opens in the reader where you
-  stand ([`openPicture`](ref:hub/renderers/tower3d/src/main.ts#openPicture)) or goes to its worker's desk while it is
+  stand ([`openPicture`](ref:hub/renderers/tower3d/src/panels.ts#openPicture)) or goes to its worker's desk while it is
   on duty. A picture is looked up in the plan's galleries ([`pictureOf`](ref:hub/renderers/tower3d/src/cards.ts#pictureOf)),
   its worker's card only while the board carries it.
 - **Checked by frames** ([`FIXTURES`](ref:hub/scripts/tower3d-fixtures.ts#FIXTURES)): a fixture is a list of

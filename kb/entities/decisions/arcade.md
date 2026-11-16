@@ -15,8 +15,8 @@
     "hub/renderers/tower3d/src/arcade.ts",
     "hub/renderers/tower3d/src/layers.ts#CABINETS",
     "hub/renderers/tower3d/src/zones.ts#controlZones",
-    "hub/renderers/tower3d/src/main.ts#openGame",
-    "hub/renderers/tower3d/src/main.ts#gameEntered",
+    "hub/renderers/tower3d/src/panels.ts#openGame",
+    "hub/renderers/tower3d/src/panels.ts#gameEntered",
     "hub/renderers/tower3d/src/app.ts#followCabinet",
     "hub/renderers/tower3d/src/building.ts#frameAside",
     "hub/renderers/tower3d/src/ui.ts#gameHtml",
@@ -57,8 +57,8 @@ meaning by one renderer, with no change to the core.
   [`itemTitles`](ref:hub/src/shared/titles.ts) (shared with drafts and `tower kept`). A
   [`CABINETS`](ref:hub/renderers/tower3d/src/layers.ts#CABINETS) layer keyed by project and id redraws one when its
   title, keeper or tint changes.
-- **Playing** ([`openGame`](ref:hub/renderers/tower3d/src/main.ts#openGame), entered by
-  [`gameEntered`](ref:hub/renderers/tower3d/src/main.ts#gameEntered) as the app loop goes to it, [[tower3d-system]]): the act `{kind: 'arcade', project,
+- **Playing** ([`openGame`](ref:hub/renderers/tower3d/src/panels.ts#openGame), entered by
+  [`gameEntered`](ref:hub/renderers/tower3d/src/panels.ts#gameEntered) as the app loop goes to it, [[tower3d-system]]): the act `{kind: 'arcade', project,
   id}` offers E play. The panel takes the right half of the screen (head: title, keeper, ↗ to play it in a browser
   tab, ✕); the body is `<iframe sandbox="allow-scripts allow-pointer-lock">` on
   `/collection/<project>/games/<id>`, focused at once. The camera flies to face the cabinet straight on in the

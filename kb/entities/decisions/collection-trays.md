@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-16",
-  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/extensions/reviews/client/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/main.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/src/views/tray.ts#mount", "hub/src/shared/items.ts#mountKeptTray", "hub/src/shared/view-item.ts#typeView"]
+  "refs": ["hub/src/shared/items.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/items.ts#collectionPeekHtml", "hub/src/shared/items.ts#itemKind", "hub/src/shared/items.ts#keptTitles", "hub/src/shared/items.ts#deleteAsk", "hub/extensions/reviews/client/reviews.ts#landedThreads", "hub/extensions/drafts/client/drafts.ts#keepUnsent", "hub/renderers/tower3d/src/kept.ts#keptText", "hub/renderers/tower3d/src/panels.ts#openKept", "hub/src/shared/spawn.ts#spawnHandlers", "hub/src/views/tray.ts#mount", "hub/src/shared/items.ts#mountKeptTray", "hub/src/shared/view-item.ts#typeView"]
 }
 ---
 **Problem.** A renderer that draws trays only for the collections it gives a meaning to hides the rest: what a worker
@@ -63,5 +63,5 @@ and reads items alike ([[renderer-is-disposable]]).
 **Impact.** The core is untouched: the trays are shared exports a renderer composes over the board, verbs and reads.
 Tower 3D lists each collection that holds items in its floor panel, titled through
 [`keptText`](ref:hub/renderers/tower3d/src/kept.ts#keptText): a draft opens its editor, a game its cabinet
-([[arcade]]), any other item the reader ([`openKept`](ref:hub/renderers/tower3d/src/main.ts#openKept)); its spawn
+([[arcade]]), any other item the reader ([`openKept`](ref:hub/renderers/tower3d/src/panels.ts#openKept)); its spawn
 dialog runs the same machine, so it keeps an unsent prompt too.

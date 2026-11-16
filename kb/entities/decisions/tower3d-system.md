@@ -42,14 +42,14 @@
     "hub/renderers/tower3d/src/navigation.ts#offersNow",
     "hub/renderers/tower3d/src/main.ts#tickAim",
     "hub/renderers/tower3d/src/main.ts#tickHold",
-    "hub/renderers/tower3d/src/main.ts#RUN",
-    "hub/renderers/tower3d/src/main.ts#LEAVE",
-    "hub/renderers/tower3d/src/main.ts#ENTER",
-    "hub/renderers/tower3d/src/main.ts#TAB_ENTER",
-    "hub/renderers/tower3d/src/main.ts#drawPending",
-    "hub/renderers/tower3d/src/main.ts#deskEntered",
-    "hub/renderers/tower3d/src/main.ts#docClosed",
-    "hub/renderers/tower3d/src/main.ts#readerEntered",
+    "hub/renderers/tower3d/src/panels.ts#RUN",
+    "hub/renderers/tower3d/src/panels.ts#LEAVE",
+    "hub/renderers/tower3d/src/panels.ts#ENTER",
+    "hub/renderers/tower3d/src/panels.ts#TAB_ENTER",
+    "hub/renderers/tower3d/src/panels.ts#drawPending",
+    "hub/renderers/tower3d/src/panels.ts#deskEntered",
+    "hub/renderers/tower3d/src/panels.ts#docClosed",
+    "hub/renderers/tower3d/src/panels.ts#readerEntered",
     "hub/renderers/tower3d/src/app.ts#followCabinet",
     "hub/renderers/tower3d/src/app.ts#took",
     "hub/renderers/tower3d/src/app.ts#settled",
@@ -66,7 +66,8 @@
     "hub/renderers/tower3d/src/views.ts#startViews",
     "hub/renderers/tower3d/src/spawn.ts#startSpawn",
     "hub/renderers/tower3d/src/hud.ts#startHud",
-    "hub/renderers/tower3d/src/navigation.ts#startNavigation"
+    "hub/renderers/tower3d/src/navigation.ts#startNavigation",
+    "hub/renderers/tower3d/src/panels.ts#startPanels"
   ]
 }
 ---
@@ -152,15 +153,15 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   never leaving or entering, and throws for a panel that isn't the open one's kind. A desk opens on its screen, then on the
   tab and the showing pending for it, all in the same transition. A desk's tabs move the same way inside it (`tab`,
   with `tab/leave` and `tab/enter`); a tab entered again is entered again, so the logbook is read again.
-- *Leave and enter are tables by kind* ([`LEAVE`](ref:hub/renderers/tower3d/src/main.ts#LEAVE),
-  [`ENTER`](ref:hub/renderers/tower3d/src/main.ts#ENTER), [`TAB_ENTER`](ref:hub/renderers/tower3d/src/main.ts#TAB_ENTER)),
+- *Leave and enter are tables by kind* ([`LEAVE`](ref:hub/renderers/tower3d/src/panels.ts#LEAVE),
+  [`ENTER`](ref:hub/renderers/tower3d/src/panels.ts#ENTER), [`TAB_ENTER`](ref:hub/renderers/tower3d/src/panels.ts#TAB_ENTER)),
   total over `Panel['kind']`. An opener is a check and a `go`; a closer is a `go(undefined)`. The drawer's enter
   is empty (`opensItself`), its opener showing the side, and its leave hides it; the shell picker's leave is empty
   and the side hides it; the elevator's are empty, since it draws nothing of its own (`renderElevator` shows the car's
   panel from where you stand). So every enter still hides the side and the picker (`sideClosed`), as
-  [`deskEntered`](ref:hub/renderers/tower3d/src/main.ts#deskEntered) does. The reader's kinds share one enter and
-  leave ([`readerEntered`](ref:hub/renderers/tower3d/src/main.ts#readerEntered),
-  [`docClosed`](ref:hub/renderers/tower3d/src/main.ts#docClosed)); entered again from its own kind, which isn't
+  [`deskEntered`](ref:hub/renderers/tower3d/src/panels.ts#deskEntered) does. The reader's kinds share one enter and
+  leave ([`readerEntered`](ref:hub/renderers/tower3d/src/panels.ts#readerEntered),
+  [`docClosed`](ref:hub/renderers/tower3d/src/panels.ts#docClosed)); entered again from its own kind, which isn't
   left, the reader is closed before it opens again, except a kept item, which keeps the body it shows until the new
   one is read. What a panel's keys go to once drawn is a `focus` effect from a table by kind (`FOCUS_ON`: the
   picker's first place, the archive's filter, the draft's text).
@@ -173,7 +174,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   it finds, not by a flag: the draft editor's leave saves the draft open, and a close that must not save (a draft
   deleted, sent or gone) lets the draft go first.
 - *Draw is state to DOM, once a frame.* `draw` asks for the panels to be drawn at the next animation frame, however
-  many transitions asked; [`drawPending`](ref:hub/renderers/tower3d/src/main.ts#drawPending) draws them now, which a
+  many transitions asked; [`drawPending`](ref:hub/renderers/tower3d/src/panels.ts#drawPending) draws them now, which a
   stepped door frame does as a real frame would, and which a `focus` effect does first, since it needs what the draw
   writes. An effect that needs the drawn DOM calls it first; a handler never does. Each visible change has its `draw` in `tower3d.events()`, so a missing one shows ([[tower3d-door]]).
 - *The building takes a board by an event.* `board/arrived` keeps the board in the db as `waiting`, a later one
@@ -268,7 +269,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   [`tickHold`](ref:hub/renderers/tower3d/src/main.ts#tickHold) writes the ring's `--hold` every frame, dispatches
   `hold-filled` once, then runs the verb itself, outside the loop, as a key does. A verb runs outside the loop because
   many verbs dispatch and then read the db, which inside an executor they would find stale.
-  [`RUN`](ref:hub/renderers/tower3d/src/main.ts#RUN)'s entries that are transitions (a floor's panel, the
+  [`RUN`](ref:hub/renderers/tower3d/src/panels.ts#RUN)'s entries that are transitions (a floor's panel, the
   directory, the elevator) return their event, which `run` dispatches; the rest act at once.
 - *Capture is a fact reported to the app.* Pointer lock (`pointerlockchange`) and the door's capture each dispatch
   `capture`, and `captured()` reads the db ([`Capture`](ref:hub/renderers/tower3d/src/app.ts#Capture)). `still`

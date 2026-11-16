@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-08",
   "reviewed": "2026-11-16",
-  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#keepTextareaEmpty", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/main.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/shared/keymap.ts#panesOf", "hub/src/shared/keymap.ts#chordsOf", "hub/renderers/page/page.js#pressAdded", "hub/renderers/page/page.js#escapeDismisses"]
+  "refs": ["hub/src/shared/keymap.ts#COMMANDS", "hub/src/shared/keymap.ts#keysProblems", "hub/src/shared/keymap.ts#keymapOf", "hub/src/shared/keymap.ts#commandOf", "hub/src/shared/keymap.ts#frameCommandOf", "hub/src/tower/frame-keys.js", "hub/src/tower/http.ts#serveSandboxed", "hub/src/shared/shelf-page.ts#FromPage", "hub/renderers/page/page.js#frameKey", "hub/src/shared/keymap.ts#keymapSheetHtml", "hub/src/shared/keymap.ts#keyshortcuts", "hub/src/shared/keymap.ts#keysHint", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/shared/termkeys.ts#deadKeys", "hub/src/shared/termkeys.ts#leftToComposition", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/term-view.ts#keepTextareaEmpty", "hub/src/shared/model.ts#configuredKeys", "hub/src/config-check.ts#configProblems", "hub/src/bridge/board.ts#Board", "hub/renderers/page/page.js#run", "hub/renderers/page/screen.js#leaveTerminal", "hub/renderers/tower3d/src/panels.ts#runCommand", "hub/docs/config.md", "hub/src/shared/keymap.ts#addedKeys", "hub/src/shared/keymap.ts#addedCommandOf", "hub/src/shared/keymap.ts#panesOf", "hub/src/shared/keymap.ts#chordsOf", "hub/renderers/page/page.js#pressAdded", "hub/renderers/page/page.js#escapeDismisses"]
 }
 ---
 **Problem.** The keys lived in several places (shared constants, the page's shortcuts and hand-written `?` sheet,
@@ -100,9 +100,9 @@ every other key, and reach every renderer the way `user.name` does.
   dispatches the Escape that ends a pointer lock, which framed would also go home). It lets go of the mouse when its window loses focus: Chrome keeps a
   frame's pointer lock while the palette a forwarded ⌘K opened takes focus, and Escape would go to the lock.
 - Tower 3D runs the moves, the panes and `leave-terminal` from `board.keys` in the world, at a desk and in its
-  terminal ([`runCommand`](ref:hub/renderers/tower3d/src/main.ts#runCommand)), and every terminal and field command in
+  terminal ([`runCommand`](ref:hub/renderers/tower3d/src/panels.ts#runCommand)), and every terminal and field command in
   its terminal and fields. Its pause card's `keymapSheetHtml` lists only those
-  ([`runsHere`](ref:hub/renderers/tower3d/src/main.ts#runsHere)): a command that does nothing there is not offered there.
+  ([`runsHere`](ref:hub/renderers/tower3d/src/keymap-here.ts#runsHere)): a command that does nothing there is not offered there.
 
 **Alternatives considered.**
 - Overrides in `tower.store`, per viewer: the user chose the config, the hand-edited intent every renderer and worker

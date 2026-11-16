@@ -21,7 +21,7 @@
     "hub/src/tower/dispatch.ts#letGo",
     "hub/src/shared/duty.ts#strandedOf",
     "hub/src/shared/duty.ts#resumeStranded",
-    "hub/renderers/tower3d/src/main.ts#letWorkerGo",
+    "hub/renderers/tower3d/src/panels.ts#letWorkerGo",
     "hub/renderers/tower3d/src/acts.ts#HELD",
     "hub/src/cli-verbs.ts#CLI_VERBS",
     "hub/test/board.test.ts"

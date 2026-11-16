@@ -14,7 +14,7 @@
     "hub/src/shared/toasts.ts#toaster",
     "hub/src/shared/toasts.ts#sameToast",
     "hub/src/shared/toasts.ts#toastsCss",
-    "hub/renderers/tower3d/src/main.ts#sendHome",
+    "hub/renderers/tower3d/src/panels.ts#sendHome",
     "hub/src/shared/design.ts#designCss",
     "hub/extensions/drafts/client/drafts.ts#discard",
     "hub/extensions/drafts/client/drafts.ts#restore",

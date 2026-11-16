@@ -6,7 +6,7 @@
   "in": "tower-core",
   "reviewed": "2026-11-16",
   "involves": ["operator", "tower3d", "tower-server", "host-daemon", "claude-code", "system-root"],
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/main.ts#RUN", "hub/renderers/tower3d/src/navigation.ts#goDesk", "hub/renderers/tower3d/src/main.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#keyWrites", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/hosting.ts#deskViews", "hub/renderers/tower3d/src/main.ts#openChanges", "hub/renderers/tower3d/src/main.ts#mountDeskScreen", "hub/renderers/tower3d/src/main.ts#replay", "hub/renderers/tower3d/src/input.ts#startInput", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/views.ts#layoutNow", "hub/renderers/tower3d/src/hud.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/desk.ts#makeSeat", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/panels.ts#RUN", "hub/renderers/tower3d/src/navigation.ts#goDesk", "hub/renderers/tower3d/src/panels.ts#focusDesk", "hub/renderers/tower3d/src/term.ts#mountTerm", "hub/src/shared/term-view.ts#termHandlers", "hub/src/shared/term-view.ts#mountTermView", "hub/src/shared/termkeys.ts#terminalKeymap", "hub/src/tower/tower.js#keySender", "hub/src/tower/tower.js#keyWrites", "hub/src/tower/tower.js#relay", "hub/src/tower/http.ts#muxWatch", "hub/src/tower/http.ts#screenStream", "hub/src/tower/http.ts#terminalStream", "hub/src/tower/http.ts#command", "hub/renderers/tower3d/src/hosting.ts#deskViews", "hub/renderers/tower3d/src/panels.ts#openChanges", "hub/renderers/tower3d/src/panels.ts#mountDeskScreen", "hub/renderers/tower3d/src/panels.ts#replay", "hub/renderers/tower3d/src/input.ts#startInput", "hub/src/machine.ts#hostRequest", "hub/src/host/main.ts#handle", "hub/renderers/tower3d/src/ui.ts#deskHeadHtml", "hub/renderers/tower3d/src/desk-verbs.ts#deskVerbs", "hub/renderers/tower3d/src/views.ts#layoutNow", "hub/renderers/tower3d/src/hud.ts#sawDesk", "hub/renderers/tower3d/renderer.json"]
 }
 ---
 ```mermaid
@@ -45,9 +45,9 @@ sequenceDiagram
 
 - **Aim, then E.** What sits under the crosshair offers its verbs on every frame
   ([`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf)); a desk's `use` is "sit" while its card is live
-  ([[verb-prompts]]). E runs it through the act table ([`RUN`](ref:hub/renderers/tower3d/src/main.ts#RUN)):
+  ([[verb-prompts]]). E runs it through the act table ([`RUN`](ref:hub/renderers/tower3d/src/panels.ts#RUN)):
   [`goDesk`](ref:hub/renderers/tower3d/src/navigation.ts#goDesk) travels to the desk's floor if needed, and
-  [`focusDesk`](ref:hub/renderers/tower3d/src/main.ts#focusDesk) opens the desk panel by the app's `go`
+  [`focusDesk`](ref:hub/renderers/tower3d/src/panels.ts#focusDesk) opens the desk panel by the app's `go`
   ([[tower3d-system]]), a modal over the dimmed world. While it is open the scene isn't drawn: the canvas keeps its last frame and updates go on. A video-wall
   tile opens the same panel where you stand. A worker gathered with its crew sits at a meeting table instead
   ([[whereabouts]]); aiming at it, or at its empty desk, opens the same panel.
@@ -92,19 +92,19 @@ sequenceDiagram
   ([`sawDesk`](ref:hub/renderers/tower3d/src/hud.ts#sawDesk)), in the seen set every renderer of theirs writes. A
   destructive verb asks first in the library's dialog with its words ([[press-feedback]]). A config layout change reaches the desk on reload; the viewer's, on the next board.
 - **The panel's tabs.** Logbook ([[logbook]]: a past session picked there replaces the terminal with its last
-  screen, [`replay`](ref:hub/renderers/tower3d/src/main.ts#replay) and
-  [`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen), until live is chosen again or Esc),
+  screen, [`replay`](ref:hub/renderers/tower3d/src/panels.ts#replay) and
+  [`mountDeskScreen`](ref:hub/renderers/tower3d/src/panels.ts#mountDeskScreen), until live is chosen again or Esc),
   Changes (the page's `tower/changes` view, mounted at the desk through the library's view host, with the reviews
   extension's note box in its `lines.acts`: [`deskViews`](ref:hub/renderers/tower3d/src/hosting.ts#deskViews),
-  [`openChanges`](ref:hub/renderers/tower3d/src/main.ts#openChanges), [[ui-model]]), Reviews (the reviews extension's
-  `reviews/thread` view, mounted the same way, [`openReviews`](ref:hub/renderers/tower3d/src/main.ts#openReviews)) and
+  [`openChanges`](ref:hub/renderers/tower3d/src/panels.ts#openChanges), [[ui-model]]), Reviews (the reviews extension's
+  `reviews/thread` view, mounted the same way, [`openReviews`](ref:hub/renderers/tower3d/src/panels.ts#openReviews)) and
   each thing the worker showed lie over the terminal, which keeps its size. Changes and Reviews are each hidden and
   kept while another tab shows, their reads stopped, and closed with the desk; each tab is tallied by its view's `tab`.
   A note's lines, which the thread hands Tower 3D to display (a `display` event, through the port), open in the
-  desk's Changes ([`display`](ref:hub/renderers/tower3d/src/main.ts#display)): at the open desk, or, from the reader, at the desk of the
+  desk's Changes ([`display`](ref:hub/renderers/tower3d/src/panels.ts#display)): at the open desk, or, from the reader, at the desk of the
   worker whose lines they are, gone to; a subject Tower 3D has no place for is said in a toast. A terminal that ends while its tab
   shows gives way to the Logbook, as the page's gives way to the Brief, and the Terminal tab then shows its last screen
-  ([`terminalEnded`](ref:hub/renderers/tower3d/src/main.ts#terminalEnded)). While a text box has focus, keys
+  ([`terminalEnded`](ref:hub/renderers/tower3d/src/panels.ts#terminalEnded)). While a text box has focus, keys
   type into it and never move you.
 - **Leaving.** Esc in the terminal belongs to Claude; ✕, a click on the dimmed world, or Esc outside the terminal
   ([`onKey`](ref:hub/renderers/tower3d/src/main.ts#onKey)) closes the panel. Closing unwatches the stream, and the
