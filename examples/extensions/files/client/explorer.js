@@ -171,7 +171,18 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     return rows.join('')
   }
 
-  let painted = ''
+  /** The tree as last drawn: none until the first paint, which replaces the note the view starts with. */
+  let painted
+  /** Why the checkout's repos couldn't be read, in the error's own words. */
+  let unreadable
+  /** What the tree says when the checkout has no repo to list. */
+  const emptyNote = () => {
+    if (unreadable) return `The checkout couldn't be read: ${unreadable}`
+    if (card.worktree?.gone)
+      return `${card.callsign}'s worktree ${card.worktree.name} was removed, so there is nothing to read. Resuming the worker restores it from its branch when the branch still exists.`
+    return 'This worker has no checkout the explorer can read.'
+  }
+
   function paint() {
     const html = repos
       .map((repo) => {
@@ -180,9 +191,10 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
         return `<button class="row root" data-dir="${esc(key)}" aria-expanded="${isOpen}"><span class="twist">${isOpen ? '▾' : '▸'}</span><span class="name">${esc(repo)}</span>${holdsMark(repo, '') ? '<i class="dot" title="holds changes"></i>' : ''}</button>${isOpen ? rowsOf(repo, '', 1) : ''}`
       })
       .join('')
-    if (html === painted) return
-    painted = html
-    tree.innerHTML = html || '<p class="note">This worker has no checkout the explorer can read.</p>'
+    const drawn = html || emptyNote()
+    if (drawn === painted) return
+    painted = drawn
+    tree.innerHTML = html || `<p class="note">${esc(emptyNote())}</p>`
   }
 
   /** Lists folder `path` of `repo`. */
@@ -341,7 +353,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     }
   })
 
-  repos = (await read('repos').catch((err) => (toast(err), { repos: [] }))).repos
+  repos = (await read('repos').catch((err) => ((unreadable = err.message), { repos: [] }))).repos
   if (!(await state.get(`open.${card.id}`))) repos.forEach((repo) => opened.add(keyOf(repo, '')))
   await Promise.all(repos.map((repo) => list(repo, '').catch(toast)))
   for (const key of opened) {
@@ -370,6 +382,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     update(next, at) {
       board = next
       card = at.value
+      paint()
     },
     visible(on) {
       seen = on
