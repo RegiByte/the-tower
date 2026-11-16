@@ -107,8 +107,8 @@ const sameRoom = (from: Panel | undefined, to: Panel | undefined) => from?.kind 
 const FOCUSES = new Set<Panel['kind']>(['desk', 'shell', 'tv', 'game'])
 const focuses = (p: Panel | undefined) => p !== undefined && FOCUSES.has(p.kind)
 
-/** What a panel's keys go to once it is entered and drawn: the picker's first place, the archive's filter. */
-const FOCUS_ON: Partial<Record<Panel['kind'], string>> = { 'shell-pick': '#shell-pick [data-shell-dir]', archive: '#archive-filter' }
+/** What a panel's keys go to once it is entered and drawn: the picker's first place, the archive's filter, the draft's text. */
+const FOCUS_ON: Partial<Record<Panel['kind'], string>> = { 'shell-pick': '#shell-pick [data-shell-dir]', archive: '#archive-filter', draft: '#draft-text' }
 
 /** The worker whose desk is open. */
 export const atDesk = (db: Db) => (db.panel?.kind === 'desk' ? db.panel.id : undefined)
@@ -163,11 +163,13 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
 export type AppReads = {
   /** The checkouts with a review thread on a floor. */
   threadsOf: (f: Floor) => { checkout: string }[]
+  /** Whether a floor keeps drafts: the drafts extension is on there. */
+  keepsDrafts: (f: Floor) => boolean
 }
 
 /**
  * The panel whose subject the board no longer holds: a desk's worker gone, a shell ended, a floor removed, a shelf
- * entry, a kept item, a game or a review thread gone.
+ * entry, a kept item, a game or a review thread gone, a floor no longer keeping drafts.
  */
 function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
   if (!panel) return false
@@ -179,6 +181,10 @@ function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
     case 'doc': return !floor(panel.project)?.shelf?.[panel.n]
     case 'kept': return !keptItem(board, panel)
     case 'game': return !gameItem(board.floors, panel.project, panel.id)
+    case 'draft': {
+      const f = floor(panel.project)
+      return !f || !reads.keepsDrafts(f)
+    }
     case 'thread': {
       const f = floor(panel.project)
       return !f || !reads.threadsOf(f).some((t) => t.checkout === panel.checkout)
