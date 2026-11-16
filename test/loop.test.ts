@@ -55,3 +55,24 @@ test('loop subscribe: each event with the effects its handler returned, after th
   c.dispatch({ type: 'add', by: 1 })
   assert.equal(seen.length, 2, 'unsubscribed')
 })
+
+test('loop subscribe: a listener that throws leaves the loop running, every event handled and every other listener told, and rejects with its error', () => {
+  const c = counter()
+  const rejected: unknown[] = []
+  const reject = Promise.reject
+  Promise.reject = (err?: unknown) => (rejected.push(err), Promise.resolve() as Promise<never>)
+  try {
+    const told: string[] = []
+    c.subscribe(() => {
+      throw new Error('a listener broke')
+    })
+    c.subscribe((event) => told.push(event.type))
+    c.dispatch({ type: 'echo', by: 2 })
+    c.dispatch({ type: 'add', by: 1 })
+    assert.deepEqual(told, ['echo', 'add', 'add'])
+    assert.equal(c.state(), 3)
+    assert.deepEqual(rejected.map((err) => (err as Error).message), ['a listener broke', 'a listener broke', 'a listener broke'], 'once per event, as a rejection')
+  } finally {
+    Promise.reject = reject
+  }
+})

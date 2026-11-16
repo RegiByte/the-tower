@@ -39,7 +39,8 @@ export type Loop<S, E> = {
    * after those effects ran, in the order the events were handled: an event an executor dispatched comes after the one
    * whose effect dispatched it. Answers the function that stops the calls. A listener watches and never steers: one
    * that throws leaves the loop as it was, every queued event still handled, and its error rejects a promise of its own,
-   * which the page's or the process's unhandled-rejection handling reports. @since 2.7
+   * which the page's or the process's unhandled-rejection handling reports. An event whose handler or executor throws
+   * is not reported: its error leaves `dispatch` before the listeners are called. @since 2.7
    */
   subscribe(listener: Listener<E>): () => void
 }
