@@ -28,7 +28,11 @@ export const terminalFont = (prefs: Prefs): TermFont => ({
 export const loadTerminalFont = ({ family, size }: TermFont) =>
   Promise.all([`${size}px ${family}`, `700 ${size}px ${family}`].map((font) => document.fonts.load(font)))
 
-/** A cell of `family`, measured as xterm measures it: a run of W in a span, at a size large enough to read fractions. */
+/**
+ * A cell of `family` per px of font size: a run of W in a span at 100 px, scaled. Not xterm's cell at a given size:
+ * a face's ascent and descent round per size, so a scaled height overshoots. `fitSize` measures each size as xterm does.
+ * @deprecated A watched terminal's size is `fitSize`'s.
+ */
 export function cellOf(family: string): Cell {
   const span = Object.assign(document.createElement('span'), { textContent: 'W'.repeat(32) })
   span.style.cssText = `position: absolute; visibility: hidden; white-space: pre; font: 100px/normal ${family}`
