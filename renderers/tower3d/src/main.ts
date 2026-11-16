@@ -724,8 +724,8 @@ function sideClosed() {
 }
 
 /**
- * Entering the side (a floor's panel, its archive, the directory): the drawer and the shell picker closed, as
- * they don't leave by the app yet, the mouse let go.
+ * Entering the side (a floor's panel, its archive, the directory): the shell picker closed, as it doesn't leave by
+ * the app yet, the mouse let go.
  */
 function sideEntered() {
   sideClosed()
@@ -736,7 +736,7 @@ const sideLeft = () => show('side', false)
 /** The picker of where a new shell starts, `first`'s floor ahead, its first place focused for the keyboard. */
 const openShellPick = (first: string) => go({ kind: 'shell-pick', first })
 
-/** Entering the picker: the drawer's side closed, as it doesn't leave by the app yet. */
+/** Entering the picker: the side closed. */
 function shellPickEntered() {
   sideClosed()
   show('shell-pick', true)
@@ -810,7 +810,7 @@ statsPolling.subscribe(events.listen('statsPolling'))
 const openStats = () => go({ kind: 'stats' })
 
 /**
- * Entering the reader: the drawer and the picker closed, as they don't leave by the app yet, the
+ * Entering the reader: the picker closed, as it doesn't leave by the app yet, the
  * mouse let go, the reader shown. Entered again from its own kind, which isn't left, the reader is closed first.
  */
 function readerEntered(panel: Panel, from: Panel | undefined) {
@@ -832,7 +832,7 @@ function statsEntered(panel: Panel, from: Panel | undefined) {
 /** The Stats panel over your range: a read over another, held or in flight, is dropped. */
 const rangeStats = () => app.dispatch({ type: 'stats/range' })
 
-/** Whatever panel is open left, back to walking: the drawer and the picker hidden as they close, since they don't leave by the app yet. */
+/** Whatever panel is open left, back to walking: the picker hidden as it closes, since it doesn't leave by the app yet. */
 function closePanels() {
   closeSide()
   if (panelNow()) go(undefined)
@@ -848,7 +848,7 @@ function openGame(project: string, id: string) {
   if (at) go({ kind: 'game', project, id, x: at.cabinet.x })
 }
 
-/** Entering a game: the drawer and the picker closed, as they don't leave by the app yet, the music paused, the game's frame given the keys, the camera on its cabinet. */
+/** Entering a game: the picker closed, as it doesn't leave by the app yet, the music paused, the game's frame given the keys, the camera on its cabinet. */
 function gameEntered({ project, id }: GamePanel) {
   sideClosed()
   pause()
@@ -996,7 +996,7 @@ function goShown(id: string, target: string) {
   goDesk(id)
 }
 
-/** A panel of the side the app doesn't move yet, opened over what is open: a drawer. */
+/** A panel of the side whose enter doesn't show it, opened over what is open: a drawer. */
 function openSide(next: Panel) {
   unfocus()
   closeDoc()
@@ -1013,7 +1013,7 @@ function focusDesk(id: string) {
 }
 
 /**
- * Entering the desk: the drawer and the picker closed, as they don't leave by the app yet, the
+ * Entering the desk: the picker closed, as it doesn't leave by the app yet, the
  * mouse let go, the desk's panel shown on its screen.
  */
 function deskEntered({ id }: { id: string }) {
@@ -1086,7 +1086,7 @@ function shellEntered({ id }: { id: string }) {
 /** Up close to a big screen, filling the view. */
 const watch = (n: number) => go({ kind: 'tv', n })
 
-/** Entering a big screen: the drawer and the picker closed, as they don't leave by the app yet, the screen filling the view. */
+/** Entering a big screen: the picker closed, as it doesn't leave by the app yet, the screen filling the view. */
 function tvEntered({ n }: { n: number }) {
   const screen = bigScreens(planNow())[n]
   sideClosed()
@@ -3049,7 +3049,7 @@ function openDraftPanel(d: Draft) {
   go({ kind: 'draft', project: d.project })
 }
 
-/** Entering the editor: the drawer and the picker closed, as they don't leave by the app yet, the mouse let go, the draft's text in it. */
+/** Entering the editor: the picker closed, as it doesn't leave by the app yet, the mouse let go, the draft's text in it. */
 function draftEntered() {
   sideClosed()
   show('paused', false)
