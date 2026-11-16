@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { HELD, HOLD_MS, holdFill, type Act, type Held, type Offer, type Verb } from './acts.ts'
 import { levelsShown, showLevels } from './levels.ts'
-import { drive, type Move } from './input.ts'
+import type { Move } from './input.ts'
 import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
@@ -11,6 +11,7 @@ import type { CatName } from './life.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
 
 const { camera, canvas, scene } = shell().stage
+const { drive } = shell().input
 
 /**
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse

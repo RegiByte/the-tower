@@ -1,5 +1,6 @@
 import { defineResource } from 'braided'
 import { startClients } from './clients.ts'
+import { startInput } from './input.ts'
 import { startLighting } from './light/setting.ts'
 import { stage as stageShown } from './loading.ts'
 import { bindShell, type Shell } from './shell.ts'
@@ -12,6 +13,7 @@ import { startStage } from './stage.ts'
  *   lighting  whether the page draws the light rig, read before anything draws (light/setting.ts)
  *   clients   the extension clients whose words the page draws (clients.ts)
  *   stage     the renderer, scene, camera and the city outside, on the page's canvas (stage.ts)
+ *   input     the keys held and the mouse's travel under the pointer lock (input.ts)
  *   shell     the page itself: main.ts, imported once the resources it reads are bound (shell.ts)
  */
 
@@ -25,8 +27,14 @@ const stage = defineResource({
   halt: (started) => started.stop(),
 })
 
+const input = defineResource({
+  dependencies: ['stage'],
+  start: ({ stage }: Pick<Shell, 'stage'>) => startInput(stage.canvas),
+  halt: (started) => started.stop(),
+})
+
 const shell = defineResource({
-  dependencies: ['clients', 'lighting', 'stage'],
+  dependencies: ['clients', 'lighting', 'stage', 'input'],
   start: async (started: Shell) => {
     stageShown('models')
     bindShell(started)
@@ -35,4 +43,4 @@ const shell = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, shell }
+export const tower3d = { lighting, clients, stage, input, shell }
