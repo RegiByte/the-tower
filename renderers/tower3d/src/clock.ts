@@ -12,3 +12,6 @@ if (FIXTURE_AT !== undefined && pinned !== undefined && pinned !== FIXTURE_AT) {
 }
 
 export const wallNow = () => FIXTURE_AT ?? pinned ?? Date.now()
+
+/** Whether the wall clock moves: a pinned one (`?at=`, a fixture board) stands still, and nothing waits on it. */
+export const clockMoves = FIXTURE_AT === undefined && pinned === undefined

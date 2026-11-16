@@ -54,7 +54,7 @@ import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml
 import { addedCommandOf, commandOf, COMMANDS, keymapSheetHtml, panesOf, type Keys } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
 import { random } from './random.ts'
-import { wallNow } from './clock.ts'
+import { clockMoves, wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards, readArchive, readConversations, viewTower } from './fixtures.ts'
 import { CHANGES, THREAD, deskViews, readerView, viewHosting } from './hosting.ts'
@@ -292,8 +292,8 @@ function historyReads(board: Board, archived: Archived) {
 }
 
 /**
- * The plan last derived, and what from. The building takes a fresh archive snapshot and instant with every board and
- * replan, so the plan is derived once for each of those and reused by every read until the next.
+ * The plan last derived, and what from. The building takes a fresh archive snapshot with every board and a fresh
+ * instant with every board and replan, so the plan is derived once for each of those and reused by every read until the next.
  */
 let planned: { board: Board; archived: Archived; at: number; plan: Plan } | undefined
 
@@ -1444,7 +1444,7 @@ function drawPending() {
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
 const app = loop({
   state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
-  handlers: appHandlers({ planOf, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
+  handlers: appHandlers({ planOf, clockMoves, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
   execute: {
     ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
     announce: () => {},
@@ -2258,7 +2258,6 @@ function update(dt: number) {
   s.simNow += dt * 1000
   const turned = takeTurn()
   if (!boardNow() || !s.world) return
-  if (wallNow() >= planNow().until) takeBoard(boardNow()!, selfNow())
   const f: Frame = { dt, t: s.simNow / 1000, turned }
   for (const tick of TICKS) tick(f)
 }

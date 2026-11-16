@@ -157,8 +157,7 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   many transitions asked; [`drawPending`](ref:hub/renderers/tower3d/src/main.ts#drawPending) draws them now, which a
   stepped door frame does as a real frame would, and which a `focus` effect does first, since it needs what the draw
   writes. An effect that needs the drawn DOM calls it first; a handler never does. Each visible change has its `draw` in `tower3d.events()`, so a missing one shows ([[tower3d-door]]).
-- *The building takes a board by an event.* `board-settled`, dispatched once a board's archives are read (and at the
-  plan's `until`), carries what the building takes ([`Building`](ref:hub/renderers/tower3d/src/app.ts#Building)): the
+- *The building takes a board by an event.* `board-settled`, dispatched once a board's archives are read, carries what the building takes ([`Building`](ref:hub/renderers/tower3d/src/app.ts#Building)): the
   board, the shelf entry this page is, each floor's archive as read for it and the wall time it is planned at. Its pure
   handler ([`took`](ref:hub/renderers/tower3d/src/app.ts#took)) keeps it in the db first, then returns in order: a
   firework for each turn finished, `waits/began` for the lamps, an `asked` toast for each ask begun and not dismissed,
@@ -185,8 +184,8 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
 - *The plan is derived, the boards before it too.* The db keeps what the building's plan comes from, not the plan: the
   board, each floor's archive as read for it ([`archivedAt`](ref:hub/renderers/tower3d/src/archive.ts#archivedAt))
   and the wall time it was planned at; [`planOf`](ref:hub/renderers/tower3d/src/main.ts#planOf) derives the plan,
-  memoized on the identity of those three, not on their value: each board taken or replanned brings a fresh snapshot
-  and instant, so the memo misses then, as the stored plan was rebuilt then, and serves every read until the next; it is handed to the handlers as a read (`AppReads.planOf`). The archive is a snapshot taken with the board: read live, the standing board's archive
+  memoized on the identity of those three, not on their value: each board taken brings a fresh snapshot and instant,
+  and each replan a fresh instant, so the memo misses then, as the stored plan was rebuilt then, and serves every read until the next; it is handed to the handlers as a read (`AppReads.planOf`). The archive is a snapshot taken with the board: read live, the standing board's archive
   goes undefined once a newer board's read lands, and its plan would lose its seats while that board waits. What
   changed since the board before (a turn finished, a showing arrived, the first board) is derived from that board,
   `was` in the handler and `world/apply`, and the desk and gallery layers are made over it
@@ -209,8 +208,13 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   and sets its level as the ride ends, before `ride-arrived`; a `place` stands it where a cut or the door says, the ride
   and flight ended. The pet's hearts are three.js sprites, kept beside the frames that place them. A flight an
   executor starts (`fly-home`, a big screen or a game entered) is dispatched from it, so it lands in the db once the
-  transition's other effects have run; only frames read it. The replan at `plan.until` is still checked every frame,
-  in `update`: the plan is the board's, and it becomes a timer when the board becomes an event (P3).
+  transition's other effects have run; only frames read it.
+- *The replan is a timer.* The board handler starts a `replan` timer for the plan's `until` (the next worker leaving
+  for the break room), firing `replan` with `at: until`, so it plans as a frame just after would. A pinned clock (`?at=`,
+  every fixture) never replans: the handler is told once whether the clock moves (`AppReads.clockMoves`). A replan
+  plans the same board again at that instant and keeps the archive snapshot it was taken with: only a new board takes
+  a new read, so a newer board's reads half landed can't unseat a floor's workers while it waits. The cost, accepted:
+  a floor whose archive read failed for a board and was read again seats its workers only at the next board.
 - *Aim is written on change.* [`tickAim`](ref:hub/renderers/tower3d/src/main.ts#tickAim) still raycasts every frame,
   but dispatches `aimed` only when the act's key changes ([`Aim`](ref:hub/renderers/tower3d/src/app.ts#Aim)). The db
   keeps the act last aimed at and the act the prompt offers verbs for apart: the prompt empties when the view leaves

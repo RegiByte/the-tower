@@ -135,6 +135,8 @@ export type AppEvent =
   | { type: 'view'; view: View }
   /** A board whose floors' archives are read: the building takes it, planned as `building` says. */
   | { type: 'board-settled'; building: Building }
+  /** The plan stopped holding by time alone at wall time `at` (its `until`): the building plans its board again then. */
+  | { type: 'replan'; at: number }
   | { type: 'ride'; ride: Ride }
   | { type: 'ride-arrived' }
   | { type: 'fly'; flight: Flight }
@@ -318,6 +320,8 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
 export type AppReads = {
   /** The building's plan, derived from what it took (memoized on it). */
   planOf: (b: Building) => Plan
+  /** Whether the wall clock moves: a pinned one (`?at=`, a fixture) never replans. */
+  clockMoves: boolean
   /** A floor's review threads, by checkout and the key their subject is named by. */
   threadsOf: (f: Floor) => { checkout: string; key: string }[]
   /** Whether a floor keeps drafts: the drafts extension is on there. */
@@ -448,8 +452,13 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
     () => [{ type: 'logbooks' }, { type: 'elevator' }],
     (db) => (db.pending.desk && deskOf(plan, db.pending.desk) ? [into({ ...db, pending: { ...db.pending, desk: undefined } }), { type: 'desk/go', id: db.pending.desk }] : []),
     (db) => (db.pending.shell && kioskOf(plan, db.pending.shell) ? [into({ ...db, pending: { ...db.pending, shell: undefined } }), { type: 'shell/go', id: db.pending.shell }] : []),
+    () => replanAt(building, plan, reads),
   )
 }
+
+/** The building planned again once its plan stops holding by time alone, while the clock moves and the plan has an end. */
+const replanAt = (building: Building, plan: Plan, reads: AppReads): AppEffect[] =>
+  reads.clockMoves && Number.isFinite(plan.until) ? [{ type: 'timer/start', id: 'replan', ms: Math.max(0, plan.until - building.at), fire: { type: 'replan', at: plan.until } }] : []
 
 /** The desk's tab goes to `to`. */
 const tabTo = (db: Db, id: string, to: TabTo): AppEffect[] => [into({ ...db, deskTab: tabName(to) }), ...tabbed(db.deskTab, id, to), DRAW]
@@ -482,6 +491,8 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   pend: (db, { pending }) => [into({ ...db, pending: { ...db.pending, ...pending } })],
   view: (db, { view }) => [into({ ...db, view })],
   'board-settled': (db, { building }) => took(db, building, reads),
+  /** The same board planned again at `at`, its archive as read for it kept: only a new board takes a new read. */
+  replan: (db, { at }) => (db.building ? took(db, { ...db.building, at }, reads) : []),
   ride: (db, { ride }) => [into(moved(db, { ride })), { type: 'elevator' }],
   'ride-arrived': (db) => [into(moved(db, { ride: undefined })), { type: 'hud' }, { type: 'elevator' }],
   fly: (db, { flight }) => [into(moved(db, { flight }))],
