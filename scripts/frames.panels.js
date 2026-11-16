@@ -7,8 +7,9 @@
  * stage whose panels were still changing after 3 s of real time carries an `error` saying so.
  *
  * Each route ends with one Escape and a `<route>-closed` stage, the way a user leaves it, then starts the next from
- * walking with no panel open, so one changing leaves the others' stages alone. Extend it at the end, so older
- * recordings still line up stage by stage.
+ * walking with no panel open, so one changing leaves the others' stages alone; the leaving routes at the end, on
+ * `leaving` alone, leave by the next board instead of an Escape. Extend it at the end, so older recordings still line
+ * up stage by stage.
  *
  * One stage waits on the real clock: `stats-open` waits up to 10 s for the tower to answer the Stats read, so the
  * answer and the stats it draws are that stage's; a sandbox slower than that moves them to a later stage.
@@ -304,7 +305,7 @@
    */
   if (new URLSearchParams(location.search).get('board') === 'leaving') {
     const leaves = async (route, open) => {
-      tryDo(route, open); t.step(60); await settle(); snap(`${route}-before-leaving`)
+      tryDo(`${route}-leaving`, open); t.step(60); await settle(); snap(`${route}-before-leaving`)
       t.advance(); t.step(60); await settle(); snap(`${route}-left`)
       t.advance(); t.step(60); await walking()
     }
