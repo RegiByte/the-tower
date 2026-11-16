@@ -3,7 +3,8 @@ import { fit, type Model } from '../../kaykit/src/catalog.ts'
 import type { Card } from './api.ts'
 import { DESK, RETURN } from './layout.ts'
 import type { FlatSlot } from '../../kaykit/src/scene.ts'
-import { stateKey, type PrefabPick, type Prefab, type PrefabItem } from './zones.ts'
+import { stateKey } from './prefab.ts'
+import type { PrefabPick, Prefab, PrefabItem } from './zones.ts'
 
 /**
  * A workstation's KayKit Bits models (CC0, vendored in `renderers/tower3d/kaykit`) as data, in desk space.

@@ -13,7 +13,7 @@
     "hub/renderers/tower3d/src/dress.ts#pickOf",
     "hub/renderers/tower3d/src/desk.ts#situate",
     "hub/renderers/tower3d/src/desk.ts#besideOf",
-    "hub/renderers/tower3d/src/zones.ts#stateKey",
+    "hub/renderers/tower3d/src/prefab.ts#stateKey",
     "hub/renderers/kaykit/src/scene.ts#picks",
     "hub/renderers/tower3d/src/dress.ts#PROPS",
     "hub/renderers/tower3d/src/dress.ts#statusState",
@@ -41,7 +41,7 @@ text, while the status colours stay the loudest thing on the floor. The state al
   whole pile at that share ([`pileState`](ref:hub/renderers/tower3d/src/dress.ts#pileState)); and `season`,
   `october`'s candy. The kit holds every list of states a document can be drawn in
   ([`picks`](ref:hub/renderers/kaykit/src/scene.ts#picks), under
-  [`stateKey`](ref:hub/renderers/tower3d/src/zones.ts#stateKey)), and a desk is drawn in its card's
+  [`stateKey`](ref:hub/renderers/tower3d/src/prefab.ts#stateKey)), and a desk is drawn in its card's
   ([`pickOf`](ref:hub/renderers/tower3d/src/dress.ts#pickOf)), so the office shows what the editor shows.
 - The document's slots place what is drawn around the worker (its fork's chair, its subagents, its logbook, papers,
   second monitor, a frame per thing it showed, the cat's perch, a reviewer's chair, notebook and visitors), read by

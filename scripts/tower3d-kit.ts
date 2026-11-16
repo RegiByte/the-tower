@@ -27,7 +27,8 @@ import { groupsOf, picks } from '../renderers/kaykit/src/scene.ts'
 import { FORGE_SURFACES, forgeId, gltfOf, measureKit, readForge, sourceFiles } from '../renderers/kaykit/src/measure.ts'
 import { DESK_DRESS, PROPS } from '../renderers/tower3d/src/dress.ts'
 import type { KitFile } from '../renderers/tower3d/src/kitfile.ts'
-import { CITY_MODELS, PREFABS, stateKey, type Prefab, type PrefabBox, type PrefabItem } from '../renderers/tower3d/src/zones.ts'
+import { stateKey } from '../renderers/tower3d/src/prefab.ts'
+import { CITY_MODELS, PREFABS, type Prefab, type PrefabBox, type PrefabItem } from '../renderers/tower3d/src/zones.ts'
 
 const REPO = path.resolve(import.meta.dirname, '..')
 const VENDORED = path.join(REPO, 'renderers/tower3d/kaykit')
