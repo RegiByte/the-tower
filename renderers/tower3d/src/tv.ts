@@ -21,7 +21,7 @@ texture.colorSpace = THREE.SRGBColorSpace
 texture.anisotropy = 8
 
 /** Every big screen's face: shared, never disposed with a building. */
-export const screenMaterial = glows(new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }))
+export const screenMaterial = glows(new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 }))
 screenMaterial.userData.shared = true
 
 let share: { stream: MediaStream; video: HTMLVideoElement } | undefined
