@@ -58,7 +58,7 @@ progress.
   never takes focus; × hides it until the id moves again. The palette lists "Reload: the tower was updated" while the
   page is stale ([`RELOAD_ENTRY`](ref:hub/src/shared/palette.ts#RELOAD_ENTRY), [[command-palette]]). The page shows
   `tower.served.version` under its logo, a button that copies it. Tower 3D shows the same notice when it is not framed
-  ([`staleNotice`](ref:hub/renderers/tower3d/src/main.ts#staleNotice)); framed, the page framing it says so.
+  ([`staleNotice`](ref:hub/renderers/tower3d/src/toasts.ts#staleNotice)); framed, the page framing it says so.
 
 **Alternatives considered.**
 - The package version or the latest tag as the id: a worker's sandbox or a checkout with uncommitted changes runs new
