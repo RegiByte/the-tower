@@ -60,7 +60,31 @@ const landedFix = ({ checkoutState: s }: Card): string => (s.is === 'landed' && 
 const launch = ({ kind, fields }: LaunchRequest): LaunchParts =>
   kind === 'spawn' && typeof fields?.of === 'string' ? { reportsTo: fields.of, exempt: ['hiring'] } : {}
 
-type Hire = { project: string; of: string; by?: string; tell?: boolean }
+/**
+ * What a reviewer's spawn takes as given, named and validated as `tower/spawn` names and validates a hire's: the
+ * runtime, model, effort, callsign and `argv` command it starts under, and other extensions' spawn fields.
+ */
+type Launch = { runtime?: string; model?: string; effort?: string; callsign?: string; command?: string; x?: Record<string, Record<string, unknown>> }
+
+/** The spawn's fields a review pins, each refused with why when given: what the reviewer is cut from and starts on. */
+const PINNED = {
+  cwd: "a reviewer starts in a worktree forked from its author's checkout, never in a directory named: leave `cwd` out",
+  cut: "a reviewer's worktree is always forked from its author's checkout: leave `cut` out",
+  prompt: "a reviewer starts on the reviews:review skill: leave `prompt` out, and put what it should know on the author's thread first (`tower x reviews note`)",
+  project: "a reviewer works on its author's floor, found by callsign on every floor: leave `project` out",
+} as const
+
+type Pinned = Partial<Record<keyof typeof PINNED, unknown>>
+
+type Hire = { project: string; of: string; by?: string; tell?: boolean } & Launch & Omit<Pinned, 'project'>
+
+/** Why a review can't take what it was given: a field it pins, or a spawn field of its own. */
+const pinnedRefusal = (given: Pinned & Pick<Launch, 'x'>): ApiError | undefined => {
+  const pinned = (Object.keys(PINNED) as (keyof typeof PINNED)[]).find((field) => given[field] !== undefined)
+  if (pinned) return apiError('invalid', `${pinned}: ${PINNED[pinned]}`)
+  if (given.x?.[CAP] !== undefined) return apiError('invalid', `x.${CAP}: a review sets x.${CAP}.of to its author itself: leave x.${CAP} out`)
+  return undefined
+}
 
 type Spawned = { t: 'spawned'; id: string; cut: { name: string } }
 
@@ -133,7 +157,7 @@ const start: Start = (ctx) => {
   }
 
   /** Starts a reviewer of the worker called `of` in a fork of its checkout, on that worker's floor. */
-  const hireReviewer = async ({ project, of, by, tell }: Omit<Hire, 'project'> & { project: string | undefined }, call: CallCtx['call'], cards: Card[]): Promise<{ reply: Spawned; author: Card } | ApiError> => {
+  const hireReviewer = async ({ project, of, by, tell, launch }: Pick<Hire, 'of' | 'by' | 'tell'> & { project: string | undefined; launch: Launch }, call: CallCtx['call'], cards: Card[]): Promise<{ reply: Spawned; author: Card } | ApiError> => {
     const author = workerOf(project, of, cards)
     if (!author) return apiError('not_found', `No worker is called ${of.toUpperCase()}: \`tower agents --all\` lists who is on duty`)
     const floor = floorOf(ctx.board(), author.project)
@@ -141,11 +165,14 @@ const start: Start = (ctx) => {
     const why = unreviewable(author, floor, ofCard(author))
     if (why) return apiError('refused', `${author.callsign}'s work can't be reviewed: ${why}${landedFix(author)}`)
     if (!floor.cards.some((c) => c.id === author.id)) return apiError('refused', `${author.callsign} is off the board, so a reviewer can't join its crew: resume it first (\`tower resume ${author.id}\`)`)
+    const runtime = launch.runtime === undefined ? undefined : ctx.board().runtimes[launch.runtime]
+    if (runtime?.absent.includes('slashCommands')) return apiError('refused', `A reviewer starts on the slash command of the reviews:review skill, which ${runtime.label} can't run: hire it on a runtime with slash commands, Claude when left out`)
     const reply = (await call('tower/spawn', {
+      ...launch,
       project: author.project,
       cut: { from: author.checkout },
       prompt: reviewerPrompt(author.callsign, tell === true),
-      x: { [CAP]: { of: author.callsign } },
+      x: { ...launch.x, [CAP]: { of: author.callsign } },
       ...(by !== undefined && { by, hire: true }),
     })) as Spawned | ApiError
     return isApiError(reply) ? reply : { reply, author }
@@ -199,12 +226,16 @@ const start: Start = (ctx) => {
     },
     launch,
     verbs: {
-      hire: async (input: Hire, { call, cards }: CallCtx) => {
-        const hired = await hireReviewer(input, call, cards())
+      hire: async ({ project, of, by, tell, cwd, cut, prompt, ...launch }: Hire, { call, cards }: CallCtx) => {
+        const refused = pinnedRefusal({ cwd, cut, prompt, x: launch.x })
+        if (refused) return refused
+        const hired = await hireReviewer({ project, of, by, tell, launch }, call, cards())
         return isApiError(hired) ? hired : hired.reply
       },
-      review: async ({ of, tell }: Pick<Hire, 'of' | 'tell'>, { call, caller, cards }: CallCtx) => {
-        const hired = await hireReviewer({ project: callerCard(caller)?.project, of, tell, by: caller.t === 'worker' ? caller.id : undefined }, call, cards())
+      review: async ({ of, tell, cwd, cut, prompt, project, ...launch }: Pick<Hire, 'of' | 'tell'> & Launch & Pinned, { call, caller, cards }: CallCtx) => {
+        const refused = pinnedRefusal({ cwd, cut, prompt, project, x: launch.x })
+        if (refused) return refused
+        const hired = await hireReviewer({ project: callerCard(caller)?.project, of, tell, by: caller.t === 'worker' ? caller.id : undefined, launch }, call, cards())
         if (isApiError(hired)) return hired
         const { reply, author } = hired
         const reviewer = cards().find((c) => c.id === reply.id)!
