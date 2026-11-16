@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music and the terminal) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, shell, and reads the others through one binding set as it starts. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle.",
+  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal and the asset loads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, shell, and reads the others through one binding set as it starts. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
@@ -19,6 +19,8 @@
     "hub/renderers/tower3d/src/input.ts#startInput",
     "hub/renderers/tower3d/src/music.ts#startMusic",
     "hub/renderers/tower3d/src/term.ts#startTerminal",
+    "hub/renderers/tower3d/src/loads.ts#startAssets",
+    "hub/renderers/tower3d/src/tv.ts#screenMaterial",
     "hub/renderers/tower3d/src/prefab.ts",
     "hub/scripts/tower3d-boot.ts#importCycles",
     "hub/src/tower/spine.ts",
@@ -40,7 +42,7 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 
 **How.**
 - *Resources are plain functions.* Each module exports a start (`startStage`, `startInput`, `startMusic`,
-  `startTerminal`, `startClients`, `startLighting`) that does what its import used to and returns what
+  `startTerminal`, `startClients`, `startLighting`, `startAssets`) that does what its import used to and returns what
   its users call, with a stop where stopping is cheap. Nothing calls the stops yet.
 - *One record wires them.* [`system.ts`](ref:hub/renderers/tower3d/src/system.ts) is the only module that knows
   where each is implemented: `defineResource` calls with their dependencies (the stage needs the lighting, the input
@@ -61,6 +63,18 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 - *No cycles.* [`importCycles`](ref:hub/scripts/tower3d-boot.ts#importCycles) in `test:tower3d-boot` walks the import
   graph esbuild reads for the four pages and fails, naming the modules, on any cycle. The one there was (`layout`,
   `meetings`, `zones`, `breaks`) is broken by [`prefab.ts`](ref:hub/renderers/tower3d/src/prefab.ts).
+- *The loads are a resource that hands out a promise.* [`startAssets`](ref:hub/renderers/tower3d/src/loads.ts#startAssets)
+  lights the models stage and starts loading the models, the kit, the faces, the viewer's kept spot and the
+  renderer's settings, and returns `loaded`, which settles once all are in. Its start does not wait for them: the page
+  reads its viewer and subscribes to the board while they load, so a page behind another tab still rings
+  ([[tower3d-start]]). Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
+  `assets.ts` would shadow it.
+- *Moving an import can move pixels.* three.js orders opaque draws by `material.id`, and ids are handed out as
+  materials are made, many of them as their module is evaluated. A change to what is imported first renumbers them,
+  which flips the draw order of any two surfaces within the depth buffer's precision of each other, so a refactor can
+  change frames without changing what anything draws. A surface that must win such a tie says so itself, the way the
+  big screens' [material](ref:hub/renderers/tower3d/src/tv.ts#screenMaterial) and the contact shadows' floor take a
+  polygon offset.
 - *Music alone.* The chimes keep their own audio context: muting suspends the band's.
 
 **Alternatives considered.**
@@ -75,6 +89,6 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   load-order hazards.
 
 **Impact.** The start order is the graph, and a failure names its resource. The import-time effects left the leaf
-modules; `main.ts` keeps its own (the asset loads, its listeners, timers, the board's subscription) until later
+modules; `main.ts` keeps its own (its listeners, timers, the board's subscription) until later
 passes move them.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.

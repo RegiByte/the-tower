@@ -11,6 +11,7 @@
     "hub/renderers/tower3d/index.html",
     "hub/renderers/tower3d/src/loading.ts",
     "hub/renderers/tower3d/src/boot.ts",
+    "hub/renderers/tower3d/src/loads.ts#startAssets",
     "hub/renderers/tower3d/src/system.ts",
     "hub/renderers/tower3d/src/files.ts#prefetch",
     "hub/renderers/tower3d/src/main.ts#onLiveBoard",
@@ -41,8 +42,9 @@ thread, for seconds with the GPU's program cache cold.
   sets it ([`frameScene`](ref:hub/renderers/tower3d/src/main.ts#frameScene): the rig's lights and shadows are part
   of each program's key, so compiling without them misses half the programs), `compileAsync`, then the first frame
   drawn under the screen as it fades. Boards arriving meanwhile supersede one another; the latest follows.
-- *The board is seen before it is drawn.* The page reads the viewer's record and subscribes to the board as it boots,
-  beside the models, and hands every board to its attention machine as it arrives ([[attention-list]], [[machines]]). Drawing waits for
+- *The board is seen before it is drawn.* The system's assets resource starts the loads
+  ([`startAssets`](ref:hub/renderers/tower3d/src/loads.ts#startAssets)) and hands the page their promise; the page
+  subscribes to the board as it boots, while they load, and hands every board to its attention machine as it arrives ([[attention-list]], [[machines]]). Drawing waits for
   the models ([`onLoaded`](ref:hub/renderers/tower3d/src/main.ts#onLoaded)) and the start waits on a shown tab
   (Chrome decodes an image and runs a frame only for one), so a page opened or reloaded behind another tab still
   rings when a worker starts waiting on you.
