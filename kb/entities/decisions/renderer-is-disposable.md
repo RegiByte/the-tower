@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-02",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-16",
   "refs": ["hub/src/system.ts#watchSystem", "hub/src/bridge/board.ts#board", "hub/src/shared/api.ts", "hub/src/tower/tower.js", "hub/src/tower/served.ts#libraryUrls", "hub/src/shared/waits.ts#neighbours", "hub/src/collections.ts", "hub/PRINCIPLES.md"]
 }
 ---
