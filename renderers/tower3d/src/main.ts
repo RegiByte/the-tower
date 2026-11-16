@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import type { Deleted, Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts'
+import type { Deleted, Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, VerbAction } from '/lib/extension.js'
-import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reviewAction, type Act, type ActOf, type ByKind, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
+import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reviewAction, type Act, type ActOf, type ByKind, type CatNames, type Offer, type Verb } from './acts.ts'
 import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
 import { fenceText, markdownCss } from '/lib/markdown.js'
@@ -11,11 +11,9 @@ import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fi
 import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer, reducedMotion } from '/lib/viewer.js'
 import { actionId, isFresh as isNewAction, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
 import { deskVerbs } from './desk-verbs.ts'
-import { wireSpawn } from '/lib/spawn.js'
-import { hiringHandlers, noHires } from './hiring.ts'
 import { projectOfKey, type Lines, type Subject } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, isAsk, loudest, nextAttended, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, isAsk, loudest, nextAttended, type Move, type Ring, type Sound, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
 import { actKey, appHandlers, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type TabTo } from './app.ts'
@@ -42,7 +40,7 @@ import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } fr
 import { paintScreens } from './screens.ts'
 import { isMarkdown, isVideo, playFilms, type Shown } from './showing.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
-import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { addedCommandOf, commandOf, panesOf } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
 import { clockMoves, wallNow } from './clock.ts'
@@ -52,9 +50,8 @@ import { CHANGES, THREAD } from './hosting.ts'
 import * as loading from './loading.ts'
 import { archivedAt, archivedOf, archiveFailure, archiveOf, archivesSettled, drawersAt, readArchives, rereadArchive, settledArchives } from './archive.ts'
 import { poseFiling } from './filing.ts'
-import { FILINGS, STATIONS, reconcile } from './layers.ts'
+import { FILINGS, reconcile } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
-import { noteText } from './notes.ts'
 import { GAMES, gameItem } from './games.ts'
 import { keptText, keptTitle } from './kept.ts'
 import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
@@ -72,16 +69,17 @@ import { DRAWN_PANES, MOVE_OF } from './keymap-here.ts'
 import { nowOf } from './now.ts'
 import type { World } from './building.ts'
 import type { Views } from './views.ts'
+import type { Spawn } from './spawn.ts'
 
 /** The resources the page reads as it starts: the leaves' binding (`Shell`), and those only the page reads. */
-export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views }
+export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn }
 
 /**
  * The page: what it draws, the listeners and timers it keeps, and the loops it runs, started by the `main` resource once
  * every resource it reads has (system.ts).
  */
 export function startMain(started: Main) {
-  const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
+  const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
   const { lit } = started.lighting
   const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = started.stage
   const { move, releaseKeys, takeTurn } = started.input
@@ -90,6 +88,7 @@ export function startMain(started: Main) {
   const { toast, call, tried, offered, copiedAs } = started.toasts
   const { events } = started
   const { desk, reader, deskNow } = started.views
+  const { draftIo, hire, saving, handOver, hireOnNote, spawn, openSpawn, hiring, openSpawnOnNote } = started.spawn
   const { directory, screenDistance, boxesHere, here, discard, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs } = started.world
   const { boardNow, selfNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed, aimNow } = nowOf(started.port)
 
@@ -111,9 +110,6 @@ export function startMain(started: Main) {
    * dialog. A button that asks nothing is answered at once, in the press that made it, so a lock still has its gesture.
    */
   const answered = (el: HTMLElement) => el.dataset.ask === undefined || ask(el.dataset.ask, el.dataset.askVerb!)
-
-  /** The drafts collection over the renderer API. */
-  const draftIo: DraftIo = { call: tower.call, read: noteText, failed: (err) => toast(err.message) }
 
 
   /** Where you stood, kept by the tower for this page so a reload puts you back, with the music on or off and what you've seen shown. */
@@ -2426,132 +2422,9 @@ export function startMain(started: Main) {
     places[(at + (e.key === 'ArrowDown' ? 1 : places.length - 1)) % places.length]?.focus()
   })
 
-  /** The floor the dialog's Start waits on, if it does. */
-  const dialogStarting = () => {
-    const d = spawning.state()
-    return d.t === 'starting' ? d.project : undefined
-  }
 
-  /** A worker with `form` on a floor, on the carried note `on` if given (`hiring`). */
-  const hireWith = (project: string, form: SpawnForm, on: Held | undefined) =>
-    hiring.dispatch({ type: 'hire', project, name: floorOf(project).name, form, on, starting: dialogStarting() })
-
-  /** A worker where the floor starts one unless told, its own worktree or the hub: you sit down at it once its desk shows. */
-  const hire = (project: string) => hireWith(project, spawnDefaults(floorOf(project)), undefined)
-
-  /** The editor's last save, which a note's text is read after. */
-  let saving: Promise<boolean> = Promise.resolve(true)
-
-  /** The carried note's text as it is on disk now, `undefined` when it can't be sent: a note that can't be read stays in hand. */
-  async function carriedText() {
-    const note = s.carrying!
-    await saving
-    const text = await readDraft(draftIo, note.project, note.id).catch((err: Error) => (toast(err.message), null))
-    if (text === null) return undefined
-    if (text === undefined) return (toast('The draft in your hand is gone'), drop(), undefined)
-    if (!text.trim()) return (toast('The draft is empty'), undefined)
-    return text
-  }
-
-  /** After a draft's words reached a session: it is deleted, and out of your hand if you held it. */
-  async function sent(note: Held) {
-    await discardItem(draftIo, note.project, note.id)
-    if (s.carrying?.project === note.project && s.carrying.id === note.id) drop()
-  }
-
-  /** The carried note on its way to a session: pressing again meanwhile sends nothing. */
-  let handing = false
-
-  /** Sends the carried note with `send`, then deletes its draft: a failed send keeps it in your hand. */
-  async function sendCarried(send: (text: string) => Promise<boolean>) {
-    if (handing || hiredOn(s.carrying!)) return
-    handing = true
-    try {
-      const note = s.carrying!
-      const text = await carriedText()
-      if (text !== undefined && (await send(text))) await sent(note)
-    } finally {
-      handing = false
-    }
-  }
-
-  const handOver = (c: Call<'submit'>) => sendCarried(async (text) => (await offered(c, { text }))?.t === 'ok')
-  /** A worker hired on the carried note goes to work on it alone: you stay where you are, and the note leaves your hand once it started. */
-  async function hireOnNote(project: string) {
-    const note = s.carrying!
-    if (hiredOn(note)) return toast(HIRED_ON_NOTE)
-    if (handing) return
-    const prompt = await carriedText()
-    if (prompt !== undefined) hireWith(project, spawnDefaults(floorOf(project), prompt), note)
-  }
-
-  const HIRED_ON_NOTE = 'A worker is being hired on the draft in your hand'
-
-  /** Whether a hire waiting on the tower was made on `note`: it can't be sent anywhere else meanwhile. */
-  const hiredOn = (note: Held) => Object.values(hiring.state()).some((h) => h.t === 'spawning' && h.on?.project === note.project && h.on.id === note.id)
-
-  const spawn = $('spawn') as HTMLDialogElement
-  /** The new-worker dialog (`wireSpawn`), opened on a floor or on a draft: a prompt it closes on is kept in that draft, read again from disk, which is deleted once a worker starts on it. */
-  const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
-    board: () => boardNow()!,
-    run: async (call, body) => {
-      const reply = await tower.run(call, body)
-      const project = call[1].project!
-      hiring.dispatch({ type: 'arriving', project, name: floorOf(project).name, id: reply.id })
-      hiring.dispatch({ type: 'board', board: boardNow()! })
-      return reply
-    },
-    sign: (f) => floorSignHtml(planNow(), f.id),
-    drafts: { draftsOf, keepUnsent, titleOf },
-    draftIo,
-    held: async (note) => {
-      const item = draftItem(boardNow()!.floors, note.project, note.id)
-      return item && openDraft(draftIo, note.project, item).catch((err: Error) => (toast(err.message), undefined))
-    },
-    kept: () => {},
-    shown: unlock,
-    started: (id, note) => {
-      app.dispatch({ type: 'pend', pending: { desk: id } })
-      if (note) void sent(note)
-    },
-    toast,
-    upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
-  })
-  spawning.subscribe(events.listen('spawning'))
   spawn.addEventListener('close', showPaused)
 
-  function openSpawn(project: string, draft?: { note: Held; text: string }) {
-    hiring.dispatch({ type: 'open', project, name: floorOf(project).name, on: draft?.note, text: draft?.text ?? '' })
-  }
-
-  /** The hires in flight, one per floor (`hiring.ts`): the open workstation of a floor hiring reads so until the new worker's desk shows. */
-  const hiring = loop({
-    state: noHires<Held>(),
-    handlers: hiringHandlers<Held>(),
-    execute: {
-      run: ({ project, form }, dispatch) =>
-        void Promise.resolve().then(() => tower.run(...spawnCall(floorOf(project), form))).then(
-          (reply) => dispatch({ type: 'replied', project, reply }),
-          (err: Error) => dispatch({ type: 'failed', project, message: err.message }),
-        ),
-      started: ({ id, on }, dispatch) => {
-        if (on) void sent(on)
-        else app.dispatch({ type: 'pend', pending: { desk: id } })
-        dispatch({ type: 'board', board: boardNow()! })
-      },
-      open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
-      toast: ({ text }) => toast(text),
-      draw: () => boardNow() && reconcile(STATIONS, s.stations, planNow(), discard),
-    },
-  })
-  hiring.subscribe(events.listen('hiring'))
-  s.hiring = hiring.state
-
-  async function openSpawnOnNote(project: string, note: Held) {
-    if (hiredOn(note)) return toast(HIRED_ON_NOTE)
-    const text = await carriedText()
-    if (text !== undefined) openSpawn(project, { note, text })
-  }
 
   /** The draft editor beside the world: saved as you type, on leaving, and before it is carried or sent. */
   let saveTimer: ReturnType<typeof setTimeout>
@@ -2608,7 +2481,7 @@ export function startMain(started: Main) {
     const d = s.draft
     if (d) {
       if (keepsApart(d)) toast('Your edits were kept as a new draft')
-      saving = leave(draftIo, d)
+      saving.last = leave(draftIo, d)
     }
     draftDropped()
   }
@@ -2616,8 +2489,8 @@ export function startMain(started: Main) {
   function saveDraft() {
     clearTimeout(saveTimer)
     const d = s.draft!
-    saving = save(draftIo, d)
-    saving.then(() => s.draft === d && renderPanel())
+    saving.last = save(draftIo, d)
+    saving.last.then(() => s.draft === d && renderPanel())
   }
 
   async function followDraft(d: Draft) {
@@ -2657,7 +2530,7 @@ export function startMain(started: Main) {
     const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act
     const d = s.draft
     if (!d || (what !== 'take' && what !== 'keep')) return
-    saving = settle(draftIo, d, what === 'take')
+    saving.last = settle(draftIo, d, what === 'take')
     if (what === 'take') draftText.value = d.text
     renderPanel()
   })
