@@ -876,7 +876,7 @@ function openGame(project: string, id: string) {
 
 /** The camera on the game's cabinet, where the arcade stands it now: a game kept since moves every cabinet along. */
 function frameCabinet(panel: GamePanel, { cabinet, level }: NonNullable<ReturnType<typeof cabinetOf>>) {
-  go({ ...panel, x: cabinet.x })
+  patchPanel({ ...panel, x: cabinet.x })
   const front = new THREE.Vector3(cabinet.x, level.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
   frameAside(front, new THREE.Vector3(0, 0, -1), 2 * CABINET.width)
 }
@@ -914,7 +914,7 @@ async function openShelf(project: string, n: number, file?: string) {
   const text = shown ? await shelfText(project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
   const doc = panelAs('doc')
   if (doc?.project !== project || doc.n !== n) return
-  go({ ...doc, file: shown })
+  patchPanel({ ...doc, file: shown })
   $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: s.board!.floors.find((f) => f.id === project)!.hub }, tower.prefs.attributes())
 }
 onAppearance(() => {
@@ -949,7 +949,7 @@ function openKept(k: { project: string; collection: string; id: string }) {
 /** The item's body, drawn again only when the item changes; a text read that fails says so with Read again. */
 async function drawKept(panel: Extract<Panel, { kind: 'kept' }>, c: FloorCollection, item: FloorItem) {
   const drawing = { ...panel, drawn: item.modifiedAt }
-  go(drawing)
+  patchPanel(drawing)
   if (!readsText(itemKind(item.id))) return ($('doc-body').innerHTML = keptFileHtml(c, item, `/${itemPath(panel.project, c.id, item.id)}`))
   const text = await keptText(panel.project, c.id, item.id).catch((err: Error) => {
     if (panelNow() === drawing) $('doc-body').innerHTML = failedHtml(item.tag, err.message, 'data-kept-read')
@@ -963,7 +963,7 @@ onAppearance(() => redrawKept())
 function redrawKept() {
   const kept = panelAs('kept')
   if (!kept) return
-  go({ ...kept, drawn: undefined })
+  patchPanel({ ...kept, drawn: undefined })
   renderPanel()
 }
 
@@ -1003,8 +1003,7 @@ onAppearance(() => {
 
 /** To the worker's desk, on the tab of its showing of `target`. */
 function goShown(id: string, target: string) {
-  const shown = findCard(s.board!, id)?.shown.find((sh) => sh.target === target)
-  if (shown) app.dispatch({ type: 'pend', pending: { shown: { id, shown } } })
+  if (findCard(s.board!, id)?.shown.some((sh) => sh.target === target)) app.dispatch({ type: 'pend', pending: { shown: { id, target } } })
   goDesk(id)
 }
 
@@ -1319,6 +1318,8 @@ const panelAs = <K extends Panel['kind']>(kind: K) => {
 }
 /** The panel goes to `to` (`go` in app.ts). */
 const go = (to: Panel | undefined) => app.dispatch({ type: 'go', to })
+/** The open panel's own data changes; it stays open, neither left nor entered. */
+const patchPanel = (to: Panel) => app.dispatch({ type: 'panel', to })
 const viewNow = () => app.state().view
 const deskTabNow = () => app.state().deskTab
 const replayNow = () => app.state().replay
@@ -1382,7 +1383,7 @@ const TAB_ENTER: { [K in TabTo['tab']]: (id: string, to: Extract<TabTo, { tab: K
   brief: (id) => briefEntered(id),
   reviews: (id) => deskViewEntered(THREAD, id),
   changes: (id, { lines }) => (deskViewEntered(CHANGES, id), lines && desk.showLines(lines)),
-  shown: (id, { shown }) => void shownEntered(id, shown),
+  shown: (id, { target }) => void shownEntered(id, findCard(s.board!, id)!.shown.find((sh) => sh.target === target)!),
 }
 
 /** The panels are drawn once, at the next frame, however many transitions asked for it; `drawPending` draws them now. */
@@ -2416,7 +2417,7 @@ function readWhole(key: string, atDeskBrief: boolean) {
   tower.conversation(session, conversation).then((whole) => {
     if (atDeskBrief && deskBrief) return (deskBrief = { ...deskBrief, threads: withWhole(deskBrief.threads, whole), wholes: [...deskBrief.wholes, whole] }), drawDeskBrief(true)
     const open = panelAs('logbook')
-    if (open?.threads) go({ ...open, threads: withWhole(open.threads, whole), wholes: [...open.wholes, whole] }), renderPanel()
+    if (open?.threads) patchPanel({ ...open, threads: withWhole(open.threads, whole), wholes: [...open.wholes, whole] }), renderPanel()
   }, (err: Error) => toast(err.message))
 }
 
@@ -2436,7 +2437,7 @@ document.addEventListener('toggle', (e) => {
 }, true)
 
 const openScreen = () => app.dispatch({ type: 'tab', to: { tab: 'screen' } })
-const openShown = (shown: Shown) => app.dispatch({ type: 'tab', to: { tab: 'shown', shown } })
+const openShown = (shown: Shown) => app.dispatch({ type: 'tab', to: { tab: 'shown', target: shown.target } })
 
 /** A showing lies over the terminal like the brief, and counts as seen once opened. */
 async function shownEntered(id: string, sh: Shown) {
@@ -2599,7 +2600,7 @@ function readReader(c: Card) {
     const open = panelAs('logbook')
     if (open?.card.id !== c.id) return
     const atEnd = open.threads === undefined || readsAtEnd($('logbook-text'))
-    go({ ...open, threads: briefs, wholes })
+    patchPanel({ ...open, threads: briefs, wholes })
     renderPanel()
     if (atEnd) $('logbook-text').scrollTop = $('logbook-text').scrollHeight
   })
@@ -2609,7 +2610,7 @@ function readReader(c: Card) {
 function logbookTab(tab: LogbookTab) {
   const panel = panelAs('logbook')
   if (!panel || panel.tab === tab) return
-  go({ ...panel, tab })
+  patchPanel({ ...panel, tab })
   if (tab === 'screen') showLogbookScreen(panel.card, panel.on)
   else closeTerm($('logbook-screen'))
   renderPanel()
@@ -2691,7 +2692,7 @@ $('doc-body').addEventListener('click', (e) => {
     if (tab) return logbookTab(tab as LogbookTab)
     const session = (e.target as HTMLElement).closest<HTMLElement>('[data-replay]')?.dataset.replay
     if (!session) return
-    go({ ...logbook, on: session })
+    patchPanel({ ...logbook, on: session })
     showLogbookScreen(logbook.card, session)
     return renderPanel()
   }
@@ -2745,7 +2746,7 @@ $('side').addEventListener('click', async (e) => {
     const f = floorOf(floor.id)
     return pressing(el, () => tried(() => tidy(offeredCall(f, 'tidy', f.name))))
   }
-  if (d.tray && floor) return (go({ ...floor, tray: floor.tray === d.tray ? undefined : d.tray }), renderPanel())
+  if (d.tray && floor) return (patchPanel({ ...floor, tray: floor.tray === d.tray ? undefined : d.tray }), renderPanel())
   if (d.kept && floor) return openKept(keptOf(d.kept))
   if (d.archive !== undefined && floor) return (openSide({ kind: 'archive', id: floor.id, words: [] }), $('archive-filter').focus())
   if (d.floor !== undefined && archive) return openSide({ kind: 'floor', id: archive.id, tray: undefined })
@@ -2755,7 +2756,7 @@ $('side').addEventListener('input', (e) => {
   const el = e.target as HTMLInputElement
   const archive = panelAs('archive')
   if (el.id !== 'archive-filter' || !archive) return
-  go({ ...archive, words: wordsOf(el.value) })
+  patchPanel({ ...archive, words: wordsOf(el.value) })
   renderPanel()
 })
 

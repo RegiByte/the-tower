@@ -375,7 +375,7 @@ export function deskDismissHtml(board: Board, c: Card, heed: Heed) {
  * its review thread on a floor keeping threads, and each thing it showed you.
  */
 export type DeskTab = 'screen' | 'brief' | 'changes' | 'reviews' | `shown:${string}`
-export const shownTab = (s: Shown): DeskTab => `shown:${s.target}`
+export const shownTab = (s: Pick<Shown, 'target'>): DeskTab => `shown:${s.target}`
 
 /** A showing's tab: a dot while you have yet to open it, an outward arrow on the open one to take it to a browser tab. */
 const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boolean) => {

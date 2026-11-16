@@ -14,7 +14,6 @@ import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
 import type { Lines } from '/lib/board.js'
 import { findCard } from './cards.ts'
 import type { Board } from './api.ts'
-import type { Shown } from './showing.ts'
 import type { Panel, View } from './state.ts'
 import { shownTab, type DeskTab } from './ui.ts'
 
@@ -27,15 +26,15 @@ export type Pending = {
   desk: string | undefined
   shell: string | undefined
   tab: PendingTab | undefined
-  /** A desk to open on a showing's tab, by its worker. */
-  shown: { id: string; shown: Shown } | undefined
+  /** A desk to open on a showing's tab, by its worker and the showing's target. */
+  shown: { id: string; target: string } | undefined
 }
 
 /** A past session of a worker at a desk replayed on its monitor, and in its desk panel: its last screen, until back to live. */
 export type Replay = { id: string; session: string }
 
 /** A desk's tab to show: Changes scrolled to `lines` when given, a showing by itself. */
-export type TabTo = { tab: 'screen' } | { tab: 'brief' } | { tab: 'reviews' } | { tab: 'changes'; lines: Lines | undefined } | { tab: 'shown'; shown: Shown }
+export type TabTo = { tab: 'screen' } | { tab: 'brief' } | { tab: 'reviews' } | { tab: 'changes'; lines: Lines | undefined } | { tab: 'shown'; target: string }
 
 export type Db = {
   panel: Panel | undefined
@@ -50,6 +49,8 @@ export type Db = {
 export type AppEvent =
   | AttendEvent
   | { type: 'go'; to: Panel | undefined }
+  /** The open panel's own data changed, the same panel still open: a read landed, a filter typed, a tray unfolded. */
+  | { type: 'panel'; to: Panel }
   | { type: 'tab'; to: TabTo }
   | { type: 'replay'; id: string; session: string | undefined }
   | { type: 'pend'; pending: Partial<Pending> }
@@ -103,7 +104,7 @@ const sameRoom = (from: Panel | undefined, to: Panel | undefined) => from?.kind 
 /** The worker whose desk is open. */
 export const atDesk = (db: Db) => (db.panel?.kind === 'desk' ? db.panel.id : undefined)
 
-const tabName = (to: TabTo): DeskTab => (to.tab === 'shown' ? shownTab(to.shown) : to.tab)
+const tabName = (to: TabTo): DeskTab => (to.tab === 'shown' ? shownTab(to) : to.tab)
 
 /** The desk's tab `from` left for `to`, unless it is `to`, and `to` entered, even when it is: a tab entered again is read again. */
 const tabbed = (from: DeskTab, id: string, to: TabTo): AppEffect[] => [...(tabName(to) === from ? [] : [{ type: 'tab/leave', tab: from } as const]), { type: 'tab/enter', id, to }]
@@ -113,7 +114,7 @@ const tabsPending = (pending: Pending, id: string): TabTo[] => {
   const tab = pending.tab?.id === id ? pending.tab : undefined
   return [
     ...(tab ? [tab.tab === 'changes' ? { tab: 'changes' as const, lines: tab.lines } : { tab: tab.tab }] : []),
-    ...(pending.shown?.id === id ? [{ tab: 'shown' as const, shown: pending.shown.shown }] : []),
+    ...(pending.shown?.id === id ? [{ tab: 'shown' as const, target: pending.shown.target }] : []),
   ]
 }
 
@@ -153,6 +154,13 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
 const subjectLeft = (panel: Panel | undefined, board: Board) =>
   (panel?.kind === 'desk' && !findCard(board, panel.id)) || (panel?.kind === 'shell' && !board.shells.some((sh) => sh.id === panel.id))
 
+/** What is pending, less what `board` no longer holds: a tab of a worker gone, a showing withdrawn. */
+const pendingOn = (pending: Pending, board: Board): Pending => ({
+  ...pending,
+  tab: pending.tab && findCard(board, pending.tab.id) ? pending.tab : undefined,
+  shown: pending.shown && findCard(board, pending.shown.id)?.shown.some((sh) => sh.target === pending.shown!.target) ? pending.shown : undefined,
+})
+
 export const appHandlers: Handlers<Db, AppEvent, AppEffect> = {
   board: attend,
   lost: attend,
@@ -164,6 +172,10 @@ export const appHandlers: Handlers<Db, AppEvent, AppEffect> = {
   visible: attend,
   watch: attend,
   go: (db, { to }) => went(db, to),
+  panel: (db, { to }) => {
+    if (db.panel?.kind !== to.kind) throw new Error(`a ${to.kind} panel's data changes only while it is open; the panel is ${db.panel?.kind ?? 'none'}: go to it instead`)
+    return [into({ ...db, panel: to }), DRAW]
+  },
   tab: (db, { to }) => {
     const id = atDesk(db)
     if (id === undefined) throw new Error(`a desk's ${to.tab} tab opens only at a desk; the panel is ${db.panel?.kind ?? 'none'}`)
@@ -176,6 +188,9 @@ export const appHandlers: Handlers<Db, AppEvent, AppEffect> = {
   },
   pend: (db, { pending }) => [into({ ...db, pending: { ...db.pending, ...pending } })],
   view: (db, { view }) => [into({ ...db, view })],
-  'board-applied': (db, { board }) => (subjectLeft(db.panel, board) ? went(db, undefined) : [DRAW]),
+  'board-applied': (db, { board }) => {
+    const next = { ...db, pending: pendingOn(db.pending, board) }
+    return subjectLeft(next.panel, board) ? went(next, undefined) : [into(next), DRAW]
+  },
   'replay-left': (db) => [into({ ...db, replay: undefined })],
 }
