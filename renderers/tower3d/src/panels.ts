@@ -366,11 +366,6 @@ export function startPanels(started: PanelsDeps) {
     $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: boardNow()!.floors.find((f) => f.id === project)!.hub }, tower.prefs.attributes())
   }
 
-  onAppearance(() => {
-    const doc = panelAs('doc')
-    if (doc?.file) openShelf(doc.project, doc.n, doc.file)
-  })
-
   /** The open `html` entry's page, given the board and the API. Tower 3D reads what it keeps in `tower.store` as it boots. */
   let docRelay: { close(): void } | undefined
 
@@ -410,8 +405,6 @@ export function startPanels(started: PanelsDeps) {
     $('doc-body').innerHTML = keptTextHtml(item, text, tower.prefs.attributes())
   }
 
-  onAppearance(() => redrawKept())
-
   /** The kept item open, read afresh. */
   function redrawKept() {
     const kept = panelAs('kept')
@@ -447,11 +440,6 @@ export function startPanels(started: PanelsDeps) {
     if (open?.id !== id || open.target !== target) return
     $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes(), md)
   }
-
-  onAppearance(() => {
-    const picture = panelAs('picture')
-    if (picture) openPicture(picture.id, picture.target)
-  })
 
   /** A panel of the side whose enter doesn't show it, opened over what is open: a drawer. */
   function openSide(next: Panel) {
@@ -782,9 +770,6 @@ export function startPanels(started: PanelsDeps) {
     })
   }
 
-  // A key this page set, or a shelf page it relays did, such as a dismissal: the first board reads the record anyway.
-  tower.store.on(() => boardNow() && rereadViewer())
-
   /** Your layout as `tower.store` keeps it now, the desk drawn again when it changed. */
   function rereadLayout() {
     const name = s.declared?.name
@@ -995,24 +980,6 @@ export function startPanels(started: PanelsDeps) {
     drawSettings()
   }
 
-  /** A logbook's words and code, copied as written; its words rendered or raw, wherever the choice is offered. */
-  document.addEventListener('click', (e) => {
-    const el = e.target as Element
-    const code = el.closest('[data-copy-code]')
-    if (code) return copiedAs(fenceText(code), 'the code')
-    const markdown = el.closest<HTMLElement>('[data-brief-markdown]')?.dataset.briefMarkdown
-    if (markdown) return chooseBriefMarkdown(markdown as BriefMarkdown)
-    const files = el.closest<HTMLElement>('[data-changes-files]')?.dataset.changesFiles
-    if (files) return (keepViewer('changesTree', files === 'shown'), renderPanel(), drawSettings())
-    const said = el.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
-    const atDesk = el.closest('#desk-brief')
-    const threads = atDesk ? deskBrief?.threads : panelAs('logbook')?.threads
-    const of = atDesk ? deskBrief && findCard(boardNow()!, deskBrief.id) : panelAs('logbook')?.card
-    if (said && threads && of) return copiedAs(saidText(threads, said)!, saidWhat(threads, said, boardNow()!.runtimes[of.runtime].label)!)
-    const earlier = el.closest<HTMLElement>('[data-brief-earlier]')?.dataset.briefEarlier
-    if (earlier) readWhole(earlier, !!el.closest('#desk-brief'))
-  })
-
   /** A logbook's conversation read whole, drawn in place of its last turns where it was asked for. */
   function readWhole(key: string, atDeskBrief: boolean) {
     const [session, conversation] = key.split(':')
@@ -1098,13 +1065,6 @@ export function startPanels(started: PanelsDeps) {
     })
   }
 
-  onAppearance(() => {
-    const desk = atDesk()
-    if (!desk) return
-    const sh = findCard(boardNow()!, desk)?.shown.find((sh) => shownTab(sh) === deskTabNow())
-    if (sh && isMarkdown(sh)) openShown(sh)
-  })
-
   /** The desk's Reviews and Changes hidden and kept, as another of its tabs opens. */
   function hideTabs() {
     desk.hide()
@@ -1167,11 +1127,6 @@ export function startPanels(started: PanelsDeps) {
     })
     if (sent) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
   }
-
-  setInterval(() => {
-    if (panelNow()?.kind === 'desk' && deskTabNow() === 'changes') showSince($('desk-view'))
-    if (panelNow()?.kind === 'stats') showSince($('doc-body'))
-  }, 1000)
 
   /**
    * The logbook of a worker with no desk in the reader, opened on its conversations, read at once, the latest at the
@@ -1380,14 +1335,6 @@ export function startPanels(started: PanelsDeps) {
     $('landing').scrollTop = 0
   }
 
-  /** The settled line's "what landing changed", in a desk's Changes and Reviews and in a thread read away from any desk. */
-  document.addEventListener('click', (e) => {
-    const of = (e.target as Element).closest<HTMLElement>('[data-landing-of]')
-    const desk = atDesk()
-    const project = desk ? findCard(boardNow()!, desk)?.project : panelAs('thread')?.project
-    if (of && project) pressing(of, () => showLanding({ project, branch: of.dataset.landingOf! }))
-  })
-
   async function tidy(c: Call<'tidy'>) {
     const reply = await offered(c)
     if (reply) toast(tidiedLine(reply))
@@ -1543,5 +1490,64 @@ export function startPanels(started: PanelsDeps) {
   Promise.all([tower.get('renderers'), tower.renderer()]).then(([{ renderers }, here]) =>
     ($('renderers').innerHTML = renderersHtml(renderers, here?.name, tower.framed)), (err: Error) => toast(`renderers: ${err.message}`))
 
-  return { display, renderPanel, focusDesk, mountDeskScreen, replay, focusShell, run, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, runCommand, tickPet, freshLogbooks, followDraft, askDraw }
+  /**
+   * The listeners on the window, the document and the viewer's record that read the app's db: added by the app as it
+   * attaches, so none can run before it.
+   */
+  function listen() {
+    onAppearance(() => {
+      const doc = panelAs('doc')
+      if (doc?.file) openShelf(doc.project, doc.n, doc.file)
+    })
+
+    onAppearance(() => redrawKept())
+
+    onAppearance(() => {
+      const picture = panelAs('picture')
+      if (picture) openPicture(picture.id, picture.target)
+    })
+
+    // A key this page set, or a shelf page it relays did, such as a dismissal: the first board reads the record anyway.
+    tower.store.on(() => boardNow() && rereadViewer())
+
+    /** A logbook's words and code, copied as written; its words rendered or raw, wherever the choice is offered. */
+    document.addEventListener('click', (e) => {
+      const el = e.target as Element
+      const code = el.closest('[data-copy-code]')
+      if (code) return copiedAs(fenceText(code), 'the code')
+      const markdown = el.closest<HTMLElement>('[data-brief-markdown]')?.dataset.briefMarkdown
+      if (markdown) return chooseBriefMarkdown(markdown as BriefMarkdown)
+      const files = el.closest<HTMLElement>('[data-changes-files]')?.dataset.changesFiles
+      if (files) return (keepViewer('changesTree', files === 'shown'), renderPanel(), drawSettings())
+      const said = el.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
+      const atDesk = el.closest('#desk-brief')
+      const threads = atDesk ? deskBrief?.threads : panelAs('logbook')?.threads
+      const of = atDesk ? deskBrief && findCard(boardNow()!, deskBrief.id) : panelAs('logbook')?.card
+      if (said && threads && of) return copiedAs(saidText(threads, said)!, saidWhat(threads, said, boardNow()!.runtimes[of.runtime].label)!)
+      const earlier = el.closest<HTMLElement>('[data-brief-earlier]')?.dataset.briefEarlier
+      if (earlier) readWhole(earlier, !!el.closest('#desk-brief'))
+    })
+
+    onAppearance(() => {
+      const desk = atDesk()
+      if (!desk) return
+      const sh = findCard(boardNow()!, desk)?.shown.find((sh) => shownTab(sh) === deskTabNow())
+      if (sh && isMarkdown(sh)) openShown(sh)
+    })
+
+    setInterval(() => {
+      if (panelNow()?.kind === 'desk' && deskTabNow() === 'changes') showSince($('desk-view'))
+      if (panelNow()?.kind === 'stats') showSince($('doc-body'))
+    }, 1000)
+
+    /** The settled line's "what landing changed", in a desk's Changes and Reviews and in a thread read away from any desk. */
+    document.addEventListener('click', (e) => {
+      const of = (e.target as Element).closest<HTMLElement>('[data-landing-of]')
+      const desk = atDesk()
+      const project = desk ? findCard(boardNow()!, desk)?.project : panelAs('thread')?.project
+      if (of && project) pressing(of, () => showLanding({ project, branch: of.dataset.landingOf! }))
+    })
+  }
+
+  return { listen, display, renderPanel, focusDesk, mountDeskScreen, replay, focusShell, run, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, runCommand, tickPet, freshLogbooks, followDraft, askDraw }
 }
