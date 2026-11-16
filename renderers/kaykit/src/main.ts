@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { MapControls } from 'three/examples/jsm/controls/MapControls.js'
+import { copyText } from '../../../src/shared/clipboard.ts'
 import { fit, PACKS, type Catalog } from './catalog.ts'
 import { loadAtlases } from './atlas.ts'
 import { build, cameraFor, type Assets, type Built } from './draw.ts'
@@ -344,7 +345,7 @@ function info() {
   )
 }
 
-const copy = (text: string) => void navigator.clipboard.writeText(text)
+const copy = (text: string) => void copyText(text)
 
 async function open(target: string) {
   if (target === 'gallery') return show('gallery')

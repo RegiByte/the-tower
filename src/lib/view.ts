@@ -1,4 +1,8 @@
-/** The library's `/lib/view.js`: a view's types and chrome, the host that mounts views, panels drawn and kept, controls pressed, files and items, icons, highlighted code. */
+/** The library's `/lib/view.js`: a view's types and chrome, the host that mounts views, the clipboard, panels drawn and kept, controls pressed, files and items, icons, highlighted code. */
+export {
+  copyTelling,
+  copyText,
+} from '../shared/clipboard.ts'
 export {
   fileButtonsHtml,
   fileCall,

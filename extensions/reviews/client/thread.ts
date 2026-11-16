@@ -2,7 +2,7 @@ import { type Board, type Card, type Floor, type Subject, linesSubject, noLonger
 import { CHANGES_POLL_MS } from '/lib/changes.js'
 import { commandOf } from '/lib/keys.js'
 import { heldHandlers, loop, noReads, reading, valueOf } from '/lib/machine.js'
-import { type Mount, type Tab, drawPanel, fileCall, panelsCss, pressing } from '/lib/view.js'
+import { type Mount, type Tab, copyTelling, drawPanel, fileCall, panelsCss, pressing } from '/lib/view.js'
 import { plural } from '/lib/words.js'
 import { anchorOf } from './anchors.ts'
 import type { FloorThread, NoteCall } from '../threads.ts'
@@ -162,7 +162,7 @@ const threadMount = (placeOf: (board: Board, subject: Subject) => ThreadPlace): 
     const want = target.closest('[data-thread-read]') && threadWant(board.floors, place())
     if (want) return (threadReads.dispatch({ ...want, type: 'refresh' }), draw())
     const copy = target.closest<HTMLElement>('[data-copy]')?.dataset.copy
-    if (copy) void navigator.clipboard.writeText(copy).then(() => kit.toast(`Copied ${copy}`), (err: Error) => kit.toast(err.message))
+    if (copy) void copyTelling(copy, copy, kit.toast)
   })
 
   host.addEventListener('change', (e) => {

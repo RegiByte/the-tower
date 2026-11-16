@@ -458,7 +458,7 @@ joins as a minor the day something uses it.
 | `/lib/board.js` | generic | authors | the board's types and pure readings of it: subjects, what is offered and its calls, crews, checkouts, each command's limits, each extension's settings |
 | `/lib/extension.js` | server | server | server code's types (Start, ctx, folds, parts, the shape of tower/config), API errors, and checking a spawn's fields |
 | `/lib/words.js` | generic | authors | text: escaping, plurals, spans, times, tags and item titles |
-| `/lib/view.js` | browser | authors | a view's types and chrome, panels drawn and kept, controls pressed, files and items, icons, highlighted code |
+| `/lib/view.js` | browser | authors | a view's types and chrome, the clipboard, panels drawn and kept, controls pressed, files and items, icons, highlighted code |
 | `/lib/markdown.js` | generic | authors | markdown as safe html, and its stylesheet |
 | `/lib/machine.js` | generic | authors | the loop machines run on, and held reads |
 | `/lib/time.js` | generic | authors | crons and periods: slots and their words |
@@ -500,6 +500,10 @@ Draw Claude's answers, prompts and anything a worker wrote with `markdownHtml` o
 markdown library's own `parse`: those words can carry what a web page Claude read put in them, and your renderer runs
 at the tower's origin, which holds every verb. `documentHtml` keeps a file's raw HTML as written, its links and
 scripts included (only markdown links are checked), so frame its html without `allow-scripts`.
+
+Copy with `copyText(text)` of `/lib/view.js`, or `copyTelling(text, what, toast)` to toast the outcome, never with
+`navigator.clipboard`: a tower reached by a name of the config's `hosts` over plain http is no secure context, the
+clipboard API is undefined there, and `copyText` falls back to the document's copy command.
 
 A renderer that draws any of the library's views installs the shared tooltip once, `watchTips(document)` from
 `/lib/chrome.js`: the views explain their controls with `data-tip` (the Stats bars their readouts), and the settings

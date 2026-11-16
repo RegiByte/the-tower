@@ -9,6 +9,7 @@ import { deleteAsk, itemFile, itemPath, itemsCss, keptTitles } from './items.ts'
 import { failedHtml } from './panel-html.ts'
 import { fileButtonsHtml, fileCall } from './file-acts.ts'
 import { ICON } from './icons.ts'
+import { copyTelling } from './clipboard.ts'
 import { esc, span } from './format.ts'
 
 /**
@@ -167,7 +168,7 @@ const itemFrame = (spec: TypeViewSpec): Mount => (host, { tower, board: first, s
     const card = target.closest<HTMLElement>('[data-card]')?.dataset.card
     if (card) return kit.display(`card:${card}`)
     const copy = target.closest<HTMLElement>('[data-copy]')?.dataset.copy
-    if (copy) void navigator.clipboard.writeText(copy).then(() => kit.toast(`Copied ${copy}`), (err: Error) => kit.toast(err.message))
+    if (copy) void copyTelling(copy, copy, kit.toast)
   })
 
   const offs = spec.restyled ? [tower.prefs.on(drawBody), tower.onScheme(drawBody)] : []
