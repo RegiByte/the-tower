@@ -1,6 +1,6 @@
 import { itemSubject, type Floor } from '/lib/board.js'
 import { dismissing } from '/lib/cards.js'
-import { closeHtml, drawPanel, fileCall, panelsCss, pressing, viewCss, type Mount } from '/lib/view.js'
+import { closeHtml, copyTelling, drawPanel, fileCall, panelsCss, pressing, viewCss, type Mount } from '/lib/view.js'
 import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 import type { PolicyReplies } from '../policies.ts'
@@ -60,7 +60,7 @@ export const mount: Mount = async (host, { tower, board: first, subject, kit }) 
     const worker = target.closest<HTMLElement>('[data-worker]')?.dataset.worker
     if (worker) return kit.display(`card:${worker}`)
     const copy = target.closest<HTMLElement>('[data-copy]')?.dataset.copy
-    if (copy) return void navigator.clipboard.writeText(copy).then(() => kit.toast(`Copied ${copy}`), (err: Error) => kit.toast(err.message))
+    if (copy) return void copyTelling(copy, copy, kit.toast)
     const dismiss = target.closest<HTMLElement>('[data-offer-dismiss]')?.dataset.offerDismiss
     if (dismiss) tower.store.set(VIEWER_KEYS.dismissed, dismissing(board, dismissed, dismiss))
   })

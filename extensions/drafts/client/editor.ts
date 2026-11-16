@@ -1,7 +1,7 @@
 import { type Card, can, type Floor, type FloorCollection, itemSubject, offeredCall } from '/lib/board.js'
 import { gistOf, HOST_MEANS, statusName, whyNot } from '/lib/cards.js'
 import { commandOf } from '/lib/keys.js'
-import { closeHtml, fileButtonsHtml, fileCall, GIST_ICON, type Mount, viewCss } from '/lib/view.js'
+import { closeHtml, copyTelling, fileButtonsHtml, fileCall, GIST_ICON, type Mount, viewCss } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import {
   AUTOSAVE_MS, DRAFT_STATE, DRAFTS, discard, draftItem, draftPath, draftsOf, draftState, edit, follow, keepsApart, leave, newDraft, openDraft, restore, save, sendable, settle, titleOf,
@@ -190,7 +190,7 @@ export const mount: Mount = async (host, { tower, board: first, subject, kit }) 
     if (file) return void tower.run(file).catch((err: Error) => kit.toast(err.message))
     if (target.closest('[data-home]')) return kit.display('board')
     const copy = target.closest<HTMLElement>('[data-copy]')?.dataset.copy
-    if (copy) return void navigator.clipboard.writeText(copy).then(() => kit.toast(`Copied ${copy}`), (err: Error) => kit.toast(err.message))
+    if (copy) return void copyTelling(copy, copy, kit.toast)
     const card = target.closest<HTMLElement>('[data-card]')?.dataset.card
     if (card) return kit.display(`card:${card}`)
     const act = target.closest<HTMLElement>('[data-draft-act]')?.dataset.draftAct

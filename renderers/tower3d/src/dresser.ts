@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { transformControls } from './gizmo.ts'
+import { copyText } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { CHARACTERS, CLIPS, SLOTS, bodyOf, type ClipName, type Slot } from './contract.ts'
 import { avatar, fitted, place, seatedAt, type Avatar } from './avatar.ts'
@@ -609,7 +610,7 @@ document.body.addEventListener('click', (e) => {
   if (d.act === 'save') run(() => changes().then((lines) => (lines.length ? ((confirming = lines), renderFit()) : say('nothing to save: the file already holds this wardrobe'))))
   if (d.act === 'write') run(() => save().then((file) => say(`saved ${file}: \`npm run tower3d\` puts it in Tower 3D`)))
   if (d.act === 'cancel') ((confirming = undefined), renderFit())
-  if (d.act === 'json') run(() => ((jsonOpen = !jsonOpen), jsonOpen && navigator.clipboard.writeText(checked()).then(() => say('copied'), () => say('the clipboard refused: copy it from below')), renderFit()))
+  if (d.act === 'json') run(() => ((jsonOpen = !jsonOpen), jsonOpen && copyText(checked()).then(() => say('copied'), () => say('the clipboard refused: copy it from below')), renderFit()))
   if (d.act === 'mix') ((mixOpen = !mixOpen), renderFit())
   if (d.act === 'apply-mix') run(() => (applyMix((document.getElementById('mix') as HTMLTextAreaElement).value), redress(), say('mix applied')))
 })

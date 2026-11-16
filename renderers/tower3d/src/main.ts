@@ -8,7 +8,7 @@ import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js
 import { fenceText, markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
 import { placeOnOpen, watchTips, toaster, toastsCss, ask, asking, closableNoticer, type Notice } from '/lib/chrome.js'
-import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
+import { ICON, copyTelling, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
 import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer, reducedMotion } from '/lib/viewer.js'
 import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey, layoutOf, usableConfigLayout, type Layout } from '/lib/layout.js'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
@@ -2530,7 +2530,7 @@ async function sendNotes(project: string, checkout: string, to: Card | undefined
   if (sent) toast(`Sent ${to.callsign} to the thread of ${checkout}`)
 }
 
-const copiedAs = (text: string, what: string) => navigator.clipboard.writeText(text).then(() => toast(`Copied ${what}`), (err: Error) => toast(err.message))
+const copiedAs = (text: string, what: string) => copyTelling(text, what, toast)
 
 setInterval(() => {
   if (panelNow()?.kind === 'desk' && s.deskTab === 'changes') showSince($('desk-view'))

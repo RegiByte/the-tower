@@ -2,7 +2,7 @@ import { can, type Card, conversationSubject, saidSubject, type Subject } from '
 import { type Brief, briefCss, briefHtml, briefKey, type BriefMarkdown, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead } from '/lib/brief.js'
 import { addedActions } from '/lib/layout.js'
 import { fenceText, markdownCss, markdownHtml } from '/lib/markdown.js'
-import { drawPanel, type Mount, type Tab } from '/lib/view.js'
+import { copyTelling, drawPanel, type Mount, type Tab } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { VIEWER_KEYS } from '/lib/viewer.js'
 import { saidOf } from '../shared/brief.ts'
@@ -128,7 +128,7 @@ export const mount: Mount = (host, { tower, board: first, subject: at, kit }) =>
     draw(true)
   }
 
-  const copy = (text: string, what: string) => void navigator.clipboard.writeText(text).then(() => kit.toast(`Copied ${what}`), (err: Error) => kit.toast(err.message))
+  const copy = (text: string, what: string) => void copyTelling(text, what, kit.toast)
 
   host.addEventListener('click', (e) => {
     const target = e.target as Element
