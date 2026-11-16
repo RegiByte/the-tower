@@ -96,6 +96,17 @@
     }
     if (still < 3) unsettled = true
   }
+  /**
+   * Waits, in real time and up to 10 s, for the app to handle one of `types`: a read the tower answers on its own clock
+   * then lands in the stage after, not in whichever stage is running when it does. A page that sends no such event
+   * waits the 10 s.
+   */
+  const answered = async (types) => {
+    for (let waited = 0; waited < 10000; waited += 50) {
+      if (t.events(seen).some((r) => r.loop === 'app' && types.includes(r.event.type))) return
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
+  }
   const same = (a, b) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort())
   /** Stands within reach of `target` (beside it, on the floor or the deck) and aims at it; throws if no spot reaches it. */
   const reach = (target) => {
@@ -260,6 +271,7 @@
   const stats = t.acts('stats')[0]
   if (stats) {
     tryDo('stats', () => use(stats)); t.step(5); await settle(); snap('stats-open')
+    await answered(['stats/landed', 'stats/failed'])
     await closed('stats')
   }
 
