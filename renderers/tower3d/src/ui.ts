@@ -1,5 +1,4 @@
 import { documentCss } from '/lib/design.js'
-import { DRAFT_STATE, draftItem, draftState, draftsOf, cardReviews, floorThreadsOf, keepsThreads, reviewerOf, commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } from './clients.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import { type TabWords, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, failedHtml, fileButtonsHtml, fileSpansHtml, ICON, SHELF_ICON, originIcon, withIcons } from '/lib/view.js'
 import { type FloorCollection, type FloorItem, defaultLimits } from '/lib/board.js'
@@ -20,6 +19,9 @@ import { gameTitle } from './arcade.ts'
 import { gameItem, gamePath, gamesOf } from './games.ts'
 import { isImage, isMarkdown, isVideo, type Shown } from './showing.ts'
 import { LOBBY_BAND } from './sign.ts'
+import { shell } from './shell.ts'
+
+const { DRAFT_STATE, draftItem, draftState, draftsOf, cardReviews, floorThreadsOf, keepsThreads, reviewerOf, commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } = shell().clients
 
 /** A worker's model, effort, context, cost, folder and pair, as its card's meta line says them. */
 const metaOf = (c: Card) =>

@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { AUTOSAVE_MS, DRAFTS, discard as discardDraft, keepUnsent, discardItem, restore as restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, cardReviews, floorThreadsOf, threadCheckout, keepsThreads as floorKeepsThreads, probedLines } from './clients.ts'
 import type { Deleted, Draft, DraftIo } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, Verb as ApiVerb, Verbs, VerbAction } from '/lib/extension.js'
 import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reachOf, reviewAction, type Act, type ActOf, type ByKind, type Carried, type CatNames, type Held, type Offer, type Verb } from './acts.ts'
@@ -75,6 +74,9 @@ import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads }
 import { aim, eyes, fallTo, jump, look, walk, type Walker } from './walker.ts'
 import { DECK, groundAt, layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, panelGrid, setDoors, setLimits, setShellTitles } from './world.ts'
+import { shell } from './shell.ts'
+
+const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, cardReviews, floorThreadsOf, threadCheckout, keepsThreads: floorKeepsThreads, probedLines } = shell().clients
 
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
