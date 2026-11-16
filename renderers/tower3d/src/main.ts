@@ -69,7 +69,6 @@ import { noteText, noteTitle, onTitles, pruneNoteTitles } from './notes.ts'
 import { SCREEN, onGameTitles, pruneGameTitles } from './arcade.ts'
 import { GAMES, gameItem } from './games.ts'
 import { keptText, keptTitle, onKeptTitles, pruneKeptTitles } from './kept.ts'
-import { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } from './stage.ts'
 import { s, type GamePanel, type Panel, type Spot, type Standing, type Threads } from './state.ts'
 import { aim, eyes, fallTo, jump, look, walk, type Walker } from './walker.ts'
 import { DECK, groundAt, layerAt, type Layer } from './floorplan.ts'
@@ -78,6 +77,7 @@ import { shell } from './shell.ts'
 
 const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, cardReviews, floorThreadsOf, threadCheckout, keepsThreads: floorKeepsThreads, probedLines } = shell().clients
 const { lit } = shell().lighting
+const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = shell().stage
 
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
