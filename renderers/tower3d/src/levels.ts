@@ -1,7 +1,9 @@
 import * as THREE from 'three'
 import { makeLayer, type KitLayer } from './kit.ts'
-import { scene } from './stage.ts'
+import { shell } from './shell.ts'
 import { s, type State } from './state.ts'
+
+const { scene } = shell().stage
 
 /**
  * What stands on one level, under one group in building coordinates: its desks, stations, notes, pictures, walls,

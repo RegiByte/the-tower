@@ -2,7 +2,6 @@ import { startSystem } from 'braided'
 import { prefetch } from './files.ts'
 import { FIXTURE } from './fixture-name.ts'
 import { drop, fail } from './loading.ts'
-import { tower3d } from './system.ts'
 import type { Door } from './door.ts'
 
 /**
@@ -11,7 +10,7 @@ import type { Door } from './door.ts'
  */
 if (FIXTURE !== undefined) drop()
 prefetch()
-const started = startSystem(tower3d).then(({ errors }) => {
+const started = import('./system.ts').then(({ tower3d }) => startSystem(tower3d)).then(({ errors }) => {
   if (errors.size === 0) return
   const why = [...errors].map(([id, err]) => `${id}: ${err.message}`).join(' · ')
   fail(`start: ${why}`)
@@ -19,8 +18,9 @@ const started = startSystem(tower3d).then(({ errors }) => {
 })
 
 /**
- * The door from the first script on, so an agent can await `tower3d.ready()` as soon as the page has loaded: the page's
- * extension clients load before the page's modules build anything, which can settle after the load event, and the
- * page then replaces this with the whole door.
+ * The door from the first script on, so an agent can await `tower3d.ready()` as soon as the page has loaded: the system
+ * and every module it starts load after this is set (Chrome can fire the load event before a module that takes long to
+ * evaluate has run), its resources can settle after the load event, and the page then replaces this with the whole
+ * door.
  */
 window.tower3d = { ready: () => started.then(() => window.tower3d.ready()) } as Door

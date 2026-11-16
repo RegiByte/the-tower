@@ -5,10 +5,12 @@ import { drive, type Move } from './input.ts'
 import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
-import { camera, canvas, scene } from './stage.ts'
+import { shell } from './shell.ts'
 import { s, type Panel, type Standing, type View } from './state.ts'
 import type { CatName } from './life.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
+
+const { camera, canvas, scene } = shell().stage
 
 /**
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
