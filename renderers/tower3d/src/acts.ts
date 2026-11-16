@@ -4,7 +4,7 @@ import type { Board, Card, GalleryShowing } from './api.ts'
 import type { Added, VerbAction } from '/lib/extension.js'
 import { HOST_MEANS, addedActions, base, can, cardSubject, cardsOf, sentHome, current, defaultWhere, findCard, hireBlocked, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
 import { wallNow } from './clock.ts'
-import { drawerLabel, type Drawer } from './archive.ts'
+import { drawerLabel, type Archive } from './archive.ts'
 import type { Clients } from './clients.ts'
 import { gameItem } from './games.ts'
 import type { CatName } from './life.ts'
@@ -139,7 +139,7 @@ const floorOf = (board: Board, project: string) => board.floors.find((f) => f.id
  * What an act's offers read beyond the board and the scene: the extensions' words (a draft, a worker's review notes,
  * a floor's threads) and the drawers its archive's latest read fills.
  */
-export type OfferReads = Pick<Clients, 'draftItem' | 'cardReviews' | 'floorThreadsOf' | 'keepsThreads' | 'threadCheckout'> & { drawersAt: (project: string) => Drawer[] | undefined }
+export type OfferReads = Pick<Clients, 'draftItem' | 'cardReviews' | 'floorThreadsOf' | 'keepsThreads' | 'threadCheckout'> & Pick<Archive, 'drawersAt'>
 
 /** Whether a floor keeps review threads. */
 export const keepsThreads = (board: Board, project: string, reads: Pick<OfferReads, 'keepsThreads'>) => {

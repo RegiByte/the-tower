@@ -100,7 +100,7 @@ export function startArchive({ port }: { port: Port }) {
     return filed.get(cards)!
   }
 
-    return { watchArchives, readArchives, settledArchives, rereadArchive, archiveOf, archiveFailure, archivedAt, archivesSettled, archivedOf, drawersAt }
+  return { watchArchives, readArchives, settledArchives, rereadArchive, archiveOf, archiveFailure, archivedAt, archivesSettled, archivedOf, drawersAt }
 }
 
 export type Archive = ReturnType<typeof startArchive>
