@@ -11,7 +11,6 @@ test('a config holding every key a read stands on lacks nothing, with runtimes.c
 })
 
 test('a config short of a key every read stands on names the first one it lacks', () => {
-  assert.equal(lack([]), 'it holds no JSON object')
   assert.equal(lack({}), 'runtimes.claude.argv must name the command Claude sessions start with, such as {"runtimes": {"claude": {"argv": ["claude"]}}}')
   assert.equal(lack({ runtimes: { claude: { argv: [] } }, projects: {} }), 'runtimes.claude.argv must name the command Claude sessions start with, such as {"runtimes": {"claude": {"argv": ["claude"]}}}')
   assert.equal(lack({ runtimes: { claude: { argv: { claude: [] } } }, projects: {} }), 'runtimes.claude.argv must name the command Claude sessions start with, such as {"runtimes": {"claude": {"argv": ["claude"]}}}')

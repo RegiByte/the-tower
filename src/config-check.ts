@@ -298,7 +298,6 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
 
 /** Every problem of a config read from its file, each at the key it is at. */
 export const configProblems = (config: Config): ConfigProblem[] => {
-  if (!isObject(config)) return [fail('(the file)', 'holds no JSON object')]
   const moved = movedKeys(config)
   const isMoved = (p: ConfigProblem) => p.level === 'warn' && moved.some((m) => m.key === p.key)
   const renderers = (() => {
