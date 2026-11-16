@@ -7,7 +7,7 @@ import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
 import { shell } from './shell.ts'
 import { s, type Standing, type View } from './state.ts'
-import type { Db } from './app.ts'
+import { markedIn, type Db } from './app.ts'
 import type { CatName } from './life.ts'
 import type { EventRecord } from './record.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
@@ -109,7 +109,10 @@ export type Engine = {
   captured(): boolean
   captureChanged(): void
   pick(x: number, y: number): Act | undefined
-  showPrompt(a: Act | undefined): void
+  /** The crosshair on `a`, the prompt offering its verbs. */
+  aimAt(a: Act | undefined): void
+  /** What the prompt's act offers now. */
+  offers(): Offer[]
   startHold(a: Act, o: Offer, by: string): void
   floorY(): number
   /** The app's db: the panel open beside the world, the view, the desk's tab, a replay. */
@@ -195,13 +198,14 @@ export function installDoor(e: Engine) {
   }
 
   const state = (): DoorState => {
-    const { view, motion: { ride, flight, pet } } = e.app()
+    const { view, motion: { ride, flight, pet }, aim } = e.app()
+    const offers = e.offers()
     return {
       seed: SEED, time: s.simNow, stepped: s.stepped, captured: e.captured(), view,
       panel: panelOf(), carrying: s.carrying,
       walker: { ...s.me }, riding: ride !== undefined, flying: flight !== undefined,
       petting: pet && { name: pet.name, progress: petProgress(pet, s.simNow) },
-      aimed: s.aimed, offers: s.offers, marked: s.marked, holding: s.hold && { verb: s.hold.verb, fill: holdFill(s.hold.start, s.simNow) },
+      aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, s.simNow) },
       fps: s.meter.fps, frameMs: s.meter.frameMs, drawn: { calls: s.meter.calls, triangles: s.meter.triangles },
       counts: { boards: s.boards, rebuilds: s.rebuilds, desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
     }
@@ -236,18 +240,19 @@ export function installDoor(e: Engine) {
       s.me = { ...s.me, ...facing(eyes(s.me, e.floorY(), new THREE.Vector3()), at) }
       aim(camera, s.me, e.floorY())
       camera.updateMatrixWorld()
-      s.aimed = e.pick(0, 0)
-      e.showPrompt(s.aimed)
-      return s.aimed
+      e.aimAt(e.pick(0, 0))
+      return e.app().aim.aimed
     },
     press(verb, { hold: held = false } = {}) {
-      if (!s.aimed) throw new Error('nothing is aimed at: aimAt a thing first')
-      const o = s.offers.find((o) => o.verb === verb)
-      if (!o) throw new Error(`${verb} is not offered; offered: ${s.offers.map((o) => o.verb).join(', ') || 'nothing'}`)
+      const { aimed } = e.app().aim
+      if (!aimed) throw new Error('nothing is aimed at: aimAt a thing first')
+      const offers = e.offers()
+      const o = offers.find((o) => o.verb === verb)
+      if (!o) throw new Error(`${verb} is not offered; offered: ${offers.map((o) => o.verb).join(', ') || 'nothing'}`)
       if (HELD.has(verb) && !held) throw new Error(`${verb} runs on a hold: press('${verb}', { hold: true }), then step past ${HOLD_MS} ms`)
       if (!HELD.has(verb) && held) throw new Error(`${verb} runs on a press, not a hold`)
-      if (held) return e.startHold(s.aimed, o, 'door')
-      e.run(s.aimed, verb)
+      if (held) return e.startHold(aimed, o, 'door')
+      e.run(aimed, verb)
     },
     key(code) {
       if (!s.board) throw new Error('no board yet: await ready()')

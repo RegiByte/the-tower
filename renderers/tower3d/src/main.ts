@@ -18,7 +18,7 @@ import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Ca
 import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
-import { appHandlers, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
+import { actKey, appHandlers, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
@@ -1341,7 +1341,7 @@ const RUN: ByKind<unknown, [Verb]> = {
 }
 
 function run(a: Act, verb: Verb) {
-  const held = s.offers.find((o) => o.verb === verb)?.whyNot
+  const held = offersNow().find((o) => o.verb === verb)?.whyNot
   if (held) return toast(held)
   if (verb === 'next') return nextWaiting()
   if (verb === 'overview') return overview()
@@ -1694,8 +1694,7 @@ function overview() {
   closePanels()
   unlock()
   app.dispatch({ type: 'view', view: 'overview' })
-  s.aimed = undefined
-  showPrompt(undefined)
+  aimAt(undefined)
   show('paused', false)
   const top = s.plan.levels.at(-1)!.y
   const center = new THREE.Vector3(0, top / 2, 0)
@@ -1772,17 +1771,39 @@ function pick(x: number, y: number): Act | undefined {
  * What the aimed thing offers, each verb on its own key. The mouse wheel marks one and a click runs it; a verb that
  * ends something runs only once its key or the button has been held for `HOLD_MS`.
  */
+const aimNow = () => app.state().aim
+
+/** What the prompt's act offers now: derived from the board and what you hold, never kept. */
+function offersNow() {
+  const a = aimNow().offered
+  return a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: s.plan.galleries }) : []
+}
+
+/** The crosshair or the pointer is on `a`, and the prompt offers its verbs, drawn by `at` when the pointer gives one. */
+function aimAt(a: Act | undefined, at?: { x: number; y: number }) {
+  const key = actKey(a)
+  const aim = aimNow()
+  if (key !== aim.aimedKey || key !== aim.offeredKey) app.dispatch({ type: 'aimed', act: a, key })
+  drawPrompt(at)
+}
+
+/** The prompt offers nothing, what was last aimed at kept. */
+function offerNothing() {
+  if (aimNow().offeredKey !== actKey(undefined)) app.dispatch({ type: 'offered', act: undefined, key: actKey(undefined) })
+  drawPrompt()
+}
+
 let promptKey = ''
-function showPrompt(a: Act | undefined, at?: { x: number; y: number }) {
+function drawPrompt(at?: { x: number; y: number }) {
+  const aim = aimNow()
+  const a = aim.offered
   $('crosshair').classList.toggle('on', Boolean(a) && viewNow() === 'walk')
-  const which = JSON.stringify(a ?? null)
-  if (which !== s.offersOfAimed) (s.offersOfAimed = which, s.marked = 0, s.hold = undefined)
-  s.offers = a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: s.plan.galleries }) : []
-  s.marked = Math.min(s.marked, Math.max(0, s.offers.length - 1))
-  const key = a ? `${which}|${JSON.stringify(s.offers)}|${s.marked}|${Math.floor(s.simNow / 1000)}` : ''
+  const offers = offersNow()
+  const marked = markedIn(aim, offers.length)
+  const key = a ? `${aim.offeredKey}|${JSON.stringify(offers)}|${marked}|${Math.floor(s.simNow / 1000)}` : ''
   if (key !== promptKey) {
     promptKey = key
-    const html = a && s.board ? promptHtml(a, s.board, s.offers, s.marked, s.catNames, s.plan.galleries) : ''
+    const html = a && s.board ? promptHtml(a, s.board, offers, marked, s.catNames, s.plan.galleries) : ''
     $('prompt').innerHTML = html
     show('prompt', Boolean(html))
   }
@@ -1792,17 +1813,26 @@ function showPrompt(a: Act | undefined, at?: { x: number; y: number }) {
 }
 
 function startHold(a: Act, o: Offer, by: string) {
-  s.hold = { act: a, verb: o.verb, start: s.simNow, by }
+  app.dispatch({ type: 'hold', hold: { act: a, verb: o.verb, start: s.simNow, by } })
+}
+
+/** A hold let go of: the key or the button released, or the page no longer seeing it held. */
+const unhold = () => void (aimNow().hold && app.dispatch({ type: 'unhold' }))
+
+/** The offer the wheel marked, among those offered now. */
+function markedOffer() {
+  const offers = offersNow()
+  return offers[markedIn(aimNow(), offers.length)]
 }
 
 /** Runs the marked offer on a click; a held one starts filling instead. */
 function pressMarked(a: Act) {
-  const o = s.offers[s.marked]
+  const o = markedOffer()
   if (o && HELD.has(o.verb)) startHold(a, o, 'mouse')
 }
 function releaseMarked(a: Act) {
-  if (s.hold?.by === 'mouse') return (s.hold = undefined)
-  const o = s.offers[s.marked]
+  if (aimNow().hold?.by === 'mouse') return unhold()
+  const o = markedOffer()
   if (o && !HELD.has(o.verb)) run(a, o.verb)
 }
 
@@ -1989,8 +2019,7 @@ function startPet(name: CatName) {
   const cat = s.cats.get(name)!
   const spot = petSpot(cat, camera.position)
   app.dispatch({ type: 'pet', pet: { name, start: s.simNow, tailward: spot.tailward } })
-  s.aimed = undefined
-  showPrompt(undefined)
+  aimAt(undefined)
   petHearts = makeHearts()
   scene.add(petHearts)
   flyTo(spot.from, lookQuaternion(spot.from, spot.at), PET_IN, { type: 'arrived', at: { kind: 'pet' } })
@@ -2044,22 +2073,20 @@ function tickCamera() {
 }
 
 function tickAim() {
-  if (viewNow() === 'walk' && captured() && !motionNow().flight) {
-    s.aimed = pick(0, 0)
-    showPrompt(s.aimed)
-  } else if (viewNow() !== 'overview' && !s.still) showPrompt(undefined)
+  if (viewNow() === 'walk' && captured() && !motionNow().flight) aimAt(pick(0, 0))
+  else if (viewNow() !== 'overview' && !s.still) offerNothing()
 }
 
 /** A held verb's ring fills; once full, the verb runs. */
 function tickHold() {
-  if (!s.hold) return
-  const ring = $('prompt').querySelector<HTMLElement>(`[data-verb="${s.hold.verb}"] kbd`)
-  const k = holdFill(s.hold.start, s.simNow)
+  const { hold } = aimNow()
+  if (!hold) return
+  const ring = $('prompt').querySelector<HTMLElement>(`[data-verb="${hold.verb}"] kbd`)
+  const k = holdFill(hold.start, s.simNow)
   ring?.style.setProperty('--hold', String(k))
   if (k < 1) return
-  const { act: a, verb } = s.hold
-  s.hold = undefined
-  run(a, verb)
+  app.dispatch({ type: 'hold-filled' })
+  run(hold.act, hold.verb)
 }
 
 /** The chair of the workstation standing where a worker left its desk at `desk`, once one stands there. */
@@ -2243,26 +2270,28 @@ resize()
 /** A click acts on what it pressed: under pointer lock the cursor never moves, but the view can turn to another act. */
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId)
-  s.down = { x: e.clientX, y: e.clientY, act: JSON.stringify(s.aimed ?? null) }
-  if (e.button === 0 && s.aimed && (captured() || viewNow() === 'overview')) pressMarked(s.aimed)
+  const { aimed, aimedKey } = aimNow()
+  s.down = { x: e.clientX, y: e.clientY, act: aimedKey }
+  if (e.button === 0 && aimed && (captured() || viewNow() === 'overview')) pressMarked(aimed)
 })
 canvas.addEventListener('pointerup', (e) => {
   if (e.button !== 0 || !s.board || !s.down) return
-  if (Math.hypot(e.clientX - s.down.x, e.clientY - s.down.y) > 5 || JSON.stringify(s.aimed ?? null) !== s.down.act) return (s.hold = undefined)
-  if (viewNow() === 'overview' || captured()) return s.aimed && releaseMarked(s.aimed)
+  const { aimed, aimedKey } = aimNow()
+  if (Math.hypot(e.clientX - s.down.x, e.clientY - s.down.y) > 5 || aimedKey !== s.down.act) return unhold()
+  if (viewNow() === 'overview' || captured()) return aimed && releaseMarked(aimed)
   closePanels()
   lock()
 })
 canvas.addEventListener('pointermove', (e) => {
   if (viewNow() !== 'overview' || !s.board) return
-  s.aimed = pick((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1)
-  canvas.style.cursor = s.aimed ? 'pointer' : ''
-  showPrompt(s.aimed, { x: e.clientX, y: e.clientY })
+  const a = pick((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1)
+  canvas.style.cursor = a ? 'pointer' : ''
+  aimAt(a, { x: e.clientX, y: e.clientY })
 })
 canvas.addEventListener('wheel', (e) => {
-  if (viewNow() !== 'walk' || !captured() || s.offers.length < 2) return
-  s.marked = (s.marked + Math.sign(e.deltaY) + s.offers.length) % s.offers.length
-  s.hold = undefined
+  const offers = offersNow()
+  if (viewNow() !== 'walk' || !captured() || offers.length < 2) return
+  app.dispatch({ type: 'mark', marked: (markedIn(aimNow(), offers.length) + Math.sign(e.deltaY) + offers.length) % offers.length })
 }, { passive: true })
 $('paused').addEventListener('click', (e) => {
   if ((e.target as Element).closest('a, [popovertarget]')) return
@@ -2275,7 +2304,7 @@ const typing = () => {
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || asking() || ($('spawn') as HTMLDialogElement).open || ($('landing') as HTMLDialogElement).open
 }
 /** The aimed thing's verb on a key, by `KeyboardEvent.code`. */
-const offerOnKey = (code: string) => (s.aimed && (captured() || viewNow() === 'overview') ? offerForKey(s.offers, code) : undefined)
+const offerOnKey = (code: string) => (aimNow().aimed && (captured() || viewNow() === 'overview') ? offerForKey(offersNow(), code) : undefined)
 
 /** A key the building answers, by `KeyboardEvent.code`: the aimed thing's verbs first, then the building's own. Returns whether it answered. */
 function onKey(code: string, repeat: boolean): boolean {
@@ -2284,8 +2313,9 @@ function onKey(code: string, repeat: boolean): boolean {
   startMusic()
   if (viewNow() === 'pet') return false
   const offer = offerOnKey(code)
-  if (s.aimed && offer) {
-    if (!repeat) HELD.has(offer.verb) ? startHold(s.aimed, offer, code) : run(s.aimed, offer.verb)
+  const { aimed } = aimNow()
+  if (aimed && offer) {
+    if (!repeat) HELD.has(offer.verb) ? startHold(aimed, offer, code) : run(aimed, offer.verb)
     return true
   }
   // WebKit dispatches the Esc that ends a pointer lock while the lock still holds: framed, the tower would run it too.
@@ -2319,11 +2349,11 @@ document.addEventListener('keydown', (e) => {
 })
 
 document.addEventListener('keyup', (e) => {
-  if (s.hold?.by === e.code) s.hold = undefined
+  if (aimNow().hold?.by === e.code) unhold()
 })
 /** A key or button released while the page has no focus never reports it: a hold is a confirmation only while it is seen. */
-addEventListener('blur', () => (s.hold = undefined))
-document.addEventListener('visibilitychange', () => (s.hold = undefined))
+addEventListener('blur', unhold)
+document.addEventListener('visibilitychange', unhold)
 /** A file's Finder and editor buttons work in every panel, before the panel's own click handling sees the click. */
 document.addEventListener(
   'click',
@@ -3205,7 +3235,7 @@ let unbuilt: (err: Error) => void
 const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
 
 installDoor({
-  ready, update, render, onKey, run, place, leaveOverview, captured, captureChanged, pick, showPrompt, startHold, floorY, pickables, advance, app: app.state, drawPending,
+  ready, update, render, onKey, run, place, leaveOverview, captured, captureChanged, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, drawPending,
   events: events.read,
   play: () => (lastFrame = performance.now()),
 })

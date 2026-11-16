@@ -1,6 +1,6 @@
 import type { ChairKit, Chairs } from './chairs.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
-import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
+import type { Act, CatNames, Held, Verb } from './acts.ts'
 import type { Board, Brief, Card, ShelfSelf, Stats, tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
 import type { Renderer } from '/lib/board.js'
@@ -150,12 +150,6 @@ export type State = {
   beer: boolean
   draft: Draft | undefined
 
-  /** What the crosshair is on, what it offers, the offer the wheel marked, and the held one. */
-  aimed: Act | undefined
-  offers: Offer[]
-  marked: number
-  offersOfAimed: string
-  hold: Hold | undefined
   /** A pointer press, kept to act on the release only if it still points at what it pressed. */
   down: { x: number; y: number; act: string } | undefined
 
@@ -203,7 +197,7 @@ export const s: State = {
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 },
   doorOpen: new Map(), hiring: noHires, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined,
-  aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, down: undefined,
+  down: undefined,
   doorMode: false, doorHeld: false, still: false,
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
   meter: { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 },
