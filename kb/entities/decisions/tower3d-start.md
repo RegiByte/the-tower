@@ -38,7 +38,7 @@ thread, for seconds with the GPU's program cache cold.
   what has arrived ([[bundled-renderer]]). Every floor needs all of
   them, so none waits for a later stage.
 - *The first board is a sequence.* [`onLiveBoard`](ref:hub/renderers/tower3d/src/main.ts#onLiveBoard) hands it to
-  [`startOn`](ref:hub/renderers/tower3d/src/main.ts#startOn): a paint, `onBoard`, a paint, the scene set as a frame
+  [`startOn`](ref:hub/renderers/tower3d/src/main.ts#startOn): a paint, the board taken (`board-settled`), a paint, the scene set as a frame
   sets it ([`frameScene`](ref:hub/renderers/tower3d/src/main.ts#frameScene): the rig's lights and shadows are part
   of each program's key, so compiling without them misses half the programs), `compileAsync`, then the first frame
   drawn under the screen as it fades. Boards arriving meanwhile supersede one another; the latest follows.

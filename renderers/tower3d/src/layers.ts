@@ -264,18 +264,18 @@ export const WALLS: Layer<{ level: FloorLevel; key: string }, WallItem> = {
   root: (item) => item.wall.group,
 }
 
-/** Each floor's Running board, rebuilt when what it lists changes. */
-export const RUNNING: Layer<{ level: FloorLevel; added: AddedTidy[]; key: string }, Running> = {
+/** Each floor's Running board on `board`, rebuilt when what it lists changes. */
+export const runningOn = (board: Board): Layer<{ level: FloorLevel; added: AddedTidy[]; key: string }, Running> => ({
   slots: (p) =>
     floors(p).map((level) => {
-      const added = addedTidyOf(s.board!, level.floor)
+      const added = addedTidyOf(board, level.floor)
       return [String(level.index), { level, added, key: runningKey(p, level, added) }]
     }),
   level: (at) => at.level.index,
   make: ({ level, added }, _key, p) => buildRunning(p, level, added),
   keep: (item, { key }) => item.key === key,
   root: (item) => item.group,
-}
+})
 
 /** Each floor's pigeonhole, while it keeps review threads, rebuilt when what it shows changes. */
 export const PIGEONHOLES: Layer<{ level: FloorLevel; key: string }, Pigeonhole> = {

@@ -17,7 +17,7 @@
     "hub/renderers/tower3d/src/zones.ts#controlZones",
     "hub/renderers/tower3d/src/main.ts#openGame",
     "hub/renderers/tower3d/src/main.ts#gameEntered",
-    "hub/renderers/tower3d/src/main.ts#followCabinet",
+    "hub/renderers/tower3d/src/app.ts#followCabinet",
     "hub/renderers/tower3d/src/main.ts#frameAside",
     "hub/renderers/tower3d/src/ui.ts#gameHtml",
     "hub/src/shared/titles.ts",
@@ -66,7 +66,7 @@ meaning by one renderer, with no change to the core.
   nothing restarts it while a game is open (B unmutes without playing); closing (✕, a click on the world, Esc when the page has the keys) flies
   home and resumes it unless muted. While the game has focus the page gets no keys, so ✕ is the way out. A
   game kept meanwhile moves every cabinet along: the camera follows the open game's cabinet, and a game pushed off the
-  end of the arcade closes ([`followCabinet`](ref:hub/renderers/tower3d/src/main.ts#followCabinet)). Going to any other
+  end of the arcade closes ([`followCabinet`](ref:hub/renderers/tower3d/src/app.ts#followCabinet)). Going to any other
   panel from a game (a desk by a toast's Go, say) closes the game.
 - **Contained by what exists.** The tower serves a collection's html under the shelf CSP sandbox
   ([`collectionItem`](ref:hub/src/tower/http.ts#collectionItem)): an opaque origin, so a game's POST is refused

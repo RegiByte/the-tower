@@ -12,9 +12,11 @@
 import { attendNext, type AttendEvent, type AttendOut, type Attending } from '/lib/attend.js'
 import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
 import { subjectAt, type Lines } from '/lib/board.js'
-import { findCard } from './cards.ts'
+import { askTransitions, cardsOf, findCard, shownKey, transitions } from './cards.ts'
 import { gameItem } from './games.ts'
-import type { Board, Floor } from './api.ts'
+import { cabinetOf, deskOf, kioskOf, type Plan } from './layout.ts'
+import type { Board, Floor, ShelfSelf } from './api.ts'
+import type { Archived } from './archive.ts'
 import type { Act } from './acts.ts'
 import type { Pet } from './pet.ts'
 import type { Hold, Panel, Standing, View } from './state.ts'
@@ -101,7 +103,14 @@ export type Capture = { locked: boolean; door: boolean; still: boolean }
 /** Whether walking has the mouse. */
 export const captured = (c: Capture) => c.locked || c.door
 
+/**
+ * What the building took and its plan is derived from: a board, the shelf entry this page is, each floor's archive as
+ * read for that board, and the wall time it was planned at.
+ */
+export type Building = { board: Board; self: ShelfSelf | undefined; archived: Archived; at: number }
+
 export type Db = {
+  building: Building | undefined
   panel: Panel | undefined
   /** Whether the window has your eye, and what asks for you, said and rung as every renderer does (`attend.ts`). */
   attending: Attending
@@ -124,10 +133,8 @@ export type AppEvent =
   | { type: 'pend'; pending: Partial<Pending> }
   /** The view, set by what isn't a panel: the overview, petting. */
   | { type: 'view'; view: View }
-  /** The building took `board`: a panel whose subject left it closes. */
-  | { type: 'board-applied'; board: Board }
-  /** The replayed worker's desk left the building: the replay ends with it. */
-  | { type: 'replay-left' }
+  /** A board whose floors' archives are read: the building takes it, planned as `building` says. */
+  | { type: 'board-settled'; building: Building }
   | { type: 'ride'; ride: Ride }
   | { type: 'ride-arrived' }
   | { type: 'fly'; flight: Flight }
@@ -170,6 +177,25 @@ export type AppEffect =
   | { type: 'replays' }
   | { type: 'fly-home' }
   | { type: 'toast'; text: string }
+  /** The world takes the building's board: its layers reconciled, what it shows outside panels written. `was` is the board before. */
+  | { type: 'world/apply'; was: Board | undefined }
+  /** A firework over the roof party for each worker whose turn finished. */
+  | { type: 'fireworks'; cards: { id: string; project: string }[] }
+  /** A wait began: the lamps pulse from now. */
+  | { type: 'waits/began' }
+  /** An ask began that you haven't dismissed: said, with a way to go to it. */
+  | { type: 'asked'; ask: Board['asks'][number] }
+  /** A showing new since the board before: its worker holds it up and you hear it, said unless you sit at its desk. */
+  | { type: 'shown/arrived'; id: string; target: string; atDesk: boolean }
+  /** The game open framed again on its cabinet, which moved along. */
+  | { type: 'game/frame'; project: string; id: string }
+  /** The panels drawn now: a drawer whose folder left or a picture that left its gallery closes in its draw. */
+  | { type: 'redraw' }
+  /** The open desk's brief and the reader's logbook read again when their worker changed. */
+  | { type: 'logbooks' }
+  /** To a desk or a shell pending once the board shows it, sat down at it. */
+  | { type: 'desk/go'; id: string }
+  | { type: 'shell/go'; id: string }
   /** The panels drawn from the db and the board, once, at the next frame. */
   | { type: 'draw' }
   /** Focus on the first element `selector` names once the panels are drawn. */
@@ -190,6 +216,7 @@ export type AppEffect =
   | { type: 'captured' }
 
 export const startingDb = (attending: Attending): Db => ({
+  building: undefined,
   panel: undefined,
   attending,
   view: 'walk',
@@ -284,8 +311,13 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
   ]
 }
 
-/** What the handlers read of a board through an extension's client, handed in once: pure reads of the board's data. */
+/**
+ * What the handlers read of a board through an extension's client, and the building's plan, handed in once: pure reads
+ * of the board's data.
+ */
 export type AppReads = {
+  /** The building's plan, derived from what it took (memoized on it). */
+  planOf: (b: Building) => Plan
   /** A floor's review threads, by checkout and the key their subject is named by. */
   threadsOf: (f: Floor) => { checkout: string; key: string }[]
   /** Whether a floor keeps drafts: the drafts extension is on there. */
@@ -342,6 +374,86 @@ const pendingOn = (pending: Pending, board: Board): Pending => ({
   shown: pending.shown && findCard(board, pending.shown.id)?.shown.some((sh) => sh.target === pending.shown!.target) ? pending.shown : undefined,
 })
 
+/** Each step run on the db the step before it left, their effects in order. */
+function steps(db: Db, ...each: ((db: Db) => AppEffect[])[]): AppEffect[] {
+  let at = db
+  return each.flatMap((step) => {
+    const effects = step(at)
+    for (const e of effects) if (e.type === 'state') at = e.state
+    return effects
+  })
+}
+
+/** What the building's board leaves of the db: what is pending it no longer holds dropped, the panel whose subject left closed, a kept item changed read again. */
+function applied(db: Db, board: Board, reads: AppReads): AppEffect[] {
+  const next = { ...db, pending: pendingOn(db.pending, board) }
+  if (subjectLeft(next.panel, board, reads)) return [...went(next, undefined), ...leftSaid(next.panel)]
+  const kept = keptChanged(next.panel, board)
+  return kept ? went(next, kept) : [into(next), DRAW]
+}
+
+/** The game open follows its cabinet: closed once the arcade no longer stands it, framed again where a game kept since moved it along. */
+function followCabinet(db: Db, plan: Plan): AppEffect[] {
+  if (db.panel?.kind !== 'game') return []
+  const game = db.panel
+  const at = cabinetOf(plan, game.project, game.id)
+  if (!at) return went(db, undefined)
+  if (at.cabinet.x === game.x) return []
+  return [into({ ...db, panel: { ...game, x: at.cabinet.x } }), DRAW, { type: 'game/frame', project: game.project, id: game.id }]
+}
+
+/** Each showing on `next` that `was` didn't hold arrives; at its open desk, its tab opens on it. On the first board, none does. */
+function shownArrived(db: Db, was: Board | undefined, next: Board): AppEffect[] {
+  if (!was) return []
+  const before = new Set(cardsOf(was).flatMap((c) => c.shown.map(shownKey)))
+  const arrived = cardsOf(next).flatMap((c) => c.shown.filter((sh) => !before.has(shownKey(sh))).map((sh) => ({ id: c.id, target: sh.target })))
+  return steps(db, ...arrived.map(({ id, target }) => (db: Db): AppEffect[] => {
+    const here = atDesk(db) === id
+    const said: AppEffect = { type: 'shown/arrived', id, target, atDesk: here }
+    return here ? [said, ...tabTo(db, id, { tab: 'shown', target })] : [said]
+  }))
+}
+
+/** The workers whose turn finished between the two boards: working on `was`, done or idle on `next`. */
+function finished(was: Board | undefined, next: Board) {
+  const working = new Set(was ? cardsOf(was).filter((c) => c.status === 'working').map((c) => c.id) : [])
+  return cardsOf(next).filter((c) => working.has(c.id) && (c.status === 'done' || c.status === 'idle')).map((c) => ({ id: c.id, project: c.project }))
+}
+
+/**
+ * The building takes a board: what changed since the board before said (turns finished, waits and asks begun, showings
+ * arrived), the world applied, then what the db holds that the board no longer does (a replay whose desk left, a panel
+ * whose subject left, a game whose cabinet moved), and a desk or shell pending gone to once it stands.
+ */
+function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
+  const was = db.building?.board
+  const next = building.board
+  const plan = reads.planOf(building)
+  const fireworks = finished(was, next)
+  const asked = askTransitions(was, next).began.filter((a) => !db.attending.dismissed.has(a.key))
+  return steps(
+    { ...db, building },
+    (db) => [
+      into(db),
+      ...(fireworks.length ? [{ type: 'fireworks', cards: fireworks } as const] : []),
+      ...(transitions(was, next).began.length ? [{ type: 'waits/began' } as const] : []),
+      ...asked.map((ask) => ({ type: 'asked', ask }) as const),
+      { type: 'world/apply', was },
+    ],
+    (db) => shownArrived(db, was, next),
+    (db) => (db.replay && !deskOf(plan, db.replay.id) ? [into({ ...db, replay: undefined })] : []),
+    (db) => applied(db, next, reads),
+    (db) => followCabinet(db, plan),
+    (db) => (db.panel?.kind === 'drawer' || db.panel?.kind === 'picture' ? [{ type: 'redraw' }] : []),
+    () => [{ type: 'logbooks' }, { type: 'elevator' }],
+    (db) => (db.pending.desk && deskOf(plan, db.pending.desk) ? [into({ ...db, pending: { ...db.pending, desk: undefined } }), { type: 'desk/go', id: db.pending.desk }] : []),
+    (db) => (db.pending.shell && kioskOf(plan, db.pending.shell) ? [into({ ...db, pending: { ...db.pending, shell: undefined } }), { type: 'shell/go', id: db.pending.shell }] : []),
+  )
+}
+
+/** The desk's tab goes to `to`. */
+const tabTo = (db: Db, id: string, to: TabTo): AppEffect[] => [into({ ...db, deskTab: tabName(to) }), ...tabbed(db.deskTab, id, to), DRAW]
+
 export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> => ({
   board: attend,
   lost: attend,
@@ -360,7 +472,7 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   tab: (db, { to }) => {
     const id = atDesk(db)
     if (id === undefined) throw new Error(`a desk's ${to.tab} tab opens only at a desk; the panel is ${db.panel?.kind ?? 'none'}`)
-    return [into({ ...db, deskTab: tabName(to) }), ...tabbed(db.deskTab, id, to), DRAW]
+    return tabTo(db, id, to)
   },
   replay: (db, { id, session }) => {
     const replay = session === undefined ? undefined : { id, session }
@@ -369,13 +481,7 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   },
   pend: (db, { pending }) => [into({ ...db, pending: { ...db.pending, ...pending } })],
   view: (db, { view }) => [into({ ...db, view })],
-  'board-applied': (db, { board }) => {
-    const next = { ...db, pending: pendingOn(db.pending, board) }
-    if (subjectLeft(next.panel, board, reads)) return [...went(next, undefined), ...leftSaid(next.panel)]
-    const kept = keptChanged(next.panel, board)
-    return kept ? went(next, kept) : [into(next), DRAW]
-  },
-  'replay-left': (db) => [into({ ...db, replay: undefined })],
+  'board-settled': (db, { building }) => took(db, building, reads),
   ride: (db, { ride }) => [into(moved(db, { ride })), { type: 'elevator' }],
   'ride-arrived': (db) => [into(moved(db, { ride: undefined })), { type: 'hud' }, { type: 'elevator' }],
   fly: (db, { flight }) => [into(moved(db, { flight }))],
