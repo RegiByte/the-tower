@@ -6,7 +6,8 @@
  *
  *   npm run sandbox -- up                         the tower it reads (the sandbox's: sandbox-root.ts)
  *   npm run tool:frames -- record before          builds the bundle, walks every board twice (a scenario that does
- *                                                 not repeat is refused), keeps the walk under TOWER_FRAMES/before
+ *                                                 not repeat is refused, both walks kept under
+ *                                                 TOWER_FRAMES/before-unsteady), keeps the walk under TOWER_FRAMES/before
  *   …change the code…
  *   npm run tool:frames -- record after
  *   npm run tool:frames -- compare before after   each stage's state fields and PNG; exits 1 on any difference and
@@ -55,6 +56,18 @@ const walk = (board: string) => withPage(PAGE(board), { timezone: 'UTC', flags: 
 const differing = (a: Walked[], b: Walked[]) =>
   a.flatMap((x, i) => (same({ ...x, png: x.png && sha(pngOf(x.png)) }, { ...b[i], png: b[i]?.png && sha(pngOf(b[i].png!)) }) ? [] : [x.name]))
 
+/** Keeps both walks of a scenario that did not repeat, their differing stages' PNGs and every stage's state, to diff. */
+function keepUnsteady(label: string, board: string, unsteady: string[], ...walks: Walked[][]) {
+  const dir = path.join(ROOT, `${label}-unsteady`, board)
+  rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
+  walks.forEach((walked, w) => {
+    walked.forEach(({ png, name }, i) => png && unsteady.includes(name) && writeFileSync(path.join(dir, `${w + 1}-${String(i).padStart(2, '0')}-${name}.png`), pngOf(png)))
+    writeFileSync(path.join(dir, `${w + 1}.json`), JSON.stringify(walked.map(({ png, ...stage }) => ({ ...stage, png: png && sha(pngOf(png)) })), null, 1))
+  })
+  return dir
+}
+
 async function record(label: string) {
   const answers = await fetch(`${TOWER}/origins`).then(() => true, () => false)
   if (!answers) throw new Error(`no tower at ${TOWER}: npm run sandbox -- up`)
@@ -64,7 +77,7 @@ async function record(label: string) {
   for (const board of BOARDS) {
     const [first, second] = [await walk(board), await walk(board)]
     const unsteady = differing(first, second)
-    if (unsteady.length) throw new Error(`${board}: the scenario does not repeat at ${unsteady.join(', ')}: something reaches a frame outside the clock, the seed or ?at`)
+    if (unsteady.length) throw new Error(`${board}: the scenario does not repeat at ${unsteady.join(', ')}: something reaches a frame outside the clock, the seed or ?at; both walks are in ${keepUnsteady(label, board, unsteady, first, second)}`)
     mkdirSync(path.join(dir, board), { recursive: true })
     const stages: Stage[] = first.map(({ png, ...stage }, i) => {
       if (!png) return stage
