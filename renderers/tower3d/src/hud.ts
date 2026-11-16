@@ -163,6 +163,9 @@ export function startHud(started: HudDeps) {
    */
   let settingsDrawn = ''
 
+  /** The lighting setting as last chosen, kept in `tower.store` under `LIGHTING_KEY`: the page draws what it started with (`lit`). */
+  let chosen = lit
+
   let settingsBy: Element = $('hud')
 
   const settingsEl = $('settings')
@@ -170,7 +173,7 @@ export function startHud(started: HudDeps) {
   const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 
   function paintSettings() {
-    const html = settingsHtml([soundSection(port.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(s.lighting, lit)])
+    const html = settingsHtml([soundSection(port.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(chosen, lit)])
     if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
   }
 
@@ -187,7 +190,7 @@ export function startHud(started: HudDeps) {
   settingsEl.addEventListener('click', (e) => {
     const el = (e.target as Element).closest<HTMLElement>('[data-ring-choice], [data-sound-play], [data-lighting], [data-lighting-reload]')
     if (!el) return
-    if (el.dataset.lighting) return (chooseLighting((s.lighting = el.dataset.lighting === 'true')), drawSettings())
+    if (el.dataset.lighting) return (chooseLighting((chosen = el.dataset.lighting === 'true')), drawSettings())
     if (el.hasAttribute('data-lighting-reload')) return location.reload()
     if (el.dataset.ringChoice) return chooseRing(el.dataset.ringChoice as Ring)
     ring(el.dataset.soundPlay as Sound)
