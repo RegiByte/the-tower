@@ -7,7 +7,7 @@ import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
 import { shell } from './shell.ts'
 import { s, type Standing, type View } from './state.ts'
-import { markedIn, type Db } from './app.ts'
+import { markedIn, type AppEvent, type Db } from './app.ts'
 import type { CatName } from './life.ts'
 import type { EventRecord } from './record.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
@@ -107,7 +107,6 @@ export type Engine = {
   place(level: number, spot: Standing): void
   leaveOverview(): void
   captured(): boolean
-  captureChanged(): void
   pick(x: number, y: number): Act | undefined
   /** The crosshair on `a`, the prompt offering its verbs. */
   aimAt(a: Act | undefined): void
@@ -115,8 +114,9 @@ export type Engine = {
   offers(): Offer[]
   startHold(a: Act, o: Offer, by: string): void
   floorY(): number
-  /** The app's db: the panel open beside the world, the view, the desk's tab, a replay. */
+  /** The app's db: the panel open beside the world, the view, the desk's tab, a replay, motion, aim and capture. */
   app(): Db
+  dispatch(event: AppEvent): void
   /** The panels drawn now, if a transition asked for a draw: a stepped frame draws as a real one does. */
   drawPending(): void
   pickables(): THREE.Object3D[]
@@ -216,13 +216,12 @@ export function installDoor(e: Engine) {
     pictured,
     capture() {
       s.doorMode = true
-      s.doorHeld = e.app().view === 'walk' && !e.app().panel
-      e.captureChanged()
+      e.dispatch({ type: 'capture', by: 'door', held: e.app().view === 'walk' && !e.app().panel })
     },
     release() {
-      s.doorMode = s.doorHeld = false
+      s.doorMode = false
       drive(undefined)
-      e.captureChanged()
+      e.dispatch({ type: 'capture', by: 'door', held: false })
     },
     teleport({ level, x, z, yaw = s.me.yaw, pitch = 0, y = 0 }) {
       if (!s.plan.levels[level]) throw new Error(`no level ${level}: the tower has ${s.plan.levels.length}`)

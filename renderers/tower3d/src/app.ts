@@ -92,6 +92,15 @@ export type Aim = {
 /** The marked offer's index among `count` offers. */
 export const markedIn = (aim: Aim, count: number) => Math.min(aim.marked, Math.max(0, count - 1))
 
+/**
+ * Whether walking has the mouse, as the page and the door report it: pointer lock, or the door's capture standing in
+ * for it. `still`: the mouse let go with P, the view holding as it was, without the pause card, until it is taken again.
+ */
+export type Capture = { locked: boolean; door: boolean; still: boolean }
+
+/** Whether walking has the mouse. */
+export const captured = (c: Capture) => c.locked || c.door
+
 export type Db = {
   panel: Panel | undefined
   /** Whether the window has your eye, and what asks for you, said and rung as every renderer does (`attend.ts`). */
@@ -102,6 +111,7 @@ export type Db = {
   replay: Replay | undefined
   motion: Motion
   aim: Aim
+  capture: Capture
 }
 
 export type AppEvent =
@@ -137,6 +147,12 @@ export type AppEvent =
   | { type: 'hold'; hold: Hold }
   /** The held key or button let go of, or no longer seen held. */
   | { type: 'unhold' }
+  /** Pointer lock was taken or lost (`pointer`), or the door's capture (`door`). */
+  | { type: 'capture'; by: 'pointer' | 'door'; held: boolean }
+  /** The mouse let go of: by Esc, or as a panel opens. */
+  | { type: 'unlock' }
+  /** The mouse let go of with P: the view holds still. */
+  | { type: 'let-go' }
   /** The held verb's ring filled: the frame that saw it runs the verb, as a key does, once this is handled. */
   | { type: 'hold-filled' }
 
@@ -168,6 +184,10 @@ export type AppEffect =
   | { type: 'elevator' }
   /** What is done once there that the db can't decide: a desk or a kiosk still standing, the mouse, the orbit, a purr. */
   | { type: 'arrived'; at: Exclude<Arrival, { kind: 'ask' }> }
+  /** The mouse let go of: pointer lock exited, the door's capture released. */
+  | { type: 'unlock' }
+  /** The keys held let go of and the pause card drawn, as the mouse is taken or let go of. */
+  | { type: 'captured' }
 
 export const startingDb = (attending: Attending): Db => ({
   panel: undefined,
@@ -178,6 +198,7 @@ export const startingDb = (attending: Attending): Db => ({
   replay: undefined,
   motion: { ride: undefined, flight: undefined, cut: undefined, pet: undefined },
   aim: { aimed: undefined, aimedKey: actKey(undefined), offered: undefined, offeredKey: actKey(undefined), marked: 0, hold: undefined },
+  capture: { locked: false, door: false, still: false },
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
@@ -185,6 +206,8 @@ const DRAW: AppEffect = { type: 'draw' }
 const moved = (db: Db, motion: Partial<Motion>): Db => ({ ...db, motion: { ...db.motion, ...motion } })
 const fire = (event: AppEvent | undefined): AppEffect[] => (event ? [{ type: 'fire', event }] : [])
 
+const UNLOCK: AppEffect = { type: 'unlock' }
+const withCapture = (db: Db, capture: Partial<Capture>): Db => ({ ...db, capture: { ...db.capture, ...capture } })
 const withAim = (db: Db, aim: Partial<Aim>): Db => ({ ...db, aim: { ...db.aim, ...aim } })
 
 /** The prompt offers verbs for `act`: a different act starts the mark and the hold over. */
@@ -245,6 +268,7 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
     ...db,
     panel: to,
     view,
+    ...(to && { capture: { ...db.capture, still: false } }),
     ...(steps && { deskTab: steps.at, pending: { ...db.pending, tab: undefined, shown: undefined } }),
   }
   const [state, ...told] = attend(next, { type: 'watch', at: to?.kind === 'desk' ? to.id : undefined })
@@ -253,7 +277,7 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
     ...told,
     ...(!stays && from ? [{ type: 'leave', panel: from } as const] : []),
     ...(unfocuses ? [{ type: 'fly-home' } as const] : []),
-    ...(to ? [{ type: 'enter', panel: to, from } as const] : []),
+    ...(to ? [UNLOCK, { type: 'enter', panel: to, from } as const] : []),
     ...(steps?.effects ?? []),
     DRAW,
     ...(to && FOCUS_ON[to.kind] ? [{ type: 'focus', selector: FOCUS_ON[to.kind]! } as const] : []),
@@ -375,5 +399,11 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   hold: (db, { hold }) => [into(withAim(db, { hold }))],
   unhold: (db) => [into(withAim(db, { hold: undefined }))],
   'hold-filled': (db) => [into(withAim(db, { hold: undefined }))],
+  capture: (db, { by, held }) => {
+    const next = { ...db.capture, [by === 'pointer' ? 'locked' : 'door']: held }
+    return [into({ ...db, capture: captured(next) ? { ...next, still: false } : next }), { type: 'captured' }]
+  },
+  unlock: (db) => [into(withCapture(db, { still: false })), UNLOCK],
+  'let-go': (db) => [into(withCapture(db, { still: true })), UNLOCK],
   arrived: (db, { at }) => (at.kind === 'ask' ? [...went(db, { kind: 'floor', id: at.project, tray: undefined }), { type: 'toast', text: at.said }] : [{ type: 'arrived', at }]),
 })

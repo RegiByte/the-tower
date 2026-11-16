@@ -20,8 +20,9 @@ shape of a mod. These shapes extract; they are not a plugin API.
 
 **How.**
 - **One state record** ([`state.ts`](ref:hub/renderers/tower3d/src/state.ts)): the board and plan, the layers'
-  maps, the walker, aim and hold, the door's capture, the clock and the meter; what the page has decided (the panel,
-  the view, a ride, a flight, a cut, a pet) is the app loop's db ([[tower3d-system]]). Modules
+  maps, the walker, the door's mode, the clock and the meter; what the page has decided (the panel, the view, a ride,
+  a flight, a cut, a pet, what is aimed at and held, whether walking has the mouse) is the app loop's db
+  ([[tower3d-system]]). Modules
   read and write `s.field`, so every write is greppable. Render memos and derived caches stay beside the function
   that uses them.
 - **Keyed layers** ([`reconcile`](ref:hub/renderers/tower3d/src/layers.ts#reconcile)): a layer says which slots

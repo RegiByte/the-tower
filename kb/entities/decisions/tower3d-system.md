@@ -36,6 +36,12 @@
     "hub/renderers/tower3d/src/main.ts#ARRIVED",
     "hub/renderers/tower3d/src/main.ts#tickCamera",
     "hub/renderers/tower3d/src/main.ts#travel",
+    "hub/renderers/tower3d/src/app.ts#Aim",
+    "hub/renderers/tower3d/src/app.ts#Capture",
+    "hub/renderers/tower3d/src/main.ts#offersNow",
+    "hub/renderers/tower3d/src/main.ts#tickAim",
+    "hub/renderers/tower3d/src/main.ts#tickHold",
+    "hub/renderers/tower3d/src/main.ts#RUN",
     "hub/renderers/tower3d/src/main.ts#LEAVE",
     "hub/renderers/tower3d/src/main.ts#ENTER",
     "hub/renderers/tower3d/src/main.ts#TAB_ENTER",
@@ -106,7 +112,8 @@ executors are in `main.ts`, where the DOM and the building are. Every panel kind
 cabinet's drawer, which still opens and closes itself through a bridge (`openSide`, `closeSide`).
 - *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): the panel open, attention, the view, the desk's tab,
   what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on), a replay, and
-  what moves on its own (`motion`, below).
+  what moves on its own (`motion`), what is aimed at and held (`aim`), and whether walking has the mouse (`capture`), each
+  below.
   Readers call `app.state()` (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `main.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
   anything written every frame stay out of it.
@@ -181,6 +188,23 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   executor starts (`fly-home`, a big screen or a game entered) is dispatched from it, so it lands in the db once the
   transition's other effects have run; only frames read it. The replan at `plan.until` is still checked every frame,
   in `update`: the plan is the board's, and it becomes a timer when the board becomes an event (P3).
+- *Aim is written on change.* [`tickAim`](ref:hub/renderers/tower3d/src/main.ts#tickAim) still raycasts every frame,
+  but dispatches `aimed` only when the act's key changes ([`Aim`](ref:hub/renderers/tower3d/src/app.ts#Aim)). The db
+  keeps the act last aimed at and the act the prompt offers verbs for apart: the prompt empties when the view leaves
+  walking, while the act last aimed at is kept (`offered`). A different act starts the wheel's mark and the hold over.
+  What the prompt offers is never kept: [`offersNow`](ref:hub/renderers/tower3d/src/main.ts#offersNow) derives it from
+  the board and what you hold on every read, and the mark is read within it (`markedIn`). A hold is its start time:
+  [`tickHold`](ref:hub/renderers/tower3d/src/main.ts#tickHold) writes the ring's `--hold` every frame, dispatches
+  `hold-filled` once, then runs the verb itself, outside the loop, as a key does. A verb runs outside the loop because
+  many verbs dispatch and then read the db, which inside an executor they would find stale.
+  [`RUN`](ref:hub/renderers/tower3d/src/main.ts#RUN)'s entries that are transitions (a floor's panel, the
+  directory, the elevator) return their event, which `run` dispatches; the rest act at once.
+- *Capture is a fact reported to the app.* Pointer lock (`pointerlockchange`) and the door's capture each dispatch
+  `capture`, and `captured()` reads the db ([`Capture`](ref:hub/renderers/tower3d/src/app.ts#Capture)). `still`
+  (the mouse let go with P) is written by `let-go`, cleared by `unlock` and by the mouse being taken. Entering any panel
+  lets go of the mouse: `went` returns an `unlock` effect before the `enter`, so no enter unlocks itself. `lock` stays a
+  plain function: it writes nothing to the db, and the door's capture comes back as a `capture` event. No `port` is
+  needed, since every source of these events starts after the app.
 - *A leg that moves a family*:
   - gives its kinds `LEAVE` and `ENTER` entries and folds its opener and closer into them and `go`, its data
     updates into `panel`;
@@ -211,6 +235,6 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
 modules; `main.ts` keeps its own (its listeners, timers, the board's subscription) until later
 passes move them. Every panel changes state only through the app loop, and the draw writes nothing back, but the
 drawer and the picture, whose draws still close them. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
-`spawning`), it stays out of the panel union. The capture (`still`, the door's hold) stays outside the db:
-`lock` and `unlock` write it from everywhere, executors among them, so it moves with them as effects.
+`spawning`), it stays out of the panel union. Motion, aim and capture are in the db as well. What is left outside it
+is the walker, which the frames own, the door's mode and a pointer press.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.
