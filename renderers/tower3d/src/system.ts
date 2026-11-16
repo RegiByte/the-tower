@@ -7,6 +7,7 @@ import { startLighting } from './light/setting.ts'
 import { stage as stageShown } from './loading.ts'
 import { startPort } from './port.ts'
 import { bindShell, type Shell } from './shell.ts'
+import type { Main } from './main.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 
@@ -22,7 +23,8 @@ import { startTerminal } from './term.ts'
  *   terminal  the desk's terminal, mounted in the panel (term.ts)
  *   assets    the models, the kit and the faces, loading; the page draws once they are in (loads.ts)
  *   port      where the reads that land send their events, the app attached once it is made (port.ts)
- *   shell     the page itself: main.ts, imported once the resources it reads are bound (shell.ts)
+ *   shell     what the leaf modules read as they load, bound before any page resource loads its module (shell.ts)
+ *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
 const lighting = defineResource({ start: startLighting, halt: () => {} })
@@ -50,13 +52,25 @@ const assets = defineResource({ start: startAssets, halt: () => {} })
 const port = defineResource({ start: startPort, halt: () => {} })
 
 const shell = defineResource({
-  dependencies: ['clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port'],
-  start: async (started: Shell) => {
-    stageShown('models')
+  dependencies: ['clients', 'lighting', 'stage', 'input', 'port'],
+  start: (started: Shell) => {
     bindShell(started)
-    await import('./main.ts')
+    return started
   },
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, shell }
+/**
+ * A page resource imports its module as it starts, once `shell` is bound: the leaf modules it imports read the binding
+ * as they load. Transitional, with the binding.
+ */
+const main = defineResource({
+  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port'],
+  start: async (started: Main & { shell: Shell }) => {
+    stageShown('models')
+    ;(await import('./main.ts')).startMain(started)
+  },
+  halt: () => {},
+})
+
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, shell, main }

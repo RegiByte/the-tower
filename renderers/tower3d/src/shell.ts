@@ -1,17 +1,16 @@
-import type { Assets } from './loads.ts'
 import type { Clients } from './clients.ts'
 import type { Lighting } from './light/setting.ts'
 import type { Input } from './input.ts'
-import type { Music } from './music.ts'
 import type { Port } from './port.ts'
 import type { Stage } from './stage.ts'
-import type { Term } from './term.ts'
 
 /**
- * The started resources the page's modules read: main.ts and every module it imports, loaded once they are bound.
- * Bound once, before main.ts is imported; a read before then is a module loaded too early, and says so.
+ * The started resources the leaf modules read as they load (`acts`, `arcade`, `archive`, `desk`, `door`, `kept`,
+ * `notes`, `pigeonhole`, `state`, `world`, `ui`, `levels`). Bound once those have started, before any page resource
+ * loads its module; a read before then is a module loaded too early, and says so. Transitional: once the leaves take
+ * what they read as arguments, the binding goes (decision `tower3d-system`).
  */
-export type Shell = { clients: Clients; lighting: Lighting; stage: Stage; input: Input; music: Music; terminal: Term; assets: Assets; port: Port }
+export type Shell = { clients: Clients; lighting: Lighting; stage: Stage; input: Input; port: Port }
 
 let bound: Shell | undefined
 
@@ -20,6 +19,6 @@ export function bindShell(started: Shell) {
 }
 
 export function shell(): Shell {
-  if (!bound) throw new Error('Tower 3D read its started resources before they were bound: only main.ts and the modules it imports read shell()')
+  if (!bound) throw new Error('Tower 3D read its started resources before they were bound: a module that reads shell() was loaded before the shell resource started')
   return bound
 }
