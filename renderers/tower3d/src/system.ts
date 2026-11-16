@@ -43,14 +43,12 @@ const music = defineResource({ start: startMusic, halt: (started) => started.sto
 
 const terminal = defineResource({ start: startTerminal, halt: (started) => started.stop() })
 
-const assets = defineResource({
-  start: () => (stageShown('models'), startAssets()),
-  halt: () => {},
-})
+const assets = defineResource({ start: startAssets, halt: () => {} })
 
 const shell = defineResource({
   dependencies: ['clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets'],
   start: async (started: Shell) => {
+    stageShown('models')
     bindShell(started)
     await import('./main.ts')
   },
