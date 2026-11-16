@@ -163,7 +163,7 @@ const feed = defineResource({
 })
 
 const door = defineResource({
-  dependencies: ['shell', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
+  dependencies: ['shell', 'stage', 'input', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
   start: async (started: DoorDeps & { shell: Shell }) => (await import('./door.ts')).startDoor(started),
   halt: () => {},
 })
