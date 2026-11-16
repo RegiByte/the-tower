@@ -14,7 +14,7 @@
     "hub/renderers/tower3d/src/layers.ts#NOTES",
     "hub/renderers/tower3d/src/notes.ts",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
-    "hub/renderers/tower3d/src/main.ts#sendCarried",
+    "hub/renderers/tower3d/src/spawn.ts#sendCarried",
     "hub/renderers/tower3d/src/main.ts#openDraftPanel",
     "hub/renderers/tower3d/src/hands.ts#holdNote",
     "hub/renderers/page/index.html", "hub/renderers/page/page.js",
@@ -49,7 +49,7 @@ tower page.
   just puts the note back. The carried note's title is derived from the cache wherever it shows.
 - **Verbs** ([`OFFERS`](ref:hub/renderers/tower3d/src/acts.ts#OFFERS)), with H meaning "hand over what you carry":
   to a worker offering `submit`, or to the open desk, which hires a worker on the note.
-- **Sent, then deleted** ([`sendCarried`](ref:hub/renderers/tower3d/src/main.ts#sendCarried)): the text is read
+- **Sent, then deleted** ([`sendCarried`](ref:hub/renderers/tower3d/src/spawn.ts#sendCarried)): the text is read
   after the editor's last save, then submitted or spawned as the prompt. Only a success deletes the draft and empties
   your hand; a failure keeps the note in hand.
 - **The panel** ([`openDraftPanel`](ref:hub/renderers/tower3d/src/main.ts#openDraftPanel)) lies on the right like

@@ -10,6 +10,7 @@ import { bindShell, type Shell } from './shell.ts'
 import type { Main } from './main.ts'
 import type { WorldDeps } from './building.ts'
 import type { ViewsDeps } from './views.ts'
+import type { SpawnDeps } from './spawn.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
@@ -31,6 +32,7 @@ import { startToasts } from './toasts.ts'
  *   events    what the page's loops handled, kept for the door (events.ts)
  *   world     the building in the scene: its plan, its layers, what can be seen and picked (building.ts)
  *   views     the views the panels mount, and the layout they are drawn by (views.ts)
+ *   spawn     hiring: the new-worker dialog, the hires in flight, the carried note handed over (spawn.ts)
  *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
@@ -91,8 +93,14 @@ const views = defineResource({
   halt: () => {},
 })
 
+const spawn = defineResource({
+  dependencies: ['shell', 'clients', 'port', 'toasts', 'events', 'world'],
+  start: async (started: SpawnDeps & { shell: Shell }) => (await import('./spawn.ts')).startSpawn(started),
+  halt: () => {},
+})
+
 const main = defineResource({
-  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views'],
+  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn'],
   start: async (started: Main & { shell: Shell }) => {
     stageShown('models')
     ;(await import('./main.ts')).startMain(started)
@@ -100,4 +108,4 @@ const main = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, main }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, main }

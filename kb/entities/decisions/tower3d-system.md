@@ -63,7 +63,8 @@
     "hub/renderers/tower3d/src/layers.ts#desksAfter",
     "hub/renderers/tower3d/src/layers.ts#galleryAfter",
     "hub/renderers/tower3d/src/door.ts#Engine",
-    "hub/renderers/tower3d/src/views.ts#startViews"
+    "hub/renderers/tower3d/src/views.ts#startViews",
+    "hub/renderers/tower3d/src/spawn.ts#startSpawn"
   ]
 }
 ---
@@ -303,6 +304,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
 **Impact.** The start order is the graph, and a failure names its resource. The import-time effects left the leaf
 modules; `main.ts` keeps its own (its listeners, timers, the board's subscription) until later
 passes move them. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
-`spawning`), it stays out of the panel union. Motion, aim and capture are in the db as well. What is left outside it
+`spawning`, started as the `spawn` resource: [`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), it stays out
+of the panel union. Motion, aim and capture are in the db as well. What is left outside it
 is the walker, which the frames own, the door's mode and a pointer press.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.
