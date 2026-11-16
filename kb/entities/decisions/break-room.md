@@ -16,7 +16,7 @@
     "hub/renderers/tower3d/src/layout.ts#plan",
     "hub/renderers/tower3d/src/layout.ts#Plan",
     "hub/renderers/tower3d/src/layout.ts#DeskSlot",
-    "hub/renderers/tower3d/src/main.ts#update",
+    "hub/renderers/tower3d/src/frames.ts#update",
     "hub/renderers/tower3d/src/desk.ts#standingPose",
     "hub/scripts/tower3d-fixtures.ts#breakroom",
     "hub/scripts/frames.scenario.js",
@@ -52,7 +52,7 @@ nobody has typed to it since, its latest prompt was its hirer's and the hirer ru
 - *The grace without a timer.* The plan is made for a board at the wall clock's `now`
   ([`plan`](ref:hub/renderers/tower3d/src/layout.ts#plan)) and says when it next changes by time alone
   ([`nextBreak`](ref:hub/renderers/tower3d/src/breaks.ts#nextBreak), `Plan.until`); the page's
-  [`update`](ref:hub/renderers/tower3d/src/main.ts#update) plans the board again once the wall clock passes it. So a
+  [`update`](ref:hub/renderers/tower3d/src/frames.ts#update) plans the board again once the wall clock passes it. So a
   quiet tower, whose board doesn't change, still sends the worker off, and every viewer and reload agree. Under `?at=`
   the clock is pinned, so a fixture draws the same frames.
 - *Places* ([`breakPlaces`](ref:hub/renderers/tower3d/src/layout.ts#breakPlaces)): before each cabinet, playing

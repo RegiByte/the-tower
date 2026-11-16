@@ -24,7 +24,7 @@
     "hub/renderers/tower3d/src/layout.ts#collidersOn",
     "hub/renderers/tower3d/src/layout.ts#solids",
     "hub/renderers/tower3d/src/walker.ts#fallTo",
-    "hub/renderers/tower3d/src/main.ts#stepWalker",
+    "hub/renderers/tower3d/src/frames.ts#stepWalker",
     "hub/renderers/tower3d/src/layout.ts#plan",
     "hub/renderers/tower3d/src/floorplan.ts#roomsOf",
     "hub/renderers/tower3d/src/floorplan.ts#anchorsOf",
@@ -58,7 +58,7 @@ their screens over their shoulders.
   draws it on each floor. The deck stays inside its level, so the rule that a level is a box closed by its slabs holds
   ([[tower3d-levels]]).
 - *The walker lands on a ground height* ([`fallTo`](ref:hub/renderers/tower3d/src/walker.ts#fallTo),
-  [`stepWalker`](ref:hub/renderers/tower3d/src/main.ts#stepWalker)):
+  [`stepWalker`](ref:hub/renderers/tower3d/src/frames.ts#stepWalker)):
   [`groundAt`](ref:hub/renderers/tower3d/src/floorplan.ts#groundAt) is a ramp on the stair, the deck past its
   top, else the floor; within a step of it the walker stands on it, else it falls. Its layer,
   [`layerAt`](ref:hub/renderers/tower3d/src/floorplan.ts#layerAt), is chosen by height, and what it bumps into is
