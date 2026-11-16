@@ -169,7 +169,7 @@ export function installDoor(e: Engine) {
    * this before it renders, so a door call made before one (a stepped page, a teleport) reads it the same.
    */
   function current() {
-    showLevels(levelsShown(e.app().view, s))
+    showLevels(levelsShown(e.app().view, e.app().motion, s.me.level))
     scene.updateMatrixWorld()
   }
 
@@ -194,15 +194,18 @@ export function installDoor(e: Engine) {
     return panel
   }
 
-  const state = (): DoorState => ({
-    seed: SEED, time: s.simNow, stepped: s.stepped, captured: e.captured(), view: e.app().view,
-    panel: panelOf(), carrying: s.carrying,
-    walker: { ...s.me }, riding: s.ride !== undefined, flying: s.flight !== undefined,
-    petting: s.pet && { name: s.pet.name, progress: petProgress(s.pet, s.simNow) },
-    aimed: s.aimed, offers: s.offers, marked: s.marked, holding: s.hold && { verb: s.hold.verb, fill: holdFill(s.hold.start, s.simNow) },
-    fps: s.meter.fps, frameMs: s.meter.frameMs, drawn: { calls: s.meter.calls, triangles: s.meter.triangles },
-    counts: { boards: s.boards, rebuilds: s.rebuilds, desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
-  })
+  const state = (): DoorState => {
+    const { view, motion: { ride, flight, pet } } = e.app()
+    return {
+      seed: SEED, time: s.simNow, stepped: s.stepped, captured: e.captured(), view,
+      panel: panelOf(), carrying: s.carrying,
+      walker: { ...s.me }, riding: ride !== undefined, flying: flight !== undefined,
+      petting: pet && { name: pet.name, progress: petProgress(pet, s.simNow) },
+      aimed: s.aimed, offers: s.offers, marked: s.marked, holding: s.hold && { verb: s.hold.verb, fill: holdFill(s.hold.start, s.simNow) },
+      fps: s.meter.fps, frameMs: s.meter.frameMs, drawn: { calls: s.meter.calls, triangles: s.meter.triangles },
+      counts: { boards: s.boards, rebuilds: s.rebuilds, desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
+    }
+  }
 
   Object.assign(window.tower3d, {
     ready: () => e.ready,

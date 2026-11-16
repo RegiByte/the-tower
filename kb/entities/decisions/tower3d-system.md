@@ -31,6 +31,11 @@
     "hub/renderers/tower3d/src/app.ts#went",
     "hub/renderers/tower3d/src/app.ts#subjectLeft",
     "hub/renderers/tower3d/src/app.ts#AppReads",
+    "hub/renderers/tower3d/src/app.ts#Motion",
+    "hub/renderers/tower3d/src/app.ts#Arrival",
+    "hub/renderers/tower3d/src/main.ts#ARRIVED",
+    "hub/renderers/tower3d/src/main.ts#tickCamera",
+    "hub/renderers/tower3d/src/main.ts#travel",
     "hub/renderers/tower3d/src/main.ts#LEAVE",
     "hub/renderers/tower3d/src/main.ts#ENTER",
     "hub/renderers/tower3d/src/main.ts#TAB_ENTER",
@@ -100,10 +105,11 @@ do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/rende
 executors are in `main.ts`, where the DOM and the building are. Every panel kind moves through it but a filing
 cabinet's drawer, which still opens and closes itself through a bridge (`openSide`, `closeSide`).
 - *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): the panel open, attention, the view, the desk's tab,
-  what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on) and a replay.
+  what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on), a replay, and
+  what moves on its own (`motion`, below).
   Readers call `app.state()` (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `main.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
-  per-frame motion stay out of it.
+  anything written every frame stay out of it.
 - *`go` moves a panel* ([`went`](ref:hub/renderers/tower3d/src/app.ts#went)), the page's `go` over Tower 3D's
   `Panel` union: the open panel is left unless the next stays in its room (desks, shells and the big screen share
   one, `ROOM`), the next is entered, and a `draw` follows; a kind entered again from itself is entered again, not
@@ -158,7 +164,23 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
     since moved along.
   `onBoard` also dispatches `replay-left` where a replay's desk left the building, and goes to a pending desk or
   shell.
-- *What sets the view outside a panel* (the overview, petting) sends a `view` event.
+- *What sets the view outside a panel* (the overview) sends a `view` event; a pet sets it with the `pet` that starts it.
+- *Motion is timestamps.* A ride, a camera flight, a cut and a pet are plain data in the db
+  ([`Motion`](ref:hub/renderers/tower3d/src/app.ts#Motion)): when each started (simulated ms), vectors and rotations
+  as numbers, and the event a flight or a cut fires as it ends (`then`, as a timer's `fire`). The db changes as one
+  starts and as it ends, never in between: a frame reads `app.state()`, derives how far along each is from
+  `now - start`, and dispatches once when it is done (`cut-reached`, `ride-arrived`, `flight-landed`, `pet-done`).
+  No frame dispatches otherwise, and [`tickCamera`](ref:hub/renderers/tower3d/src/main.ts#tickCamera) writes the
+  camera through vectors it keeps, allocating nothing. What a cut or a flight leaves you to do is an `arrived` event
+  ([`Arrival`](ref:hub/renderers/tower3d/src/app.ts#Arrival)): an ask's floor opened by `went`, the rest by
+  [`ARRIVED`](ref:hub/renderers/tower3d/src/main.ts#ARRIVED), since whether a desk or a kiosk still stands, the mouse,
+  the orbit and a purr are the building's. A cut to where you already are fires its `then` at once
+  ([`travel`](ref:hub/renderers/tower3d/src/main.ts#travel)). The walker stays the frames': riding turns it to the doors
+  and sets its level as the ride ends, before `ride-arrived`; a `place` stands it where a cut or the door says, the ride
+  and flight ended. The pet's hearts are three.js sprites, kept beside the frames that place them. A flight an
+  executor starts (`fly-home`, a big screen or a game entered) is dispatched from it, so it lands in the db once the
+  transition's other effects have run; only frames read it. The replan at `plan.until` is still checked every frame,
+  in `update`: the plan is the board's, and it becomes a timer when the board becomes an event (P3).
 - *A leg that moves a family*:
   - gives its kinds `LEAVE` and `ENTER` entries and folds its opener and closer into them and `go`, its data
     updates into `panel`;
