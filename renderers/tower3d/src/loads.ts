@@ -10,6 +10,9 @@ import { loadFaces } from './toon.ts'
  */
 export function startAssets() {
   const loaded = Promise.all([loadModels(), tower.recall(), loadFaces(), loadKit(), tower.renderer()]).then(([models, kept, , kit, declared]) => ({ models, kept, kit, declared }))
+  // The page handles a failed load (main.ts#failStart), but only once it is imported, after every other resource has
+  // started; one that fails first skips the page, and the loading screen already says why.
+  loaded.catch(() => {})
   return { loaded }
 }
 

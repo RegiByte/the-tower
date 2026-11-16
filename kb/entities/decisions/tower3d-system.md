@@ -64,10 +64,11 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   graph esbuild reads for the four pages and fails, naming the modules, on any cycle. The one there was (`layout`,
   `meetings`, `zones`, `breaks`) is broken by [`prefab.ts`](ref:hub/renderers/tower3d/src/prefab.ts).
 - *The loads are a resource that hands out a promise.* [`startAssets`](ref:hub/renderers/tower3d/src/loads.ts#startAssets)
-  lights the models stage and starts loading the models, the kit, the faces, the viewer's kept spot and the
-  renderer's settings, and returns `loaded`, which settles once all are in. Its start does not wait for them: the page
-  reads its viewer and subscribes to the board while they load, so a page behind another tab still rings
-  ([[tower3d-start]]). Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
+  starts loading the models, the kit, the faces, the viewer's kept spot and the renderer's settings, and returns
+  `loaded`, which settles once all are in. Its start does not wait for them: the page reads its viewer and subscribes
+  to the board while they load, so a page behind another tab still rings ([[tower3d-start]]). The page handles a
+  failed load only once it is imported, after every other resource, so `loaded` is marked handled: a resource that
+  fails first skips the page, and the loading screen already says why. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
   `assets.ts` would shadow it.
 - *Moving an import can move pixels.* three.js orders opaque draws by `material.id`, and ids are handed out as
   materials are made, many of them as their module is evaluated. A change to what is imported first renumbers them,
