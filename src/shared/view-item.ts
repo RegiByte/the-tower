@@ -30,10 +30,10 @@ export type Body = { tower: Tower; kit: Kit; subject: Subject; url: string; body
 
 /**
  * A body drawn, where it keeps more than its element: handed each board while it is drawn (`update`), a subject below
- * the one drawn (`show`, true when it took it), whether it is seen (`visible`), where it is scrolled to (`scroll`), and
- * closed as it is drawn again or its view closes.
+ * the one drawn (`show`, true when it took it), whether it is seen (`visible`), where it is scrolled to (`scroll`, undefined
+ * until it has drawn), and closed as it is drawn again or its view closes.
  */
-export type Drawn = { update?(): void; show?(subject: Subject): boolean; visible?(on: boolean): void; scroll?(): number; close(): void }
+export type Drawn = { update?(): void; show?(subject: Subject): boolean; visible?(on: boolean): void; scroll?(): number | undefined; close(): void }
 
 /**
  * A view by type: `rules`, its own look; `draw`, its body into `el`, what it keeps returned; `restyled`, drawn again
