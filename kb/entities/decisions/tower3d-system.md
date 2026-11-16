@@ -109,7 +109,7 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   one, `ROOM`), the next is entered, and a `draw` follows; a kind entered again from itself is entered again, not
   left. Entering a desk, a shell, the big screen or a game focuses the view (`FOCUSES`); leaving one for a panel
   that doesn't walks again, with a `fly-home`. Two names for two things: a game focuses the view but shares no
-  room, so a desk gone to from a game leaves the game. `go` is a transition: a change to the
+  room, so a game is left when you go to any other panel. `go` is a transition: a change to the
   open panel's own data (a read landing, a filter typed, a tray unfolded) is `panel`, which patches it and draws,
   never leaving or entering, and throws for a panel that isn't the open one's kind. A desk opens on its screen, then on the
   tab and the showing pending for it, all in the same transition. A desk's tabs move the same way inside it (`tab`,
@@ -187,8 +187,8 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
 
 **Impact.** The start order is the graph, and a failure names its resource. The import-time effects left the leaf
 modules; `main.ts` keeps its own (its listeners, timers, the board's subscription) until later
-passes move them. Every panel but the drawer changes state only through the app loop, and the draw writes nothing
-back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
+passes move them. Every panel changes state only through the app loop, and the draw writes nothing back, but the
+drawer and the picture, whose draws still close them. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`), it stays out of the panel union. The capture (`still`, the door's hold) stays outside the db:
 `lock` and `unlock` write it from everywhere, executors among them, so it moves with them as effects.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.
