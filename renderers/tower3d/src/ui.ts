@@ -5,7 +5,7 @@ import { type FloorCollection, type FloorItem, defaultLimits } from '/lib/board.
 import { usd } from '/lib/stats.js'
 import { documentHtml, markdownHtml } from '/lib/markdown.js'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '/lib/brief.js'
-import { drawerLabel, type Drawer } from './archive.ts'
+import { drawerLabel, type Archive, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, GalleryShowing, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
@@ -23,9 +23,7 @@ import { LOBBY_BAND } from './sign.ts'
 export type HudReads = Pick<Clients, 'commandProbes' | 'PROBE_ATTENTION' | 'PROBE_STATE_NAME' | 'probeTitle'>
 
 /** What the prompt reads beyond the board to name the aimed thing: the extensions' words, the archive's drawers, the titles. */
-export type PromptReads = Pick<Clients, 'draftItem' | 'draftsOf' | 'cardReviews' | 'floorThreadsOf' | 'reviewerOf'> & {
-  drawersAt: (project: string) => Drawer[] | undefined
-} & Pick<Titles, 'noteTitle' | 'gameTitle'>
+export type PromptReads = Pick<Clients, 'draftItem' | 'draftsOf' | 'cardReviews' | 'floorThreadsOf' | 'reviewerOf'> & Pick<Archive, 'drawersAt'> & Pick<Titles, 'noteTitle' | 'gameTitle'>
 
 /** A worker's model, effort, context, cost, folder and pair, as its card's meta line says them. */
 const metaOf = (c: Card, reviewerOf: Clients['reviewerOf']) =>

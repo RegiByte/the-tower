@@ -338,10 +338,10 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   connected component of all eleven. Removing the top-level await lets it boot, but it keeps the cycle and its
   load-order hazards.
 
-**Impact.** The start order is the graph, and a failure names its resource. No module reads or starts anything as it
+**Impact.** The start order is the graph, and a failure names its resource. No module reads a started resource as it
 loads: the page's effects (its listeners, timers, the board's subscription) and its caches (the titles, the archive
-reads) are each in the start of the resource they belong to, and a module is handed what it reads, so it can be
-imported anywhere, in any order, without a start before it. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
+reads) are each in the start of the resource they belong to, and a module is handed what it reads, so importing one
+needs no resource started before it. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`, started as the `spawn` resource: [`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), it stays out
 of the panel union. Motion, aim and capture are in the db as well. What is left outside it
 is the walker, which the frames own, the door's mode and a pointer press.
