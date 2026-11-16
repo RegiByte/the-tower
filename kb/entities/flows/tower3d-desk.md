@@ -62,7 +62,8 @@ sequenceDiagram
 - **Claimed on open, when it is the only terminal.** One PTY, one size: the terminal the user acted on last owns it. The desk opens the
   `terminal/<id>` stream, whose snapshot says how many other terminals are open on the session
   ([`terminalStream`](ref:hub/src/tower/http.ts#terminalStream); a monitor's `screen/<id>` stream is not one).
-  With none, [`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) fits the terminal to the modal at the
+  With none, [`mountTerm`](ref:hub/renderers/tower3d/src/term.ts#mountTerm) fits the terminal to the modal, in an unpadded box filling its
+  frame (xterm.js fits to its parent's computed size, which under `border-box` counts the padding), at the
   viewer's font (`tower.prefs`) and sends `resize` as soon as the snapshot arrives, so typing works at once. Beside
   another it reads "watching" at a font that fits, so opening never reflows the session under whoever is working.
   A key or a pointer press in the terminal, a paste or a drop on it, or text given it with no key claims, before
