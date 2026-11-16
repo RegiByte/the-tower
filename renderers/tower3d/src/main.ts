@@ -1,19 +1,17 @@
 import * as THREE from 'three'
 import type { Deleted, Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Call, VerbAction } from '/lib/extension.js'
-import { HELD, byKind, heldWhy, keepsThreads, holdFill, offerForKey, offersOf, reviewAction, type Act, type ActOf, type ByKind, type CatNames, type Offer, type Verb } from './acts.ts'
-import { briefCss, briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
+import { HELD, byKind, keepsThreads, holdFill, offerForKey, offersOf, reviewAction, type Act, type ActOf, type ByKind, type CatNames, type Offer, type Verb } from './acts.ts'
+import { briefKey, expandedSaid, openFolds, openTools, saidText, saidWhat, toolCallHtml, toolCallSettled, withWhole, withWholesRead, type BriefMarkdown } from '/lib/brief.js'
 import { type StatsRange, STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
-import { fenceText, markdownCss } from '/lib/markdown.js'
-import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
-import { placeOnOpen, watchTips, toastsCss, ask, asking } from '/lib/chrome.js'
-import { ICON, keepShownTabs, drawPanel, keepingFocus, panelsCss, failedHtml, fileCall, pressing, itemKind, itemPath, itemsCss, keptOf, readsText } from '/lib/view.js'
-import { VIEWER_KEYS, readViewer, sawAll, seenOf, type Viewer, reducedMotion } from '/lib/viewer.js'
-import { actionId, isFresh as isNewAction, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
-import { deskVerbs } from './desk-verbs.ts'
+import { fenceText } from '/lib/markdown.js'
+import { ask, asking } from '/lib/chrome.js'
+import { keepShownTabs, drawPanel, keepingFocus, failedHtml, fileCall, pressing, itemKind, itemPath, keptOf, readsText } from '/lib/view.js'
+import { readViewer, seenOf, reducedMotion } from '/lib/viewer.js'
+import { actionId, offeredIds, layoutKey, type Layout } from '/lib/layout.js'
 import { projectOfKey, type Lines, type Subject } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
-import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, isAsk, loudest, nextAttended, type Move, type Ring, type Sound, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
+import { can, runVerb, boardErrorTitle, bubbleOf, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, attentionOrder, isAsk, loudest, nextAttended, type Move, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
 import { actKey, appHandlers, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type TabTo } from './app.ts'
@@ -34,13 +32,12 @@ import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
-import { chooseLighting, lightingSection } from './light/setting.ts'
 import { hangOn, levelOf, levelsShown, showLevels } from './levels.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { paintScreens } from './screens.ts'
 import { isMarkdown, isVideo, playFilms, type Shown } from './showing.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
-import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { addedCommandOf, commandOf, panesOf } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
 import { clockMoves, wallNow } from './clock.ts'
@@ -71,8 +68,10 @@ import type { World } from './building.ts'
 import type { Views } from './views.ts'
 import type { Spawn } from './spawn.ts'
 
+import type { Hud } from './hud.ts'
+
 /** The resources the page reads as it starts: the leaves' binding (`Shell`), and those only the page reads. */
-export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn }
+export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud }
 
 /**
  * The page: what it draws, the listeners and timers it keeps, and the loops it runs, started by the `main` resource once
@@ -83,18 +82,15 @@ export function startMain(started: Main) {
   const { lit } = started.lighting
   const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = started.stage
   const { move, releaseKeys, takeTurn } = started.input
-  const { beatAt, duck, pause, play, playing, setRoom } = started.music
+  const { beatAt, duck, pause, setRoom } = started.music
   const { closeTerm, mountTerm } = started.terminal
   const { toast, call, tried, offered, copiedAs } = started.toasts
   const { events } = started
   const { desk, reader, deskNow } = started.views
-  const { draftIo, hire, saving, handOver, hireOnNote, spawn, openSpawn, hiring, openSpawnOnNote } = started.spawn
+  const { draftIo, hire, saving, handOver, hireOnNote, openSpawn, hiring, openSpawnOnNote } = started.spawn
   const { directory, screenDistance, boxesHere, here, discard, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs } = started.world
   const { boardNow, selfNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed, aimNow } = nowOf(started.port)
-
-
-  document.head.append(Object.assign(document.createElement('style'), { textContent: panelsCss + briefCss + markdownCss + settingsCss + toastsCss + itemsCss }))
-  watchTips(document)
+  const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, sawActions, sawDesk, drawSettings, toggleFps } = started.hud
 
 
 
@@ -102,14 +98,7 @@ export function startMain(started: Main) {
 
 
 
-  /** Why a daemon verb is held back now, for the panels' buttons. */
-  const held = (verb: DaemonVerb) => heldWhy(boardNow()!, s.lost, verb)
 
-  /**
-   * Whether a panel button that asks first (`data-ask`, as `askingButton` draws it) was answered yes in the library's
-   * dialog. A button that asks nothing is answered at once, in the press that made it, so a lock still has its gesture.
-   */
-  const answered = (el: HTMLElement) => el.dataset.ask === undefined || ask(el.dataset.ask, el.dataset.askVerb!)
 
 
   /** Where you stood, kept by the tower for this page so a reload puts you back, with the music on or off and what you've seen shown. */
@@ -152,36 +141,7 @@ export function startMain(started: Main) {
   /** `next` arrives: the building takes it once its floors' archives are read at its keys, planned then. */
   const boardArrived = (next: Board, self: ShelfSelf | undefined) => app.dispatch({ type: 'board/arrived', board: next, self })
 
-  /**
-   * Music unless you turned it off, kept with your spot, and never over a game, which may play its own. The door plays
-   * none: an agent's browser has no one to hear it.
-   */
-  const startMusic = () => !s.muted && !s.doorMode && panelNow()?.kind !== 'game' && !playing() && play()
-  function toggleMusic() {
-    s.muted = !s.muted
-    if (s.muted) pause()
-    else startMusic()
-    renderHud()
-  }
 
-  let hudKey = ''
-  function renderHud() {
-    const waits = heededWaits(boardNow()!, heed())
-    const asks = heededAsks(boardNow()!, heed())
-    document.title = waits.length + asks.length ? `(${waits.length + asks.length}) The Tower` : 'The Tower'
-    const html = hudHtml(boardNow()!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits, asks: asks.length })
-    if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
-    drawSettings()
-    const notes = untestedHtml(boardNow()!) ?? ''
-    if (notes !== $('hud-notes').innerHTML) $('hud-notes').innerHTML = notes
-  }
-
-  function renderElevator() {
-    const { ride } = motionNow()
-    const inCar = viewNow() === 'walk' && (ride !== undefined || inside(carBox(planNow()), s.me.x, s.me.z))
-    show('elevator', inCar)
-    if (inCar) $('elevator').innerHTML = elevatorHtml(planNow(), ride ? ride.to : s.me.level, ride !== undefined, heededWaits(boardNow()!, heed()))
-  }
 
   /**
    * Places a subject a mounted view hands Tower 3D (the kit's `display`): a worker's lines show in its desk's Changes,
@@ -196,8 +156,6 @@ export function startMain(started: Main) {
     app.dispatch({ type: 'pend', pending: { tab: { id: lines.card, tab: 'changes', lines } } })
     goDesk(lines.card)
   }
-
-  tower.get('origins').then((o) => (s.origins = o), (err: Error) => toast(`origins: ${err.message}`))
 
   function renderPanel() {
     const board = boardNow()
@@ -311,31 +269,6 @@ export function startMain(started: Main) {
     }
   }
 
-  /** The pause card stands for the free mouse only while nothing else holds it: a panel, the spawn dialog, or P. */
-  const showPaused = () => show('paused', !captured() && viewNow() === 'walk' && !panelNow() && !app.state().capture.still && !spawn.open)
-
-  document.addEventListener('pointerlockchange', () => app.dispatch({ type: 'capture', by: 'pointer', held: document.pointerLockElement === canvas }))
-  /**
-   * Focus leaving the window takes the keys with it, to another app or to what the page framing this one opened over it
-   * (its palette, a dialog), and Chrome keeps a frame's pointer lock through that: the mouse is let go of, as on Esc, so
-   * the pause card stands and the next Esc reaches where focus went. Focus moving into one of this page's own frames
-   * leaves the document focused.
-   */
-  addEventListener('blur', () => setTimeout(() => captured() && !document.hasFocus() && unlock()))
-
-  /** Walking takes the mouse: pointer lock, or the door's capture once the door has captured. */
-  function lock() {
-    startMusic()
-    show('paused', false)
-    if (s.doorMode) return app.dispatch({ type: 'capture', by: 'door', held: true })
-    canvas.requestPointerLock().catch((err: Error) => (show('paused', true), toast(`pointer lock: ${err.message}`)))
-  }
-
-  /** The mouse let go of: the door's capture released, pointer lock exited. */
-  function unlocked() {
-    if (app.state().capture.door) app.dispatch({ type: 'capture', by: 'door', held: false })
-    if (document.pointerLockElement) document.exitPointerLock()
-  }
 
 
 
@@ -1092,12 +1025,6 @@ export function startMain(started: Main) {
   addEventListener('blur', () => setTimeout(() => app.dispatch({ type: 'focus', focused: document.hasFocus() })))
   document.addEventListener('visibilitychange', () => app.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
-  /**
-   * The actions seen as `read` from the store, with what this page saw (`here`) kept: the set only grows, and a read
-   * sent before this page's last write may answer without it.
-   */
-  const seenSince = (read: string[] | null, here: string[] | null) => (read && here ? (sawAll(read, here) ?? read) : (read ?? here))
-
   /** Your record as `tower.store` keeps it now: another renderer of yours may have changed it. */
   function rereadViewer() {
     if (FIXTURE !== undefined) return
@@ -1118,11 +1045,6 @@ export function startMain(started: Main) {
   // A key this page set, or a shelf page it relays did, such as a dismissal: the first board reads the record anyway.
   tower.store.on(() => boardNow() && rereadViewer())
 
-  function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
-    s.viewer = { ...s.viewer, [field]: value }
-    if (FIXTURE === undefined) tower.store.set(VIEWER_KEYS[field], value)
-  }
-
   /** Your layout as `tower.store` keeps it now, the desk drawn again when it changed. */
   function rereadLayout() {
     const name = s.declared?.name
@@ -1133,35 +1055,6 @@ export function startMain(started: Main) {
       s.storedLayout = stored
       renderPanel()
     })
-  }
-
-  /** The actions you have seen, by `actionId`, across every renderer of yours. */
-  const seenNow = (board: Board) => seenOf(s.viewer.seen, offeredIds(board))
-
-  /** Whether the open desk draws an action's "new" dot: while it is new to you, and until the panel closes once it drew it so. */
-  const dottedNow = (board: Board) => {
-    const offered = offeredIds(board)
-    const seen = seenNow(board)
-    return (id: string) => s.dotted.has(id) || isNewAction(offered, seen, id)
-  }
-
-  /** `ids` seen by you, kept for every renderer of yours when that adds any. */
-  function sawActions(board: Board, ids: string[]) {
-    const seen = sawAll(seenNow(board), ids)
-    if (seen) keepViewer('seen', seen)
-  }
-
-  /**
-   * The verbs new to you that worker `c`'s desk draws count as seen once drawn in a focused window; the desk keeps their
-   * dots until its panel closes, so you see them. Run at every paint of the desk and when the window gains focus.
-   */
-  function sawDesk(board: Board, c: Card) {
-    if (!document.hasFocus()) return
-    const offered = offeredIds(board)
-    const seen = seenNow(board)
-    const fresh = deskVerbs(board, c, deskNow(board)).map((r) => r.id).filter((id) => isNewAction(offered, seen, id))
-    for (const id of fresh) s.dotted.add(id)
-    sawActions(board, fresh)
   }
 
   function dismissWait(key: string) {
@@ -1177,38 +1070,6 @@ export function startMain(started: Main) {
     paintDirectory(directory, planNow(), heededWaits(boardNow()!, heed()))
   }
 
-  function chooseRing(ring: Ring) {
-    app.dispatch({ type: 'ring', ring })
-    drawSettings()
-  }
-
-  /**
-   * The settings popover: how waits ring, the viewer's appearance and the building's lighting. Notifications are the tower page's, so it offers none. It
-   * stands by the button that opened it, in the HUD or on the pause card.
-   */
-  let settingsDrawn = ''
-  let settingsBy: Element = $('hud')
-  const settingsEl = $('settings')
-  const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
-  function paintSettings() {
-    const html = settingsHtml([soundSection(app.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(s.lighting, lit)])
-    if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
-  }
-  placeOnOpen(settingsEl, () => settingsBy)
-  document.querySelector('.paused-settings')!.innerHTML = `${ICON.settings}Settings`
-  $('watch-close').innerHTML = ICON.close
-  settingsEl.addEventListener('beforetoggle', (e) => (e as ToggleEvent).newState === 'open' && paintSettings())
-  document.addEventListener('click', (e) => (settingsBy = (e.target as Element).closest('[popovertarget="settings"]') ?? settingsBy), true)
-  settingsEl.addEventListener('click', (e) => {
-    const el = (e.target as Element).closest<HTMLElement>('[data-ring-choice], [data-sound-play], [data-lighting], [data-lighting-reload]')
-    if (!el) return
-    if (el.dataset.lighting) return (chooseLighting((s.lighting = el.dataset.lighting === 'true')), drawSettings())
-    if (el.hasAttribute('data-lighting-reload')) return location.reload()
-    if (el.dataset.ringChoice) return chooseRing(el.dataset.ringChoice as Ring)
-    ring(el.dataset.soundPlay as Sound)
-  })
-  wirePrefs(settingsEl, tower.prefs.set)
-  tower.prefs.on(() => drawSettings())
 
   /**
    * A pane of the open panel, by the keymap's names for the tower page's panes: a desk's tabs, the logbook reader's Screen
@@ -1352,10 +1213,6 @@ export function startMain(started: Main) {
     m.frameMs = m.work / m.frames
     Object.assign(m, { since: now, frames: 0, work: 0 })
     if (s.fpsShown) $('fps').textContent = `${Math.round(m.fps)} fps · ${m.frameMs.toFixed(1)} ms`
-  }
-  function toggleFps() {
-    s.fpsShown = !s.fpsShown
-    show('fps', s.fpsShown)
   }
 
   let lastFrame = performance.now()
@@ -2423,8 +2280,6 @@ export function startMain(started: Main) {
   })
 
 
-  spawn.addEventListener('close', showPaused)
-
 
   /** The draft editor beside the world: saved as you type, on leaving, and before it is carried or sent. */
   let saveTimer: ReturnType<typeof setTimeout>
@@ -2574,9 +2429,6 @@ export function startMain(started: Main) {
     app.dispatch({ type: 'board', board: next })
     boardArrived(next, undefined)
   }
-
-  /** The HUD's limits count down to their resets and age between boards. */
-  setInterval(() => boardNow() && renderHud(), 30_000)
 
   /** Kept only for a person: the door's walks would move their spot. */
   let keptKey = ''

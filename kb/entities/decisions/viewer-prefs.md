@@ -38,7 +38,7 @@
     "hub/renderers/page/calls.js#watchCalls", "hub/src/views/skyline.ts#mount", "hub/renderers/tower3d/src/main.ts#tickLamps",
     "hub/src/shared/term-view.ts",
     "hub/renderers/tower3d/src/ui.ts#hudHtml",
-    "hub/renderers/tower3d/src/main.ts#paintSettings"
+    "hub/renderers/tower3d/src/hud.ts#paintSettings"
   ],
   "links": [
     { "to": "shared-panels", "verb": "follows", "carries": "pure views, one stylesheet, data attributes each renderer wires" },
@@ -85,7 +85,7 @@ they are written once in shared code and a next renderer gets them by importing 
   [`prefSections`](ref:hub/src/shared/settings.ts#prefSections) draws them and
   [`wirePrefs`](ref:hub/src/shared/settings.ts#wirePrefs) wires them, so a next setting is a descriptor with no
   renderer to touch. It is a native `popover` (light dismiss, top layer, not a modal). Tower 3D adds its own section
-  ([`paintSettings`](ref:hub/renderers/tower3d/src/main.ts#paintSettings)) and offers no alerts: the page framing it
+  ([`paintSettings`](ref:hub/renderers/tower3d/src/hud.ts#paintSettings)) and offers no alerts: the page framing it
   sends the notifications.
 - *Terminals* ([`terminal.ts`](ref:hub/src/shared/terminal.ts), [`term-view.ts`](ref:hub/src/shared/term-view.ts))
   draw in `--mono` at `termSize` while their viewer holds the PTY, so a bigger font gives the session fewer columns
