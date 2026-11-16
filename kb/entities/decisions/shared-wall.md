@@ -13,7 +13,7 @@
     "hub/renderers/tower3d/src/showings.ts#galleryOf",
     "hub/renderers/tower3d/src/layout.ts#corkFor",
     "hub/renderers/tower3d/src/gallery.ts",
-    "hub/renderers/tower3d/src/layers.ts#GALLERY",
+    "hub/renderers/tower3d/src/layers.ts#galleryAfter",
     "hub/renderers/tower3d/src/desk.ts#heldUpAt",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
     "hub/renderers/tower3d/src/main.ts#openPicture",
@@ -42,7 +42,7 @@ it goes home.
 - **Pictures** ([`gallery.ts`](ref:hub/renderers/tower3d/src/gallery.ts)): the poster or typeset page of
   `posterOf`, or an image or a video bare at its own proportions once read ([[blob-reads]]), in a frame of the
   worker's own colour, over a plaque, with a NEW ribbon from the viewer's seen state.
-- **Arrival** ([`GALLERY`](ref:hub/renderers/tower3d/src/layers.ts#GALLERY)): on a new board the kept pictures slide
+- **Arrival** ([`galleryAfter`](ref:hub/renderers/tower3d/src/layers.ts#galleryAfter)): on a new board the kept pictures slide
   to their new places; a showing new since the last board waits while its worker holds it up at the desk, then flies
   to the centre ([`heldUpAt`](ref:hub/renderers/tower3d/src/desk.ts#heldUpAt)).
 - **Verbs** ([`OFFERS`](ref:hub/renderers/tower3d/src/acts.ts#OFFERS)): a picture opens in the reader where you
