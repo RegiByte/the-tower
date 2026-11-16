@@ -10,7 +10,6 @@ import { keepHours, keepsHours, windowsAt } from './exterior/windows.ts'
 import { beacons } from './exterior/beacons.ts'
 import { clouds } from './exterior/clouds.ts'
 import { riseRig, rigHour } from './light/rig.ts'
-import { LIT } from './light/setting.ts'
 
 /** The city around the tower: sky, lights, the street and a city of windows, lit by the viewer's clock. Built once. */
 
@@ -372,7 +371,7 @@ const DAY = { stone: new THREE.Color('#8f9bb5'), ground: new THREE.Color('#3a415
  * flies around it to sim time `t` (seconds), and `fly` puts the plane (models/plane.py) on the airfield once the
  * models are loaded.
  */
-export function outside(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
+export function outside(scene: THREE.Scene, renderer: THREE.WebGLRenderer, lit: boolean) {
   const sky = Object.assign(document.createElement('canvas'), { width: 4, height: 256 })
   const background = new THREE.CanvasTexture(sky)
   background.colorSpace = THREE.SRGBColorSpace
@@ -428,8 +427,8 @@ export function outside(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
     windowsAt(hours, night)
     lights.setNight(night)
     weather.tint(look)
-    if (LIT) rigHour(hours, look)
+    if (lit) rigHour(hours, look)
   }
-  if (LIT) riseRig(scene, renderer, { hemi, sun, ambient })
+  if (lit) riseRig(scene, renderer, { hemi, sun, ambient })
   return { setHour, tick, fly }
 }

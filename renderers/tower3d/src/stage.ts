@@ -5,6 +5,7 @@ import { listen } from './input.ts'
 import { skyAt } from '/lib/design.js'
 import { glowKit } from './kit.ts'
 import { outside } from './outside.ts'
+import { shell } from './shell.ts'
 
 /** The page's one renderer, scene and camera, the sky outside following the wall clock, and the orbit used from outside. */
 export const canvas = document.getElementById('scene') as HTMLCanvasElement
@@ -12,7 +13,7 @@ export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 export const scene = new THREE.Scene()
-const city = outside(scene, renderer)
+const city = outside(scene, renderer, shell().lighting.lit)
 /** Moves the traffic and the plane outside to sim time `t` (seconds). */
 export const tickOutside = city.tick
 /** Puts the plane on the airfield. */

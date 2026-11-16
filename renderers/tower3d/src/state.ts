@@ -26,9 +26,9 @@ import { STATS_ALL } from '/lib/stats.js'
 import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
 import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
 import { noHires, type Hiring } from './hiring.ts'
-import { LIT } from './light/setting.ts'
 import type { Walker } from './walker.ts'
 import type { World } from './world.ts'
+import { shell } from './shell.ts'
 
 export type View = 'walk' | 'focus' | 'overview' | 'pet'
 export type Ride = { from: number; to: number; t: number; move: number }
@@ -132,7 +132,7 @@ export type State = {
   declared: Renderer | undefined
   /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
   storedLayout: Layout | undefined
-  /** The lighting setting as last chosen, kept in `tower.store` under `LIGHTING_KEY`: the page draws `LIT`, what it started with. */
+  /** The lighting setting as last chosen, kept in `tower.store` under `LIGHTING_KEY`: the page draws what it started with (`Lighting`). */
   lighting: boolean
   /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
   waitedAt: number
@@ -220,7 +220,7 @@ export const s: State = {
   board: undefined, lost: false, plan: NO_PLAN, self: undefined, first: true, models: undefined, kit: undefined, levels: [], hands: undefined,
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
-  visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: LIT, waitedAt: 0, lastStatus: new Map(),
+  visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: shell().lighting.lit, waitedAt: 0, lastStatus: new Map(),
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
   doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, hiring: noHires, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined,
