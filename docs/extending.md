@@ -66,7 +66,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
 ```json
 {
   "regions": [{ "id": "card.head", "subject": "card", "holds": ["badges", "lines", "verbs", "commands"], "description": "the worker's header" }],
-  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location", "spawn"],
+  "kit": ["terminal", "region", "run", "display", "go", "bus", "toast", "notice", "confirm", "href", "showing", "location", "spawn", "now"],
   "keeps": [],
   "layout": { "floor.section": { "hidden": ["policies/policies"] } }
 }
@@ -79,7 +79,7 @@ declares beside its fields; a renderer with no file declares nothing. The tower 
   full](#when-a-region-is-full)). Only `regions` is required. `tower extensions check` and the table under
   [Extensions](#extensions) are read from them.
 - `kit`: what it lends the views it hosts (`terminal`, `region`, `run`, `display`, `go`, `bus`, `toast`, `notice`, `confirm`, `href`,
-  `showing`, `location`, `spawn`): a
+  `showing`, `location`, `spawn`, `now`): a
   view is offered only where the kit holds every member it `needs` ([Views](#views)).
 - `keeps`: the chords it takes for itself, as the config's `keys` writes them (Tower 3D's movement keys): no
   extension's default chord takes one.
@@ -1075,7 +1075,9 @@ command, `spawn` the new-worker form on a floor or a draft, or `<cap>/<name>`), 
 id of the worker it started, which the renderer awaits as it arrives, so `display('card:<id>')` lands on it, or with
 nothing once the form closed without one or the view closed first (the renderer then goes to the worker), or when
 `on` is of no floor on the board; a form already open is brought back, answering nothing; where `run('spawn', on)`
-goes to the worker, it stays; optional as `href` is), `display(subject, { view? })`,
+goes to the worker, it stays; optional as `href` is), `now()` (the renderer's clock, in ms since the epoch, which a
+view stamps what it reads with, so a renderer whose clock is pinned shows how long ago it read the same on every
+load; optional as `href` is), `display(subject, { view? })`,
 `go(location)`, `bus` (below), `toast(text, action?)`, `notice(text, action?)` (a toast standing
 until closed) and `confirm(text, verb)`. The renderer calls `update` on each
 board, `show` with a subject below the one it is on (true when it took it), and `close` as its location leaves or its

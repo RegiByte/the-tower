@@ -155,7 +155,7 @@ export function regions(deps) {
     layout,
     declared,
     kit: deps.kit,
-    lent: { ...commandKit, terminal, bus: deps.bus },
+    lent: { ...commandKit, terminal, bus: deps.bus, now: Date.now },
     fills: {
       contributions: (el, id, subject, options) => contributions(el, id, subject, /** @type {{ omit?: string[] }} */ (options)),
       // A tabs region takes the pane scope of the view it is drawn in, found by DOM ancestry: the nearest [data-view].
