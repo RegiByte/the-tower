@@ -4,7 +4,8 @@ import type { Card } from './api.ts'
 import { crewsOf } from './cards.ts'
 import type { Room } from './floorplan.ts'
 import type { Box } from './layout.ts'
-import { stateKey, turnBox, type Prefabs } from './zones.ts'
+import { stateKey, turnBox } from './prefab.ts'
+import type { Prefabs } from './zones.ts'
 
 /**
  * Where a crew meets (decision `whereabouts`): a pure function of one board. A crew is a lead, a worker reporting to

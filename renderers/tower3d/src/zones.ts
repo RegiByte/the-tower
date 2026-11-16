@@ -2,6 +2,7 @@ import { mixOklab } from '/lib/design.js'
 import { turnXZ, type Vec3 } from '../../kaykit/src/catalog.ts'
 import type { FlatSlot, ModelItem, Theme } from '../../kaykit/src/scene.ts'
 import { DECK } from './floorplan.ts'
+import { turnBox } from './prefab.ts'
 import { CORE, KIOSK_DEPTH, RETURN, SEAT_OFFSET, fromDesk, STRING_ROWS, WALL, bigScreens, consoleSpot, coreFront, partySpots, inside, receptionBox, roomBox, roomDoor, runningSpot, workstations, type Box, type Level, type Plan } from './layout.ts'
 
 /**
@@ -57,13 +58,11 @@ export type PrefabBox = { size: Vec3; at: Vec3; turn: number; color: string; glo
 /**
  * A prefab as built (in `out/kaykit/kit.kaykit`): its shared models and boxes, the floor they take that a walker bumps
  * into, its slots, its states by the group each excludes the others of (`groupsOf`), and its models, boxes and slots in
- * every list of states it can be drawn in, by `stateKey` (shared ones included).
+ * every list of states it can be drawn in, by `stateKey` (prefab.ts; shared ones included).
  */
 export type Prefab = { items: PrefabItem[]; boxes: PrefabBox[]; footprint: Box[]; slots: FlatSlot[]; groups: Record<string, string[]>; states: Record<string, PrefabPick> }
 /** A prefab in a list of its states: its models, boxes and slots, and the floor they take. */
 export type PrefabPick = { items: PrefabItem[]; boxes: PrefabBox[]; slots: FlatSlot[]; footprint: Box[] }
-/** What a prefab's models in a list of its states are kept under: the names in any order. */
-export const stateKey = (names: string[]) => names.toSorted().join('+')
 export type Prefabs = Record<string, Prefab>
 
 /**
@@ -72,14 +71,6 @@ export type Prefabs = Record<string, Prefab>
  * and glass).
  */
 export type ZoneSlot = { prefab: string; x: number; z: number; y?: number; turn: number; stretch?: number; theme?: Theme; boxes: Box[]; shapes: PrefabBox[] }
-
-/** A footprint in a prefab's frame, in level space once the prefab stands at (x, z), stretched, turned by `turn`. */
-export const turnBox = (b: Box, x: number, z: number, turn: number, stretch = 1): Box => {
-  const corners = [[b.minX * stretch, b.minZ], [b.minX * stretch, b.maxZ], [b.maxX * stretch, b.minZ], [b.maxX * stretch, b.maxZ]].map(([cx, cz]) => turnXZ(cx, cz, turn))
-  const xs = corners.map(([cx]) => x + cx)
-  const zs = corners.map(([, cz]) => z + cz)
-  return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) }
-}
 
 const prefabOf = (prefabs: Prefabs, name: string) => {
   const found = prefabs[name]
