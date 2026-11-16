@@ -11,6 +11,16 @@ import { s, type Standing, type View } from './state.ts'
 import { markedIn, type AppEvent, type Db } from './app.ts'
 import type { CatName } from './life.ts'
 import type { EventRecord } from './record.ts'
+import { nowOf } from './now.ts'
+import type { Port } from './port.ts'
+import type { Events } from './events.ts'
+import type { World } from './building.ts'
+import type { Navigation } from './navigation.ts'
+import type { Panels } from './panels.ts'
+import type { AppLoop } from './app-loop.ts'
+import type { Controls } from './controls.ts'
+import type { Frames } from './frames.ts'
+import type { Feed } from './feed.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
 
 const { camera, canvas, scene } = shell().stage
@@ -282,4 +292,29 @@ export function installDoor(e: Engine) {
     },
     events: (after = 0) => e.events(after),
   } satisfies Door)
+}
+
+/** What the door is started with: every resource whose functions it drives. */
+export type DoorDeps = { port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
+
+/** The door filled, once every resource it drives has started (the `door` resource). */
+export function startDoor(started: DoorDeps) {
+  const { events } = started
+  const { planNow, floorY, pickables, pick } = started.world
+  const { captured } = nowOf(started.port)
+  const { leaveOverview, offersNow, aimAt, startHold } = started.navigation
+  const { run, drawPending } = started.panels
+  const { app } = started.app
+  const { onKey } = started.controls
+  const { play, render, update } = started.frames
+  const { advance, ready } = started.feed
+
+  /** Standing at `spot` on `level` at once, out of any ride or flight. */
+  const place = (level: number, spot: Standing) => app.dispatch({ type: 'place', level, spot })
+
+  installDoor({
+    ready, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
+    events: events.read,
+    play,
+  })
 }
