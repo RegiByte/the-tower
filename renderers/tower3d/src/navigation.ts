@@ -18,9 +18,13 @@ import type { World } from './building.ts'
 import type { Hud } from './hud.ts'
 import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
+import type { Clients } from './clients.ts'
+import { drawersAt } from './archive.ts'
+import { noteTitle } from './notes.ts'
+import { gameTitle } from './arcade.ts'
 
 /** What the navigation resource is started with. */
-export type NavigationDeps = { stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
+export type NavigationDeps = { clients: Clients; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
 
 export type Navigation = ReturnType<typeof startNavigation>
 
@@ -29,6 +33,7 @@ export type Navigation = ReturnType<typeof startNavigation>
  * and aiming at what the prompt offers.
  */
 export function startNavigation(started: NavigationDeps) {
+  const reads = { ...started.clients, drawersAt, noteTitle, gameTitle }
   const { port } = started
   const { orbit } = started.stage
   const { boardNow, unlock, atDesk, panelNow, go, viewNow, motionNow, heed, aimNow } = nowOf(port)
@@ -191,7 +196,7 @@ export function startNavigation(started: NavigationDeps) {
   /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
   function offersNow() {
     const a = aimNow().offered
-    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: planNow().galleries }) : []
+    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: planNow().galleries }, reads) : []
   }
 
   /** The crosshair or the pointer is on `a`, and the prompt offers its verbs, drawn by `at` when the pointer gives one. */
@@ -219,7 +224,7 @@ export function startNavigation(started: NavigationDeps) {
     const key = a ? `${aim.offeredKey}|${JSON.stringify(offers)}|${marked}|${Math.floor(s.simNow / 1000)}` : ''
     if (key !== promptKey) {
       promptKey = key
-      const html = a && boardNow() ? promptHtml(a, boardNow()!, offers, marked, s.catNames, planNow().galleries) : ''
+      const html = a && boardNow() ? promptHtml(a, boardNow()!, offers, marked, s.catNames, planNow().galleries, reads) : ''
       $('prompt').innerHTML = html
       show('prompt', Boolean(html))
     }

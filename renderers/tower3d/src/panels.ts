@@ -30,6 +30,8 @@ import { CHANGES, THREAD } from './hosting.ts'
 import { archivedOf, archiveFailure, archiveOf, drawersAt, rereadArchive } from './archive.ts'
 import { GAMES, gameItem } from './games.ts'
 import { keptText, keptTitle } from './kept.ts'
+import { noteTitle } from './notes.ts'
+import { gameTitle } from './arcade.ts'
 import { s, type GamePanel, type Panel, type Threads } from './state.ts'
 import { paintDirectory } from './world.ts'
 import type { Music } from './music.ts'
@@ -61,6 +63,7 @@ export function startPanels(started: PanelsDeps) {
   const { port } = started
   const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
   const { camera, scene } = started.stage
+  const reads = { ...started.clients, drawersAt, noteTitle, keptTitle, gameTitle }
   const { pause } = started.music
   const { closeTerm, mountTerm } = started.terminal
   const { boardNow, selfNow, unlock, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed } = nowOf(port)
@@ -96,7 +99,7 @@ export function startPanels(started: PanelsDeps) {
       if (!c) return
       $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), dottedNow(board), held, tower.framed)
       sawDesk(board, c)
-      $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, deskTabNow(), (sh) => isFresh(c, sh), { changes: desk.tabOf(CHANGES, c), reviews: desk.tabOf(THREAD, c) })
+      $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, deskTabNow(), (sh) => isFresh(c, sh), { changes: desk.tabOf(CHANGES, c), reviews: desk.tabOf(THREAD, c) }, reads)
       keepShownTabs($('desk-tabs').parentElement!, c.id)
       $('desk-activity').innerHTML = activityHtml(c)
       $('desk-activity').dataset.tip = gistLine(c)
@@ -117,7 +120,7 @@ export function startPanels(started: PanelsDeps) {
       const id = panel.id
       const f = board.floors.find((f) => f.id === id)
       if (!f) return
-      $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, held, panel.tray)
+      $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, held, panel.tray, reads)
     }
     if (panel.kind === 'archive') {
       const f = board.floors.find((f) => f.id === panel.id)
@@ -150,7 +153,7 @@ export function startPanels(started: PanelsDeps) {
       const f = board.floors.find((f) => f.id === d.project)
       // The app closes the editor on a floor no longer keeping drafts once the building takes the board (`subjectLeft`).
       if (!f || !draftsOf(f)) return
-      $('draft-head').innerHTML = draftHeadHtml(f, d, held, Boolean(s.carrying))
+      $('draft-head').innerHTML = draftHeadHtml(f, d, held, Boolean(s.carrying), reads)
       $('draft-note').innerHTML = d.conflict !== undefined ? draftNoteHtml : ''
       show('draft-note', d.conflict !== undefined)
     }
@@ -181,7 +184,7 @@ export function startPanels(started: PanelsDeps) {
       const f = board.floors.find((f) => f.id === panel.project)
       // The app closes a game no longer kept once the building takes the board (`subjectLeft`).
       if (!f || !gameItem([f], panel.project, panel.id)) return
-      $('game-head').innerHTML = gameHeadHtml(f, panel.project, panel.id)
+      $('game-head').innerHTML = gameHeadHtml(f, panel.project, panel.id, reads)
     }
     if (panel.kind === 'doc') {
       const f = board.floors.find((f) => f.id === panel.project)
@@ -805,7 +808,7 @@ export function startPanels(started: PanelsDeps) {
     if (panel?.kind === 'logbook') return pane === 'screen' || pane === 'brief' ? (logbookTab(pane), true) : false
     if (panel?.kind !== 'desk') return false
     const c = findCard(boardNow()!, panel.id)!
-    if (pane === 'reviews' && !keepsThreads(boardNow()!, c.project)) return false
+    if (pane === 'reviews' && !keepsThreads(boardNow()!, c.project, reads)) return false
     if (pane === 'screen') return (openScreen(), $('desk-screen').querySelector('textarea')?.focus(), true)
     const typingInto = document.activeElement as HTMLElement | null
     typingInto?.blur()

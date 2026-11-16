@@ -116,13 +116,13 @@ const spawn = defineResource({
 })
 
 const hud = defineResource({
-  dependencies: ['shell', 'lighting', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
+  dependencies: ['shell', 'lighting', 'clients', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
   start: async (started: HudDeps & { shell: Shell }) => (await import('./hud.ts')).startHud(started),
   halt: () => {},
 })
 
 const navigation = defineResource({
-  dependencies: ['shell', 'stage', 'port', 'toasts', 'world', 'hud'],
+  dependencies: ['shell', 'clients', 'stage', 'port', 'toasts', 'world', 'hud'],
   start: async (started: NavigationDeps & { shell: Shell }) => (await import('./navigation.ts')).startNavigation(started),
   halt: () => {},
 })

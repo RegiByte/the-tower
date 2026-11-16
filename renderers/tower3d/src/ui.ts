@@ -2,11 +2,11 @@ import { documentCss } from '/lib/design.js'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import { type TabWords, collectionTrayHtml, deleteAsk, itemFile, itemKind, itemPath, itemsCss, itemTextHtml, failedHtml, fileButtonsHtml, fileSpansHtml, ICON, SHELF_ICON, originIcon, withIcons } from '/lib/view.js'
 import { type FloorCollection, type FloorItem, defaultLimits } from '/lib/board.js'
-import { keptTitle } from './kept.ts'
+import type { keptTitle } from './kept.ts'
 import { usd } from '/lib/stats.js'
 import { documentHtml, markdownHtml } from '/lib/markdown.js'
 import { briefHtml as lineageBriefHtml, RESUMED_IDLE, resumedIdle, sessionLabel, sessionWhen, shownFrom, type BriefView } from '/lib/brief.js'
-import { drawerLabel, drawersAt, type Drawer } from './archive.ts'
+import { drawerLabel, type Drawer } from './archive.ts'
 import { CAT_CARDS, catName, HELD, KEY, type Act, type CatNames, type Offer } from './acts.ts'
 import type { Board, Brief, Card, Floor, GalleryShowing, KeptBy, SessionRef, Shell, Wait } from './api.ts'
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
@@ -14,17 +14,25 @@ import { verbLabel } from '/lib/cards.js'
 import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, untestedFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
 import { wallNow } from './clock.ts'
 import { waitingAt, type Level, type Plan } from './layout.ts'
-import { noteTitle } from './notes.ts'
-import { gameTitle } from './arcade.ts'
+import type { noteTitle } from './notes.ts'
+import type { gameTitle } from './arcade.ts'
+import type { Clients } from './clients.ts'
 import { gameItem, gamePath, gamesOf } from './games.ts'
 import { isImage, isMarkdown, isVideo, type Shown } from './showing.ts'
 import { LOBBY_BAND } from './sign.ts'
-import { shell } from './shell.ts'
 
-const { DRAFT_STATE, draftItem, draftState, draftsOf, cardReviews, floorThreadsOf, keepsThreads, reviewerOf, commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } = shell().clients
+/** What the HUD reads beyond the board: the quota extension's probes. */
+export type HudReads = Pick<Clients, 'commandProbes' | 'PROBE_ATTENTION' | 'PROBE_STATE_NAME' | 'probeTitle'>
+
+/** What the prompt reads beyond the board to name the aimed thing: the extensions' words, the archive's drawers, the titles. */
+export type PromptReads = Pick<Clients, 'draftItem' | 'draftsOf' | 'cardReviews' | 'floorThreadsOf' | 'reviewerOf'> & {
+  drawersAt: (project: string) => Drawer[] | undefined
+  noteTitle: typeof noteTitle
+  gameTitle: typeof gameTitle
+}
 
 /** A worker's model, effort, context, cost, folder and pair, as its card's meta line says them. */
-const metaOf = (c: Card) =>
+const metaOf = (c: Card, reviewerOf: Clients['reviewerOf']) =>
   [modelName(c.model), c.effort, c.context !== undefined && `ctx ${c.context}%`, c.costUsd !== undefined && `$${c.costUsd.toFixed(2)}`, base(c.cwd), pairLineOf(c, reviewerOf(c))]
     .filter(Boolean)
     .join(' · ')
@@ -57,7 +65,8 @@ const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var
 const limitName = (kind: string) => kind.replace('five_hour', '5h').replace('seven_day', '7d').replaceAll('_', ' ')
 
 /** The strip at the bottom-left: where you are, who works and the rate limits, each piece only while it says something. */
-export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits, asks }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[]; asks: number }) {
+export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits, asks }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[]; asks: number }, reads: HudReads) {
+  const { commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } = reads
   const duty = cardsOf(board).filter((c) => c.onDuty)
   const count = (a: Card['attention']) => duty.filter((c) => c.attention === a).length
   const state = hostState(board)
@@ -113,12 +122,13 @@ const leftHtml = (c: Card) => {
 }
 
 /** What you're looking at: its name and state. */
-function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GalleryShowing[]) {
+function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GalleryShowing[], reads: PromptReads) {
+  const { draftItem, draftsOf, cardReviews, floorThreadsOf, reviewerOf, drawersAt, noteTitle, gameTitle } = reads
   if (act.kind === 'desk' || act.kind === 'tile') {
     const c = findCard(board, act.id)
     if (!c) return ''
     return `<div class="head"><span class="call">${esc(c.callsign)}</span>${pill(c)}</div>
-      <div class="meta">${esc(metaOf(c))}</div>${gistLine(c) ? `<div class="gist">${esc(gistLine(c))}</div>` : ''}${leftHtml(c)}`
+      <div class="meta">${esc(metaOf(c, reviewerOf))}</div>${gistLine(c) ? `<div class="gist">${esc(gistLine(c))}</div>` : ''}${leftHtml(c)}`
   }
   if (act.kind === 'binder') {
     const c = findCard(board, act.id)
@@ -248,8 +258,8 @@ const offersHtml = (offers: Offer[], marked: number) =>
     <kbd${HELD.has(o.verb) ? ' class="held"' : ''}>${KEY[o.verb]}</kbd><span>${HELD.has(o.verb) ? 'hold · ' : ''}${esc(o.label)}${o.whyNot ? `<small>${esc(o.whyNot)}</small>` : ''}</span></div>`).join('')
 
 /** The aimed thing and what it offers, each verb on its own key. Empty for a thing gone from the board. */
-export function promptHtml(act: Act, board: Board, offers: Offer[], marked: number, cats: CatNames, galleries: GalleryShowing[]) {
-  const head = aimedHead(act, board, cats, galleries)
+export function promptHtml(act: Act, board: Board, offers: Offer[], marked: number, cats: CatNames, galleries: GalleryShowing[], reads: PromptReads) {
+  const head = aimedHead(act, board, cats, galleries, reads)
   return head && `${head}${offers.length ? `<div class="offers">${offersHtml(offers, marked)}</div>` : ''}`
 }
 
@@ -398,8 +408,8 @@ export const logbookTabsHtml = (tab: LogbookTab) =>
 const tallyHtml = (words: TabWords | undefined) => (words?.text ? ` <small${words.tone === 'unseen' ? ' class="unseen"' : ''}>${esc(words.text)}</small>` : '')
 
 /** The desk's tabs, each tallied by what its view says of it (`tallies`), then a tab for each thing the worker showed. */
-export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean, tallies: Partial<Record<DeskTab, TabWords>>) {
-  const own = (['screen', 'brief', 'changes', ...(keepsThreads(f) ? ['reviews'] as const : [])] as const)
+export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean, tallies: Partial<Record<DeskTab, TabWords>>, reads: Pick<Clients, 'keepsThreads'>) {
+  const own = (['screen', 'brief', 'changes', ...(reads.keepsThreads(f) ? ['reviews'] as const : [])] as const)
     .map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${TAB_NAME[t]}${tallyHtml(tallies[t])}</button>`).join('')
   return own + (c.shown.length ? `<span class="shown-tabs">${c.shown.map((s) => shownTabHtml(c, s, shownTab(s) === tab, fresh(s))).join('')}</span>` : '')
 }
@@ -614,7 +624,8 @@ const spawnButton = (f: Floor, held: HeldWhy) =>
  * A floor's desk: its dirs, its shelf, who's on duty, what they left running, and what it keeps beside them folded to
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
-export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, held: HeldWhy, tray: string | undefined) {
+export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, held: HeldWhy, tray: string | undefined, reads: Pick<Clients, 'draftsOf'> & { noteTitle: typeof noteTitle; keptTitle: typeof keptTitle }) {
+  const { draftsOf, noteTitle, keptTitle } = reads
   const places = shellPlaces([f])
   const edited = editedRows(f)
   const dirs = [f.hub, ...f.repos].map((dir, i) => `<div class="dir"><span data-tip="${esc(dir)}">${i ? ICON.repo : ICON.hub} ${esc(base(dir))}</span>
@@ -705,7 +716,8 @@ type ShelfEntry = NonNullable<Floor['shelf']>[number]
 const keptByText = (keptBy: KeptBy | undefined) => (keptBy ? ` · kept by ${keptBy.callsign}` : '')
 
 /** The draft editor's head: whose draft and how it stands, and what can be done with it. */
-export function draftHeadHtml(f: Floor, d: Draft, held: HeldWhy, carrying: boolean) {
+export function draftHeadHtml(f: Floor, d: Draft, held: HeldWhy, carrying: boolean, reads: Pick<Clients, 'draftItem' | 'draftState' | 'DRAFT_STATE' | 'draftsOf'>) {
+  const { draftItem, draftState, DRAFT_STATE, draftsOf } = reads
   const acts = [
     d.id && !carrying && `<button data-act="carry" data-tip="take it in your hand: H hands it to a worker or the open desk">Carry</button>`,
     held('spawn') ? heldButton(held('spawn')!, 'primary', 'Start session', 'Start session') : can(f, 'spawn') && `<button class="primary" data-act="start" data-tip="start a new session on this prompt">Start session</button>`,
@@ -718,7 +730,8 @@ export function draftHeadHtml(f: Floor, d: Draft, held: HeldWhy, carrying: boole
 }
 
 /** A game's panel head: its title and keeper, a way to play it in a browser tab, and close, the way out while the game holds the keys. */
-export function gameHeadHtml(f: Floor, project: string, id: string) {
+export function gameHeadHtml(f: Floor, project: string, id: string, reads: { gameTitle: typeof gameTitle }) {
+  const { gameTitle } = reads
   const item = gameItem([f], project, id)!
   const acts = [
     `<button class="icon-btn" data-out="/${esc(gamePath(project, id))}" aria-label="play it in a browser tab" data-tip="play it in a browser tab">${ICON.remote}</button>`,
