@@ -1,22 +1,19 @@
 import * as THREE from 'three'
 import { HELD, holdFill, offerForKey, type Act, type CatNames } from './acts.ts'
-import { statsQuery } from '/lib/stats.js'
-import { ask, asking } from '/lib/chrome.js'
+import { asking } from '/lib/chrome.js'
 import { readViewer, reducedMotion } from '/lib/viewer.js'
 import { tower, type Board, type Card, type ShelfSelf } from './api.ts'
 import { boardErrorTitle, bubbleOf, WORLD, heededWaits, loudest, findCard, statusColor, onStatusColor, shownKey } from './cards.ts'
-import { attending } from '/lib/attend.js'
-import { appHandlers, markedIn, startingDb, type AppEvent, type Arrival, type TabTo } from './app.ts'
-import { loop, timers, type Executors, type TimerEffect } from '/lib/machine.js'
+import { markedIn } from './app.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { poseDesk, poseRigs, type Desk } from './desk.ts'
 import { tickFireworks } from './fireworks.ts'
-import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, nearDoors, purr, ring, roam, steer, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat } from './life.ts'
+import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, nearDoors, roam, steer, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat } from './life.ts'
 import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from './hands.ts'
 import { tintOf } from './palette.ts'
-import { PET_MS, petProgress, strokeAt } from './pet.ts'
+import { petProgress, strokeAt } from './pet.ts'
 import { idle } from './tv.ts'
-import { DESK, cabinetOf, carBox, inside, levelHeight, levelOfCard, levelY } from './layout.ts'
+import { DESK, carBox, inside, levelHeight, levelOfCard, levelY } from './layout.ts'
 import { chairKit } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
@@ -29,15 +26,14 @@ import { isVideo, playFilms } from './showing.ts'
 import { levelForKey } from './ui.ts'
 import { addedCommandOf, commandOf } from '/lib/keys.js'
 import { MOVE_KEYS, type Turn } from './input.ts'
-import { clockMoves, wallNow } from './clock.ts'
+import { wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
 import { FIXTURE, fixtureBoards } from './fixtures.ts'
 import * as loading from './loading.ts'
-import { archivedAt, archivesSettled, drawersAt, readArchives, settledArchives } from './archive.ts'
+import { settledArchives } from './archive.ts'
 import { poseFiling } from './filing.ts'
-import { FILINGS, reconcile } from './layers.ts'
 import { fitPicture, placePicture } from './gallery.ts'
-import { s, type Panel, type Spot, type Standing } from './state.ts'
+import { s, type Spot, type Standing } from './state.ts'
 import { aim, fallTo, jump, look, walk, type Walker } from './walker.ts'
 import { groundAt } from './floorplan.ts'
 import { panelGrid, setDoors } from './world.ts'
@@ -59,28 +55,29 @@ import type { Navigation } from './navigation.ts'
 
 import type { Panels } from './panels.ts'
 
+import type { AppLoop } from './app-loop.ts'
+
 /** The resources the page reads as it starts: the leaves' binding (`Shell`), and those only the page reads. */
-export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
+export type Main = Shell & { music: Music; terminal: Term; assets: Assets; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels; app: AppLoop }
 
 /**
  * The page: what it draws, the listeners and timers it keeps, and the loops it runs, started by the `main` resource once
  * every resource it reads has (system.ts).
  */
 export function startMain(started: Main) {
-  const { draftsOf, floorThreadsOf } = started.clients
   const { lit } = started.lighting
   const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = started.stage
-  const { move, releaseKeys, takeTurn } = started.input
+  const { move, takeTurn } = started.input
   const { beatAt, duck, setRoom } = started.music
   const { toast } = started.toasts
   const { events } = started
-  const { desk } = started.views
   const { hiring } = started.spawn
-  const { screenDistance, boxesHere, here, discard, celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, flyHome, frameCabinet, riddenFor, DOORS_SHUT, floorY, pickables, pick, floorOf, carried, syncNotes, syncCabinets, firstBuilt, primeSeenAs } = started.world
+  const { screenDistance, boxesHere, here, discard, planNow, ease, riddenFor, DOORS_SHUT, floorY, pickables, pick, floorOf, carried, firstBuilt, primeSeenAs } = started.world
   const { boardNow, captured, unlock, letGo, atDesk, panelNow, panelAs, go, viewNow, motionNow, replayNow, heed, aimNow } = nowOf(started.port)
-  const { startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk, toggleFps } = started.hud
-  const { lookAtNew, closeSide, closePanels, toDesk, toShell, goLevel, goToAsk, nextWaiting, startRide, overview, leaveOverview, offersNow, aimAt, offerNothing, startHold, unhold, markedOffer } = started.navigation
-  const { display, renderPanel, focusDesk, mountDeskScreen, replay, focusShell, run, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, runCommand, tickPet, freshLogbooks, followDraft, askDraw } = started.panels
+  const { startMusic, toggleMusic, renderElevator, lock, toggleFps } = started.hud
+  const { lookAtNew, closeSide, closePanels, goLevel, nextWaiting, startRide, overview, leaveOverview, offersNow, aimAt, offerNothing, startHold, unhold, markedOffer } = started.navigation
+  const { renderPanel, replay, run, drawPending, runCommand, tickPet } = started.panels
+  const { app } = started.app
 
 
 
@@ -125,26 +122,6 @@ export function startMain(started: Main) {
   /** Standing at `spot` on `level` at once, out of any ride or flight. */
   const place = (level: number, spot: Standing) => app.dispatch({ type: 'place', level, spot })
 
-  /** You stand at `spot` on `level`, the camera at your eyes. */
-  function stand(level: number, spot: Standing) {
-    s.me = { ...s.me, pitch: 0, ...spot, level, y: spot.y ?? 0, vy: 0 }
-    aim(camera, s.me, floorY())
-    renderHud()
-    renderElevator()
-  }
-
-
-  /** What arriving somewhere does that only the building can say: whether the desk or the kiosk still stands, the mouse, the orbit, a purr. */
-  const ARRIVED: { [K in Exclude<Arrival, { kind: 'ask' }>['kind']]: (at: Extract<Arrival, { kind: K }>) => void } = {
-    desk: ({ id }) => s.desks.has(id) && focusDesk(id),
-    shell: ({ id }) => focusShell(id),
-    level: () => lock(),
-    overview: ({ center }) => {
-      orbit.target.fromArray(center)
-      orbit.enabled = true
-    },
-    pet: () => s.muted || purr(PET_MS / 1000),
-  }
 
 
 
@@ -161,76 +138,6 @@ export function startMain(started: Main) {
 
 
 
-  /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
-  const app = loop({
-    state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
-    handlers: appHandlers({ planOf, clockMoves, archivesSettled, archivedAt, drawersAt, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
-    execute: {
-      ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
-      announce: () => {},
-      notify: () => {},
-      unnotify: () => {},
-      sound: ({ sound }) => void (s.doorMode || tower.framed || ring(sound)),
-      keep: ({ field, value }) => keepViewer(field, value),
-      leave: ({ panel }) => (LEAVE[panel.kind] as (p: Panel) => void)(panel),
-      enter: ({ panel, from }) => (ENTER[panel.kind] as (p: Panel, from: Panel | undefined) => void)(panel, from),
-      'tab/leave': ({ tab }) => TAB_LEAVE(tab),
-      'tab/enter': ({ id, to }) => (TAB_ENTER[to.tab] as (id: string, to: TabTo) => void)(id, to),
-      'desk/screen': ({ id }) => mountDeskScreen(findCard(boardNow()!, id)!),
-      replays: () => dressReplays(),
-      'fly-home': () => flyHome(),
-      unlock: () => unlocked(),
-      captured: () => (releaseKeys(), showPaused()),
-      fire: ({ event }, dispatch) => dispatch(event),
-      place: ({ level, spot }) => stand(level, spot),
-      fade: ({ on }) => void $('fade').classList.toggle('on', on),
-      hud: () => renderHud(),
-      elevator: () => renderElevator(),
-      arrived: ({ at }) => (ARRIVED[at.kind] as (at: Arrival) => void)(at),
-      toast: ({ text }) => toast(text),
-      'archives/read': ({ board }, dispatch) => (readArchives(board), dispatch({ type: 'archives/asked', at: wallNow() })),
-      filings: () => void reconcile(FILINGS, s.filings, planNow(), discard),
-      notes: () => void syncNotes(),
-      cabinets: () => void syncCabinets(),
-      'stats/fetch': ({ reading }, dispatch) =>
-        void tower.stats(statsQuery(s.viewer.statsRange, wallNow())).then(
-          (read) => dispatch({ type: 'stats/landed', reading, read, at: wallNow() }),
-          (err: Error) => dispatch({ type: 'stats/failed', reading, message: err.message }),
-        ),
-      'world/apply': ({ was }) => {
-      desk.update(boardNow()!)
-      rereadViewer()
-      worldRebuilt(was)
-      hiring.dispatch({ type: 'board', board: boardNow()! })
-      worldFurnished(was)
-      if (s.draft?.id) followDraft(s.draft)
-      renderHud()
-    },
-      fireworks: ({ cards }) => celebrate(cards),
-      'waits/began': () => void (s.waitedAt = s.simNow),
-      asked: ({ ask }) => toast(`${ask.title}, asked by ${ask.cap}`, { label: 'Go', run: () => goToAsk(ask) }),
-      'shown/arrived': ({ id, target, atDesk }) => shownArrives(id, target, atDesk),
-      'game/frame': ({ project, id }) => frameCabinet(cabinetOf(planNow(), project, id)!),
-      logbooks: () => freshLogbooks(boardNow()!),
-      'replan/at': ({ until }, dispatch) => dispatch({ type: 'replan', at: Math.max(until, wallNow()) }),
-      'desk/go': ({ id }) => toDesk(id),
-      'shell/go': ({ id }) => toShell(id),
-      draw: askDraw,
-      display: ({ subject }) => display(subject),
-      focus: ({ selector }) => (drawPending(), document.querySelector<HTMLElement>(selector)?.focus()),
-    },
-  })
-  app.subscribe(events.listen('app'))
-  started.port.attach(app)
-  addEventListener('focus', () => {
-    app.dispatch({ type: 'focus', focused: true })
-    const desk = panelAs('desk')
-    const c = desk && boardNow() && findCard(boardNow()!, desk.id)
-    if (c) sawDesk(boardNow()!, c)
-  })
-  // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
-  addEventListener('blur', () => setTimeout(() => app.dispatch({ type: 'focus', focused: document.hasFocus() })))
-  document.addEventListener('visibilitychange', () => app.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
 
   /** A keydown outside a terminal that runs a shared command. Returns whether it ran one. */

@@ -34,7 +34,7 @@
     "hub/renderers/tower3d/src/app.ts#AppReads",
     "hub/renderers/tower3d/src/app.ts#Motion",
     "hub/renderers/tower3d/src/app.ts#Arrival",
-    "hub/renderers/tower3d/src/main.ts#ARRIVED",
+    "hub/renderers/tower3d/src/app-loop.ts#ARRIVED",
     "hub/renderers/tower3d/src/main.ts#tickCamera",
     "hub/renderers/tower3d/src/navigation.ts#travel",
     "hub/renderers/tower3d/src/app.ts#Aim",
@@ -67,7 +67,8 @@
     "hub/renderers/tower3d/src/spawn.ts#startSpawn",
     "hub/renderers/tower3d/src/hud.ts#startHud",
     "hub/renderers/tower3d/src/navigation.ts#startNavigation",
-    "hub/renderers/tower3d/src/panels.ts#startPanels"
+    "hub/renderers/tower3d/src/panels.ts#startPanels",
+    "hub/renderers/tower3d/src/app-loop.ts#startAppLoop"
   ]
 }
 ---
@@ -127,20 +128,21 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 - *Music alone.* The chimes keep their own audio context: muting suspends the band's.
 - *The reads that land reach the app through one port.* The archive reads and the titles read from notes', kept
   items' and games' texts start before the app that handles what they bring. They send their events to `port`
-  ([`startPort`](ref:hub/renderers/tower3d/src/port.ts#startPort)), a resource with no dependencies, and `main.ts`
-  attaches the app to it once it is made: the one late binding between the page's event sources and its app. An
+  ([`startPort`](ref:hub/renderers/tower3d/src/port.ts#startPort)), a resource with no dependencies, and the `app`
+  resource attaches the app to it once it is made: the one late binding between the page's event sources and its app. An
   event sent before the app attached throws, naming the source. A resource that starts before the app and reads its
   db reads it through the port too (`state`), which throws the same way before the app attached.
 
 **The app loop.** The page's decisions live in one machine, `app` (the shared loop, [[machines]]), as the tower page's
-do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/renderers/tower3d/src/app.ts); its
-executors are in `main.ts`, where the DOM and the building are. Every panel kind moves through it; a filing
+do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/renderers/tower3d/src/app.ts); the
+`app` resource ([`startAppLoop`](ref:hub/renderers/tower3d/src/app-loop.ts#startAppLoop)) runs it with executors that call
+the resources started before it, where the DOM and the building are. Every panel kind moves through it; a filing
 cabinet's drawer still opens through a bridge (`openSide`), which shows the side its enter doesn't.
 - *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): what the building took (below), the panel open, attention, the view, the desk's tab,
   what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on), a replay, and
   what moves on its own (`motion`), what is aimed at and held (`aim`), whether walking has the mouse (`capture`), each
   below, the board waiting for its floors' archives (`waiting`), and the Stats panel's read (`stats`).
-  Readers call `app.state()` (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `main.ts`; the door through
+  Readers call `app.state()`, through the port (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `now.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
   anything written every frame stay out of it.
 - *`go` moves a panel* ([`went`](ref:hub/renderers/tower3d/src/app.ts#went)), the page's `go` over Tower 3D's
@@ -245,7 +247,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   No frame dispatches otherwise, and [`tickCamera`](ref:hub/renderers/tower3d/src/main.ts#tickCamera) writes the
   camera through vectors it keeps, allocating nothing. What a cut or a flight leaves you to do is an `arrived` event
   ([`Arrival`](ref:hub/renderers/tower3d/src/app.ts#Arrival)): an ask's floor opened by `went`, the rest by
-  [`ARRIVED`](ref:hub/renderers/tower3d/src/main.ts#ARRIVED), since whether a desk or a kiosk still stands, the mouse,
+  [`ARRIVED`](ref:hub/renderers/tower3d/src/app-loop.ts#ARRIVED), since whether a desk or a kiosk still stands, the mouse,
   the orbit and a purr are the building's. A cut to where you already are fires its `then` at once
   ([`travel`](ref:hub/renderers/tower3d/src/navigation.ts#travel)). The walker stays the frames': riding turns it to the doors
   and sets its level as the ride ends, before `ride-arrived`; a `place` stands it where a cut or the door says, the ride
