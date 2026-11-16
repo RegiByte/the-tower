@@ -15,8 +15,9 @@ import { subjectAt, type Lines } from '/lib/board.js'
 import { findCard } from './cards.ts'
 import { gameItem } from './games.ts'
 import type { Board, Floor } from './api.ts'
+import type { Act } from './acts.ts'
 import type { Pet } from './pet.ts'
-import type { Panel, Standing, View } from './state.ts'
+import type { Hold, Panel, Standing, View } from './state.ts'
 import { shownTab, type DeskTab } from './ui.ts'
 
 /** The tab a desk opens on once it opens: its brief, its review thread, or lines of its Changes. */
@@ -70,6 +71,27 @@ export type Arrival =
   /** Low beside the cat being petted, which purrs. */
   | { kind: 'pet' }
 
+/** An act as a key: two acts with one key are the same thing, aimed at again. */
+export const actKey = (a: Act | undefined) => JSON.stringify(a ?? null)
+
+/**
+ * What the crosshair or the pointer was last on, and what the prompt offers verbs for: the two part while the view is
+ * elsewhere, the prompt emptied and the act last aimed at kept. Each act is kept with its key, so a frame compares keys
+ * and dispatches only when one changes. What the prompt offers is derived (`offersOf`).
+ */
+export type Aim = {
+  aimed: Act | undefined
+  aimedKey: string
+  offered: Act | undefined
+  offeredKey: string
+  /** The offer the wheel marked, as marked: read within the offers there are now (`markedIn`). */
+  marked: number
+  hold: Hold | undefined
+}
+
+/** The marked offer's index among `count` offers. */
+export const markedIn = (aim: Aim, count: number) => Math.min(aim.marked, Math.max(0, count - 1))
+
 export type Db = {
   panel: Panel | undefined
   /** Whether the window has your eye, and what asks for you, said and rung as every renderer does (`attend.ts`). */
@@ -79,6 +101,7 @@ export type Db = {
   pending: Pending
   replay: Replay | undefined
   motion: Motion
+  aim: Aim
 }
 
 export type AppEvent =
@@ -106,6 +129,16 @@ export type AppEvent =
   | { type: 'pet'; pet: Pet }
   | { type: 'pet-done' }
   | { type: 'arrived'; at: Arrival }
+  /** The crosshair or the pointer found `act`, which the prompt now offers verbs for. */
+  | { type: 'aimed'; act: Act | undefined; key: string }
+  /** The prompt offers verbs for `act`, what was last aimed at kept. */
+  | { type: 'offered'; act: Act | undefined; key: string }
+  | { type: 'mark'; marked: number }
+  | { type: 'hold'; hold: Hold }
+  /** The held key or button let go of, or no longer seen held. */
+  | { type: 'unhold' }
+  /** The held verb's ring filled: the frame that saw it runs the verb, as a key does, once this is handled. */
+  | { type: 'hold-filled' }
 
 export type AppEffect =
   | AttendOut
@@ -144,12 +177,19 @@ export const startingDb = (attending: Attending): Db => ({
   pending: { desk: undefined, shell: undefined, tab: undefined, shown: undefined },
   replay: undefined,
   motion: { ride: undefined, flight: undefined, cut: undefined, pet: undefined },
+  aim: { aimed: undefined, aimedKey: actKey(undefined), offered: undefined, offeredKey: actKey(undefined), marked: 0, hold: undefined },
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
 const DRAW: AppEffect = { type: 'draw' }
 const moved = (db: Db, motion: Partial<Motion>): Db => ({ ...db, motion: { ...db.motion, ...motion } })
 const fire = (event: AppEvent | undefined): AppEffect[] => (event ? [{ type: 'fire', event }] : [])
+
+const withAim = (db: Db, aim: Partial<Aim>): Db => ({ ...db, aim: { ...db.aim, ...aim } })
+
+/** The prompt offers verbs for `act`: a different act starts the mark and the hold over. */
+const offering = (aim: Aim, act: Act | undefined, key: string): Aim =>
+  key === aim.offeredKey ? { ...aim, offered: act } : { ...aim, offered: act, offeredKey: key, marked: 0, hold: undefined }
 
 /** Standing at `spot` on `level`, out of any ride or flight. */
 const placed = (db: Db, level: number, spot: Standing): AppEffect[] => [into(moved(db, { ride: undefined, flight: undefined })), { type: 'place', level, spot }]
@@ -329,5 +369,11 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
     const petting = db.view === 'pet'
     return [into(moved({ ...db, view: petting ? 'walk' : db.view }, { pet: undefined })), ...(petting ? [{ type: 'fly-home' } as const] : [])]
   },
+  aimed: (db, { act, key }) => [into({ ...db, aim: offering({ ...db.aim, aimed: act, aimedKey: key }, act, key) })],
+  offered: (db, { act, key }) => [into({ ...db, aim: offering(db.aim, act, key) })],
+  mark: (db, { marked }) => [into(withAim(db, { marked, hold: undefined }))],
+  hold: (db, { hold }) => [into(withAim(db, { hold }))],
+  unhold: (db) => [into(withAim(db, { hold: undefined }))],
+  'hold-filled': (db) => [into(withAim(db, { hold: undefined }))],
   arrived: (db, { at }) => (at.kind === 'ask' ? [...went(db, { kind: 'floor', id: at.project, tray: undefined }), { type: 'toast', text: at.said }] : [{ type: 'arrived', at }]),
 })
