@@ -8,7 +8,8 @@ import { drawSections, SECTIONS_RULES } from '../shared/view-sections.ts'
 /**
  * `tower/document`, the markdown view, of a kept item or a showing: the document drawn by sections (`drawSections`),
  * each a viewer subject of the item or showing with its commands in a gutter beside the frame. A file of a worker's
- * checkout opens at its `fragment`, and its relative links go to what they name (`linkedFrom`).
+ * checkout opens at its `fragment`, and its relative links go to what they name (`linkedFrom`). Drawn again, it opens
+ * where the draw it replaces was scrolled to.
  */
 
 /**
@@ -41,7 +42,10 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
     title,
     docCss,
     links: (doc) => (file ? linkedFrom(doc, file, kit) : () => undefined),
-    opened: (doc) => void (file?.fragment && !scrollToFragment(doc, file.fragment) && kit.toast(`#${file.fragment} names no heading in ${file.path}`)),
+    opened: (doc) => {
+      if (at.scroll !== undefined) return doc.defaultView!.scrollTo(0, at.scroll)
+      if (file?.fragment && !scrollToFragment(doc, file.fragment)) kit.toast(`#${file.fragment} names no heading in ${file.path}`)
+    },
   })
 }
 

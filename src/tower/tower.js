@@ -41,7 +41,10 @@
  *   await tower.call('edit', { path, line })        or in the user's editor, a file at `line` if given
  *   await tower.run(callOf(card, 'resume'))         a call the board offers (`callOf`, cards.ts), with the fields the user supplies: run(callOf(floor, 'spawn'), { cwd })
  *   tower.keys(id, data) / tower.shellKeys(id, data)  keystrokes, delivered in order
- *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>` or `shell/<id>`, ending at `x` or `error`; returns unwatch
+ *   tower.watch('screen/<id>', (msg) => …)          a stream: `screen/<id>`, `terminal/<id>`, `shell/<id>` or `version/<read>`, ending at `x` or `error`; returns unwatch
+ *   tower.versions('shown/<id>/<path>', (msg) => …)   each new version of the file a read serves (a showing, a shelf file, a kept item):
+ *                                                   `{ t: 'version', modifiedAt }` as watching begins and on each change, or the `error`
+ *                                                   that ends it; returns unwatch
  *   tower.ui('select', { id }) / ('home') / ('shelf', { project, n })   the framing tower's own view, when framed
  *   tower.ui('go', { location }) / ('display', { subject, view? })      a location (views.ts), or a subject or its key shown
  *                                                   where the framing page's layout puts it
@@ -102,6 +105,7 @@
    * @typedef {import('../shared/shelf-page.ts').Served} Served
    * @typedef {import('../shared/shelf-page.ts').ShelfSelf} ShelfSelf
    * @typedef {import('../shared/shelf-page.ts').StreamMsg} StreamMsg
+   * @typedef {import('../shared/shelf-page.ts').VersionMsg} VersionMsg
    * @typedef {import('../shared/shelf-page.ts').ToPage} ToPage
    * @typedef {import('../shared/shelf-page.ts').Tower} Tower
    * @typedef {import('../bridge/board.ts').Board} Board
@@ -557,6 +561,23 @@
     return stop
   }
 
+  /**
+   * Each new version of the file a read serves: `fn` gets its modification time (null while it is gone) once watching,
+   * then on each change; a version said again is not handed on.
+   * @type {Tower['versions']}
+   */
+  const versions = (read, fn) => {
+    /** @type {number | null | undefined} */
+    let last
+    return watch(`version/${read}`, (streamed) => {
+      const msg = /** @type {VersionMsg} */ (/** @type {unknown} */ (streamed))
+      if (msg.t === 'error') return fn(msg)
+      if (msg.t !== 'version' || msg.modifiedAt === last) return
+      last = msg.modifiedAt
+      fn(msg)
+    })
+  }
+
   /** @typedef {{ id: string, data: string }} Keys */
 
   /**
@@ -744,6 +765,7 @@
     keys: keySender('keys'),
     shellKeys: keySender('shell/keys'),
     watch,
+    versions,
     relay,
     ui: api.ui,
     remember: api.remember,

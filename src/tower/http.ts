@@ -38,7 +38,7 @@
  *   GET  /shell/<id>    SSE: a snapshot of the shell's screen, then its output, from the terms daemon
  *   GET  /job/<id>/screen  SSE: a snapshot of the job's screen, then its output and its end, from the jobs daemon while it keeps it
  *   GET  /jobs          every job the jobs log holds, newest first, each in its state (src/bridge/jobs.ts `jobsNow`)
- *   GET  /mux           SSE: screen, terminal, shell and job streams multiplexed on one connection; POST /mux/watch {mux, key, path},
+ *   GET  /mux           SSE: screen, terminal, shell, job and version streams multiplexed on one connection; POST /mux/watch {mux, key, path},
  *                       /mux/unwatch {mux, key}
  *   GET  /shelf/<project>/<n>          the files of the project's nth shelf entry, relative to its hub (an item entry's: its id, while its collection holds it)
  *   GET  /shelf/<project>/<n>/<file>   one of them, or a file beside or below an html entry's page
@@ -98,7 +98,7 @@ import { fontFile, packageDir } from '../packages.ts'
 import { readPatterns } from '../patterns.ts'
 import { defaultRenderer, layoutReachOf, rendererFile, renderersOf, withLayoutProblems } from '../renderers.ts'
 import { CLI_REGIONS } from '../shared/regions.ts'
-import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, refusal, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
+import { API_VERSION, apiError, ApiError as ApiErrorSchema, CALLER_HEADERS, ERROR_STATUS, HOOK_DEADLINE, HOOKS, isApiError, ITEM_ID, QUERIES, refusal, TRANSPORT, VERBS, VIEWER_ID, VIEWER_RENDERER, type ApiError, type ErrorCode, type Query, type RouteInput } from '../shared/api.ts'
 import { FLOWS } from '../shared/flows.ts'
 import { megabytes, UPLOAD_LIMIT } from '../shared/uploads.ts'
 import boardSchema from '../shared/board.schema.json' with { type: 'json' }
@@ -109,9 +109,10 @@ import type { JobStream } from '../shared/jobs.ts'
 import { designCss, fonts } from '../shared/design.ts'
 import { MANIFEST_SCHEMA, qualifiedOf, tooDeep, type Caller, type Deprecated } from '../shared/extensions.ts'
 import { bundledClient, clientSource } from '../extensions.ts'
+import { fileVersions } from '../file-versions.ts'
 import { placedOn } from '../bridge/board.ts'
 import { briefConfig, callsignsOf, ConfigError, outsideProject, projectDirs, sessionDirs, shelfItem, towerHosts, type Config, type Project, type Renderer, type SessionLog, type ShelfEntry } from '../shared/model.ts'
-import type { Reads, ScreenMsg, TerminalMsg } from '../shared/shelf-page.ts'
+import type { Reads, ScreenMsg, TerminalMsg, VersionMsg } from '../shared/shelf-page.ts'
 import type { ShellStream } from '../shared/terms.ts'
 import { MEDIA_TYPES, mediaTypeOf, UNKNOWN_TYPE } from '../shared/media.ts'
 import { shelfFiles, shelfServes, shownServes } from '../shelf.ts'
@@ -512,7 +513,29 @@ export const httpServer = defineResource({
       })
     }
 
-    const streamAt = (path: string, send: (msg: ScreenMsg | TerminalMsg | ShellStream | JobStream) => void): Promise<Stop | undefined> => {
+    const versions = fileVersions()
+
+    /**
+     * The versions of the file a read serves (`version/shown/<id>/<path>`), the read answered first as over HTTP for
+     * `caller`: refused with its failure, or as `invalid` when what it answers is no file.
+     */
+    async function versionStream(read: string, send: (msg: VersionMsg) => void, caller: Caller): Promise<Stop | ApiError> {
+      const pathname = `/${read}`
+      for (const entry of READS) {
+        const match = 'read' in entry && entry.path.exec(pathname)
+        if (!match) continue
+        const params = Object.fromEntries(Object.entries(match.groups ?? {}).map(([name, value]) => [name, value === undefined ? undefined : decodeURIComponent(value)]))
+        const reply = await answered(entry, params, {}, caller)
+        if (reply.t === 'file') return versions.watch(reply.file, send)
+        if (isApiError(reply.body)) return reply.body
+        return apiError('invalid', `${read} answers no file: a version is a file's, of a read that serves one (shown, shelf, collection)`)
+      }
+      return apiError('not_found', `No read at "${read}" serves a file`)
+    }
+
+    const streamAt = (path: string, send: (msg: ScreenMsg | TerminalMsg | ShellStream | JobStream | VersionMsg) => void, caller: Caller): Promise<Stop | ApiError | undefined> => {
+      const version = /^version\/(.+)$/.exec(path)?.[1]
+      if (version) return versionStream(version, send, caller)
       const screen = /^screen\/([\w-]+)$/.exec(path)?.[1]
       if (screen) return screenStream(screen, send)
       const terminal = /^terminal\/([\w-]+)$/.exec(path)?.[1]
@@ -523,15 +546,16 @@ export const httpServer = defineResource({
       return Promise.resolve(job ? jobStream(job, send) : undefined)
     }
 
-    async function muxWatch({ mux: muxId, key, path }: RouteInput['mux/watch']): Promise<Answer> {
+    async function muxWatch({ mux: muxId, key, path }: RouteInput['mux/watch'], caller: Caller): Promise<Answer> {
       const mux = muxes.get(muxId)
       if (!mux) return apiError('not_found', `No mux "${muxId}"`)
       void mux.streams.get(key)?.then((stop) => stop?.())
-      const stream = streamAt(path, (data) => sse(mux.res, { key, data }))
+      const stream = streamAt(path, (data) => sse(mux.res, { key, data }), caller)
       /** A stream that fails to open answers its watch with the failure, and the mux holds it as one with nothing to stop. */
-      mux.streams.set(key, stream.catch(() => undefined))
-      if (!(await stream)) return apiError('not_found', `Nothing streams at "${path}"`)
-      return OK
+      mux.streams.set(key, stream.then((opened) => (typeof opened === 'function' ? opened : undefined), () => undefined))
+      const opened = await stream
+      if (!opened) return apiError('not_found', `Nothing streams at "${path}"`)
+      return typeof opened === 'function' ? OK : opened
     }
 
     function muxUnwatch({ mux: muxId, key }: RouteInput['mux/unwatch']): Answer {
@@ -727,7 +751,7 @@ export const httpServer = defineResource({
     }
 
     /** The mux's verbs, which hold this server's connections: every other verb is the dispatch's. */
-    const MUX: { [R in keyof typeof TRANSPORT]: (input: RouteInput[R]) => Answer | Promise<Answer> } = { 'mux/watch': muxWatch, 'mux/unwatch': muxUnwatch }
+    const MUX: { [R in keyof typeof TRANSPORT]: (input: RouteInput[R], caller: Caller) => Answer | Promise<Answer> } = { 'mux/watch': muxWatch, 'mux/unwatch': muxUnwatch }
 
     /**
      * The largest command body read: an `upload` of the largest file it takes, base64, with room to spare. The other
@@ -839,7 +863,7 @@ export const httpServer = defineResource({
       if (isMux(route)) {
         const input = TRANSPORT[route].input.safeParse(body.json)
         if (!input.success) return fail(res, 'invalid', z.prettifyError(input.error))
-        return send(res, await (MUX[route] as (input: unknown) => Answer | Promise<Answer>)(input.data))
+        return send(res, await (MUX[route] as (input: unknown, caller: Caller) => Answer | Promise<Answer>)(input.data, callerOf(req)))
       }
       if (!core) deprecate(res, dispatch.deprecationOf(q!.cap, q!.name))
       send(res, await dispatch.call(core ? `tower/${route}` : route, body.json, callerOf(req)))
@@ -923,7 +947,7 @@ export const httpServer = defineResource({
         if (renderer !== undefined && (viewer === undefined || !VIEWER_RENDERER.test(renderer))) return fail(res, 'invalid', `renderer ${JSON.stringify(renderer)} names no renderer of a viewer: give viewer too, and a renderer's name`)
         return streamBoard(req, res, viewer === undefined ? undefined : { viewer, ...(renderer !== undefined && { renderer }) })
       } }),
-      streamRead({ description: 'The screen, terminal, shell and job streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
+      streamRead({ description: 'The screen, terminal, shell, job and version streams on one connection; POST /mux/watch {mux, key, path} adds one, /mux/unwatch {mux, key} drops it.' }, { path: /^\/mux$/, serve: ({ req, res }) => openMux(req, res) }),
       plain('schema', { path: /^\/schema$/, serve: ({ res }): void => void res.writeHead(200, { 'content-type': 'application/json' }).end(apiSchema()) }),
       apiRead('origins', { path: /^\/origins$/, answer: () => origins() }),
       apiRead('config', { path: /^\/config$/, answer: () => json(readConfigFile(paths.config) satisfies Reads['config']) }),
@@ -971,6 +995,7 @@ export const httpServer = defineResource({
     const describeStreams = (reads: readonly Read[]): Record<string, StreamDoc> => ({
       ...Object.fromEntries(reads.flatMap((entry) => ('stream' in entry && entry.stream ? [[keyOf(entry), entry.stream]] : []))),
       'terminal/<id>': { description: 'The screen stream as an interactive terminal opens it (`TerminalMsg`).' },
+      'version/<read>': { description: 'The version of the file a read serves (`shown/<id>/<path>`, a shelf file, a kept item) once watching, then on each change to the file at its path: `VersionMsg`, `modifiedAt` in epoch ms or null while there is none. `tower.versions` reads it.' },
     })
 
     /** Every entry of `READS` as `{ path, kind, query? }`, keyed by its API read or, for a route that is none, by its path. */

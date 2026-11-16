@@ -6,7 +6,8 @@ import { frameSource, offsetIn, PASSAGE_RULES, pickPassages, type Picks } from '
 /**
  * `tower/text`, the view of text drawn as written, in a document frame where nothing runs, from the design's tokens;
  * links open a tab of their own. Text picked in it is a `passage` of the subject drawn (`pickPassages`), its lines
- * the file's own, and its words keep their indentation: what the frame draws is the file as written.
+ * the file's own, and its words keep their indentation: what the frame draws is the file as written. Drawn again, it
+ * opens where the draw it replaces was scrolled to.
  */
 
 const RULES = `& .text-split { position: relative; flex: 1; min-width: 0; display: flex; }
@@ -43,10 +44,12 @@ async function draw(el: HTMLElement, at: Body): Promise<Drawn | undefined> {
       }),
     )
     if (!seen) picks.visible(false)
+    if (at.scroll !== undefined) doc.defaultView!.scrollTo(0, at.scroll)
   })
   frame.srcdoc = frameDoc(at.tower, at.docCss, '<base target="_blank"><article></article>')
   return {
     update: () => picks?.update(),
+    scroll: () => frame.contentDocument?.defaultView?.scrollY ?? 0,
     visible: (on) => ((seen = on), picks?.visible(on)),
     close: () => ((closed = true), picks?.close()),
   }

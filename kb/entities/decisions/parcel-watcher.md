@@ -6,8 +6,8 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-27",
-  "reviewed": "2026-11-15",
-  "refs": ["hub/src/subscribe.ts#subscribe", "hub/src/system.ts#watchSystem", "hub/src/repo-watch.ts#watchRepos", "hub/package.json"]
+  "reviewed": "2026-11-16",
+  "refs": ["hub/src/subscribe.ts#subscribe", "hub/src/system.ts#watchSystem", "hub/src/repo-watch.ts#watchRepos", "hub/src/file-versions.ts#fileVersions", "hub/package.json"]
 }
 ---
 **Context.** On macOS Node's recursive `fs.watch` goes through libuv's FSEvents backend, which keeps one
@@ -20,8 +20,10 @@ a review thread. Standalone, a recursive `fs.watch` with another opening and clo
 
 **Decision.** [`subscribe`](ref:hub/src/subscribe.ts#subscribe) is the one place a backend lives, and it is
 `@parcel/watcher`: one FSEventStream per subscription on macOS, inotify on Linux with ignored directories never
-watched. The repo watches ([`watchRepos`](ref:hub/src/repo-watch.ts#watchRepos)) and the collections, system streams
-and project streams watches ([`watchSystem`](ref:hub/src/system.ts#watchSystem)) all go through it; the sessions
+watched. The repo watches ([`watchRepos`](ref:hub/src/repo-watch.ts#watchRepos)), the collections, system streams
+and project streams watches ([`watchSystem`](ref:hub/src/system.ts#watchSystem)), and the folders of files whose
+versions someone follows ([`fileVersions`](ref:hub/src/file-versions.ts#fileVersions), its subfolders ignored, opened
+and closed as views come and go) all go through it; the sessions
 directory and the config's directory (and a linked config's target directory) stay non-recursive `fs.watch` (kqueue,
 which FSEvents' churn does not touch).
 A subscription resolves once watching, so each reader starts watching before its first read. FSEvents' "must

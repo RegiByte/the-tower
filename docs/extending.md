@@ -386,7 +386,10 @@ Everything a renderer can do is an HTTP route on `http://127.0.0.1:<port>`:
   weekly limit as last read in the window (`weekly`), and the points of it used outside the tower in the window (`outside`: claude.ai, the desktop app, another machine, as the quota probe saw it climb while no session worked; the budget's `outside` is this week's, and what 1% buys leaves it out). `/archive/<project>` answers the floor's cards the board leaves out, the board's `Card` shape, so the
   workers of any past window are the board's cards and the archive's together.
 - **Streams**: a session's screen, an interactive terminal, a shell (`screen/<id>`, `terminal/<id>`, `shell/<id>`),
-  multiplexed on one connection, `GET /mux`.
+  and the version of a file a read serves (`version/<read>`, such as `version/shown/<id>/<path>`), multiplexed on one
+  connection, `GET /mux`. `tower.versions(read, fn)` hands `fn` `{t: 'version', modifiedAt}` as the watch begins and
+  each time the file at that path changes, written in place or replaced by a rename, `modifiedAt` null while it is
+  gone: draw the read again on each. The tower watches the file's folder only while someone listens (2.9).
 - **Errors** are data: `{t: 'error', code, message}`. Branch on `code` (`invalid`, `not_found`, `refused`,
   `unavailable`, `not_at_prompt`…), never on `message`.
 
