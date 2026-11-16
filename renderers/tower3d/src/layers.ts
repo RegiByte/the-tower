@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { act } from './acts.ts'
-import { arcadeSignKey, buildArcadeSign, gameTitle, makeCabinet, type ArcadeSign, type Cabinet } from './arcade.ts'
+import { arcadeSignKey, buildArcadeSign, makeCabinet, type ArcadeSign, type Cabinet } from './arcade.ts'
 import { addedTidyOf, can, cardsOf, shownKey } from './cards.ts'
 import { makeNote, type Note } from './cork.ts'
 import { DESK_DRESS, pickOf } from './dress.ts'
@@ -9,7 +9,7 @@ import { dressPicture, hang, makePicture, type Picture } from './gallery.ts'
 import { openStation, type AwaySlot, type DanceFloor, type DeskSlot, type GuestSlot, type Level, type PictureSlot, type Plan, type StationSlot } from './layout.ts'
 import { arrival, carryChair, carryIn, leaver, moveTo, originOf } from './life.ts'
 import { seatedness } from './rig.ts'
-import { noteTitle } from './notes.ts'
+import type { Titles } from './titles.ts'
 import { tintOf } from './palette.ts'
 import { buildDanceFloors, makeGuest, type DanceFloors, type Guest } from './party.ts'
 import { buildVideoWall, videoWallKey } from './room.ts'
@@ -177,8 +177,8 @@ export const STATIONS: Layer<StationAt, Station> = {
 type NoteAt = { project: string; id: string; tag: string; modifiedAt: number; level: number; x: number; y: number; z: number; tint: string }
 const carried = (at: NoteAt) => s.carrying?.project === at.project && s.carrying.id === at.id
 
-/** Every draft pinned on its floor's corkboard, drawn again when its title or tint changes; the one you carry is not there. */
-export const NOTES: Layer<NoteAt, Note> = {
+/** Every draft pinned on its floor's corkboard, drawn again when its title (`noteTitle`'s) or tint changes; the one you carry is not there. */
+export const notesOf = (noteTitle: Titles['noteTitle']): Layer<NoteAt, Note> => ({
   slots: (p) => floors(p).flatMap((level) => (level.cork?.notes ?? []).map((n) => {
     const at = { project: level.floor.id, id: n.id, tag: n.tag, modifiedAt: n.modifiedAt, level: level.index, x: n.x, y: level.y + n.y, z: level.cork!.z + 0.06, tint: tintOf(level.floor) }
     return [`${at.project}/${at.id}`, at] as [string, NoteAt]
@@ -197,12 +197,12 @@ export const NOTES: Layer<NoteAt, Note> = {
     return true
   },
   root: (note) => note.group,
-}
+})
 
 type CabinetAt = { project: string; id: string; tag: string; modifiedAt: number; keptBy: string | undefined; level: number; x: number; y: number; z: number; tint: string }
 
-/** Every game's cabinet in its floor's arcade, facing into the room, drawn again when its title, keeper or tint changes. */
-export const CABINETS: Layer<CabinetAt, Cabinet> = {
+/** Every game's cabinet in its floor's arcade, facing into the room, drawn again when its title (`gameTitle`'s), keeper or tint changes. */
+export const cabinetsOf = (gameTitle: Titles['gameTitle']): Layer<CabinetAt, Cabinet> => ({
   slots: (p) => floors(p).flatMap((level) => (level.arcade?.cabinets ?? []).map((c) => {
     const at = { project: level.floor.id, id: c.id, tag: c.tag, modifiedAt: c.modifiedAt, keptBy: c.keptBy, level: level.index, x: c.x, y: level.y, z: c.z, tint: tintOf(level.floor) }
     return [`${at.project}/${at.id}`, at] as [string, CabinetAt]
@@ -220,7 +220,7 @@ export const CABINETS: Layer<CabinetAt, Cabinet> = {
     return true
   },
   root: (cabinet) => cabinet.group,
-}
+})
 
 type PictureAt = { slot: PictureSlot; level: number; at: THREE.Vector3 }
 

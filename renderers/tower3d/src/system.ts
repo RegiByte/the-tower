@@ -22,6 +22,7 @@ import type { KeeperDeps } from './keeper.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
+import { startTitles } from './titles.ts'
 
 /**
  * Tower 3D as a system of braided resources, each started once its dependencies have (decision `tower3d-system`).
@@ -36,6 +37,7 @@ import { startToasts } from './toasts.ts'
  *   assets    the models, the kit and the faces, loading; the page draws once they are in (loads.ts)
  *   port      where the reads that land send their events, the app attached once it is made (port.ts)
  *   toasts    what tells the user what happened, and the API calls whose failure it tells (toasts.ts)
+ *   titles    the titles read from items' texts: notes, kept items, games (titles.ts)
  *   shell     what the leaf modules read as they load, bound before any page resource loads its module (shell.ts)
  *   events    what the page's loops handled, kept for the door (events.ts)
  *   world     the building in the scene: its plan, its layers, what can be seen and picked (building.ts)
@@ -87,6 +89,8 @@ const shell = defineResource({
 
 const toasts = defineResource({ start: startToasts, halt: () => {} })
 
+const titles = defineResource({ dependencies: ['clients', 'port'], start: startTitles, halt: () => {} })
+
 /**
  * A page resource imports its module as it starts, once `shell` is bound: the leaf modules it imports read the binding
  * as they load. Transitional, with the binding.
@@ -98,7 +102,7 @@ const events = defineResource({
 })
 
 const world = defineResource({
-  dependencies: ['shell', 'clients', 'stage', 'port', 'toasts'],
+  dependencies: ['shell', 'clients', 'titles', 'stage', 'port', 'toasts'],
   start: async (started: WorldDeps & { shell: Shell }) => (await import('./building.ts')).startWorld(started),
   halt: () => {},
 })
@@ -110,7 +114,7 @@ const views = defineResource({
 })
 
 const spawn = defineResource({
-  dependencies: ['shell', 'clients', 'port', 'toasts', 'events', 'world'],
+  dependencies: ['shell', 'clients', 'titles', 'port', 'toasts', 'events', 'world'],
   start: async (started: SpawnDeps & { shell: Shell }) => (await import('./spawn.ts')).startSpawn(started),
   halt: () => {},
 })
@@ -122,13 +126,13 @@ const hud = defineResource({
 })
 
 const navigation = defineResource({
-  dependencies: ['shell', 'clients', 'stage', 'port', 'toasts', 'world', 'hud'],
+  dependencies: ['shell', 'clients', 'titles', 'stage', 'port', 'toasts', 'world', 'hud'],
   start: async (started: NavigationDeps & { shell: Shell }) => (await import('./navigation.ts')).startNavigation(started),
   halt: () => {},
 })
 
 const panels = defineResource({
-  dependencies: ['shell', 'clients', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
+  dependencies: ['shell', 'clients', 'titles', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
   start: async (started: PanelsDeps & { shell: Shell }) => (await import('./panels.ts')).startPanels(started),
   halt: () => {},
 })
@@ -175,4 +179,4 @@ const keeper = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, titles, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
