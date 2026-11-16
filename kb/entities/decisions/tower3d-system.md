@@ -178,7 +178,8 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
 - *The plan is derived, the boards before it too.* The building keeps what its plan comes from, not the plan: the
   board, each floor's archive as read for it ([`archivedAt`](ref:hub/renderers/tower3d/src/archive.ts#archivedAt))
   and the wall time it was planned at; [`planOf`](ref:hub/renderers/tower3d/src/main.ts#planOf) derives the plan,
-  memoized on those three. The archive is a snapshot taken with the board: read live, the standing board's archive
+  memoized on the identity of those three, not on their value: each board taken or replanned brings a fresh snapshot
+  and instant, so the memo misses then, as the stored plan was rebuilt then, and serves every read until the next. The archive is a snapshot taken with the board: read live, the standing board's archive
   goes undefined once a newer board's read lands, and its plan would lose its seats while that board waits. What
   changed since the board before (a turn finished, a showing arrived, the first board) is derived from that board,
   `was` in `onBoard`, and the desk and gallery layers are made over it
