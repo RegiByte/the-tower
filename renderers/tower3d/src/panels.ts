@@ -24,7 +24,7 @@ import { isMarkdown, type Shown } from './showing.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, pictureHeadHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, panesOf } from '/lib/keys.js'
-import { wallNow } from './clock.ts'
+import type { Clock } from './clock.ts'
 import { FIXTURE, readArchive, readConversations } from './fixtures.ts'
 import { CHANGES, THREAD } from './hosting.ts'
 import type { Archive } from './archive.ts'
@@ -49,7 +49,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the panels resource is started with. */
-export type PanelsDeps = { tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
+export type PanelsDeps = { clock: Clock; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
 
 export type Panels = ReturnType<typeof startPanels>
 
@@ -58,6 +58,7 @@ export type Panels = ReturnType<typeof startPanels>
  * briefs read for it, the draft editor, and the pet's hearts.
  */
 export function startPanels(started: PanelsDeps) {
+  const { now: wallNow } = started.clock
   const { tower } = started
   const { port } = started
   const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
@@ -98,9 +99,9 @@ export function startPanels(started: PanelsDeps) {
       const c = findCard(board, panel.id)
       // The app closes a desk whose worker left once the building takes the board (`subjectLeft`): a draw before then draws nothing.
       if (!c) return
-      $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), dottedNow(board), held, tower.framed)
+      $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), dottedNow(board), held, tower.framed, wallNow())
       sawDesk(board, c)
-      $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, deskTabNow(), (sh) => isFresh(c, sh), { changes: desk.tabOf(CHANGES, c), reviews: desk.tabOf(THREAD, c) }, reads)
+      $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, deskTabNow(), (sh) => isFresh(c, sh), { changes: desk.tabOf(CHANGES, c), reviews: desk.tabOf(THREAD, c) }, reads, wallNow())
       keepShownTabs($('desk-tabs').parentElement!, c.id)
       $('desk-activity').innerHTML = activityHtml(c)
       $('desk-activity').dataset.tip = gistLine(c)
@@ -121,7 +122,7 @@ export function startPanels(started: PanelsDeps) {
       const id = panel.id
       const f = board.floors.find((f) => f.id === id)
       if (!f) return
-      $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, held, panel.tray, reads)
+      $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, held, panel.tray, reads, wallNow())
     }
     if (panel.kind === 'archive') {
       const f = board.floors.find((f) => f.id === panel.id)
@@ -131,7 +132,7 @@ export function startPanels(started: PanelsDeps) {
       $('archive-count').textContent = count
       if ($('archive-list').innerHTML !== html) $('archive-list').innerHTML = html
     }
-    if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(planNow(), held, heededWaits(board, heed()))
+    if (panel.kind === 'directory') $('side').innerHTML = directoryHtml(planNow(), held, heededWaits(board, heed()), wallNow())
     if (panel.kind === 'shell-pick') keepingFocus($('shell-pick'), () => ($('shell-pick').innerHTML = shellPickHtml(planNow(), board, panel.first, held)))
     if (panel.kind === 'drawer') {
       const f = board.floors.find((f) => f.id === panel.project)
@@ -179,7 +180,7 @@ export function startPanels(started: PanelsDeps) {
       const picture = pictureOf(planNow().galleries, board, panel.id, panel.target)
       // The app closes a picture its gallery no longer hangs once the building takes the board (`subjectLeft`).
       if (!picture) return
-      $('doc-head').innerHTML = pictureHeadHtml(picture.worker, picture.card?.onDuty ?? false, picture.shown, `#${hueOf(panel.id).getHexString()}`)
+      $('doc-head').innerHTML = pictureHeadHtml(picture.worker, picture.card?.onDuty ?? false, picture.shown, `#${hueOf(panel.id).getHexString()}`, wallNow())
     }
     if (panel.kind === 'game') {
       const f = board.floors.find((f) => f.id === panel.project)
@@ -198,7 +199,7 @@ export function startPanels(started: PanelsDeps) {
       const c = f?.collections.find((c) => c.id === panel.collection)
       const item = c?.items.find((i) => i.id === panel.id)
       if (!f || !c || !item) return
-      $('doc-head').innerHTML = keptHeadHtml(f, c, item, keptTitle(f.id, c.id, item))
+      $('doc-head').innerHTML = keptHeadHtml(f, c, item, keptTitle(f.id, c.id, item), wallNow())
     }
   }
 

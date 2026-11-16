@@ -11,7 +11,6 @@ import type { Board, Brief, Card, Floor, GalleryShowing, KeptBy, SessionRef, She
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { verbLabel } from '/lib/cards.js'
 import { actionWords, badgesOf, rankedLines, type LayoutEntry, cardSubject, conversationSubject, type Subject, ATTENTION_MEANS, ATTENTION_NAME, HOST_ATTENTION, HOST_MEANS, HOST_NAME, ON_DUTY_MEANS, hostState, BLOCKED_TEXT, DISMISS_TITLE, GIST_MARK, heededWaits, type Heed, untestedFlagHtml, LIMITS_STALE_MS, extraUsageAmounts, extraUsageLine, limitsFromTitle, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, ago, when, sentHome, shownHref, base, callOf, can, cardsOf, detailsOf, goneBases, pastCount, pastCrews, pastMatching, pastSize, type PastCrew, resumesRow, pictureOf, rendererUrl, risky, shelfKind, shelfPaths, shelfSource, onDisk, keptBranchLines, mainUnreadHtml, commandName, esc, findCard, gistLine, gistOf, lampOf, leftoversOf, loudest, modelName, paceLine, plain, resetLine, resetWhen, shownTitle, span, statusName, statusTitle, addedTidyOf, tidyLine, tidyRows, type TidyRow, landedRow, KILL_COST, type DaemonVerb, weekElapsed, whereLineOf, worktreeBranch, worktreeRisk, UNRESUMABLE_NAME, UNRESUMABLE_TITLE, LET_GO_MEANS, letGoAsk, resumeAllAsk, strandedOf, sendHomeAsk, reapAsk, killShellAsk, tidyRowAsk, tidyAllAsk, shellPlaces, type ShellPlace, WORKTREE_ASK, carriedLine, discardAsk, editedRows, type EditedRow, pairLineOf } from './cards.ts'
-import { wallNow } from './clock.ts'
 import { waitingAt, type Level, type Plan } from './layout.ts'
 import type { Titles } from './titles.ts'
 import type { Clients } from './clients.ts'
@@ -39,7 +38,7 @@ const levelKey = (l: Level) => (l.kind === 'roof' ? 'R' : String(l.index))
 
 /** A project's lamp: its colour, never an attention. */
 const swatch = (color: string) => `<span class="lamp" style="--c:${color}"></span>`
-const pill = (c: Card) => `<span class="pill ${lampOf(c)}" data-tip="${esc(statusTitle(c))}"><span class="lamp"></span>${esc(statusName(c))} · ${ago(wallNow() - c.enteredAt)}</span>`
+const pill = (c: Card, now: number) => `<span class="pill ${lampOf(c)}" data-tip="${esc(statusTitle(c))}"><span class="lamp"></span>${esc(statusName(c))} · ${ago(now - c.enteredAt)}</span>`
 /** A floor sign: a plate tinted by the band on its edge, the key that rides there on a tile, the name in caps. */
 const sign = (key: string, name: string, band: string, extra = '') =>
   `<div class="sign" style="--p:${band}"><span class="num">${esc(key)}</span><span class="name">${esc(name)}</span>${extra}</div>`
@@ -59,7 +58,7 @@ const fillOf = (pct: number, hot: number) => (pct > hot ? 'var(--broken)' : 'var
 const limitName = (kind: string) => kind.replace('five_hour', '5h').replace('seven_day', '7d').replaceAll('_', ' ')
 
 /** The strip at the bottom-left: where you are, who works and the rate limits, each piece only while it says something. */
-export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits, asks }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[]; asks: number }, reads: HudReads) {
+export function hudHtml(board: Board, here: Level, { music, sharing, fresh, waits, asks, now }: { music: boolean; sharing: boolean; fresh: number; waits: Wait[]; asks: number; now: number }, reads: HudReads) {
   const { commandProbes, PROBE_ATTENTION, PROBE_STATE_NAME, probeTitle } = reads
   const duty = cardsOf(board).filter((c) => c.onDuty)
   const count = (a: Card['attention']) => duty.filter((c) => c.attention === a).length
@@ -71,7 +70,6 @@ export function hudHtml(board: Board, here: Level, { music, sharing, fresh, wait
     .map((a) => `<span class="${a}" data-tip="${esc(`${count(a)} ${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b></span>`)
   const shells = board.shells.length ? [`<span data-tip="${board.shells.length} shells running"><b>${board.shells.length}</b> shells</span>`] : []
   const crew = [...tally, ...shells]
-  const now = wallNow()
   const account = defaultLimits(board)
   const age = now - (account.rateLimitsAt ?? now)
   const stale = age > LIMITS_STALE_MS
@@ -116,12 +114,12 @@ const leftHtml = (c: Card) => {
 }
 
 /** What you're looking at: its name and state. */
-function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GalleryShowing[], reads: PromptReads) {
+function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GalleryShowing[], reads: PromptReads, now: number) {
   const { draftItem, draftsOf, cardReviews, floorThreadsOf, reviewerOf, drawersAt, noteTitle, gameTitle } = reads
   if (act.kind === 'desk' || act.kind === 'tile') {
     const c = findCard(board, act.id)
     if (!c) return ''
-    return `<div class="head"><span class="call">${esc(c.callsign)}</span>${pill(c)}</div>
+    return `<div class="head"><span class="call">${esc(c.callsign)}</span>${pill(c, now)}</div>
       <div class="meta">${esc(metaOf(c, reviewerOf))}</div>${gistLine(c) ? `<div class="gist">${esc(gistLine(c))}</div>` : ''}${leftHtml(c)}`
   }
   if (act.kind === 'binder') {
@@ -159,7 +157,7 @@ function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GallerySho
     if (!c || !latest) return ''
     const more = c.shown.length > 1 ? ` · ${c.shown.length} shown in all` : ''
     return `<div class="head"><span class="call">${esc(shownTitle(latest))}</span></div>
-      <div class="meta">${esc(c.callsign)} showed you this ${ago(wallNow() - latest.at)} ago${more}</div>`
+      <div class="meta">${esc(c.callsign)} showed you this ${ago(now - latest.at)} ago${more}</div>`
   }
   if (act.kind === 'picture') {
     const picture = pictureOf(galleries, board, act.id, act.target)
@@ -167,7 +165,7 @@ function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GallerySho
     const { worker, shown: sh, card: c } = picture
     const where = c?.onDuty ? 'on duty' : c ? statusName(c) : 'archived'
     return `<div class="head"><span class="call">${esc(shownTitle(sh))}</span></div>
-      <div class="meta">${esc(worker.callsign)} (${esc(where)}) showed you this ${ago(wallNow() - sh.at)} ago</div>`
+      <div class="meta">${esc(worker.callsign)} (${esc(where)}) showed you this ${ago(now - sh.at)} ago</div>`
   }
   if (act.kind === 'leftover') {
     const c = findCard(board, act.id)
@@ -178,16 +176,16 @@ function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GallerySho
   }
   if (act.kind === 'tidy') {
     const f = board.floors.find((f) => f.id === act.project)
-    return f ? `<div class="head"><span class="call">${esc(tidyLine(f.tidy, addedTidyOf(board, f)))}</span></div>${tidyListHtml(board, f)}` : ''
+    return f ? `<div class="head"><span class="call">${esc(tidyLine(f.tidy, addedTidyOf(board, f)))}</span></div>${tidyListHtml(board, f, now)}` : ''
   }
   if (act.kind === 'landed') {
     const f = board.floors.find((f) => f.id === act.project)
-    const row = f && landedRow(f, act.id, wallNow())
+    const row = f && landedRow(f, act.id, now)
     return row ? `<div class="head"><span class="call">${esc(row.what)}</span><span class="meta">${esc(row.does)}</span></div><div class="meta">${esc(KILL_COST)}</div>` : ''
   }
   if (act.kind === 'shell') {
     const sh = board.shells.find((s) => s.id === act.id)
-    return sh ? `<div class="head"><span class="call">shell · ${esc(base(sh.cwd))}</span></div><div class="meta">${esc(sh.activity)} · ${ago(wallNow() - sh.startedAt)}</div>` : ''
+    return sh ? `<div class="head"><span class="call">shell · ${esc(base(sh.cwd))}</span></div><div class="meta">${esc(sh.activity)} · ${ago(now - sh.startedAt)}</div>` : ''
   }
   if (act.kind === 'floor') {
     const f = board.floors.find((f) => f.id === act.id)
@@ -216,24 +214,24 @@ function aimedHead(act: Act, board: Board, cats: CatNames, galleries: GallerySho
   if (act.kind === 'note') {
     const item = draftItem(board.floors, act.project, act.id)
     if (!item) return ''
-    return `<div class="head"><span class="call">${esc(noteTitle(act.project, item))}</span></div><div class="meta">${esc(item.tag)}${keptByText(item.keptBy)} · changed ${ago(wallNow() - item.modifiedAt)} ago</div>`
+    return `<div class="head"><span class="call">${esc(noteTitle(act.project, item))}</span></div><div class="meta">${esc(item.tag)}${keptByText(item.keptBy)} · changed ${ago(now - item.modifiedAt)} ago</div>`
   }
   if (act.kind === 'arcade') {
     const item = gameItem(board.floors, act.project, act.id)
     if (!item) return ''
     const about = gamesOf(board.floors.find((f) => f.id === act.project)!)?.description
-    return `<div class="head"><span class="call">${esc(gameTitle(act.project, item))}</span></div><div class="meta">a game · ${esc(item.tag)}${keptByText(item.keptBy)} · changed ${ago(wallNow() - item.modifiedAt)} ago</div>${about ? `<div class="meta">${esc(about)}</div>` : ''}`
+    return `<div class="head"><span class="call">${esc(gameTitle(act.project, item))}</span></div><div class="meta">a game · ${esc(item.tag)}${keptByText(item.keptBy)} · changed ${ago(now - item.modifiedAt)} ago</div>${about ? `<div class="meta">${esc(about)}</div>` : ''}`
   }
   if (act.kind === 'guest') {
     const c = findCard(board, act.id)
     if (!c) return ''
-    return `<div class="head"><span class="call">${esc(c.callsign)}</span><span class="meta">off duty · ${ago(wallNow() - c.enteredAt)}</span></div>
+    return `<div class="head"><span class="call">${esc(c.callsign)}</span><span class="meta">off duty · ${ago(now - c.enteredAt)}</span></div>
       ${gistLine(c) ? `<div class="gist">${esc(gistLine(c))}</div>` : ''}`
   }
   if (act.kind === 'cat') {
     const c = act.watching ? findCard(board, act.watching) : undefined
     return `<div class="head"><span class="call">${esc(catName(act.name, cats))} 🐈</span><span class="meta">${CAT_CARDS[act.name].coat}</span></div>
-      <div class="meta">${c ? `keeping an eye on ${esc(c.callsign)}, waiting ${ago(wallNow() - c.enteredAt)}` : act.following ? 'following you' : 'roaming the tower'}</div>`
+      <div class="meta">${c ? `keeping an eye on ${esc(c.callsign)}, waiting ${ago(now - c.enteredAt)}` : act.following ? 'following you' : 'roaming the tower'}</div>`
   }
   if (act.kind === 'tv') return `<div class="head"><span class="call">The big screen</span></div>`
   if (act.kind === 'directory') return `<div class="head"><span class="call">Building directory</span></div>`
@@ -252,8 +250,8 @@ const offersHtml = (offers: Offer[], marked: number) =>
     <kbd${HELD.has(o.verb) ? ' class="held"' : ''}>${KEY[o.verb]}</kbd><span>${HELD.has(o.verb) ? 'hold · ' : ''}${esc(o.label)}${o.whyNot ? `<small>${esc(o.whyNot)}</small>` : ''}</span></div>`).join('')
 
 /** The aimed thing and what it offers, each verb on its own key. Empty for a thing gone from the board. */
-export function promptHtml(act: Act, board: Board, offers: Offer[], marked: number, cats: CatNames, galleries: GalleryShowing[], reads: PromptReads) {
-  const head = aimedHead(act, board, cats, galleries, reads)
+export function promptHtml(act: Act, board: Board, offers: Offer[], marked: number, cats: CatNames, galleries: GalleryShowing[], reads: PromptReads, now: number) {
+  const head = aimedHead(act, board, cats, galleries, reads, now)
   return head && `${head}${offers.length ? `<div class="offers">${offersHtml(offers, marked)}</div>` : ''}`
 }
 
@@ -328,7 +326,7 @@ const cardAddedHtml = (board: Board, c: Card, desk: DeskRegion, fresh: (id: stri
  * A worker's desk head: who and where, a glance at its context and cost, what extensions show of it as its region
  * `desk` holds and ranks it, and what can be done with it.
  */
-export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor | undefined, desk: DeskRegion, fresh: (id: string) => boolean, held: HeldWhy, framed: boolean) {
+export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor | undefined, desk: DeskRegion, fresh: (id: string) => boolean, held: HeldWhy, framed: boolean, now: number) {
   const ctx = c.context
   const stats = [
     ctx !== undefined && `<span class="meter" data-tip="context window: ${ctx}% · ${esc(modelName(c.model))}" style="--fill:${fillOf(ctx, 80)}"><i style="width:${ctx}%"></i></span><b>${ctx}%</b>`,
@@ -345,7 +343,7 @@ export function deskHeadHtml(board: Board, c: Card, cards: Card[], floor: Floor 
     can(c, 'send-home') && askingButton(`data-act="kill" data-of="${esc(c.id)}" class="danger"`, 'Send home', `ends ${sentHome(cards, c).map((h) => h.callsign).join(', ')}`, sendHomeAsk(c, sentHome(cards, c)), verbLabel('card', 'send-home')),
     `<button class="icon-btn" data-act="close" aria-label="back to walking" data-tip="back to walking (or click the world)">${ICON.close}</button>`,
   ].filter(Boolean).join('')
-  return `<span class="call">${esc(c.callsign)}</span>${pill(c)}${cardBadgesHtml(board, c)}${cardLinesHtml(board, c, desk.entry)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, undefined))}</span>
+  return `<span class="call">${esc(c.callsign)}</span>${pill(c, now)}${cardBadgesHtml(board, c)}${cardLinesHtml(board, c, desk.entry)}<span class="meta" data-tip="${esc(c.cwd)}">${esc(whereLineOf(c, floor, undefined))}</span>
     <span class="stats">${stats}</span><span class="acts">${acts}</span>`
 }
 
@@ -382,9 +380,9 @@ export type DeskTab = 'screen' | 'brief' | 'changes' | 'reviews' | `shown:${stri
 export const shownTab = (s: Pick<Shown, 'target'>): DeskTab => `shown:${s.target}`
 
 /** A showing's tab: a dot while you have yet to open it, an outward arrow on the open one to take it to a browser tab. */
-const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boolean) => {
+const shownTabHtml = (c: Card, s: Card['shown'][number], on: boolean, fresh: boolean, now: number) => {
   const from = shownFrom(c.lineage, s)
-  return `<button class="shown-tab${on ? ' on' : ''}" data-tab="${esc(shownTab(s))}" data-tip="${esc(`${c.callsign} showed ${s.target} · ${ago(wallNow() - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
+  return `<button class="shown-tab${on ? ' on' : ''}" data-tab="${esc(shownTab(s))}" data-tip="${esc(`${c.callsign} showed ${s.target} · ${ago(now - s.at)} ago${from ? ` · in ${from.label}` : ''}`)}">` +
     `<span class="shown-name">${fresh ? '<span class="fresh"></span>' : ''}${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
     `${on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : ''}${on && s.kind === 'file' ? fileSpansHtml(s.target) : ''}</button>`
 }
@@ -402,10 +400,10 @@ export const logbookTabsHtml = (tab: LogbookTab) =>
 const tallyHtml = (words: TabWords | undefined) => (words?.text ? ` <small${words.tone === 'unseen' ? ' class="unseen"' : ''}>${esc(words.text)}</small>` : '')
 
 /** The desk's tabs, each tallied by what its view says of it (`tallies`), then a tab for each thing the worker showed. */
-export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean, tallies: Partial<Record<DeskTab, TabWords>>, reads: Pick<Clients, 'keepsThreads'>) {
+export function deskTabsHtml(c: Card, f: Floor, tab: DeskTab, fresh: (s: Shown) => boolean, tallies: Partial<Record<DeskTab, TabWords>>, reads: Pick<Clients, 'keepsThreads'>, now: number) {
   const own = (['screen', 'brief', 'changes', ...(reads.keepsThreads(f) ? ['reviews'] as const : [])] as const)
     .map((t) => `<button data-tab="${t}"${t === tab ? ' class="on"' : ''}>${TAB_NAME[t]}${tallyHtml(tallies[t])}</button>`).join('')
-  return own + (c.shown.length ? `<span class="shown-tabs">${c.shown.map((s) => shownTabHtml(c, s, shownTab(s) === tab, fresh(s))).join('')}</span>` : '')
+  return own + (c.shown.length ? `<span class="shown-tabs">${c.shown.map((s) => shownTabHtml(c, s, shownTab(s) === tab, fresh(s), now)).join('')}</span>` : '')
 }
 
 /** A thread read away from any desk: nobody works in its checkout now. */
@@ -501,9 +499,9 @@ export const drawerSideHtml = (f: Floor, d: Drawer) =>
       ${gistLine(c) ? `<div class="conv"><span>${esc(plain(gistLine(c)))}</span></div>` : ''}</div>`).join('')}</div>`
 
 /** A worker card: its attention on the left edge, the callsign, the status word and what it's up to. */
-const workerCards = (cards: Card[]) =>
+const workerCards = (cards: Card[], now: number) =>
   cards.map((c) => `<div class="sess ${lampOf(c)}" data-desk="${esc(c.id)}"><div class="top"><span class="lamp"></span><span class="call">${esc(c.callsign)}</span>
-    <span class="st">${esc(statusName(c))} · ${ago(wallNow() - c.enteredAt)}</span></div>${gistLine(c) ? `<div class="line">${esc(gistLine(c))}</div>` : ''}</div>`).join('')
+    <span class="st">${esc(statusName(c))} · ${ago(now - c.enteredAt)}</span></div>${gistLine(c) ? `<div class="line">${esc(gistLine(c))}</div>` : ''}</div>`).join('')
 
 /** Every process the floor's workers left running, each with its own reap. */
 const runningHtml = (f: Floor) =>
@@ -516,11 +514,11 @@ const tidyRowHtml = (r: Pick<TidyRow, 'what' | 'does' | 'title'>, button: string
   `<div class="wt" data-tip="${esc(r.title)}"><span class="n"><b>${withIcons(esc(r.what))}</b></span><span class="st">${esc(r.does)}</span>${button}</div>`
 
 /** Everything the floor's Tidy would do, a row each. */
-const tidyListHtml = (board: Board, f: Floor) => tidyRows(f, wallNow(), addedTidyOf(board, f)).map((r) => tidyRowHtml(r, '')).join('')
+const tidyListHtml = (board: Board, f: Floor, now: number) => tidyRows(f, now, addedTidyOf(board, f)).map((r) => tidyRowHtml(r, '')).join('')
 
 /** Tidy's rows on the floor's panel, each with a button that does only that row, asked first. */
-const tidyPanelHtml = (board: Board, f: Floor) =>
-  tidyRows(f, wallNow(), addedTidyOf(board, f))
+const tidyPanelHtml = (board: Board, f: Floor, now: number) =>
+  tidyRows(f, now, addedTidyOf(board, f))
     .map((r) => tidyRowHtml(r, askingButton(`class="icon-btn" data-tidy-call="${esc(JSON.stringify(r.call))}" aria-label="${esc(`${r.does}: ${r.what}`)}"`, ICON.tidy, `only this: ${r.does}`, tidyRowAsk(r), 'Tidy')))
     .join('')
 
@@ -618,7 +616,7 @@ const spawnButton = (f: Floor, held: HeldWhy) =>
  * A floor's desk: its dirs, its shelf, who's on duty, what they left running, and what it keeps beside them folded to
  * one row of counts: the worktrees unfold here, the archive opens its own panel.
  */
-export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, held: HeldWhy, tray: string | undefined, reads: Pick<Clients, 'draftsOf'> & Pick<Titles, 'noteTitle' | 'keptTitle'>) {
+export function floorHtml(board: Board, f: Floor, origins: Record<string, string>, framed: boolean, held: HeldWhy, tray: string | undefined, reads: Pick<Clients, 'draftsOf'> & Pick<Titles, 'noteTitle' | 'keptTitle'>, now: number) {
   const { draftsOf, noteTitle, keptTitle } = reads
   const places = shellPlaces([f])
   const edited = editedRows(f)
@@ -652,14 +650,14 @@ export function floorHtml(board: Board, f: Floor, origins: Record<string, string
   return `${sign(String(level), f.name, f.color ?? NO_BAND, closeButton)}
     <div class="section eyebrow">Dirs</div>${dirs}
     ${shelf && `<div class="section eyebrow">Shelf</div><div class="shelf" style="--p:${f.color ?? NO_BAND}">${shelf}</div>`}
-    <div class="section eyebrow">On duty</div><div class="cards">${workerCards(duty) || '<div class="past">lights off</div>'}</div>
+    <div class="section eyebrow">On duty</div><div class="cards">${workerCards(duty, now) || '<div class="past">lights off</div>'}</div>
     ${resumeAllButton(f, held)}${spawnButton(f, held)}
     ${running && `<div class="section eyebrow">Running</div>${running}`}
-    ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy, addedTidyOf(board, f)))}</div>${tidyPanelHtml(board, f)}${askingButton('class="wide" data-tidy', 'tidy all', 'do all of it, as listed', tidyAllAsk(f, wallNow(), addedTidyOf(board, f)), verbLabel('floor', 'tidy'))}` : ''}
+    ${can(f, 'tidy') ? `<div class="section eyebrow">${esc(tidyLine(f.tidy, addedTidyOf(board, f)))}</div>${tidyPanelHtml(board, f, now)}${askingButton('class="wide" data-tidy', 'tidy all', 'do all of it, as listed', tidyAllAsk(f, now, addedTidyOf(board, f)), verbLabel('floor', 'tidy'))}` : ''}
     ${edited.length ? `<div class="section eyebrow" data-tip="landed as copies, some edited on the way: not in Tidy all, look first and remove each on its own">landed edited</div>${edited.map(editedRowHtml).join('')}` : ''}
     ${trays && `<div class="trays">${trays}</div>`}
     ${tray === 'worktrees' && trees ? `<div class="section eyebrow">Worktrees</div>${worktreesHtml(f, places, held)}` : ''}
-    ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded === draftsOf(f) ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, wallNow()) : ''}`
+    ${unfolded ? collectionTrayHtml(f.id, unfolded, (item) => (unfolded === draftsOf(f) ? noteTitle(f.id, item) : keptTitle(f.id, unfolded.id, item)), undefined, now) : ''}`
 }
 
 /** A floor's archive panel, drawn once as it opens: its list is drawn apart, so the filter keeps its focus. */
@@ -686,13 +684,13 @@ export function archiveListHtml(board: Board, f: Floor, cards: Card[] | undefine
 }
 
 /** Every floor and who's on it: a click takes you there. */
-export function directoryHtml(p: Plan, held: HeldWhy, heeded: Wait[]) {
+export function directoryHtml(p: Plan, held: HeldWhy, heeded: Wait[], now: number) {
   const floors = p.levels.filter((l) => l.kind === 'floor').reverse()
   const body = floors.map((l) => {
     const waits = waitingAt(l, heeded).length
     const count = `<small>${waits ? `<b class="waits">${waits} waiting</b> · ` : ''}${l.desks.length} on duty</small>`
     return `<div class="go" data-go="${l.index}">${sign(levelKey(l), l.name, tint(l), count)}</div>
-      <div class="cards">${workerCards(l.desks.map((d) => d.card))}
+      <div class="cards">${workerCards(l.desks.map((d) => d.card), now)}
       ${l.kiosks.map((k) => `<div class="sess" data-shell="${esc(k.shell.id)}"><div class="top">${swatch(tint(l))}<span class="call">shell · ${esc(base(k.shell.cwd))}</span>
         <span class="st">${esc(k.shell.activity)}</span></div></div>`).join('')}</div>
       ${spawnButton(l.floor, held)}`
@@ -756,14 +754,14 @@ export function docHeadHtml(f: Floor, entry: ShelfEntry, framed: boolean) {
 }
 
 /** A kept item's head in the reader: its collection, tag, floor, title, keeper and age; a new tab, Delete, close. */
-export function keptHeadHtml(f: Floor, c: FloorCollection, item: FloorItem, title: string) {
+export function keptHeadHtml(f: Floor, c: FloorCollection, item: FloorItem, title: string, now: number) {
   const acts = [
     `<button data-out="/${esc(itemPath(f.id, c.id, item.id))}" data-tip="open it on its own">${ICON.remote} new tab</button>`,
     askingButton(`data-act="delete" data-of="${esc(item.id)}" class="danger"`, 'Delete', 'the file is deleted for good', deleteAsk(c, item, title), 'Delete'),
     closeButton,
   ].join('')
   return `${swatch(f.color ?? NO_BAND)}<span class="call">${esc(c.label)}</span>
-    <span class="meta" data-tip="${esc(itemFile(c, item.id))}">${esc(item.tag)} · ${esc(f.name)} · ${esc(title)}${esc(keptByText(item.keptBy))} · changed ${ago(wallNow() - item.modifiedAt)} ago</span><span class="acts">${acts}</span>`
+    <span class="meta" data-tip="${esc(itemFile(c, item.id))}">${esc(item.tag)} · ${esc(f.name)} · ${esc(title)}${esc(keptByText(item.keptBy))} · changed ${ago(now - item.modifiedAt)} ago</span><span class="acts">${acts}</span>`
 }
 
 /**
@@ -783,14 +781,14 @@ export const keptTextHtml = (item: FloorItem, text: string, root: string) =>
     <style>${documentCss}${itemsCss}</style><article>${itemTextHtml(item.id, text)}</article>`)}"></iframe>`
 
 /** A gallery picture in the reader: who showed it and when, its way to the worker's desk while on duty, and to a browser tab. */
-export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, color: string) {
+export function pictureHeadHtml(worker: SessionRef, onDuty: boolean, sh: Shown, color: string, now: number) {
   const acts = [
     onDuty && `<button data-act="desk" data-tip="to its desk, on this showing's tab">at ${esc(worker.callsign)}'s desk</button>`,
     sh.kind === 'file' && fileButtonsHtml(sh.target),
     sh.kind !== 'link' && `<button class="icon-btn" data-out="${esc(shownHref(sh))}" aria-label="open in a browser tab" data-tip="open in a browser tab">${ICON.remote}</button>`,
     closeButton,
   ].filter(Boolean).join('')
-  const meta = `${worker.callsign} showed ${sh.target} · ${ago(wallNow() - sh.at)} ago`
+  const meta = `${worker.callsign} showed ${sh.target} · ${ago(now - sh.at)} ago`
   return `${swatch(color)}<span class="call">${esc(shownTitle(sh))}</span>
     <span class="meta" data-tip="${esc(meta)}">${esc(meta)}</span><span class="acts">${acts}</span>`
 }

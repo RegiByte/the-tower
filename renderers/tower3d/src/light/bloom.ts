@@ -2,7 +2,6 @@ import * as THREE from 'three'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js'
 import { skyAt } from '/lib/design.js'
-import { wallNow } from '../clock.ts'
 import { interiorOff } from './rig.ts'
 
 /**
@@ -31,8 +30,8 @@ const GLOW_EVERY = 2
 let glow: { pass: UnrealBloomPass; lit: THREE.WebGLRenderTarget; frame: number } | undefined
 
 /** How dark the sky is at the wall clock's hour: its stars, 0 by day, 1 at full night. */
-function nightNow() {
-  const now = new Date(wallNow())
+function nightAt(at: number) {
+  const now = new Date(at)
   return skyAt(now.getHours() + now.getMinutes() / 60).stars
 }
 
@@ -91,8 +90,8 @@ function glowing(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THRE
 }
 
 /** Adds the night's glow to the canvas, as strong as the night is dark; nothing by day. */
-export function bloom(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
-  const night = nightNow()
+export function bloom(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, now: number) {
+  const night = nightAt(now)
   if (night < 0.05) return
   renderer.getDrawingBufferSize(size)
   const half = size.clone().multiplyScalar(0.5).floor()

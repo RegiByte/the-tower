@@ -19,7 +19,7 @@ import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } fr
 import type { Screens } from './screens.ts'
 import { isVideo, type Pictures } from './showing.ts'
 import { type Turn } from './input.ts'
-import { wallNow } from './clock.ts'
+import type { Clock } from './clock.ts'
 import { FIXTURE } from './fixtures.ts'
 import { poseFiling } from './filing.ts'
 import { fitPicture, placePicture } from './gallery.ts'
@@ -40,7 +40,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the frames resource is started with. */
-export type FramesDeps = { tower: Tower; screens: Screens; pictures: Pictures; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels }
+export type FramesDeps = { clock: Clock; tower: Tower; screens: Screens; pictures: Pictures; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type Frames = ReturnType<typeof startFrames>
 
@@ -49,6 +49,7 @@ export type Frames = ReturnType<typeof startFrames>
  * and its render.
  */
 export function startFrames(started: FramesDeps) {
+  const { now: wallNow } = started.clock
   const { tower } = started
   const { paintScreens } = started.screens
   const { playFilms, imageOf } = started.pictures
@@ -106,7 +107,7 @@ export function startFrames(started: FramesDeps) {
   function render() {
     frameScene()
     renderer.render(scene, camera)
-    if (lit) bloom(renderer, scene, camera)
+    if (lit) bloom(renderer, scene, camera, wallNow())
     Object.assign(s.meter, { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles })
     if (s.hands && handsShown()) drawHands(renderer, s.hands)
   }

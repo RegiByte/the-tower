@@ -4,7 +4,6 @@ import type { SessionRef } from './api.ts'
 import { act } from './acts.ts'
 import { hueOf } from './avatar.ts'
 import { WORLD, ago, shownTitle } from './cards.ts'
-import { wallNow } from './clock.ts'
 import { PICTURE_ASPECT, type WallSlot } from './layout.ts'
 import type { Pictures, Shown } from './showing.ts'
 import { block, plate, sprite, toon } from './toon.ts'
@@ -37,7 +36,7 @@ export function buildWall(wall: WallSlot, facing: THREE.ColorRepresentation, tin
 }
 
 /** A plaque's face: who showed it and how long ago, over its title. */
-function plaqueTexture(worker: SessionRef, s: Shown) {
+function plaqueTexture(worker: SessionRef, s: Shown, now: number) {
   const cv = Object.assign(document.createElement('canvas'), PLAQUE.px)
   const g = cv.getContext('2d')!
   g.fillStyle = WORLD.panel
@@ -51,7 +50,7 @@ function plaqueTexture(worker: SessionRef, s: Shown) {
   g.font = `400 26px ${type.ui}`
   g.fillStyle = WORLD.muted
   g.textAlign = 'end'
-  g.fillText(`${ago(wallNow() - s.at)} ago`, cv.width - 18, 20)
+  g.fillText(`${ago(now - s.at)} ago`, cv.width - 18, 20)
   g.textAlign = 'start'
   g.font = `400 28px ${type.ui}`
   g.fillStyle = WORLD.ink
@@ -64,7 +63,7 @@ function plaqueTexture(worker: SessionRef, s: Shown) {
   return tex
 }
 
-const plaqueTextOf = (s: Shown) => `${shownTitle(s)}|${ago(wallNow() - s.at)}`
+const plaqueTextOf = (s: Shown, now: number) => `${shownTitle(s)}|${ago(now - s.at)}`
 
 /** Where a picture is going: its center in the world and its width, from `start` over `secs` (seconds). */
 type Move = { from: THREE.Vector3; fromW: number; to: THREE.Vector3; toW: number; start: number; secs: number }
@@ -84,17 +83,17 @@ export type Picture = {
 }
 
 /** A showing in its frame, at unit width, standing for itself when aimed at. */
-export function makePicture(worker: SessionRef, s: Shown, posterOf: Pictures['posterOf']): Picture {
+export function makePicture(worker: SessionRef, s: Shown, posterOf: Pictures['posterOf'], now: number): Picture {
   const group = new THREE.Group()
   const h = 1 / PICTURE_ASPECT
   const frame = block(1 + FRAME * 2, h + FRAME * 2, 0.05, toon(hueOf(worker.id)), 0, -h / 2 - FRAME, -0.03)
   const face: Face = new THREE.Mesh(new THREE.PlaneGeometry(1, h), new THREE.MeshBasicMaterial({ map: posterOf(worker, s), toneMapped: false }))
-  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(PLAQUE.width, (PLAQUE.width * PLAQUE.px.height) / PLAQUE.px.width), new THREE.MeshBasicMaterial({ map: plaqueTexture(worker, s), toneMapped: false }))
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(PLAQUE.width, (PLAQUE.width * PLAQUE.px.height) / PLAQUE.px.width), new THREE.MeshBasicMaterial({ map: plaqueTexture(worker, s, now), toneMapped: false }))
   const ribbon = sprite('NEW', 0.07, { color: '#fff', bg: WORLD.accent, px: 44 })
   group.add(frame, face, plaque, ribbon)
   act(group, { kind: 'picture', id: worker.id, target: s.target }, [])
   const at = new THREE.Vector3()
-  const pic = { group, worker, shown: s, frame, face, plaque, plaqueText: plaqueTextOf(s), ribbon, move: { from: at, fromW: 1, to: at, toW: 1, start: 0, secs: 0 } }
+  const pic = { group, worker, shown: s, frame, face, plaque, plaqueText: plaqueTextOf(s, now), ribbon, move: { from: at, fromW: 1, to: at, toW: 1, start: 0, secs: 0 } }
   frameAround(pic, 1, h)
   return pic
 }
@@ -122,13 +121,13 @@ export function fitPicture(pic: Picture, imageOf: Pictures['imageOf']) {
 }
 
 /** Redraws the plaque once its age reads differently, and shows the ribbon while you have yet to open it. */
-export function dressPicture(pic: Picture, fresh: boolean) {
+export function dressPicture(pic: Picture, fresh: boolean, now: number) {
   pic.ribbon.visible = fresh
-  const text = plaqueTextOf(pic.shown)
+  const text = plaqueTextOf(pic.shown, now)
   if (text === pic.plaqueText) return
   pic.plaqueText = text
   pic.plaque.material.map!.dispose()
-  pic.plaque.material.map = plaqueTexture(pic.worker, pic.shown)
+  pic.plaque.material.map = plaqueTexture(pic.worker, pic.shown, now)
   pic.plaque.material.needsUpdate = true
 }
 

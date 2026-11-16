@@ -7,7 +7,6 @@ import { duration, hours, usd, WEEKLY } from '/lib/stats.js'
 import { buildCork } from './cork.ts'
 import { buildWall } from './gallery.ts'
 import { WORLD, clockAt, paceWords, weekElapsed } from './cards.ts'
-import { wallNow } from './clock.ts'
 import { waitingAt, type Level, type Plan } from './layout.ts'
 import { act } from './acts.ts'
 import { CORE, DOOR_WIDTH, LOBBY_HEIGHT, SHAFT_HEAD, SLAB, STOREY, WALL, bigScreens, coreFront, levelHeight, loungeSpots, rateLimitBoxes, receptionBox, type BigScreen } from './layout.ts'
@@ -365,10 +364,9 @@ function roofLevel(p: Plan, level: Extract<Level, { kind: 'roof' }>, hostUp: boo
  * Rate-limit columns filled to the share used, a weekly one collared where an even pace through the week would be and
  * tagged with what the week has left at its pace so far.
  */
-function limitColumns(p: Plan, limits: RateLimit[], today: Today) {
+function limitColumns(p: Plan, limits: RateLimit[], today: Today, now: number) {
   const g = new THREE.Group()
   const boxes = rateLimitBoxes(p, limits.length)
-  const now = wallNow()
   const height = (pct: number) => (pct / 100) * 3.6
   limits.forEach((r, i) => {
     const b = boxes[i]
@@ -389,10 +387,10 @@ function limitColumns(p: Plan, limits: RateLimit[], today: Today) {
   return g
 }
 
-export function setLimits(world: World, p: Plan, limits: RateLimit[], today: Today) {
+export function setLimits(world: World, p: Plan, limits: RateLimit[], today: Today, now: number) {
   for (const old of [...world.limits.children]) (world.limits.remove(old), dispose(old))
-  world.limits.add(limitColumns(p, limits, today))
-  paintStatsBoard(world.statsBoard, today)
+  world.limits.add(limitColumns(p, limits, today, now))
+  paintStatsBoard(world.statsBoard, today, now)
 }
 
 /** The stats board's frame on two legs, last in the row of rate-limit columns, its face to the elevator. */
@@ -411,7 +409,7 @@ function statsStand(p: Plan, limits: number, face: World['statsBoard'], pickable
 }
 
 /** Today's numbers on the stats board: what was spent, the work done, how long workers waited on you, the week left. */
-export function paintStatsBoard(face: World['statsBoard'], today: Today) {
+export function paintStatsBoard(face: World['statsBoard'], today: Today, now: number) {
   const g = face.canvas.getContext('2d')!
   const { width: W, height: H } = face.canvas
   g.fillStyle = WORLD.panel
@@ -448,7 +446,7 @@ export function paintStatsBoard(face: World['statsBoard'], today: Today) {
   if (today.budget?.pace) {
     g.fillStyle = WORLD.muted
     g.font = `400 19px ${type.ui}`
-    g.fillText(paceWords(today.budget.pace, wallNow()).join(' · '), 28, 128 + (rows.length - 1) * 66 + 24)
+    g.fillText(paceWords(today.budget.pace, now).join(' · '), 28, 128 + (rows.length - 1) * 66 + 24)
   }
   g.fillStyle = WORLD.faint
   g.font = `400 20px ${type.ui}`
@@ -535,7 +533,7 @@ function elevatorPanel(p: Plan) {
   return { material: new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }), aspect: cv.width / cv.height }
 }
 
-export function buildWorld(p: Plan, board: Board, directory: World['directory'], statsBoard: World['statsBoard'], models: Models, draftsOf: Clients['draftsOf'], screenTexture: Screens['screenTexture']): World {
+export function buildWorld(p: Plan, board: Board, directory: World['directory'], statsBoard: World['statsBoard'], models: Models, draftsOf: Clients['draftsOf'], screenTexture: Screens['screenTexture'], now: number): World {
   const group = new THREE.Group()
   const pickables: THREE.Object3D[] = []
   const bookcases: Bookcase[] = []
@@ -587,7 +585,7 @@ export function buildWorld(p: Plan, board: Board, directory: World['directory'],
   const shellTags = new Map<string, THREE.Sprite>()
   group.traverse((o) => o.userData.shellTag && shellTags.set(o.userData.shellTag.id, o as THREE.Sprite))
   const world = { group, levels, doors, car: carGroup, waitLamps, beacon, directory, statsBoard, bookcases, party, pickables, limits, shellTags }
-  setLimits(world, p, defaultLimits(board).rateLimits, board.today)
+  setLimits(world, p, defaultLimits(board).rateLimits, board.today, now)
   return world
 }
 

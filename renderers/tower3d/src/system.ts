@@ -5,6 +5,7 @@ import { startClients } from './clients.ts'
 import { startInput } from './input.ts'
 import { startMusic } from './music.ts'
 import { startLighting, type Lighting } from './light/setting.ts'
+import { startClock, type Clock } from './clock.ts'
 import { stage as stageShown } from './loading.ts'
 import { startPort } from './port.ts'
 import { startWorld } from './building.ts'
@@ -34,6 +35,7 @@ import { startEvents } from './events.ts'
  * The only module that knows where each is implemented:
  *
  *   tower     the tower's API the page reads and writes through (`window.tower`, /lib/client.js)
+ *   clock     the wall clock the page draws by, pinned by `?at=` (clock.ts)
  *   lighting  whether the page draws the light rig, read before anything draws (light/setting.ts)
  *   clients   the extension clients whose words the page draws (clients.ts)
  *   stage     the renderer, scene, camera and the city outside, on the page's canvas (stage.ts)
@@ -64,13 +66,15 @@ import { startEvents } from './events.ts'
 
 const tower = defineResource({ start: (): Tower => window.tower, halt: () => {} })
 
+const clock = defineResource({ start: startClock, halt: () => {} })
+
 const lighting = defineResource({ dependencies: ['tower'], start: startLighting, halt: () => {} })
 
 const clients = defineResource({ start: startClients, halt: () => {} })
 
 const stage = defineResource({
-  dependencies: ['lighting'],
-  start: ({ lighting }: { lighting: Lighting }) => startStage(lighting.lit),
+  dependencies: ['clock', 'lighting'],
+  start: ({ clock, lighting }: { clock: Clock; lighting: Lighting }) => startStage(lighting.lit, clock.now),
   halt: (started) => started.stop(),
 })
 
@@ -97,7 +101,7 @@ const toasts = defineResource({ dependencies: ['tower'], start: startToasts, hal
 
 const titles = defineResource({ dependencies: ['tower', 'clients', 'port'], start: startTitles, halt: () => {} })
 
-const archive = defineResource({ dependencies: ['port'], start: startArchive, halt: () => {} })
+const archive = defineResource({ dependencies: ['clock', 'port'], start: startArchive, halt: () => {} })
 
 const events = defineResource({
   dependencies: ['archive'],
@@ -106,13 +110,13 @@ const events = defineResource({
 })
 
 const world = defineResource({
-  dependencies: ['tower', 'screens', 'pictures', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
+  dependencies: ['clock', 'tower', 'screens', 'pictures', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
   start: startWorld,
   halt: () => {},
 })
 
 const views = defineResource({
-  dependencies: ['port', 'toasts'],
+  dependencies: ['clock', 'port', 'toasts'],
   start: startViews,
   halt: () => {},
 })
@@ -124,25 +128,25 @@ const spawn = defineResource({
 })
 
 const hud = defineResource({
-  dependencies: ['tower', 'lighting', 'clients', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
+  dependencies: ['clock', 'tower', 'lighting', 'clients', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
   start: startHud,
   halt: () => {},
 })
 
 const navigation = defineResource({
-  dependencies: ['tower', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
+  dependencies: ['clock', 'tower', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
   start: startNavigation,
   halt: () => {},
 })
 
 const panels = defineResource({
-  dependencies: ['tower', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
+  dependencies: ['clock', 'tower', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
   start: startPanels,
   halt: () => {},
 })
 
 const app = defineResource({
-  dependencies: ['tower', 'clients', 'archive', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
+  dependencies: ['clock', 'tower', 'clients', 'archive', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
   start: startAppLoop,
   halt: () => {},
 })
@@ -156,7 +160,7 @@ const controls = defineResource({
 
 /** After the app and the controls: the frames it starts read the app's db, and the order is the page's. */
 const frames = defineResource({
-  dependencies: ['tower', 'screens', 'pictures', 'lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
+  dependencies: ['clock', 'tower', 'screens', 'pictures', 'lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
   start: (started: FramesDeps & { app: unknown; controls: unknown }) => startFrames(started),
   halt: () => {},
 })
@@ -183,4 +187,4 @@ const keeper = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { tower, lighting, clients, stage, input, music, screens, pictures, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+export const tower3d = { tower, clock, lighting, clients, stage, input, music, screens, pictures, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }

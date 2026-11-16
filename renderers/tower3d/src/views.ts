@@ -4,13 +4,14 @@ import type { Board } from './api.ts'
 import type { DeskRegion } from './desk-verbs.ts'
 import { viewTower } from './fixtures.ts'
 import { deskViews, readerView, viewHosting } from './hosting.ts'
+import type { Clock } from './clock.ts'
 import type { Port } from './port.ts'
 import { s } from './state.ts'
 import { nowOf } from './now.ts'
 import type { Toasts } from './toasts.ts'
 
 /** What the views are started with. */
-export type ViewsDeps = { port: Port; toasts: Toasts }
+export type ViewsDeps = { clock: Clock; port: Port; toasts: Toasts }
 
 export type Views = ReturnType<typeof startViews>
 
@@ -33,6 +34,7 @@ export function startViews(started: ViewsDeps) {
 
   const viewDeps = {
     tower: viewTower,
+    now: started.clock.now,
     board: () => boardNow()!,
     layout: () => layoutNow(boardNow()!),
     declared: () => s.declared!,

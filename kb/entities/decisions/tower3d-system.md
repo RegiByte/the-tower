@@ -107,6 +107,10 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 - *The tower is a resource.* The API the page reads and writes through is the `tower` resource, `window.tower` on the
   live page, handed to every resource that calls it; `api.ts` exports its type and helpers that take it
   (`shelfFiles(tower, …)`), never the object, so no module reaches the API except through the record.
+- *The clock is a resource.* The wall clock the page draws by, pinned by `?at=`, is the `clock` resource
+  ([`startClock`](ref:hub/renderers/tower3d/src/clock.ts#startClock)): `now` and whether it `moves`. The resources
+  that stamp or draw an age read it from their start; the pure builders below them (`ui.ts`'s, the gallery's, the
+  desks' dressing, the stats board) take the instant they draw at as an argument.
 - *The lighting bands the ramp.* Lit, the lighting's start bands every toon material by the rig's ramp
   ([`lightRamp`](ref:hub/renderers/tower3d/src/toon.ts#lightRamp)) before anything draws; the stage gets `lit` as an
   argument. The pages that never start it (the lab, the dresser, the editor) stay unlit.

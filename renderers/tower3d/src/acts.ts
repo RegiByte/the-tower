@@ -3,7 +3,6 @@ import type { ShelfEntry } from '/lib/board.js'
 import type { Board, Card, GalleryShowing } from './api.ts'
 import type { Added, VerbAction } from '/lib/extension.js'
 import { HOST_MEANS, addedActions, base, can, cardSubject, cardsOf, sentHome, current, defaultWhere, findCard, hireBlocked, landedRow, whyNot, type DaemonVerb, pictureOf, sendTarget, shelfKind, shownTitle, addedTidyOf, tidyLine, waitingCards } from './cards.ts'
-import { wallNow } from './clock.ts'
 import { drawerLabel, type Archive } from './archive.ts'
 import type { Clients } from './clients.ts'
 import { gameItem } from './games.ts'
@@ -110,7 +109,7 @@ export type Carried = Held & { title: string; tag: string }
  * What the building around you is doing, and what you carry, for the verbs that depend on them. `lost`: the tower
  * stopped answering, so the board on show can't say a daemon verb would run.
  */
-export type Scene = { sharing: boolean; framed: boolean; music: boolean; carrying: Carried | undefined; beer: boolean; cats: CatNames; lost: boolean; galleries: GalleryShowing[] }
+export type Scene = { sharing: boolean; framed: boolean; music: boolean; carrying: Carried | undefined; beer: boolean; cats: CatNames; lost: boolean; galleries: GalleryShowing[]; now: number }
 
 /** Why a daemon verb can't run now: the tower lost (`lost`), or a daemon it needs down (`whyNot`). */
 export const heldWhy = (board: Board, lost: boolean, verb: DaemonVerb) => (lost ? HOST_MEANS.unknown : whyNot(board, verb))
@@ -277,9 +276,9 @@ const OFFERS: ByKind<Offer[], [Board, Scene, OfferReads]> = {
     if (!f || !can(f, 'tidy')) return []
     return [{ verb: 'use', label: 'the list, at the console' }, { verb: 'reap', label: tidyLine(f.tidy, addedTidyOf(board, f)).toLowerCase() }]
   },
-  landed(a, board) {
+  landed(a, board, scene) {
     const f = floorOf(board, a.project)
-    const row = f && landedRow(f, a.id, wallNow())
+    const row = f && landedRow(f, a.id, scene.now)
     if (!row) return []
     return [
       { verb: 'reap', label: `kill ${row.what}: only this` },
