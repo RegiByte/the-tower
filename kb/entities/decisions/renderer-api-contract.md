@@ -55,7 +55,7 @@ went wrong, and know which changes can break it.
   [`API_VERSION`](ref:hub/src/shared/api.ts#API_VERSION), filled into `tower.js` as it is served
   ([`towerClient`](ref:hub/src/tower/served.ts#towerClient)), and carried by `GET /board` and the tunnel's `board`
   message alike. Two pull requests that set the same number merge with no conflict, so CI refuses one whose own diff moves it
-  without passing the base's ([`api-version-check`](ref:hub/scripts/api-version-check.ts)). An addition an older renderer reads past (a board field, a verb, a read, a stream) moves the minor; a
+  without passing the base's ([`api-version-check`](ref:hub/scripts/api-version-check.ts)), against the base as of that run: a green check stays green after main moves, so a landing re-runs it against the fresh base. An addition an older renderer reads past (a board field, a verb, a read, a stream) moves the minor; a
   rename, a removal or a changed meaning moves the major, and CHANGELOG.md says why. `tower.js` reads a board from a
   tower of its own major at its own minor or newer. A renderer kept apart from the tower pins the version it was
   written against in its script URL (`/tower.js?v=2.0`), and the script refuses to load into a tower of another major
