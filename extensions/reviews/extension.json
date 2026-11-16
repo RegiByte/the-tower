@@ -10,7 +10,7 @@
   "client": "client",
   "guidance": {
     "brief": "Review threads: get your work reviewed, read and answer notes. `tower x reviews thread` reads yours, `tower x reviews review <CALLSIGN> --tell` hires a reviewer.",
-    "full": "Every checkout has one review thread: your worktree, or `main` for the main checkouts. The user, the checkout's workers and reviewers append notes about work that hasn't landed, often quoting lines.\n\nUse it when your task asks for a review or the user says \"get yourself reviewed\", when told of new notes, or when you want a note on your own work for the next reader of the diff: a non-obvious choice, a risk, something left undone. Not a place for write-ups, and not for work that has landed.\n\n- `tower x reviews review <CALLSIGN> --tell`: hires a reviewer in a fork of that worker's checkout, uncommitted work included. It reviews once and leaves notes; `--tell` also sends them to the worker. To get yourself reviewed, first leave a note stating the goal and what was agreed, then name your own callsign. A review is never limited by the floor's hiring limits.\n- `tower x reviews thread [checkout]`: the thread of your checkout (a reviewer's: its author's), then the notes new to you and the repo names its anchors take.\n- `tower x reviews note [--on <checkout>] [--re <k>] [--at <repo>:<path>:<from>-<to> …] <<'EOF'` … `EOF`: appends a note under your callsign, the body on stdin. `--re 3` or `--re n3` answers n3. Each `--at` anchors it to lines, quoted from your checkout as they are now.\n- `tower x reviews resolve <k> … [--on <checkout>]`: marks those notes resolved with a note of its own; anything on stdin is said under the mark. Resolve a note once it is dealt with: the fix landed, or its author agreed it stays.\n- `tower x reviews send <CALLSIGN>`: submits into that worker a pointer to the notes new to it.\n\nWhen told of new notes: read the thread, act on each (change the code, or decide it stays), and answer each with `--re`: what you changed, with the commit, or why it stays. Then, when a worker hired you, report to it: what changed and whether the work is ready. The thread alone is no report: your hirer isn't watching it. Only these words write the thread: never edit its file."
+    "full": "Every checkout has one review thread: your worktree, or `main` for the main checkouts. The user, the checkout's workers and reviewers append notes about work that hasn't landed, often quoting lines.\n\nUse it when your task asks for a review or the user says \"get yourself reviewed\", when told of new notes, or when you want a note on your own work for the next reader of the diff: a non-obvious choice, a risk, something left undone. Not a place for write-ups, and not for work that has landed.\n\n- `tower x reviews review <CALLSIGN> --tell`: hires a reviewer in a fork of that worker's checkout, uncommitted work included. It reviews once and leaves notes; `--tell` also sends them to the worker. It takes `tower hire`'s launch options, validated as a hire's: `--model`, `--effort`, `--runtime` (one with slash commands), `--callsign`, `--command`, and other extensions' spawn fields as `--x '{\"roles\": {\"role\": \"reviewer\"}}'`; what it is cut from and starts on are its own, so `--cut`, `--cwd`, `--prompt` and `--project` are refused. To get yourself reviewed, first leave a note stating the goal and what was agreed, then name your own callsign. A review is never limited by the floor's hiring limits.\n- `tower x reviews thread [checkout]`: the thread of your checkout (a reviewer's: its author's), then the notes new to you and the repo names its anchors take.\n- `tower x reviews note [--on <checkout>] [--re <k>] [--at <repo>:<path>:<from>-<to> …] <<'EOF'` … `EOF`: appends a note under your callsign, the body on stdin. `--re 3` or `--re n3` answers n3. Each `--at` anchors it to lines, quoted from your checkout as they are now.\n- `tower x reviews resolve <k> … [--on <checkout>]`: marks those notes resolved with a note of its own; anything on stdin is said under the mark. Resolve a note once it is dealt with: the fix landed, or its author agreed it stays.\n- `tower x reviews send <CALLSIGN>`: submits into that worker a pointer to the notes new to it.\n\nWhen told of new notes: read the thread, act on each (change the code, or decide it stays), and answer each with `--re`: what you changed, with the commit, or why it stays. Then, when a worker hired you, report to it: what changed and whether the work is ready. The thread alone is no report: your hirer isn't watching it. Only these words write the thread: never edit its file."
   },
   "runtimes": {
     "claude": { "plugins": "plugin" }
@@ -515,6 +515,50 @@
           "tell": {
             "type": "boolean",
             "description": "The reviewer sends a pointer to its notes to the author when done."
+          },
+          "runtime": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The runtime the reviewer runs, as `tower/spawn` takes it: one the config's `runtimes` names (`board.runtimes`); Claude when left out. Refused on a runtime without slash commands (`absent: slashCommands`), which can't start the review skill."
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reviewer's model, as `tower/spawn` takes it: any id; the runtime's default when left out."
+          },
+          "effort": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reviewer's effort, as `tower/spawn` takes it; the runtime's default when left out."
+          },
+          "callsign": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reviewer's callsign, `NAME` or `NAME-NN`, as `tower/spawn` takes it: refused when its name is a worker's on duty; drawn at random when left out."
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Which of the config's named `argv` commands the reviewer starts under, as `tower/spawn` takes it; the floor's when left out."
+          },
+          "x": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            },
+            "description": "Other extensions' spawn fields, by capability then field, as `tower/spawn` takes them (`{\"roles\": {\"role\": \"reviewer\"}}`), each parsed by its field's schema. Not `reviews`: the review sets `x.reviews.of` to the author itself."
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Pinned, refused when given: a reviewer starts in a worktree forked from its author's checkout."
+          },
+          "cut": {
+            "type": "object",
+            "description": "Pinned, refused when given: a reviewer's worktree is always forked from its author's checkout."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Pinned, refused when given: a reviewer starts on the reviews:review skill; put what it should know on the author's thread first."
           }
         },
         "required": [
@@ -551,7 +595,7 @@
           "cut"
         ]
       },
-      "description": "Hire a reviewer of a worker's unlanded work: a worker in a fork of its checkout, uncommitted work included, that reviews once against its goal and leaves notes on its thread. It sits beside its author, in its crew, and is exempt from hiring limits.",
+      "description": "Hire a reviewer of a worker's unlanded work: a worker in a fork of its checkout, uncommitted work included, that reviews once against its goal and leaves notes on its thread. It sits beside its author, in its crew, and is exempt from hiring limits. Its launch options (runtime, model, effort, callsign, command, other extensions' `x` fields) pass to `tower/spawn` as given; the fork, the floor, the prompt and `x.reviews.of` are its own, and given are refused.",
       "words": {
         "label": "Review",
         "hint": "hire a reviewer in a fork of this worker's checkout"
@@ -686,6 +730,54 @@
           "tell": {
             "type": "boolean",
             "description": "The reviewer sends a pointer to its notes to the author when done."
+          },
+          "runtime": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The runtime the reviewer runs, as `tower/spawn` takes it: one the config's `runtimes` names (`board.runtimes`); Claude when left out. Refused on a runtime without slash commands (`absent: slashCommands`), which can't start the review skill."
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reviewer's model, as `tower/spawn` takes it: any id; the runtime's default when left out."
+          },
+          "effort": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reviewer's effort, as `tower/spawn` takes it; the runtime's default when left out."
+          },
+          "callsign": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The reviewer's callsign, `NAME` or `NAME-NN`, as `tower/spawn` takes it: refused when its name is a worker's on duty; drawn at random when left out."
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Which of the config's named `argv` commands the reviewer starts under, as `tower/spawn` takes it; the floor's when left out."
+          },
+          "x": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            },
+            "description": "Other extensions' spawn fields, by capability then field, as `tower/spawn` takes them (`{\"roles\": {\"role\": \"reviewer\"}}`), each parsed by its field's schema. Not `reviews`: the review sets `x.reviews.of` to the author itself."
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Pinned, refused when given: a reviewer starts in a worktree forked from its author's checkout."
+          },
+          "cut": {
+            "type": "object",
+            "description": "Pinned, refused when given: a reviewer's worktree is always forked from its author's checkout."
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Pinned, refused when given: a reviewer starts on the reviews:review skill; put what it should know on the author's thread first."
+          },
+          "project": {
+            "type": "string",
+            "description": "Pinned, refused when given: a reviewer works on its author's floor, found by callsign on every floor."
           }
         }
       },
@@ -727,7 +819,7 @@
           "of"
         ],
         "print": "said",
-        "usage": "review <CALLSIGN> [--tell]"
+        "usage": "review <CALLSIGN> [--tell] [--runtime <id>] [--model <m>] [--effort <e>] [--callsign <C>] [--command <name>] [--x '{\"<cap>\": {\"<field>\": <value>}}']"
       }
     }
   },
