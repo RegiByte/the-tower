@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/tower3d/src/state.ts", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/stage.ts#startStage", "hub/renderers/tower3d/src/door.ts#installDoor"]
+  "refs": ["hub/renderers/tower3d/src/state.ts", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/panels.ts", "hub/renderers/tower3d/src/stage.ts#startStage", "hub/renderers/tower3d/src/door.ts#installDoor"]
 }
 ---
 **Problem.** A renderer that grows a thing at a time (a layer of things drawn per board, a kind of thing to aim at, a
@@ -31,7 +31,7 @@ shape of a mod. These shapes extract; they are not a plugin API.
   happens as one leaves (a desk's worker walks out). Every layer is an export of `layers.ts`.
 - **Act tables** ([`byKind`](ref:hub/renderers/tower3d/src/acts.ts#byKind)): `ByKind<R, Args>` maps every
   `Act['kind']` to a function given its own kind. `OFFERS` (pure, in `acts.ts`) and `RUN` (the shell, in
-  `main.ts`) are both total, so a new kind fails the typecheck until it has both. The building's own verbs
+  `panels.ts`) are both total, so a new kind fails the typecheck until it has both. The building's own verbs
   (`next`, `overview`, `stop`) run before the table.
 - **Ticks**: a frame is `TICKS`, an ordered list of functions over one `Frame` (`dt`, `t`, the turn taken).
 - **The door out** ([`installDoor`](ref:hub/renderers/tower3d/src/door.ts#installDoor)): it reads the record and
@@ -45,9 +45,9 @@ A refactor of these shapes is checked with `npm run tool:frames` ([[tower3d-door
 - State passed explicitly to every function: more functional on paper, but every call site and handler changes
   and the shell stays imperative (three.js objects, the DOM).
 - A full split by concern (navigation, panels, aim in their own modules): a cleaner end state, but cycles between
-  panels and navigation to untangle first. `RUN` stays in `main.ts` for the same reason: its entries call
-  navigation and panels. Superseded in direction by [[tower3d-system]]: a split goes by resource, wired as data, with no
-  import cycles allowed. It is not carried out yet: `main.ts` is still one resource.
+  panels and navigation to untangle first. `RUN` stayed in one module for the same reason: its entries call
+  navigation and panels. Superseded by [[tower3d-system]], which carried a split out by resource, wired as data, with
+  no import cycles allowed: `RUN` is the panels resource's, and calls navigation, started before it.
 
-**Impact.** `main.ts` keeps boot, the board, navigation, panels and input; adding a layer, an act kind or a tick
-is one entry each.
+**Impact.** Adding a layer, an act kind or a tick is one entry each; the page around them is split by resource
+([[tower3d-system]]).
