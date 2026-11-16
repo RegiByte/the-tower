@@ -6,7 +6,8 @@ import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import { pictured } from './showing.ts'
 import { shell } from './shell.ts'
-import { s, type Panel, type Standing, type View } from './state.ts'
+import { s, type Standing, type View } from './state.ts'
+import type { Db } from './app.ts'
 import type { CatName } from './life.ts'
 import type { EventRecord } from './record.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
@@ -111,8 +112,10 @@ export type Engine = {
   showPrompt(a: Act | undefined): void
   startHold(a: Act, o: Offer, by: string): void
   floorY(): number
-  /** The panel open beside the world. */
-  panel(): Panel | undefined
+  /** The app's db: the panel open beside the world, the view, the desk's tab, a replay. */
+  app(): Db
+  /** The panels drawn now, if a transition asked for a draw: a stepped frame draws as a real one does. */
+  drawPending(): void
   pickables(): THREE.Object3D[]
   /** Delivers a fixture's next board. */
   advance(): void
@@ -166,7 +169,7 @@ export function installDoor(e: Engine) {
    * this before it renders, so a door call made before one (a stepped page, a teleport) reads it the same.
    */
   function current() {
-    showLevels(levelsShown(s))
+    showLevels(levelsShown(e.app().view, s))
     scene.updateMatrixWorld()
   }
 
@@ -184,15 +187,15 @@ export function installDoor(e: Engine) {
   }
 
   const panelOf = (): DoorState['panel'] => {
-    const panel = e.panel()
+    const { panel, deskTab, replay } = e.app()
     if (panel?.kind === 'logbook') return { kind: panel.kind, id: panel.card.id, tab: panel.tab, on: panel.on, read: panel.threads !== undefined }
     if (panel?.kind === 'draft') return { kind: panel.kind, project: s.draft?.project, id: s.draft?.id }
-    if (panel?.kind === 'desk') return { ...panel, tab: s.deskTab, ...(s.replay && s.replay.id === panel.id && { replay: s.replay.session }) }
+    if (panel?.kind === 'desk') return { ...panel, tab: deskTab, ...(replay && replay.id === panel.id && { replay: replay.session }) }
     return panel
   }
 
   const state = (): DoorState => ({
-    seed: SEED, time: s.simNow, stepped: s.stepped, captured: e.captured(), view: s.view,
+    seed: SEED, time: s.simNow, stepped: s.stepped, captured: e.captured(), view: e.app().view,
     panel: panelOf(), carrying: s.carrying,
     walker: { ...s.me }, riding: s.ride !== undefined, flying: s.flight !== undefined,
     petting: s.pet && { name: s.pet.name, progress: petProgress(s.pet, s.simNow) },
@@ -206,7 +209,7 @@ export function installDoor(e: Engine) {
     pictured,
     capture() {
       s.doorMode = true
-      s.doorHeld = s.view === 'walk' && !e.panel()
+      s.doorHeld = e.app().view === 'walk' && !e.app().panel
       e.captureChanged()
     },
     release() {
@@ -216,7 +219,7 @@ export function installDoor(e: Engine) {
     },
     teleport({ level, x, z, yaw = s.me.yaw, pitch = 0, y = 0 }) {
       if (!s.plan.levels[level]) throw new Error(`no level ${level}: the tower has ${s.plan.levels.length}`)
-      if (s.view === 'overview') e.leaveOverview()
+      if (e.app().view === 'overview') e.leaveOverview()
       e.place(level, { x, z, yaw, pitch, y })
     },
     acts: (kind) => everyAct(kind),
@@ -225,7 +228,7 @@ export function installDoor(e: Engine) {
       return { level: s.plan.levels.findLast((l) => l.y <= at.y)!.index, x: at.x, y: at.y, z: at.z }
     },
     aimAt(target) {
-      if (s.view !== 'walk') throw new Error(`aimAt works while walking; the view is ${s.view}`)
+      if (e.app().view !== 'walk') throw new Error(`aimAt works while walking; the view is ${e.app().view}`)
       const at = centerOf(target)
       s.me = { ...s.me, ...facing(eyes(s.me, e.floorY(), new THREE.Vector3()), at) }
       aim(camera, s.me, e.floorY())
@@ -253,6 +256,7 @@ export function installDoor(e: Engine) {
     step(frames = 1, dt = STEP) {
       s.stepped = true
       for (let i = 0; i < frames; i++) (e.update(dt), (boardsStepped = s.boards))
+      e.drawPending()
       e.render()
       return state()
     },

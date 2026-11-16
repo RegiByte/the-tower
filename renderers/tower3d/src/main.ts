@@ -17,7 +17,9 @@ import { defaultLimits, projectOfKey, type FloorCollection, type FloorItem, type
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
-import { attendNext, attending, type AttendEvent, type AttendOut, type Attending } from '/lib/attend.js'
+import { attending } from '/lib/attend.js'
+import { appHandlers, startingDb, type AppEvent, type TabTo } from './app.ts'
+import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
@@ -101,7 +103,7 @@ const statsBoard = boardFace(640, 400)
  */
 let screensAt: { plan?: Plan; level: number; overview: boolean; spots: Map<string, THREE.Vector3[]> } = { level: -1, overview: false, spots: new Map() }
 function screensHere() {
-  const overview = s.view === 'overview'
+  const overview = viewNow() === 'overview'
   if (screensAt.plan === s.plan && screensAt.level === s.me.level && screensAt.overview === overview) return screensAt.spots
   const spots = new Map<string, THREE.Vector3[]>()
   const levels = overview ? [...s.levels.map((l) => l.group), ...s.world!.levels] : [s.levels[s.me.level]?.group, s.world!.levels[s.me.level]]
@@ -239,11 +241,11 @@ function dressAllPapers() {
   }
 }
 
-/** The replayed past session on its worker's monitor, every other monitor on its own screen; a replay whose worker left ends. */
+/** The replayed past session on its worker's monitor, every other monitor on its own screen. */
 function dressReplays() {
-  if (s.replay && !s.desks.has(s.replay.id)) s.replay = undefined
+  const replaying = replayNow()
   for (const desk of s.desks.values()) {
-    const session = s.replay?.id === desk.card.id ? desk.card.lineage.find((l) => l.id === s.replay!.session) : undefined
+    const session = replaying?.id === desk.card.id ? desk.card.lineage.find((l) => l.id === replaying.session) : undefined
     showOnMonitor(desk, session ? replayTexture(`screen/${session.id}`, `REPLAY · ${sessionWhen(session.startedAt)}`) : monitorOf(desk.card))
   }
   screensAt = { ...screensAt, plan: undefined }
@@ -296,7 +298,7 @@ function shownArrives(c: Card, sh: Shown) {
   const desk = s.desks.get(c.id)
   if (desk) holdUp(desk, sh, s.simNow / 1000)
   tada()
-  if (atDesk() === c.id) return openShown(c.id, sh)
+  if (atDesk() === c.id) return openShown(sh)
   toast(`${c.callsign} showed you “${shownTitle(sh)}” · V to look`)
 }
 
@@ -318,7 +320,7 @@ function see(sh: Shown) {
 function lookAtNew() {
   const newest = freshShown()[0]
   if (!newest) return toast('Nothing new shown to you')
-  if (atDesk() === newest.c.id) return openShown(newest.c.id, newest.sh)
+  if (atDesk() === newest.c.id) return openShown(newest.sh)
   goShown(newest.c.id, newest.sh.target)
 }
 const spotOf = ({ level, x, z, yaw, pitch, y }: Walker): Spot => ({ level, x, z, yaw, pitch, y })
@@ -385,7 +387,7 @@ function onBoardError(err: Error & { code: string }) {
   show('board-error', true)
   if (loading.shown()) loading.fail(`${boardErrorTitle(err.code)}: ${err.message}`)
   s.lost = err.code === 'disconnected'
-  seeing.dispatch({ type: 'lost', lost: s.lost })
+  app.dispatch({ type: 'lost', lost: s.lost })
   if (s.lost) hiring.dispatch({ type: 'lost' })
   renderPanel()
 }
@@ -432,11 +434,13 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   syncCabinets()
   if (s.carrying && !draftItem(next.floors, s.carrying.project, s.carrying.id)) (toast('The draft in your hand is gone'), drop())
   if (s.draft?.id) followDraft(s.draft)
+  const replaying = replayNow()
   keepScreens(new Set([
     ...s.plan.levels.flatMap((l) => (l.kind === 'floor' ? l.desks.filter((d) => d.card.live).map((d) => `screen/${d.card.id}`) : [])),
     ...next.shells.map((sh) => `shell/${sh.id}`),
-    ...(s.replay ? [`screen/${s.replay.session}`] : []),
+    ...(replaying ? [`screen/${replaying.session}`] : []),
   ]))
+  if (replaying && !s.desks.has(replaying.id)) app.dispatch({ type: 'replay-left' })
   dressReplays()
   paintDirectory(directory, s.plan, heededWaits(next, heed()))
   if (s.first) {
@@ -456,11 +460,15 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   s.first = false
   if (s.me.level >= s.plan.levels.length) s.me = { ...s.me, level: 0 }
   renderHud()
+  app.dispatch({ type: 'board-applied', board: next })
+  // The panels the app doesn't move yet close in their draw when their subject left: drawn at once, as the board lands.
   renderPanel()
   freshLogbooks(next)
   renderElevator()
-  if (s.pendingDesk && deskOf(s.plan, s.pendingDesk)) goDesk(s.pendingDesk)
-  if (s.pendingShell && kioskOf(s.plan, s.pendingShell)) goShell(s.pendingShell)
+  const { desk: pendingDesk } = app.state().pending
+  if (pendingDesk && deskOf(s.plan, pendingDesk)) goDesk(pendingDesk)
+  const { shell: pendingShell } = app.state().pending
+  if (pendingShell && kioskOf(s.plan, pendingShell)) goShell(pendingShell)
   if (wasFirst) pictured().then(built)
 }
 
@@ -489,7 +497,7 @@ function renderHud() {
 }
 
 function renderElevator() {
-  const inCar = s.view === 'walk' && (s.ride !== undefined || inside(carBox(s.plan), s.me.x, s.me.z))
+  const inCar = viewNow() === 'walk' && (s.ride !== undefined || inside(carBox(s.plan), s.me.x, s.me.z))
   show('elevator', inCar)
   if (inCar) $('elevator').innerHTML = elevatorHtml(s.plan, s.ride ? s.ride.to : s.me.level, s.ride !== undefined, heededWaits(s.board!, heed()))
 }
@@ -518,8 +526,8 @@ function display(target: Subject | string) {
   if (typeof target === 'string' || target.kind !== 'lines') return toast(`Nothing here shows ${key}`)
   const lines = target.value as Lines
   if (!findCard(s.board!, lines.card)) return toast(`${key} is no longer on the board`)
-  if (atDesk() === lines.card) return openChanges(lines.card, lines)
-  s.pendingTab = { id: lines.card, tab: 'changes', lines }
+  if (atDesk() === lines.card) return openChanges(lines)
+  app.dispatch({ type: 'pend', pending: { tab: { id: lines.card, tab: 'changes', lines } } })
   goDesk(lines.card)
 }
 
@@ -531,10 +539,11 @@ function renderPanel() {
   if (!board || !panel) return
   if (panel.kind === 'desk') {
     const c = findCard(board, panel.id)
-    if (!c) return unfocus()
+    // The app closes a desk whose worker left once the building takes the board (`board-applied`): a draw before then draws nothing.
+    if (!c) return
     $('desk-head').innerHTML = deskHeadHtml(board, c, cardsOf(board), board.floors.find((f) => f.id === c.project), deskNow(board), dottedNow(board), held, tower.framed)
     sawDesk(board, c)
-    $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, s.deskTab, (sh) => isFresh(c, sh), { changes: desk.tabOf(CHANGES, c), reviews: desk.tabOf(THREAD, c) })
+    $('desk-tabs').innerHTML = deskTabsHtml(c, board.floors.find((f) => f.id === c.project)!, deskTabNow(), (sh) => isFresh(c, sh), { changes: desk.tabOf(CHANGES, c), reviews: desk.tabOf(THREAD, c) })
     keepShownTabs($('desk-tabs').parentElement!, c.id)
     $('desk-activity').innerHTML = activityHtml(c)
     $('desk-activity').dataset.tip = gistLine(c)
@@ -546,7 +555,7 @@ function renderPanel() {
   if (panel.kind === 'shell') {
     const id = panel.id
     const sh = board.shells.find((sh) => sh.id === id)
-    if (!sh) return unfocus()
+    if (!sh) return
     show('desk-ask', false)
     for (const el of ['desk-tabs', 'desk-activity', 'desk-dismiss', 'desk-details']) $(el).innerHTML = ''
     $('desk-head').innerHTML = shellHeadHtml(sh, board.floors.find((f) => f.id === sh.project))
@@ -636,7 +645,7 @@ function renderPanel() {
 const locked = () => document.pointerLockElement === canvas
 const captured = () => locked() || s.doorHeld
 /** The pause card stands for the free mouse only while nothing else holds it: a panel, the spawn dialog, or P. */
-const showPaused = () => show('paused', !captured() && s.view === 'walk' && !panelNow() && !s.still && !spawn.open)
+const showPaused = () => show('paused', !captured() && viewNow() === 'walk' && !panelNow() && !s.still && !spawn.open)
 
 function captureChanged() {
   releaseKeys()
@@ -713,23 +722,37 @@ function travel(level: number, spot: Standing, then: () => void) {
 }
 
 function closeSide() {
-  if (panelNow()?.kind === 'floor' || panelNow()?.kind === 'archive' || panelNow()?.kind === 'directory' || panelNow()?.kind === 'elevator' || panelNow()?.kind === 'drawer' || panelNow()?.kind === 'shell-pick') setPanel(undefined)
+  if (panelNow()?.kind === 'floor' || panelNow()?.kind === 'archive' || panelNow()?.kind === 'directory' || panelNow()?.kind === 'elevator' || panelNow()?.kind === 'drawer' || panelNow()?.kind === 'shell-pick') go(undefined)
+  sideClosed()
+}
+
+function sideClosed() {
   show('side', false)
   show('shell-pick', false)
 }
 
 /** The picker of where a new shell starts, `first`'s floor ahead, its first place focused for the keyboard. */
-function openShellPick(first: string) {
-  closePanels()
-  setPanel({ kind: 'shell-pick', first })
-  renderPanel()
+const openShellPick = (first: string) => go({ kind: 'shell-pick', first })
+
+/** Entering the picker: every other panel's place closed, as the panels they hold don't leave by the app yet. */
+function shellPickEntered(_: { first: string }, from: Panel | undefined) {
+  sideClosed()
+  docClosed(from)
+  draftClosed()
   show('shell-pick', true)
   unlock()
-  $('shell-pick').querySelector<HTMLElement>('[data-shell-dir]')?.focus()
 }
 
 /** Back to walking: the terminal closes and the camera returns to your eyes. */
 function unfocus() {
+  const panel = panelNow()
+  if (panel?.kind === 'desk' || panel?.kind === 'shell' || panel?.kind === 'tv') return go(undefined)
+  if (viewNow() === 'focus') (app.dispatch({ type: 'view', view: 'walk' }), flyHome())
+  showPaused()
+}
+
+/** What leaving the focused room does: the terminal closes, and what the desk mounted and showed with it. */
+function focusLeft() {
   s.dotted.clear()
   closeTerm($('desk-screen'))
   show('desk', false)
@@ -737,13 +760,18 @@ function unfocus() {
   hideReviewing()
   closeShown()
   show('watch', false)
-  if (panelNow()?.kind === 'desk' || panelNow()?.kind === 'shell' || panelNow()?.kind === 'tv') setPanel(undefined)
-  if (s.view === 'focus') (s.view = 'walk', flyHome())
   showPaused()
 }
 
 function closeDoc() {
-  if (panelAs('logbook')?.tab === 'screen') closeTerm($('logbook-screen'))
+  const open = panelNow()
+  docClosed(open)
+  if (open?.kind === 'doc' || open?.kind === 'kept' || open?.kind === 'picture' || open?.kind === 'thread' || open?.kind === 'stats' || open?.kind === 'logbook') go(undefined)
+}
+
+/** The reader closed as `open` leaves it, the logbook's screen among it. */
+function docClosed(open: Panel | undefined) {
+  if (open?.kind === 'logbook' && open.tab === 'screen') closeTerm($('logbook-screen'))
   show('doc', false)
   closeDocRelay()
   reader.close()
@@ -751,7 +779,6 @@ function closeDoc() {
   delete $('doc-body').dataset.stats
   delete $('doc-body').dataset.logbook
   statsPolling.dispatch({ type: 'stop' })
-  if (panelNow()?.kind === 'doc' || panelNow()?.kind === 'kept' || panelNow()?.kind === 'picture' || panelNow()?.kind === 'thread' || panelNow()?.kind === 'stats' || panelNow()?.kind === 'logbook') setPanel(undefined)
 }
 
 /**
@@ -785,7 +812,7 @@ statsPolling.subscribe(events.listen('statsPolling'))
 /** Every floor's stats in the reader where you stand: the overview first, each floor a tab. */
 function openStats() {
   closePanels()
-  setPanel({ kind: 'stats' })
+  go({ kind: 'stats' })
   unlock()
   show('paused', false)
   show('doc', true)
@@ -833,8 +860,8 @@ function openGame(project: string, id: string) {
   if (!at) return
   closePanels()
   const panel: GamePanel = { kind: 'game', project, id, x: at.cabinet.x }
-  setPanel(panel)
-  s.view = 'focus'
+  go(panel)
+  app.dispatch({ type: 'view', view: 'focus' })
   unlock()
   pause()
   show('paused', false)
@@ -849,17 +876,17 @@ function openGame(project: string, id: string) {
 
 /** The camera on the game's cabinet, where the arcade stands it now: a game kept since moves every cabinet along. */
 function frameCabinet(panel: GamePanel, { cabinet, level }: NonNullable<ReturnType<typeof cabinetOf>>) {
-  setPanel({ ...panel, x: cabinet.x })
+  go({ ...panel, x: cabinet.x })
   const front = new THREE.Vector3(cabinet.x, level.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
   frameAside(front, new THREE.Vector3(0, 0, -1), 2 * CABINET.width)
 }
 
 function closeGame() {
   if (panelNow()?.kind !== 'game') return
-  setPanel(undefined)
+  go(undefined)
   show('game', false)
   $('game-body').innerHTML = ''
-  if (s.view === 'focus') (s.view = 'walk', flyHome())
+  if (viewNow() === 'focus') (app.dispatch({ type: 'view', view: 'walk' }), flyHome())
   startMusic()
 }
 
@@ -876,7 +903,7 @@ async function openShelf(project: string, n: number, file?: string) {
   if (s.self?.project === project && s.self.n === n) return toast(`${entry.label} is where you are standing`)
   if ('renderer' in entry) return tower.framed ? tower.ui('shelf', { project, n }) : (unlock(), open(rendererUrl(entry.renderer), '_blank', 'noopener'))
   closePanels()
-  setPanel({ kind: 'doc', project, n, file })
+  go({ kind: 'doc', project, n, file })
   unlock()
   show('paused', false)
   show('doc', true)
@@ -887,7 +914,7 @@ async function openShelf(project: string, n: number, file?: string) {
   const text = shown ? await shelfText(project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
   const doc = panelAs('doc')
   if (doc?.project !== project || doc.n !== n) return
-  setPanel({ ...doc, file: shown })
+  go({ ...doc, file: shown })
   $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: s.board!.floors.find((f) => f.id === project)!.hub }, tower.prefs.attributes())
 }
 onAppearance(() => {
@@ -912,7 +939,7 @@ function openKept(k: { project: string; collection: string; id: string }) {
   if (k.collection === DRAFTS && s.board && draftItem(s.board.floors, k.project, k.id)) return openNote(k.project, k.id)
   if (k.collection === GAMES) return openGame(k.project, k.id)
   closePanels()
-  setPanel({ kind: 'kept', ...k, drawn: undefined })
+  go({ kind: 'kept', ...k, drawn: undefined })
   unlock()
   show('paused', false)
   show('doc', true)
@@ -922,7 +949,7 @@ function openKept(k: { project: string; collection: string; id: string }) {
 /** The item's body, drawn again only when the item changes; a text read that fails says so with Read again. */
 async function drawKept(panel: Extract<Panel, { kind: 'kept' }>, c: FloorCollection, item: FloorItem) {
   const drawing = { ...panel, drawn: item.modifiedAt }
-  setPanel(drawing)
+  go(drawing)
   if (!readsText(itemKind(item.id))) return ($('doc-body').innerHTML = keptFileHtml(c, item, `/${itemPath(panel.project, c.id, item.id)}`))
   const text = await keptText(panel.project, c.id, item.id).catch((err: Error) => {
     if (panelNow() === drawing) $('doc-body').innerHTML = failedHtml(item.tag, err.message, 'data-kept-read')
@@ -936,7 +963,7 @@ onAppearance(() => redrawKept())
 function redrawKept() {
   const kept = panelAs('kept')
   if (!kept) return
-  setPanel({ ...kept, drawn: undefined })
+  go({ ...kept, drawn: undefined })
   renderPanel()
 }
 
@@ -956,7 +983,7 @@ async function openPicture(id: string, target: string) {
   if (!picture) return
   const { worker, shown: sh } = picture
   closePanels()
-  setPanel({ kind: 'picture', id, target })
+  go({ kind: 'picture', id, target })
   unlock()
   show('paused', false)
   show('doc', true)
@@ -974,9 +1001,10 @@ onAppearance(() => {
   if (picture) openPicture(picture.id, picture.target)
 })
 
-/** To the worker's desk, on the showing's tab. */
+/** To the worker's desk, on the tab of its showing of `target`. */
 function goShown(id: string, target: string) {
-  s.pendingShown = { id, target }
+  const shown = findCard(s.board!, id)?.shown.find((sh) => sh.target === target)
+  if (shown) app.dispatch({ type: 'pend', pending: { shown: { id, shown } } })
   goDesk(id)
 }
 
@@ -984,38 +1012,34 @@ function openSide(next: Panel) {
   unfocus()
   closeDoc()
   closeDraftPanel()
-  setPanel(next)
+  go(next)
   renderPanel()
   show('side', true)
   unlock()
 }
 
+/** At the worker's desk, its panel open on its screen, then on the tab pending for it. */
 function focusDesk(id: string) {
-  const c = s.board && findCard(s.board, id)
-  if (!c) return
-  closeSide()
-  closeDoc()
-  closeDraftPanel()
-  setPanel({ kind: 'desk', id })
+  if (!s.board || !findCard(s.board, id)) return
+  go({ kind: 'desk', id })
+}
+
+/**
+ * Entering the desk: the side, the reader and the draft editor closed, as the panels they hold don't leave by the
+ * app yet, the mouse let go, the desk's panel shown on its screen.
+ */
+function deskEntered({ id }: { id: string }, from: Panel | undefined) {
+  sideClosed()
+  docClosed(from)
+  draftClosed()
   s.dotted.clear()
-  s.deskTab = 'screen'
-  s.view = 'focus'
   unlock()
   show('paused', false)
   show('desk', true)
   show('desk-brief', false)
   hideReviewing()
   closeShown()
-  renderPanel()
-  mountDeskScreen(c)
-  const tab = s.pendingTab?.id === id ? s.pendingTab : undefined
-  s.pendingTab = undefined
-  if (tab?.tab === 'brief') openBrief(id)
-  if (tab?.tab === 'reviews') openReviews()
-  if (tab?.tab === 'changes') openChanges(id, tab.lines)
-  const pending = s.pendingShown?.id === id ? c.shown.find((sh) => sh.target === s.pendingShown!.target) : undefined
-  s.pendingShown = undefined
-  if (pending) openShown(id, pending)
+  mountDeskScreen(findCard(s.board!, id)!)
 }
 
 /**
@@ -1024,7 +1048,8 @@ function focusDesk(id: string) {
  */
 function mountDeskScreen(c: Card) {
   const id = c.id
-  const past = s.replay?.id === id ? c.lineage.find((l) => l.id === s.replay!.session) : undefined
+  const replaying = replayNow()
+  const past = replaying?.id === id ? c.lineage.find((l) => l.id === replaying.session) : undefined
   $('desk-screen').classList.toggle('replay', Boolean(past))
   $('desk-stamp').innerHTML = past ? stampHtml(past.startedAt, true) : ''
   show('desk-stamp', Boolean(past))
@@ -1032,7 +1057,7 @@ function mountDeskScreen(c: Card) {
     path: past ? `screen/${past.id}` : `terminal/${id}`, id: past?.id ?? id, sendKeys: tower.keys, resizeVerb: 'resize', scrollback: 0, wheelReports: true, onError: (err) => toast(err.message), cwd: () => c.cwd,
     onMode: (text, owner) => (($('desk-mode').textContent = text), $('desk-mode').classList.toggle('owner', owner)),
     ...terminalKeys,
-    onEnd: () => atDesk() === id && s.deskTab === 'screen' && terminalEnded(id),
+    onEnd: () => atDesk() === id && deskTabNow() === 'screen' && terminalEnded(id),
   })
 }
 
@@ -1042,18 +1067,11 @@ function mountDeskScreen(c: Card) {
  */
 function terminalEnded(id: string) {
   const c = findCard(s.board!, id)
-  if (c && can(c, 'brief')) openBrief(id)
+  if (c && can(c, 'brief')) openBrief()
 }
 
 /** A past session of a worker at a desk on its monitor, and on the desk panel's screen while it is open there. */
-function replay(id: string, session: string | undefined) {
-  s.replay = session === undefined ? undefined : { id, session }
-  dressReplays()
-  const c = findCard(s.board!, id)
-  if (!c || atDesk() !== id) return
-  mountDeskScreen(c)
-  openScreen()
-}
+const replay = (id: string, session: string | undefined) => app.dispatch({ type: 'replay', id, session })
 
 /** A past worker, on the board or in the archive read of the floor whose panel listed it. */
 const pastCard = (id: string) =>
@@ -1061,18 +1079,20 @@ const pastCard = (id: string) =>
 
 function focusShell(id: string) {
   if (!kioskOf(s.plan, id)) return
+  go({ kind: 'shell', id })
+}
+
+/** Entering a shell: the desk's panel over its terminal, the side, the reader and the draft editor closed as at a desk. */
+function shellEntered({ id }: { id: string }, from: Panel | undefined) {
   $('desk-screen').classList.remove('replay')
   show('desk-stamp', false)
-  closeSide()
-  closeDoc()
-  closeDraftPanel()
-  setPanel({ kind: 'shell', id })
-  s.view = 'focus'
+  sideClosed()
+  docClosed(from)
+  draftClosed()
   unlock()
   show('paused', false)
   show('desk', true)
   show('desk-brief', false)
-  renderPanel()
   mountTerm($('desk-screen'), {
     path: `shell/${id}`, id, sendKeys: tower.shellKeys, resizeVerb: 'shell/resize', scrollback: SHELL_SCROLLBACK, wheelReports: false, onError: (err) => toast(err.message), cwd: () => s.board!.shells.find((sh) => sh.id === id)!.cwd,
     onMode: (text, owner) => (($('desk-mode').textContent = text), $('desk-mode').classList.toggle('owner', owner)),
@@ -1087,8 +1107,8 @@ function watch(n: number) {
   closeSide()
   closeDoc()
   closeDraftPanel()
-  setPanel({ kind: 'tv', n })
-  s.view = 'focus'
+  go({ kind: 'tv', n })
+  app.dispatch({ type: 'view', view: 'focus' })
   unlock()
   show('paused', false)
   show('watch', true)
@@ -1117,11 +1137,11 @@ function endShare() {
 
 /** To a worker's desk, wherever it is, and sit down. */
 function goDesk(id: string) {
-  s.pendingDesk = undefined
+  app.dispatch({ type: 'pend', pending: { desk: undefined } })
   const level = levelOfCard(s.plan, id)
   const slot = deskOf(s.plan, id)
   if (!level || !slot) return toast(`${findCard(s.board!, id)?.callsign ?? id} is not on duty`)
-  if (s.view === 'overview') leaveOverview()
+  if (viewNow() === 'overview') leaveOverview()
   closeSide()
   travel(level.index, deskSpot(slot), () => {
     if (s.desks.has(id)) focusDesk(id)
@@ -1129,11 +1149,11 @@ function goDesk(id: string) {
 }
 
 function goShell(id: string) {
-  s.pendingShell = undefined
+  app.dispatch({ type: 'pend', pending: { shell: undefined } })
   const level = levelOfShell(s.plan, id)
   const k = kioskOf(s.plan, id)
   if (!level || !k) return
-  if (s.view === 'overview') leaveOverview()
+  if (viewNow() === 'overview') leaveOverview()
   closeSide()
   travel(level.index, { x: k.x + 1.9, z: k.z, y: DECK.top, yaw: -Math.PI / 2 }, () => focusShell(id))
 }
@@ -1152,7 +1172,7 @@ async function throwAway(project: string, id: string) {
 
 /** To a level, in front of the elevator, `then` once there. */
 function arriveAt(index: number, then: () => void) {
-  if (s.view === 'overview') leaveOverview()
+  if (viewNow() === 'overview') leaveOverview()
   closePanels()
   travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, then)
 }
@@ -1201,7 +1221,7 @@ function runOnWorker(a: ActOf<'desk' | 'tile' | 'guest'>, verb: Verb) {
   if (verb === 'hand') return tried(() => handOver(offeredCall(c, 'submit', c.callsign)))
   if (verb !== 'brief' && verb !== 'thread') return
   if (a.kind === 'guest') return openLogbook(c)
-  s.pendingTab = { id: c.id, tab: verb === 'brief' ? 'brief' : 'reviews' }
+  app.dispatch({ type: 'pend', pending: { tab: { id: c.id, tab: verb === 'brief' ? 'brief' : 'reviews' } } })
   byKind(RUN, a, 'use')
 }
 
@@ -1212,12 +1232,12 @@ const RUN: ByKind<unknown, [Verb]> = {
     const c = findCard(s.board!, a.id)
     if (!c) return
     if (verb === 'send') return sendNotes(c.project, threadCheckout(c), c)
-    if (verb === 'thread') s.pendingTab = { id: a.id, tab: 'reviews' }
+    if (verb === 'thread') app.dispatch({ type: 'pend', pending: { tab: { id: a.id, tab: 'reviews' } } })
     goDesk(a.id)
   },
   binder(a) {
     if (!s.desks.has(a.id)) return
-    s.pendingTab = { id: a.id, tab: 'brief' }
+    app.dispatch({ type: 'pend', pending: { tab: { id: a.id, tab: 'brief' } } })
     focusDesk(a.id)
   },
   drawer: (a) => openSide({ kind: 'drawer', project: a.project, n: a.n }),
@@ -1275,7 +1295,7 @@ const RUN: ByKind<unknown, [Verb]> = {
   stats: () => openStats(),
   dj: () => toggleMusic(),
   bar: () => (s.beer = !s.beer),
-  elevator: () => (setPanel({ kind: 'elevator' }), unlock()),
+  elevator: () => (go({ kind: 'elevator' }), unlock()),
 }
 
 function run(a: Act, verb: Verb) {
@@ -1291,13 +1311,17 @@ function run(a: Act, verb: Verb) {
 const atDesk = () => panelAs('desk')?.id
 
 /** The panel open beside the world. */
-const panelNow = () => seeing.state().panel
+const panelNow = () => app.state().panel
 /** The panel open while it is a `kind`. */
 const panelAs = <K extends Panel['kind']>(kind: K) => {
   const p = panelNow()
   return p?.kind === kind ? (p as Extract<Panel, { kind: K }>) : undefined
 }
-const setPanel = (panel: Panel | undefined) => seeing.dispatch({ type: 'panel', panel })
+/** The panel goes to `to` (`go` in app.ts). */
+const go = (to: Panel | undefined) => app.dispatch({ type: 'go', to })
+const viewNow = () => app.state().view
+const deskTabNow = () => app.state().deskTab
+const replayNow = () => app.state().replay
 
 /**
  * To the desk a move key names, in the order every renderer moves in (src/shared/cards.ts): N goes round the waits and
@@ -1333,58 +1357,74 @@ function goToAsk(a: Board['asks'][number]) {
 const askSaid = (a: Board['asks'][number]) => (a.hint ? `${a.title}\n\n${a.hint}` : a.title)
 
 /** What you did about the waits (`Heed`): dismissed, the attention machine's, and visited by N this round. */
-const heed = (): Heed => ({ dismissed: seeing.state().attending.dismissed, visited: s.visited })
+const heed = (): Heed => ({ dismissed: app.state().attending.dismissed, visited: s.visited })
 
-/**
- * Tower 3D's machine: the panel open beside the world (the desk you sit at among them), whether the window has your
- * eye, and what asks for you, said and rung as every renderer does (`attend.ts`). Attention is told the desk at
- * which you sit as the panel changes: its waits ring for nobody while you look at it.
- */
-type Seeing = { panel: Panel | undefined; attending: Attending }
-type SeeingEvent = AttendEvent | { type: 'panel'; panel: Panel | undefined }
-type SeeingEffect = AttendOut | StateEffect<Seeing> | TimerEffect<SeeingEvent>
-
-const attend = (v: Seeing, e: AttendEvent): SeeingEffect[] => {
-  const [attending, effects] = attendNext(v.attending, e)
-  return [{ type: 'state', state: { ...v, attending } }, ...effects]
+/** What leaving a panel does, by its kind; the panels the app doesn't move yet close themselves. */
+const closesItself = () => {}
+const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => void } = {
+  desk: focusLeft, shell: focusLeft, tv: focusLeft,
+  floor: closesItself, archive: closesItself, doc: closesItself, kept: closesItself, picture: closesItself, directory: closesItself, elevator: closesItself,
+  'shell-pick': closesItself, logbook: closesItself, drawer: closesItself, draft: closesItself, thread: closesItself, stats: closesItself, game: closesItself,
 }
 
-const seeingHandlers: Handlers<Seeing, SeeingEvent, SeeingEffect> = {
-  board: attend,
-  lost: attend,
-  stored: attend,
-  dismiss: attend,
-  ring: attend,
-  remind: attend,
-  focus: attend,
-  visible: attend,
-  watch: attend,
-  panel: (v, { panel }) => attend({ ...v, panel }, { type: 'watch', at: panel?.kind === 'desk' ? panel.id : undefined }),
+/** What entering a panel does, by its kind, `from` the one open before; the panels the app doesn't move yet open themselves. */
+const opensItself = () => {}
+const ENTER: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>, from: Panel | undefined) => void } = {
+  desk: deskEntered, shell: shellEntered, 'shell-pick': shellPickEntered,
+  floor: opensItself, archive: opensItself, doc: opensItself, kept: opensItself, picture: opensItself, directory: opensItself, elevator: opensItself,
+  tv: opensItself, logbook: opensItself, drawer: opensItself, draft: opensItself, thread: opensItself, stats: opensItself, game: opensItself,
+}
+
+/** What leaving and entering a desk's tab does: each lies over the terminal, which keeps its size. */
+const TAB_LEAVE = (tab: DeskTab) => (tab === 'brief' ? show('desk-brief', false) : tab === 'changes' || tab === 'reviews' ? hideTabs() : tab !== 'screen' && closeShown())
+const TAB_ENTER: { [K in TabTo['tab']]: (id: string, to: Extract<TabTo, { tab: K }>) => void } = {
+  screen: () => {},
+  brief: (id) => briefEntered(id),
+  reviews: (id) => deskViewEntered(THREAD, id),
+  changes: (id, { lines }) => (deskViewEntered(CHANGES, id), lines && desk.showLines(lines)),
+  shown: (id, { shown }) => void shownEntered(id, shown),
+}
+
+/** The panels are drawn once, at the next frame, however many transitions asked for it; `drawPending` draws them now. */
+let drawAsked = false
+function drawPending() {
+  if (!drawAsked) return
+  drawAsked = false
+  renderPanel()
 }
 
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
-const seeing = loop({
-  state: { panel: undefined, attending: attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' }) } as Seeing,
-  handlers: seeingHandlers,
+const app = loop({
+  state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
+  handlers: appHandlers,
   execute: {
-    ...(timers<SeeingEvent>() as Executors<TimerEffect<SeeingEvent>, SeeingEvent>),
+    ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
     announce: () => {},
     notify: () => {},
     unnotify: () => {},
     sound: ({ sound }) => void (s.doorMode || tower.framed || ring(sound)),
     keep: ({ field, value }) => keepViewer(field, value),
+    leave: ({ panel }) => (LEAVE[panel.kind] as (p: Panel) => void)(panel),
+    enter: ({ panel, from }) => (ENTER[panel.kind] as (p: Panel, from: Panel | undefined) => void)(panel, from),
+    'tab/leave': ({ tab }) => TAB_LEAVE(tab),
+    'tab/enter': ({ id, to }) => (TAB_ENTER[to.tab] as (id: string, to: TabTo) => void)(id, to),
+    'desk/screen': ({ id }) => mountDeskScreen(findCard(s.board!, id)!),
+    replays: () => dressReplays(),
+    'fly-home': () => flyHome(),
+    draw: () => void (drawAsked || ((drawAsked = true), requestAnimationFrame(drawPending))),
+    focus: ({ selector }) => (drawPending(), document.querySelector<HTMLElement>(selector)?.focus()),
   },
 })
-seeing.subscribe(events.listen('seeing'))
+app.subscribe(events.listen('app'))
 addEventListener('focus', () => {
-  seeing.dispatch({ type: 'focus', focused: true })
+  app.dispatch({ type: 'focus', focused: true })
   const desk = panelAs('desk')
   const c = desk && s.board && findCard(s.board, desk.id)
   if (c) sawDesk(s.board!, c)
 })
 // The window blurs as focus moves into one of the page's own frames, where the document still has it once focus settles.
-addEventListener('blur', () => setTimeout(() => seeing.dispatch({ type: 'focus', focused: document.hasFocus() })))
-document.addEventListener('visibilitychange', () => seeing.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
+addEventListener('blur', () => setTimeout(() => app.dispatch({ type: 'focus', focused: document.hasFocus() })))
+document.addEventListener('visibilitychange', () => app.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
 
 /**
  * The actions seen as `read` from the store, with what this page saw (`here`) kept: the set only grows, and a read
@@ -1401,7 +1441,7 @@ function rereadViewer() {
     const viewer = { ...read, seen: seenSince(read.seen, was.seen) }
     s.viewer = viewer
     if (viewer.seen === null && s.board) keepViewer('seen', seenOf(null, offeredIds(s.board)))
-    seeing.dispatch({ type: 'stored', viewer })
+    app.dispatch({ type: 'stored', viewer })
     if (viewer.statsRange !== was.statsRange) rangeStats()
     if (viewer.briefMarkdown !== was.briefMarkdown) redrawDeskBrief()
     renderHud()
@@ -1467,7 +1507,7 @@ function sawDesk(board: Board, c: Card) {
 }
 
 function dismissWait(key: string) {
-  seeing.dispatch({ type: 'dismiss', key })
+  app.dispatch({ type: 'dismiss', key })
   renderHud()
   drawWaits()
 }
@@ -1480,7 +1520,7 @@ function drawWaits() {
 }
 
 function chooseRing(ring: Ring) {
-  seeing.dispatch({ type: 'ring', ring })
+  app.dispatch({ type: 'ring', ring })
   drawSettings()
 }
 
@@ -1493,7 +1533,7 @@ let settingsBy: Element = $('hud')
 const settingsEl = $('settings')
 const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([soundSection(seeing.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(s.lighting, lit)])
+  const html = settingsHtml([soundSection(app.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(s.lighting, lit)])
   if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
 }
 placeOnOpen(settingsEl, () => settingsBy)
@@ -1543,8 +1583,8 @@ function toPane(pane: string) {
   if (pane === 'screen') return (openScreen(), $('desk-screen').querySelector('textarea')?.focus(), true)
   const typingInto = document.activeElement as HTMLElement | null
   typingInto?.blur()
-  if (pane === 'brief') openBrief(c.id)
-  else if (pane === 'changes') openChanges(c.id, undefined)
+  if (pane === 'brief') openBrief()
+  else if (pane === 'changes') openChanges(undefined)
   else openReviews()
   return true
 }
@@ -1589,7 +1629,7 @@ function floorY() {
 function overview() {
   closePanels()
   unlock()
-  s.view = 'overview'
+  app.dispatch({ type: 'view', view: 'overview' })
   s.aimed = undefined
   showPrompt(undefined)
   show('paused', false)
@@ -1604,7 +1644,7 @@ function overview() {
 
 function leaveOverview() {
   orbit.enabled = false
-  s.view = 'walk'
+  app.dispatch({ type: 'view', view: 'walk' })
   show('prompt', false)
   flyHome()
 }
@@ -1656,14 +1696,14 @@ function blocked(distance: number): boolean {
  */
 function pick(x: number, y: number): Act | undefined {
   raycaster.setFromCamera(new THREE.Vector2(x, y), camera)
-  raycaster.far = s.view === 'overview' ? Infinity : 9
+  raycaster.far = viewNow() === 'overview' ? Infinity : 9
   const floor = floorY()
   const hit = raycaster.intersectObjects(pickables(), true).find((h) => {
     if (!shown(h.object) || !h.object.userData.act) return false
-    return s.view === 'overview' || (h.point.y > floor - 0.2 && h.point.y < floor + levelHeight(s.me.level))
+    return viewNow() === 'overview' || (h.point.y > floor - 0.2 && h.point.y < floor + levelHeight(s.me.level))
   })
   const a: Act | undefined = hit?.object.userData.act
-  if (!a || s.view === 'overview') return a
+  if (!a || viewNow() === 'overview') return a
   return hit!.distance <= reachOf(a) && !blocked(hit!.distance) ? a : undefined
 }
 
@@ -1673,7 +1713,7 @@ function pick(x: number, y: number): Act | undefined {
  */
 let promptKey = ''
 function showPrompt(a: Act | undefined, at?: { x: number; y: number }) {
-  $('crosshair').classList.toggle('on', Boolean(a) && s.view === 'walk')
+  $('crosshair').classList.toggle('on', Boolean(a) && viewNow() === 'walk')
   const which = JSON.stringify(a ?? null)
   if (which !== s.offersOfAimed) (s.offersOfAimed = which, s.marked = 0, s.hold = undefined)
   s.offers = a && s.board ? offersOf(a, s.board, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: s.plan.galleries }) : []
@@ -1747,8 +1787,8 @@ let latest: Parameters<typeof onBoard> | undefined
 function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
   show('board-error', false)
   s.lost = false
-  seeing.dispatch({ type: 'lost', lost: false })
-  seeing.dispatch({ type: 'board', board: next })
+  app.dispatch({ type: 'lost', lost: false })
+  app.dispatch({ type: 'board', board: next })
   if (!loaded || starting) return void (latest = [next, at])
   if (!s.first) return whenSettled(next, () => onBoard(next, at))
   start(next, at)
@@ -1811,7 +1851,7 @@ function render() {
 /** What a frame sets on the scene before it is drawn: the screens painted, the levels shown, the lighting's passes. */
 function frameScene() {
   if (s.board && s.world) paintScreens(s.simNow, screenDistance)
-  showLevels(levelsShown(s))
+  showLevels(levelsShown(viewNow(), s))
   if (lit) lightFrame()
 }
 
@@ -1836,7 +1876,7 @@ function cameraOnLevel() {
 const standingOn = () => (s.world ? [s.levels[s.me.level]?.group, s.world.levels[s.me.level]].filter((o) => o !== undefined) : [])
 
 /** Your hands are in view while you walk or pet a cat, but not while the camera rides or flies. */
-const handsShown = () => (s.view === 'walk' || s.view === 'pet') && !s.ride && !s.flight
+const handsShown = () => (viewNow() === 'walk' || viewNow() === 'pet') && !s.ride && !s.flight
 
 /** One frame of simulated time: `dt` seconds of it, `t` the clock in seconds, and the turn the input took. */
 type Frame = { dt: number; t: number; turned: Turn }
@@ -1876,7 +1916,7 @@ function tickWalker(f: Frame) {
 
 function stepWalker({ dt, turned }: Frame) {
   s.me = fallTo(s.me, here().kind === 'floor' ? groundAt(s.plan.loft, s.me.x, s.me.z, s.me.y) : 0, dt)
-  if (s.view !== 'walk' || !captured()) return
+  if (viewNow() !== 'walk' || !captured()) return
   s.me = look(s.me, turned)
   if (s.ride || s.flight) return
   const wasInCar = inside(carBox(s.plan), s.me.x, s.me.z)
@@ -1892,7 +1932,7 @@ function stepWalker({ dt, turned }: Frame) {
 function startPet(name: CatName) {
   const cat = s.cats.get(name)!
   const spot = petSpot(cat, camera.position)
-  s.view = 'pet'
+  app.dispatch({ type: 'view', view: 'pet' })
   s.aimed = undefined
   showPrompt(undefined)
   s.pet = { name, start: s.simNow, tailward: spot.tailward, hearts: makeHearts() }
@@ -1905,10 +1945,10 @@ function tickPet() {
   const p = s.pet
   if (!p) return
   const k = petProgress(p, s.simNow)
-  if (s.view === 'pet' && k < 1) return placeHearts(p, s.cats.get(p.name)!, k)
+  if (viewNow() === 'pet' && k < 1) return placeHearts(p, s.cats.get(p.name)!, k)
   dropHearts(p)
   s.pet = undefined
-  if (s.view === 'pet') (s.view = 'walk', flyHome())
+  if (viewNow() === 'pet') (app.dispatch({ type: 'view', view: 'walk' }), flyHome())
 }
 
 /** A landing's doors: shut for a ride and behind a leaver who boarded; open where you stand and ahead of a leaver. */
@@ -1940,15 +1980,15 @@ function tickCamera() {
       s.flight = undefined
       done?.()
     }
-  } else if (s.view === 'walk') aim(camera, s.me, floorY())
-  else if (s.view === 'overview') orbit.update()
+  } else if (viewNow() === 'walk') aim(camera, s.me, floorY())
+  else if (viewNow() === 'overview') orbit.update()
 }
 
 function tickAim() {
-  if (s.view === 'walk' && captured() && !s.flight) {
+  if (viewNow() === 'walk' && captured() && !s.flight) {
     s.aimed = pick(0, 0)
     showPrompt(s.aimed)
-  } else if (s.view !== 'overview' && !s.still) showPrompt(undefined)
+  } else if (viewNow() !== 'overview' && !s.still) showPrompt(undefined)
 }
 
 /** A held verb's ring fills; once full, the verb runs. */
@@ -1971,7 +2011,7 @@ function chairLeft(desk: THREE.Vector3) {
 
 /** Everyone moves where they go every frame; bones are posed only on the levels drawn (`levelsShown`). */
 function tickPeople({ dt, t }: Frame) {
-  const shown = levelsShown(s)
+  const shown = levelsShown(viewNow(), s)
   for (const desk of s.desks.values()) poseDesk(desk, t, dt)
   for (const [id, a] of s.arrivals) if (walkIn(a, dt)) s.arrivals.delete(id)
   for (const desk of s.desks.values()) {
@@ -2026,10 +2066,10 @@ function tickCats(dt: number, t: number) {
 
 function tickParty({ dt, t }: Frame) {
   setRoom(here().kind === 'roof' ? 'roof' : 'inside')
-  duck(s.view === 'focus')
+  duck(viewNow() === 'focus')
   const beat = beatAt(t)
   const roof = s.plan.levels.at(-1)!
-  const posing = levelsShown(s)(roof.index)
+  const posing = levelsShown(viewNow(), s)(roof.index)
   for (const g of s.guests.values()) {
     const at = guestAt(g.card, t, s.plan)
     placeGuest(g, at, roof.y)
@@ -2046,7 +2086,7 @@ const head = new THREE.Vector3()
 
 /** While you walk a floor, an arrow on the screen's edge toward each worker on it waiting on you that you can't see. */
 function tickCompass() {
-  const walking = s.view === 'walk' && !s.ride
+  const walking = viewNow() === 'walk' && !s.ride
   const waits = walking ? heededWaits(s.board!, heed()).filter((w) => levelOfCard(s.plan, w.id)?.index === s.me.level && s.desks.has(w.id)) : []
   const targets = waits.map((w) => ({ id: w.id, at: s.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(s.me.level) + HEAD_Y) }))
   const card = (id: string) => findCard(s.board!, id)!
@@ -2144,29 +2184,29 @@ resize()
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId)
   s.down = { x: e.clientX, y: e.clientY, act: JSON.stringify(s.aimed ?? null) }
-  if (e.button === 0 && s.aimed && (captured() || s.view === 'overview')) pressMarked(s.aimed)
+  if (e.button === 0 && s.aimed && (captured() || viewNow() === 'overview')) pressMarked(s.aimed)
 })
 canvas.addEventListener('pointerup', (e) => {
   if (e.button !== 0 || !s.board || !s.down) return
   if (Math.hypot(e.clientX - s.down.x, e.clientY - s.down.y) > 5 || JSON.stringify(s.aimed ?? null) !== s.down.act) return (s.hold = undefined)
-  if (s.view === 'overview' || captured()) return s.aimed && releaseMarked(s.aimed)
+  if (viewNow() === 'overview' || captured()) return s.aimed && releaseMarked(s.aimed)
   closePanels()
   lock()
 })
 canvas.addEventListener('pointermove', (e) => {
-  if (s.view !== 'overview' || !s.board) return
+  if (viewNow() !== 'overview' || !s.board) return
   s.aimed = pick((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1)
   canvas.style.cursor = s.aimed ? 'pointer' : ''
   showPrompt(s.aimed, { x: e.clientX, y: e.clientY })
 })
 canvas.addEventListener('wheel', (e) => {
-  if (s.view !== 'walk' || !captured() || s.offers.length < 2) return
+  if (viewNow() !== 'walk' || !captured() || s.offers.length < 2) return
   s.marked = (s.marked + Math.sign(e.deltaY) + s.offers.length) % s.offers.length
   s.hold = undefined
 }, { passive: true })
 $('paused').addEventListener('click', (e) => {
   if ((e.target as Element).closest('a, [popovertarget]')) return
-  if (s.view === 'overview') leaveOverview()
+  if (viewNow() === 'overview') leaveOverview()
   lock()
 })
 
@@ -2175,14 +2215,14 @@ const typing = () => {
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || asking() || ($('spawn') as HTMLDialogElement).open || ($('landing') as HTMLDialogElement).open
 }
 /** The aimed thing's verb on a key, by `KeyboardEvent.code`. */
-const offerOnKey = (code: string) => (s.aimed && (captured() || s.view === 'overview') ? offerForKey(s.offers, code) : undefined)
+const offerOnKey = (code: string) => (s.aimed && (captured() || viewNow() === 'overview') ? offerForKey(s.offers, code) : undefined)
 
 /** A key the building answers, by `KeyboardEvent.code`: the aimed thing's verbs first, then the building's own. Returns whether it answered. */
 function onKey(code: string, repeat: boolean): boolean {
   if (code === 'KeyB') return (toggleMusic(), true)
   if (code === 'Backquote') return (toggleFps(), true)
   startMusic()
-  if (s.view === 'pet') return false
+  if (viewNow() === 'pet') return false
   const offer = offerOnKey(code)
   if (s.aimed && offer) {
     if (!repeat) HELD.has(offer.verb) ? startHold(s.aimed, offer, code) : run(s.aimed, offer.verb)
@@ -2194,13 +2234,13 @@ function onKey(code: string, repeat: boolean): boolean {
   if (code === 'KeyN') return (nextWaiting(), true)
   if (code === 'KeyV') return (lookAtNew(), true)
   if (code === 'KeyM') return (panelNow()?.kind === 'directory' ? (closeSide(), lock()) : openSide({ kind: 'directory' }), true)
-  if (code === 'KeyH') return (s.view === 'overview' ? (leaveOverview(), lock()) : overview(), true)
-  if (code === 'Escape' && s.view === 'overview') return (leaveOverview(), true)
-  if (code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return (replay(s.replay.id, undefined), true)
+  if (code === 'KeyH') return (viewNow() === 'overview' ? (leaveOverview(), lock()) : overview(), true)
+  if (code === 'Escape' && viewNow() === 'overview') return (leaveOverview(), true)
+  if (code === 'Escape' && replayNow() !== undefined && replayNow()!.id === atDesk()) return (replay(replayNow()!.id, undefined), true)
   if (code === 'Escape' && panelNow()) return (closePanels(), true)
   const to = levelForKey(s.plan, code)
   if (to === undefined || to === s.me.level || s.ride) return false
-  if (s.view === 'walk' && inside(carBox(s.plan), s.me.x, s.me.z)) startRide(to)
+  if (viewNow() === 'walk' && inside(carBox(s.plan), s.me.x, s.me.z)) startRide(to)
   else goLevel(to)
   return true
 }
@@ -2209,10 +2249,10 @@ function onKey(code: string, repeat: boolean): boolean {
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || asking() || commandKey(e)) return
   // A replayed screen takes no input, so Esc ends the replay even while that screen has focus.
-  if (e.code === 'Escape' && s.replay !== undefined && s.replay.id === atDesk()) return (e.preventDefault(), replay(s.replay.id, undefined))
+  if (e.code === 'Escape' && replayNow() !== undefined && replayNow()!.id === atDesk()) return (e.preventDefault(), replay(replayNow()!.id, undefined))
   if (!s.board || typing() || e.metaKey || e.ctrlKey || e.altKey) return
   // A key the page leaves alone goes back to the app around it: Tower.app's WKWebView beeps on each one.
-  if (MOVE_KEYS.has(e.code) && s.view === 'walk' && (captured() || document.activeElement === document.body)) e.preventDefault()
+  if (MOVE_KEYS.has(e.code) && viewNow() === 'walk' && (captured() || document.activeElement === document.body)) e.preventDefault()
   // A verb may focus a field (the spawn dialog's prompt): its key must not be typed into it.
   if (offerOnKey(e.code)) e.preventDefault()
   if (onKey(e.code, e.repeat)) e.preventDefault()
@@ -2253,7 +2293,7 @@ $('watch').addEventListener('click', (e) => {
 $('elevator').addEventListener('click', (e) => {
   const to = (e.target as HTMLElement).closest<HTMLElement>('[data-ride]')?.dataset.ride
   if (to === undefined) return
-  if (panelNow()?.kind === 'elevator') setPanel(undefined)
+  if (panelNow()?.kind === 'elevator') go(undefined)
   startRide(Number(to))
   lock()
 })
@@ -2292,22 +2332,20 @@ function readLogbook(where: keyof typeof logbookReads, c: Card, held: boolean, w
 /** Each open logbook read again where its worker's card moved since it was read, as the page's Brief is. */
 function freshLogbooks(board: Board) {
   const desk = atDesk()
-  const worker = desk && s.deskTab === 'brief' ? findCard(board, desk) : undefined
+  const worker = desk && deskTabNow() === 'brief' ? findCard(board, desk) : undefined
   if (worker && logbookReads.desk !== readKey(worker)) readDeskBrief(worker)
   const open = panelAs('logbook')
   const read = open && findCard(board, open.card.id)
   if (read && logbookReads.reader !== readKey(read)) readReader(read)
 }
 
+const openBrief = () => app.dispatch({ type: 'tab', to: { tab: 'brief' } })
+
 /**
  * The brief lies over the terminal, which keeps its size: a hidden terminal would refit the PTY to nothing. A brief
  * read before for this worker shows at once, then is read again.
  */
-function openBrief(id: string) {
-  s.deskTab = 'brief'
-  closeShown()
-  hideTabs()
-  renderPanel()
+function briefEntered(id: string) {
   if (deskBrief?.id === id) (drawDeskBrief(true), show('desk-brief', true))
   readDeskBrief(findCard(s.board!, id)!)
 }
@@ -2315,7 +2353,7 @@ function openBrief(id: string) {
 /** The desk's logbook read now, drawn as it lands while the desk still shows it, and kept at its end while you read there. */
 function readDeskBrief(c: Card) {
   readLogbook('desk', c, deskBrief?.id === c.id, () => (deskBrief?.id === c.id ? deskBrief.wholes : []), (briefs, wholes) => {
-    if (!findCard(s.board!, c.id) || atDesk() !== c.id || s.deskTab !== 'brief') return
+    if (!findCard(s.board!, c.id) || atDesk() !== c.id || deskTabNow() !== 'brief') return
     const same = deskBrief?.id === c.id
     const atEnd = !same || readsAtEnd($('desk-brief'))
     deskBrief = { id: c.id, threads: briefs, wholes }
@@ -2339,12 +2377,12 @@ const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expande
 function drawDeskBrief(same: boolean) {
   const c = findCard(s.board!, deskBrief!.id)!
   const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), tools: toolRead, markdown: s.viewer.briefMarkdown }
-  $('desk-brief').innerHTML = logbookHtml(s.board!, c, deskBrief!.threads, look, s.replay?.id === c.id ? s.replay.session : undefined)
+  $('desk-brief').innerHTML = logbookHtml(s.board!, c, deskBrief!.threads, look, replayNow()?.id === c.id ? replayNow()!.session : undefined)
 }
 
 /** The logbook again, if the desk shows it, in your `viewer.briefMarkdown`. */
 function redrawDeskBrief() {
-  if (deskBrief && atDesk() === deskBrief.id && s.deskTab === 'brief') drawDeskBrief(true)
+  if (deskBrief && atDesk() === deskBrief.id && deskTabNow() === 'brief') drawDeskBrief(true)
 }
 
 function chooseBriefMarkdown(markdown: BriefMarkdown) {
@@ -2378,7 +2416,7 @@ function readWhole(key: string, atDeskBrief: boolean) {
   tower.conversation(session, conversation).then((whole) => {
     if (atDeskBrief && deskBrief) return (deskBrief = { ...deskBrief, threads: withWhole(deskBrief.threads, whole), wholes: [...deskBrief.wholes, whole] }), drawDeskBrief(true)
     const open = panelAs('logbook')
-    if (open?.threads) setPanel({ ...open, threads: withWhole(open.threads, whole), wholes: [...open.wholes, whole] }), renderPanel()
+    if (open?.threads) go({ ...open, threads: withWhole(open.threads, whole), wholes: [...open.wholes, whole] }), renderPanel()
   }, (err: Error) => toast(err.message))
 }
 
@@ -2397,27 +2435,18 @@ document.addEventListener('toggle', (e) => {
   }, (err: Error) => toast(err.message))
 }, true)
 
-function openScreen() {
-  s.deskTab = 'screen'
-  show('desk-brief', false)
-  hideTabs()
-  closeShown()
-  renderPanel()
-}
+const openScreen = () => app.dispatch({ type: 'tab', to: { tab: 'screen' } })
+const openShown = (shown: Shown) => app.dispatch({ type: 'tab', to: { tab: 'shown', shown } })
 
 /** A showing lies over the terminal like the brief, and counts as seen once opened. */
-async function openShown(id: string, sh: Shown) {
+async function shownEntered(id: string, sh: Shown) {
   const c = findCard(s.board!, id)!
-  s.deskTab = shownTab(sh)
-  show('desk-brief', false)
-  hideTabs()
   see(sh)
-  renderPanel()
   $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes())
   show('desk-shown', true)
   if (!isMarkdown(sh)) return
   const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
-  if (atDesk() !== id || s.deskTab !== shownTab(sh)) return
+  if (atDesk() !== id || deskTabNow() !== shownTab(sh)) return
   $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes(), md)
 }
 
@@ -2447,10 +2476,10 @@ $('desk-tabs').addEventListener('click', (e) => {
   if (!desk || openOut(e) || !tab) return
   const c = findCard(s.board!, desk)!
   const sh = c.shown.find((sh) => shownTab(sh) === tab)
-  if (sh) return openShown(c.id, sh)
-  if (tab === 'brief') openBrief(desk)
+  if (sh) return openShown(sh)
+  if (tab === 'brief') openBrief()
   else if (tab === 'reviews') openReviews()
-  else if (tab === 'changes') openChanges(desk, undefined)
+  else if (tab === 'changes') openChanges(undefined)
   else openScreen()
 })
 $('desk-shown').addEventListener('click', openOut)
@@ -2465,8 +2494,8 @@ for (const el of ['desk-brief', 'desk-stamp']) {
 onAppearance(() => {
   const desk = atDesk()
   if (!desk) return
-  const sh = findCard(s.board!, desk)?.shown.find((sh) => shownTab(sh) === s.deskTab)
-  if (sh && isMarkdown(sh)) openShown(desk, sh)
+  const sh = findCard(s.board!, desk)?.shown.find((sh) => shownTab(sh) === deskTabNow())
+  if (sh && isMarkdown(sh)) openShown(sh)
 })
 
 /** The desk's Reviews and Changes hidden and kept, as another of its tabs opens. */
@@ -2487,23 +2516,13 @@ const showSince = (el: HTMLElement) => {
 }
 
 /** The worker's review thread, the page's `reviews/thread` mounted at its desk over the terminal, like the brief. */
-function openReviews() {
-  openDeskView(THREAD, atDesk()!)
-  renderPanel()
-}
+const openReviews = () => app.dispatch({ type: 'tab', to: { tab: 'reviews' } })
 
-/** What changed in the worker's repos, the page's `tower/changes` mounted at its desk; `jump`: lines to scroll to. */
-function openChanges(id: string, jump: Lines | undefined) {
-  openDeskView(CHANGES, id)
-  if (jump) desk.showLines(jump)
-  renderPanel()
-}
+/** What changed in the worker's repos, the page's `tower/changes` mounted at its desk; `lines`: lines to scroll to. */
+const openChanges = (lines: Lines | undefined) => app.dispatch({ type: 'tab', to: { tab: 'changes', lines } })
 
 /** The desk's tab `view` on the worker `id` seen, the desk's other views hidden and kept. */
-function openDeskView(view: typeof CHANGES | typeof THREAD, id: string) {
-  s.deskTab = view === THREAD ? 'reviews' : 'changes'
-  show('desk-brief', false)
-  closeShown()
+function deskViewEntered(view: typeof CHANGES | typeof THREAD, id: string) {
   show('desk-view', true)
   desk.open(view, $('desk-view'), findCard(s.board!, id)!)
 }
@@ -2512,13 +2531,13 @@ function openDeskView(view: typeof CHANGES | typeof THREAD, id: string) {
 function openThread(project: string, checkout: string) {
   const worker = workerIn(floorOf(project), checkout)
   if (worker?.onDuty) {
-    s.pendingTab = { id: worker.id, tab: 'reviews' }
+    app.dispatch({ type: 'pend', pending: { tab: { id: worker.id, tab: 'reviews' } } })
     return goDesk(worker.id)
   }
   const t = floorThreadsOf(floorOf(project)).find((t) => t.checkout === checkout)
   if (!t) return
   closePanels()
-  setPanel({ kind: 'thread', project, checkout })
+  go({ kind: 'thread', project, checkout })
   unlock()
   show('paused', false)
   show('doc', true)
@@ -2544,7 +2563,7 @@ async function sendNotes(project: string, checkout: string, to: Card | undefined
 const copiedAs = (text: string, what: string) => copyTelling(text, what, toast)
 
 setInterval(() => {
-  if (panelNow()?.kind === 'desk' && s.deskTab === 'changes') showSince($('desk-view'))
+  if (panelNow()?.kind === 'desk' && deskTabNow() === 'changes') showSince($('desk-view'))
   if (panelNow()?.kind === 'stats') showSince($('doc-body'))
 }, 1000)
 
@@ -2559,7 +2578,7 @@ function openLogbook(c: Card) {
   unfocus()
   closeDraftPanel()
   closeDoc()
-  setPanel({ kind: 'logbook', card: c, threads: undefined, wholes: [], tab: 'brief', on: c.id })
+  go({ kind: 'logbook', card: c, threads: undefined, wholes: [], tab: 'brief', on: c.id })
   $('doc-body').dataset.logbook = ''
   $('doc-body').innerHTML = `<div class="desk-bar tab-row"><span class="desk-tabs tab-set" id="logbook-tabs"></span></div>
     <div class="logbook-shot" id="logbook-shot"><div id="logbook-sessions"></div><div class="logbook-frame"><div class="logbook-screen" id="logbook-screen"></div><div class="stamp" id="logbook-stamp"></div></div></div>
@@ -2580,7 +2599,7 @@ function readReader(c: Card) {
     const open = panelAs('logbook')
     if (open?.card.id !== c.id) return
     const atEnd = open.threads === undefined || readsAtEnd($('logbook-text'))
-    setPanel({ ...open, threads: briefs, wholes })
+    go({ ...open, threads: briefs, wholes })
     renderPanel()
     if (atEnd) $('logbook-text').scrollTop = $('logbook-text').scrollHeight
   })
@@ -2590,7 +2609,7 @@ function readReader(c: Card) {
 function logbookTab(tab: LogbookTab) {
   const panel = panelAs('logbook')
   if (!panel || panel.tab === tab) return
-  setPanel({ ...panel, tab })
+  go({ ...panel, tab })
   if (tab === 'screen') showLogbookScreen(panel.card, panel.on)
   else closeTerm($('logbook-screen'))
   renderPanel()
@@ -2608,7 +2627,7 @@ function showLogbookScreen(c: Card, session: string) {
 
 async function resume(c: Call<'resume'>) {
   const reply = await offered(c)
-  if (reply?.t === 'spawned') s.pendingDesk = reply.id
+  if (reply?.t === 'spawned') app.dispatch({ type: 'pend', pending: { desk: reply.id } })
 }
 
 $('desk-head').addEventListener('click', async (e) => {
@@ -2672,7 +2691,7 @@ $('doc-body').addEventListener('click', (e) => {
     if (tab) return logbookTab(tab as LogbookTab)
     const session = (e.target as HTMLElement).closest<HTMLElement>('[data-replay]')?.dataset.replay
     if (!session) return
-    setPanel({ ...logbook, on: session })
+    go({ ...logbook, on: session })
     showLogbookScreen(logbook.card, session)
     return renderPanel()
   }
@@ -2726,7 +2745,7 @@ $('side').addEventListener('click', async (e) => {
     const f = floorOf(floor.id)
     return pressing(el, () => tried(() => tidy(offeredCall(f, 'tidy', f.name))))
   }
-  if (d.tray && floor) return (setPanel({ ...floor, tray: floor.tray === d.tray ? undefined : d.tray }), renderPanel())
+  if (d.tray && floor) return (go({ ...floor, tray: floor.tray === d.tray ? undefined : d.tray }), renderPanel())
   if (d.kept && floor) return openKept(keptOf(d.kept))
   if (d.archive !== undefined && floor) return (openSide({ kind: 'archive', id: floor.id, words: [] }), $('archive-filter').focus())
   if (d.floor !== undefined && archive) return openSide({ kind: 'floor', id: archive.id, tray: undefined })
@@ -2736,7 +2755,7 @@ $('side').addEventListener('input', (e) => {
   const el = e.target as HTMLInputElement
   const archive = panelAs('archive')
   if (el.id !== 'archive-filter' || !archive) return
-  setPanel({ ...archive, words: wordsOf(el.value) })
+  go({ ...archive, words: wordsOf(el.value) })
   renderPanel()
 })
 
@@ -2788,7 +2807,7 @@ async function killShell(sh: Board['shells'][number]) {
 /** A new shell in `cwd`: you walk to its kiosk once the board shows it. Answers whether it started. */
 async function spawnShell(c: Call<'shell/spawn'>, cwd: string) {
   const reply = await offered(c, { cwd })
-  if (reply?.t === 'spawned') s.pendingShell = reply.id
+  if (reply?.t === 'spawned') app.dispatch({ type: 'pend', pending: { shell: reply.id } })
   return reply?.t === 'spawned'
 }
 
@@ -2922,7 +2941,7 @@ const spawning = wireSpawn<Held, DraftIo, Draft>(spawn, {
   kept: () => {},
   shown: unlock,
   started: (id, note) => {
-    s.pendingDesk = id
+    app.dispatch({ type: 'pend', pending: { desk: id } })
     if (note) void sent(note)
   },
   toast,
@@ -2947,7 +2966,7 @@ const hiring = loop({
       ),
     started: ({ id, on }, dispatch) => {
       if (on) void sent(on)
-      else s.pendingDesk = id
+      else app.dispatch({ type: 'pend', pending: { desk: id } })
       dispatch({ type: 'board', board: s.board! })
     },
     open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
@@ -2971,7 +2990,7 @@ const draftText = $('draft-text') as HTMLTextAreaElement
 function openDraftPanel(d: Draft) {
   closePanels()
   s.draft = d
-  setPanel({ kind: 'draft' })
+  go({ kind: 'draft' })
   unlock()
   show('paused', false)
   show('draft', true)
@@ -2990,20 +3009,29 @@ async function openNote(project: string, id: string) {
 
 /** Closes the editor without saving: for a draft that is gone. */
 function dropDraftPanel() {
+  draftDropped()
+  if (panelNow()?.kind === 'draft') go(undefined)
+}
+
+function draftDropped() {
   clearTimeout(saveTimer)
   s.draft = undefined
   show('draft', false)
-  if (panelNow()?.kind === 'draft') setPanel(undefined)
 }
 
 /** Closes the editor, its text saved. */
 function closeDraftPanel() {
+  draftClosed()
+  if (panelNow()?.kind === 'draft') go(undefined)
+}
+
+function draftClosed() {
   const d = s.draft
   if (d) {
     if (keepsApart(d)) toast('Your edits were kept as a new draft')
     saving = leave(draftIo, d)
   }
-  dropDraftPanel()
+  draftDropped()
 }
 
 function saveDraft() {
@@ -3075,7 +3103,7 @@ shell().assets.loaded.then(({ models: m, kept, kit, declared: renderer }) => {
   else onLoaded()
 }, failStart)
 /** How waits ring and what you dismissed are known before the first board, which may come long before the models. */
-if (FIXTURE === undefined) readViewer(tower.store.get).then((viewer) => (seeing.dispatch({ type: 'stored', viewer }), tower.subscribe(onLiveBoard), tower.onBoardError(onBoardError)))
+if (FIXTURE === undefined) readViewer(tower.store.get).then((viewer) => (app.dispatch({ type: 'stored', viewer }), tower.subscribe(onLiveBoard), tower.onBoardError(onBoardError)))
 Promise.all([tower.get('renderers'), tower.renderer()]).then(([{ renderers }, here]) =>
   ($('renderers').innerHTML = renderersHtml(renderers, here?.name, tower.framed)), (err: Error) => toast(`renderers: ${err.message}`))
 
@@ -3091,7 +3119,7 @@ function advance() {
 }
 
 function onFixtureBoard(next: Board) {
-  seeing.dispatch({ type: 'board', board: next })
+  app.dispatch({ type: 'board', board: next })
   whenSettled(next, () => onBoard(next, undefined))
 }
 
@@ -3101,7 +3129,7 @@ setInterval(() => s.board && renderHud(), 30_000)
 /** Kept only for a person: the door's walks would move their spot. */
 let keptKey = ''
 setInterval(() => {
-  if (!s.board || s.view !== 'walk' || s.ride || s.doorMode) return
+  if (!s.board || viewNow() !== 'walk' || s.ride || s.doorMode) return
   const kept: Kept = { spot: spotOf(s.me), muted: s.muted, fps: s.fpsShown, seen: [...s.seenShown].slice(-SEEN_KEPT) }
   const key = JSON.stringify(kept)
   if (key !== keptKey) (keptKey = key, tower.remember(kept))
@@ -3113,7 +3141,7 @@ let unbuilt: (err: Error) => void
 const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
 
 installDoor({
-  ready, update, render, onKey, run, place, leaveOverview, captured, captureChanged, pick, showPrompt, startHold, floorY, pickables, advance, panel: panelNow,
+  ready, update, render, onKey, run, place, leaveOverview, captured, captureChanged, pick, showPrompt, startHold, floorY, pickables, advance, app: app.state, drawPending,
   events: events.read,
   play: () => (lastFrame = performance.now()),
 })

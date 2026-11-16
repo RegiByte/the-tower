@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { makeLayer, type KitLayer } from './kit.ts'
 import { shell } from './shell.ts'
-import { s, type State } from './state.ts'
+import { s, type State, type View } from './state.ts'
 
 const { scene } = shell().stage
 
@@ -37,8 +37,8 @@ export const levelOf = (o: THREE.Object3D) => s.levels.findIndex((root) => root.
  * back in, so from inside only your own level can be seen; riding, the levels the car passes, whose landing doors go
  * by its open front; from outside, over the city or flying the camera there and back, all of them.
  */
-export function levelsShown(v: Pick<State, 'view' | 'ride' | 'flight' | 'me'>): (index: number) => boolean {
-  if (v.view === 'overview' || v.flight) return () => true
+export function levelsShown(view: View, v: Pick<State, 'ride' | 'flight' | 'me'>): (index: number) => boolean {
+  if (view === 'overview' || v.flight) return () => true
   if (v.ride) {
     const [low, high] = [Math.min(v.ride.from, v.ride.to), Math.max(v.ride.from, v.ride.to)]
     return (i) => i >= low && i <= high

@@ -4,7 +4,7 @@ import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
 import type { Board, Brief, Card, ShelfSelf, Stats, tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
-import type { Lines, Renderer } from '/lib/board.js'
+import type { Renderer } from '/lib/board.js'
 import type { Note } from './cork.ts'
 import type { ArcadeSign, Cabinet } from './arcade.ts'
 import type { Desk, Station } from './desk.ts'
@@ -21,7 +21,7 @@ import type { VideoWall } from './room.ts'
 import type { Running } from './running.ts'
 import type { Pigeonhole } from './pigeonhole.ts'
 import type { Filing } from './filing.ts'
-import type { DeskTab, LogbookTab } from './ui.ts'
+import type { LogbookTab } from './ui.ts'
 import { STATS_ALL } from '/lib/stats.js'
 import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
 import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
@@ -141,7 +141,6 @@ export type State = {
 
   /** Where you are and what you're doing: walking, riding, looking at a terminal, petting a cat, or out over the city. */
   me: Walker
-  view: View
   ride: Ride | undefined
   flight: Flight | undefined
   /** The cat being petted, while the view is `pet`. */
@@ -149,15 +148,8 @@ export type State = {
   cut: Cut | undefined
   /** How open each level's landing doors are, 0 to 1, by level index. */
   doorOpen: Map<number, number>
-  deskTab: DeskTab
-  /** Where to go once the board shows it: a desk or shell just spawned or resumed, a desk to open on its brief or its review thread. */
-  pendingDesk: string | undefined
   /** The hires in flight by floor, as the hiring machine in main holds them: read by the open workstations. */
   hiring: () => Hiring<Held>
-  pendingTab: { id: string; tab: 'brief' | 'reviews' } | { id: string; tab: 'changes'; lines: Lines } | undefined
-  pendingShell: string | undefined
-  /** A desk to open on a showing's tab, by its worker and target. */
-  pendingShown: { id: string; target: string } | undefined
   /** Every showing you have opened, by `shownKey`, kept with your spot; and every one on the last board, to spot new ones. */
   seenShown: Set<string>
   lastShown: Set<string>
@@ -207,8 +199,6 @@ export type State = {
   origins: Record<string, string>
   /** The Stats panel: the last read over `viewer.statsRange` and when, the scope shown, and the read in flight's number. */
   stats: { read: Stats | undefined; failed: string | undefined; at: number | undefined; scope: string; reading: number }
-  /** A past session of a worker at a desk replayed on its monitor, and in its desk panel: its last screen, until back to live. */
-  replay: { id: string; session: string } | undefined
 }
 
 const NO_PLATE = { width: 0, depth: 0 }
@@ -221,8 +211,8 @@ export const s: State = {
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
   visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: shell().lighting.lit, waitedAt: 0, lastStatus: new Map(),
-  me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, view: 'walk', ride: undefined, flight: undefined, pet: undefined, cut: undefined,
-  doorOpen: new Map(), deskTab: 'screen', pendingDesk: undefined, hiring: noHires, pendingTab: undefined, pendingShell: undefined, pendingShown: undefined, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
+  me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, ride: undefined, flight: undefined, pet: undefined, cut: undefined,
+  doorOpen: new Map(), hiring: noHires, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined,
   aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, down: undefined,
   doorMode: false, doorHeld: false, still: false,
@@ -230,5 +220,4 @@ export const s: State = {
   meter: { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 },
   saved: undefined, muted: false, fpsShown: false, origins: {},
   stats: { read: undefined, failed: undefined, at: undefined, scope: STATS_ALL, reading: 0 },
-  replay: undefined,
 }
