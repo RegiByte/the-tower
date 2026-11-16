@@ -1237,6 +1237,7 @@ const mainRegion = regions({
   subjectOf,
   unshown: () => unshown,
   mainPane: () => viewing('view')?.location.pane,
+  now: pageNow,
   gone: () => goHome(),
   left: () => void subjectLeft(),
   bus,
