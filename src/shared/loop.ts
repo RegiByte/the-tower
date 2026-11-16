@@ -34,7 +34,18 @@ export type Loop<S, E> = {
    * Provisional, though `Loop` is stable. @since 1.162
    */
   until(holds: (state: S) => boolean): Promise<S>
+  /**
+   * Calls `listener` once per event handled, with the event and every effect its handler returned (`state` among them),
+   * after those effects ran, in the order the events were handled: an event an executor dispatched comes after the one
+   * whose effect dispatched it. Answers the function that stops the calls. A listener watches and never steers: one
+   * that throws leaves the loop as it was, every queued event still handled, and its error rejects a promise of its own,
+   * which the page's or the process's unhandled-rejection handling reports. @since 2.7
+   */
+  subscribe(listener: Listener<E>): () => void
 }
+
+/** What `Loop.subscribe` calls with each event handled and the effects its handler returned. */
+export type Listener<E> = (event: E, effects: readonly Tagged[]) => void
 
 /**
  * Runs a machine from `state`. An event dispatched while another is handled (an executor drawing, and the draw asking
@@ -45,12 +56,24 @@ export function loop<S, E extends Tagged, F extends Tagged>(m: { state: S; handl
   const queue: E[] = []
   let handling = false
   let waiting: { holds: (state: S) => boolean; resolve: (state: S) => void }[] = []
+  let listeners: Listener<E>[] = []
+  const tell = (event: E, effects: F[]) => {
+    for (const listener of listeners) {
+      try {
+        listener(event, effects)
+      } catch (err) {
+        void Promise.reject(err)
+      }
+    }
+  }
   const step = (event: E) => {
     const handler = m.handlers[event.type as E['type']] as (state: S, event: E) => F[]
-    for (const effect of handler(state, event)) {
+    const effects = handler(state, event)
+    for (const effect of effects) {
       if (effect.type === 'state') state = (effect as Tagged as StateEffect<S>).state
       else (m.execute[effect.type as Exclude<F['type'], 'state'>] as (effect: F, dispatch: (event: E) => void) => void)(effect, dispatch)
     }
+    tell(event, effects)
   }
   const dispatch = (event: E) => {
     queue.push(event)
@@ -67,7 +90,11 @@ export function loop<S, E extends Tagged, F extends Tagged>(m: { state: S; handl
   }
   const until = (holds: (state: S) => boolean) =>
     !handling && holds(state) ? Promise.resolve(state) : new Promise<S>((resolve) => void waiting.push({ holds, resolve }))
-  return { dispatch, state: () => state, until }
+  const subscribe = (listener: Listener<E>) => {
+    listeners = [...listeners, listener]
+    return () => void (listeners = listeners.filter((l) => l !== listener))
+  }
+  return { dispatch, state: () => state, until, subscribe }
 }
 
 /** The executors of `TimerEffect`s, each loop its own. */

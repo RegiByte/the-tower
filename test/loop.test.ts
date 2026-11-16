@@ -44,3 +44,14 @@ test('loop until: asked from an executor, resolves on the state the events it qu
   c.dispatch({ type: 'echo', by: 1 })
   assert.equal(await wait, c.state(), 'the add queued before the wait has run')
 })
+
+test('loop subscribe: each event with the effects its handler returned, after they ran, in the order handled', () => {
+  const c = counter()
+  const seen: string[] = []
+  const stop = c.subscribe((event, effects) => seen.push(`${event.type} ${event.by} → ${effects.map((f) => f.type).join(',')} at ${c.state()}`))
+  c.dispatch({ type: 'echo', by: 2 })
+  assert.deepEqual(seen, ['echo 2 → echo at 0', 'add 2 → state at 2'], 'the add the executor dispatched comes after the echo that asked for it')
+  stop()
+  c.dispatch({ type: 'add', by: 1 })
+  assert.equal(seen.length, 2, 'unsubscribed')
+})

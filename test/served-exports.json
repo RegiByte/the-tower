@@ -1948,6 +1948,9 @@
         "Handlers": {
           "since": "2.0"
         },
+        "Listener": {
+          "since": "2.7"
+        },
         "Loop": {
           "since": "2.0"
         },
