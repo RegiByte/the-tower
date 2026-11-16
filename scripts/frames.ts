@@ -44,8 +44,11 @@ const source = (file: string) => readFileSync(path.join(import.meta.dirname, fil
 type Scenario = { name: string; dir: string; source: string; boards: string[] }
 const SCENARIOS: Scenario[] = [
   { name: 'walk', dir: '', source: source('frames.scenario.js'), boards: ['busy', 'empty', 'tall', 'party', 'review', 'attention', 'tidy', 'logbook', 'crews', 'growing', 'breakroom'] },
-  /** busy reaches every route but the filing cabinet's, which logbook has, and a review thread's slot, which review has. */
-  { name: 'panels', dir: 'panels', source: source('frames.panels.js'), boards: ['busy', 'logbook', 'review'] },
+  /**
+   * busy reaches every route but the filing cabinet's, which logbook has, and a review thread's slot, which review has;
+   * leaving closes each panel whose subject can leave by taking the subject away.
+   */
+  { name: 'panels', dir: 'panels', source: source('frames.panels.js'), boards: ['busy', 'logbook', 'review', 'leaving'] },
 ]
 
 /**

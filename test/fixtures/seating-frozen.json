@@ -1694,6 +1694,331 @@
     []
    ]
   },
+  "leaving.json, board 0": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
+  "leaving.json, board 1": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "leaving.json, board 2": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
+  "leaving.json, board 3": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "leaving.json, board 4": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
+  "leaving.json, board 5": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "leaving.json, board 6": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
+  "leaving.json, board 7": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "leaving.json, board 8": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
+  "leaving.json, board 9": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "leaving.json, board 10": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
+  "leaving.json, board 11": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "leaving.json, board 12": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
+  "leaving.json, board 13": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ]
+   ],
+   "galleries": [
+    []
+   ]
+  },
+  "leaving.json, board 14": {
+   "seats": [
+    [
+     "20261004-090000-leav",
+     null
+    ],
+    [
+     "20261004-090007-leav",
+     {
+      "n": 0
+     }
+    ]
+   ],
+   "galleries": [
+    [
+     {
+      "worker": {
+       "id": "20261004-090000-leav",
+       "callsign": "MUSASHI-43"
+      },
+      "shown": {
+       "kind": "file",
+       "target": "/work/leave/reports/failures-by-hour.png",
+       "title": "Failures by hour",
+       "at": 1791123900000,
+       "session": "20261004-090000-leav"
+      }
+     }
+    ]
+   ]
+  },
   "logbook.json, board 0": {
    "seats": [
     [
