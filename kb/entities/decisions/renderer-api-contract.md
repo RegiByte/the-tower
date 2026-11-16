@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/extensions.ts#MANIFEST_SCHEMA", "hub/src/shared/api.ts#ApiError", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#libraryUrls", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json", "hub/src/shared/views.ts"]
+  "refs": ["hub/src/shared/api.ts#VERBS", "hub/src/shared/extensions.ts#MANIFEST_SCHEMA", "hub/src/shared/api.ts#ApiError", "hub/src/tower/http.ts#command", "hub/src/tower/http.ts#READS", "hub/src/tower/http.ts#apiSchema", "hub/src/shared/api.ts#API_VERSION", "hub/scripts/api-version-check.ts", "hub/src/tower/tower.js", "hub/src/tower/served.ts#towerClient", "hub/src/tower/served.ts#libraryUrls", "hub/test/served.test.ts", "hub/test/served-exports.json", "hub/docs/extending.md", "hub/src/bridge/verbs.ts#cardOffers", "hub/test/board.test.ts", "hub/src/shared/api.ts#ERROR_STATUS", "hub/src/shared/api.ts#ERROR_CODES", "hub/src/collections.ts#itemVersion", "hub/scripts/board-schema.ts", "hub/test/board-schema.test.ts", "hub/src/shared/shelf-page.ts#Tower", "hub/tsconfig.client.json", "hub/tsconfig.page.json", "hub/src/shared/views.ts"]
 }
 ---
 **Problem.** The [[renderer-api]] is the contract the next renderer reads, and that renderer may not be written in
@@ -54,7 +54,8 @@ went wrong, and know which changes can break it.
 - **One version, `major.minor`, and only a major breaks.** It lives only in
   [`API_VERSION`](ref:hub/src/shared/api.ts#API_VERSION), filled into `tower.js` as it is served
   ([`towerClient`](ref:hub/src/tower/served.ts#towerClient)), and carried by `GET /board` and the tunnel's `board`
-  message alike. An addition an older renderer reads past (a board field, a verb, a read, a stream) moves the minor; a
+  message alike. Two pull requests that set the same number merge with no conflict, so CI refuses one whose own diff moves it
+  without passing the base's ([`api-version-check`](ref:hub/scripts/api-version-check.ts)). An addition an older renderer reads past (a board field, a verb, a read, a stream) moves the minor; a
   rename, a removal or a changed meaning moves the major, and CHANGELOG.md says why. `tower.js` reads a board from a
   tower of its own major at its own minor or newer. A renderer kept apart from the tower pins the version it was
   written against in its script URL (`/tower.js?v=2.0`), and the script refuses to load into a tower of another major

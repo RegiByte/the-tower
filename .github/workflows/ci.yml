@@ -42,6 +42,9 @@ jobs:
       - name: A pull request's base is the one its merge commit was made on
         if: github.event_name == 'pull_request'
         run: git update-ref "refs/remotes/origin/${{ github.base_ref }}" HEAD^1
+      - name: A pull request that moves API_VERSION moves it past the base's
+        if: github.event_name == 'pull_request'
+        run: npx tsx scripts/api-version-check.ts HEAD^1 HEAD^2
       - name: The knowledge base verifies
         run: node .claude/skills/kb/tool/kb.mjs verify
       - name: A pull request's own kb suspects, as warnings
