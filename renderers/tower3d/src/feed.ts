@@ -8,7 +8,7 @@ import { chairKit } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
 import { FIXTURE, fixtureBoards } from './fixtures.ts'
 import * as loading from './loading.ts'
-import { settledArchives } from './archive.ts'
+import type { Archive } from './archive.ts'
 import { s } from './state.ts'
 import type { Assets } from './loads.ts'
 import type { Toasts } from './toasts.ts'
@@ -24,7 +24,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the feed resource is started with. */
-export type FeedDeps = { stage: Stage; assets: Assets; port: Port; toasts: Toasts; world: World; spawn: Spawn; hud: Hud; panels: Panels; frames: Frames }
+export type FeedDeps = { archive: Archive; stage: Stage; assets: Assets; port: Port; toasts: Toasts; world: World; spawn: Spawn; hud: Hud; panels: Panels; frames: Frames }
 
 export type Feed = ReturnType<typeof startFeed>
 
@@ -109,7 +109,7 @@ export function startFeed(started: FeedDeps) {
   async function startOn(next: Board, at: ShelfSelf | undefined) {
     loading.stage('building')
     await painted()
-    await settledArchives(next)
+    await started.archive.settledArchives(next)
     boardArrived(next, at)
     if (!port.state().building) throw new Error("the first board was not taken: its floors' archives were read before it was sent in, and no longer were when it arrived")
     loading.stage('lighting')

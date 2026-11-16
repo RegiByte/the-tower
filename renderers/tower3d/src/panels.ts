@@ -27,7 +27,7 @@ import { commandOf, panesOf } from '/lib/keys.js'
 import { wallNow } from './clock.ts'
 import { FIXTURE, readArchive, readConversations } from './fixtures.ts'
 import { CHANGES, THREAD } from './hosting.ts'
-import { archivedOf, archiveFailure, archiveOf, drawersAt, rereadArchive } from './archive.ts'
+import type { Archive } from './archive.ts'
 import { GAMES, gameItem } from './games.ts'
 import type { Titles } from './titles.ts'
 import { s, type GamePanel, type Panel, type Threads } from './state.ts'
@@ -49,7 +49,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the panels resource is started with. */
-export type PanelsDeps = { clients: Clients; titles: Titles; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
+export type PanelsDeps = { clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
 
 export type Panels = ReturnType<typeof startPanels>
 
@@ -62,6 +62,7 @@ export function startPanels(started: PanelsDeps) {
   const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
   const { camera, scene } = started.stage
   const { keptText, keptTitle } = started.titles
+  const { archivedOf, archiveFailure, archiveOf, drawersAt, rereadArchive } = started.archive
   const reads = { ...started.clients, ...started.titles, drawersAt }
   const { pause } = started.music
   const { closeTerm, mountTerm } = started.terminal

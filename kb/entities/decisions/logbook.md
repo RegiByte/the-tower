@@ -26,7 +26,7 @@
     "hub/renderers/tower3d/src/filing.ts#buildFiling",
     "hub/renderers/tower3d/src/filing.ts#poseFiling",
     "hub/renderers/tower3d/src/layout.ts#filingSpot",
-    "hub/renderers/tower3d/src/layers.ts#FILINGS",
+    "hub/renderers/tower3d/src/layers.ts#filingsOf",
     "hub/src/bridge/screen.ts#lastFrame"
   ],
   "links": [

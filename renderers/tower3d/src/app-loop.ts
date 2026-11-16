@@ -9,8 +9,7 @@ import { purr, ring } from './life.ts'
 import { PET_MS } from './pet.ts'
 import { cabinetOf } from './layout.ts'
 import { clockMoves, wallNow } from './clock.ts'
-import { archivedAt, archivesSettled, drawersAt, readArchives } from './archive.ts'
-import { FILINGS } from './layers.ts'
+import type { Archive } from './archive.ts'
 import { s, type Panel, type Standing } from './state.ts'
 import { aim } from './walker.ts'
 import type { Toasts } from './toasts.ts'
@@ -29,7 +28,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the app resource is started with. */
-export type AppLoopDeps = { clients: Clients; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
+export type AppLoopDeps = { clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type AppLoop = ReturnType<typeof startAppLoop>
 
@@ -45,7 +44,8 @@ export function startAppLoop(started: AppLoopDeps) {
   const { boardNow, panelAs } = nowOf(port)
   const { toast } = started.toasts
   const { events } = started
-  const { reconcile, celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets } = started.world
+  const { celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets, syncFilings } = started.world
+  const { archivedAt, archivesSettled, drawersAt, readArchives } = started.archive
   const { desk } = started.views
   const { hiring } = started.spawn
   const { renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk } = started.hud
@@ -100,7 +100,7 @@ export function startAppLoop(started: AppLoopDeps) {
       arrived: ({ at }) => (ARRIVED[at.kind] as (at: Arrival) => void)(at),
       toast: ({ text }) => toast(text),
       'archives/read': ({ board }, dispatch) => (readArchives(board), dispatch({ type: 'archives/asked', at: wallNow() })),
-      filings: () => void reconcile(FILINGS, s.filings),
+      filings: () => void syncFilings(),
       notes: () => void syncNotes(),
       cabinets: () => void syncCabinets(),
       'stats/fetch': ({ reading }, dispatch) =>

@@ -15,7 +15,7 @@ import { buildDanceFloors, makeGuest, type DanceFloors, type Guest } from './par
 import { buildVideoWall, videoWallKey } from './room.ts'
 import { buildRunning, runningKey, type Running } from './running.ts'
 import { buildPigeonhole, pigeonholeKey, type Pigeonhole } from './pigeonhole.ts'
-import { drawersAt } from './archive.ts'
+import type { Archive } from './archive.ts'
 import type { Clients } from './clients.ts'
 import { buildFiling, filingKey, type Filing } from './filing.ts'
 import { s, type WallItem } from './state.ts'
@@ -298,14 +298,14 @@ export const ARCADE_SIGNS: Layer<{ level: FloorLevel; key: string }, ArcadeSign>
   root: (item) => item.group,
 }
 
-/** Each floor's filing cabinet, rebuilt when its archive's drawers change (or once the archive is first read). */
-export const FILINGS: Layer<{ level: FloorLevel; key: string }, Filing> = {
+/** Each floor's filing cabinet, rebuilt when its archive's drawers (`drawersAt`'s) change (or once the archive is first read). */
+export const filingsOf = (drawersAt: Archive['drawersAt']): Layer<{ level: FloorLevel; key: string }, Filing> => ({
   slots: (p) => floors(p).map((level) => [String(level.index), { level, key: filingKey(p, level, drawersAt(level.floor.id)) }]),
   level: (at) => at.level.index,
   make: ({ level }, _key, p) => buildFiling(p, level, drawersAt(level.floor.id)),
   keep: (item, { key }) => item.key === key,
   root: (item) => item.group,
-}
+})
 
 /** Today's off-duty workers at the roof's party. Where each stands is set every frame, from the time (src/life.ts#guestAt). */
 export const GUESTS: Layer<GuestSlot, Guest> = {
