@@ -125,7 +125,7 @@ its round from an airfield ([`flight`](ref:hub/renderers/tower3d/src/outside.ts#
 clock alone, so stepped loads repeat.
 
 **Life.** New workers walk in from the elevator and sit down, and leavers stand up and walk out through its doors
-([`doorTarget`](ref:hub/renderers/tower3d/src/main.ts#doorTarget)). A worker's look is its own, from the wardrobe
+([`doorTarget`](ref:hub/renderers/tower3d/src/frames.ts#doorTarget)). A worker's look is its own, from the wardrobe
 ([`lookOfWorker`](ref:hub/renderers/tower3d/src/wardrobe.ts#lookOfWorker), [[kaykit-workers]]); its status shows on
 the light over its head, its bubble and its pose, and a line over its tag says what it is up to
 ([`glanceOf`](ref:hub/renderers/tower3d/src/cards.ts#glanceOf)). Cats roam the levels on a schedule hashed from the

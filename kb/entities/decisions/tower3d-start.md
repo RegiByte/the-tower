@@ -17,7 +17,7 @@
     "hub/renderers/tower3d/src/main.ts#onLiveBoard",
     "hub/renderers/tower3d/src/main.ts#onLoaded",
     "hub/renderers/tower3d/src/main.ts#startOn",
-    "hub/renderers/tower3d/src/main.ts#frameScene",
+    "hub/renderers/tower3d/src/frames.ts#frameScene",
     "hub/renderers/tower3d/src/main.ts#failStart"
   ]
 }
@@ -41,7 +41,7 @@ thread, for seconds with the GPU's program cache cold.
   [`startOn`](ref:hub/renderers/tower3d/src/main.ts#startOn): a paint, its floors' archives read
   ([`settledArchives`](ref:hub/renderers/tower3d/src/archive.ts#settledArchives)) and the board taken in one
   dispatch, so a failure taking it fails the start, a paint, the scene set as a frame
-  sets it ([`frameScene`](ref:hub/renderers/tower3d/src/main.ts#frameScene): the rig's lights and shadows are part
+  sets it ([`frameScene`](ref:hub/renderers/tower3d/src/frames.ts#frameScene): the rig's lights and shadows are part
   of each program's key, so compiling without them misses half the programs), `compileAsync`, then the first frame
   drawn under the screen as it fades. Boards arriving meanwhile supersede one another; the latest follows.
 - *The board is seen before it is drawn.* The system's assets resource starts the loads

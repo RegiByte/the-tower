@@ -35,13 +35,13 @@
     "hub/renderers/tower3d/src/app.ts#Motion",
     "hub/renderers/tower3d/src/app.ts#Arrival",
     "hub/renderers/tower3d/src/app-loop.ts#ARRIVED",
-    "hub/renderers/tower3d/src/main.ts#tickCamera",
+    "hub/renderers/tower3d/src/frames.ts#tickCamera",
     "hub/renderers/tower3d/src/navigation.ts#travel",
     "hub/renderers/tower3d/src/app.ts#Aim",
     "hub/renderers/tower3d/src/app.ts#Capture",
     "hub/renderers/tower3d/src/navigation.ts#offersNow",
-    "hub/renderers/tower3d/src/main.ts#tickAim",
-    "hub/renderers/tower3d/src/main.ts#tickHold",
+    "hub/renderers/tower3d/src/frames.ts#tickAim",
+    "hub/renderers/tower3d/src/frames.ts#tickHold",
     "hub/renderers/tower3d/src/panels.ts#RUN",
     "hub/renderers/tower3d/src/panels.ts#LEAVE",
     "hub/renderers/tower3d/src/panels.ts#ENTER",
@@ -69,7 +69,8 @@
     "hub/renderers/tower3d/src/navigation.ts#startNavigation",
     "hub/renderers/tower3d/src/panels.ts#startPanels",
     "hub/renderers/tower3d/src/app-loop.ts#startAppLoop",
-    "hub/renderers/tower3d/src/controls.ts#startControls"
+    "hub/renderers/tower3d/src/controls.ts#startControls",
+    "hub/renderers/tower3d/src/frames.ts#startFrames"
   ]
 }
 ---
@@ -245,7 +246,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   as numbers, and the event a flight or a cut fires as it ends (`then`, as a timer's `fire`). The db changes as one
   starts and as it ends, never in between: a frame reads `app.state()`, derives how far along each is from
   `now - start`, and dispatches once when it is done (`cut-reached`, `ride-arrived`, `flight-landed`, `pet-done`).
-  No frame dispatches otherwise, and [`tickCamera`](ref:hub/renderers/tower3d/src/main.ts#tickCamera) writes the
+  No frame dispatches otherwise, and [`tickCamera`](ref:hub/renderers/tower3d/src/frames.ts#tickCamera) writes the
   camera through vectors it keeps, allocating nothing. What a cut or a flight leaves you to do is an `arrived` event
   ([`Arrival`](ref:hub/renderers/tower3d/src/app.ts#Arrival)): an ask's floor opened by `went`, the rest by
   [`ARRIVED`](ref:hub/renderers/tower3d/src/app-loop.ts#ARRIVED), since whether a desk or a kiosk still stands, the mouse,
@@ -263,13 +264,13 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   (`AppReads.clockMoves`). A replan plans the same board again at that instant and keeps the archive snapshot it was taken with: only a new board takes
   a new read, so a newer board's reads half landed can't unseat a floor's workers while it waits. The cost, accepted:
   a floor whose archive read failed for a board and was read again seats its workers only at the next board.
-- *Aim is written on change.* [`tickAim`](ref:hub/renderers/tower3d/src/main.ts#tickAim) still raycasts every frame,
+- *Aim is written on change.* [`tickAim`](ref:hub/renderers/tower3d/src/frames.ts#tickAim) still raycasts every frame,
   but dispatches `aimed` only when the act's key changes ([`Aim`](ref:hub/renderers/tower3d/src/app.ts#Aim)). The db
   keeps the act last aimed at and the act the prompt offers verbs for apart: the prompt empties when the view leaves
   walking, while the act last aimed at is kept (`offered`). A different act starts the wheel's mark and the hold over.
   What the prompt offers is never kept: [`offersNow`](ref:hub/renderers/tower3d/src/navigation.ts#offersNow) derives it from
   the board and what you hold on every read, and the mark is read within it (`markedIn`). A hold is its start time:
-  [`tickHold`](ref:hub/renderers/tower3d/src/main.ts#tickHold) writes the ring's `--hold` every frame, dispatches
+  [`tickHold`](ref:hub/renderers/tower3d/src/frames.ts#tickHold) writes the ring's `--hold` every frame, dispatches
   `hold-filled` once, then runs the verb itself, outside the loop, as a key does. A verb runs outside the loop because
   many verbs dispatch and then read the db, which inside an executor they would find stale.
   [`RUN`](ref:hub/renderers/tower3d/src/panels.ts#RUN)'s entries that are transitions (a floor's panel, the
