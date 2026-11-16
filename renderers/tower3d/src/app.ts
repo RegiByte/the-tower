@@ -13,11 +13,11 @@ import { attendNext, type AttendEvent, type AttendOut, type Attending } from '/l
 import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
 import { subjectAt, type Lines } from '/lib/board.js'
 import { STATS_ALL, type Stats } from '/lib/stats.js'
-import { askTransitions, cardsOf, findCard, shownKey, transitions } from './cards.ts'
+import { askTransitions, cardsOf, findCard, pictureOf, shownKey, transitions } from './cards.ts'
 import { gameItem } from './games.ts'
 import { cabinetOf, deskOf, kioskOf, type Plan } from './layout.ts'
 import type { Board, Floor, ShelfSelf } from './api.ts'
-import type { Archived } from './archive.ts'
+import type { Archived, Drawer } from './archive.ts'
 import type { Act } from './acts.ts'
 import type { Pet } from './pet.ts'
 import type { Hold, Panel, Standing, View } from './state.ts'
@@ -240,8 +240,6 @@ export type AppEffect =
   | { type: 'replan/at'; until: number }
   /** The game open framed again on its cabinet, which moved along. */
   | { type: 'game/frame'; project: string; id: string }
-  /** The panels drawn now: a drawer whose folder left or a picture that left its gallery closes in its draw. */
-  | { type: 'redraw' }
   /** The open desk's brief and the reader's logbook read again when their worker changed. */
   | { type: 'logbooks' }
   /** To a desk or a shell pending once the board shows it, sat down at it. */
@@ -377,6 +375,8 @@ export type AppReads = {
   archivesSettled: (board: Board) => boolean
   /** Each floor's archive as read at `board`'s keys: the snapshot a building takes with it. */
   archivedAt: (board: Board) => Archived
+  /** A floor's filing cabinet's drawers, as its archive's latest read holds them; `undefined` until one lands. */
+  drawersAt: (project: string) => Drawer[] | undefined
   /** A floor's review threads, by checkout and the key their subject is named by. */
   threadsOf: (f: Floor) => { checkout: string; key: string }[]
   /** Whether a floor keeps drafts: the drafts extension is on there. */
@@ -385,9 +385,10 @@ export type AppReads = {
 
 /**
  * The panel whose subject the board no longer holds: a desk's worker gone, a shell ended, a floor removed, a shelf
- * entry, a kept item, a game or a review thread gone, a floor no longer keeping drafts.
+ * entry, a kept item, a game or a review thread gone, a floor no longer keeping drafts, a drawer its floor's archive no
+ * longer fills, a picture its gallery no longer hangs.
  */
-function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
+function subjectLeft(panel: Panel | undefined, board: Board, plan: Plan, reads: AppReads) {
   if (!panel) return false
   const floor = (id: string) => board.floors.find((f) => f.id === id)
   switch (panel.kind) {
@@ -396,6 +397,8 @@ function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
     case 'floor': case 'archive': return !floor(panel.id)
     case 'doc': return !floor(panel.project)?.shelf?.[panel.n]
     case 'kept': return !keptItem(board, panel)
+    case 'drawer': return !floor(panel.project) || !reads.drawersAt(panel.project)?.[panel.n]
+    case 'picture': return !pictureOf(plan.galleries, board, panel.id, panel.target)
     case 'game': return !gameItem(board.floors, panel.project, panel.id)
     case 'draft': {
       const f = floor(panel.project)
@@ -444,9 +447,9 @@ function steps(db: Db, ...each: ((db: Db) => AppEffect[])[]): AppEffect[] {
 }
 
 /** What the building's board leaves of the db: what is pending it no longer holds dropped, the panel whose subject left closed, a kept item changed read again. */
-function applied(db: Db, board: Board, reads: AppReads): AppEffect[] {
+function applied(db: Db, board: Board, plan: Plan, reads: AppReads): AppEffect[] {
   const next = { ...db, pending: pendingOn(db.pending, board) }
-  if (subjectLeft(next.panel, board, reads)) return [...went(next, undefined), ...leftSaid(next.panel)]
+  if (subjectLeft(next.panel, board, plan, reads)) return [...went(next, undefined), ...leftSaid(next.panel)]
   const kept = keptChanged(next.panel, board)
   return kept ? went(next, kept) : [into(next), DRAW]
 }
@@ -501,9 +504,8 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
     ],
     (db) => shownArrived(db, was, next),
     (db) => (db.replay && !deskOf(plan, db.replay.id) ? [into({ ...db, replay: undefined })] : []),
-    (db) => applied(db, next, reads),
+    (db) => applied(db, next, plan, reads),
     (db) => followCabinet(db, plan),
-    (db) => (db.panel?.kind === 'drawer' || db.panel?.kind === 'picture' ? [{ type: 'redraw' }] : []),
     () => [{ type: 'logbooks' }, { type: 'elevator' }],
     (db) => (db.pending.desk && deskOf(plan, db.pending.desk) ? [into({ ...db, pending: { ...db.pending, desk: undefined } }), { type: 'desk/go', id: db.pending.desk }] : []),
     (db) => (db.pending.shell && kioskOf(plan, db.pending.shell) ? [into({ ...db, pending: { ...db.pending, shell: undefined } }), { type: 'shell/go', id: db.pending.shell }] : []),
@@ -511,11 +513,19 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
   )
 }
 
-/** The board waiting taken at wall time `at`, once every floor's archive is read at its keys: a floor's history is then as current as the board. */
+/** The board waiting, once every floor's archive is read at its keys: a floor's history is then as current as the board. */
+const settles = (db: Db, reads: AppReads) => (db.waiting && reads.archivesSettled(db.waiting.board) ? db.waiting : undefined)
+
+/** The board waiting taken at wall time `at`, once it settles. */
 function settled(db: Db, at: number, reads: AppReads): AppEffect[] {
-  const w = db.waiting
-  if (!w || !reads.archivesSettled(w.board)) return []
-  return took({ ...db, waiting: undefined }, { board: w.board, self: w.self, archived: reads.archivedAt(w.board), at }, reads)
+  const w = settles(db, reads)
+  return w ? took({ ...db, waiting: undefined }, { board: w.board, self: w.self, archived: reads.archivedAt(w.board), at }, reads) : []
+}
+
+/** An archive read landed with no board to take: the panel open closes if its subject left, which only a drawer's can then. */
+function archiveLeft(db: Db, reads: AppReads): AppEffect[] {
+  const b = db.building
+  return b && subjectLeft(db.panel, b.board, reads.planOf(b), reads) ? [...went(db, undefined), ...leftSaid(db.panel)] : []
 }
 
 /** What a title's text arriving draws again besides the panels: the notes' boards, the cabinets. */
@@ -571,7 +581,7 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   view: (db, { view }) => [into({ ...db, view })],
   'board/arrived': (db, { board, self }) => [into({ ...db, waiting: { board, self } }), { type: 'archives/read', board }],
   'archives/asked': (db, { at }) => settled(db, at, reads),
-  'archive/landed': (db, { at }) => [...settled(db, at, reads), { type: 'filings' }, DRAW],
+  'archive/landed': (db, { at }) => [...(settles(db, reads) ? settled(db, at, reads) : archiveLeft(db, reads)), { type: 'filings' }, DRAW],
   'archive/failed': (_, { message }) => [{ type: 'toast', text: `The archive can't be read: ${message}` }],
   'titles/arrived': (_, { of }) => [...TITLED[of], DRAW],
   'stats/read': (db) => statsRead(db),
