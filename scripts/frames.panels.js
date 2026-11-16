@@ -10,6 +10,9 @@
  * walking with no panel open, so one changing leaves the others' stages alone. Extend it at the end, so older
  * recordings still line up stage by stage.
  *
+ * One stage waits on the real clock: `stats-open` waits up to 10 s for the tower to answer the Stats read, so the
+ * answer and the stats it draws are that stage's; a sandbox slower than that moves them to a later stage.
+ *
  * Not reached: the landing, the watch panel and the board-lost banner (no fixture board shows them), the settings
  * panel, a desk's Reviews tab with a thread on it, and a draft edited (closing an edited draft saves it).
  */
@@ -97,9 +100,9 @@
     if (still < 3) unsettled = true
   }
   /**
-   * Waits, in real time and up to 10 s, for the app to handle one of `types`: a read the tower answers on its own clock
-   * then lands in the stage after, not in whichever stage is running when it does. A page that sends no such event
-   * waits the 10 s.
+   * Waits, in real time and up to 10 s, for the app to handle one of `types` since the last stage: a read the tower
+   * answers on its own clock then lands in the stage that opened it, not in whichever stage is running when it does.
+   * A page that sends no such event waits the 10 s, and an answer slower than that still lands in a later stage.
    */
   const answered = async (types) => {
     for (let waited = 0; waited < 10000; waited += 50) {
@@ -270,8 +273,7 @@
 
   const stats = t.acts('stats')[0]
   if (stats) {
-    tryDo('stats', () => use(stats)); t.step(5); await settle(); snap('stats-open')
-    await answered(['stats/landed', 'stats/failed'])
+    tryDo('stats', () => use(stats)); t.step(5); await answered(['stats/landed', 'stats/failed']); await settle(); snap('stats-open')
     await closed('stats')
   }
 
