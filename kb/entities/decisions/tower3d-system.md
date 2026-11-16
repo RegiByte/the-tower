@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal and the asset loads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, shell, and reads the others through one binding set as it starts. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle.",
+  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal and the asset loads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, shell, and reads the others through one binding set as it starts. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
@@ -24,7 +24,20 @@
     "hub/renderers/tower3d/src/prefab.ts",
     "hub/scripts/tower3d-boot.ts#importCycles",
     "hub/src/tower/spine.ts",
-    "hub/package.json"
+    "hub/package.json",
+    "hub/renderers/tower3d/src/app.ts",
+    "hub/renderers/tower3d/src/app.ts#Db",
+    "hub/renderers/tower3d/src/app.ts#appHandlers",
+    "hub/renderers/tower3d/src/app.ts#went",
+    "hub/renderers/tower3d/src/app.ts#subjectLeft",
+    "hub/renderers/tower3d/src/main.ts#LEAVE",
+    "hub/renderers/tower3d/src/main.ts#ENTER",
+    "hub/renderers/tower3d/src/main.ts#TAB_ENTER",
+    "hub/renderers/tower3d/src/main.ts#drawPending",
+    "hub/renderers/tower3d/src/main.ts#deskEntered",
+    "hub/renderers/tower3d/src/main.ts#docClosed",
+    "hub/renderers/tower3d/src/main.ts#onBoard",
+    "hub/renderers/tower3d/src/door.ts#Engine"
   ]
 }
 ---
@@ -79,6 +92,50 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   polygon offset.
 - *Music alone.* The chimes keep their own audio context: muting suspends the band's.
 
+**The app loop.** The page's decisions live in one machine, `app` (the shared loop, [[machines]]), as the tower page's
+do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/renderers/tower3d/src/app.ts); its
+executors are in `main.ts`, where the DOM and the building are. The panel families move into it a leg at a time;
+the desk, the shell and the shell picker are in, the rest still open and close themselves through a bridge.
+- *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): the panel open, attention, the view, the desk's tab,
+  what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on) and a replay.
+  Readers call `app.state()` (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `main.ts`; the door through
+  [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
+  per-frame motion stay out of it.
+- *`go` moves a panel* ([`went`](ref:hub/renderers/tower3d/src/app.ts#went)), the page's `go` over Tower 3D's
+  `Panel` union: the open panel is left unless the next stays in its room (desks, shells and the big screen share
+  one, the view focused on them), the next is entered, and a `draw` follows. Entering a desk or shell focuses the
+  view; leaving that room for anything else walks again, with a `fly-home`. A desk opens on its screen, then on the
+  tab and the showing pending for it, all in the same transition. A desk's tabs move the same way inside it (`tab`,
+  with `tab/leave` and `tab/enter`); a tab entered again is entered again, so the logbook is read again.
+- *Leave and enter are tables by kind* ([`LEAVE`](ref:hub/renderers/tower3d/src/main.ts#LEAVE),
+  [`ENTER`](ref:hub/renderers/tower3d/src/main.ts#ENTER), [`TAB_ENTER`](ref:hub/renderers/tower3d/src/main.ts#TAB_ENTER)),
+  total over `Panel['kind']`. A kind not yet moved has an empty entry, `closesItself` or `opensItself`, and its
+  opener still does its DOM, then calls `go` to set the panel. Until those kinds move, entering a desk, a shell or
+  the picker closes the side, the reader and the draft editor itself, as the old openers did
+  ([`deskEntered`](ref:hub/renderers/tower3d/src/main.ts#deskEntered)); a game stays open under a desk gone to,
+  as before.
+- *Handlers return every effect at once, the db first.* The loop applies `state` when it meets it, so an executor
+  reads the new db, and none dispatches while a transition runs: an event dispatched from an executor waits until
+  the transition's effects have all run, after the state they assumed. That is why the old closes are split into
+  what they hide (`sideClosed`, [`docClosed`](ref:hub/renderers/tower3d/src/main.ts#docClosed), `draftClosed`) and
+  the `go(undefined)` they send: an enter runs only the first. A close that asked which panel was open asks the
+  `from` its enter is handed.
+- *Draw is state to DOM, once a frame.* `draw` asks for the panels to be drawn at the next animation frame, however
+  many transitions asked; [`drawPending`](ref:hub/renderers/tower3d/src/main.ts#drawPending) draws them now, which a
+  stepped door frame does as a real frame would, and which a `focus` effect does first, since it needs what the draw
+  writes. Each visible change has its `draw` in `tower3d.events()`, so a missing one shows ([[tower3d-door]]).
+- *A panel whose subject left closes in the board handler, not the draw.* `board-applied`, dispatched where
+  [`onBoard`](ref:hub/renderers/tower3d/src/main.ts#onBoard) used to draw the panel, closes a desk whose worker left or
+  a shell that ended ([`subjectLeft`](ref:hub/renderers/tower3d/src/app.ts#subjectLeft)). `onBoard` still draws at
+  once after it, for the kinds whose draw still closes them; it dispatches `replay-left` where a replay's desk left the
+  building, and goes to a pending desk or shell, until the board itself is an event.
+- *What sets the view outside a panel* (the overview, petting, a game, the big screen) sends a `view` event until it
+  moves.
+- *A leg that moves a family* gives its kinds `LEAVE` and `ENTER` entries, folds its opener and closer into them and
+  `go`, takes its subject-gone close from the draw into `board-applied`, drops it from the bridge closes the moved
+  kinds' enters run, and records `tool:frames` before and after: state, panel markup and pictures identical, the
+  events changed as the transitions say.
+
 **Alternatives considered.**
 - *esbuild's `--splitting`*: main becomes a real ES module chunk and native ESM tolerates cycles. It treats the
   symptom: cycles still hand out half-made bindings, the start order stays implicit, and the build gains hashed chunks
@@ -92,5 +149,7 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 
 **Impact.** The start order is the graph, and a failure names its resource. The import-time effects left the leaf
 modules; `main.ts` keeps its own (its listeners, timers, the board's subscription) until later
-passes move them.
+passes move them. The desk and shell panels change state only through the app loop, and their draw writes nothing
+back; the other panel families follow the same steps. The capture (`still`, the door's hold) stays outside the db:
+`lock` and `unlock` write it from everywhere, executors among them, so it moves with them as effects.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.

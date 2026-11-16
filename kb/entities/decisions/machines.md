@@ -26,7 +26,7 @@
     "hub/renderers/page/view.js",
     "hub/renderers/page/page.js#pageHandlers",
     "hub/renderers/page/stats.js#stats",
-    "hub/renderers/tower3d/src/main.ts#seeingHandlers",
+    "hub/renderers/tower3d/src/app.ts#appHandlers",
     "hub/test/reads.test.ts",
     "hub/src/shared/term-view.ts#termHandlers",
     "hub/src/shared/view-host.ts#hostedHandlers",
@@ -64,7 +64,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   `visible`, `watch`: [`attendHandlers`](ref:hub/src/shared/attend.ts#attendHandlers),
   [`watching`](ref:hub/src/shared/attend.ts#watching)); every handler that moves a renderer's view tells attention
   `watch` (the tower page's [`pageHandlers`](ref:hub/renderers/page/page.js#pageHandlers), [[web-tower]]; Tower 3D's
-  [`seeingHandlers`](ref:hub/renderers/tower3d/src/main.ts#seeingHandlers), the desk you sit at), so the view and the
+  [`appHandlers`](ref:hub/renderers/tower3d/src/app.ts#appHandlers), the desk you sit at, [[tower3d-system]]), so the view and the
   rings follow one selection and replay the same from their events. An event enters as it happens, apart from
   drawing: Tower 3D hands a board to its machine as it arrives, before its first frame, which a hidden tab holds back.
 - *Time is data.* A timer is an effect carrying the event it fires

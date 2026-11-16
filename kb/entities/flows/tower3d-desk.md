@@ -47,8 +47,8 @@ sequenceDiagram
   ([`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf)); a desk's `use` is "sit" while its card is live
   ([[verb-prompts]]). E runs it through the act table ([`RUN`](ref:hub/renderers/tower3d/src/main.ts#RUN)):
   [`goDesk`](ref:hub/renderers/tower3d/src/main.ts#goDesk) travels to the desk's floor if needed, and
-  [`focusDesk`](ref:hub/renderers/tower3d/src/main.ts#focusDesk) opens the desk panel, a modal over the dimmed
-  world. While it is open the scene isn't drawn: the canvas keeps its last frame and updates go on. A video-wall
+  [`focusDesk`](ref:hub/renderers/tower3d/src/main.ts#focusDesk) opens the desk panel by the app's `go`
+  ([[tower3d-system]]), a modal over the dimmed world. While it is open the scene isn't drawn: the canvas keeps its last frame and updates go on. A video-wall
   tile opens the same panel where you stand. A worker gathered with its crew sits at a meeting table instead
   ([[whereabouts]]); aiming at it, or at its empty desk, opens the same panel.
 - **The transport depends on where Tower 3D runs.** At `/r/tower3d/` `/tower.js` calls the routes and opens one
