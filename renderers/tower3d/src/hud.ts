@@ -25,10 +25,11 @@ import type { Views } from './views.ts'
 import type { Spawn } from './spawn.ts'
 import type { Lighting } from './light/setting.ts'
 import type { Stage } from './stage.ts'
+import type { Clients } from './clients.ts'
 import type { Port } from './port.ts'
 
 /** What the hud resource is started with. */
-export type HudDeps = { lighting: Lighting; stage: Stage; music: Music; port: Port; toasts: Toasts; world: World; views: Views; spawn: Spawn }
+export type HudDeps = { lighting: Lighting; clients: Clients; stage: Stage; music: Music; port: Port; toasts: Toasts; world: World; views: Views; spawn: Spawn }
 
 export type Hud = ReturnType<typeof startHud>
 
@@ -79,7 +80,7 @@ export function startHud(started: HudDeps) {
     const waits = heededWaits(boardNow()!, heed())
     const asks = heededAsks(boardNow()!, heed())
     document.title = waits.length + asks.length ? `(${waits.length + asks.length}) The Tower` : 'The Tower'
-    const html = hudHtml(boardNow()!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits, asks: asks.length })
+    const html = hudHtml(boardNow()!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits, asks: asks.length }, started.clients)
     if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
     drawSettings()
     const notes = untestedHtml(boardNow()!) ?? ''
