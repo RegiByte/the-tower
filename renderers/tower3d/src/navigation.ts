@@ -19,11 +19,11 @@ import type { Hud } from './hud.ts'
 import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 import type { Clients } from './clients.ts'
-import { drawersAt } from './archive.ts'
+import type { Archive } from './archive.ts'
 import type { Titles } from './titles.ts'
 
 /** What the navigation resource is started with. */
-export type NavigationDeps = { clients: Clients; titles: Titles; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
+export type NavigationDeps = { clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
 
 export type Navigation = ReturnType<typeof startNavigation>
 
@@ -32,7 +32,7 @@ export type Navigation = ReturnType<typeof startNavigation>
  * and aiming at what the prompt offers.
  */
 export function startNavigation(started: NavigationDeps) {
-  const reads = { ...started.clients, ...started.titles, drawersAt }
+  const reads = { ...started.clients, ...started.titles, drawersAt: started.archive.drawersAt }
   const { port } = started
   const { orbit } = started.stage
   const { boardNow, unlock, atDesk, panelNow, go, viewNow, motionNow, heed, aimNow } = nowOf(port)

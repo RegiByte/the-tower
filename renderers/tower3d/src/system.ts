@@ -23,6 +23,7 @@ import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
 import { startTitles } from './titles.ts'
+import { startArchive, type Archive } from './archive.ts'
 
 /**
  * Tower 3D as a system of braided resources, each started once its dependencies have (decision `tower3d-system`).
@@ -38,6 +39,7 @@ import { startTitles } from './titles.ts'
  *   port      where the reads that land send their events, the app attached once it is made (port.ts)
  *   toasts    what tells the user what happened, and the API calls whose failure it tells (toasts.ts)
  *   titles    the titles read from items' texts: notes, kept items, games (titles.ts)
+ *   archive   every floor's archive as read, telling the port as each read lands (archive.ts)
  *   shell     what the leaf modules read as they load, bound before any page resource loads its module (shell.ts)
  *   events    what the page's loops handled, kept for the door (events.ts)
  *   world     the building in the scene: its plan, its layers, what can be seen and picked (building.ts)
@@ -91,18 +93,20 @@ const toasts = defineResource({ start: startToasts, halt: () => {} })
 
 const titles = defineResource({ dependencies: ['clients', 'port'], start: startTitles, halt: () => {} })
 
+const archive = defineResource({ dependencies: ['port'], start: startArchive, halt: () => {} })
+
 /**
  * A page resource imports its module as it starts, once `shell` is bound: the leaf modules it imports read the binding
  * as they load. Transitional, with the binding.
  */
 const events = defineResource({
-  dependencies: ['shell'],
-  start: async () => (await import('./events.ts')).startEvents(),
+  dependencies: ['shell', 'archive'],
+  start: async (started: { archive: Archive; shell: Shell }) => (await import('./events.ts')).startEvents(started),
   halt: () => {},
 })
 
 const world = defineResource({
-  dependencies: ['shell', 'clients', 'titles', 'stage', 'port', 'toasts'],
+  dependencies: ['shell', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
   start: async (started: WorldDeps & { shell: Shell }) => (await import('./building.ts')).startWorld(started),
   halt: () => {},
 })
@@ -126,19 +130,19 @@ const hud = defineResource({
 })
 
 const navigation = defineResource({
-  dependencies: ['shell', 'clients', 'titles', 'stage', 'port', 'toasts', 'world', 'hud'],
+  dependencies: ['shell', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
   start: async (started: NavigationDeps & { shell: Shell }) => (await import('./navigation.ts')).startNavigation(started),
   halt: () => {},
 })
 
 const panels = defineResource({
-  dependencies: ['shell', 'clients', 'titles', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
+  dependencies: ['shell', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
   start: async (started: PanelsDeps & { shell: Shell }) => (await import('./panels.ts')).startPanels(started),
   halt: () => {},
 })
 
 const app = defineResource({
-  dependencies: ['shell', 'clients', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
+  dependencies: ['shell', 'clients', 'archive', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
   start: async (started: AppLoopDeps & { shell: Shell }) => (await import('./app-loop.ts')).startAppLoop(started),
   halt: () => {},
 })
@@ -158,7 +162,7 @@ const frames = defineResource({
 })
 
 const feed = defineResource({
-  dependencies: ['shell', 'stage', 'assets', 'port', 'toasts', 'world', 'spawn', 'hud', 'panels', 'frames'],
+  dependencies: ['shell', 'archive', 'stage', 'assets', 'port', 'toasts', 'world', 'spawn', 'hud', 'panels', 'frames'],
   start: async (started: FeedDeps & { shell: Shell }) => {
     stageShown('models')
     return (await import('./feed.ts')).startFeed(started)
@@ -179,4 +183,4 @@ const keeper = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, titles, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, titles, archive, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }

@@ -27,10 +27,10 @@ import { fillBooks } from './room.ts'
 import { keymapSheetHtml } from '/lib/keys.js'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
-import { historyOf, type Archived, readArchives } from './archive.ts'
+import { historyOf, type Archive, type Archived } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
-import { ARCADE_SIGNS, cabinetsOf, DANCE, FILINGS, GUESTS, notesOf, pigeonholesOf, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
+import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, GUESTS, notesOf, pigeonholesOf, STATIONS, WALLS, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
 import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
 import { eyes, type Walker } from './walker.ts'
@@ -46,7 +46,7 @@ import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { clients: Clients; titles: Titles; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -58,6 +58,7 @@ export function startWorld(started: WorldDeps) {
   const { draftItem, draftsOf, cardReviews, floorThreadsOf, keepsThreads: floorKeepsThreads, reviewerOf } = started.clients
   const { camera, scene } = started.stage
   const { noteTitle, pruneNoteTitles, pruneKeptTitles, gameTitle, pruneGameTitles } = started.titles
+  const { readArchives, drawersAt } = started.archive
   const { port } = started
   const { toast } = started.toasts
   const { buildingNow, boardNow, captured, viewNow, motionNow, replayNow, heed } = nowOf(started.port)
@@ -118,6 +119,7 @@ export function startWorld(started: WorldDeps) {
   const pigeonholes = pigeonholesOf(cardReviews)
   const notes = notesOf(noteTitle)
   const cabinets = cabinetsOf(gameTitle)
+  const filings = filingsOf(drawersAt)
 
   /** What changes the building's shape: shell titles and limit readings are redrawn on their own. */
   const structureKey = (pl: Plan, b: Board) => JSON.stringify([
@@ -321,7 +323,7 @@ export function startWorld(started: WorldDeps) {
     reconcile(runningOn(next), s.running)
     reconcile(pigeonholes, s.pigeonholes)
     reconcile(ARCADE_SIGNS, s.arcadeSigns)
-    reconcile(FILINGS, s.filings)
+    syncFilings()
     readArchives(next)
     dressAllPapers()
     reconcile(DANCE, s.dance)
@@ -501,9 +503,12 @@ export function startWorld(started: WorldDeps) {
 
   const syncCabinets = () => boardNow() && reconcile(cabinets, s.cabinets)
 
+  /** Each floor's filing cabinet in step with its archive's drawers. */
+  const syncFilings = () => reconcile(filings, s.filings)
+
   /** Settles once the first board's building is pictured, the start's last wait (`ready`). */
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, firstBuilt, primeSeenAs }
+  return { directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs }
 }
