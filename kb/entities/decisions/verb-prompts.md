@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#OFFERS", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/health.ts#whyNot", "hub/renderers/tower3d/src/main.ts#onKey", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
+  "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#OFFERS", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/health.ts#whyNot", "hub/renderers/tower3d/src/controls.ts#onKey", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
 }
 ---
 **Problem.** Each object in Tower 3D did one thing on E. Everything else (brief, resume, reap, kill, spawn, a
@@ -32,7 +32,7 @@ appear in a corner, each on its own button, consequential ones are held, and the
   ([`heldWhy`](ref:hub/renderers/tower3d/src/acts.ts#heldWhy) over [`whyNot`](ref:hub/src/shared/health.ts#whyNot));
   its key says why in a toast and runs nothing. The panels draw those verbs' buttons inert, as the tower page does.
 - A stopped worker offers resume first, then a read-only look at its last screen, then its brief.
-- An aimed verb's key comes before a global one ([`onKey`](ref:hub/renderers/tower3d/src/main.ts#onKey)); the global
+- An aimed verb's key comes before a global one ([`onKey`](ref:hub/renderers/tower3d/src/controls.ts#onKey)); the global
   keys are for movement and navigation, and those with a meaning in the world also have an object that offers it
   (the directory board offers next waiting and overview, the DJ music).
 

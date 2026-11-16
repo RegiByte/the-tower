@@ -15,6 +15,7 @@ import type { HudDeps } from './hud.ts'
 import type { NavigationDeps } from './navigation.ts'
 import type { PanelsDeps } from './panels.ts'
 import type { AppLoopDeps } from './app-loop.ts'
+import type { ControlsDeps } from './controls.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
@@ -41,6 +42,7 @@ import { startToasts } from './toasts.ts'
  *   navigation  getting about: travel, the overview, the elevator's ride, what the prompt offers (navigation.ts)
  *   panels    what is drawn beside the world: each panel's enter, leave and draw, and the verbs its buttons run (panels.ts)
  *   app       the page's app loop (app.ts's handlers) with the executors that carry its effects out, attached to the port, and the window's focus and visibility it is told of (app-loop.ts)
+ *   controls  the pointer and the keys: what a click, a wheel or a key does in the world, and the keys a panel takes (controls.ts)
  *   main      the page itself: main.ts, imported and started once the resources it reads have (main.ts)
  */
 
@@ -131,8 +133,15 @@ const app = defineResource({
   halt: () => {},
 })
 
+/** After the app: its window blur and visibility listeners register after the app's own. */
+const controls = defineResource({
+  dependencies: ['shell', 'stage', 'port', 'world', 'hud', 'navigation', 'panels', 'app'],
+  start: async (started: ControlsDeps & { shell: Shell; app: unknown }) => (await import('./controls.ts')).startControls(started),
+  halt: () => {},
+})
+
 const main = defineResource({
-  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels', 'app'],
+  dependencies: ['shell', 'clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels', 'app', 'controls'],
   start: async (started: Main & { shell: Shell }) => {
     stageShown('models')
     ;(await import('./main.ts')).startMain(started)
@@ -140,4 +149,4 @@ const main = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, main }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, shell, events, world, views, spawn, hud, navigation, panels, app, controls, main }

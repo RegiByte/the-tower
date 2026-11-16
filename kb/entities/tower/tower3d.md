@@ -45,7 +45,7 @@ keyed by act kind; a frame as an ordered list of ticks.
 ([[verb-prompts]]); [`offersOf`](ref:hub/renderers/tower3d/src/acts.ts#offersOf) derives them from the board every
 frame, and which verbs a thing offers comes from the board's verbs ([[board-verbs]]), asked with
 [`can`](ref:hub/src/shared/offered.ts#can). The building's own keys (floors, the next wait, the directory, the view from
-outside) are [`onKey`](ref:hub/renderers/tower3d/src/main.ts#onKey)'s. A stopped worker's desk offers resume first
+outside) are [`onKey`](ref:hub/renderers/tower3d/src/controls.ts#onKey)'s. A stopped worker's desk offers resume first
 and shows its last screen read-only; a stranded one offers Let go beside Resume ([[let-go]], [[carry-on]]). Beside
 every keyboard lies the worker's logbook ([[logbook]]). Each floor's Running board
 ([`buildRunning`](ref:hub/renderers/tower3d/src/running.ts#buildRunning)) lists what the floor's workers left running
