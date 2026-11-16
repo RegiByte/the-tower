@@ -22,7 +22,7 @@ files carry CORS ([`ANY_ORIGIN`](ref:hub/src/tower/http.ts#ANY_ORIGIN), the rule
 extension clients are not: the build passes `--external:/lib/*` and `--external:/x/*`, so each `/lib/<module>.js`
 and `/x/<cap>/<file>.js` import stays a URL the browser resolves at run time. esbuild honours the tsconfig's `/lib/*`
 path, so without the flag it would quietly bundle a copy instead; `npm run test:tower3d-boot` fails when a built page
-imports nothing from `/lib/`. The renderer's [`cards.ts`](ref:hub/renderers/tower3d/src/cards.ts) and
+imports nothing from `/lib/`, and on any import cycle among Tower 3D's modules ([[tower3d-system]]). The renderer's [`cards.ts`](ref:hub/renderers/tower3d/src/cards.ts) and
 [`api.ts`](ref:hub/renderers/tower3d/src/api.ts) re-export the library modules its files read. Extension clients come
 through [`clients.ts`](ref:hub/renderers/tower3d/src/clients.ts), which loads each with `clientOf`: a user extension
 that takes over a capability may serve no such file, and the renderer goes on without what it drew. The tower serves
