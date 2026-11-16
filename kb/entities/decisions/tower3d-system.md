@@ -51,6 +51,10 @@
     "hub/renderers/tower3d/src/main.ts#readerEntered",
     "hub/renderers/tower3d/src/main.ts#followCabinet",
     "hub/renderers/tower3d/src/main.ts#onBoard",
+    "hub/renderers/tower3d/src/main.ts#planOf",
+    "hub/renderers/tower3d/src/archive.ts#archivedAt",
+    "hub/renderers/tower3d/src/layers.ts#desksAfter",
+    "hub/renderers/tower3d/src/layers.ts#galleryAfter",
     "hub/renderers/tower3d/src/door.ts#Engine"
   ]
 }
@@ -171,6 +175,17 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
     since moved along.
   `onBoard` also dispatches `replay-left` where a replay's desk left the building, and goes to a pending desk or
   shell.
+- *The plan is derived, the boards before it too.* The building keeps what its plan comes from, not the plan: the
+  board, each floor's archive as read for it ([`archivedAt`](ref:hub/renderers/tower3d/src/archive.ts#archivedAt))
+  and the wall time it was planned at; [`planOf`](ref:hub/renderers/tower3d/src/main.ts#planOf) derives the plan,
+  memoized on those three. The archive is a snapshot taken with the board: read live, the standing board's archive
+  goes undefined once a newer board's read lands, and its plan would lose its seats while that board waits. What
+  changed since the board before (a turn finished, a showing arrived, the first board) is derived from that board,
+  `was` in `onBoard`, and the desk and gallery layers are made over it
+  ([`desksAfter`](ref:hub/renderers/tower3d/src/layers.ts#desksAfter),
+  [`galleryAfter`](ref:hub/renderers/tower3d/src/layers.ts#galleryAfter)). The caches of what the walker bumps
+  into, what blocks a look and where the monitors stand stay keyed by the plan: they read the desks, the meeting
+  chairs and the meshes, which change with any board, not only with the building's shape.
 - *What sets the view outside a panel* (the overview) sends a `view` event; a pet sets it with the `pet` that starts it.
 - *Motion is timestamps.* A ride, a camera flight, a cut and a pet are plain data in the db
   ([`Motion`](ref:hub/renderers/tower3d/src/app.ts#Motion)): when each started (simulated ms), vectors and rotations
