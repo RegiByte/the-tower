@@ -45,7 +45,6 @@ import { TABLE, meetingKit } from './meetings.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import { isScreenTexture, isStillScreen, keepScreens, paintScreens, replayTexture, screenPathOf } from './screens.ts'
 import { isMarkdown, isPosterTexture, isVideo, keepPosters, pictured, playFilms, type Shown } from './showing.ts'
-import { closeTerm, mountTerm } from './term.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
 import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
@@ -79,6 +78,7 @@ const { lit } = shell().lighting
 const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = shell().stage
 const { move, releaseKeys, takeTurn } = shell().input
 const { beatAt, duck, pause, play, playing, setRoom } = shell().music
+const { closeTerm, mountTerm } = shell().terminal
 
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)

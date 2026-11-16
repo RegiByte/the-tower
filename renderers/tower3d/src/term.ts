@@ -34,36 +34,41 @@ type Target = {
   run: (id: string, e: KeyboardEvent) => boolean
 }
 
-let open: TermViewHandle | undefined
+/** The terminal: one mounted at a time, redrawn when the viewer's scheme or terminal face changes. */
+export function startTerminal() {
+  let open: TermViewHandle | undefined
 
-export function closeTerm(host: HTMLElement) {
-  open?.close()
-  open = undefined
-  host.innerHTML = ''
+  function closeTerm(host: HTMLElement) {
+    open?.close()
+    open = undefined
+    host.innerHTML = ''
+  }
+
+  function mountTerm(host: HTMLElement, t: Target) {
+    closeTerm(host)
+    const box = host.appendChild(Object.assign(document.createElement('div'), { className: 'term-box' }))
+    open = mountTermView(box, { Terminal, FitAddon, WebLinksAddon, UnicodeGraphemesAddon }, {
+      watch: (on) => watchStream(t.path, on),
+      resize: (size) => tower.call(t.resizeVerb, { id: t.id, ...size }),
+      send: (data) => t.sendKeys(t.id, data),
+      wheelReports: t.wheelReports,
+      scrollback: t.scrollback,
+      font: termFont,
+      scheme: () => tower.scheme(),
+      keymap: t.keys,
+      run: t.run,
+      mode: (m) => t.onMode(modeText(m), m.t === 'owning'),
+      end: t.onEnd,
+      error: t.onError,
+      upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
+      files: { cwd: t.cwd, edit: (path, line) => tower.call('edit', { path, line }) },
+    })
+  }
+
+  const offs = [tower.onScheme(() => open?.rescheme()), tower.prefs.on(() => void open?.refont())]
+  return { mountTerm, closeTerm, stop: () => offs.forEach((off) => off()) }
 }
+
+export type Term = ReturnType<typeof startTerminal>
 
 const termFont = () => terminalFont(tower.prefs.get())
-
-export function mountTerm(host: HTMLElement, t: Target) {
-  closeTerm(host)
-  const box = host.appendChild(Object.assign(document.createElement('div'), { className: 'term-box' }))
-  open = mountTermView(box, { Terminal, FitAddon, WebLinksAddon, UnicodeGraphemesAddon }, {
-    watch: (on) => watchStream(t.path, on),
-    resize: (size) => tower.call(t.resizeVerb, { id: t.id, ...size }),
-    send: (data) => t.sendKeys(t.id, data),
-    wheelReports: t.wheelReports,
-    scrollback: t.scrollback,
-    font: termFont,
-    scheme: () => tower.scheme(),
-    keymap: t.keys,
-    run: t.run,
-    mode: (m) => t.onMode(modeText(m), m.t === 'owning'),
-    end: t.onEnd,
-    error: t.onError,
-    upload: (name, data) => tower.call('upload', { name, data }).then((r) => r.path),
-    files: { cwd: t.cwd, edit: (path, line) => tower.call('edit', { path, line }) },
-  })
-}
-
-tower.onScheme(() => open?.rescheme())
-tower.prefs.on(() => void open?.refont())
