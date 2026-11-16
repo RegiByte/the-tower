@@ -23,7 +23,6 @@ import { hueOf } from './avatar.ts'
 import { drawCompass, pointers } from './compass.ts'
 import { besideOf, deskSlots, dressBinder, dressPapers, dressSide, holdUp, monitorOf, poseDesk, poseRigs, showOnMonitor, type Desk } from './desk.ts'
 import { launch, tickFireworks } from './fireworks.ts'
-import { beatAt, duck, pause, play, playing, setRoom } from './music.ts'
 import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, makeCat, nearDoors, purr, ring, roam, steer, tada, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat, type CatName } from './life.ts'
 import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands } from './hands.ts'
 import { tintOf } from './palette.ts'
@@ -79,6 +78,7 @@ const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, res
 const { lit } = shell().lighting
 const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = shell().stage
 const { move, releaseKeys, takeTurn } = shell().input
+const { beatAt, duck, pause, play, playing, setRoom } = shell().music
 
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
