@@ -155,6 +155,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
   let wanted: Subject | undefined
   let closed = false
   let seen = true
+  let loaded = false
 
   const drawMarks = () =>
     subjects.forEach((s, i) => {
@@ -199,6 +200,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
     if (!seen) (follow.visible(false), picks.visible(false))
     if (wanted) scrollTo(wanted)
     else at.opened?.(doc)
+    loaded = true
   })
   frame.srcdoc = frameDoc(at.tower, at.docCss, '')
 
@@ -210,7 +212,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
       follow?.replace()
     },
     show: (s) => s.kind === 'section' && scrollTo(s),
-    scroll: () => frame.contentDocument?.defaultView?.scrollY ?? 0,
+    scroll: () => (loaded ? frame.contentDocument?.defaultView?.scrollY : undefined),
     visible(on) {
       seen = on
       follow?.visible(on)
