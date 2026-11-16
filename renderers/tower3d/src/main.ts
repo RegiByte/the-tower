@@ -595,7 +595,8 @@ function renderPanel() {
   if (panel.kind === 'draft') {
     const d = s.draft!
     const f = board.floors.find((f) => f.id === d.project)
-    if (!f || !draftsOf(f)) return dropDraftPanel()
+    // The app closes the editor on a floor no longer keeping drafts once the building takes the board (`board-applied`).
+    if (!f || !draftsOf(f)) return
     $('draft-head').innerHTML = draftHeadHtml(f, d, held, Boolean(s.carrying))
     $('draft-note').innerHTML = d.conflict !== undefined ? draftNoteHtml : ''
     show('draft-note', d.conflict !== undefined)
@@ -734,12 +735,11 @@ function sideClosed() {
 }
 
 /**
- * Entering the side (a floor's panel, its archive, the directory): the drawer, the picker and the draft editor
- * closed, as they don't leave by the app yet, the mouse let go.
+ * Entering the side (a floor's panel, its archive, the directory): the drawer and the shell picker closed, as
+ * they don't leave by the app yet, the mouse let go.
  */
 function sideEntered() {
   sideClosed()
-  draftClosed()
   show('side', true)
   unlock()
 }
@@ -748,10 +748,9 @@ const sideLeft = () => show('side', false)
 /** The picker of where a new shell starts, `first`'s floor ahead, its first place focused for the keyboard. */
 const openShellPick = (first: string) => go({ kind: 'shell-pick', first })
 
-/** Entering the picker: the side and the draft editor closed, as the drawer and the draft don't leave by the app yet. */
+/** Entering the picker: the drawer's side closed, as it doesn't leave by the app yet. */
 function shellPickEntered() {
   sideClosed()
-  draftClosed()
   show('shell-pick', true)
   unlock()
 }
@@ -824,13 +823,12 @@ statsPolling.subscribe(events.listen('statsPolling'))
 const openStats = () => go({ kind: 'stats' })
 
 /**
- * Entering the reader: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the
+ * Entering the reader: the drawer and the picker closed, as they don't leave by the app yet, the
  * mouse let go, the reader shown. Entered again from its own kind, which isn't left, the reader is closed first.
  */
 function readerEntered(panel: Panel, from: Panel | undefined) {
   sideClosed()
   if (from?.kind === panel.kind) docClosed(from)
-  draftClosed()
   unlock()
   show('paused', false)
   show('doc', true)
@@ -866,12 +864,11 @@ async function readStats() {
   renderPanel()
 }
 
+/** Whatever panel is open left, back to walking: the drawer and the picker hidden as they close, since they don't leave by the app yet. */
 function closePanels() {
   closeSide()
-  closeDoc()
-  closeDraftPanel()
-  closeGame()
-  unfocus()
+  if (panelNow()) go(undefined)
+  showPaused()
 }
 
 /**
@@ -883,10 +880,9 @@ function openGame(project: string, id: string) {
   if (at) go({ kind: 'game', project, id, x: at.cabinet.x })
 }
 
-/** Entering a game: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the music paused, the game's frame given the keys, the camera on its cabinet. */
+/** Entering a game: the drawer and the picker closed, as they don't leave by the app yet, the music paused, the game's frame given the keys, the camera on its cabinet. */
 function gameEntered({ project, id }: GamePanel) {
   sideClosed()
-  draftClosed()
   unlock()
   pause()
   show('paused', false)
@@ -1060,12 +1056,11 @@ function focusDesk(id: string) {
 }
 
 /**
- * Entering the desk: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the
+ * Entering the desk: the drawer and the picker closed, as they don't leave by the app yet, the
  * mouse let go, the desk's panel shown on its screen.
  */
 function deskEntered({ id }: { id: string }) {
   sideClosed()
-  draftClosed()
   s.dotted.clear()
   unlock()
   show('paused', false)
@@ -1116,12 +1111,11 @@ function focusShell(id: string) {
   go({ kind: 'shell', id })
 }
 
-/** Entering a shell: the desk's panel over its terminal, the drawer, the picker and the draft editor closed as at a desk. */
+/** Entering a shell: the desk's panel over its terminal, the drawer and the picker closed as at a desk. */
 function shellEntered({ id }: { id: string }) {
   $('desk-screen').classList.remove('replay')
   show('desk-stamp', false)
   sideClosed()
-  draftClosed()
   unlock()
   show('paused', false)
   show('desk', true)
@@ -1137,11 +1131,10 @@ function shellEntered({ id }: { id: string }) {
 /** Up close to a big screen, filling the view. */
 const watch = (n: number) => go({ kind: 'tv', n })
 
-/** Entering a big screen: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the screen filling the view. */
+/** Entering a big screen: the drawer and the picker closed, as they don't leave by the app yet, the screen filling the view. */
 function tvEntered({ n }: { n: number }) {
   const screen = bigScreens(s.plan)[n]
   sideClosed()
-  draftClosed()
   unlock()
   show('paused', false)
   show('watch', true)
@@ -1400,8 +1393,8 @@ const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => voi
   desk: focusLeft, shell: focusLeft, tv: focusLeft,
   floor: sideLeft, archive: sideLeft, directory: sideLeft,
   elevator: closesItself,
-  'shell-pick': closesItself, drawer: closesItself, draft: closesItself,
-  game: gameLeft,
+  'shell-pick': closesItself, drawer: closesItself,
+  game: gameLeft, draft: draftLeft,
   stats: readerLeft, logbook: readerLeft, doc: readerLeft, kept: readerLeft, picture: readerLeft, thread: readerLeft,
 }
 
@@ -1411,8 +1404,8 @@ const ENTER: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>, from: 
   desk: deskEntered, shell: shellEntered, 'shell-pick': shellPickEntered,
   floor: sideEntered, archive: sideEntered, directory: sideEntered,
   elevator: opensItself,
-  drawer: opensItself, draft: opensItself,
-  tv: tvEntered, game: gameEntered,
+  drawer: opensItself,
+  tv: tvEntered, game: gameEntered, draft: draftEntered,
   stats: statsEntered, thread: threadEntered, logbook: logbookEntered,
   doc: (panel, from) => void docEntered(panel, from),
   kept: (panel, from) => void keptEntered(panel, from),
@@ -1440,7 +1433,7 @@ function drawPending() {
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
 const app = loop({
   state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
-  handlers: appHandlers({ threadsOf: floorThreadsOf }),
+  handlers: appHandlers({ threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
   execute: {
     ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
     announce: () => {},
@@ -3026,16 +3019,27 @@ async function openSpawnOnNote(project: string, note: Held) {
 let saveTimer: ReturnType<typeof setTimeout>
 const draftText = $('draft-text') as HTMLTextAreaElement
 
+/** The editor on `d`, the draft open before saved and closed first. */
 function openDraftPanel(d: Draft) {
-  closePanels()
+  draftClosed()
   s.draft = d
-  go({ kind: 'draft' })
+  go({ kind: 'draft', project: d.project })
+}
+
+/** Entering the editor: the drawer and the picker closed, as they don't leave by the app yet, the mouse let go, the draft's text in it. */
+function draftEntered() {
+  sideClosed()
   unlock()
   show('paused', false)
   show('draft', true)
-  draftText.value = d.text
-  renderPanel()
-  draftText.focus()
+  draftText.value = s.draft!.text
+}
+
+/** Leaving the editor: the draft saved, unless its floor no longer keeps drafts, where it is let go unsaved. */
+function draftLeft({ project }: { project: string }) {
+  const f = s.board!.floors.find((f) => f.id === project)
+  if (f && draftsOf(f)) draftClosed()
+  else draftDropped()
 }
 
 async function openNote(project: string, id: string) {
@@ -3046,10 +3050,10 @@ async function openNote(project: string, id: string) {
   openDraftPanel(d)
 }
 
-/** Closes the editor without saving: for a draft that is gone. */
+/** Closes the editor without saving: for a draft that is gone, deleted or sent. Its leave finds no draft to save. */
 function dropDraftPanel() {
   draftDropped()
-  if (panelNow()?.kind === 'draft') go(undefined)
+  closeDraftPanel()
 }
 
 function draftDropped() {
@@ -3058,9 +3062,8 @@ function draftDropped() {
   show('draft', false)
 }
 
-/** Closes the editor, its text saved. */
+/** Closes the editor, its text saved as it leaves. */
 function closeDraftPanel() {
-  draftClosed()
   if (panelNow()?.kind === 'draft') go(undefined)
 }
 

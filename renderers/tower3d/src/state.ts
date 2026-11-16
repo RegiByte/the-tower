@@ -65,8 +65,8 @@ export type Panel =
   | { kind: 'logbook'; card: Card; threads: Threads | undefined; wholes: Brief[]; tab: LogbookTab; on: string }
   /** A pulled drawer of a floor's filing cabinet, its folders listed beside the world. */
   | { kind: 'drawer'; project: string; n: number }
-  /** The draft editor, on `State.draft`. */
-  | { kind: 'draft' }
+  /** The draft editor on a draft of `project`'s floor, its body in `State.draft`. */
+  | { kind: 'draft'; project: string }
   /** A checkout's review thread read away from any desk, nobody working there now. */
   | { kind: 'thread'; project: string; checkout: string }
   /** The Stats panel in the reader. */
