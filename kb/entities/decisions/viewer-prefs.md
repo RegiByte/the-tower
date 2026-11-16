@@ -30,7 +30,6 @@
     "hub/src/shared/health.ts#HOST_MEANS",
     "hub/src/shared/terminal.ts",
     "hub/src/shared/terminal.ts#fitSize",
-    "hub/src/shared/terminal.ts#cellOf",
     "hub/src/shared/design.ts#reduced",
     "hub/src/shared/design.ts#designCss",
     "hub/src/shared/shelf-page.ts",
@@ -91,8 +90,8 @@ they are written once in shared code and a next renderer gets them by importing 
 - *Terminals* ([`terminal.ts`](ref:hub/src/shared/terminal.ts), [`term-view.ts`](ref:hub/src/shared/term-view.ts))
   draw in `--mono` at `termSize` while their viewer holds the PTY, so a bigger font gives the session fewer columns
   and rows (the PTY has one size); a watching one fits the PTY at a size up to `termSize`
-  ([`fitSize`](ref:hub/src/shared/terminal.ts#fitSize)), from cells measured in the face itself
-  ([`cellOf`](ref:hub/src/shared/terminal.ts#cellOf)).
+  ([`fitSize`](ref:hub/src/shared/terminal.ts#fitSize)), from cells measured in the face at each size it tries,
+  as xterm lays them out, so a PTY a driving terminal fitted to a box of the same size is watched at the same font.
 - *Waits that flash* (`waits: 'flash'`, `data-waits` on the root) are for a viewer who reads past colour alone: the
   tower page marks what waits on them and isn't dismissed `calls` (a worker's row, a folded floor's count, a lamp of
   the rail), pulses it in its attention's colour, and stands an arrow at the sidebar's edge counting those scrolled
