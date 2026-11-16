@@ -10,7 +10,7 @@ import { PET_MS } from './pet.ts'
 import { cabinetOf } from './layout.ts'
 import { clockMoves, wallNow } from './clock.ts'
 import { archivedAt, archivesSettled, drawersAt, readArchives } from './archive.ts'
-import { FILINGS, reconcile } from './layers.ts'
+import { FILINGS } from './layers.ts'
 import { s, type Panel, type Standing } from './state.ts'
 import { aim } from './walker.ts'
 import type { Toasts } from './toasts.ts'
@@ -45,7 +45,7 @@ export function startAppLoop(started: AppLoopDeps) {
   const { boardNow, panelAs } = nowOf(port)
   const { toast } = started.toasts
   const { events } = started
-  const { discard, celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets } = started.world
+  const { reconcile, celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets } = started.world
   const { desk } = started.views
   const { hiring } = started.spawn
   const { renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk } = started.hud
@@ -100,7 +100,7 @@ export function startAppLoop(started: AppLoopDeps) {
       arrived: ({ at }) => (ARRIVED[at.kind] as (at: Arrival) => void)(at),
       toast: ({ text }) => toast(text),
       'archives/read': ({ board }, dispatch) => (readArchives(board), dispatch({ type: 'archives/asked', at: wallNow() })),
-      filings: () => void reconcile(FILINGS, s.filings, planNow(), discard),
+      filings: () => void reconcile(FILINGS, s.filings),
       notes: () => void syncNotes(),
       cabinets: () => void syncCabinets(),
       'stats/fetch': ({ reading }, dispatch) =>

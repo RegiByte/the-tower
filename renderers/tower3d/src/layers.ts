@@ -17,7 +17,6 @@ import { buildRunning, runningKey, type Running } from './running.ts'
 import { buildPigeonhole, pigeonholeKey, type Pigeonhole } from './pigeonhole.ts'
 import { drawersAt } from './archive.ts'
 import { buildFiling, filingKey, type Filing } from './filing.ts'
-import { hangOn } from './levels.ts'
 import { s, type WallItem } from './state.ts'
 import type { Board, Card } from './api.ts'
 import type { AddedTidy } from '/lib/extension.js'
@@ -28,6 +27,9 @@ import { wallNow } from './clock.ts'
  * `keep` brings a kept item up to its slot, or answers false when the item must be made anew; `leave` runs as an item
  * goes, before it is discarded. Each is handed the plan being reconciled.
  */
+/** Puts an object on a level of the scene, out of wherever it hung before (`hangOn`). */
+export type Hang = (level: number, o: THREE.Object3D) => void
+
 export type Layer<S, T> = {
   slots: (p: Plan) => [key: string, slot: S][]
   level: (slot: S, p: Plan) => number
@@ -37,17 +39,17 @@ export type Layer<S, T> = {
   leave?: (item: T, key: string, p: Plan) => void
 }
 
-export function reconcile<S, T>(layer: Layer<S, T>, items: Map<string, T>, p: Plan, discard: (o: THREE.Object3D) => void) {
+export function reconcile<S, T>(layer: Layer<S, T>, items: Map<string, T>, p: Plan, hang: Hang, discard: (o: THREE.Object3D) => void) {
   const wanted = layer.slots(p)
   for (const [key, slot] of wanted) {
     const old = items.get(key)
     if (old && layer.keep(old, slot, p)) {
-      hangOn(layer.level(slot, p), layer.root(old))
+      hang(layer.level(slot, p), layer.root(old))
       continue
     }
     if (old) discard(layer.root(old))
     const item = layer.make(slot, key, p)
-    hangOn(layer.level(slot, p), layer.root(item))
+    hang(layer.level(slot, p), layer.root(item))
     items.set(key, item)
   }
   const keys = new Set(wanted.map(([key]) => key))
@@ -87,7 +89,7 @@ const seatedAt = (desk: Desk, id: string) => {
 /** The dressing's slots of the desk a worker sits at, in that desk's states: a reviewer's are its author's. */
 export const slotsAt = (author: Card) => deskSlots(pickOf(author, new Date(wallNow()).getMonth(), s.kit!.prefabs[DESK_DRESS]).slots)
 
-export const desksAfter = (was: Board | undefined): Layer<DeskAt, Desk> => ({
+export const desksAfter = (was: Board | undefined, hang: Hang): Layer<DeskAt, Desk> => ({
   slots: (p) => floors(p).flatMap((level) => level.desks.map((slot) => {
     const author = slot.beside ? level.desks.find((d) => d.card.id === slot.beside)!.card : slot.card
     return [slot.card.id, { slot, level: level.index, y: level.y, author }] as [string, DeskAt]
@@ -125,7 +127,7 @@ export const desksAfter = (was: Board | undefined): Layer<DeskAt, Desk> => ({
       const level = p.levels.find((l) => l.y === desk.group.position.y)!.index
       const l = leaver(p, desk, level, seatedAt(desk, id), s.models!)
       s.leavers.add(l)
-      hangOn(level, l.group)
+      hang(level, l.group)
       if (kindOfDesk(desk) === 'beside') carryChair(l, desk)
     }
     s.arrivals.delete(id)

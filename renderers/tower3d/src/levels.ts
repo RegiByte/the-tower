@@ -1,10 +1,7 @@
 import * as THREE from 'three'
 import { makeLayer, type KitLayer } from './kit.ts'
-import { shell } from './shell.ts'
 import type { Motion } from './app.ts'
 import { s, type View } from './state.ts'
-
-const { scene } = shell().stage
 
 /**
  * What stands on one level, under one group in building coordinates: its desks, stations, notes, pictures, walls,
@@ -13,8 +10,8 @@ const { scene } = shell().stage
  */
 export type LevelRoot = { group: THREE.Group; zones: KitLayer; dressing: KitLayer }
 
-/** Level `index`'s root, made on first use. */
-export function onLevel(index: number): LevelRoot {
+/** Level `index`'s root, made on first use and added to `scene`. */
+export function onLevel(scene: THREE.Scene, index: number): LevelRoot {
   while (s.levels.length <= index) {
     const root = { group: new THREE.Group(), zones: makeLayer(), dressing: makeLayer() }
     root.group.add(root.zones.group, root.dressing.group)
@@ -24,9 +21,9 @@ export function onLevel(index: number): LevelRoot {
   return s.levels[index]
 }
 
-/** Puts `o` under level `index`'s root, out of wherever it hung before. */
-export function hangOn(index: number, o: THREE.Object3D) {
-  const { group } = onLevel(index)
+/** Puts `o` under level `index`'s root in `scene`, out of wherever it hung before. */
+export function hangOn(scene: THREE.Scene, index: number, o: THREE.Object3D) {
+  const { group } = onLevel(scene, index)
   if (o.parent !== group) group.add(o)
 }
 
