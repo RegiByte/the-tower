@@ -728,6 +728,31 @@ const breakroom = (now: number) => boardOf([
   },
 ], now)
 
+/** How many times `leaving` takes its subjects away and brings them back: once for each panel a subject leaving closes. */
+const LEAVINGS = 7
+
+/**
+ * Every kind of subject a panel is open on, then each one gone: an off-duty worker's picture on the wall, a worker at
+ * its desk, two archived workers filling the filing cabinet's drawers, a shell, a shelf page, a kept game and the
+ * review thread of a checkout no worker is in, which opens as a thread rather than at a desk. `gone`, the showing is
+ * withdrawn, the worker at its desk and the archived ones leave the board, and the shell, the shelf entry, the game and
+ * the thread are gone. The worker that stays comes first, so its card holds the same id on both boards.
+ */
+const leaving = (now: number, gone = false) => boardOf([{
+  id: 'leave', name: 'leave', color: '#f78c6c', repos: ['/work/leave'],
+  shelf: gone ? [] : [{ label: 'Dashboard', html: 'dash/index.html' }],
+  games: gone ? [] : [{ html: gameHtml('Last Orbit') }],
+  threads: gone ? {} : { 'old-flags': `# old-flags\n\n## user · 2026-10-04 14:40 · n1\nWho still reads the old flags?\n` },
+  workers: [
+    { status: 'exited', prompt: 'Plot the failures by hour', answer: 'Plotted.', ago: 60, left: 30,
+      shown: gone ? [] : [{ kind: 'file', target: '/work/leave/reports/failures-by-hour.png', title: 'Failures by hour', ago: 35 }] },
+    ...(gone ? [] : [
+      { status: 'working', prompt: 'Trim the logs', tool: 'Edit', ago: 20 },
+      { status: 'exited', prompt: 'Rotate the keys', answer: 'Rotated.', ago: 2 * 24 * 60 },
+      { status: 'exited', prompt: 'Read the old flags', answer: 'Read.', ago: 3 * 24 * 60 },
+    ] satisfies Facts[]),
+  ],
+}], now, { shells: gone ? [] : [SHELL('leave', 0, 'npm run dev', now)] })
 
 /** The instant the fixtures are built at, the one `tool:frames` pins (in UTC); `night`'s, the tour's night shots. */
 const AFTERNOON = '2026-10-04T15:00:00.000Z'
@@ -747,6 +772,7 @@ const FIXTURES: Record<string, { at: string; boards: (now: number) => Built[] }>
   growing: { at: AFTERNOON, boards: growing },
   breakroom: { at: AFTERNOON, boards: (now) => [breakroom(now)] },
   night: { at: NIGHT, boards: (now) => [busyBoard(busyFloors(now), now)] },
+  leaving: { at: AFTERNOON, boards: (now) => [leaving(now), ...Array.from({ length: LEAVINGS }, () => [leaving(now, true), leaving(now)]).flat()] },
 }
 
 /** The zone the fixtures are built in: the bridge reads a day in local time, so another zone would write other files. */

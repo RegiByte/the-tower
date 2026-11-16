@@ -298,5 +298,24 @@
     await closed('draft')
   }
 
+  /**
+   * On `leaving`, each panel whose subject can leave, opened on a board that holds its subject and kept open across the
+   * next board, which doesn't: `<route>-left` shows whether it closed. The board after brings every subject back.
+   */
+  if (new URLSearchParams(location.search).get('board') === 'leaving') {
+    const leaves = async (route, open) => {
+      tryDo(route, open); t.step(60); await settle(); snap(`${route}-before-leaving`)
+      t.advance(); t.step(60); await settle(); snap(`${route}-left`)
+      t.advance(); t.step(60); await walking()
+    }
+    await leaves('desk', () => use(t.acts('desk')[0]))
+    await leaves('shell', () => use(t.acts('shell')[0]))
+    await leaves('doc', () => use(t.acts('shelf')[0]))
+    await leaves('thread', () => use(t.acts('thread')[0], 'thread'))
+    await leaves('drawer', () => use(t.acts('drawer')[0]))
+    await leaves('picture', () => use(t.acts('picture')[0]))
+    await leaves('game', () => use(t.acts('arcade')[0]))
+  }
+
   return out
 })()

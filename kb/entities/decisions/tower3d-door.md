@@ -66,7 +66,7 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   `npm run test:tower3d-boot`, the built bundle booted on a fixture board through `ready()` with no page error.
 - Frames' two scenarios. The walk ([`frames.scenario.js`](ref:hub/scripts/frames.scenario.js)) crosses the building on
   every fixture board, each stage's state and scene PNG. The panel routes
-  ([`frames.panels.js`](ref:hub/scripts/frames.panels.js)) run on the boards that reach them (busy, logbook, review):
+  ([`frames.panels.js`](ref:hub/scripts/frames.panels.js)) run on the boards that reach them (busy, logbook, review, leaving):
   each kind of panel opened the way a user does and worked, then left with one Escape and recorded as
   `<route>-closed`, each route starting from walking with nothing open. Its header lists the panels no fixture board
   reaches. A stage keeps the door's state, a hash of each panel shown (its markup normalized to tags, kept attributes,
@@ -77,6 +77,11 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   slow read shows as a failed step rather than a stray difference.
   Handing a note to a desk reaches the sandbox's API, which knows no fixture session and refuses it, so that route
   records the note still carried and puts it back.
+  On `leaving`, whose boards alternate between holding every subject a panel can show and holding none of them, the
+  panel routes end with a stage pair per close: each panel opened on a board holding its subject
+  (`<route>-before-leaving`), then the next board delivered (`<route>-left`), so the close a panel's subject leaving
+  makes (the desk, shell, doc, thread, drawer, picture and game) is recorded with its events rather than traced by
+  reading.
 
 **Alternatives considered.**
 - Keep driving real input over CDP: fragile and slow.
