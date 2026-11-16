@@ -5,7 +5,7 @@ import type { Input, Move } from './input.ts'
 import type { Plan } from './layout.ts'
 import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
-import { pictured } from './showing.ts'
+import type { Pictures } from './showing.ts'
 import { s, type Standing, type View } from './state.ts'
 import { markedIn, type AppEvent, type Db } from './app.ts'
 import type { CatName } from './life.ts'
@@ -106,6 +106,7 @@ declare global {
 /** What the door drives: the functions the page's own input and frames call. */
 export type Engine = {
   ready: Promise<void>
+  pictured: () => Promise<void>
   /** The plan the building stands on. */
   plan(): Plan
   update(dt: number): void
@@ -225,7 +226,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
 
   Object.assign(window.tower3d, {
     ready: () => e.ready,
-    pictured,
+    pictured: e.pictured,
     capture() {
       s.doorMode = true
       e.dispatch({ type: 'capture', by: 'door', held: e.app().view === 'walk' && !e.app().panel })
@@ -294,11 +295,12 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
 }
 
 /** What the door is started with: every resource whose functions it drives. */
-export type DoorDeps = { stage: Stage; input: Input; port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
+export type DoorDeps = { pictures: Pictures; stage: Stage; input: Input; port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
 
 /** The door filled, once every resource it drives has started (the `door` resource). */
 export function startDoor(started: DoorDeps) {
   const { events } = started
+  const { pictured } = started.pictures
   const { planNow, floorY, pickables, pick } = started.world
   const { captured } = nowOf(started.port)
   const { leaveOverview, offersNow, aimAt, startHold } = started.navigation
@@ -312,7 +314,7 @@ export function startDoor(started: DoorDeps) {
   const place = (level: number, spot: Standing) => app.dispatch({ type: 'place', level, spot })
 
   installDoor({
-    ready, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
+    ready, pictured, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
     events: events.read,
     play,
     drive: started.input.drive,

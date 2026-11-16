@@ -16,8 +16,8 @@ import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
 import { levelOf, levelsShown, showLevels } from './levels.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
-import { paintScreens } from './screens.ts'
-import { isVideo, playFilms } from './showing.ts'
+import type { Screens } from './screens.ts'
+import { isVideo, type Pictures } from './showing.ts'
 import { type Turn } from './input.ts'
 import { wallNow } from './clock.ts'
 import { FIXTURE } from './fixtures.ts'
@@ -40,7 +40,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the frames resource is started with. */
-export type FramesDeps = { tower: Tower; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels }
+export type FramesDeps = { tower: Tower; screens: Screens; pictures: Pictures; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type Frames = ReturnType<typeof startFrames>
 
@@ -50,6 +50,8 @@ export type Frames = ReturnType<typeof startFrames>
  */
 export function startFrames(started: FramesDeps) {
   const { tower } = started
+  const { paintScreens } = started.screens
+  const { playFilms, imageOf } = started.pictures
   const { port } = started
   const { lit } = started.lighting
   const { camera, orbit, renderer, scene, tickOutside } = started.stage
@@ -357,7 +359,7 @@ export function startFrames(started: FramesDeps) {
 
   /** A frame's work, in order: where you are, what the camera sees, what you aim at, then everything alive. */
   function tickGallery({ t }: Frame) {
-    for (const pic of s.pictures.values()) (fitPicture(pic), placePicture(pic, t))
+    for (const pic of s.pictures.values()) (fitPicture(pic, imageOf), placePicture(pic, t))
   }
 
   /** At most this many videos play at once: each decodes and copies its frames to the GPU. */

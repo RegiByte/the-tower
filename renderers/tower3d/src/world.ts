@@ -14,6 +14,7 @@ import { CORE, DOOR_WIDTH, LOBBY_HEIGHT, SHAFT_HEAD, SLAB, STOREY, WALL, bigScre
 import { instance, type Models } from './models.ts'
 import { buildParty, type Party } from './party.ts'
 import { floorPalette, tintOf } from './palette.ts'
+import type { Screens } from './screens.ts'
 import { buildRoom, buildShelf, shellTag, shellTitle, type Bookcase } from './room.ts'
 import { buildLoft } from './loft.ts'
 import type { PrefabBox } from './zones.ts'
@@ -228,7 +229,7 @@ function landingRug(p: Plan, number: string, tint: string, color: string) {
   return g
 }
 
-function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: Models, pickables: THREE.Object3D[], bookcases: Bookcase[], draftsOf: Clients['draftsOf']) {
+function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: Models, pickables: THREE.Object3D[], bookcases: Bookcase[], draftsOf: Clients['draftsOf'], screenTexture: Screens['screenTexture']) {
   const g = new THREE.Group()
   const tint = tintOf(level.floor)
   const colors = floorPalette(tint)
@@ -241,7 +242,7 @@ function floorLevel(p: Plan, level: Extract<Level, { kind: 'floor' }>, models: M
   const outside = signPlate(signOf(level, tint), 1)
   outside.position.set(-p.width / 2 + 2 + outside.geometry.parameters.width / 2, STOREY / 2, p.depth / 2 + 0.2)
   g.add(outside)
-  g.add(buildRoom(p, level, models, pickables), buildShelf(level, models, pickables, bookcases), roomSigns(p, tint))
+  g.add(buildRoom(p, level, models, pickables, screenTexture), buildShelf(level, models, pickables, bookcases), roomSigns(p, tint))
   g.add(buildLoft(p.loft, colors, tint))
   g.add(buildWall(level.wall, colors.facing, tint))
   if (level.cork) g.add(buildCork(level.cork, level.floor.id, draftsOf(level.floor)!.label, tint, pickables))
@@ -534,7 +535,7 @@ function elevatorPanel(p: Plan) {
   return { material: new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }), aspect: cv.width / cv.height }
 }
 
-export function buildWorld(p: Plan, board: Board, directory: World['directory'], statsBoard: World['statsBoard'], models: Models, draftsOf: Clients['draftsOf']): World {
+export function buildWorld(p: Plan, board: Board, directory: World['directory'], statsBoard: World['statsBoard'], models: Models, draftsOf: Clients['draftsOf'], screenTexture: Screens['screenTexture']): World {
   const group = new THREE.Group()
   const pickables: THREE.Object3D[] = []
   const bookcases: Bookcase[] = []
@@ -553,7 +554,7 @@ export function buildWorld(p: Plan, board: Board, directory: World['directory'],
     const facing = level.kind === 'floor' ? floorPalette(tint).facing : '#343c4c'
     if (level.kind === 'lobby') g.add(lobbyLevel(p, directory, models, pickables), lounge(p, models, pickables))
     if (level.kind === 'floor') {
-      g.add(floorLevel(p, level, models, pickables, bookcases, draftsOf))
+      g.add(floorLevel(p, level, models, pickables, bookcases, draftsOf, screenTexture))
       const lamp = glowing('#2a2f3a')
       g.add(mesh(new THREE.SphereGeometry(0.12, 12, 10), lamp, 0, DOOR_HEIGHT + 0.25, coreFront(p) + WALL + 0.1))
       waitLamps.set(level.index, lamp)
