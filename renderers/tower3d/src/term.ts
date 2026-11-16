@@ -5,7 +5,6 @@ import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes'
 import { modeText, mountTermView, type TermViewHandle, terminalFont } from '/lib/terminal.js'
 import type { Keys } from '/lib/keys.js'
 import type { StreamMsg, Tower } from './api.ts'
-import { watchStream } from './fixtures.ts'
 
 /**
  * The real terminal of the desk or kiosk you're at, a view of its PTY held by whoever types (`term-view.ts`). It
@@ -48,7 +47,7 @@ export function startTerminal({ tower }: { tower: Tower }) {
     closeTerm(host)
     const box = host.appendChild(Object.assign(document.createElement('div'), { className: 'term-box' }))
     open = mountTermView(box, { Terminal, FitAddon, WebLinksAddon, UnicodeGraphemesAddon }, {
-      watch: (on) => watchStream(t.path, on),
+      watch: (on) => tower.watch(t.path, on),
       resize: (size) => tower.call(t.resizeVerb, { id: t.id, ...size }),
       send: (data) => t.sendKeys(t.id, data),
       wheelReports: t.wheelReports,

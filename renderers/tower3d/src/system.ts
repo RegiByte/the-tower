@@ -1,11 +1,12 @@
 import { defineResource } from 'braided'
 import type { Tower } from './api.ts'
+import type { Clients } from './clients.ts'
 import { startAssets } from './loads.ts'
 import { startClients } from './clients.ts'
 import { startInput } from './input.ts'
 import { startMusic } from './music.ts'
 import { startLighting, type Lighting } from './light/setting.ts'
-import { startClock, type Clock } from './clock.ts'
+import { fixtureClock, startClock, type Clock } from './clock.ts'
 import { stage as stageShown } from './loading.ts'
 import { startPort } from './port.ts'
 import { startWorld } from './building.ts'
@@ -17,14 +18,14 @@ import { startPanels } from './panels.ts'
 import { startAppLoop } from './app-loop.ts'
 import { startControls, type ControlsDeps } from './controls.ts'
 import { startFrames, type FramesDeps } from './frames.ts'
-import { startFeed, type FeedDeps } from './feed.ts'
+import { startFeed, startFixtureFeed, type FeedDeps, type FixtureFeedDeps } from './feed.ts'
 import { startDoor } from './door.ts'
 import { startKeeper, type KeeperDeps } from './keeper.ts'
 import { startStage, type Stage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { screensOf } from './screens.ts'
 import { picturesOf } from './showing.ts'
-import { watchStream } from './fixtures.ts'
+import { fixtureTower, startFixture, type Fixture } from './fixtures.ts'
 import { startToasts } from './toasts.ts'
 import { startTitles } from './titles.ts'
 import { startArchive } from './archive.ts'
@@ -86,8 +87,7 @@ const input = defineResource({
 
 const music = defineResource({ start: startMusic, halt: (started) => started.stop() })
 
-/** Its streams are read through the fixture's shim until the fixture page is a record of its own. */
-const screens = defineResource({ start: () => screensOf(watchStream), halt: () => {} })
+const screens = defineResource({ dependencies: ['tower'], start: ({ tower }: { tower: Tower }) => screensOf(tower.watch), halt: () => {} })
 
 const pictures = defineResource({ dependencies: ['tower'], start: ({ tower }: { tower: Tower }) => picturesOf(tower), halt: () => {} })
 
@@ -101,7 +101,7 @@ const toasts = defineResource({ dependencies: ['tower'], start: startToasts, hal
 
 const titles = defineResource({ dependencies: ['tower', 'clients', 'port'], start: startTitles, halt: () => {} })
 
-const archive = defineResource({ dependencies: ['clock', 'port'], start: startArchive, halt: () => {} })
+const archive = defineResource({ dependencies: ['tower', 'clock', 'port'], start: startArchive, halt: () => {} })
 
 const events = defineResource({
   dependencies: ['archive'],
@@ -116,7 +116,7 @@ const world = defineResource({
 })
 
 const views = defineResource({
-  dependencies: ['clock', 'port', 'toasts'],
+  dependencies: ['tower', 'clock', 'port', 'toasts'],
   start: startViews,
   halt: () => {},
 })
@@ -165,8 +165,10 @@ const frames = defineResource({
   halt: () => {},
 })
 
+const FEEDS_ON = ['tower', 'archive', 'stage', 'assets', 'port', 'toasts', 'world', 'spawn', 'hud', 'panels', 'frames'] as const
+
 const feed = defineResource({
-  dependencies: ['tower', 'archive', 'stage', 'assets', 'port', 'toasts', 'world', 'spawn', 'hud', 'panels', 'frames'],
+  dependencies: FEEDS_ON,
   start: (started: FeedDeps) => {
     stageShown('models')
     return startFeed(started)
@@ -187,4 +189,28 @@ const keeper = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { tower, clock, lighting, clients, stage, input, music, screens, pictures, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+export const liveTower3d = { tower, clock, lighting, clients, stage, input, music, screens, pictures, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+
+/**
+ * A fixture page (`?board=<name>`): the live record with the resources that differ swapped, the page itself the same.
+ * The fixture's file is a resource; the tower answers from it with the live one's interface, the clock stands at the
+ * instant it was built at, and the feed delivers its boards.
+ */
+export const fixtureTower3d = (name: string) => ({
+  ...liveTower3d,
+  fixture: defineResource({ start: () => startFixture(name), halt: () => {} }),
+  tower: defineResource({
+    dependencies: ['fixture', 'clients'],
+    start: (started: { fixture: Fixture; clients: Clients }) => fixtureTower(started),
+    halt: () => {},
+  }),
+  clock: defineResource({ dependencies: ['fixture'], start: ({ fixture }: { fixture: Fixture }) => fixtureClock({ name, at: fixture.file.at }), halt: () => {} }),
+  feed: defineResource({
+    dependencies: [...FEEDS_ON, 'fixture'],
+    start: (started: FixtureFeedDeps) => {
+      stageShown('models')
+      return startFixtureFeed(started)
+    },
+    halt: () => {},
+  }),
+})

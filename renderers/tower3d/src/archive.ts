@@ -1,7 +1,6 @@
 import { failureAt, failureOf, heldHandlers, noReads, reading, valueAt, valueOf, loop, type Listener } from '/lib/machine.js'
-import type { Board, Card, Floor } from './api.ts'
+import type { Board, Card, Floor, Tower } from './api.ts'
 import { archivedCard, archiveKey, type ArchiveReads, archiveWant } from './cards.ts'
-import { readArchive } from './fixtures.ts'
 import type { Clock } from './clock.ts'
 import type { Port } from './port.ts'
 import { historyFrom } from './seating.ts'
@@ -24,11 +23,8 @@ export function historyOf(f: Floor, archived: Archived): Card[] | undefined {
 }
 
 /** Starts the archive reads, telling the port as each lands or fails. */
-export function startArchive({ port, clock }: { port: Port; clock: Clock }) {
+export function startArchive({ tower, port, clock }: { tower: Tower; port: Port; clock: Clock }) {
   const { now: wallNow } = clock
-  /** The board the reads were last asked against: a fixture board serves its own archive. */
-  let readBoard: Board | undefined
-
   /** An archive read landed or failed, at the wall time a board it settles is planned at. */
   const landed = () => port.dispatch({ type: 'archive/landed', at: wallNow() })
 
@@ -37,7 +33,7 @@ export function startArchive({ port, clock }: { port: Port; clock: Clock }) {
     handlers: heldHandlers<Card[]>(),
     execute: {
       read: reading((slot) =>
-        readArchive(readBoard!, slot).catch((err: Error) => {
+        tower.archive(slot).catch((err: Error) => {
           port.dispatch({ type: 'archive/failed', message: err.message })
           throw err
         }),
@@ -52,7 +48,6 @@ export function startArchive({ port, clock }: { port: Port; clock: Clock }) {
 
   /** Reads every floor's archive that moved since it was read, or was never read. */
   function readArchives(board: Board) {
-    readBoard = board
     for (const f of board.floors) archives.dispatch(archiveWant(board, f))
   }
 
@@ -64,7 +59,6 @@ export function startArchive({ port, clock }: { port: Port; clock: Clock }) {
 
   /** Reads a floor's archive again now, as the archive panel's Read again asks. */
   function rereadArchive(board: Board, project: string) {
-    readBoard = board
     archives.dispatch({ ...archiveWant(board, board.floors.find((f) => f.id === project)!), type: 'refresh' })
   }
 

@@ -1,8 +1,7 @@
 import type { Subject } from '/lib/board.js'
 import { declaredLayout, layoutOf, usableConfigLayout } from '/lib/layout.js'
-import type { Board } from './api.ts'
+import type { Board, Tower } from './api.ts'
 import type { DeskRegion } from './desk-verbs.ts'
-import { viewTower } from './fixtures.ts'
 import { deskViews, readerView, viewHosting } from './hosting.ts'
 import type { Clock } from './clock.ts'
 import type { Port } from './port.ts'
@@ -11,7 +10,7 @@ import { nowOf } from './now.ts'
 import type { Toasts } from './toasts.ts'
 
 /** What the views are started with. */
-export type ViewsDeps = { clock: Clock; port: Port; toasts: Toasts }
+export type ViewsDeps = { tower: Tower; clock: Clock; port: Port; toasts: Toasts }
 
 export type Views = ReturnType<typeof startViews>
 
@@ -33,7 +32,7 @@ export function startViews(started: ViewsDeps) {
   const deskNow = (board: Board): DeskRegion => ({ holds: s.declared?.regions?.find((r) => r.id === 'card.desk')?.holds ?? [], entry: layoutNow(board)['card.desk'] })
 
   const viewDeps = {
-    tower: viewTower,
+    tower: started.tower,
     now: started.clock.now,
     board: () => boardNow()!,
     layout: () => layoutNow(boardNow()!),

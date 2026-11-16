@@ -23,7 +23,7 @@
     "hub/src/shared/titles.ts",
     "hub/src/tower/http.ts#collectionItem",
     "hub/src/mod/skills/handbook/SKILL.md",
-    "hub/renderers/tower3d/src/fixtures.ts#FIXTURE_GAMES",
+    "hub/renderers/tower3d/src/fixtures.ts#fixtureTower",
     "hub/scripts/frames.scenario.js"
   ]
 }
@@ -75,7 +75,7 @@ meaning by one renderer, with no change to the core.
   no network, a `<title>`, no storage, alert or forms, keyboard and mouse, any frame size; preview with
   `tower show`, keep with `tower keep games`. The tower brief says nothing of games.
 - **Checked by frames**: `busy`'s alpha keeps three games (two titled, each with a keeper, and one untitled without one,
-  [`FIXTURE_GAMES`](ref:hub/renderers/tower3d/src/fixtures.ts#FIXTURE_GAMES)); the walk aims at a cabinet, plays
+  their texts what the fixture's [tower](ref:hub/renderers/tower3d/src/fixtures.ts#fixtureTower) answers); the walk aims at a cabinet, plays
   it and closes it.
 
 **Alternatives considered.**

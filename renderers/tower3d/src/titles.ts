@@ -12,7 +12,7 @@ import type { Port } from './port.ts'
 export function startTitles({ tower, clients, port }: { tower: Tower; clients: Clients; port: Port }) {
   return {
     ...notesTitled(tower, clients, () => port.dispatch({ type: 'titles/arrived', of: 'notes' })),
-    ...keptTitled(tower, clients.DRAFTS, () => port.dispatch({ type: 'titles/arrived', of: 'kept' })),
+    ...keptTitled(tower, () => port.dispatch({ type: 'titles/arrived', of: 'kept' })),
     ...gamesTitled(tower, () => port.dispatch({ type: 'titles/arrived', of: 'games' })),
   }
 }
