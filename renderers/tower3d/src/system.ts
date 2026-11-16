@@ -3,27 +3,27 @@ import { startAssets } from './loads.ts'
 import { startClients } from './clients.ts'
 import { startInput } from './input.ts'
 import { startMusic } from './music.ts'
-import { startLighting } from './light/setting.ts'
+import { startLighting, type Lighting } from './light/setting.ts'
 import { stage as stageShown } from './loading.ts'
 import { startPort } from './port.ts'
-import { bindShell, type Shell } from './shell.ts'
-import type { WorldDeps } from './building.ts'
-import type { ViewsDeps } from './views.ts'
-import type { SpawnDeps } from './spawn.ts'
-import type { HudDeps } from './hud.ts'
-import type { NavigationDeps } from './navigation.ts'
-import type { PanelsDeps } from './panels.ts'
-import type { AppLoopDeps } from './app-loop.ts'
-import type { ControlsDeps } from './controls.ts'
-import type { FramesDeps } from './frames.ts'
-import type { FeedDeps } from './feed.ts'
-import type { DoorDeps } from './door.ts'
-import type { KeeperDeps } from './keeper.ts'
-import { startStage } from './stage.ts'
+import { startWorld } from './building.ts'
+import { startViews } from './views.ts'
+import { startSpawn } from './spawn.ts'
+import { startHud } from './hud.ts'
+import { startNavigation } from './navigation.ts'
+import { startPanels } from './panels.ts'
+import { startAppLoop } from './app-loop.ts'
+import { startControls, type ControlsDeps } from './controls.ts'
+import { startFrames, type FramesDeps } from './frames.ts'
+import { startFeed, type FeedDeps } from './feed.ts'
+import { startDoor } from './door.ts'
+import { startKeeper, type KeeperDeps } from './keeper.ts'
+import { startStage, type Stage } from './stage.ts'
 import { startTerminal } from './term.ts'
 import { startToasts } from './toasts.ts'
 import { startTitles } from './titles.ts'
-import { startArchive, type Archive } from './archive.ts'
+import { startArchive } from './archive.ts'
+import { startEvents } from './events.ts'
 
 /**
  * Tower 3D as a system of braided resources, each started once its dependencies have (decision `tower3d-system`).
@@ -40,7 +40,6 @@ import { startArchive, type Archive } from './archive.ts'
  *   toasts    what tells the user what happened, and the API calls whose failure it tells (toasts.ts)
  *   titles    the titles read from items' texts: notes, kept items, games (titles.ts)
  *   archive   every floor's archive as read, telling the port as each read lands (archive.ts)
- *   shell     what the leaf modules read as they load, bound before any page resource loads its module (shell.ts)
  *   events    what the page's loops handled, kept for the door (events.ts)
  *   world     the building in the scene: its plan, its layers, what can be seen and picked (building.ts)
  *   views     the views the panels mount, and the layout they are drawn by (views.ts)
@@ -62,13 +61,13 @@ const clients = defineResource({ start: startClients, halt: () => {} })
 
 const stage = defineResource({
   dependencies: ['lighting'],
-  start: ({ lighting }: Pick<Shell, 'lighting'>) => startStage(lighting.lit),
+  start: ({ lighting }: { lighting: Lighting }) => startStage(lighting.lit),
   halt: (started) => started.stop(),
 })
 
 const input = defineResource({
   dependencies: ['stage'],
-  start: ({ stage }: Pick<Shell, 'stage'>) => startInput(stage.canvas),
+  start: ({ stage }: { stage: Stage }) => startInput(stage.canvas),
   halt: (started) => started.stop(),
 })
 
@@ -80,107 +79,94 @@ const assets = defineResource({ start: startAssets, halt: () => {} })
 
 const port = defineResource({ start: startPort, halt: () => {} })
 
-const shell = defineResource({
-  dependencies: ['clients', 'lighting', 'stage', 'input', 'port'],
-  start: (started: Shell) => {
-    bindShell(started)
-    return started
-  },
-  halt: () => {},
-})
-
 const toasts = defineResource({ start: startToasts, halt: () => {} })
 
 const titles = defineResource({ dependencies: ['clients', 'port'], start: startTitles, halt: () => {} })
 
 const archive = defineResource({ dependencies: ['port'], start: startArchive, halt: () => {} })
 
-/**
- * A page resource imports its module as it starts, once `shell` is bound: the leaf modules it imports read the binding
- * as they load. Transitional, with the binding.
- */
 const events = defineResource({
-  dependencies: ['shell', 'archive'],
-  start: async (started: { archive: Archive; shell: Shell }) => (await import('./events.ts')).startEvents(started),
+  dependencies: ['archive'],
+  start: startEvents,
   halt: () => {},
 })
 
 const world = defineResource({
-  dependencies: ['shell', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
-  start: async (started: WorldDeps & { shell: Shell }) => (await import('./building.ts')).startWorld(started),
+  dependencies: ['clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
+  start: startWorld,
   halt: () => {},
 })
 
 const views = defineResource({
-  dependencies: ['shell', 'port', 'toasts'],
-  start: async (started: ViewsDeps & { shell: Shell }) => (await import('./views.ts')).startViews(started),
+  dependencies: ['port', 'toasts'],
+  start: startViews,
   halt: () => {},
 })
 
 const spawn = defineResource({
-  dependencies: ['shell', 'clients', 'titles', 'port', 'toasts', 'events', 'world'],
-  start: async (started: SpawnDeps & { shell: Shell }) => (await import('./spawn.ts')).startSpawn(started),
+  dependencies: ['clients', 'titles', 'port', 'toasts', 'events', 'world'],
+  start: startSpawn,
   halt: () => {},
 })
 
 const hud = defineResource({
-  dependencies: ['shell', 'lighting', 'clients', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
-  start: async (started: HudDeps & { shell: Shell }) => (await import('./hud.ts')).startHud(started),
+  dependencies: ['lighting', 'clients', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
+  start: startHud,
   halt: () => {},
 })
 
 const navigation = defineResource({
-  dependencies: ['shell', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
-  start: async (started: NavigationDeps & { shell: Shell }) => (await import('./navigation.ts')).startNavigation(started),
+  dependencies: ['clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
+  start: startNavigation,
   halt: () => {},
 })
 
 const panels = defineResource({
-  dependencies: ['shell', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
-  start: async (started: PanelsDeps & { shell: Shell }) => (await import('./panels.ts')).startPanels(started),
+  dependencies: ['clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
+  start: startPanels,
   halt: () => {},
 })
 
 const app = defineResource({
-  dependencies: ['shell', 'clients', 'archive', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
-  start: async (started: AppLoopDeps & { shell: Shell }) => (await import('./app-loop.ts')).startAppLoop(started),
+  dependencies: ['clients', 'archive', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
+  start: startAppLoop,
   halt: () => {},
 })
 
 /** After the app: its window blur and visibility listeners register after the app's own. */
 const controls = defineResource({
-  dependencies: ['shell', 'stage', 'port', 'world', 'hud', 'navigation', 'panels', 'app'],
-  start: async (started: ControlsDeps & { shell: Shell; app: unknown }) => (await import('./controls.ts')).startControls(started),
+  dependencies: ['stage', 'port', 'world', 'hud', 'navigation', 'panels', 'app'],
+  start: (started: ControlsDeps & { app: unknown }) => startControls(started),
   halt: () => {},
 })
 
 /** After the app and the controls: the frames it starts read the app's db, and the order is the page's. */
 const frames = defineResource({
-  dependencies: ['shell', 'lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
-  start: async (started: FramesDeps & { shell: Shell; app: unknown; controls: unknown }) => (await import('./frames.ts')).startFrames(started),
+  dependencies: ['lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
+  start: (started: FramesDeps & { app: unknown; controls: unknown }) => startFrames(started),
   halt: () => {},
 })
 
 const feed = defineResource({
-  dependencies: ['shell', 'archive', 'stage', 'assets', 'port', 'toasts', 'world', 'spawn', 'hud', 'panels', 'frames'],
-  start: async (started: FeedDeps & { shell: Shell }) => {
+  dependencies: ['archive', 'stage', 'assets', 'port', 'toasts', 'world', 'spawn', 'hud', 'panels', 'frames'],
+  start: (started: FeedDeps) => {
     stageShown('models')
-    return (await import('./feed.ts')).startFeed(started)
+    return startFeed(started)
   },
   halt: () => {},
 })
 
 const door = defineResource({
-  dependencies: ['shell', 'stage', 'input', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
-  start: async (started: DoorDeps & { shell: Shell }) => (await import('./door.ts')).startDoor(started),
+  dependencies: ['stage', 'input', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
+  start: startDoor,
   halt: () => {},
 })
 
 /** After the app: it reads the app's db every second. */
 const keeper = defineResource({
-  dependencies: ['shell', 'port', 'app'],
-  start: async (started: KeeperDeps & { shell: Shell; app: unknown }) => (await import('./keeper.ts')).startKeeper(started),
+  dependencies: ['port', 'app'],
+  start: (started: KeeperDeps & { app: unknown }) => startKeeper(started),
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, titles, archive, shell, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }

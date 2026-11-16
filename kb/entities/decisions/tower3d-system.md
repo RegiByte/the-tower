@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads and the port its reads send their events through) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the world, the views, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot; the leaf modules read theirs through one transitional binding, shell. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
+  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads, the port its reads send their events through, the titles read from items' texts and the archive's reads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the views, the world, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot. The modules below them read nothing as they load: what they draw by is handed to them, as arguments or a start's dependencies, and system.ts imports every module statically. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
@@ -10,8 +10,10 @@
   "refs": [
     "hub/renderers/tower3d/src/system.ts",
     "hub/renderers/tower3d/src/boot.ts",
-    "hub/renderers/tower3d/src/shell.ts",
-    "hub/renderers/tower3d/src/shell.ts#shell",
+    "hub/renderers/tower3d/src/titles.ts#startTitles",
+    "hub/renderers/tower3d/src/archive.ts#startArchive",
+    "hub/renderers/tower3d/src/layers.ts#pigeonholesOf",
+    "hub/renderers/tower3d/src/acts.ts#OfferReads",
     "hub/renderers/tower3d/src/clients.ts#startClients",
     "hub/renderers/tower3d/src/light/setting.ts#startLighting",
     "hub/renderers/tower3d/src/toon.ts#lightRamp",
@@ -105,16 +107,21 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 - *The lighting bands the ramp.* Lit, the lighting's start bands every toon material by the rig's ramp
   ([`lightRamp`](ref:hub/renderers/tower3d/src/toon.ts#lightRamp)) before anything draws; the stage gets `lit` as an
   argument. The pages that never start it (the lab, the dresser, the editor) stay unlit.
-- *The leaves read a temporary binding; the page resources import their modules as they start.* Twelve leaf modules
-  (`acts`, `arcade`, `archive`, `desk`, `door`, `kept`, `notes`, `pigeonhole`, `state`, `world`, `ui`, `levels`) read
-  the clients, the lighting, the stage, the input or the port as they load. `shell` binds those five
-  ([`shell()`](ref:hub/renderers/tower3d/src/shell.ts#shell)) once they have started, and a read before it is bound
-  throws, naming why. A page resource lists `shell` among its dependencies and imports its module in its start
-  (`await import(…)`), so no leaf loads before the binding. Both are transitional: once the
-  leaves take what they read as arguments, the binding goes and the imports are static again.
+- *State built once is a resource; everything else is handed what it reads.* The titles read from notes', kept items'
+  and games' texts ([`startTitles`](ref:hub/renderers/tower3d/src/titles.ts#startTitles)) and every floor's archive
+  reads ([`startArchive`](ref:hub/renderers/tower3d/src/archive.ts#startArchive)) are caches made once, so each is a
+  resource whose start makes it and tells the port as a read lands. A module of pure builders takes what it reads as
+  arguments from the resource that calls it: an act's offers take their reads
+  ([`OfferReads`](ref:hub/renderers/tower3d/src/acts.ts#OfferReads): the clients' words and the archive's drawers),
+  the panel builders in `ui.ts` take theirs, a layer that draws by a read is made from it
+  ([`pigeonholesOf`](ref:hub/renderers/tower3d/src/layers.ts#pigeonholesOf), `notesOf`, `cabinetsOf`, `filingsOf`),
+  built once by the world, and the levels hang on the scene they are handed. The world exposes `hang`, `reconcile`
+  and `syncFilings` to the resources after it. A resource composes the record it hands on (`{ ...clients, ...titles,
+  drawersAt }`) in its own start. No module reads a started resource as it loads, so `system.ts` imports every
+  module statically and evaluating one starts nothing.
 - *The page is split by resource.* What was one page module is twelve resources, each a start in its own module
   handed the resources it calls, in an order the dependencies give and the page's needs pin where nothing else does:
-  the world ([`startWorld`](ref:hub/renderers/tower3d/src/building.ts#startWorld)), the views, hiring
+  the views, the world ([`startWorld`](ref:hub/renderers/tower3d/src/building.ts#startWorld)), hiring
   ([`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), the HUD
   ([`startHud`](ref:hub/renderers/tower3d/src/hud.ts#startHud)), navigation
   ([`startNavigation`](ref:hub/renderers/tower3d/src/navigation.ts#startNavigation)), the panels
@@ -234,7 +241,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   its gallery, derived with the plan, no longer hangs. An archive read landing with no board to take checks the same
   (`archive/landed`), which only a drawer's subject can then fail. A kept item deleted says so in a `toast` effect. What it reads through an extension's client (a floor's
   review threads, whether it keeps drafts) is handed to the handlers once, as pure reads
-  ([`AppReads`](ref:hub/renderers/tower3d/src/app.ts#AppReads)), so `app.ts` never reaches `shell()`. It drops what
+  ([`AppReads`](ref:hub/renderers/tower3d/src/app.ts#AppReads)), so `app.ts` holds no client. It drops what
   is pending that the board no longer holds (a tab of a worker gone, a showing withdrawn), so what a desk opens on is
   derived from the board it arrives on; the db keeps a showing's target, never a copy of it. A kept item whose file
   changed is entered again, so its body is read again (`drawn` names the `modifiedAt` it was read for); no draw
@@ -312,7 +319,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   - adds a clause for each kind to `subjectLeft` and deletes the draw's own close for it (`return closeX()` in
     `renderPanel`) in the same commit, or it closes twice;
   - gives a subject check that needs an extension's pure read that read as a handler dependency (`AppReads`), never
-    through `shell()`; one that needs the plan or a read outside the board waits for P3, its close left in the draw;
+    through a client of its own; one that needs the plan or a read outside the board waits for P3, its close left in the draw;
   - moves a body read or a state write out of the draw into the enter, or into the board handler entering it again;
   - drops its close from the bridge closes the moved kinds' enters run;
   - records `tool:frames` before and after: state, panel markup and pictures identical, the events changed as the
@@ -331,9 +338,10 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   connected component of all eleven. Removing the top-level await lets it boot, but it keeps the cycle and its
   load-order hazards.
 
-**Impact.** The start order is the graph, and a failure names its resource. The import-time effects left the leaf
-modules, and the page's own (its listeners, timers, the board's subscription) are each in the start of the resource
-they belong to. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
+**Impact.** The start order is the graph, and a failure names its resource. No module reads or starts anything as it
+loads: the page's effects (its listeners, timers, the board's subscription) and its caches (the titles, the archive
+reads) are each in the start of the resource they belong to, and a module is handed what it reads, so it can be
+imported anywhere, in any order, without a start before it. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`, started as the `spawn` resource: [`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), it stays out
 of the panel union. Motion, aim and capture are in the db as well. What is left outside it
 is the walker, which the frames own, the door's mode and a pointer press.
