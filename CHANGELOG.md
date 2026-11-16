@@ -12,6 +12,29 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.5.0
+
+Smoother Tower 3D, terminals sized to their pane, copy buttons that work everywhere, and a reviewer hired like any
+worker (#605, #606, #607, #609, #610, #611, #612). Nothing to restart beyond the tower (`tower update` does it). API 2.6.
+
+- **Tower 3D stutters less.** The roof party worked out every guest's walk again on each board, about once a second;
+  the walks are now kept until something they are worked out from changes. Main-thread time lost to slow frames
+  dropped by about two thirds in measurements.
+- **Terminals fit their pane.** Tower 3D's worker panel no longer sizes its terminal a few pixels past the pane, and a
+  reopened panel no longer draws it a font size smaller until clicked. The page's watching terminals had the same
+  drop and are fixed alike.
+- **Every copy button copies on a page reached under a `hosts` name over plain http.** They all go through one copy
+  that falls back to the browser's copy command outside a secure context.
+- **`tower x reviews review` takes `hire`'s launch options:** `--runtime`, `--model`, `--effort`, `--callsign`,
+  `--command` and other extensions' spawn fields (`--x`). What a review pins (floor, cut, prompt) is refused, as is a
+  runtime that can't run the review skill's slash command (opencode, for now).
+- **A config file holding no JSON object** (`null`, a list, a string) is refused wherever it is read, in one line
+  naming the file, instead of `tower up` and `down` falling back to the default port.
+- **The Files tab of a worker whose worktree is gone says so,** with what resuming would do, and a folder that can't
+  be listed shows why instead of loading forever.
+- **For renderers:** `/lib/view.js` gains `copyText` and `copyTelling`. `cellOf` is deprecated: nothing uses it.
+- **For contributors:** CI refuses a pull request that sets `API_VERSION` to a number its base already holds.
+
 ## v2.4.1
 
 Terminals draw what the TUI drew, and a slow mouse wheel scrolls (#602, #603). Nothing to restart beyond the tower
