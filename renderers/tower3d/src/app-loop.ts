@@ -136,6 +136,9 @@ export function startAppLoop(started: AppLoopDeps) {
 
   started.port.attach(app)
 
+  /** The listeners that read the db, added once it is attached: the HUD's first, the app's own, then the panels'. */
+  started.hud.listen()
+
   addEventListener('focus', () => {
     app.dispatch({ type: 'focus', focused: true })
     const desk = panelAs('desk')
@@ -147,6 +150,8 @@ export function startAppLoop(started: AppLoopDeps) {
   addEventListener('blur', () => setTimeout(() => app.dispatch({ type: 'focus', focused: document.hasFocus() })))
 
   document.addEventListener('visibilitychange', () => app.dispatch({ type: 'visible', visible: document.visibilityState === 'visible' }))
+
+  started.panels.listen()
 
   return { app }
 }

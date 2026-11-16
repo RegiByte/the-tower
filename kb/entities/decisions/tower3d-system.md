@@ -127,7 +127,10 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   ([`startKeeper`](ref:hub/renderers/tower3d/src/keeper.ts#startKeeper)). A resource calls only those started before
   it; one that reads the app's db or dispatches before the app starts does it through the port (`now.ts`). Window and
   document listeners register in the order they always did, so a resource that adds one on a target an earlier
-  resource listens on starts after it (the controls after the app, for blur and visibility). A flag one resource keeps
+  resource listens on starts after it (the controls after the app, for blur and visibility). A listener that reads the app's db
+  or dispatches to it is added only once the app is attached: the HUD's and the panels' are each gathered in a
+  `listen` the app calls as it attaches, the HUD's before its own and the panels' after, so none can run before the
+  app exists (a resource's start is an `await import` away from the next). A flag one resource keeps
   and another set is a function on its owner (the panels' `askDraw`, the frames' `beginDrawing` and `play`, the
   editor's last save a cell hiring exposes).
 - *No cycles.* [`importCycles`](ref:hub/scripts/tower3d-boot.ts#importCycles) in `test:tower3d-boot` walks the import

@@ -98,16 +98,6 @@ export function startHud(started: HudDeps) {
   /** The pause card stands for the free mouse only while nothing else holds it: a panel, the spawn dialog, or P. */
   const showPaused = () => show('paused', !captured() && viewNow() === 'walk' && !panelNow() && !port.state().capture.still && !spawn.open)
 
-  document.addEventListener('pointerlockchange', () => port.dispatch({ type: 'capture', by: 'pointer', held: document.pointerLockElement === canvas }))
-
-  /**
-   * Focus leaving the window takes the keys with it, to another app or to what the page framing this one opened over it
-   * (its palette, a dialog), and Chrome keeps a frame's pointer lock through that: the mouse is let go of, as on Esc, so
-   * the pause card stands and the next Esc reaches where focus went. Focus moving into one of this page's own frames
-   * leaves the document focused.
-   */
-  addEventListener('blur', () => setTimeout(() => captured() && !document.hasFocus() && unlock()))
-
   /** Walking takes the mouse: pointer lock, or the door's capture once the door has captured. */
   function lock() {
     startMusic()
@@ -214,8 +204,24 @@ export function startHud(started: HudDeps) {
 
   spawn.addEventListener('close', showPaused)
 
-  /** The HUD's limits count down to their resets and age between boards. */
-  setInterval(() => boardNow() && renderHud(), 30_000)
+  /**
+   * The window's and the document's listeners that read the app's db or dispatch to it, and the HUD's refresh: added by
+   * the app as it attaches, so none can run before it.
+   */
+  function listen() {
+    document.addEventListener('pointerlockchange', () => port.dispatch({ type: 'capture', by: 'pointer', held: document.pointerLockElement === canvas }))
 
-  return { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, sawActions, sawDesk, drawSettings, toggleFps }
+    /**
+     * Focus leaving the window takes the keys with it, to another app or to what the page framing this one opened over it
+     * (its palette, a dialog), and Chrome keeps a frame's pointer lock through that: the mouse is let go of, as on Esc, so
+     * the pause card stands and the next Esc reaches where focus went. Focus moving into one of this page's own frames
+     * leaves the document focused.
+     */
+    addEventListener('blur', () => setTimeout(() => captured() && !document.hasFocus() && unlock()))
+
+    /** The HUD's limits count down to their resets and age between boards. */
+    setInterval(() => boardNow() && renderHud(), 30_000)
+  }
+
+  return { listen, held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, sawActions, sawDesk, drawSettings, toggleFps }
 }
