@@ -154,13 +154,10 @@ export type State = {
   down: { x: number; y: number; act: string } | undefined
 
   /**
-   * Walking takes the mouse: pointer lock, or the door's capture standing in for it. Once the door has captured,
-   * `doorHeld` follows every lock and unlock the way pointer lock would.
+   * The door has captured: its capture stands in for pointer lock and follows every lock and unlock the way pointer
+   * lock would (the app's `Capture`).
    */
   doorMode: boolean
-  doorHeld: boolean
-  /** The mouse let go with P: the view holds as it was, without the pause card, until the mouse is taken again. */
-  still: boolean
 
   /**
    * Simulated time in ms: what animations, holds, flights and cuts read. Live, real frames advance it; stepped, only
@@ -198,7 +195,7 @@ export const s: State = {
   doorOpen: new Map(), hiring: noHires, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined,
   down: undefined,
-  doorMode: false, doorHeld: false, still: false,
+  doorMode: false,
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
   meter: { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 },
   saved: undefined, muted: false, fpsShown: false, origins: {},

@@ -18,7 +18,7 @@ import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Ca
 import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
-import { actKey, appHandlers, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
+import { actKey, appHandlers, captured as capturedBy, markedIn, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
@@ -648,17 +648,11 @@ function renderPanel() {
   }
 }
 
-const locked = () => document.pointerLockElement === canvas
-const captured = () => locked() || s.doorHeld
+const captured = () => capturedBy(app.state().capture)
 /** The pause card stands for the free mouse only while nothing else holds it: a panel, the spawn dialog, or P. */
-const showPaused = () => show('paused', !captured() && viewNow() === 'walk' && !panelNow() && !s.still && !spawn.open)
+const showPaused = () => show('paused', !captured() && viewNow() === 'walk' && !panelNow() && !app.state().capture.still && !spawn.open)
 
-function captureChanged() {
-  releaseKeys()
-  if (captured()) s.still = false
-  showPaused()
-}
-document.addEventListener('pointerlockchange', captureChanged)
+document.addEventListener('pointerlockchange', () => app.dispatch({ type: 'capture', by: 'pointer', held: document.pointerLockElement === canvas }))
 /**
  * Focus leaving the window takes the keys with it, to another app or to what the page framing this one opened over it
  * (its palette, a dialog), and Chrome keeps a frame's pointer lock through that: the mouse is let go of, as on Esc, so
@@ -667,21 +661,20 @@ document.addEventListener('pointerlockchange', captureChanged)
  */
 addEventListener('blur', () => setTimeout(() => captured() && !document.hasFocus() && unlock()))
 
+/** Walking takes the mouse: pointer lock, or the door's capture once the door has captured. */
 function lock() {
   startMusic()
   show('paused', false)
-  if (s.doorMode) return (s.doorHeld = true, captureChanged())
+  if (s.doorMode) return app.dispatch({ type: 'capture', by: 'door', held: true })
   canvas.requestPointerLock().catch((err: Error) => (show('paused', true), toast(`pointer lock: ${err.message}`)))
 }
-function unlock() {
-  s.still = false
-  if (s.doorHeld) (s.doorHeld = false, captureChanged())
+const unlock = () => app.dispatch({ type: 'unlock' })
+const letGo = () => app.dispatch({ type: 'let-go' })
+
+/** The mouse let go of: the door's capture released, pointer lock exited. */
+function unlocked() {
+  if (app.state().capture.door) app.dispatch({ type: 'capture', by: 'door', held: false })
   if (document.pointerLockElement) document.exitPointerLock()
-}
-function letGo() {
-  s.still = true
-  if (s.doorHeld) (s.doorHeld = false, captureChanged())
-  document.exitPointerLock()
 }
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
@@ -759,7 +752,6 @@ function sideClosed() {
 function sideEntered() {
   sideClosed()
   show('side', true)
-  unlock()
 }
 const sideLeft = () => show('side', false)
 
@@ -770,7 +762,6 @@ const openShellPick = (first: string) => go({ kind: 'shell-pick', first })
 function shellPickEntered() {
   sideClosed()
   show('shell-pick', true)
-  unlock()
 }
 
 /** Back to walking: the terminal closes and the camera returns to your eyes. */
@@ -847,7 +838,6 @@ const openStats = () => go({ kind: 'stats' })
 function readerEntered(panel: Panel, from: Panel | undefined) {
   sideClosed()
   if (from?.kind === panel.kind) docClosed(from)
-  unlock()
   show('paused', false)
   show('doc', true)
 }
@@ -901,7 +891,6 @@ function openGame(project: string, id: string) {
 /** Entering a game: the drawer and the picker closed, as they don't leave by the app yet, the music paused, the game's frame given the keys, the camera on its cabinet. */
 function gameEntered({ project, id }: GamePanel) {
   sideClosed()
-  unlock()
   pause()
   show('paused', false)
   show('game', true)
@@ -1064,7 +1053,6 @@ function openSide(next: Panel) {
   go(next)
   renderPanel()
   show('side', true)
-  unlock()
 }
 
 /** At the worker's desk, its panel open on its screen, then on the tab pending for it. */
@@ -1080,7 +1068,6 @@ function focusDesk(id: string) {
 function deskEntered({ id }: { id: string }) {
   sideClosed()
   s.dotted.clear()
-  unlock()
   show('paused', false)
   show('desk', true)
   show('desk-brief', false)
@@ -1134,7 +1121,6 @@ function shellEntered({ id }: { id: string }) {
   $('desk-screen').classList.remove('replay')
   show('desk-stamp', false)
   sideClosed()
-  unlock()
   show('paused', false)
   show('desk', true)
   show('desk-brief', false)
@@ -1153,7 +1139,6 @@ const watch = (n: number) => go({ kind: 'tv', n })
 function tvEntered({ n }: { n: number }) {
   const screen = bigScreens(s.plan)[n]
   sideClosed()
-  unlock()
   show('paused', false)
   show('watch', true)
   frameOn(new THREE.Vector3(screen.x, levelY(screen.level) + screen.y, screen.z), new THREE.Vector3(0, 0, 1), screen.w)
@@ -1268,12 +1253,16 @@ function runOnWorker(a: ActOf<'desk' | 'tile' | 'guest'>, verb: Verb) {
 }
 
 /** What a verb does to each kind of thing; `use` is the thing's own action. `run` takes the building's verbs first. */
-const RUN: ByKind<unknown, [Verb]> = {
-  desk: (a, verb) => (verb === 'use' ? goDesk(a.id) : runOnWorker(a, verb)),
+/** To a floor's panel. */
+const toFloor = (id: string): AppEvent => ({ type: 'go', to: { kind: 'floor', id, tray: undefined } })
+
+/** What each act's verb does: the event of a transition, which `run` dispatches, or what is done at once. */
+const RUN: ByKind<AppEvent | void, [Verb]> = {
+  desk: (a, verb) => void (verb === 'use' ? goDesk(a.id) : runOnWorker(a, verb)),
   papers(a, verb) {
     const c = findCard(s.board!, a.id)
     if (!c) return
-    if (verb === 'send') return sendNotes(c.project, threadCheckout(c), c)
+    if (verb === 'send') return void sendNotes(c.project, threadCheckout(c), c)
     if (verb === 'thread') app.dispatch({ type: 'pend', pending: { tab: { id: a.id, tab: 'reviews' } } })
     goDesk(a.id)
   },
@@ -1285,59 +1274,57 @@ const RUN: ByKind<unknown, [Verb]> = {
   drawer: (a) => openSide({ kind: 'drawer', project: a.project, n: a.n }),
   thread(a, verb) {
     const t = floorThreadsOf(floorOf(a.project)).find((t) => t.checkout === a.checkout)
-    if (verb === 'send' && t) return sendNotes(a.project, a.checkout, sendTarget(floorOf(a.project), a.checkout, undefined))
+    if (verb === 'send' && t) return void sendNotes(a.project, a.checkout, sendTarget(floorOf(a.project), a.checkout, undefined))
     openThread(a.project, a.checkout)
   },
   station(a, verb) {
-    if (verb === 'use') return hire(a.project)
-    if (verb === 'hand') return hireOnNote(a.project)
-    return s.carrying ? openSpawnOnNote(a.project, s.carrying) : openSpawn(a.project)
+    if (verb === 'use') return void hire(a.project)
+    if (verb === 'hand') return void hireOnNote(a.project)
+    return void (s.carrying ? openSpawnOnNote(a.project, s.carrying) : openSpawn(a.project))
   },
   shown(a) {
     const latest = findCard(s.board!, a.id)?.shown.at(-1)
     if (latest) goShown(a.id, latest.target)
   },
   picture: (a, verb) => (verb === 'use' ? openPicture(a.id, a.target) : goShown(a.id, a.target)),
-  tile(a, verb) {
-    return verb === 'use' ? focusDesk(a.id) : runOnWorker(a, verb)
-  },
-  guest: (a, verb) => verb !== 'use' && runOnWorker(a, verb),
-  tidy: (a, verb) => (verb === 'use' ? go({ kind: 'floor', id: a.project, tray: undefined }) : tried(() => tidy(offeredCall(floorOf(a.project), 'tidy', floorOf(a.project).name)))),
+  tile: (a, verb) => void (verb === 'use' ? focusDesk(a.id) : runOnWorker(a, verb)),
+  guest: (a, verb) => void (verb !== 'use' && runOnWorker(a, verb)),
+  tidy: (a, verb) => (verb === 'use' ? toFloor(a.project) : void tried(() => tidy(offeredCall(floorOf(a.project), 'tidy', floorOf(a.project).name)))),
   landed(a, verb) {
-    if (verb === 'use') return go({ kind: 'floor', id: a.project, tray: undefined })
+    if (verb === 'use') return toFloor(a.project)
     if (verb === 'goto') return goDesk(a.id)
     const row = landedRow(floorOf(a.project), a.id, wallNow())
-    return row && tidy(row.call)
+    return void (row && tidy(row.call))
   },
   leftover(a, verb) {
     if (verb === 'goto') return goDesk(a.id)
     const r = findCard(s.board!, a.id)?.resources.find((r) => r.pid === a.pid)
-    return r && tried(() => tower.run(offeredCall(r, 'reap', `process ${r.pid}`)))
+    return void (r && tried(() => tower.run(offeredCall(r, 'reap', `process ${r.pid}`))))
   },
-  shell: (a, verb) => (verb === 'use' ? goShell(a.id) : killShell(s.board!.shells.find((sh) => sh.id === a.id)!)),
+  shell: (a, verb) => void (verb === 'use' ? goShell(a.id) : killShell(s.board!.shells.find((sh) => sh.id === a.id)!)),
   floor(a, verb) {
-    if (verb === 'use') return go({ kind: 'floor', id: a.id, tray: undefined })
+    if (verb === 'use') return toFloor(a.id)
     const f = s.board!.floors.find((f) => f.id === a.id)!
-    if (verb === 'spawn') return openSpawn(f.id)
+    if (verb === 'spawn') return void openSpawn(f.id)
     if (verb === 'shell') return openShellPick(f.id)
-    return tried(() => tower.run(offeredCall(f, 'editor', f.name), { dir: f.hub }))
+    return void tried(() => tower.run(offeredCall(f, 'editor', f.name), { dir: f.hub }))
   },
-  shelf: (a) => openShelf(a.project, a.n),
-  book: (a) => openShelf(a.project, a.n, a.file),
+  shelf: (a) => void openShelf(a.project, a.n),
+  book: (a) => void openShelf(a.project, a.n, a.file),
   cork: (a) => (s.carrying ? drop() : openDraftPanel(newDraft(a.project))),
   note(a, verb) {
-    if (verb === 'use') return carry(a.project, a.id)
-    if (verb === 'brief') return openNote(a.project, a.id)
-    return throwAway(a.project, a.id)
+    if (verb === 'use') return void carry(a.project, a.id)
+    if (verb === 'brief') return void openNote(a.project, a.id)
+    return void throwAway(a.project, a.id)
   },
   arcade: (a) => openGame(a.project, a.id),
-  cat: (a, verb) => (verb === 'use' ? startPet(a.name) : a.watching && goDesk(a.watching)),
-  tv: (a) => useScreen(a.n),
-  directory: () => go({ kind: 'directory' }),
+  cat: (a, verb) => void (verb === 'use' ? startPet(a.name) : a.watching && goDesk(a.watching)),
+  tv: (a) => void useScreen(a.n),
+  directory: () => ({ type: 'go', to: { kind: 'directory' } }),
   stats: () => openStats(),
   dj: () => toggleMusic(),
-  bar: () => (s.beer = !s.beer),
-  elevator: () => (go({ kind: 'elevator' }), unlock()),
+  bar: () => void (s.beer = !s.beer),
+  elevator: () => ({ type: 'go', to: { kind: 'elevator' } }),
 }
 
 function run(a: Act, verb: Verb) {
@@ -1346,7 +1333,8 @@ function run(a: Act, verb: Verb) {
   if (verb === 'next') return nextWaiting()
   if (verb === 'overview') return overview()
   if (verb === 'stop') return endShare()
-  byKind(RUN, a, verb)
+  const event = byKind(RUN, a, verb)
+  if (event) app.dispatch(event)
 }
 
 /** The worker whose desk you sit at. */
@@ -1465,6 +1453,8 @@ const app = loop({
     'desk/screen': ({ id }) => mountDeskScreen(findCard(s.board!, id)!),
     replays: () => dressReplays(),
     'fly-home': () => flyHome(),
+    unlock: () => unlocked(),
+    captured: () => (releaseKeys(), showPaused()),
     fire: ({ event }, dispatch) => dispatch(event),
     place: ({ level, spot }) => stand(level, spot),
     fade: ({ on }) => void $('fade').classList.toggle('on', on),
@@ -2074,7 +2064,7 @@ function tickCamera() {
 
 function tickAim() {
   if (viewNow() === 'walk' && captured() && !motionNow().flight) aimAt(pick(0, 0))
-  else if (viewNow() !== 'overview' && !s.still) offerNothing()
+  else if (viewNow() !== 'overview' && !app.state().capture.still) offerNothing()
 }
 
 /** A held verb's ring fills; once full, the verb runs. */
@@ -3081,7 +3071,6 @@ function openDraftPanel(d: Draft) {
 /** Entering the editor: the drawer and the picker closed, as they don't leave by the app yet, the mouse let go, the draft's text in it. */
 function draftEntered() {
   sideClosed()
-  unlock()
   show('paused', false)
   show('draft', true)
   draftText.value = s.draft!.text
@@ -3235,7 +3224,7 @@ let unbuilt: (err: Error) => void
 const ready = new Promise<void>((resolve, reject) => ((built = resolve), (unbuilt = reject)))
 
 installDoor({
-  ready, update, render, onKey, run, place, leaveOverview, captured, captureChanged, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, drawPending,
+  ready, update, render, onKey, run, place, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
   events: events.read,
   play: () => (lastFrame = performance.now()),
 })
