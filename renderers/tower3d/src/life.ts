@@ -686,12 +686,34 @@ function spotsOn(p: Plan, n: number): Map<string, GuestSpot> {
   return spots
 }
 
-/** The legs worked out for a plan, each with its spots and the walks onto them, by leg; only the latest few are kept. */
-const parties = new WeakMap<Plan, Map<number, { spots: Map<string, GuestSpot>; ways: Map<string, THREE.Vector3[]> }>>()
+type PartyLegs = Map<number, { spots: Map<string, GuestSpot>; ways: Map<string, THREE.Vector3[]> }>
+
+/**
+ * Everything a party's spots and walks are worked out from: the roof's size and ground, its rate limits' count, its
+ * dance floors and who the guests are. A plan is made on every board, and a board that moves none of these keeps
+ * the party's legs.
+ */
+function partyShape(p: Plan) {
+  const roof = p.levels.at(-1) as Extract<Level, { kind: 'roof' }>
+  return JSON.stringify([p.width, p.depth, groundAt(p, roof.index).shape, roof.limits.length, roof.floors, roof.guests.map((g) => [g.card.id, g.card.project])])
+}
+
+/** The party's legs as last worked out, each with its spots and the walks onto them, by leg; only the latest few are kept. */
+let party: { shape: string; legs: PartyLegs } | undefined
+/** Each plan's legs once looked up: a plan never changes, and a frame asks for a leg several times per guest. */
+const partiesOf = new WeakMap<Plan, PartyLegs>()
+
+function legsOf(p: Plan) {
+  const known = partiesOf.get(p)
+  if (known) return known
+  const shape = partyShape(p)
+  if (party?.shape !== shape) party = { shape, legs: new Map() }
+  partiesOf.set(p, party.legs)
+  return party.legs
+}
 
 function partyOn(p: Plan, n: number) {
-  const legs = parties.get(p) ?? new Map()
-  parties.set(p, legs)
+  const legs = legsOf(p)
   if (!legs.has(n)) {
     legs.set(n, { spots: spotsOn(p, n), ways: new Map() })
     for (const k of legs.keys()) if (k < n - 2 || k > n + 2) legs.delete(k)
