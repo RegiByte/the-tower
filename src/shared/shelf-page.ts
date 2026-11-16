@@ -215,6 +215,15 @@ export type RelayedUi = { [V in 'select' | 'home' | 'shelf']: (fields: Extract<T
   [V in 'go' | 'display']?: (fields: Extract<TowerVerb, { verb: V }>) => void
 }
 
+/**
+ * The messages of a version stream, `version/<read>` through `tower.watch`, of a read that serves a file
+ * (`shown/<id>/<path>`, `shelf/<project>/<n>/<file>`, `collection/<project>/<collection>/<item>`): its version once
+ * watching, then again each time the file at its path changes, written in place, replaced by a rename or deleted;
+ * `modifiedAt` its modification time in epoch ms, null while there is no file. `error` ends it, its folder no longer
+ * watched. A change may be said more than once. @since 2.9
+ */
+export type VersionMsg = { t: 'version'; modifiedAt: number | null } | { t: 'error'; message: string }
+
 /** What a watch hands its callback: a stream's messages, or the error that ended it. */
 export type StreamMsg = ScreenMsg | TerminalMsg | ShellStream
 
@@ -266,6 +275,12 @@ export type Tower = {
   keys(id: string, data: string): void
   shellKeys(id: string, data: string): void
   watch(path: string, fn: (msg: StreamMsg) => void): () => void
+  /**
+   * Each new version of the file `read` serves (`shown/<id>/<path>`, a shelf file, a kept item), its stream
+   * `version/<read>` with a version said again left out: once watching, then on each change, or the error that ends
+   * it. Returns unwatch. @since 2.9
+   */
+  versions(read: string, fn: (msg: VersionMsg) => void): () => void
   remember(value: unknown): void
   recall(): Promise<unknown>
   /** `on` hears each key this page sets, a page it relays included. @since 1.108 */

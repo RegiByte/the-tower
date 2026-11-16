@@ -23,17 +23,17 @@ import { esc, span } from './format.ts'
 /**
  * What a body is drawn from: `subject`, the subject drawn; `url`, where its content is served; `body`, its text itself, where its subject carries it
  * (an address); `title`, what it is called; `name`, its file's name; `file`, its path on disk; `version`, its
- * content's, where it has one; `docCss`, a document frame's styles beside the design's; `stale`, whether a newer draw
- * has begun since.
+ * content's, where it has one; `docCss`, a document frame's styles beside the design's; `scroll`, where the draw it
+ * replaces was scrolled to, kept by a body drawn again; `stale`, whether a newer draw has begun since.
  */
-export type Body = { tower: Tower; kit: Kit; subject: Subject; url: string; body?: string; title: string; name: string; file?: string; version?: number; docCss: string; stale: () => boolean }
+export type Body = { tower: Tower; kit: Kit; subject: Subject; url: string; body?: string; title: string; name: string; file?: string; version?: number; docCss: string; scroll?: number; stale: () => boolean }
 
 /**
  * A body drawn, where it keeps more than its element: handed each board while it is drawn (`update`), a subject below
- * the one drawn (`show`, true when it took it), whether it is seen (`visible`), and closed as it is drawn again or its
- * view closes.
+ * the one drawn (`show`, true when it took it), whether it is seen (`visible`), where it is scrolled to (`scroll`), and
+ * closed as it is drawn again or its view closes.
  */
-export type Drawn = { update?(): void; show?(subject: Subject): boolean; visible?(on: boolean): void; close(): void }
+export type Drawn = { update?(): void; show?(subject: Subject): boolean; visible?(on: boolean): void; scroll?(): number; close(): void }
 
 /**
  * A view by type: `rules`, its own look; `draw`, its body into `el`, what it keeps returned; `restyled`, drawn again
@@ -67,23 +67,27 @@ export const versioned = ({ url, version }: Body) => (version === undefined ? es
 
 /**
  * A frame's draws of its body: each `draw` begins a newer one, so an older read lands nowhere and what an older one
- * kept is closed; the one drawn is handed the board, a subject below, and whether it is seen; `close` ends them all.
+ * kept is closed, where it was scrolled to handed to the newer; the one drawn is handed the board, a subject below, and whether it
+ * is seen; `close` ends them all.
  */
 const draws = (spec: TypeViewSpec, el: HTMLElement) => {
   let n = 0
   let closed = false
   let seen = true
   let drawn: Drawn | undefined
+  /** Where the last body drawn was scrolled to, carried past draws that drew nothing: one still reading, or one that failed. */
+  let scroll: number | undefined
   const end = () => {
     drawn?.close()
     drawn = undefined
   }
   return {
-    draw: (at: Omit<Body, 'stale'>) => {
+    draw: (at: Omit<Body, 'stale' | 'scroll'>) => {
       const mine = ++n
+      scroll = drawn?.scroll?.() ?? scroll
       end()
       const stale = () => closed || mine !== n
-      void Promise.resolve(spec.draw(el, { ...at, stale })).then((kept) => {
+      void Promise.resolve(spec.draw(el, { ...at, ...(scroll !== undefined && { scroll }), stale })).then((kept) => {
         if (!kept) return
         if (stale()) return kept.close()
         drawn = kept
@@ -222,18 +226,35 @@ const bodyOf = (subject: Subject): Omit<Body, 'tower' | 'kit' | 'subject' | 'sta
   }
 }
 
+/** The read serving a subject's file, whose versions a frame drawing it alone follows: a shown file's. */
+const versionedRead = (subject: Subject) => {
+  if (subject.kind !== 'shown') return undefined
+  const s = subject.value as CardShown
+  return s.kind === 'file' ? shownHref(s).slice(1) : undefined
+}
+
 /**
  * The frame of a subject drawn alone, a showing among them: its body alone, filling its tab, whose head is the tab
- * strip's. A video it shows plays as it opens and pauses while hidden.
+ * strip's, drawn again, where it was scrolled to, each time a shown file changes on disk. A video it shows plays as it
+ * opens and pauses while hidden.
  */
 const bareFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit }) => {
   host.innerHTML = `<style>${viewCss(spec.id, `${spec.rules}\n${SHOWN_RULES}`)}</style><div class="shown-body"></div>`
   const body = host.querySelector<HTMLElement>('.shown-body')!
   const bodies = draws(spec, body)
+  /** The file's version as last said, undefined until the watch says one: the body drawn as the view opens is of it. */
+  let version: number | null | undefined
   const drawBody = () => {
-    bodies.draw({ tower, kit, subject, ...bodyOf(subject) })
+    bodies.draw({ tower, kit, subject, ...bodyOf(subject), ...(typeof version === 'number' && { version }) })
     for (const video of body.querySelectorAll('video')) video.autoplay = true
   }
+  const read = versionedRead(subject)
+  const unwatch = read === undefined ? undefined : tower.versions(read, (msg) => {
+    if (msg.t === 'error') return kit.toast(msg.message)
+    const first = version === undefined
+    version = msg.modifiedAt
+    if (!first) drawBody()
+  })
 
   host.addEventListener('click', (e) => {
     const target = e.target as Element
@@ -254,6 +275,7 @@ const bareFrame = (spec: TypeViewSpec): Mount => (host, { tower, subject, kit })
     },
     close() {
       bodies.close()
+      unwatch?.()
       offs.forEach((off) => off())
     },
   }

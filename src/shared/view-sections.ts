@@ -210,6 +210,7 @@ export function drawSections(el: HTMLElement, at: Sectioned): Drawn {
       follow?.replace()
     },
     show: (s) => s.kind === 'section' && scrollTo(s),
+    scroll: () => frame.contentDocument?.defaultView?.scrollY ?? 0,
     visible(on) {
       seen = on
       follow?.visible(on)

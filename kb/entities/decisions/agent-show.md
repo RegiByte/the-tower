@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/src/directory.ts#shownOf", "hub/src/tower/dispatch.ts#logFact", "hub/src/shared/api.ts#VERBS", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/view-item.ts#typeView", "hub/src/views/link.ts#mount", "hub/src/shared/subjects.ts#shownSubject", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
+  "refs": ["hub/src/directory.ts#shownOf", "hub/src/tower/dispatch.ts#logFact", "hub/src/shared/api.ts#VERBS", "hub/src/bridge/facts.ts#Shown", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/board.ts#Card", "hub/src/bridge/board.ts#shownBy", "hub/src/bridge/chains.ts#lineage", "hub/src/shelf.ts#shownServes", "hub/src/tower/http.ts#shownFile", "hub/src/shared/worker-details.ts#shownTitle", "hub/src/shared/launch.ts#towerBrief", "hub/src/mod/skills/handbook/SKILL.md", "hub/renderers/page/index.html", "hub/renderers/page/page.js", "hub/src/shared/view-item.ts#typeView", "hub/src/shared/view-item.ts#versionedRead", "hub/src/tower/http.ts#versionStream", "hub/src/views/link.ts#mount", "hub/src/shared/subjects.ts#shownSubject", "hub/renderers/tower3d/src/showing.ts#posterOf", "hub/renderers/tower3d/src/desk.ts#holdUp", "hub/renderers/tower3d/src/gallery.ts", "hub/test/fixtures/shown.jsonl", "hub/test/fixtures/lineage-heir.jsonl"]
 }
 ---
 **Problem.** A worker that wrote a report, a plan or a page had no way to put it in front of the user except
@@ -29,7 +29,10 @@ worker that made it.
   them to read gets `tower show`, again after a change ([[brief-first]]). The `tower:handbook` skill says the rest. Showing adds to how a worker answers or
   publishes, and replaces neither.
 - The bridge folds them into `facts.shown`, oldest first. Showing a target again moves it last with a new `at`,
-  so a renderer shows the file as it is now, again. The card carries `shown`, `at` in epoch ms.
+  so a renderer shows it again, as news. A showing names a path, never a copy: the tower page draws a shown file again,
+  where it was scrolled to, each time the file at that path changes on disk, written in place or replaced by a rename,
+  through the read's version stream (`version/shown/<id>/<path>`, `tower.versions`), watched only while its tab is
+  drawn ([[tower-server]]). A file deleted says so in its tab until it is written again. The card carries `shown`, `at` in epoch ms.
 - A worker keeps what it showed across resumes: `card.shown` holds the showings of every session the worker ran
   as ([[resume]], [`lineage`](ref:hub/src/bridge/chains.ts#lineage)), each with the `session` that showed it,
   which is the one `/shown/<session>/<path>` serves it by. A target shown again in a later session moves last.
@@ -67,6 +70,12 @@ worker that made it.
 **Alternatives considered.**
 - *A `TowerVerb` relayed to open pages.* With no page open, or after a reload, the showing is gone. A
   showing is a fact about a session, and facts live in its log ([[logs-are-facts]]).
+- *Each showing's file version on the board.* Every renderer would have it with no stream, but the tower would
+  watch the folder of every file any card ever showed, past workers' included, for as long as it runs. A version
+  stream watches only what a view has open.
+- *A renderer polling the file.* Each renderer would write it again, and a write shows only at the next poll.
+- *Watching the file itself.* A watch is bound to the file it opened: a writer that renames a new file onto the path
+  leaves it watching the old one.
 - *Showings stay with the session that showed them.* The user sees a resume of a worker as the same worker, and a
   resumed worker would come back with empty tabs while the gallery named its stopped predecessor.
 - *Snapshot the file's content when shown.* Logs stay small, and a worker updates a file and shows it
@@ -80,6 +89,7 @@ worker that made it.
   worker. Opening a file in the user's Finder or editor has its own verbs, `tower reveal` and `tower edit`
   ([[open-files]]).
 
-**Consequences.** Showing an html file exposes its directory and below, its hidden files and folders apart, to
+**Consequences.** Tower 3D reads a showing once, as it opens; following its versions there is still to come.
+Showing an html file exposes its directory and below, its hidden files and folders apart, to
 pages at the tower's origin; an html shelf entry, which the user declares, still serves everything below its page. A file deleted after it was shown answers `not_found`. Closing a showing is per browser
 in the tower page; Tower 3D keeps no ×, and what it has opened is kept with its spot.
