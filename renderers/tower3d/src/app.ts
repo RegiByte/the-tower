@@ -5,7 +5,7 @@
  * runs. The executors live where the DOM and the building are (main.ts).
  *
  * A panel moves by `go`, as the page's views do: the panel open is left, unless the next stays in its room, and the
- * next entered, then drawn. Desks, shells and the big screen share one room, the view focused on them. Leaving or
+ * next entered, then drawn. Desks, shells and the big screen share one room; they and a game focus the view. Leaving or
  * entering a kind is an executor's table entry (`LEAVE`, `ENTER`); a kind whose opener and closer still do its DOM
  * themselves has an empty entry. A desk's tabs move the same way inside the desk (`tab`).
  */
@@ -13,6 +13,7 @@ import { attendNext, type AttendEvent, type AttendOut, type Attending } from '/l
 import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
 import type { Lines } from '/lib/board.js'
 import { findCard } from './cards.ts'
+import { gameItem } from './games.ts'
 import type { Board, Floor } from './api.ts'
 import type { Panel, View } from './state.ts'
 import { shownTab, type DeskTab } from './ui.ts'
@@ -54,7 +55,7 @@ export type AppEvent =
   | { type: 'tab'; to: TabTo }
   | { type: 'replay'; id: string; session: string | undefined }
   | { type: 'pend'; pending: Partial<Pending> }
-  /** The view, set by what isn't a panel `go` moves yet: the overview, petting, a game, the big screen. */
+  /** The view, set by what isn't a panel: the overview, petting. */
   | { type: 'view'; view: View }
   /** The building took `board`: a panel whose subject left it closes. */
   | { type: 'board-applied'; board: Board }
@@ -97,10 +98,14 @@ const attend = (db: Db, e: AttendEvent): AppEffect[] => {
   return [into({ ...db, attending }), ...effects]
 }
 
-/** The panels the view focuses on, which share one room: from one to another, the first isn't left. */
-const FOCUSED = new Set<Panel['kind']>(['desk', 'shell', 'tv'])
-const focused = (p: Panel | undefined) => p !== undefined && FOCUSED.has(p.kind)
-const sameRoom = (from: Panel | undefined, to: Panel | undefined) => from?.kind === to?.kind || (focused(from) && focused(to))
+/** The panels that share one room, the desk's panel and the big screen: from one to another, the first isn't left. */
+const ROOM = new Set<Panel['kind']>(['desk', 'shell', 'tv'])
+const inRoom = (p: Panel | undefined) => p !== undefined && ROOM.has(p.kind)
+const sameRoom = (from: Panel | undefined, to: Panel | undefined) => from?.kind === to?.kind || (inRoom(from) && inRoom(to))
+
+/** The panels the view focuses on as they are entered: the camera up close, not at your eyes. */
+const FOCUSES = new Set<Panel['kind']>(['desk', 'shell', 'tv', 'game'])
+const focuses = (p: Panel | undefined) => p !== undefined && FOCUSES.has(p.kind)
 
 /** What a panel's keys go to once it is entered and drawn: the picker's first place, the archive's filter. */
 const FOCUS_ON: Partial<Record<Panel['kind'], string>> = { 'shell-pick': '#shell-pick [data-shell-dir]', archive: '#archive-filter' }
@@ -124,14 +129,14 @@ const tabsPending = (pending: Pending, id: string): TabTo[] => {
 
 /**
  * The panel goes to `to`: the open one left unless `to` stays in its room, `to` entered, all drawn. A desk opens on
- * its screen, then on what was pending for it; entering a desk or shell focuses the view, and leaving the focused room
- * for anything else walks again, the camera back at your eyes. Attention is told the desk you sit at.
+ * its screen, then on what was pending for it; entering a desk, a shell, the big screen or a game focuses the view, and
+ * leaving one for a panel that doesn't walks again, the camera back at your eyes. Attention is told the desk you sit at.
  */
 function went(db: Db, to: Panel | undefined): AppEffect[] {
   const from = db.panel
   const stays = sameRoom(from, to)
-  const enters = to?.kind === 'desk' || to?.kind === 'shell'
-  const unfocuses = !stays && focused(from) && db.view === 'focus'
+  const enters = focuses(to)
+  const unfocuses = !stays && focuses(from) && !enters && db.view === 'focus'
   const view = enters ? 'focus' : unfocuses ? 'walk' : db.view
   const tabs = to?.kind === 'desk' ? tabsPending(db.pending, to.id) : []
   const steps = to?.kind === 'desk' ? tabs.reduce<{ at: DeskTab; effects: AppEffect[] }>((t, next) => ({ at: tabName(next), effects: [...t.effects, ...tabbed(t.at, to.id, next)] }), { at: 'screen', effects: [] }) : undefined
@@ -162,7 +167,7 @@ export type AppReads = {
 
 /**
  * The panel whose subject the board no longer holds: a desk's worker gone, a shell ended, a floor removed, a shelf
- * entry, a kept item or a review thread gone.
+ * entry, a kept item, a game or a review thread gone.
  */
 function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
   if (!panel) return false
@@ -173,6 +178,7 @@ function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
     case 'floor': case 'archive': return !floor(panel.id)
     case 'doc': return !floor(panel.project)?.shelf?.[panel.n]
     case 'kept': return !keptItem(board, panel)
+    case 'game': return !gameItem(board.floors, panel.project, panel.id)
     case 'thread': {
       const f = floor(panel.project)
       return !f || !reads.threadsOf(f).some((t) => t.checkout === panel.checkout)
