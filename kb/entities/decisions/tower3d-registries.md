@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/tower3d/src/state.ts", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/stage.ts", "hub/renderers/tower3d/src/door.ts#installDoor"]
+  "refs": ["hub/renderers/tower3d/src/state.ts", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/main.ts", "hub/renderers/tower3d/src/stage.ts#startStage", "hub/renderers/tower3d/src/door.ts#installDoor"]
 }
 ---
 **Problem.** A renderer that grows a thing at a time (a layer of things drawn per board, a kind of thing to aim at, a
@@ -33,8 +33,9 @@ shape of a mod. These shapes extract; they are not a plugin API.
   (`next`, `overview`, `stop`) run before the table.
 - **Ticks**: a frame is `TICKS`, an ordered list of functions over one `Frame` (`dt`, `t`, the turn taken).
 - **The door out** ([`installDoor`](ref:hub/renderers/tower3d/src/door.ts#installDoor)): it reads the record and
-  drives an `Engine`, the functions the page's own input and frames call. The three.js setup lives in
-  [`stage.ts`](ref:hub/renderers/tower3d/src/stage.ts) so layers and the door import the scene and camera.
+  drives an `Engine`, the functions the page's own input and frames call. The three.js setup is the stage resource
+  ([`startStage`](ref:hub/renderers/tower3d/src/stage.ts#startStage), [[tower3d-system]]), which layers and the door
+  read the scene and camera from.
 
 A refactor of these shapes is checked with `npm run tool:frames` ([[tower3d-door]]), expecting identical frames.
 
@@ -43,7 +44,8 @@ A refactor of these shapes is checked with `npm run tool:frames` ([[tower3d-door
   and the shell stays imperative (three.js objects, the DOM).
 - A full split by concern (navigation, panels, aim in their own modules): a cleaner end state, but cycles between
   panels and navigation to untangle first. `RUN` stays in `main.ts` for the same reason: its entries call
-  navigation and panels.
+  navigation and panels. Superseded by [[tower3d-system]]: the split now goes by resource, wired as data, with no
+  import cycles allowed.
 
 **Impact.** `main.ts` keeps boot, the board, navigation, panels and input; adding a layer, an act kind or a tick
 is one entry each.
