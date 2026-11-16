@@ -52,7 +52,7 @@ import { dispose, loadFaces } from './toon.ts'
 import { fillBooks } from './room.ts'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, elevatorHtml, floorHtml, floorSignHtml, gameHeadHtml, gameHtml, hudHtml, levelForKey, pictureHeadHtml, promptHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { addedCommandOf, commandOf, COMMANDS, keymapSheetHtml, panesOf, type Keys } from '/lib/keys.js'
-import { MOVE_KEYS, move, releaseKeys, takeTurn, type Turn } from './input.ts'
+import { MOVE_KEYS, type Turn } from './input.ts'
 import { random } from './random.ts'
 import { wallNow } from './clock.ts'
 import { installDoor } from './door.ts'
@@ -78,6 +78,7 @@ import { shell } from './shell.ts'
 const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, cardReviews, floorThreadsOf, threadCheckout, keepsThreads: floorKeepsThreads, probedLines } = shell().clients
 const { lit } = shell().lighting
 const { camera, canvas, flyPlane, orbit, renderer, scene, tickOutside } = shell().stage
+const { move, releaseKeys, takeTurn } = shell().input
 
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)

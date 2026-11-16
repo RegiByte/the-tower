@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { wallNow } from './clock.ts'
-import { listen } from './input.ts'
 import { skyAt } from '/lib/design.js'
 import { glowKit } from './kit.ts'
 import { outside } from './outside.ts'
@@ -30,7 +29,6 @@ export function startStage(lit: boolean) {
   orbit.enabled = false
   orbit.enableDamping = true
   orbit.maxPolarAngle = Math.PI * 0.49
-  listen(canvas)
   return {
     canvas,
     renderer,
