@@ -461,6 +461,7 @@ function onBoard(next: Board, at: ShelfSelf | undefined) {
   if (s.me.level >= s.plan.levels.length) s.me = { ...s.me, level: 0 }
   renderHud()
   app.dispatch({ type: 'board-applied', board: next })
+  followCabinet()
   // The panels the app doesn't move yet close in their draw when their subject left: drawn at once, as the board lands.
   renderPanel()
   freshLogbooks(next)
@@ -624,9 +625,8 @@ function renderPanel() {
   }
   if (panel.kind === 'game') {
     const f = board.floors.find((f) => f.id === panel.project)
-    const at = cabinetOf(s.plan, panel.project, panel.id)
-    if (!f || !gameItem([f], panel.project, panel.id) || !at) return closeGame()
-    if (at.cabinet.x !== panel.x) frameCabinet(panel, at)
+    // The app closes a game no longer kept once the building takes the board (`board-applied`).
+    if (!f || !gameItem([f], panel.project, panel.id)) return
     $('game-head').innerHTML = gameHeadHtml(f, panel.project, panel.id)
   }
   if (panel.kind === 'doc') {
@@ -760,7 +760,6 @@ function shellPickEntered() {
 function unfocus() {
   const panel = panelNow()
   if (panel?.kind === 'desk' || panel?.kind === 'shell' || panel?.kind === 'tv') return go(undefined)
-  if (viewNow() === 'focus') (app.dispatch({ type: 'view', view: 'walk' }), flyHome())
   showPaused()
 }
 
@@ -821,8 +820,8 @@ const statsPolling = loop({
 })
 statsPolling.subscribe(events.listen('statsPolling'))
 
-/** Every floor's stats in the reader where you stand: the overview first, each floor a tab. A game open closes first, as it doesn't leave by the app yet. */
-const openStats = () => (closeGame(), go({ kind: 'stats' }))
+/** Every floor's stats in the reader where you stand: the overview first, each floor a tab. */
+const openStats = () => go({ kind: 'stats' })
 
 /**
  * Entering the reader: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the
@@ -881,37 +880,48 @@ function closePanels() {
  */
 function openGame(project: string, id: string) {
   const at = cabinetOf(s.plan, project, id)
-  if (!at) return
-  closePanels()
-  const panel: GamePanel = { kind: 'game', project, id, x: at.cabinet.x }
-  go(panel)
-  app.dispatch({ type: 'view', view: 'focus' })
+  if (at) go({ kind: 'game', project, id, x: at.cabinet.x })
+}
+
+/** Entering a game: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the music paused, the game's frame given the keys, the camera on its cabinet. */
+function gameEntered({ project, id }: GamePanel) {
+  sideClosed()
+  draftClosed()
   unlock()
   pause()
   show('paused', false)
   show('game', true)
-  renderPanel()
   $('game-body').innerHTML = gameHtml(project, id)
   const frame = $('game-body').querySelector('iframe')!
   frame.addEventListener('load', () => frame.focus())
   frame.focus()
-  frameCabinet(panel, at)
+  frameCabinet(cabinetOf(s.plan, project, id)!)
 }
 
-/** The camera on the game's cabinet, where the arcade stands it now: a game kept since moves every cabinet along. */
-function frameCabinet(panel: GamePanel, { cabinet, level }: NonNullable<ReturnType<typeof cabinetOf>>) {
-  patchPanel({ ...panel, x: cabinet.x })
+/** Leaving a game: its frame emptied, the music back. */
+function gameLeft() {
+  show('game', false)
+  $('game-body').innerHTML = ''
+  startMusic()
+}
+
+/** The game open follows its cabinet: closed once the arcade no longer stands it, framed again where a game kept since moved it along. */
+function followCabinet() {
+  const game = panelAs('game')
+  if (!game) return
+  const at = cabinetOf(s.plan, game.project, game.id)
+  if (!at) return go(undefined)
+  if (at.cabinet.x !== game.x) (patchPanel({ ...game, x: at.cabinet.x }), frameCabinet(at))
+}
+
+/** The camera on the game's cabinet, in the left half of the view. */
+function frameCabinet({ cabinet, level }: NonNullable<ReturnType<typeof cabinetOf>>) {
   const front = new THREE.Vector3(cabinet.x, level.y + SCREEN.y, cabinet.z - CABINET.depth / 2)
   frameAside(front, new THREE.Vector3(0, 0, -1), 2 * CABINET.width)
 }
 
 function closeGame() {
-  if (panelNow()?.kind !== 'game') return
-  go(undefined)
-  show('game', false)
-  $('game-body').innerHTML = ''
-  if (viewNow() === 'focus') (app.dispatch({ type: 'view', view: 'walk' }), flyHome())
-  startMusic()
+  if (panelNow()?.kind === 'game') go(undefined)
 }
 
 /**
@@ -926,7 +936,6 @@ function openShelf(project: string, n: number, file?: string) {
   if ('url' in entry) return tower.framed ? tower.ui('shelf', { project, n }) : (unlock(), open(entry.url, '_blank', 'noopener'))
   if (s.self?.project === project && s.self.n === n) return toast(`${entry.label} is where you are standing`)
   if ('renderer' in entry) return tower.framed ? tower.ui('shelf', { project, n }) : (unlock(), open(rendererUrl(entry.renderer), '_blank', 'noopener'))
-  closeGame()
   go({ kind: 'doc', project, n, file })
 }
 
@@ -967,7 +976,6 @@ function openKept(k: { project: string; collection: string; id: string }) {
   if (k.collection === GAMES) return openGame(k.project, k.id)
   const item = s.board!.floors.find((f) => f.id === k.project)?.collections.find((c) => c.id === k.collection)?.items.find((i) => i.id === k.id)
   if (!item) return toast('The item was deleted')
-  closeGame()
   go({ kind: 'kept', ...k, drawn: item.modifiedAt })
 }
 
@@ -1007,7 +1015,6 @@ async function deleteKept(panel: Extract<Panel, { kind: 'kept' }>) {
 /** A gallery's picture in the reader where you stand, as its desk's tab shows it; it counts as seen once opened. */
 function openPicture(id: string, target: string) {
   if (!pictureOf(s.plan.galleries, s.board!, id, target)) return
-  closeGame()
   go({ kind: 'picture', id, target })
 }
 
@@ -1128,13 +1135,13 @@ function shellEntered({ id }: { id: string }) {
 }
 
 /** Up close to a big screen, filling the view. */
-function watch(n: number) {
+const watch = (n: number) => go({ kind: 'tv', n })
+
+/** Entering a big screen: the drawer, the picker and the draft editor closed, as they don't leave by the app yet, the screen filling the view. */
+function tvEntered({ n }: { n: number }) {
   const screen = bigScreens(s.plan)[n]
-  closeSide()
-  closeDoc()
-  closeDraftPanel()
-  go({ kind: 'tv', n })
-  app.dispatch({ type: 'view', view: 'focus' })
+  sideClosed()
+  draftClosed()
   unlock()
   show('paused', false)
   show('watch', true)
@@ -1393,7 +1400,8 @@ const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => voi
   desk: focusLeft, shell: focusLeft, tv: focusLeft,
   floor: sideLeft, archive: sideLeft, directory: sideLeft,
   elevator: closesItself,
-  'shell-pick': closesItself, drawer: closesItself, draft: closesItself, game: closesItself,
+  'shell-pick': closesItself, drawer: closesItself, draft: closesItself,
+  game: gameLeft,
   stats: readerLeft, logbook: readerLeft, doc: readerLeft, kept: readerLeft, picture: readerLeft, thread: readerLeft,
 }
 
@@ -1403,7 +1411,8 @@ const ENTER: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>, from: 
   desk: deskEntered, shell: shellEntered, 'shell-pick': shellPickEntered,
   floor: sideEntered, archive: sideEntered, directory: sideEntered,
   elevator: opensItself,
-  tv: opensItself, drawer: opensItself, draft: opensItself, game: opensItself,
+  drawer: opensItself, draft: opensItself,
+  tv: tvEntered, game: gameEntered,
   stats: statsEntered, thread: threadEntered, logbook: logbookEntered,
   doc: (panel, from) => void docEntered(panel, from),
   kept: (panel, from) => void keptEntered(panel, from),
@@ -2571,7 +2580,6 @@ function openThread(project: string, checkout: string) {
     return goDesk(worker.id)
   }
   if (!floorThreadsOf(floorOf(project)).some((t) => t.checkout === checkout)) return
-  closeGame()
   go({ kind: 'thread', project, checkout })
 }
 
