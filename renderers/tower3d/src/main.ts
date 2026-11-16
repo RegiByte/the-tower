@@ -18,7 +18,7 @@ import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Ca
 import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
 import { attending } from '/lib/attend.js'
-import { appHandlers, startingDb, threadSubjectKey, type AppEvent, type TabTo } from './app.ts'
+import { appHandlers, startingDb, threadSubjectKey, type AppEvent, type Arrival, type Quat, type Ride, type TabTo, type Vec3 } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
@@ -500,9 +500,10 @@ function renderHud() {
 }
 
 function renderElevator() {
-  const inCar = viewNow() === 'walk' && (s.ride !== undefined || inside(carBox(s.plan), s.me.x, s.me.z))
+  const { ride } = motionNow()
+  const inCar = viewNow() === 'walk' && (ride !== undefined || inside(carBox(s.plan), s.me.x, s.me.z))
   show('elevator', inCar)
-  if (inCar) $('elevator').innerHTML = elevatorHtml(s.plan, s.ride ? s.ride.to : s.me.level, s.ride !== undefined, heededWaits(s.board!, heed()))
+  if (inCar) $('elevator').innerHTML = elevatorHtml(s.plan, ride ? ride.to : s.me.level, ride !== undefined, heededWaits(s.board!, heed()))
 }
 
 const viewDeps = {
@@ -687,10 +688,13 @@ const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 
 const eyeQuaternion = (w: Walker) => new THREE.Quaternion().setFromEuler(new THREE.Euler(w.pitch, w.yaw + Math.PI, 0, 'YXZ'))
 const lookQuaternion = (from: THREE.Vector3, at: THREE.Vector3) => new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(from, at, camera.up))
 
-function flyTo(to: THREE.Vector3, toQ: THREE.Quaternion, ms = 700, done?: () => void) {
-  s.flight = { from: camera.position.clone(), to, fromQ: camera.quaternion.clone(), toQ, start: s.simNow, ms: reducedMotion() ? 0 : ms, done }
+const vec3 = (v: THREE.Vector3): Vec3 => [v.x, v.y, v.z]
+const quat = (q: THREE.Quaternion): Quat => [q.x, q.y, q.z, q.w]
+
+function flyTo(to: THREE.Vector3, toQ: THREE.Quaternion, ms = 700, then?: AppEvent) {
+  app.dispatch({ type: 'fly', flight: { from: vec3(camera.position), to: vec3(to), fromQ: quat(camera.quaternion), toQ: quat(toQ), start: s.simNow, ms: reducedMotion() ? 0 : ms, then } })
 }
-const flyHome = (done?: () => void) => flyTo(eyes(s.me, floorY(), new THREE.Vector3()), eyeQuaternion(s.me), 600, done)
+const flyHome = () => flyTo(eyes(s.me, floorY(), new THREE.Vector3()), eyeQuaternion(s.me), 600)
 
 /** Frames a face `size` wide in the middle of the view, straight out from it: the camera stays in front, never in a wall. */
 function frameOn(point: THREE.Vector3, normal: THREE.Vector3, size: number) {
@@ -709,21 +713,33 @@ function frameAside(point: THREE.Vector3, normal: THREE.Vector3, size: number) {
 }
 
 /** Standing at `spot` on `level` at once, out of any ride or flight. */
-function place(level: number, spot: Standing) {
+const place = (level: number, spot: Standing) => app.dispatch({ type: 'place', level, spot })
+
+/** You stand at `spot` on `level`, the camera at your eyes. */
+function stand(level: number, spot: Standing) {
   s.me = { ...s.me, pitch: 0, ...spot, level, y: spot.y ?? 0, vy: 0 }
-  s.ride = undefined
-  s.flight = undefined
   aim(camera, s.me, floorY())
   renderHud()
   renderElevator()
 }
 
-/** A cut to elsewhere in the building: out to black, there (once `CUT_MS` have passed), back in. */
+/** A cut to elsewhere in the building: out to black, there (once `CUT_MS` have passed), back in, `then` fired. */
 const CUT_MS = 200
-function travel(level: number, spot: Standing, then: () => void) {
-  if (level === s.me.level) return then()
-  $('fade').classList.add('on')
-  s.cut = { at: s.simNow + CUT_MS, level, spot, then }
+function travel(level: number, spot: Standing, then: AppEvent) {
+  if (level === s.me.level) return app.dispatch(then)
+  app.dispatch({ type: 'cut', cut: { at: s.simNow + CUT_MS, level, spot, then } })
+}
+
+/** What arriving somewhere does that only the building can say: whether the desk or the kiosk still stands, the mouse, the orbit, a purr. */
+const ARRIVED: { [K in Exclude<Arrival, { kind: 'ask' }>['kind']]: (at: Extract<Arrival, { kind: K }>) => void } = {
+  desk: ({ id }) => s.desks.has(id) && focusDesk(id),
+  shell: ({ id }) => focusShell(id),
+  level: () => lock(),
+  overview: ({ center }) => {
+    orbit.target.fromArray(center)
+    orbit.enabled = true
+  },
+  pet: () => s.muted || purr(PET_MS / 1000),
 }
 
 function closeSide() {
@@ -1171,9 +1187,7 @@ function goDesk(id: string) {
   if (!level || !slot) return toast(`${findCard(s.board!, id)?.callsign ?? id} is not on duty`)
   if (viewNow() === 'overview') leaveOverview()
   closeSide()
-  travel(level.index, deskSpot(slot), () => {
-    if (s.desks.has(id)) focusDesk(id)
-  })
+  travel(level.index, deskSpot(slot), { type: 'arrived', at: { kind: 'desk', id } })
 }
 
 function goShell(id: string) {
@@ -1183,7 +1197,7 @@ function goShell(id: string) {
   if (!level || !k) return
   if (viewNow() === 'overview') leaveOverview()
   closeSide()
-  travel(level.index, { x: k.x + 1.9, z: k.z, y: DECK.top, yaw: -Math.PI / 2 }, () => focusShell(id))
+  travel(level.index, { x: k.x + 1.9, z: k.z, y: DECK.top, yaw: -Math.PI / 2 }, { type: 'arrived', at: { kind: 'shell', id } })
 }
 
 /** A draft deleted, said with an Undo that puts its file back under its id. */
@@ -1199,14 +1213,14 @@ async function throwAway(project: string, id: string) {
 }
 
 /** To a level, in front of the elevator, `then` once there. */
-function arriveAt(index: number, then: () => void) {
+function arriveAt(index: number, then: AppEvent) {
   if (viewNow() === 'overview') leaveOverview()
   closePanels()
   travel(index, { x: 0, z: coreFront(s.plan) + 1.6, yaw: 0 }, then)
 }
 
 /** Out of the elevator on a level, facing its floor. */
-const goLevel = (index: number) => arriveAt(index, lock)
+const goLevel = (index: number) => arriveAt(index, { type: 'arrived', at: { kind: 'level' } })
 
 /** Ends a worker with everyone under it that runs, the deepest first; the toast offers the resume of one sent home alone. */
 async function sendHome(c: Card) {
@@ -1350,6 +1364,7 @@ const go = (to: Panel | undefined) => app.dispatch({ type: 'go', to })
 /** The open panel's own data changes; it stays open, neither left nor entered. */
 const patchPanel = (to: Panel) => app.dispatch({ type: 'panel', to })
 const viewNow = () => app.state().view
+const motionNow = () => app.state().motion
 const deskTabNow = () => app.state().deskTab
 const replayNow = () => app.state().replay
 
@@ -1379,7 +1394,7 @@ function goToAsk(a: Board['asks'][number]) {
   if (id && deskOf(s.plan, id)) return goDesk(id)
   const project = projectOfKey(s.board!, a.subject)
   const level = project && s.plan.levels.find((l) => l.kind === 'floor' && l.floor.id === project)
-  if (level) return arriveAt(level.index, () => (go({ kind: 'floor', id: project, tray: undefined }), toast(askSaid(a))))
+  if (level) return arriveAt(level.index, { type: 'arrived', at: { kind: 'ask', project, said: askSaid(a) } })
   toast(askSaid(a))
 }
 
@@ -1450,6 +1465,12 @@ const app = loop({
     'desk/screen': ({ id }) => mountDeskScreen(findCard(s.board!, id)!),
     replays: () => dressReplays(),
     'fly-home': () => flyHome(),
+    fire: ({ event }, dispatch) => dispatch(event),
+    place: ({ level, spot }) => stand(level, spot),
+    fade: ({ on }) => void $('fade').classList.toggle('on', on),
+    hud: () => renderHud(),
+    elevator: () => renderElevator(),
+    arrived: ({ at }) => (ARRIVED[at.kind] as (at: Arrival) => void)(at),
     toast: ({ text }) => toast(text),
     draw: () => void (drawAsked || ((drawAsked = true), requestAnimationFrame(drawPending))),
     focus: ({ selector }) => (drawPending(), document.querySelector<HTMLElement>(selector)?.focus()),
@@ -1652,18 +1673,21 @@ function commandKey(e: KeyboardEvent) {
 const nextWaiting = () => goMove('waiting')
 
 function startRide(to: number) {
-  if (s.ride || to === s.me.level || !inside(carBox(s.plan), s.me.x, s.me.z)) return
-  s.ride = { from: s.me.level, to, t: 0, move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) }
-  renderElevator()
+  if (motionNow().ride || to === s.me.level || !inside(carBox(s.plan), s.me.x, s.me.z)) return
+  app.dispatch({ type: 'ride', ride: { from: s.me.level, to, start: s.simNow, move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) } })
 }
+
+/** How long the car has been riding, in seconds. */
+const riddenFor = (ride: Ride) => (s.simNow - ride.start) / 1000
 
 const DOORS_SHUT = 0.55
 /** The car's ride: the seconds it takes to get going and stop, its speed in metres a second, and the longest a ride takes. */
 const RIDE = { start: 0.9, speed: 14, most: 3.5 }
 function floorY() {
-  if (!s.ride) return levelY(s.me.level)
-  const k = ease(THREE.MathUtils.clamp((s.ride.t - DOORS_SHUT) / s.ride.move, 0, 1))
-  return THREE.MathUtils.lerp(levelY(s.ride.from), levelY(s.ride.to), k)
+  const { ride } = motionNow()
+  if (!ride) return levelY(s.me.level)
+  const k = ease(THREE.MathUtils.clamp((riddenFor(ride) - DOORS_SHUT) / ride.move, 0, 1))
+  return THREE.MathUtils.lerp(levelY(ride.from), levelY(ride.to), k)
 }
 
 function overview() {
@@ -1676,10 +1700,7 @@ function overview() {
   const top = s.plan.levels.at(-1)!.y
   const center = new THREE.Vector3(0, top / 2, 0)
   const from = new THREE.Vector3(s.plan.width * 0.85, top * 0.6 + 8, s.plan.depth * 1.4 + top * 0.45)
-  flyTo(from, lookQuaternion(from, center), 900, () => {
-    orbit.target.copy(center)
-    orbit.enabled = true
-  })
+  flyTo(from, lookQuaternion(from, center), 900, { type: 'arrived', at: { kind: 'overview', center: vec3(center) } })
 }
 
 function leaveOverview() {
@@ -1891,7 +1912,7 @@ function render() {
 /** What a frame sets on the scene before it is drawn: the screens painted, the levels shown, the lighting's passes. */
 function frameScene() {
   if (s.board && s.world) paintScreens(s.simNow, screenDistance)
-  showLevels(levelsShown(viewNow(), s))
+  showLevels(levelsShown(viewNow(), motionNow(), s.me.level))
   if (lit) lightFrame()
 }
 
@@ -1909,45 +1930,40 @@ function lightFrame() {
 function cameraOnLevel() {
   const { x, y, z } = camera.position
   const floor = levelY(s.me.level)
-  return !s.ride && Math.abs(x) < s.plan.width / 2 && Math.abs(z) < s.plan.depth / 2 && y > floor && y < floor + levelHeight(s.me.level)
+  return !motionNow().ride && Math.abs(x) < s.plan.width / 2 && Math.abs(z) < s.plan.depth / 2 && y > floor && y < floor + levelHeight(s.me.level)
 }
 
 /** What stands on your level and its own part of the building. */
 const standingOn = () => (s.world ? [s.levels[s.me.level]?.group, s.world.levels[s.me.level]].filter((o) => o !== undefined) : [])
 
 /** Your hands are in view while you walk or pet a cat, but not while the camera rides or flies. */
-const handsShown = () => (viewNow() === 'walk' || viewNow() === 'pet') && !s.ride && !s.flight
+const handsShown = () => (viewNow() === 'walk' || viewNow() === 'pet') && !motionNow().ride && !motionNow().flight
 
 /** One frame of simulated time: `dt` seconds of it, `t` the clock in seconds, and the turn the input took. */
 type Frame = { dt: number; t: number; turned: Turn }
 
 function tickCut() {
-  if (!s.cut || s.simNow < s.cut.at) return
-  const { level, spot, then } = s.cut
-  s.cut = undefined
-  place(level, spot)
-  $('fade').classList.remove('on')
-  then()
+  const { cut } = motionNow()
+  if (cut && s.simNow >= cut.at) app.dispatch({ type: 'cut-reached' })
 }
 
 /** Riding turns you to face the doors, so you step out onto the floor. */
 function tickRide({ dt }: Frame) {
-  if (!s.ride) return
-  s.ride.t += dt
+  const { ride } = motionNow()
+  if (!ride) return
   const out = Math.round(s.me.yaw / (2 * Math.PI)) * 2 * Math.PI
   const k = Math.min(1, dt * 3)
   s.me = { ...s.me, yaw: s.me.yaw + (out - s.me.yaw) * k, pitch: s.me.pitch * (1 - k) }
-  if (s.ride.t < DOORS_SHUT + s.ride.move) return
-  s.me = { ...s.me, level: s.ride.to }
-  s.ride = undefined
-  renderHud()
-  renderElevator()
+  if (riddenFor(ride) < DOORS_SHUT + ride.move) return
+  s.me = { ...s.me, level: ride.to }
+  app.dispatch({ type: 'ride-arrived' })
 }
 
 function tickWalker(f: Frame) {
   const was = s.me
   stepWalker(f)
-  const stroke = s.pet && strokeAt(petProgress(s.pet, s.simNow), s.pet.tailward)
+  const { pet } = motionNow()
+  const stroke = pet && strokeAt(petProgress(pet, s.simNow), pet.tailward)
   const note = carried()
   holdNote(s.hands!, note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
   holdBeer(s.hands!, s.beer)
@@ -1958,7 +1974,7 @@ function stepWalker({ dt, turned }: Frame) {
   s.me = fallTo(s.me, here().kind === 'floor' ? groundAt(s.plan.loft, s.me.x, s.me.z, s.me.y) : 0, dt)
   if (viewNow() !== 'walk' || !captured()) return
   s.me = look(s.me, turned)
-  if (s.ride || s.flight) return
+  if (motionNow().ride || motionNow().flight) return
   const wasInCar = inside(carBox(s.plan), s.me.x, s.me.z)
   const m = move()
   s.me = walk(jump(s.me, m), m, dt, boxesHere())
@@ -1972,28 +1988,31 @@ function stepWalker({ dt, turned }: Frame) {
 function startPet(name: CatName) {
   const cat = s.cats.get(name)!
   const spot = petSpot(cat, camera.position)
-  app.dispatch({ type: 'view', view: 'pet' })
+  app.dispatch({ type: 'pet', pet: { name, start: s.simNow, tailward: spot.tailward } })
   s.aimed = undefined
   showPrompt(undefined)
-  s.pet = { name, start: s.simNow, tailward: spot.tailward, hearts: makeHearts() }
-  scene.add(s.pet.hearts)
-  flyTo(spot.from, lookQuaternion(spot.from, spot.at), PET_IN, () => !s.muted && purr(PET_MS / 1000))
+  petHearts = makeHearts()
+  scene.add(petHearts)
+  flyTo(spot.from, lookQuaternion(spot.from, spot.at), PET_IN, { type: 'arrived', at: { kind: 'pet' } })
 }
+
+/** The hearts the cat being petted raises, in the world while the pet lasts. */
+let petHearts: THREE.Group | undefined
 
 /** A pet runs its strokes, then flies you home; anything else taking the view ends it where it is. */
 function tickPet() {
-  const p = s.pet
+  const p = motionNow().pet
   if (!p) return
   const k = petProgress(p, s.simNow)
-  if (viewNow() === 'pet' && k < 1) return placeHearts(p, s.cats.get(p.name)!, k)
-  dropHearts(p)
-  s.pet = undefined
-  if (viewNow() === 'pet') (app.dispatch({ type: 'view', view: 'walk' }), flyHome())
+  if (viewNow() === 'pet' && k < 1) return placeHearts(petHearts!, p, s.cats.get(p.name)!, k)
+  dropHearts(petHearts!)
+  petHearts = undefined
+  app.dispatch({ type: 'pet-done' })
 }
 
 /** A landing's doors: shut for a ride and behind a leaver who boarded; open where you stand and ahead of a leaver. */
 function doorTarget(level: number) {
-  if (s.ride) return 0
+  if (motionNow().ride) return 0
   const leaving = [...s.leavers].filter((l) => l.level === level)
   if (leaving.some(boarded)) return 0
   return level === s.me.level || leaving.some(nearDoors) ? 1 : 0
@@ -2010,22 +2029,22 @@ function tickDoors({ dt }: Frame) {
   s.world!.car.position.y = floorY()
 }
 
+/** Where a flight goes from and to, written in place each frame it flies. */
+const flown = { from: new THREE.Vector3(), to: new THREE.Vector3(), fromQ: new THREE.Quaternion(), toQ: new THREE.Quaternion() }
+
 function tickCamera() {
-  if (s.flight) {
-    const k = s.flight.ms ? Math.min(1, (s.simNow - s.flight.start) / s.flight.ms) : 1
-    camera.position.lerpVectors(s.flight.from, s.flight.to, ease(k))
-    camera.quaternion.slerpQuaternions(s.flight.fromQ, s.flight.toQ, ease(k))
-    if (k === 1) {
-      const done = s.flight.done
-      s.flight = undefined
-      done?.()
-    }
+  const { flight } = motionNow()
+  if (flight) {
+    const k = flight.ms ? Math.min(1, (s.simNow - flight.start) / flight.ms) : 1
+    camera.position.lerpVectors(flown.from.fromArray(flight.from), flown.to.fromArray(flight.to), ease(k))
+    camera.quaternion.slerpQuaternions(flown.fromQ.fromArray(flight.fromQ), flown.toQ.fromArray(flight.toQ), ease(k))
+    if (k === 1) app.dispatch({ type: 'flight-landed' })
   } else if (viewNow() === 'walk') aim(camera, s.me, floorY())
   else if (viewNow() === 'overview') orbit.update()
 }
 
 function tickAim() {
-  if (viewNow() === 'walk' && captured() && !s.flight) {
+  if (viewNow() === 'walk' && captured() && !motionNow().flight) {
     s.aimed = pick(0, 0)
     showPrompt(s.aimed)
   } else if (viewNow() !== 'overview' && !s.still) showPrompt(undefined)
@@ -2051,7 +2070,7 @@ function chairLeft(desk: THREE.Vector3) {
 
 /** Everyone moves where they go every frame; bones are posed only on the levels drawn (`levelsShown`). */
 function tickPeople({ dt, t }: Frame) {
-  const shown = levelsShown(viewNow(), s)
+  const shown = levelsShown(viewNow(), motionNow(), s.me.level)
   for (const desk of s.desks.values()) poseDesk(desk, t, dt)
   for (const [id, a] of s.arrivals) if (walkIn(a, dt)) s.arrivals.delete(id)
   for (const desk of s.desks.values()) {
@@ -2085,13 +2104,14 @@ function tickCats(dt: number, t: number) {
   const waiter = heededWaits(s.board!, heed()).map((w) => s.desks.get(w.id)).find(Boolean)
   const level = waiter && levelOfCard(s.plan, waiter.card.id)!.index
   const watcher = waiter && watcherOf(s.cats.values(), places, waiter.card.id, level!)
-  const follower = s.ride ? undefined : followerOf(places, s.me.level)
+  const follower = motionNow().ride ? undefined : followerOf(places, s.me.level)
   for (const cat of s.cats.values()) {
     const place = places.get(cat.name)!
     keepEyeOn(cat, cat.name === watcher ? waiter!.card.id : undefined)
     keepUp(cat, cat.name === follower && !cat.watching)
-    if (s.pet?.name === cat.name) {
-      const stroke = strokeAt(petProgress(s.pet, s.simNow), s.pet.tailward)
+    const { pet } = motionNow()
+    if (pet?.name === cat.name) {
+      const stroke = strokeAt(petProgress(pet, s.simNow), pet.tailward)
       leanIn(cat, stroke?.reach ?? 0, stroke?.press ?? 0, petHeight(cat, waiter), t)
     } else if (cat.watching) {
       const perch = deskPerch(waiter!)
@@ -2109,7 +2129,7 @@ function tickParty({ dt, t }: Frame) {
   duck(viewNow() === 'focus')
   const beat = beatAt(t)
   const roof = s.plan.levels.at(-1)!
-  const posing = levelsShown(viewNow(), s)(roof.index)
+  const posing = levelsShown(viewNow(), motionNow(), s.me.level)(roof.index)
   for (const g of s.guests.values()) {
     const at = guestAt(g.card, t, s.plan)
     placeGuest(g, at, roof.y)
@@ -2126,7 +2146,7 @@ const head = new THREE.Vector3()
 
 /** While you walk a floor, an arrow on the screen's edge toward each worker on it waiting on you that you can't see. */
 function tickCompass() {
-  const walking = viewNow() === 'walk' && !s.ride
+  const walking = viewNow() === 'walk' && !motionNow().ride
   const waits = walking ? heededWaits(s.board!, heed()).filter((w) => levelOfCard(s.plan, w.id)?.index === s.me.level && s.desks.has(w.id)) : []
   const targets = waits.map((w) => ({ id: w.id, at: s.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(s.me.level) + HEAD_Y) }))
   const card = (id: string) => findCard(s.board!, id)!
@@ -2279,7 +2299,7 @@ function onKey(code: string, repeat: boolean): boolean {
   if (code === 'Escape' && replayNow() !== undefined && replayNow()!.id === atDesk()) return (replay(replayNow()!.id, undefined), true)
   if (code === 'Escape' && panelNow()) return (closePanels(), true)
   const to = levelForKey(s.plan, code)
-  if (to === undefined || to === s.me.level || s.ride) return false
+  if (to === undefined || to === s.me.level || motionNow().ride) return false
   if (viewNow() === 'walk' && inside(carBox(s.plan), s.me.x, s.me.z)) startRide(to)
   else goLevel(to)
   return true
@@ -3173,7 +3193,7 @@ setInterval(() => s.board && renderHud(), 30_000)
 /** Kept only for a person: the door's walks would move their spot. */
 let keptKey = ''
 setInterval(() => {
-  if (!s.board || viewNow() !== 'walk' || s.ride || s.doorMode) return
+  if (!s.board || viewNow() !== 'walk' || motionNow().ride || s.doorMode) return
   const kept: Kept = { spot: spotOf(s.me), muted: s.muted, fps: s.fpsShown, seen: [...s.seenShown].slice(-SEEN_KEPT) }
   const key = JSON.stringify(kept)
   if (key !== keptKey) (keptKey = key, tower.remember(kept))

@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import { makeLayer, type KitLayer } from './kit.ts'
 import { shell } from './shell.ts'
-import { s, type State, type View } from './state.ts'
+import type { Motion } from './app.ts'
+import { s, type View } from './state.ts'
 
 const { scene } = shell().stage
 
@@ -37,13 +38,13 @@ export const levelOf = (o: THREE.Object3D) => s.levels.findIndex((root) => root.
  * back in, so from inside only your own level can be seen; riding, the levels the car passes, whose landing doors go
  * by its open front; from outside, over the city or flying the camera there and back, all of them.
  */
-export function levelsShown(view: View, v: Pick<State, 'ride' | 'flight' | 'me'>): (index: number) => boolean {
-  if (view === 'overview' || v.flight) return () => true
-  if (v.ride) {
-    const [low, high] = [Math.min(v.ride.from, v.ride.to), Math.max(v.ride.from, v.ride.to)]
+export function levelsShown(view: View, { ride, flight }: Pick<Motion, 'ride' | 'flight'>, level: number): (index: number) => boolean {
+  if (view === 'overview' || flight) return () => true
+  if (ride) {
+    const [low, high] = [Math.min(ride.from, ride.to), Math.max(ride.from, ride.to)]
     return (i) => i >= low && i <= high
   }
-  return (i) => i === v.me.level
+  return (i) => i === level
 }
 
 /** Shows the levels `shown` keeps and hides the rest: what stands on each, and the building's own part of it. */

@@ -15,7 +15,8 @@ import { subjectAt, type Lines } from '/lib/board.js'
 import { findCard } from './cards.ts'
 import { gameItem } from './games.ts'
 import type { Board, Floor } from './api.ts'
-import type { Panel, View } from './state.ts'
+import type { Pet } from './pet.ts'
+import type { Panel, Standing, View } from './state.ts'
 import { shownTab, type DeskTab } from './ui.ts'
 
 /** The tab a desk opens on once it opens: its brief, its review thread, or lines of its Changes. */
@@ -37,6 +38,38 @@ export type Replay = { id: string; session: string }
 /** A desk's tab to show: Changes scrolled to `lines` when given, a showing by itself. */
 export type TabTo = { tab: 'screen' } | { tab: 'brief' } | { tab: 'reviews' } | { tab: 'changes'; lines: Lines | undefined } | { tab: 'shown'; target: string }
 
+/** A point or a direction, and a rotation, as plain numbers: the db holds no three.js object. */
+export type Vec3 = readonly [number, number, number]
+export type Quat = readonly [number, number, number, number]
+
+/** The car riding from level `from` to `to` since `start`, in simulated ms: its doors shut, then it moves for `move` seconds. */
+export type Ride = { from: number; to: number; start: number; move: number }
+/** The camera flying from where it was to `to` over `ms` from `start`, in simulated ms, `then` fired once it lands. */
+export type Flight = { from: Vec3; to: Vec3; fromQ: Quat; toQ: Quat; start: number; ms: number; then: AppEvent | undefined }
+/** A cut to elsewhere in the building: out to black, there once `at` has passed, back in, `then` fired. */
+export type Cut = { at: number; level: number; spot: Standing; then: AppEvent }
+
+/**
+ * What moves on its own until it is done, each from when it started: the frames derive how far along it is and
+ * dispatch once when it is done, so the db changes only as one starts or ends.
+ */
+export type Motion = { ride: Ride | undefined; flight: Flight | undefined; cut: Cut | undefined; pet: Pet | undefined }
+
+/** Where a cut or a flight leaves you, and what is done once there. */
+export type Arrival =
+  /** At a worker's desk, sat down if it still stands. */
+  | { kind: 'desk'; id: string }
+  /** At a shell's kiosk, its terminal open if the kiosk still stands. */
+  | { kind: 'shell'; id: string }
+  /** Out of the elevator on a level, the mouse taken. */
+  | { kind: 'level' }
+  /** On the floor an ask is about, its console open and the ask said. */
+  | { kind: 'ask'; project: string; said: string }
+  /** Over the city, the view orbiting `center`. */
+  | { kind: 'overview'; center: Vec3 }
+  /** Low beside the cat being petted, which purrs. */
+  | { kind: 'pet' }
+
 export type Db = {
   panel: Panel | undefined
   /** Whether the window has your eye, and what asks for you, said and rung as every renderer does (`attend.ts`). */
@@ -45,6 +78,7 @@ export type Db = {
   deskTab: DeskTab
   pending: Pending
   replay: Replay | undefined
+  motion: Motion
 }
 
 export type AppEvent =
@@ -61,6 +95,17 @@ export type AppEvent =
   | { type: 'board-applied'; board: Board }
   /** The replayed worker's desk left the building: the replay ends with it. */
   | { type: 'replay-left' }
+  | { type: 'ride'; ride: Ride }
+  | { type: 'ride-arrived' }
+  | { type: 'fly'; flight: Flight }
+  | { type: 'flight-landed' }
+  | { type: 'cut'; cut: Cut }
+  | { type: 'cut-reached' }
+  /** Standing at `spot` on `level` at once, out of any ride or flight. */
+  | { type: 'place'; level: number; spot: Standing }
+  | { type: 'pet'; pet: Pet }
+  | { type: 'pet-done' }
+  | { type: 'arrived'; at: Arrival }
 
 export type AppEffect =
   | AttendOut
@@ -80,6 +125,16 @@ export type AppEffect =
   | { type: 'draw' }
   /** Focus on the first element `selector` names once the panels are drawn. */
   | { type: 'focus'; selector: string }
+  /** `event` dispatched, once this transition's effects have run: what a cut or a flight fires as it ends. */
+  | { type: 'fire'; event: AppEvent }
+  /** You stand at `spot` on `level`, the camera at your eyes, the HUD and the elevator's panel drawn for where you are. */
+  | { type: 'place'; level: number; spot: Standing }
+  /** The screen faded out to black, or back in. */
+  | { type: 'fade'; on: boolean }
+  | { type: 'hud' }
+  | { type: 'elevator' }
+  /** What is done once there that the db can't decide: a desk or a kiosk still standing, the mouse, the orbit, a purr. */
+  | { type: 'arrived'; at: Exclude<Arrival, { kind: 'ask' }> }
 
 export const startingDb = (attending: Attending): Db => ({
   panel: undefined,
@@ -88,10 +143,16 @@ export const startingDb = (attending: Attending): Db => ({
   deskTab: 'screen',
   pending: { desk: undefined, shell: undefined, tab: undefined, shown: undefined },
   replay: undefined,
+  motion: { ride: undefined, flight: undefined, cut: undefined, pet: undefined },
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
 const DRAW: AppEffect = { type: 'draw' }
+const moved = (db: Db, motion: Partial<Motion>): Db => ({ ...db, motion: { ...db.motion, ...motion } })
+const fire = (event: AppEvent | undefined): AppEffect[] => (event ? [{ type: 'fire', event }] : [])
+
+/** Standing at `spot` on `level`, out of any ride or flight. */
+const placed = (db: Db, level: number, spot: Standing): AppEffect[] => [into(moved(db, { ride: undefined, flight: undefined })), { type: 'place', level, spot }]
 
 const attend = (db: Db, e: AttendEvent): AppEffect[] => {
   const [attending, effects] = attendNext(db.attending, e)
@@ -251,4 +312,22 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
     return kept ? went(next, kept) : [into(next), DRAW]
   },
   'replay-left': (db) => [into({ ...db, replay: undefined })],
+  ride: (db, { ride }) => [into(moved(db, { ride })), { type: 'elevator' }],
+  'ride-arrived': (db) => [into(moved(db, { ride: undefined })), { type: 'hud' }, { type: 'elevator' }],
+  fly: (db, { flight }) => [into(moved(db, { flight }))],
+  'flight-landed': (db) => [into(moved(db, { flight: undefined })), ...fire(db.motion.flight?.then)],
+  cut: (db, { cut }) => [into(moved(db, { cut })), { type: 'fade', on: true }],
+  'cut-reached': (db) => {
+    const cut = db.motion.cut
+    if (!cut) throw new Error('a cut is reached only while one is under way: dispatch cut-reached from the frame that finds its time passed')
+    return [...placed(moved(db, { cut: undefined }), cut.level, cut.spot), { type: 'fade', on: false }, ...fire(cut.then)]
+  },
+  place: (db, { level, spot }) => placed(db, level, spot),
+  pet: (db, { pet }) => [into(moved({ ...db, view: 'pet' }, { pet }))],
+  /** A pet done, or ended by anything else taking the view: you walk again only from the pet's own view, flown home. */
+  'pet-done': (db) => {
+    const petting = db.view === 'pet'
+    return [into(moved({ ...db, view: petting ? 'walk' : db.view }, { pet: undefined })), ...(petting ? [{ type: 'fly-home' } as const] : [])]
+  },
+  arrived: (db, { at }) => (at.kind === 'ask' ? [...went(db, { kind: 'floor', id: at.project, tray: undefined }), { type: 'toast', text: at.said }] : [{ type: 'arrived', at }]),
 })

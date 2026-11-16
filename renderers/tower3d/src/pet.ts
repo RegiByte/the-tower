@@ -12,7 +12,6 @@ export type Pet = {
   start: number
   /** 1 when the view's right is toward the cat's tail, else -1: strokes run head to tail either way. */
   tailward: 1 | -1
-  hearts: THREE.Group
 }
 
 export const PET_IN = 600
@@ -72,9 +71,9 @@ export function makeHearts() {
 }
 
 /** Each heart in turn floats up off the cat's head, drifting aside, growing and fading, at `k` into the strokes. */
-export function placeHearts(p: Pet, cat: Cat, k: number) {
+export function placeHearts(hearts: THREE.Group, p: Pet, cat: Cat, k: number) {
   const head = cat.root.position.clone().add(new THREE.Vector3(0, 0.38, 0))
-  p.hearts.children.forEach((o, i) => {
+  hearts.children.forEach((o, i) => {
     const sprite = o as THREE.Sprite
     const life = ((k - (0.1 + (i / HEARTS) * 0.7)) * PET_MS) / HEART_MS
     sprite.visible = life >= 0 && life <= 1
@@ -87,7 +86,7 @@ export function placeHearts(p: Pet, cat: Cat, k: number) {
   })
 }
 
-export function dropHearts(p: Pet) {
-  p.hearts.removeFromParent()
-  for (const o of p.hearts.children) (o as THREE.Sprite).material.dispose()
+export function dropHearts(hearts: THREE.Group) {
+  hearts.removeFromParent()
+  for (const o of hearts.children) (o as THREE.Sprite).material.dispose()
 }

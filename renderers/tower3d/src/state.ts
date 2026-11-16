@@ -1,4 +1,3 @@
-import type * as THREE from 'three'
 import type { ChairKit, Chairs } from './chairs.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Offer, Verb } from './acts.ts'
@@ -13,7 +12,6 @@ import type { Hands } from './hands.ts'
 import type { Plan } from './layout.ts'
 import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
 import type { Models } from './models.ts'
-import type { Pet } from './pet.ts'
 import type { Kit } from './kit.ts'
 import type { LevelRoot } from './levels.ts'
 import type { DanceFloors, Guest } from './party.ts'
@@ -31,12 +29,8 @@ import type { World } from './world.ts'
 import { shell } from './shell.ts'
 
 export type View = 'walk' | 'focus' | 'overview' | 'pet'
-export type Ride = { from: number; to: number; t: number; move: number }
-export type Flight = { from: THREE.Vector3; to: THREE.Vector3; fromQ: THREE.Quaternion; toQ: THREE.Quaternion; start: number; ms: number; done?: () => void }
 /** Where to stand: `y` is how high over the level's floor, on a stair or the loft's deck, 0 unless given. */
 export type Standing = { x: number; z: number; yaw: number; pitch?: number; y?: number }
-/** A cut to elsewhere in the building: out to black, there once `at` has passed, back in. */
-export type Cut = { at: number; level: number; spot: Standing; then: () => void }
 export type Threads = Awaited<ReturnType<typeof tower.conversations>>
 /** A game played beside its cabinet; `x` is where the camera framed it. */
 export type GamePanel = { kind: 'game'; project: string; id: string; x: number }
@@ -139,13 +133,8 @@ export type State = {
   /** Each card's status at the last board: working to done or idle is a finished turn. */
   lastStatus: Map<string, Board['floors'][number]['cards'][number]['status']>
 
-  /** Where you are and what you're doing: walking, riding, looking at a terminal, petting a cat, or out over the city. */
+  /** Where you stand and look: what the frames move, as walking, riding, petting or a cut moves you (the app's `Motion`). */
   me: Walker
-  ride: Ride | undefined
-  flight: Flight | undefined
-  /** The cat being petted, while the view is `pet`. */
-  pet: Pet | undefined
-  cut: Cut | undefined
   /** How open each level's landing doors are, 0 to 1, by level index. */
   doorOpen: Map<number, number>
   /** The hires in flight by floor, as the hiring machine in main holds them: read by the open workstations. */
@@ -211,7 +200,7 @@ export const s: State = {
   world: undefined, worldKey: '', limitsKey: '',
   desks: new Map(), stations: new Map(), chairs: [], chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(), catNames: {},
   visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, lighting: shell().lighting.lit, waitedAt: 0, lastStatus: new Map(),
-  me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }, ride: undefined, flight: undefined, pet: undefined, cut: undefined,
+  me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 },
   doorOpen: new Map(), hiring: noHires, seenShown: new Set(), lastShown: new Set(), dotted: new Set(),
   carrying: undefined, beer: false, draft: undefined,
   aimed: undefined, offers: [], marked: 0, offersOfAimed: '', hold: undefined, down: undefined,
