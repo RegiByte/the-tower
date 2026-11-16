@@ -1886,6 +1886,7 @@ async function startOn(next: Board, at: ShelfSelf | undefined) {
   await painted()
   await settledArchives(next)
   boardArrived(next, at)
+  if (!app.state().building) throw new Error("the first board was not taken: its floors' archives were read before it was sent in, and no longer were when it arrived")
   loading.stage('lighting')
   await painted()
   frameScene()
