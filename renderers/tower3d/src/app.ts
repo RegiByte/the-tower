@@ -13,7 +13,7 @@ import { attendNext, type AttendEvent, type AttendOut, type Attending } from '/l
 import type { Handlers, StateEffect, TimerEffect } from '/lib/machine.js'
 import type { Lines } from '/lib/board.js'
 import { findCard } from './cards.ts'
-import type { Board } from './api.ts'
+import type { Board, Floor } from './api.ts'
 import type { Panel, View } from './state.ts'
 import { shownTab, type DeskTab } from './ui.ts'
 
@@ -74,6 +74,7 @@ export type AppEffect =
   /** The monitors show the replay, or live again. */
   | { type: 'replays' }
   | { type: 'fly-home' }
+  | { type: 'toast'; text: string }
   /** The panels drawn from the db and the board, once, at the next frame. */
   | { type: 'draw' }
   /** Focus on the first element `selector` names once the panels are drawn. */
@@ -153,11 +154,45 @@ function went(db: Db, to: Panel | undefined): AppEffect[] {
   ]
 }
 
-/** The panel whose subject the board no longer holds: a desk's worker gone, a shell ended, a floor removed. */
-const subjectLeft = (panel: Panel | undefined, board: Board) =>
-  (panel?.kind === 'desk' && !findCard(board, panel.id)) ||
-  (panel?.kind === 'shell' && !board.shells.some((sh) => sh.id === panel.id)) ||
-  ((panel?.kind === 'floor' || panel?.kind === 'archive') && !board.floors.some((f) => f.id === panel.id))
+/** What the handlers read of a board through an extension's client, handed in once: pure reads of the board's data. */
+export type AppReads = {
+  /** The checkouts with a review thread on a floor. */
+  threadsOf: (f: Floor) => { checkout: string }[]
+}
+
+/**
+ * The panel whose subject the board no longer holds: a desk's worker gone, a shell ended, a floor removed, a shelf
+ * entry, a kept item or a review thread gone.
+ */
+function subjectLeft(panel: Panel | undefined, board: Board, reads: AppReads) {
+  if (!panel) return false
+  const floor = (id: string) => board.floors.find((f) => f.id === id)
+  switch (panel.kind) {
+    case 'desk': return !findCard(board, panel.id)
+    case 'shell': return !board.shells.some((sh) => sh.id === panel.id)
+    case 'floor': case 'archive': return !floor(panel.id)
+    case 'doc': return !floor(panel.project)?.shelf?.[panel.n]
+    case 'kept': return !keptItem(board, panel)
+    case 'thread': {
+      const f = floor(panel.project)
+      return !f || !reads.threadsOf(f).some((t) => t.checkout === panel.checkout)
+    }
+    default: return false
+  }
+}
+
+const keptItem = (board: Board, k: Extract<Panel, { kind: 'kept' }>) =>
+  board.floors.find((f) => f.id === k.project)?.collections.find((c) => c.id === k.collection)?.items.find((i) => i.id === k.id)
+
+/** What closing a panel whose subject left says: a kept item deleted, since nothing else shows it went. */
+const leftSaid = (panel: Panel | undefined): AppEffect[] => (panel?.kind === 'kept' ? [{ type: 'toast', text: 'The item was deleted' }] : [])
+
+/** The kept item open, as `board` holds it now when it changed since its body was read: entered again, it is read again. */
+function keptChanged(panel: Panel | undefined, board: Board): Panel | undefined {
+  if (panel?.kind !== 'kept') return undefined
+  const item = keptItem(board, panel)
+  return item && item.modifiedAt !== panel.drawn ? { ...panel, drawn: item.modifiedAt } : undefined
+}
 
 /** What is pending, less what `board` no longer holds: a tab of a worker gone, a showing withdrawn. */
 const pendingOn = (pending: Pending, board: Board): Pending => ({
@@ -166,7 +201,7 @@ const pendingOn = (pending: Pending, board: Board): Pending => ({
   shown: pending.shown && findCard(board, pending.shown.id)?.shown.some((sh) => sh.target === pending.shown!.target) ? pending.shown : undefined,
 })
 
-export const appHandlers: Handlers<Db, AppEvent, AppEffect> = {
+export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> => ({
   board: attend,
   lost: attend,
   stored: attend,
@@ -195,7 +230,9 @@ export const appHandlers: Handlers<Db, AppEvent, AppEffect> = {
   view: (db, { view }) => [into({ ...db, view })],
   'board-applied': (db, { board }) => {
     const next = { ...db, pending: pendingOn(db.pending, board) }
-    return subjectLeft(next.panel, board) ? went(next, undefined) : [into(next), DRAW]
+    if (subjectLeft(next.panel, board, reads)) return [...went(next, undefined), ...leftSaid(next.panel)]
+    const kept = keptChanged(next.panel, board)
+    return kept ? went(next, kept) : [into(next), DRAW]
   },
   'replay-left': (db) => [into({ ...db, replay: undefined })],
-}
+})

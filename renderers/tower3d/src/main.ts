@@ -13,7 +13,7 @@ import { actionId, isFresh as isNewAction, offeredIds, declaredLayout, layoutKey
 import { deskVerbs, type DeskRegion } from './desk-verbs.ts'
 import { wireSpawn } from '/lib/spawn.js'
 import { hiringHandlers, noHires } from './hiring.ts'
-import { defaultLimits, projectOfKey, type FloorCollection, type FloorItem, type Lines, type Subject } from '/lib/board.js'
+import { defaultLimits, projectOfKey, type Lines, type Subject } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, tower, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Wait } from './api.ts'
 import { can, runVerb, boardErrorTitle, bubbleOf, untestedHtml, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, WORLD, ago, cardsOf, heededWaits, heededAsks, attentionOrder, askTransitions, isAsk, loudest, nextAttended, transitions, type Heed, type Move, type Ring, type Sound, type SpawnForm, current, findCard, gistLine, wordsOf, neighboursIn, sendTarget, shownTitle, spawnCall, spawnDefaults, statusColor, onStatusColor, sentHome, shownHref, shownKey, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml, type DaemonVerb } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
@@ -601,7 +601,9 @@ function renderPanel() {
   }
   if (panel.kind === 'thread') {
     const f = board.floors.find((f) => f.id === panel.project)
-    if (!(f ? floorThreadsOf(f) : []).some((t) => t.checkout === panel.checkout) || !reader.update(board)) return closeDoc()
+    // The app closes a thread gone from the board once the building takes the board (`board-applied`).
+    if (!f || !floorThreadsOf(f).some((t) => t.checkout === panel.checkout)) return
+    reader.update(board)
     const worker = workerIn(f!, panel.checkout)
     $('doc-head').innerHTML = threadHeadHtml(f!, panel.checkout, worker?.onDuty ? worker : undefined)
   }
@@ -616,6 +618,7 @@ function renderPanel() {
   }
   if (panel.kind === 'picture') {
     const picture = pictureOf(s.plan.galleries, board, panel.id, panel.target)
+    // A picture's gallery is the archive read's, not the board's alone: its draw closes it until that read is an event.
     if (!picture) return closeDoc()
     $('doc-head').innerHTML = pictureHeadHtml(picture.worker, picture.card?.onDuty ?? false, picture.shown, `#${hueOf(panel.id).getHexString()}`)
   }
@@ -629,16 +632,15 @@ function renderPanel() {
   if (panel.kind === 'doc') {
     const f = board.floors.find((f) => f.id === panel.project)
     const entry = f?.shelf?.[panel.n]
-    if (!f || !entry) return closeDoc()
+    if (!f || !entry) return
     $('doc-head').innerHTML = docHeadHtml(f, entry, tower.framed)
   }
   if (panel.kind === 'kept') {
     const f = board.floors.find((f) => f.id === panel.project)
     const c = f?.collections.find((c) => c.id === panel.collection)
     const item = c?.items.find((i) => i.id === panel.id)
-    if (!f || !c || !item) return (closeDoc(), toast('The item was deleted'))
+    if (!f || !c || !item) return
     $('doc-head').innerHTML = keptHeadHtml(f, c, item, keptTitle(f.id, c.id, item))
-    if (panel.drawn !== item.modifiedAt) drawKept(panel, c, item)
   }
 }
 
@@ -778,9 +780,8 @@ function focusLeft() {
 
 function closeDoc() {
   const open = panelNow()
-  if (open?.kind === 'stats') return go(undefined)
-  docClosed(open)
-  if (open?.kind === 'doc' || open?.kind === 'kept' || open?.kind === 'picture' || open?.kind === 'thread' || open?.kind === 'logbook') go(undefined)
+  if (open?.kind === 'logbook') docClosed(open)
+  if (open?.kind === 'doc' || open?.kind === 'kept' || open?.kind === 'picture' || open?.kind === 'thread' || open?.kind === 'stats' || open?.kind === 'logbook') go(undefined)
 }
 
 /** The reader closed as `open` leaves it, the logbook's screen among it. */
@@ -921,19 +922,21 @@ function closeGame() {
  * page: a frame in it inherits the shelf sandbox (an opaque origin, no forms, no storage), which breaks most web apps.
  * An `html` entry gets the board and the API through `tower.relay`; a renderer opens in the tower's own view when framed, else in a new tab.
  */
-async function openShelf(project: string, n: number, file?: string) {
+function openShelf(project: string, n: number, file?: string) {
   const entry = s.board!.floors.find((f) => f.id === project)?.shelf?.[n]
   if (!entry) return
   if ('link' in entry) return (unlock(), open(entry.link, '_blank', 'noopener'))
   if ('url' in entry) return tower.framed ? tower.ui('shelf', { project, n }) : (unlock(), open(entry.url, '_blank', 'noopener'))
   if (s.self?.project === project && s.self.n === n) return toast(`${entry.label} is where you are standing`)
   if ('renderer' in entry) return tower.framed ? tower.ui('shelf', { project, n }) : (unlock(), open(rendererUrl(entry.renderer), '_blank', 'noopener'))
-  closePanels()
+  closeGame()
   go({ kind: 'doc', project, n, file })
-  unlock()
-  show('paused', false)
-  show('doc', true)
-  renderPanel()
+}
+
+/** Entering a shelf entry in the reader: an `html` entry's page relayed, else its files listed and one read, the first unless `file` names one. */
+async function docEntered({ project, n, file }: Extract<Panel, { kind: 'doc' }>, from: Panel | undefined) {
+  readerEntered(from)
+  const entry = s.board!.floors.find((f) => f.id === project)!.shelf![n]
   if (shelfKind(entry) === 'html') return relayDoc(shelfUrl(project, n, shelfPage(entry)), { project, n })
   const files = await shelfFiles(project, n).catch((err: Error) => (toast(err.message), []))
   const shown = file ?? files[0]
@@ -964,33 +967,33 @@ function relayDoc(url: string, self: ShelfSelf) {
 function openKept(k: { project: string; collection: string; id: string }) {
   if (k.collection === DRAFTS && s.board && draftItem(s.board.floors, k.project, k.id)) return openNote(k.project, k.id)
   if (k.collection === GAMES) return openGame(k.project, k.id)
-  closePanels()
-  go({ kind: 'kept', ...k, drawn: undefined })
-  unlock()
-  show('paused', false)
-  show('doc', true)
-  renderPanel()
+  const item = s.board!.floors.find((f) => f.id === k.project)?.collections.find((c) => c.id === k.collection)?.items.find((i) => i.id === k.id)
+  if (!item) return toast('The item was deleted')
+  closeGame()
+  go({ kind: 'kept', ...k, drawn: item.modifiedAt })
 }
 
-/** The item's body, drawn again only when the item changes; a text read that fails says so with Read again. */
-async function drawKept(panel: Extract<Panel, { kind: 'kept' }>, c: FloorCollection, item: FloorItem) {
-  const drawing = { ...panel, drawn: item.modifiedAt }
-  patchPanel(drawing)
+/**
+ * Entering a kept item: its body read, a text read that fails said with Read again. Entered again from itself, as the
+ * item changes or is read again, the reader stays open on the body it shows until the new one is read.
+ */
+async function keptEntered(panel: Extract<Panel, { kind: 'kept' }>, from: Panel | undefined) {
+  if (from?.kind !== 'kept') readerEntered(from)
+  const c = floorOf(panel.project).collections.find((c) => c.id === panel.collection)!
+  const item = c.items.find((i) => i.id === panel.id)!
   if (!readsText(itemKind(item.id))) return ($('doc-body').innerHTML = keptFileHtml(c, item, `/${itemPath(panel.project, c.id, item.id)}`))
   const text = await keptText(panel.project, c.id, item.id).catch((err: Error) => {
-    if (panelNow() === drawing) $('doc-body').innerHTML = failedHtml(item.tag, err.message, 'data-kept-read')
+    if (panelNow() === panel) $('doc-body').innerHTML = failedHtml(item.tag, err.message, 'data-kept-read')
   })
-  if (text === undefined || panelNow() !== drawing) return
+  if (text === undefined || panelNow() !== panel) return
   $('doc-body').innerHTML = keptTextHtml(item, text, tower.prefs.attributes())
 }
 onAppearance(() => redrawKept())
 
-/** The kept item open is drawn again, read afresh. */
+/** The kept item open, read afresh. */
 function redrawKept() {
   const kept = panelAs('kept')
-  if (!kept) return
-  patchPanel({ ...kept, drawn: undefined })
-  renderPanel()
+  if (kept) go(kept)
 }
 
 /** Deleting is the user's, asked on a second press: the reader closes before the file goes. */
@@ -1004,17 +1007,17 @@ async function deleteKept(panel: Extract<Panel, { kind: 'kept' }>) {
 }
 
 /** A gallery's picture in the reader where you stand, as its desk's tab shows it; it counts as seen once opened. */
-async function openPicture(id: string, target: string) {
-  const picture = pictureOf(s.plan.galleries, s.board!, id, target)
-  if (!picture) return
-  const { worker, shown: sh } = picture
-  closePanels()
+function openPicture(id: string, target: string) {
+  if (!pictureOf(s.plan.galleries, s.board!, id, target)) return
+  closeGame()
   go({ kind: 'picture', id, target })
-  unlock()
-  show('paused', false)
-  show('doc', true)
+}
+
+/** Entering a picture: seen, and drawn in the reader, a markdown one once its text is read. */
+async function pictureEntered({ id, target }: Extract<Panel, { kind: 'picture' }>, from: Panel | undefined) {
+  readerEntered(from)
+  const { worker, shown: sh } = pictureOf(s.plan.galleries, s.board!, id, target)!
   see(sh)
-  renderPanel()
   $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes())
   if (!isMarkdown(sh)) return
   const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
@@ -1392,9 +1395,9 @@ const closesItself = () => {}
 const LEAVE: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>) => void } = {
   desk: focusLeft, shell: focusLeft, tv: focusLeft,
   floor: sideLeft, archive: sideLeft, directory: sideLeft,
-  doc: closesItself, kept: closesItself, picture: closesItself, elevator: closesItself,
-  'shell-pick': closesItself, logbook: closesItself, drawer: closesItself, draft: closesItself, thread: closesItself, game: closesItself,
-  stats: readerLeft,
+  elevator: closesItself,
+  'shell-pick': closesItself, logbook: closesItself, drawer: closesItself, draft: closesItself, game: closesItself,
+  stats: readerLeft, doc: readerLeft, kept: readerLeft, picture: readerLeft, thread: readerLeft,
 }
 
 /** What entering a panel does, by its kind, `from` the one open before; the panels the app doesn't move yet open themselves. */
@@ -1402,9 +1405,12 @@ const opensItself = () => {}
 const ENTER: { [K in Panel['kind']]: (panel: Extract<Panel, { kind: K }>, from: Panel | undefined) => void } = {
   desk: deskEntered, shell: shellEntered, 'shell-pick': shellPickEntered,
   floor: sideEntered, archive: sideEntered, directory: sideEntered,
-  doc: opensItself, kept: opensItself, picture: opensItself, elevator: opensItself,
-  tv: opensItself, logbook: opensItself, drawer: opensItself, draft: opensItself, thread: opensItself, game: opensItself,
-  stats: statsEntered,
+  elevator: opensItself,
+  tv: opensItself, logbook: opensItself, drawer: opensItself, draft: opensItself, game: opensItself,
+  stats: statsEntered, thread: threadEntered,
+  doc: (panel, from) => void docEntered(panel, from),
+  kept: (panel, from) => void keptEntered(panel, from),
+  picture: (panel, from) => void pictureEntered(panel, from),
 }
 
 /** What leaving and entering a desk's tab does: each lies over the terminal, which keeps its size. */
@@ -1428,7 +1434,7 @@ function drawPending() {
 /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
 const app = loop({
   state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
-  handlers: appHandlers,
+  handlers: appHandlers({ threadsOf: floorThreadsOf }),
   execute: {
     ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
     announce: () => {},
@@ -1443,6 +1449,7 @@ const app = loop({
     'desk/screen': ({ id }) => mountDeskScreen(findCard(s.board!, id)!),
     replays: () => dressReplays(),
     'fly-home': () => flyHome(),
+    toast: ({ text }) => toast(text),
     draw: () => void (drawAsked || ((drawAsked = true), requestAnimationFrame(drawPending))),
     focus: ({ selector }) => (drawPending(), document.querySelector<HTMLElement>(selector)?.focus()),
   },
@@ -2566,15 +2573,16 @@ function openThread(project: string, checkout: string) {
     app.dispatch({ type: 'pend', pending: { tab: { id: worker.id, tab: 'reviews' } } })
     return goDesk(worker.id)
   }
-  const t = floorThreadsOf(floorOf(project)).find((t) => t.checkout === checkout)
-  if (!t) return
-  closePanels()
+  if (!floorThreadsOf(floorOf(project)).some((t) => t.checkout === checkout)) return
+  closeGame()
   go({ kind: 'thread', project, checkout })
-  unlock()
-  show('paused', false)
-  show('doc', true)
+}
+
+/** Entering a review thread read away from any desk: its view mounted in the reader. */
+function threadEntered({ project, checkout }: Extract<Panel, { kind: 'thread' }>, from: Panel | undefined) {
+  readerEntered(from)
+  const t = floorThreadsOf(floorOf(project)).find((t) => t.checkout === checkout)!
   reader.open($('doc-body'), `reviews.thread:floor:${project}/${t.key}`)
-  renderPanel()
 }
 
 /**
