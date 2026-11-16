@@ -15,6 +15,7 @@
     "hub/extensions/reviews/server.ts#launch",
     "hub/extensions/reviews/server.ts#unreviewable",
     "hub/extensions/reviews/server.ts#ofCard",
+    "hub/extensions/reviews/server.ts#pinnedRefusal",
     "hub/extensions/reviews/extension.json",
     "hub/src/bridge/board.ts#withReports",
     "hub/extensions/reviews/client/reviews.ts#reviewerOf",
@@ -66,7 +67,7 @@ and how its findings reach the author.
   work that landed has nothing left to review), unless it is itself a reviewer
   ([`unreviewable`](ref:hub/extensions/reviews/server.ts#unreviewable)). `reviews/hire {project, of, by?, tell?}` refuses
   with the same reason, else spawns `{cut: {from: <author's checkout>}, prompt: '/reviews:review <CALLSIGN> [tell]',
-  x: {reviews: {of: <CALLSIGN>}}}`, a hire when `by` is given. Workers run it as `tower x reviews review <CALLSIGN> [--tell]`, a verb of its own over the same function, its caller the hirer. The skill is the extension's, `reviews:review` in its Claude plugin; the core's card has no `review` verb and the
+  x: {reviews: {of: <CALLSIGN>}}}`, a hire when `by` is given. Workers run it as `tower x reviews review <CALLSIGN> [--tell]`, a verb of its own over the same function, its caller the hirer. Both take `tower hire`'s launch options and pass them to the spawn as given, validated there as a hire's: `runtime`, `model`, `effort`, `callsign`, the named `argv` `command`, and other extensions' spawn fields in `x` (`--x '{"roles": {"role": "reviewer"}}'`). What a review means stays its own: the floor (the author's), the fork, the prompt and `x.reviews.of`; `cwd`, `cut`, `prompt`, `project` (on `review`) or an `x.reviews` given are refused as `invalid`, naming why ([`pinnedRefusal`](ref:hub/extensions/reviews/server.ts#pinnedRefusal)). A runtime whose board entry lists `slashCommands` among its `absent` features is refused: the prompt is the skill's slash command, which it can't run. The skill is the extension's, `reviews:review` in its Claude plugin; the core's card has no `review` verb and the
   mod ships no review skill.
 - *The skill* (`extensions/reviews/plugin/skills/review/SKILL.md`): read the goal (`tower agent`), the thread so far, and the diff
   (`git diff <towerBase>...HEAD` in the fork, the same change the author's Changes pane shows); run the project's
@@ -114,6 +115,13 @@ and how its findings reach the author.
   ([`carryChair`](ref:hub/renderers/tower3d/src/life.ts#carryChair)).
 
 **Alternatives considered.**
+- *A review that also takes a prompt or a cut.* Composition over optionality: a review is a spawn plus the fields it
+  pins, and the raw `spawn` is there for anything else. Pinned fields are refused, never dropped, so a caller learns
+  what the review owns.
+- *An opencode reviewer started on the skill's slash command.* opencode runs no slash command but `/compact`, and is
+  given the mod's skills only, not an extension's. On a sandbox one called the skill, got "Unable to load skill
+  reviews:review", then globbed the tower's own source for `SKILL.md` and reviewed from it: it worked only by luck,
+  so such runtimes are refused until extensions can give a runtime their skills.
 - *The reviewer works in the author's worktree.* Sees exactly the author's files, but its tests and builds write
   there while the author works. Rejected after the user's comment on the draft.
 - *A worktree on the author's branch.* Misses uncommitted work, which the Changes pane includes, and `cut` only
@@ -130,6 +138,6 @@ and how its findings reach the author.
 - *Gate Review on `floor.bases`*: a fork needs no base on origin, so floors of local repos would lose it; `floor.git`
   says what the fork needs.
 
-**Impact.** API: `spawn.cut.from`; `reviews/hire` and `floor.git` (1.95). Git: branch records `towerFork` and
+**Impact.** API: `spawn.cut.from`; `reviews/hire` and `floor.git` (1.95); the review verbs' launch options (2.6). Git: branch records `towerFork` and
 `towerFrom`; a fork's exposure counts only commits beyond its snapshot. Board: `card.x.reviews.of`, `card.crew`,
 `card.exempt`, `card.worktree.from`, the Review action. The reviews extension's plugin: the `review` and `threads` skills. Its words `review` and `send`.
