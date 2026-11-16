@@ -1,4 +1,5 @@
-import { fileSubject } from '/lib/board.js'
+import { can, fileSubject } from '/lib/board.js'
+import { UNRESUMABLE_TITLE, verbHint } from '/lib/cards.js'
 import { MAIN_CHECKOUT } from '/lib/files.js'
 import { fileButtonsHtml, fileCall } from '/lib/view.js'
 import { esc } from '/lib/words.js'
@@ -123,7 +124,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
 
   /** @type {string[]} */
   let repos = []
-  /** Each folder listed, by key. @type {Map<string, { entries: { name: string, kind: 'dir' | 'file', ignored?: true }[], more: number }>} */
+  /** Each folder listed, by key. @type {Map<string, { entries: { name: string, kind: 'dir' | 'file', ignored?: true }[], more: number, error?: undefined } | { error: string }>} */
   const listings = new Map()
   /** The folders open, by key. */
   const opened = new Set((await state.get(`open.${card.id}`)) ?? [])
@@ -150,6 +151,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   function rowsOf(repo, path, depth) {
     const listing = listings.get(keyOf(repo, path))
     if (!listing) return `<div class="row more" style="--depth:${depth}">…</div>`
+    if (listing.error) return `<div class="row more" style="--depth:${depth}"><span class="twist"></span><span class="name">couldn't be read: ${esc(listing.error)}</span></div>`
     const m = marks.get(repo) ?? {}
     const rows = listing.entries.map((e) => {
       const at = join(path, e.name)
@@ -178,8 +180,10 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   /** What the tree says when the checkout has no repo to list. */
   const emptyNote = () => {
     if (unreadable) return `The checkout couldn't be read: ${unreadable}`
-    if (card.worktree?.gone)
-      return `${card.callsign}'s worktree ${card.worktree.name} was removed, so there is nothing to read. Resuming the worker restores it from its branch when the branch still exists.`
+    if (card.worktree?.gone) {
+      const resume = card.unresumable ? UNRESUMABLE_TITLE[card.unresumable] : can(card, 'resume') ? verbHint('card', 'resume', card) : ''
+      return `${card.callsign}'s worktree ${card.worktree.name} was removed, so there is nothing to read. ${resume}`.trim()
+    }
     return 'This worker has no checkout the explorer can read.'
   }
 
@@ -203,12 +207,16 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
     listings.set(keyOf(repo, path), { entries: got.entries, more: got.more })
   }
 
+  /** `list`, a failed read kept as the listing's error for the tree to draw. */
+  const listOrSay = (repo, path) => list(repo, path).catch((err) => listings.set(keyOf(repo, path), { error: err.message }))
+
   /** The open folders, each listed again: those gone are closed. */
   const relist = () =>
     Promise.all(
       [...listings.keys()].map(async (key) => {
         const [repo, path] = partsOf(key)
         if (path && !opened.has(key)) return listings.delete(key)
+        if (!path) return listOrSay(repo, path)
         await list(repo, path).catch(() => (listings.delete(key), opened.delete(key)))
       }),
     )
@@ -217,7 +225,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
   async function expand(key) {
     const [repo, path] = partsOf(key)
     opened.add(key)
-    if (!listings.has(key)) await list(repo, path).catch(toast)
+    if (!listings.has(key)) await listOrSay(repo, path)
     keepOpened()
     paint()
   }
@@ -355,7 +363,7 @@ export async function mount(host, { tower, board: first, subject, kit, state }) 
 
   repos = (await read('repos').catch((err) => ((unreadable = err.message), { repos: [] }))).repos
   if (!(await state.get(`open.${card.id}`))) repos.forEach((repo) => opened.add(keyOf(repo, '')))
-  await Promise.all(repos.map((repo) => list(repo, '').catch(toast)))
+  await Promise.all(repos.map((repo) => listOrSay(repo, '')))
   for (const key of opened) {
     const [repo, path] = partsOf(key)
     if (path && repos.includes(repo)) await list(repo, path).catch(() => opened.delete(key))
