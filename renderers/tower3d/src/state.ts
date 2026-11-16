@@ -1,7 +1,7 @@
 import type { ChairKit, Chairs } from './chairs.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Act, CatNames, Held, Verb } from './acts.ts'
-import type { Brief, Card, Stats, tower } from './api.ts'
+import type { Brief, Card, tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
 import type { Renderer } from '/lib/board.js'
 import type { Note } from './cork.ts'
@@ -20,7 +20,6 @@ import type { Running } from './running.ts'
 import type { Pigeonhole } from './pigeonhole.ts'
 import type { Filing } from './filing.ts'
 import type { LogbookTab } from './ui.ts'
-import { STATS_ALL } from '/lib/stats.js'
 import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
 import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
 import { noHires, type Hiring } from './hiring.ts'
@@ -168,8 +167,6 @@ export type State = {
   fpsShown: boolean
   /** The web page of each project directory's origin remote. */
   origins: Record<string, string>
-  /** The Stats panel: the last read over `viewer.statsRange` and when, the scope shown, and the read in flight's number. */
-  stats: { read: Stats | undefined; failed: string | undefined; at: number | undefined; scope: string; reading: number }
 }
 
 const NO_PLATE = { width: 0, depth: 0 }
@@ -191,5 +188,4 @@ export const s: State = {
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
   meter: { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 },
   saved: undefined, muted: false, fpsShown: false, origins: {},
-  stats: { read: undefined, failed: undefined, at: undefined, scope: STATS_ALL, reading: 0 },
 }

@@ -3,6 +3,7 @@ import type { Clients } from './clients.ts'
 import type { Lighting } from './light/setting.ts'
 import type { Input } from './input.ts'
 import type { Music } from './music.ts'
+import type { Port } from './port.ts'
 import type { Stage } from './stage.ts'
 import type { Term } from './term.ts'
 
@@ -10,7 +11,7 @@ import type { Term } from './term.ts'
  * The started resources the page's modules read: main.ts and every module it imports, loaded once they are bound.
  * Bound once, before main.ts is imported; a read before then is a module loaded too early, and says so.
  */
-export type Shell = { clients: Clients; lighting: Lighting; stage: Stage; input: Input; music: Music; terminal: Term; assets: Assets }
+export type Shell = { clients: Clients; lighting: Lighting; stage: Stage; input: Input; music: Music; terminal: Term; assets: Assets; port: Port }
 
 let bound: Shell | undefined
 

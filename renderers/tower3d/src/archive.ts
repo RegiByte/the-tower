@@ -2,6 +2,8 @@ import { failureAt, failureOf, heldHandlers, noReads, reading, valueAt, valueOf,
 import type { Board, Card, Floor } from './api.ts'
 import { archivedCard, archiveKey, type ArchiveReads, archiveWant } from './cards.ts'
 import { readArchive } from './fixtures.ts'
+import { wallNow } from './clock.ts'
+import { shell } from './shell.ts'
 import { historyFrom } from './seating.ts'
 import { FILING } from './layout.ts'
 
@@ -12,13 +14,11 @@ import { FILING } from './layout.ts'
 
 const dayOf = (at: number) => new Date(at).setHours(0, 0, 0, 0)
 
-let arrived = () => {}
-let failed = (_: string) => {}
-/** Runs `then` whenever an archive read lands or fails, and `fail` with why whenever one fails, whether or not cards were read before. */
-export const onArchives = (then: () => void, fail: (message: string) => void) => ((arrived = then), (failed = fail))
-
 /** The board the reads were last asked against: a fixture board serves its own archive. */
 let readBoard: Board | undefined
+
+/** An archive read landed or failed, at the wall time a board it settles is planned at. */
+const landed = () => shell().port.dispatch({ type: 'archive/landed', at: wallNow() })
 
 const archives = loop({
   state: noReads<Card[]>() as ArchiveReads,
@@ -26,12 +26,12 @@ const archives = loop({
   execute: {
     read: reading((slot) =>
       readArchive(readBoard!, slot).catch((err: Error) => {
-        failed(err.message)
+        shell().port.dispatch({ type: 'archive/failed', message: err.message })
         throw err
       }),
     ),
-    draw: () => arrived(),
-    toast: () => arrived(),
+    draw: () => landed(),
+    toast: () => landed(),
   },
 })
 
@@ -42,6 +42,12 @@ export const watchArchives = (listener: Listener<unknown>) => archives.subscribe
 export function readArchives(board: Board) {
   readBoard = board
   for (const f of board.floors) archives.dispatch(archiveWant(board, f))
+}
+
+/** Reads every floor's archive at `board`'s keys, resolving once each has landed or failed to (`archivesSettled`). */
+export async function settledArchives(board: Board) {
+  readArchives(board)
+  await archives.until(() => archivesSettled(board))
 }
 
 /** Reads a floor's archive again now, as the archive panel's Read again asks. */

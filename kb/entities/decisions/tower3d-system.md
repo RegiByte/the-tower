@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal and the asset loads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, shell, and reads the others through one binding set as it starts. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
+  "summary": "Tower 3D's long-lived pieces (its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads and the port its reads send their events through) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself (main.ts) is the last resource, shell, and reads the others through one binding set as it starts. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
@@ -51,6 +51,9 @@
     "hub/renderers/tower3d/src/main.ts#readerEntered",
     "hub/renderers/tower3d/src/app.ts#followCabinet",
     "hub/renderers/tower3d/src/app.ts#took",
+    "hub/renderers/tower3d/src/app.ts#settled",
+    "hub/renderers/tower3d/src/port.ts#startPort",
+    "hub/renderers/tower3d/src/archive.ts#settledArchives",
     "hub/renderers/tower3d/src/app.ts#Building",
     "hub/renderers/tower3d/src/main.ts#worldApplied",
     "hub/renderers/tower3d/src/main.ts#planOf",
@@ -111,6 +114,11 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   big screens' [material](ref:hub/renderers/tower3d/src/tv.ts#screenMaterial) and the contact shadows' floor take a
   polygon offset.
 - *Music alone.* The chimes keep their own audio context: muting suspends the band's.
+- *The reads that land reach the app through one port.* The archive reads and the titles read from notes', kept
+  items' and games' texts start before the app that handles what they bring. They send their events to `port`
+  ([`startPort`](ref:hub/renderers/tower3d/src/port.ts#startPort)), a resource with no dependencies, and `main.ts`
+  attaches the app to it once it is made: the one late binding between the page's event sources and its app. An
+  event sent before the app attached throws, naming the source.
 
 **The app loop.** The page's decisions live in one machine, `app` (the shared loop, [[machines]]), as the tower page's
 do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/renderers/tower3d/src/app.ts); its
@@ -118,8 +126,8 @@ executors are in `main.ts`, where the DOM and the building are. Every panel kind
 cabinet's drawer, which still opens and closes itself through a bridge (`openSide`, `closeSide`).
 - *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): what the building took (below), the panel open, attention, the view, the desk's tab,
   what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on), a replay, and
-  what moves on its own (`motion`), what is aimed at and held (`aim`), and whether walking has the mouse (`capture`), each
-  below.
+  what moves on its own (`motion`), what is aimed at and held (`aim`), whether walking has the mouse (`capture`), each
+  below, the board waiting for its floors' archives (`waiting`), and the Stats panel's read (`stats`).
   Readers call `app.state()` (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `main.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
   anything written every frame stay out of it.
@@ -157,9 +165,18 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   many transitions asked; [`drawPending`](ref:hub/renderers/tower3d/src/main.ts#drawPending) draws them now, which a
   stepped door frame does as a real frame would, and which a `focus` effect does first, since it needs what the draw
   writes. An effect that needs the drawn DOM calls it first; a handler never does. Each visible change has its `draw` in `tower3d.events()`, so a missing one shows ([[tower3d-door]]).
-- *The building takes a board by an event.* `board-settled`, dispatched once a board's archives are read, carries what the building takes ([`Building`](ref:hub/renderers/tower3d/src/app.ts#Building)): the
-  board, the shelf entry this page is, each floor's archive as read for it and the wall time it is planned at. Its pure
-  handler ([`took`](ref:hub/renderers/tower3d/src/app.ts#took)) keeps it in the db first, then returns in order: a
+- *The building takes a board by an event.* `board/arrived` keeps the board in the db as `waiting`, a later one
+  replacing it, and its `archives/read` effect reads each floor's archive at the board's keys, then dispatches
+  `archives/asked`. That and every read landing or failing (`archive/landed`, sent through the port) take the board
+  waiting once every floor's archive is read at its keys, or failed to be
+  ([`settled`](ref:hub/renderers/tower3d/src/app.ts#settled), through `AppReads.archivesSettled`), so no board is
+  taken with an archive older than itself; `archive/landed` also files the cabinets again (`filings`) and draws. The
+  first board reads its archives before it is dispatched
+  ([`settledArchives`](ref:hub/renderers/tower3d/src/archive.ts#settledArchives)), so it is taken within the
+  start's own dispatch and a failure taking it fails the start ([[tower3d-start]]). What the building takes
+  ([`Building`](ref:hub/renderers/tower3d/src/app.ts#Building)) is the board, the shelf entry this page is, each
+  floor's archive as read for it (`AppReads.archivedAt`) and the wall time it is planned at, which the event that
+  settles it carries. Its pure handler ([`took`](ref:hub/renderers/tower3d/src/app.ts#took)) keeps it in the db first, then returns in order: a
   firework for each turn finished, `waits/began` for the lamps, an `asked` toast for each ask begun and not dismissed,
   `world/apply`, each showing arrived (opened on its tab at its open desk), the replay ended if its desk left, the
   panel closes below, `logbooks` and `elevator`, and the desk or shell pending gone to once the plan stands it.
@@ -194,6 +211,11 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   [`galleryAfter`](ref:hub/renderers/tower3d/src/layers.ts#galleryAfter)). The caches of what the walker bumps
   into, what blocks a look and where the monitors stand stay keyed by the plan: they read the desks, the meeting
   chairs and the meshes, which change with any board, not only with the building's shape.
+- *Reads that land are events.* A title's text arriving (`titles/arrived`, through the port) draws the panels, and
+  the notes' boards or the arcade's cabinets again (`notes`, `cabinets`). The Stats panel's read is the db's
+  (`stats`): entering the panel and its minute's poll send `stats/read`, which numbers the read and returns
+  `stats/fetch`; its answer comes back as `stats/landed` or `stats/failed` with that number, and one overtaken lands
+  on nothing. A range changed (`stats/range`) drops what is held; the scope shown is `stats/scope`.
 - *What sets the view outside a panel* (the overview) sends a `view` event; a pet sets it with the `pet` that starts it.
 - *Motion is timestamps.* A ride, a camera flight, a cut and a pet are plain data in the db
   ([`Motion`](ref:hub/renderers/tower3d/src/app.ts#Motion)): when each started (simulated ms), vectors and rotations
@@ -254,9 +276,9 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
 - *esbuild's `--splitting`*: main becomes a real ES module chunk and native ESM tolerates cycles. It treats the
   symptom: cycles still hand out half-made bindings, the start order stays implicit, and the build gains hashed chunks
   the boot check would have to follow. It remains a separate size and caching choice.
-- *Late binding by hand* (callbacks set at wire-up, a registry): the page already does it four times
-  (`onArchives`, `onTitles`, `onKeptTitles`, `onGameTitles`). Each is a cycle hidden at run time, and the topology
-  stays code spread across modules.
+- *Late binding by hand* (callbacks set at wire-up, a registry): the page did it four times (`onArchives`,
+  `onTitles`, `onKeptTitles`, `onGameTitles`) until the reads became events through the port. Each was a cycle hidden
+  at run time, and the topology stayed code spread across modules.
 - *The parked split by concern* (eleven modules cut by responsibility, branch `tower/percival-32`): one strongly
   connected component of all eleven. Removing the top-level await lets it boot, but it keeps the cycle and its
   load-order hazards.

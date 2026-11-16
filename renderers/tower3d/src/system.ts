@@ -5,6 +5,7 @@ import { startInput } from './input.ts'
 import { startMusic } from './music.ts'
 import { startLighting } from './light/setting.ts'
 import { stage as stageShown } from './loading.ts'
+import { startPort } from './port.ts'
 import { bindShell, type Shell } from './shell.ts'
 import { startStage } from './stage.ts'
 import { startTerminal } from './term.ts'
@@ -20,6 +21,7 @@ import { startTerminal } from './term.ts'
  *   music     the band, made on the first play (music.ts)
  *   terminal  the desk's terminal, mounted in the panel (term.ts)
  *   assets    the models, the kit and the faces, loading; the page draws once they are in (loads.ts)
+ *   port      where the reads that land send their events, the app attached once it is made (port.ts)
  *   shell     the page itself: main.ts, imported once the resources it reads are bound (shell.ts)
  */
 
@@ -45,8 +47,10 @@ const terminal = defineResource({ start: startTerminal, halt: (started) => start
 
 const assets = defineResource({ start: startAssets, halt: () => {} })
 
+const port = defineResource({ start: startPort, halt: () => {} })
+
 const shell = defineResource({
-  dependencies: ['clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets'],
+  dependencies: ['clients', 'lighting', 'stage', 'input', 'music', 'terminal', 'assets', 'port'],
   start: async (started: Shell) => {
     stageShown('models')
     bindShell(started)
@@ -55,4 +59,4 @@ const shell = defineResource({
   halt: () => {},
 })
 
-export const tower3d = { lighting, clients, stage, input, music, terminal, assets, shell }
+export const tower3d = { lighting, clients, stage, input, music, terminal, assets, port, shell }
