@@ -13,13 +13,13 @@
     "hub/renderers/tower3d/src/ui.ts#logbookHtml",
     "hub/renderers/tower3d/src/ui.ts#sessionsHtml",
     "hub/renderers/tower3d/src/ui.ts#logbookTabsHtml",
-    "hub/renderers/tower3d/src/main.ts#logbookTab",
+    "hub/renderers/tower3d/src/panels.ts#logbookTab",
     "hub/renderers/tower3d/src/ui.ts#stampHtml",
     "hub/renderers/tower3d/src/ui.ts#drawerSideHtml",
-    "hub/renderers/tower3d/src/main.ts#replay",
-    "hub/renderers/tower3d/src/main.ts#mountDeskScreen",
+    "hub/renderers/tower3d/src/panels.ts#replay",
+    "hub/renderers/tower3d/src/panels.ts#mountDeskScreen",
     "hub/renderers/tower3d/src/building.ts#dressReplays",
-    "hub/renderers/tower3d/src/main.ts#openLogbook",
+    "hub/renderers/tower3d/src/panels.ts#openLogbook",
     "hub/renderers/tower3d/src/screens.ts#replayTexture",
     "hub/renderers/tower3d/src/archive.ts#readArchives",
     "hub/renderers/tower3d/src/archive.ts#drawersOf",
@@ -49,14 +49,14 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
 - **The Logbook tab** is the desk panel's brief tab (the tower page keeps "Brief"): a chip per session of the lineage,
   oldest first, the running one live, over the lineage brief ([`logbookHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookHtml)),
   which reads as the tower page's does ([[brief-turns]]): each turn's steps, a tool call opened read once and kept
-  for the next draw ([`readWhole`](ref:hub/renderers/tower3d/src/main.ts#readWhole) for a conversation's earlier
+  for the next draw ([`readWhole`](ref:hub/renderers/tower3d/src/panels.ts#readWhole) for a conversation's earlier
   turns), read again as the worker's card moves while it is open, at its end while you read there
-  ([`freshLogbooks`](ref:hub/renderers/tower3d/src/main.ts#freshLogbooks)). A resume given no prompt of its own shows the same last
+  ([`freshLogbooks`](ref:hub/renderers/tower3d/src/panels.ts#freshLogbooks)). A resume given no prompt of its own shows the same last
   screen as the session it resumed (Claude reprints the conversation), so its chip says "resumed, no new turns"
   ([`sessionsHtml`](ref:hub/renderers/tower3d/src/ui.ts#sessionsHtml), from the shared `resumedIdle`).
-- **Replay** ([`replay`](ref:hub/renderers/tower3d/src/main.ts#replay)): a past session's chip puts that session's
+- **Replay** ([`replay`](ref:hub/renderers/tower3d/src/panels.ts#replay)): a past session's chip puts that session's
   last screen in the panel, read-only (`screen/<session>`, which the tower rebuilds from its log), sepia and stamped
-  with its time ([`mountDeskScreen`](ref:hub/renderers/tower3d/src/main.ts#mountDeskScreen)), and on the desk's
+  with its time ([`mountDeskScreen`](ref:hub/renderers/tower3d/src/panels.ts#mountDeskScreen)), and on the desk's
   monitor in the world ([`replayTexture`](ref:hub/renderers/tower3d/src/screens.ts#replayTexture),
   [`dressReplays`](ref:hub/renderers/tower3d/src/building.ts#dressReplays)), where it stays after the panel closes until
   live is chosen again or the worker leaves. A replay is the session's last screen, not a playback over time: the API
@@ -73,8 +73,8 @@ nothing is stored or added to the core ([[renderer-is-disposable]]).
   last drawer holding every older day too. A drawer pulled out
   ([`poseFiling`](ref:hub/renderers/tower3d/src/filing.ts#poseFiling)) lists its folders beside the world
   ([`drawerSideHtml`](ref:hub/renderers/tower3d/src/ui.ts#drawerSideHtml)); a folder opens the worker's logbook in the
-  reader ([`openLogbook`](ref:hub/renderers/tower3d/src/main.ts#openLogbook)) on two tabs
-  ([`logbookTabsHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookTabsHtml), [`logbookTab`](ref:hub/renderers/tower3d/src/main.ts#logbookTab)):
+  reader ([`openLogbook`](ref:hub/renderers/tower3d/src/panels.ts#openLogbook)) on two tabs
+  ([`logbookTabsHtml`](ref:hub/renderers/tower3d/src/ui.ts#logbookTabsHtml), [`logbookTab`](ref:hub/renderers/tower3d/src/panels.ts#logbookTab)):
   Logbook, the brief, which it opens on, and Screen, the session chips over a session's last screen, mounted only while
   it shows. The archive panel's rows open the same reader, and the keymap's `pane-*` commands switch its tabs
   ([[keymap]]).
