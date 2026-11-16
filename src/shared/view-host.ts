@@ -19,7 +19,7 @@ const MOUNT_MS = 10_000
  * if a view calls it. `spawn` is told `open`, whether the view that asked still stands. The host makes `region` and
  * `showing`, and keeps `terminal` and `bus` to close what a view opened with them.
  */
-export type Lent = Partial<Pick<Kit, 'terminal' | 'display' | 'toast' | 'notice' | 'confirm' | 'run' | 'go' | 'bus' | 'href' | 'location'>> & {
+export type Lent = Partial<Pick<Kit, 'terminal' | 'display' | 'toast' | 'notice' | 'confirm' | 'run' | 'go' | 'bus' | 'href' | 'location' | 'now'>> & {
   spawn?(on: Subject, open: () => boolean): Promise<string | undefined>
 }
 

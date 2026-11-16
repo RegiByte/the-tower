@@ -166,9 +166,11 @@ export const busOf = (): Bus => {
  * is of (a draft: on that draft) for a view that keeps its place: the id of the worker it started, which the renderer
  * awaits as it arrives, or nothing once it closed without one or the view closed first (the renderer then goes to the
  * worker), or when `on` is of no floor on the board; a form already open is brought back, answering nothing (@since
- * 1.146); `run('spawn', on)` opens the same form and goes to the worker. A renderer lends what its `renderer.json` kit
- * names; a view uses `href`, `showing`, `location` and `spawn` when they are lent, so a renderer without them still
- * hosts the views that do.
+ * 1.146); `run('spawn', on)` opens the same form and goes to the worker; `now`, the renderer's clock, in ms since the
+ * epoch, which a view stamps what it reads with, so a renderer whose clock is pinned (a fixture, a page opened at an
+ * instant) shows how long ago it read the same on every load (@since 2.8). A renderer lends what its `renderer.json`
+ * kit names; a view uses `href`, `showing`, `location`, `spawn` and `now` when they are lent, so a renderer without
+ * them still hosts the views that do.
  */
 export type Kit = {
   /** `job/<id>`: a job's screen, read only, following the job's size (@since 1.150). */
@@ -185,6 +187,7 @@ export type Kit = {
   showing?(subject: Subject): void
   location?(): Readonly<Location> | undefined
   spawn?(on: Subject): Promise<string | undefined>
+  now?(): number
 }
 
 /**

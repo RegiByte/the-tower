@@ -56,7 +56,9 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   differ from what the script writes, so a change to what the bridge derives regenerates them, and a fixture draws
   what the board would while the page reaches nothing in `src/`. The page fetches the file only on a fixture page
   ([`fixtureBoards`](ref:hub/renderers/tower3d/src/fixtures.ts#fixtureBoards)), and its wall clock is the fixture's
-  instant ([`clock.ts`](ref:hub/renderers/tower3d/src/clock.ts)): an `?at` naming another is refused. Fixtures are
+  instant ([`clock.ts`](ref:hub/renderers/tower3d/src/clock.ts)): an `?at` naming another is refused. Tower 3D lends
+  that clock to the views it hosts as the kit's `now` ([`viewHosting`](ref:hub/renderers/tower3d/src/hosting.ts#viewHosting)),
+  so a read a view stamps (the Changes') is as old on every load. Fixtures are
   built in UTC, and frames, the tour and the boot check open Chrome in UTC, so every machine draws the same hour. A
   fixture's screens open no streams: there is no host behind it, and replies landing
   between steps would make frames differ.
