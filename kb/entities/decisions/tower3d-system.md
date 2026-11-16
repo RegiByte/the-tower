@@ -166,7 +166,8 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   [`worldApplied`](ref:hub/renderers/tower3d/src/main.ts#worldApplied), the `world/apply` executor, rebuilds and
   reconciles the world and writes what it shows outside the panels, and dispatches nothing: it reads the db the
   handler left, with the panel still the one open before the board, as the world did before the panels close. Steps
-  run on the db the step before left (`steps`), so no executor dispatches inside the transition.
+  run on the db the step before left (`steps`). `world/apply` dispatches nothing; what `redraw`, `desk/go` and
+  `shell/go` dispatch (a close, a cut, an arrival) is handled after the transition.
 - *A panel whose subject left closes in the board handler, not the draw.* The board handler closes the panel whose
   subject the board no longer holds ([`subjectLeft`](ref:hub/renderers/tower3d/src/app.ts#subjectLeft)): a desk's worker gone, a
   shell ended, a floor removed, a shelf entry, a kept item, a game or a review thread gone, a floor no longer keeping
@@ -210,9 +211,11 @@ cabinet's drawer, which still opens and closes itself through a bridge (`openSid
   executor starts (`fly-home`, a big screen or a game entered) is dispatched from it, so it lands in the db once the
   transition's other effects have run; only frames read it.
 - *The replan is a timer.* The board handler starts a `replan` timer for the plan's `until` (the next worker leaving
-  for the break room), firing `replan` with `at: until`, so it plans as a frame just after would. A pinned clock (`?at=`,
-  every fixture) never replans: the handler is told once whether the clock moves (`AppReads.clockMoves`). A replan
-  plans the same board again at that instant and keeps the archive snapshot it was taken with: only a new board takes
+  for the break room), and a plan with no end cancels the one an earlier plan started. It fires `replan-due`, whose
+  `replan/at` effect reads the wall clock and dispatches `replan` at `until` or later: a timer a hidden tab or a
+  napping window fires late plans for when it fired, as the first frame after `until` would, never the past. A pinned
+  clock (`?at=`, every fixture) never replans: the handler is told once whether the clock moves
+  (`AppReads.clockMoves`). A replan plans the same board again at that instant and keeps the archive snapshot it was taken with: only a new board takes
   a new read, so a newer board's reads half landed can't unseat a floor's workers while it waits. The cost, accepted:
   a floor whose archive read failed for a board and was read again seats its workers only at the next board.
 - *Aim is written on change.* [`tickAim`](ref:hub/renderers/tower3d/src/main.ts#tickAim) still raycasts every frame,

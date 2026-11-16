@@ -1476,6 +1476,7 @@ const app = loop({
     'game/frame': ({ project, id }) => frameCabinet(cabinetOf(planNow(), project, id)!),
     redraw: () => renderPanel(),
     logbooks: () => freshLogbooks(boardNow()!),
+    'replan/at': ({ until }, dispatch) => dispatch({ type: 'replan', at: Math.max(until, wallNow()) }),
     'desk/go': ({ id }) => toDesk(id),
     'shell/go': ({ id }) => toShell(id),
     draw: () => void (drawAsked || ((drawAsked = true), requestAnimationFrame(drawPending))),

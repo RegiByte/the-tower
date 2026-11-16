@@ -135,7 +135,9 @@ export type AppEvent =
   | { type: 'view'; view: View }
   /** A board whose floors' archives are read: the building takes it, planned as `building` says. */
   | { type: 'board-settled'; building: Building }
-  /** The plan stopped holding by time alone at wall time `at` (its `until`): the building plans its board again then. */
+  /** The plan stops holding by time alone at wall time `until`: its timer fired, maybe late. */
+  | { type: 'replan-due'; until: number }
+  /** The building plans its board again at wall time `at`, `until` or later when the timer fired late. */
   | { type: 'replan'; at: number }
   | { type: 'ride'; ride: Ride }
   | { type: 'ride-arrived' }
@@ -189,6 +191,8 @@ export type AppEffect =
   | { type: 'asked'; ask: Board['asks'][number] }
   /** A showing new since the board before: its worker holds it up and you hear it, said unless you sit at its desk. */
   | { type: 'shown/arrived'; id: string; target: string; atDesk: boolean }
+  /** `replan` dispatched at the wall clock's time, never before `until`. */
+  | { type: 'replan/at'; until: number }
   /** The game open framed again on its cabinet, which moved along. */
   | { type: 'game/frame'; project: string; id: string }
   /** The panels drawn now: a drawer whose folder left or a picture that left its gallery closes in its draw. */
@@ -456,9 +460,15 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
   )
 }
 
-/** The building planned again once its plan stops holding by time alone, while the clock moves and the plan has an end. */
-const replanAt = (building: Building, plan: Plan, reads: AppReads): AppEffect[] =>
-  reads.clockMoves && Number.isFinite(plan.until) ? [{ type: 'timer/start', id: 'replan', ms: Math.max(0, plan.until - building.at), fire: { type: 'replan', at: plan.until } }] : []
+/**
+ * The building planned again once its plan stops holding by time alone, while the clock moves; a plan with no end
+ * cancels the timer an earlier plan started.
+ */
+function replanAt(building: Building, plan: Plan, reads: AppReads): AppEffect[] {
+  if (!reads.clockMoves) return []
+  if (!Number.isFinite(plan.until)) return [{ type: 'timer/cancel', id: 'replan' }]
+  return [{ type: 'timer/start', id: 'replan', ms: Math.max(0, plan.until - building.at), fire: { type: 'replan-due', until: plan.until } }]
+}
 
 /** The desk's tab goes to `to`. */
 const tabTo = (db: Db, id: string, to: TabTo): AppEffect[] => [into({ ...db, deskTab: tabName(to) }), ...tabbed(db.deskTab, id, to), DRAW]
@@ -491,6 +501,7 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   pend: (db, { pending }) => [into({ ...db, pending: { ...db.pending, ...pending } })],
   view: (db, { view }) => [into({ ...db, view })],
   'board-settled': (db, { building }) => took(db, building, reads),
+  'replan-due': (_db, { until }) => [{ type: 'replan/at', until }],
   /** The same board planned again at `at`, its archive as read for it kept: only a new board takes a new read. */
   replan: (db, { at }) => (db.building ? took(db, { ...db.building, at }, reads) : []),
   ride: (db, { ride }) => [into(moved(db, { ride })), { type: 'elevator' }],
