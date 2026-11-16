@@ -1,8 +1,7 @@
 import { startSystem } from 'braided'
 import { prefetch } from './files.ts'
 import { FIXTURE } from './fixture-name.ts'
-import { startLighting } from './light/setting.ts'
-import { drop, fail, stage } from './loading.ts'
+import { drop, fail } from './loading.ts'
 import { tower3d } from './system.ts'
 import type { Door } from './door.ts'
 
@@ -12,7 +11,7 @@ import type { Door } from './door.ts'
  */
 if (FIXTURE !== undefined) drop()
 prefetch()
-const started = startLighting().then(() => (stage('models'), startSystem(tower3d))).then(({ errors }) => {
+const started = startSystem(tower3d).then(({ errors }) => {
   if (errors.size === 0) return
   const why = [...errors].map(([id, err]) => `${id}: ${err.message}`).join(' · ')
   fail(`start: ${why}`)

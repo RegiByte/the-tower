@@ -36,7 +36,7 @@ import { checkWardrobe } from './closet.ts'
 import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
-import { chooseLighting, LIT, lightingSection } from './light/setting.ts'
+import { chooseLighting, lightingSection } from './light/setting.ts'
 import { fillLayer, loadKit, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, levelOf, levelsShown, onLevel, showLevels } from './levels.ts'
 import { DESK_DRESS, dress, pickOf } from './dress.ts'
@@ -77,6 +77,7 @@ import { boardFace, buildWorld, paintDirectory, panelGrid, setDoors, setLimits, 
 import { shell } from './shell.ts'
 
 const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, keepUnsent, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, cardReviews, floorThreadsOf, threadCheckout, keepsThreads: floorKeepsThreads, probedLines } = shell().clients
+const { lit } = shell().lighting
 
 const $ = (id: string) => document.getElementById(id)!
 const show = (id: string, on: boolean) => $(id).classList.toggle('hidden', !on)
@@ -1484,7 +1485,7 @@ let settingsBy: Element = $('hud')
 const settingsEl = $('settings')
 const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 function paintSettings() {
-  const html = settingsHtml([soundSection(seeing.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(s.lighting)])
+  const html = settingsHtml([soundSection(seeing.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(s.lighting, lit)])
   if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
 }
 placeOnOpen(settingsEl, () => settingsBy)
@@ -1794,7 +1795,7 @@ const covered = () => panelNow()?.kind === 'desk' || panelNow()?.kind === 'shell
 function render() {
   frameScene()
   renderer.render(scene, camera)
-  if (LIT) bloom(renderer, scene, camera)
+  if (lit) bloom(renderer, scene, camera)
   Object.assign(s.meter, { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles })
   if (s.hands && handsShown()) drawHands(renderer, s.hands)
 }
@@ -1803,7 +1804,7 @@ function render() {
 function frameScene() {
   if (s.board && s.world) paintScreens(s.simNow, screenDistance)
   showLevels(levelsShown(s))
-  if (LIT) lightFrame()
+  if (lit) lightFrame()
 }
 
 /** The lighting's passes before the scene is drawn: the rig fitted to what is seen, and the contact shadows under your level, all counted on the meter. */

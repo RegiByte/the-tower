@@ -2,15 +2,20 @@ import * as THREE from 'three'
 import { type } from '/lib/design.js'
 import { WORLD } from './cards.ts'
 import { rigRamp } from './light/rig.ts'
-import { LIT } from './light/setting.ts'
 
-/** A three-step ramp: MeshToonMaterial's flat cartoon banding. */
+/** A three-step ramp: MeshToonMaterial's flat cartoon banding, the rig's bands once the lighting is on (`lightRamp`). */
 const RAMP = (() => {
-  const t = LIT ? rigRamp() : new THREE.DataTexture(new Uint8Array([95, 95, 95, 255, 180, 180, 180, 255, 255, 255, 255, 255]), 3, 1, THREE.RGBAFormat)
+  const t = new THREE.DataTexture(new Uint8Array([95, 95, 95, 255, 180, 180, 180, 255, 255, 255, 255, 255]), 3, 1, THREE.RGBAFormat)
   t.minFilter = t.magFilter = THREE.NearestFilter
   t.needsUpdate = true
   return t
 })()
+
+/** Bands every toon material by the light rig's ramp: before anything is drawn, as a material reads it once compiled. */
+export function lightRamp() {
+  RAMP.image = rigRamp().image
+  RAMP.needsUpdate = true
+}
 
 const shared = new Map<string, THREE.MeshToonMaterial>()
 
