@@ -2325,24 +2325,31 @@ function onKey(code: string, repeat: boolean): boolean {
   return true
 }
 
+/** Keys the building took on their first press and that are still down: their repeats are taken too, whatever is aimed by then. */
+const takenDown = new Set<string>()
+
 /** A key the building answered is taken (`preventDefault`): framed in the tower, the tower runs its own command only for a key left alone. */
 document.addEventListener('keydown', (e) => {
   if (e.defaultPrevented || asking() || commandKey(e)) return
   // A replayed screen takes no input, so Esc ends the replay even while that screen has focus.
   if (e.code === 'Escape' && replayNow() !== undefined && replayNow()!.id === atDesk()) return (e.preventDefault(), replay(replayNow()!.id, undefined))
   if (!s.board || typing() || e.metaKey || e.ctrlKey || e.altKey) return
+  // A verb that ran on the first press changes what is aimed at: the key still down is no longer offered, and each repeat would beep.
+  if (e.repeat && takenDown.has(e.code)) return e.preventDefault()
   // A key the page leaves alone goes back to the app around it: Tower.app's WKWebView beeps on each one.
   if (MOVE_KEYS.has(e.code) && viewNow() === 'walk' && (captured() || document.activeElement === document.body)) e.preventDefault()
   // A verb may focus a field (the spawn dialog's prompt): its key must not be typed into it.
   if (offerOnKey(e.code)) e.preventDefault()
   if (onKey(e.code, e.repeat)) e.preventDefault()
+  if (e.defaultPrevented && !e.repeat) takenDown.add(e.code)
 })
 
 document.addEventListener('keyup', (e) => {
+  takenDown.delete(e.code)
   if (aimNow().hold?.by === e.code) unhold()
 })
 /** A key or button released while the page has no focus never reports it: a hold is a confirmation only while it is seen. */
-addEventListener('blur', unhold)
+addEventListener('blur', () => (takenDown.clear(), unhold()))
 document.addEventListener('visibilitychange', unhold)
 /** A file's Finder and editor buttons work in every panel, before the panel's own click handling sees the click. */
 document.addEventListener(
