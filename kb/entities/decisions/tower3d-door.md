@@ -2,12 +2,12 @@
 {
   "type": "decision",
   "name": "Tower 3D has a door for agents",
-  "summary": "Tower 3D exposes a typed window.tower3d surface (state, teleport, aimAt, press, key, drive, step, shot) over an intent-driven input layer and a steppable, seeded clock, and renders fabricated boards in place of the live one, so agents test it deterministically.",
+  "summary": "Tower 3D exposes a typed window.tower3d surface (state, teleport, aimAt, press, key, drive, step, shot, events) over an intent-driven input layer and a steppable, seeded clock, and renders fabricated boards in place of the live one, so agents test it deterministically.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
+  "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/main.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#fixtureBoards", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
 **Problem.** Agents build Tower 3D, and tested it by brute force: stubbing pointer lock, dispatching synthetic
@@ -33,6 +33,15 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
   first board is built and rejects with why a start failed ([`failStart`](ref:hub/renderers/tower3d/src/main.ts#failStart),
   [[tower3d-start]]), so a check fails at once on a file that would not load. The door plays no music, rings nothing
   and never stores the walker's spot.
+- `events()` is what Tower 3D's machines did: the last 200 events its loops handled (`seeing`, `hiring`, `spawning`,
+  `statsPolling` in `main.ts`, `archives` in `archive.ts`), each with the effects its handler returned and `at`, the
+  simulated clock, kept by [`eventRecord`](ref:hub/renderers/tower3d/src/record.ts#eventRecord) through each loop's
+  `subscribe` ([[machines]]), so an effect a handler forgot (a draw) shows as missing. The record keeps references and
+  makes them plain only when read ([`plain`](ref:hub/renderers/tower3d/src/record.ts#plain)): a Set, Map, Date or
+  three.js object comes through `drive --eval`'s JSON as a tagged object (`{ $set: [...] }`, `{ $three: type, name }`)
+  rather than `{}`. Each record is numbered, and `events(n)` answers only those after `n`: a `seeing` state carries the
+  whole board, so a reader stepping through a walk asks for what is new. `main.ts` builds the record and hands its read
+  to the door through the `Engine`, so no module imports another for it.
 - `?board=<name>` renders a fabricated board, one of [`FIXTURES`](ref:hub/scripts/tower3d-fixtures.ts#FIXTURES),
   a list of boards delivered one by one through `advance`, so what happens between boards can be recorded. Scenarios
   state facts; callsign, the worker's lifecycle ([`lifeOf`](ref:hub/src/bridge/life.ts#lifeOf)), its crew
