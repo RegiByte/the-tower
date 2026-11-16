@@ -30,12 +30,15 @@
     "hub/renderers/tower3d/src/app.ts#appHandlers",
     "hub/renderers/tower3d/src/app.ts#went",
     "hub/renderers/tower3d/src/app.ts#subjectLeft",
+    "hub/renderers/tower3d/src/app.ts#AppReads",
     "hub/renderers/tower3d/src/main.ts#LEAVE",
     "hub/renderers/tower3d/src/main.ts#ENTER",
     "hub/renderers/tower3d/src/main.ts#TAB_ENTER",
     "hub/renderers/tower3d/src/main.ts#drawPending",
     "hub/renderers/tower3d/src/main.ts#deskEntered",
     "hub/renderers/tower3d/src/main.ts#docClosed",
+    "hub/renderers/tower3d/src/main.ts#readerEntered",
+    "hub/renderers/tower3d/src/main.ts#followCabinet",
     "hub/renderers/tower3d/src/main.ts#onBoard",
     "hub/renderers/tower3d/src/door.ts#Engine"
   ]
@@ -94,8 +97,8 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
 
 **The app loop.** The page's decisions live in one machine, `app` (the shared loop, [[machines]]), as the tower page's
 do in its `page` loop ([[web-tower]]). Its pure part is [`app.ts`](ref:hub/renderers/tower3d/src/app.ts); its
-executors are in `main.ts`, where the DOM and the building are. The panel families move into it a leg at a time;
-the desk, the shell and the shell picker are in, the rest still open and close themselves through a bridge.
+executors are in `main.ts`, where the DOM and the building are. Every panel kind moves through it but a filing
+cabinet's drawer, which still opens and closes itself through a bridge (`openSide`, `closeSide`).
 - *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): the panel open, attention, the view, the desk's tab,
   what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on) and a replay.
   Readers call `app.state()` (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `main.ts`; the door through
@@ -103,49 +106,73 @@ the desk, the shell and the shell picker are in, the rest still open and close t
   per-frame motion stay out of it.
 - *`go` moves a panel* ([`went`](ref:hub/renderers/tower3d/src/app.ts#went)), the page's `go` over Tower 3D's
   `Panel` union: the open panel is left unless the next stays in its room (desks, shells and the big screen share
-  one, the view focused on them), the next is entered, and a `draw` follows. Entering a desk or shell focuses the
-  view; leaving that room for anything else walks again, with a `fly-home`. `go` is a transition: a change to the
+  one, `ROOM`), the next is entered, and a `draw` follows; a kind entered again from itself is entered again, not
+  left. Entering a desk, a shell, the big screen or a game focuses the view (`FOCUSES`); leaving one for a panel
+  that doesn't walks again, with a `fly-home`. Two names for two things: a game focuses the view but shares no
+  room, so a desk gone to from a game leaves the game. `go` is a transition: a change to the
   open panel's own data (a read landing, a filter typed, a tray unfolded) is `panel`, which patches it and draws,
   never leaving or entering, and throws for a panel that isn't the open one's kind. A desk opens on its screen, then on the
   tab and the showing pending for it, all in the same transition. A desk's tabs move the same way inside it (`tab`,
   with `tab/leave` and `tab/enter`); a tab entered again is entered again, so the logbook is read again.
 - *Leave and enter are tables by kind* ([`LEAVE`](ref:hub/renderers/tower3d/src/main.ts#LEAVE),
   [`ENTER`](ref:hub/renderers/tower3d/src/main.ts#ENTER), [`TAB_ENTER`](ref:hub/renderers/tower3d/src/main.ts#TAB_ENTER)),
-  total over `Panel['kind']`. A kind not yet moved has an empty entry, `closesItself` or `opensItself`, and its
-  opener still does its DOM, then calls `go` to set the panel. Until those kinds move, entering a desk, a shell or
-  the picker closes the side, the reader and the draft editor itself, as the old openers did
-  ([`deskEntered`](ref:hub/renderers/tower3d/src/main.ts#deskEntered)); a game stays open under a desk gone to,
-  as before.
+  total over `Panel['kind']`. An opener is a check and a `go`; a closer is a `go(undefined)`. The drawer's entries
+  are empty (`closesItself`, `opensItself`) and its opener still shows the side; the shell picker's leave is empty
+  and the side hides it; the elevator's are empty, since it draws nothing of its own (`renderElevator` shows the car's
+  panel from where you stand). So every enter still hides the side and the picker (`sideClosed`), as
+  [`deskEntered`](ref:hub/renderers/tower3d/src/main.ts#deskEntered) does. The reader's kinds share one enter and
+  leave ([`readerEntered`](ref:hub/renderers/tower3d/src/main.ts#readerEntered),
+  [`docClosed`](ref:hub/renderers/tower3d/src/main.ts#docClosed)); entered again from its own kind, which isn't
+  left, the reader is closed before it opens again, except a kept item, which keeps the body it shows until the new
+  one is read. What a panel's keys go to once drawn is a `focus` effect from a table by kind (`FOCUS_ON`: the
+  picker's first place, the archive's filter, the draft's text).
 - *Handlers return every effect at once, the db first.* The loop applies `state` when it meets it, so an executor
   reads the new db, and none dispatches while a transition runs: an event dispatched from an executor waits until
-  the transition's effects have all run, after the state they assumed. That is why the old closes are split into
-  what they hide (`sideClosed`, [`docClosed`](ref:hub/renderers/tower3d/src/main.ts#docClosed), `draftClosed`) and
-  the `go(undefined)` they send: an enter runs only the first. A close that asked which panel was open asks the
-  `from` its enter is handed.
+  the transition's effects have all run, after the state they assumed. So an enter or a leave hides and shows, and
+  never sends `go`: a close that would (`closeSide`, kept for the drawer) is split into what it hides
+  (`sideClosed`) and the `go(undefined)` it sends, and an enter runs only the first. A close that asked which panel
+  was open asks the `from` its enter is handed. A leave that must not do what it usually does is told by the state
+  it finds, not by a flag: the draft editor's leave saves the draft open, and a close that must not save (a draft
+  deleted, sent or gone) lets the draft go first.
 - *Draw is state to DOM, once a frame.* `draw` asks for the panels to be drawn at the next animation frame, however
   many transitions asked; [`drawPending`](ref:hub/renderers/tower3d/src/main.ts#drawPending) draws them now, which a
   stepped door frame does as a real frame would, and which a `focus` effect does first, since it needs what the draw
   writes. An effect that needs the drawn DOM calls it first; a handler never does. Each visible change has its `draw` in `tower3d.events()`, so a missing one shows ([[tower3d-door]]).
 - *A panel whose subject left closes in the board handler, not the draw.* `board-applied`, dispatched where
-  [`onBoard`](ref:hub/renderers/tower3d/src/main.ts#onBoard) used to draw the panel, closes a desk whose worker left or
-  a shell that ended ([`subjectLeft`](ref:hub/renderers/tower3d/src/app.ts#subjectLeft)), and drops what is pending
-  that the board no longer holds (a tab of a worker gone, a showing withdrawn), so what a desk opens on is derived
-  from the board it arrives on; the db keeps a showing's target, never a copy of it. `onBoard` still draws at
-  once after it, for the kinds whose draw still closes them; it dispatches `replay-left` where a replay's desk left the
-  building, and goes to a pending desk or shell, until the board itself is an event.
-- *What sets the view outside a panel* (the overview, petting, a game, the big screen) sends a `view` event until it
-  moves.
+  [`onBoard`](ref:hub/renderers/tower3d/src/main.ts#onBoard) used to draw the panel, closes the panel whose subject the
+  board no longer holds ([`subjectLeft`](ref:hub/renderers/tower3d/src/app.ts#subjectLeft)): a desk's worker gone, a
+  shell ended, a floor removed, a shelf entry, a kept item, a game or a review thread gone, a floor no longer keeping
+  drafts. A kept item deleted says so in a `toast` effect. What it reads through an extension's client (a floor's
+  review threads, whether it keeps drafts) is handed to the handlers once, as pure reads
+  ([`AppReads`](ref:hub/renderers/tower3d/src/app.ts#AppReads)), so `app.ts` never reaches `shell()`. It drops what
+  is pending that the board no longer holds (a tab of a worker gone, a showing withdrawn), so what a desk opens on is
+  derived from the board it arrives on; the db keeps a showing's target, never a copy of it. A kept item whose file
+  changed is entered again, so its body is read again (`drawn` names the `modifiedAt` it was read for); no draw
+  reads a body or writes the db.
+- *What the board handler can't decide yet.* Three closes need the plan or the archive read, not the board alone,
+  and wait for the board to be an event with the plan a selector over it (P3), each removed then:
+  - a drawer whose folder left and a picture that left its gallery (both the archive read's) still close in their
+    draw, and `onBoard` draws at once after `board-applied` only while one of them is open;
+  - [`followCabinet`](ref:hub/renderers/tower3d/src/main.ts#followCabinet), in `onBoard` right after `board-applied`
+    beside `syncCabinets`, closes a game whose cabinet the arcade no longer stands and frames again one a game kept
+    since moved along.
+  `onBoard` also dispatches `replay-left` where a replay's desk left the building, and goes to a pending desk or
+  shell.
+- *What sets the view outside a panel* (the overview, petting) sends a `view` event.
 - *A leg that moves a family*:
   - gives its kinds `LEAVE` and `ENTER` entries and folds its opener and closer into them and `go`, its data
     updates into `panel`;
-  - for a kind the view focuses on (the big screen, a game), adds it to `FOCUSED` and to what `went` enters focused,
-    and drops its `view` event, in one change;
+  - for a kind the view focuses on, adds it to `FOCUSES`, and to `ROOM` only if it shares the desk's room, and drops
+    its `view` event, in one change;
   - adds a clause for each kind to `subjectLeft` and deletes the draw's own close for it (`return closeX()` in
     `renderPanel`) in the same commit, or it closes twice;
+  - gives a subject check that needs an extension's pure read that read as a handler dependency (`AppReads`), never
+    through `shell()`; one that needs the plan or a read outside the board waits for P3, its close left in the draw;
+  - moves a body read or a state write out of the draw into the enter, or into `board-applied` entering it again;
   - drops its close from the bridge closes the moved kinds' enters run;
   - records `tool:frames` before and after: state, panel markup and pictures identical, the events changed as the
     transitions say.
-  When the last family moves, `onBoard`'s synchronous draw after `board-applied` goes, and its `draw` is the only one.
+  The drawer is the last to move, with P3; then `onBoard`'s synchronous draw goes, and `draw` is the only one.
 
 **Alternatives considered.**
 - *esbuild's `--splitting`*: main becomes a real ES module chunk and native ESM tolerates cycles. It treats the
@@ -160,7 +187,8 @@ the desk, the shell and the shell picker are in, the rest still open and close t
 
 **Impact.** The start order is the graph, and a failure names its resource. The import-time effects left the leaf
 modules; `main.ts` keeps its own (its listeners, timers, the board's subscription) until later
-passes move them. The desk and shell panels change state only through the app loop, and their draw writes nothing
-back; the other panel families follow the same steps. The capture (`still`, the door's hold) stays outside the db:
+passes move them. Every panel but the drawer changes state only through the app loop, and the draw writes nothing
+back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
+`spawning`), it stays out of the panel union. The capture (`still`, the door's hold) stays outside the db:
 `lock` and `unlock` write it from everywhere, executors among them, so it moves with them as effects.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.
