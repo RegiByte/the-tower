@@ -5,7 +5,7 @@ import { startAssets } from './loads.ts'
 import { startClients } from './clients.ts'
 import { startInput } from './input.ts'
 import { startMusic } from './music.ts'
-import { startLighting, type Lighting } from './light/setting.ts'
+import { fixtureLighting, startLighting, type Lighting } from './light/setting.ts'
 import { fixtureClock, startClock, type Clock } from './clock.ts'
 import { stage as stageShown } from './loading.ts'
 import { startPort } from './port.ts'
@@ -194,7 +194,7 @@ export const liveTower3d = { tower, clock, lighting, clients, stage, input, musi
 /**
  * A fixture page (`?board=<name>`): the live record with the resources that differ swapped, the page itself the same.
  * The fixture's file is a resource; the tower answers from it with the live one's interface, the clock stands at the
- * instant it was built at, and the feed delivers its boards.
+ * instant it was built at, the lighting is `?lighting=off`'s, and the feed delivers its boards, drawn from its start.
  */
 export const fixtureTower3d = (name: string) => ({
   ...liveTower3d,
@@ -204,6 +204,7 @@ export const fixtureTower3d = (name: string) => ({
     start: (started: { fixture: Fixture; clients: Clients }) => fixtureTower(started),
     halt: () => {},
   }),
+  lighting: defineResource({ dependencies: ['tower'], start: fixtureLighting, halt: () => {} }),
   clock: defineResource({ dependencies: ['fixture'], start: ({ fixture }: { fixture: Fixture }) => fixtureClock({ name, at: fixture.file.at }), halt: () => {} }),
   feed: defineResource({
     dependencies: [...FEEDS_ON, 'fixture'],

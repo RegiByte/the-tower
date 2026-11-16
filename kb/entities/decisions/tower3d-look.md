@@ -82,8 +82,9 @@ way to turn it off.
 - *It applies on reload.* The ramp and the shader patches are fixed as materials are made, and the shadow map is
   renderer state. The popover's section
   ([`lightingSection`](ref:hub/renderers/tower3d/src/light/setting.ts#lightingSection)) stores the choice and offers
-  "Reload to apply" while the page draws something other than what was chosen. A fixture page (`?board=`) reads no
-  store and takes `?lighting=off`. The lab never starts the lighting.
+  "Reload to apply" while the page draws something other than what was chosen. A fixture page (`?board=`) starts
+  [`fixtureLighting`](ref:hub/renderers/tower3d/src/light/setting.ts#fixtureLighting) instead, which takes
+  `?lighting=off`; what it chooses stays in the page's own store. The lab never starts the lighting.
 - *Off* lights the building and city by the outside's hemisphere, sun and ambient alone, with the three-step toon
   ramp.
 

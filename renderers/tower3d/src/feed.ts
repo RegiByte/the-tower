@@ -176,6 +176,7 @@ export type FixtureFeedDeps = FeedDeps & { fixture: Fixture }
 /** A fixture's boards, delivered by the door one after another (`advance`): the first once the models are in. */
 export function startFixtureFeed(started: FixtureFeedDeps): Feed {
   const { port, fixture } = started
+  started.frames.drawEachFrame()
 
   function onFixtureBoard(next: Board) {
     port.dispatch({ type: 'board', board: next })

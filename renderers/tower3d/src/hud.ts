@@ -14,7 +14,6 @@ import { sharing } from './tv.ts'
 import { carBox, inside } from './layout.ts'
 import { lightingSection } from './light/setting.ts'
 import { elevatorHtml, hudHtml } from './ui.ts'
-import { FIXTURE } from './fixture-name.ts'
 import { s } from './state.ts'
 import type { Music } from './music.ts'
 import type { Toasts } from './toasts.ts'
@@ -124,7 +123,7 @@ export function startHud(started: HudDeps) {
 
   function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
     s.viewer = { ...s.viewer, [field]: value }
-    if (FIXTURE === undefined) tower.store.set(VIEWER_KEYS[field], value)
+    tower.store.set(VIEWER_KEYS[field], value)
   }
 
   /** The actions you have seen, by `actionId`, across every renderer of yours. */
