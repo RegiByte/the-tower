@@ -115,9 +115,11 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   `fixtureTower3d(name)`, the live one with the resources that differ swapped: a `fixture` resource that reads the
   file ([`startFixture`](ref:hub/renderers/tower3d/src/fixtures.ts#startFixture)), the `tower` that answers from it
   with the live one's interface ([`fixtureTower`](ref:hub/renderers/tower3d/src/fixtures.ts#fixtureTower)), a clock
-  pinned at the instant it was built at ([`fixtureClock`](ref:hub/renderers/tower3d/src/clock.ts#fixtureClock)), and a
-  feed that delivers its boards ([`startFixtureFeed`](ref:hub/renderers/tower3d/src/feed.ts#startFixtureFeed)) over the
-  live feed's core. `boot.ts` reads `?board=` once and starts one record or the other, and no module asks which page
+  pinned at the instant it was built at ([`fixtureClock`](ref:hub/renderers/tower3d/src/clock.ts#fixtureClock)), the
+  lighting `?lighting=off` gives, and a feed that delivers its boards
+  ([`startFixtureFeed`](ref:hub/renderers/tower3d/src/feed.ts#startFixtureFeed)) over the live feed's core, drawn
+  from its start (the frames' `drawEachFrame`). A fixture page keeps what the viewer chooses in its own store, which
+  fires on its own writes as the live one does, so the page reacts to them the same way. `boot.ts` reads `?board=` once and starts one record or the other, and no module asks which page
   it is on. What a fixture page writes stays in it: its store is kept in the page, its calls and runs are refused,
   and it recalls no kept spot, so the sandbox it is served by never reaches it.
 - *The lighting bands the ramp.* Lit, the lighting's start bands every toon material by the rig's ramp
@@ -156,7 +158,7 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   or dispatches to it is added only once the app is attached: the HUD's and the panels' are each gathered in a
   `listen` the app calls as it attaches, the HUD's before its own and the panels' after, so none can run before the
   app exists (a resource's start is an `await import` away from the next). A flag one resource keeps
-  and another set is a function on its owner (the panels' `askDraw`, the frames' `beginDrawing` and `play`, the
+  and another set is a function on its owner (the panels' `askDraw`, the frames' `beginDrawing`, `drawEachFrame` and `play`, the
   editor's last save a cell hiring exposes).
 - *No cycles.* [`importCycles`](ref:hub/scripts/tower3d-boot.ts#importCycles) in `test:tower3d-boot` walks the import
   graph esbuild reads for the four pages and fails, naming the modules, on any cycle. The one there was (`layout`,

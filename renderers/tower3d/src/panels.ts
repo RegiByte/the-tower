@@ -25,7 +25,6 @@ import { SHELL_SCROLLBACK } from '/lib/terminal.js'
 import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, pictureHeadHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, panesOf } from '/lib/keys.js'
 import type { Clock } from './clock.ts'
-import { FIXTURE } from './fixture-name.ts'
 import { CHANGES, THREAD } from './hosting.ts'
 import type { Archive } from './archive.ts'
 import { GAMES, gameItem } from './games.ts'
@@ -760,7 +759,6 @@ export function startPanels(started: PanelsDeps) {
 
   /** Your record as `tower.store` keeps it now: another renderer of yours may have changed it. */
   function rereadViewer() {
-    if (FIXTURE !== undefined) return
     rereadLayout()
     readViewer(tower.store.get).then((read) => {
       const was = s.viewer

@@ -20,7 +20,6 @@ import type { Screens } from './screens.ts'
 import { isVideo, type Pictures } from './showing.ts'
 import { type Turn } from './input.ts'
 import type { Clock } from './clock.ts'
-import { FIXTURE } from './fixture-name.ts'
 import { poseFiling } from './filing.ts'
 import { fitPicture, placePicture } from './gallery.ts'
 import { s } from './state.ts'
@@ -89,12 +88,18 @@ export function startFrames(started: FramesDeps) {
     measure(now, performance.now() - start)
   }
 
-  /** Whether frames draw: a live page draws nothing until its first board is built and its shaders compiled (`startOn`). */
-  let drawing = FIXTURE !== undefined
+  /**
+   * Whether frames draw: a live page draws nothing until its first board is built and its shaders compiled (`startOn`),
+   * a fixture page from its start.
+   */
+  let drawing = false
+
+  /** Frames draw from now on. */
+  const drawEachFrame = () => void (drawing = true)
 
   /** Frames draw from now on, this one at once. */
   function beginDrawing() {
-    drawing = true
+    drawEachFrame()
     render()
   }
 
@@ -416,5 +421,5 @@ export function startFrames(started: FramesDeps) {
 
   requestAnimationFrame(frame)
 
-  return { beginDrawing, play, render, frameScene, update }
+  return { beginDrawing, drawEachFrame, play, render, frameScene, update }
 }
