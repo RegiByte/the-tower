@@ -66,11 +66,14 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
 - Frames' two scenarios. The walk ([`frames.scenario.js`](ref:hub/scripts/frames.scenario.js)) crosses the building on
   every fixture board, each stage's state and scene PNG. The panel routes
   ([`frames.panels.js`](ref:hub/scripts/frames.panels.js)) run on the boards that reach them (busy, logbook, review):
-  each kind of panel opened the way a user does, worked and closed, each route starting from walking with nothing
-  open. A stage keeps the door's state, a hash of each panel shown (its markup normalized to tags, kept attributes,
+  each kind of panel opened the way a user does and worked, then left with one Escape and recorded as
+  `<route>-closed`, each route starting from walking with nothing open. Its header lists the panels no fixture board
+  reaches. A stage keeps the door's state, a hash of each panel shown (its markup normalized to tags, kept attributes,
   text and input values, written beside the recording to diff) and the events Tower 3D's loops handled since the stage
   before, as `<loop>:<event>→<effects>`, so a panel that draws differently or a machine that does something else shows
-  as such. What the real clock decides is left out: toasts, which leave on a timer, and a read's `data-since`.
+  as such. What the real clock decides is left out: toasts, which leave on a timer, and a read's `data-since`. A stage
+  is taken once the panels hold still for 150 ms of real time; one still changing after 3 s carries an `error`, so a
+  slow read shows as a failed step rather than a stray difference.
   Handing a note to a desk reaches the sandbox's API, which knows no fixture session and refuses it, so that route
   records the note still carried and puts it back.
 
