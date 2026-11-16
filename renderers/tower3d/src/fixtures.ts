@@ -107,11 +107,15 @@ export const readBlob: typeof tower.blob =
 export const readArchive = (board: Board, project: string): Promise<Card[]> =>
   FIXTURE === undefined ? tower.archive(project) : Promise.resolve(archives.get(board)!.filter((c) => c.project === project))
 
-/** A fixture worker's saved conversations: one per session it ran as, each resuming the one before, the latest first. */
+/**
+ * A fixture worker's saved conversations: one per session it ran as, each resuming the one before, the latest first.
+ * Its own session saves none until it is prompted.
+ */
 function fixtureBriefs(c: Card): Brief[] {
   const conversation = c.conversations[0]
   const of = (i: number) => c.lineage[i] && { ...c.lineage[i], callsign: c.callsign }
-  return c.lineage.map((session, i) => {
+  const saved = conversation ? c.lineage : c.lineage.slice(0, -1)
+  return saved.map((session, i) => {
     const last = i === c.lineage.length - 1
     const prompt = last ? (conversation?.prompt ?? '') : `Session ${i + 1}: pick up where the last one stopped`
     const answer = last ? conversation?.answer : `Stopped after session ${i + 1}; saved for a resume.`
