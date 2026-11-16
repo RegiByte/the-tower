@@ -68,7 +68,8 @@
     "hub/renderers/tower3d/src/hud.ts#startHud",
     "hub/renderers/tower3d/src/navigation.ts#startNavigation",
     "hub/renderers/tower3d/src/panels.ts#startPanels",
-    "hub/renderers/tower3d/src/app-loop.ts#startAppLoop"
+    "hub/renderers/tower3d/src/app-loop.ts#startAppLoop",
+    "hub/renderers/tower3d/src/controls.ts#startControls"
   ]
 }
 ---
