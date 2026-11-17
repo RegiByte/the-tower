@@ -35,6 +35,7 @@ import type { Music } from './music.ts'
 import type { Term } from './term.ts'
 import type { Events } from './events.ts'
 import type { Toasts } from './toasts.ts'
+import type { Assets } from './loads.ts'
 import { $, onAppearance, show } from './dom.ts'
 import { DRAWN_PANES, MOVE_OF } from './keymap-here.ts'
 import { nowOf } from './now.ts'
@@ -48,7 +49,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the panels resource is started with. */
-export type PanelsDeps = { clock: Clock; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; pictures: Pictures }
+export type PanelsDeps = { clock: Clock; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; pictures: Pictures }
 
 export type Panels = ReturnType<typeof startPanels>
 
@@ -853,7 +854,7 @@ export function startPanels(started: PanelsDeps) {
 
   /** Your layout as `tower.store` keeps it now, the desk drawn again when it changed. */
   function rereadLayout() {
-    const name = s.declared?.name
+    const name = started.assets.got()?.declared?.name
     if (!name) return
     tower.store.get(layoutKey(name)).then((kept) => {
       const stored = (kept ?? undefined) as Layout | undefined

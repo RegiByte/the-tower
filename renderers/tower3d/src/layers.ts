@@ -12,6 +12,8 @@ import { openStation, type AwaySlot, type DanceFloor, type DeskSlot, type GuestS
 import { arrival, carryChair, carryIn, leaver, moveTo, originOf } from './life.ts'
 import { seatedness } from './rig.ts'
 import type { Titles } from './titles.ts'
+import type { Models } from './models.ts'
+import type { Kit } from './kit.ts'
 import { tintOf } from './palette.ts'
 import { buildDanceFloors, makeGuest, type DanceFloors, type Guest } from './party.ts'
 import { buildVideoWall, videoWallKey } from './room.ts'
@@ -85,21 +87,24 @@ const kindOfDesk = (desk: Desk) => (desk.meeting ? (desk.meeting.stand ? 'stand'
 const seatedAt = (desk: Desk, id: string) => {
   const arriving = s.arrivals.get(id)
   if (desk.meeting?.stand) return 0
-  return !arriving ? 1 : arriving.sat > 0 ? seatedness(s.models!.cast, desk.avatar.rig) : 0
+  return !arriving ? 1 : arriving.sat > 0 ? seatedness(desk.models.cast, desk.avatar.rig) : 0
 }
 
 /** The dressing's slots of the desk a worker sits at, in that desk's states: a reviewer's are its author's. */
-export const slotsAt = (author: Card, now: number) => deskSlots(pickOf(author, new Date(now).getMonth(), s.kit!.prefabs[DESK_DRESS]).slots)
+export const slotsAt = (kit: Kit, author: Card, now: number) => deskSlots(pickOf(author, new Date(now).getMonth(), kit.prefabs[DESK_DRESS]).slots)
 
-export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: DeskReads, now: number): Layer<DeskAt, Desk> => ({
+/** What the layers make their things from, as loaded. */
+export type Art = { models: Models; kit: Kit }
+
+export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: DeskReads, now: number, { models, kit }: Art): Layer<DeskAt, Desk> => ({
   slots: (p) => floors(p).flatMap((level) => level.desks.map((slot) => {
     const author = slot.beside ? level.desks.find((d) => d.card.id === slot.beside)!.card : slot.card
     return [slot.card.id, { slot, level: level.index, y: level.y, author }] as [string, DeskAt]
   })),
   level: (at) => at.level,
   make({ slot, y, author }, _key, p) {
-    const slots = slotsAt(author, now)
-    const desk = slot.meeting ? makeSeat(slot.card, s.models!, slots, slot.meeting.stand, slot.meeting.play, reads) : slot.beside ? makeVisitor(slot.card, s.models!, slots, reads) : makeDesk(slot.card, s.models!, slots, reads)
+    const slots = slotsAt(kit, author, now)
+    const desk = slot.meeting ? makeSeat(slot.card, models, slots, slot.meeting.stand, slot.meeting.play, reads) : slot.beside ? makeVisitor(slot.card, models, slots, reads) : makeDesk(slot.card, models, slots, reads)
     act(desk.group, { kind: 'desk', id: slot.card.id }, [])
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
     desk.group.position.set(slot.x, y, slot.z)
@@ -117,7 +122,7 @@ export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: Desk
       if (desk.avatar.root.visible) s.moves.set(slot.card.id, originOf(p, desk, seatedAt(desk, slot.card.id)))
       return false
     }
-    situate(desk, slotsAt(author, now))
+    situate(desk, slotsAt(kit, author, now))
     syncDesk(desk, slot.card, reads)
     desk.group.position.set(slot.x, y, slot.z)
     desk.group.rotation.y = slot.turn * DEG
@@ -127,7 +132,7 @@ export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: Desk
   leave(desk, id, p) {
     if (desk.avatar.root.visible) {
       const level = p.levels.find((l) => l.y === desk.group.position.y)!.index
-      const l = leaver(p, desk, level, seatedAt(desk, id), s.models!)
+      const l = leaver(p, desk, level, seatedAt(desk, id), models)
       s.leavers.add(l)
       toLevel(level, l.group)
       if (kindOfDesk(desk) === 'beside') carryChair(l, desk)
@@ -150,29 +155,32 @@ const lookOf = (project: string, lit: boolean, away: AwaySlot | undefined): Stat
  * Every workstation nobody sits at, by floor and number: the free ones, the open one lit while its floor can spawn,
  * and those whose workers are in a meeting room, saying where.
  */
-export const STATIONS: Layer<StationAt, Station> = {
-  slots: (p) => floors(p).flatMap((level) => [
-    ...level.free.map((slot) => {
-      const open = slot === openStation(level)
-      return [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open, lit: open && can(level.floor, 'spawn') }] as [string, StationAt]
-    }),
-    ...level.away.map((slot) => [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open: false, lit: false, away: slot }] as [string, StationAt]),
-  ]),
-  level: (at) => at.level,
-  make(at, _key, p) {
-    const station = makeStation(s.models!)
-    STATIONS.keep(station, at, p)
-    return station
-  },
-  keep(station, { slot, y, project, open, lit, away }) {
-    syncStation(station, lookOf(project, lit, away))
-    if (away) act(station.group, { kind: 'desk', id: away.card.id }, [])
-    else act(station.group, { kind: 'station', project, n: slot.n, open }, [])
-    station.group.position.set(slot.x, y, slot.z)
-    station.group.rotation.y = slot.turn * DEG
-    return true
-  },
-  root: (station) => station.group,
+export const stationsOf = (models: Models): Layer<StationAt, Station> => {
+  const layer: Layer<StationAt, Station> = {
+    slots: (p) => floors(p).flatMap((level) => [
+      ...level.free.map((slot) => {
+        const open = slot === openStation(level)
+        return [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open, lit: open && can(level.floor, 'spawn') }] as [string, StationAt]
+      }),
+      ...level.away.map((slot) => [`${level.floor.id}/${slot.n}`, { slot, level: level.index, y: level.y, project: level.floor.id, open: false, lit: false, away: slot }] as [string, StationAt]),
+    ]),
+    level: (at) => at.level,
+    make(at, _key, p) {
+      const station = makeStation(models)
+      layer.keep(station, at, p)
+      return station
+    },
+    keep(station, { slot, y, project, open, lit, away }) {
+      syncStation(station, lookOf(project, lit, away))
+      if (away) act(station.group, { kind: 'desk', id: away.card.id }, [])
+      else act(station.group, { kind: 'station', project, n: slot.n, open }, [])
+      station.group.position.set(slot.x, y, slot.z)
+      station.group.rotation.y = slot.turn * DEG
+      return true
+    },
+    root: (station) => station.group,
+  }
+  return layer
 }
 
 type NoteAt = { project: string; id: string; tag: string; modifiedAt: number; level: number; x: number; y: number; z: number; tint: string }
@@ -309,19 +317,19 @@ export const filingsOf = (drawersAt: Archive['drawersAt']): Layer<{ level: Floor
 })
 
 /** Today's off-duty workers at the roof's party. Where each stands is set every frame, from the time (src/life.ts#guestAt). */
-export const GUESTS: Layer<GuestSlot, Guest> = {
+export const guestsOf = (models: Models): Layer<GuestSlot, Guest> => ({
   slots(p) {
     const roof = p.levels.at(-1)!
     return roof.kind === 'roof' ? roof.guests.map((slot) => [slot.card.id, slot]) : []
   },
   level: (_, p) => p.levels.length - 1,
-  make: (slot) => makeGuest(slot.card, s.models!),
+  make: (slot) => makeGuest(slot.card, models),
   keep(g, slot) {
     g.card = slot.card
     return true
   },
   root: (g) => g.group,
-}
+})
 
 /** The roof's dance floors, while anyone dances, rebuilt when which floors there are, or where, changes. */
 export const DANCE: Layer<{ floors: DanceFloor[]; y: number; key: string }, DanceFloors & { key: string }> = {

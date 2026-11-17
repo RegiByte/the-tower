@@ -166,12 +166,17 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   `meetings`, `zones`, `breaks`) is broken by [`prefab.ts`](ref:hub/renderers/tower3d/src/prefab.ts).
 - *The loads are a resource that hands out a promise.* [`startAssets`](ref:hub/renderers/tower3d/src/loads.ts#startAssets)
   starts loading the models, the kit, the faces, the viewer's kept spot and the renderer's settings, and returns
-  `loaded`, which settles once all are in. Its start does not wait for them: the page reads its viewer and subscribes
+  `loaded`, which settles once all are in, and `got`, what loaded once it has: `loaded` settles only after `got`
+  holds it, so whatever runs on `loaded` reads `got` too. Its start does not wait for them: the page reads its viewer and subscribes
   to the board while they load, so a page behind another tab still rings ([[tower3d-start]]). The feed, which
   starts the first board once the models are in, handles a failed load only once it is imported, after most other
   resources, so `loaded` is marked handled: a resource that fails first skips the feed, and the loading screen already
   says why. The loading screen's models stage is lit by `feed` as it starts, so "your settings" shows while the settings are read. Its module is `loads.ts` because `src/assets.d.ts` types the asset imports, and a module named
-  `assets.ts` would shadow it.
+  `assets.ts` would shadow it. What is made from the models as they land is made by the resource that keeps it, at
+  the feed's landing, in the landing's order (the world's chair kit, the frames' hands), so their materials are made
+  when they always were; the world reads the models and the kit through `got` and fails, naming the broken order, if
+  a board reaches it first. A layer that makes things from the models is made from them (`stationsOf`, `guestsOf`,
+  `desksAfter`'s `Art`).
 - *Moving an import can move pixels.* three.js orders opaque draws by `material.id`, and ids are handed out as
   materials are made, many of them as their module is evaluated. A change to what is imported first renumbers them,
   which flips the draw order of any two surfaces within the depth buffer's precision of each other, so a refactor can

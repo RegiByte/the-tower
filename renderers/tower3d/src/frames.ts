@@ -7,7 +7,8 @@ import { drawCompass, pointers } from './compass.ts'
 import { poseDesk, poseRigs, type Desk } from './desk.ts'
 import { tickFireworks } from './fireworks.ts'
 import { CATS, CAT_SPEED, boarded, catAt, chase, deskPerch, followerOf, guestAt, keepEyeOn, keepUp, leanIn, nearDoors, roam, steer, tagAlong, walkIn, walkOut, watcherOf, arrivalPose, leaverPose, type Cat } from './life.ts'
-import { drawHands, fitHands, holdBeer, holdNote, poseHands } from './hands.ts'
+import { drawHands, fitHands, holdBeer, holdNote, makeHands, poseHands, type Hands } from './hands.ts'
+import type { Models } from './models.ts'
 import { tintOf } from './palette.ts'
 import { petProgress, strokeAt } from './pet.ts'
 import { DESK, carBox, inside, levelHeight, levelOfCard, levelY } from './layout.ts'
@@ -66,6 +67,15 @@ export function startFrames(started: FramesDeps) {
   const { aimAt, offerNothing } = started.navigation
   const { run, tickPet } = started.panels
 
+  /** Your hands in first person, made from the models once they load. */
+  let hands: Hands | undefined
+
+  /** The hands made from the models as they land, fitted to the camera. */
+  function landHands(models: Models) {
+    hands = makeHands(models)
+    fitHands(hands, camera.aspect)
+  }
+
   const meter: Meter = { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 }
 
   function measure(now: number, work: number) {
@@ -119,7 +129,7 @@ export function startFrames(started: FramesDeps) {
     renderer.render(scene, camera)
     if (lit) bloom(renderer, scene, camera, wallNow())
     Object.assign(meter, { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles })
-    if (s.hands && handsShown()) drawHands(renderer, s.hands)
+    if (hands && handsShown()) drawHands(renderer, hands)
   }
 
   /** What a frame sets on the scene before it is drawn: the screens painted, the levels shown, the lighting's passes. */
@@ -178,9 +188,9 @@ export function startFrames(started: FramesDeps) {
     const { pet } = motionNow()
     const stroke = pet && strokeAt(petProgress(pet, s.simNow), pet.tailward)
     const note = carried()
-    holdNote(s.hands!, note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
-    holdBeer(s.hands!, s.beer)
-    poseHands(s.hands!, was, s.me, stroke, f.dt, f.t)
+    holdNote(hands!, note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
+    holdBeer(hands!, s.beer)
+    poseHands(hands!, was, s.me, stroke, f.dt, f.t)
   }
 
   function stepWalker({ dt, turned }: Frame) {
@@ -261,7 +271,7 @@ export function startFrames(started: FramesDeps) {
     for (const desk of s.desks.values()) {
       if (!shown(levelOf(desk.group))) continue
       const arriving = s.arrivals.get(desk.card.id)
-      if (arriving) arrivalPose(s.models!, arriving, t)
+      if (arriving) arrivalPose(desk.models, arriving, t)
       else poseRigs(desk, t, opened + t)
     }
     for (const l of s.leavers) {
@@ -419,7 +429,7 @@ export function startFrames(started: FramesDeps) {
     renderer.setSize(innerWidth, innerHeight, false)
     camera.aspect = innerWidth / innerHeight
     camera.updateProjectionMatrix()
-    if (s.hands) fitHands(s.hands, camera.aspect)
+    if (hands) fitHands(hands, camera.aspect)
     if (covered()) render()
   }
 
@@ -429,5 +439,5 @@ export function startFrames(started: FramesDeps) {
 
   requestAnimationFrame(frame)
 
-  return { beginDrawing, drawEachFrame, play, render, frameScene, update, meter: (): Readonly<Meter> => meter }
+  return { beginDrawing, drawEachFrame, play, render, frameScene, update, meter: (): Readonly<Meter> => meter, landHands }
 }

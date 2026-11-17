@@ -12,6 +12,7 @@ import { s, type Standing } from './state.ts'
 import { aim } from './walker.ts'
 import { DECK } from './floorplan.ts'
 import type { Toasts } from './toasts.ts'
+import type { Assets } from './loads.ts'
 import { $, show } from './dom.ts'
 import { nowOf } from './now.ts'
 import type { World } from './building.ts'
@@ -24,7 +25,7 @@ import type { Archive } from './archive.ts'
 import type { Titles } from './titles.ts'
 
 /** What the navigation resource is started with. */
-export type NavigationDeps = { clock: Clock; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
+export type NavigationDeps = { clock: Clock; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
 
 export type Navigation = ReturnType<typeof startNavigation>
 
@@ -196,7 +197,7 @@ export function startNavigation(started: NavigationDeps) {
   }
 
   /** What the renderer's settings name the cats. */
-  const catNames = () => (s.declared?.settings.cats ?? {}) as CatNames
+  const catNames = () => (started.assets.got()?.declared?.settings.cats ?? {}) as CatNames
 
   /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
   function offersNow() {

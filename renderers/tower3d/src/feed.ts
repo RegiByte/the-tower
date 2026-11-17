@@ -1,9 +1,7 @@
 import { readViewer } from '/lib/viewer.js'
 import type { Board, ShelfSelf, Tower } from './api.ts'
 import { boardErrorTitle } from './cards.ts'
-import { fitHands, makeHands } from './hands.ts'
 import { idle } from './tv.ts'
-import { chairKit } from './chairs.ts'
 import { checkWardrobe } from './closet.ts'
 import type { Fixture } from './fixtures.ts'
 import * as loading from './loading.ts'
@@ -34,9 +32,10 @@ export type Feed = { advance: () => void; ready: Promise<void> }
  */
 function feedOf(started: FeedDeps, onModels: () => void) {
   const { port } = started
-  const { camera, flyPlane } = started.stage
+  const { flyPlane } = started.stage
   const { toast } = started.toasts
-  const { firstBuilt, primeSeenAs } = started.world
+  const { firstBuilt, primeSeenAs, landChairs } = started.world
+  const { landHands } = started.frames
   const { toggleFps } = started.hud
 
   let built: () => void
@@ -52,16 +51,11 @@ function feedOf(started: FeedDeps, onModels: () => void) {
 
   idle(started.tower.framed)
 
-  started.assets.loaded.then(({ models: m, kept, kit, declared: renderer }) => {
-    s.declared = renderer ?? undefined
+  started.assets.loaded.then(({ models: m, kept }) => {
     checkWardrobe(m.catalogue)
-    s.models = m
-    s.chairKit = chairKit(m.desk.getObjectByName('chair')!)
-    s.kit = kit
+    landChairs(m)
     flyPlane(m.plane)
-    s.hands = makeHands(m)
-    fitHands(s.hands, camera.aspect)
-    s.saved = (kept as Kept | null)?.spot
+    landHands(m)
     s.muted = (kept as Kept | null)?.muted ?? false
     s.seenShown = new Set((kept as Kept | null)?.seen)
     primeSeenAs((kept as Kept | null)?.seen === undefined)

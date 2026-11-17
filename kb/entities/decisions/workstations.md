@@ -14,7 +14,7 @@
     "hub/renderers/tower3d/src/seating.ts#seatsOf",
     "hub/renderers/tower3d/src/archive.ts#historyOf",
     "hub/renderers/tower3d/src/app.ts#settled",
-    "hub/renderers/tower3d/src/layers.ts#STATIONS",
+    "hub/renderers/tower3d/src/layers.ts#stationsOf",
     "hub/renderers/tower3d/src/desk.ts#makeStation",
     "hub/renderers/tower3d/src/acts.ts#OFFERS",
     "hub/renderers/tower3d/src/spawn.ts#hire",
@@ -73,7 +73,7 @@ defaults, and the new-worker form as the optional path.
   failed hire, a worker that ended before its desk showed, or a lost tower ends the hold, each said in a toast. The
   hold is a Tower 3D machine because only the world hires without the form; the shared machine runs one dialog,
   not one per floor, and ends its wait on the reply, before the desk shows.
-- A free desk is a `station` in the [`STATIONS`](ref:hub/renderers/tower3d/src/layers.ts#STATIONS) layer,
+- A free desk is a `station` in the stations layer ([`stationsOf`](ref:hub/renderers/tower3d/src/layers.ts#stationsOf)),
   keyed by floor and number. An occupied one stays a worker's `Desk`, keyed by session, with its own copy of
   the same furniture ([`makeStation`](ref:hub/renderers/tower3d/src/desk.ts#makeStation) shares it). When a
   worker comes or goes, one gives way to the other at the same spot, so nothing visibly changes but the
