@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.8.4
+
+Tower 3D's last shared state finds its owners, and the shared record is gone (#655, #656, #657). Nothing to restart
+beyond the tower (`tower update` does it).
+
+- **For contributors:** Tower 3D's viewer record, what is in your hand (a draft or a beer) and the showings you have
+  seen live in the app's db, each changed by an event. The draft deleted while in your hand and the first board's
+  seen showings are computed where the board is taken, so no executor dispatches. `state.ts` is deleted: each type
+  lives with the field it types.
+
 ## v2.8.3
 
 New callsigns to draw workers' names from, and Tower 3D's world and view state find their owners (#651, #652,
