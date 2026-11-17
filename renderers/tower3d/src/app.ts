@@ -18,7 +18,7 @@ import { gameItem } from './games.ts'
 import { cabinetOf, deskOf, kioskOf, type Plan } from './layout.ts'
 import type { Board, Floor, ShelfSelf } from './api.ts'
 import type { Archived, Drawer } from './archive.ts'
-import type { Act } from './acts.ts'
+import type { Act, Held } from './acts.ts'
 import type { Pet } from './pet.ts'
 import type { Hold, Panel, Standing, View } from './state.ts'
 import type { Layout } from '/lib/layout.js'
@@ -155,7 +155,16 @@ export type Db = {
   layout: Layout | undefined
   /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range, the actions seen. */
   viewer: Viewer
+  /** What is in your hand: nothing, a draft taken off a corkboard, or a beer from the roof's bar. */
+  hand: Hand
 }
+
+export type Hand = { t: 'empty' } | { t: 'note'; held: Held } | { t: 'beer' }
+
+/** The draft in `hand`, if it holds one. */
+export const heldIn = (hand: Hand) => (hand.t === 'note' ? hand.held : undefined)
+
+const EMPTY: Hand = { t: 'empty' }
 
 /** A field of your record and its value, as it is kept. */
 export type Kept = { [K in keyof Viewer]: { field: K; value: Viewer[K] } }[keyof Viewer]
@@ -244,6 +253,12 @@ export type AppEvent =
   | { type: 'origins/read'; origins: Record<string, string> }
   /** Your layout as `tower.store` keeps it, read again. */
   | { type: 'layout/stored'; layout: Layout | undefined }
+  /** A draft taken off its corkboard into your hand. */
+  | { type: 'hand/carry'; held: Held }
+  /** Empty hands: a draft goes back on its board, a beer is put down. */
+  | { type: 'hand/drop' }
+  /** A beer from the roof's bar in your hand. */
+  | { type: 'hand/beer' }
 
 export type AppEffect =
   | AttendOut
@@ -339,6 +354,7 @@ export const startingDb = (attending: Attending): Db => ({
   origins: {},
   layout: undefined,
   viewer: VIEWER_DEFAULT,
+  hand: EMPTY,
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
@@ -462,6 +478,8 @@ export type AppReads = {
   threadsOf: (f: Floor) => { checkout: string; key: string }[]
   /** Whether a floor keeps drafts: the drafts extension is on there. */
   keepsDrafts: (f: Floor) => boolean
+  /** Whether `held` is still among its floor's drafts on `board`. */
+  holdsDraft: (board: Board, held: Held) => boolean
 }
 
 /**
@@ -574,14 +592,17 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
   const plan = reads.planOf(building)
   const fireworks = finished(was, next)
   const asked = askTransitions(was, next).began.filter((a) => !db.attending.dismissed.has(a.key))
+  const held = heldIn(db.hand)
+  const gone = held !== undefined && !reads.holdsDraft(next, held)
   return steps(
-    { ...db, building },
+    { ...db, building, hand: gone ? EMPTY : db.hand },
     (db) => [
       into(db),
       ...(fireworks.length ? [{ type: 'fireworks', cards: fireworks } as const] : []),
       ...(transitions(was, next).began.length ? [{ type: 'waits/began' } as const] : []),
       ...asked.map((ask) => ({ type: 'asked', ask }) as const),
       { type: 'world/apply', was },
+      ...(gone ? [{ type: 'toast', text: 'The draft in your hand is gone' } as const] : []),
     ],
     (db) => shownArrived(db, was, next),
     (db) => (db.replay && !deskOf(plan, db.replay.id) ? [into({ ...db, replay: undefined })] : []),
@@ -719,5 +740,8 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   visited: (db, { visited }) => [into({ ...db, visited })],
   'origins/read': (db, { origins }) => [into({ ...db, origins })],
   'layout/stored': (db, { layout }) => [into({ ...db, layout })],
+  'hand/carry': (db, { held }) => [into({ ...db, hand: { t: 'note', held } }), { type: 'notes' }],
+  'hand/drop': (db) => [into({ ...db, hand: EMPTY }), ...(db.hand.t === 'note' ? [{ type: 'notes' } as const] : [])],
+  'hand/beer': (db) => [into({ ...db, hand: { t: 'beer' } }), ...(db.hand.t === 'note' ? [{ type: 'notes' } as const] : [])],
   arrived: (db, { at }) => (at.kind === 'ask' ? [...went(db, { kind: 'floor', id: at.project, tray: undefined }), { type: 'toast', text: at.said }] : [{ type: 'arrived', at }]),
 })

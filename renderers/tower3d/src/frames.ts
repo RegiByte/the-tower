@@ -25,7 +25,6 @@ import type { Sim } from './sim.ts'
 import type { AppLoop } from './app-loop.ts'
 import { poseFiling } from './filing.ts'
 import { fitPicture, placePicture } from './gallery.ts'
-import { s } from './state.ts'
 import { aim, fallTo, jump, look, walk, type WalkerCell } from './walker.ts'
 import { groundAt } from './floorplan.ts'
 import { panelGrid, setDoors } from './world.ts'
@@ -203,7 +202,7 @@ export function startFrames(started: FramesDeps) {
     const stroke = pet && strokeAt(petProgress(pet, simNow()), pet.tailward)
     const note = carried()
     holdNote(landedHands(), note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
-    holdBeer(landedHands(), s.beer)
+    holdBeer(landedHands(), port.state().hand.t === 'beer')
     poseHands(landedHands(), was, me(), stroke, f.dt, f.t)
   }
 

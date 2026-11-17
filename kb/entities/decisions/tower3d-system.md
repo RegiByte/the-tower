@@ -230,7 +230,13 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   ([`stored`](ref:hub/renderers/tower3d/src/app.ts#stored): a Stats range fires `stats/range`, the brief's markdown
   `brief/redraw`, the dismissals `waits/redraw`); before one, nothing is drawn yet and the first board draws what the
   record says. `viewer/kept` sets a field chosen here and returns `keep`, which writes it to `tower.store`; attention's
-  own `keep` (a dismissal, the ring) lands in the record in the same step.
+  own `keep` (a dismissal, the ring) lands in the record in the same step. What is in your hand (`hand`,
+  [`Hand`](ref:hub/renderers/tower3d/src/app.ts#Hand)) is one value: nothing, a draft taken off a corkboard, or a beer
+  from the bar, so a note and a beer are never held at once. `hand/carry`, `hand/drop` and `hand/beer` set it and return
+  a `notes` effect whenever a note goes into or out of your hand, so the corkboards are reconciled after the db holds
+  the new hand. A draft deleted while in your hand is dropped by the step that takes the board
+  ([`took`](ref:hub/renderers/tower3d/src/app.ts#took), through `holdsDraft`), before `world/apply` runs, with a toast
+  after it; nothing writes the hand from inside an executor, where a dispatch would wait and a read would see the old one.
   Readers call `app.state()`, through the port (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `now.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
   anything written every frame stay out of it.
@@ -401,5 +407,5 @@ reads) are each in the start of the resource they belong to, and a module is han
 needs no resource started before it. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`, started as the `spawn` resource: [`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), it stays out
 of the panel union. Motion, aim and capture are in the db as well. What is left outside it
-is the walker, its own resource, a pointer press, and the view state `state.ts` still holds.
+is the walker, its own resource, a pointer press, and the showings you have seen, which `state.ts` still holds.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.

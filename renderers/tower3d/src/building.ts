@@ -44,6 +44,7 @@ import type { Running } from './running.ts'
 import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer, type WallItem } from './layers.ts'
 import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
+import { heldIn } from './app.ts'
 import { eyes, type Walker, type WalkerCell } from './walker.ts'
 import { layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, setLimits, setShellTitles, type World as Built } from './world.ts'
@@ -193,7 +194,7 @@ export function startWorld(started: WorldDeps) {
   const reconcile = <S, T>(layer: SceneLayer<S, T>, items: Map<string, T>) => reconcileLayer(layer, items, planNow(), hang, discard)
 
   const pigeonholes = pigeonholesOf(cardReviews)
-  const notes = notesOf(noteTitle)
+  const notes = notesOf(noteTitle, () => heldIn(started.port.state().hand))
   const cabinets = cabinetsOf(gameTitle)
   const filings = filingsOf(drawersAt)
   const walls = wallsOf(screenTexture)
@@ -425,7 +426,6 @@ export function startWorld(started: WorldDeps) {
     syncNotes()
     pruneGameTitles(next.floors)
     syncCabinets()
-    if (s.carrying && !draftItem(next.floors, s.carrying.project, s.carrying.id)) (toast('The draft in your hand is gone'), drop())
     const replaying = replayNow()
     keepScreens(new Set([
       ...planNow().levels.flatMap((l) => (l.kind === 'floor' ? l.desks.filter((d) => d.card.live).map((d) => `screen/${d.card.id}`) : [])),
@@ -571,22 +571,9 @@ export function startWorld(started: WorldDeps) {
 
   /** The note in your hand, titled as its text shows it now. */
   function carried(): Carried | undefined {
-    const held = s.carrying
+    const held = heldIn(started.port.state().hand)
     const item = held && boardNow() && draftItem(boardNow()!.floors, held.project, held.id)
     return item && { ...held!, title: noteTitle(held!.project, item), tag: item.tag }
-  }
-
-  /** The note in your hand, drawn by your hands; its draft stays pinned, hidden, until it is handed over. */
-  function carry(project: string, id: string) {
-    s.carrying = { project, id }
-    s.beer = false
-    syncNotes()
-  }
-
-  /** Empty hands: the note goes back on its board. */
-  function drop() {
-    s.carrying = undefined
-    syncNotes()
   }
 
   /** The workstations in step with the plan, the open ones reading the hires in flight. */
@@ -602,5 +589,5 @@ export function startWorld(started: WorldDeps) {
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { built, counts, layers, people, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
+  return { built, counts, layers, people, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
 }

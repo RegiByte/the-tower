@@ -8,7 +8,7 @@ import { type SpawnForm, spawnCall, spawnDefaults } from './cards.ts'
 import { loop } from '/lib/machine.js'
 import { floorSignHtml } from './ui.ts'
 import type { Titles } from './titles.ts'
-import { s } from './state.ts'
+import { heldIn } from './app.ts'
 import type { Toasts } from './toasts.ts'
 import type { Events } from './events.ts'
 import { $ } from './dom.ts'
@@ -32,7 +32,7 @@ export function startSpawn(started: SpawnDeps) {
   const { port } = started
   const { toast, offered } = started.toasts
   const { events } = started
-  const { syncStations, planNow, floorOf, drop } = started.world
+  const { syncStations, planNow, floorOf } = started.world
   const { noteText } = started.titles
   const { boardNow, unlock } = nowOf(port)
 
@@ -55,13 +55,24 @@ export function startSpawn(started: SpawnDeps) {
   /** The editor's last save, which a note's text is read after. */
   const saving = { last: Promise.resolve(true) }
 
-  /** The carried note's text as it is on disk now, `undefined` when it can't be sent: a note that can't be read stays in hand. */
-  async function carriedText() {
-    const note = s.carrying!
+  /** The draft in your hand now: the verbs that send it are offered only while you hold one. */
+  const inHand = () => heldIn(port.state().hand)!
+
+  /** Whether you still hold `note`, the draft a send began on. */
+  const holding = (note: Held) => {
+    const held = heldIn(port.state().hand)
+    return held?.project === note.project && held.id === note.id
+  }
+
+  /** Empty hands, if `note` is still in them. */
+  const dropIfHeld = (note: Held) => holding(note) && port.dispatch({ type: 'hand/drop' })
+
+  /** `note`'s text as it is on disk now, `undefined` when it can't be sent: a note that can't be read stays in hand. */
+  async function carriedText(note: Held) {
     await saving.last
     const text = await readDraft(draftIo, note.project, note.id).catch((err: Error) => (toast(err.message), null))
     if (text === null) return undefined
-    if (text === undefined) return (toast('The draft in your hand is gone'), drop(), undefined)
+    if (text === undefined) return (toast('The draft in your hand is gone'), dropIfHeld(note), undefined)
     if (!text.trim()) return (toast('The draft is empty'), undefined)
     return text
   }
@@ -69,7 +80,7 @@ export function startSpawn(started: SpawnDeps) {
   /** After a draft's words reached a session: it is deleted, and out of your hand if you held it. */
   async function sent(note: Held) {
     await discardItem(draftIo, note.project, note.id)
-    if (s.carrying?.project === note.project && s.carrying.id === note.id) drop()
+    dropIfHeld(note)
   }
 
   /** The carried note on its way to a session: pressing again meanwhile sends nothing. */
@@ -77,11 +88,11 @@ export function startSpawn(started: SpawnDeps) {
 
   /** Sends the carried note with `send`, then deletes its draft: a failed send keeps it in your hand. */
   async function sendCarried(send: (text: string) => Promise<boolean>) {
-    if (handing || hiredOn(s.carrying!)) return
+    const note = inHand()
+    if (handing || hiredOn(note)) return
     handing = true
     try {
-      const note = s.carrying!
-      const text = await carriedText()
+      const text = await carriedText(note)
       if (text !== undefined && (await send(text))) await sent(note)
     } finally {
       handing = false
@@ -92,10 +103,10 @@ export function startSpawn(started: SpawnDeps) {
 
   /** A worker hired on the carried note goes to work on it alone: you stay where you are, and the note leaves your hand once it started. */
   async function hireOnNote(project: string) {
-    const note = s.carrying!
+    const note = inHand()
     if (hiredOn(note)) return toast(HIRED_ON_NOTE)
     if (handing) return
-    const prompt = await carriedText()
+    const prompt = await carriedText(note)
     if (prompt !== undefined) hireWith(project, spawnDefaults(floorOf(project), prompt), note)
   }
 
@@ -164,7 +175,7 @@ export function startSpawn(started: SpawnDeps) {
 
   async function openSpawnOnNote(project: string, note: Held) {
     if (hiredOn(note)) return toast(HIRED_ON_NOTE)
-    const text = await carriedText()
+    const text = await carriedText(note)
     if (text !== undefined) openSpawn(project, { note, text })
   }
 
