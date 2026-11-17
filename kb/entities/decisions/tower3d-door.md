@@ -21,7 +21,7 @@ layouts) needs repeatable views, and a refactor such as [[tower3d-registries]] n
 - Input is intents: a move held and a turn taken per frame (`input.ts`). Keyboard and mouse produce them, and the
   door injects the same. `capture()` stands in for pointer lock. Building keys go through one `onKey`, which the
   door's `key()` calls.
-- A frame is `update(dt)` then `render()` over a simulated clock that every hold, flight, fade and animation reads.
+- A frame is `update(dt)` then `render()` over a simulated clock (the `sim` resource) that every hold, flight, fade and animation reads.
   `step(n)` stops it and runs n frames, and draws the panels a transition asked for, as a real frame does
   ([[tower3d-system]]); `?stepped` starts it stopped. One seeded `random` (`?seed=`) replaces
   `Math.random` wherever chance reaches a frame. `?at=<ISO time>` pins the wall clock (`clock.ts`), so repeats hold
