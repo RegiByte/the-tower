@@ -26,6 +26,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
   /** The view that makes a new item of this collection: one on it alone, `collection.<id>`, on this floor. */
   const maker = () => viewsOf(board).find((v) => v.on.includes(`collection.${id}`) && !v.off?.includes(project))
 
+  const now = kit.now ?? Date.now
   host.innerHTML = `<style>${STYLE}</style><div class="shelf-head"></div><div class="collection-list"></div>`
   const [head, list] = [host.querySelector('.shelf-head')!, host.querySelector('.collection-list')!]
 
@@ -37,7 +38,7 @@ export const mount: Mount = (host, { tower, board: first, subject, kit }) => {
     const label = make && `new ${make.words.label.toLowerCase()}`
     const plus = make ? `<button data-make aria-label="${esc(label!)}" data-tip="${esc(label!)}">${ICON.plus}</button>` : ''
     paintOnce(head, `<span class="label">${esc(c.label)}</span><span class="dim">${esc(f.name)}</span><span class="actions"><small class="dim">${plural(c.items.length, 'item')}</small>${closeHtml(board.keys)}</span>`)
-    paintOnce(list, collectionTrayHtml(f.id, c, (item) => title(f.id, c.id, item), undefined, Date.now(), plus))
+    paintOnce(list, collectionTrayHtml(f.id, c, (item) => title(f.id, c.id, item), undefined, now(), plus))
   }
 
   host.addEventListener('click', (e) => {
