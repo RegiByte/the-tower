@@ -303,6 +303,10 @@ export function startWorld(started: WorldDeps) {
   const chairs: Chairs[] = []
   let chairKitLanded: ChairKit | undefined
   const landChairs = (models: Models) => void (chairKitLanded = chairKit(models.desk.getObjectByName('chair')!))
+  function landedChairKit() {
+    if (!chairKitLanded) throw new Error('the world seated the chairs before the models landed: a board was taken before the feed started the first')
+    return chairKitLanded
+  }
 
   /** Every level's empty meeting chairs, instanced on its root. */
   function seatChairs() {
@@ -312,7 +316,7 @@ export function startWorld(started: WorldDeps) {
       const at = level?.kind === 'floor' ? emptyChairs(level).map((pl) => ({ x: pl.x, y: level.y, z: pl.z, turn: pl.turn })) : []
       chairs[i] ??= makeChairs()
       hang(i, chairs[i].group)
-      placeChairs(chairs[i], chairKitLanded!, at)
+      placeChairs(chairs[i], landedChairKit(), at)
     }
   }
 
