@@ -46,8 +46,9 @@ predicate, which the board asks of every past worker's `cwd` before it offers a 
 and applies the defaults (`worktreesConfig`, `hiringConfig`, `briefConfig`, `editorArgv`, …); every key and its default
 is in `docs/config.md`. Two of them throw a `ConfigError`, which the board shows ([[board-errors]]):
 [`configuredUser`](ref:hub/src/shared/model.ts#configuredUser) for a `user.name` no note heading can carry
-([[the-user]]), and [`configuredCallsigns`](ref:hub/src/shared/model.ts#configuredCallsigns) for a `callsigns` setting (a list,
-or `{names, mode}` replacing or adding to `CALLSIGNS`) that can't name workers; [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) names a session id from it, and
+([[the-user]]), and [`configuredCallsigns`](ref:hub/src/shared/model.ts#configuredCallsigns) for a `callsigns`
+setting (a list, or `{names, mode}` replacing or adding to `CALLSIGNS`) that can't name workers;
+[`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) names a session id from it, and
 `spawnRequest` takes the name it gives ([[callsign]]). [`worktreeBrief`](ref:hub/src/shared/launch.ts#worktreeBrief) is what a worker in a
 worktree is told in its system prompt (its name, branch, directories, the main checkouts they copy, and the sources of
 its links); spawn and resume requests take it, `undefined` in a main checkout, and grant each link's source as one of

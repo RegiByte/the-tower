@@ -245,7 +245,7 @@ const callsignsInForce = (setting: Callsigns): readonly string[] => {
 }
 
 /** The names workers are called by: those the config's `callsigns` puts in force, or `CALLSIGNS` when it names none. A setting that can't name workers is a config error. */
-export const configuredCallsigns = (config: Config): readonly string[] => (config.callsigns === undefined ? CALLSIGNS : callsignsInForce(config.callsigns))
+export const configuredCallsigns = (config: Config): readonly string[] => (config.callsigns == null ? CALLSIGNS : callsignsInForce(config.callsigns))
 
 /** The loopback port the tower serves on: the config's `port`, 4317 when it names none. A port that isn't one is a config error. */
 export const towerPort = (config: Config): number => {
@@ -334,13 +334,13 @@ export const resolvedCommandName = (config: Config, runtime: Runtime, name: stri
 export const projectPreferredCommand = (config: Config, projectId: string, runtime: Runtime): string | undefined =>
   resolvedCommandName(config, runtime, config.projects[projectId].runtimes?.[runtime]?.command)
 
+/** The config's `callsigns`: a list of names in place of `CALLSIGNS`, or `{names, mode}`, whose `mode` (`"replace"` when left out) says whether they replace `CALLSIGNS` or are added to them. */
+export type Callsigns = string[] | { names: string[]; mode?: 'replace' | 'add' }
+
 /**
  * The whole system's configuration. The directory holding this file is the system's root:
  * session logs and the host sockets live next to it.
  */
-/** The config's `callsigns`: a list of names in place of `CALLSIGNS`, or `{names, mode}`, whose `mode` (`"replace"` when left out) says whether they replace `CALLSIGNS` or are added to them. */
-export type Callsigns = string[] | { names: string[]; mode?: 'replace' | 'add' }
-
 export type Config = {
   /**
    * What serves each runtime's own harness, by runtime: its commands and its plugins. Claude's is required; a runtime
