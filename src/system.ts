@@ -577,6 +577,8 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     }
     subscriptions.push(await subscribe(dir, subfolders, changed, exitUnwatched(dir)))
   }
+  /** The cache is made on first use and takes the root's heaviest writes: it is made now, so the config watch ignores it. */
+  mkdirSync(paths.cache, { recursive: true })
   await watchingConfig(paths.config)
   /** A config that is a link is written in its target's folder, which a watch of the link's folder doesn't see. */
   const target = realpathSync(paths.config)

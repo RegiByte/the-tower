@@ -33,8 +33,8 @@ The config's directory is the system root, and a subscription there reports its 
 included. Under a writer doing about 12,000 private-index operations a second in `cache/`, no watch missed a change
 to a file in the root, but an unfiltered subscription handed every subtree event to JavaScript (about 30% of a core);
 ignoring the root's subfolders by path, which FSEvents drops before the process, cost about 3%, a non-recursive
-`fs.watch` about 1%. So the config watch ignores the subfolders its folder holds when it starts, and signals only for
-the config's own path. A subfolder made after it starts is not ignored: its events cost CPU until the tower restarts,
+`fs.watch` about 1%. So the config watch ignores the subfolders its folder holds when it starts, `cache/` made first
+since it is otherwise made on first use, and signals only for the config's own path. A subfolder made after it starts is not ignored: its events cost CPU until the tower restarts,
 never a wrong signal.
 A subscription resolves once watching, so each reader starts watching before its first read. FSEvents' "must
 rescan", which `fs.watch` never surfaced, is reported as an unknown change; a removed root, which parcel reports once
