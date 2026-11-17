@@ -1,13 +1,13 @@
 ---
 {
   "type": "decision",
-  "name": "Tower 3D's shell is a state record, keyed layers, act tables and ticks",
-  "summary": "Tower 3D's mutable state lives with its owners; what the page has chosen and not yet put in the app's db sits in one record (state.ts); desks, walls and guests are keyed layers reconciled against the plan; what each act kind offers and does are tables keyed by kind; a frame is an ordered list of ticks; the door drives a typed Engine.",
+  "name": "Tower 3D's shell is state with its owners, keyed layers, act tables and ticks",
+  "summary": "Tower 3D's mutable state lives with its owners; what the page has chosen is the app's db, and each type lives in the module that owns its field (no shared state record); desks, walls and guests are keyed layers reconciled against the plan; what each act kind offers and does are tables keyed by kind; a frame is an ordered list of ticks; the door drives a typed Engine.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-17",
-  "refs": ["hub/renderers/tower3d/src/state.ts", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/panels.ts", "hub/renderers/tower3d/src/stage.ts#startStage", "hub/renderers/tower3d/src/door.ts#installDoor"]
+  "refs": ["hub/renderers/tower3d/src/app.ts#Db", "hub/renderers/tower3d/src/layers.ts#reconcile", "hub/renderers/tower3d/src/acts.ts#byKind", "hub/renderers/tower3d/src/panels.ts", "hub/renderers/tower3d/src/stage.ts#startStage", "hub/renderers/tower3d/src/door.ts#installDoor"]
 }
 ---
 **Problem.** A renderer that grows a thing at a time (a layer of things drawn per board, a kind of thing to aim at, a
@@ -19,14 +19,14 @@ must be handed every closure.
 shape of a mod. These shapes extract; they are not a plugin API.
 
 **How.**
-- **One state record** ([`state.ts`](ref:hub/renderers/tower3d/src/state.ts)): what the page
-  has chosen and not yet put in the app's db, now empty; the building as built, its level roots, its counts,
+- **State with its owners**: the shared record (`state.ts`, `s`) is gone, folded field by field into its owners, and
+  each type lives in the module that owns its field (`Panel`, `View`, `Hold` and `Standing` beside the app's
+  [`Db`](ref:hub/renderers/tower3d/src/app.ts#Db), `Spot` in the keeper); the building as built, its level roots, its counts,
   its keyed layers' maps and the workers on their way are the world's cells ([[tower3d-system]]); the simulated clock and the walker, written from several resources, are leaf resources
   every reader is handed (`sim`, `walker`, [[tower3d-system]]); a cell one resource alone writes stays in its start (the frames'
   meter and landing doors, the panels' open draft, the HUD's new-action dots); what the page has decided (the panel, the view, a ride,
   a flight, a cut, a pet, what is aimed at and held, whether walking has the mouse) is the app loop's db
-  ([[tower3d-system]]). Modules
-  read and write `s.field`, so every write is greppable. Render memos and derived caches stay beside the function
+  ([[tower3d-system]]), the showings you have seen included. Render memos and derived caches stay beside the function
   that uses them.
 - **Keyed layers** ([`reconcile`](ref:hub/renderers/tower3d/src/layers.ts#reconcile)): a layer says which slots
   the plan wants by key, which level each stands on (its item hangs on that level's root, [[tower3d-levels]]), how
@@ -37,7 +37,7 @@ shape of a mod. These shapes extract; they are not a plugin API.
   `panels.ts`) are both total, so a new kind fails the typecheck until it has both. The building's own verbs
   (`next`, `overview`, `stop`) run before the table.
 - **Ticks**: a frame is `TICKS`, an ordered list of functions over one `Frame` (`dt`, `t`, the turn taken).
-- **The door out** ([`installDoor`](ref:hub/renderers/tower3d/src/door.ts#installDoor)): it reads the record and
+- **The door out** ([`installDoor`](ref:hub/renderers/tower3d/src/door.ts#installDoor)): it reads the app's db and the resources it is handed, and
   drives an `Engine`, the functions the page's own input and frames call. The three.js setup is the stage resource
   ([`startStage`](ref:hub/renderers/tower3d/src/stage.ts#startStage), [[tower3d-system]]), which layers and the door
   read the scene and camera from.

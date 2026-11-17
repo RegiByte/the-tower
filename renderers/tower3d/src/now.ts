@@ -1,7 +1,6 @@
-import { captured as capturedBy } from './app.ts'
+import { captured as capturedBy, type Panel } from './app.ts'
 import type { Heed } from './cards.ts'
 import type { Port } from './port.ts'
-import type { Panel } from './state.ts'
 
 /** What the app decided, read through the port, and the dispatches that are one event each: the same wherever they are read. */
 export type Now = ReturnType<typeof nowOf>

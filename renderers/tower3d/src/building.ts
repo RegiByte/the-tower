@@ -43,10 +43,9 @@ import type { Pigeonhole } from './pigeonhole.ts'
 import type { Running } from './running.ts'
 import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer, type WallItem } from './layers.ts'
 import { SCREEN } from './arcade.ts'
-import { NO_PLAN } from './state.ts'
 import { heldIn } from './app.ts'
 import { eyes, type Walker, type WalkerCell } from './walker.ts'
-import { layerAt, type Layer } from './floorplan.ts'
+import { anchorsOf, layerAt, loftOf, roomsOf, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, setLimits, setShellTitles, type World as Built } from './world.ts'
 import type { Toasts } from './toasts.ts'
 import type { Assets } from './loads.ts'
@@ -59,6 +58,12 @@ import type { Clients } from './clients.ts'
 import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
+
+const NO_PLATE = { width: 0, depth: 0 }
+const NO_LOFT = loftOf(NO_PLATE, 0)
+const NO_ROOMS = roomsOf(NO_PLATE)
+/** The plan of no board: no levels, nothing to stand on. */
+const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
 
 /** What the world is started with. */
 export type WorldDeps = { walker: WalkerCell; clock: Clock; sim: Sim; tower: Tower; assets: Assets; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }

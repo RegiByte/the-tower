@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { makeLayer, type KitLayer } from './kit.ts'
-import type { Motion } from './app.ts'
-import type { View } from './state.ts'
+import type { Motion, View } from './app.ts'
 import type { World as Built } from './world.ts'
 
 /**
