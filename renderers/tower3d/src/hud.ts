@@ -55,7 +55,7 @@ export function startHud(started: HudDeps) {
   watchTips(document)
 
   /** Why a daemon verb is held back now, for the panels' buttons. */
-  const held = (verb: DaemonVerb) => heldWhy(boardNow()!, s.lost, verb)
+  const held = (verb: DaemonVerb) => heldWhy(boardNow()!, port.state().attending.lost, verb)
 
   /**
    * Whether a panel button that asks first (`data-ask`, as `askingButton` draws it) was answered yes in the library's
@@ -129,11 +129,17 @@ export function startHud(started: HudDeps) {
   /** The actions you have seen, by `actionId`, across every renderer of yours. */
   const seenNow = (board: Board) => seenOf(s.viewer.seen, offeredIds(board))
 
+  /** The actions the open desk drew with a "new" dot: drawn so until its panel closes, though seen once drawn. */
+  const dotted = new Set<string>()
+
+  /** The open desk's dots forgotten, as its panel closes. */
+  const clearDots = () => dotted.clear()
+
   /** Whether the open desk draws an action's "new" dot: while it is new to you, and until the panel closes once it drew it so. */
   const dottedNow = (board: Board) => {
     const offered = offeredIds(board)
     const seen = seenNow(board)
-    return (id: string) => s.dotted.has(id) || isNewAction(offered, seen, id)
+    return (id: string) => dotted.has(id) || isNewAction(offered, seen, id)
   }
 
   /** `ids` seen by you, kept for every renderer of yours when that adds any. */
@@ -151,7 +157,7 @@ export function startHud(started: HudDeps) {
     const offered = offeredIds(board)
     const seen = seenNow(board)
     const fresh = deskVerbs(board, c, deskNow(board)).map((r) => r.id).filter((id) => isNewAction(offered, seen, id))
-    for (const id of fresh) s.dotted.add(id)
+    for (const id of fresh) dotted.add(id)
     sawActions(board, fresh)
   }
 
@@ -229,5 +235,5 @@ export function startHud(started: HudDeps) {
     setInterval(() => boardNow() && renderHud(), 30_000)
   }
 
-  return { listen, held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, sawActions, sawDesk, drawSettings, toggleFps }
+  return { listen, held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, clearDots, sawActions, sawDesk, drawSettings, toggleFps }
 }

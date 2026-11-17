@@ -52,7 +52,7 @@ export function startAppLoop(started: AppLoopDeps) {
   const { hiring } = started.spawn
   const { renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk } = started.hud
   const { toDesk, toShell, goToAsk } = started.navigation
-  const { display, focusDesk, mountDeskScreen, focusShell, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, freshLogbooks, followDraft, askDraw } = started.panels
+  const { display, focusDesk, mountDeskScreen, focusShell, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, freshLogbooks, followDraft, askDraw, draft: drafted } = started.panels
 
   /** You stand at `spot` on `level`, the camera at your eyes. */
   function stand(level: number, spot: Standing) {
@@ -116,7 +116,8 @@ export function startAppLoop(started: AppLoopDeps) {
         worldRebuilt(was)
         hiring.dispatch({ type: 'board', board: boardNow()! })
         worldFurnished(was)
-        if (s.draft?.id) followDraft(s.draft)
+        const draft = drafted()
+        if (draft?.id) followDraft(draft)
         renderHud()
       },
       fireworks: ({ cards }) => celebrate(cards),

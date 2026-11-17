@@ -53,18 +53,21 @@ export function startControls(started: ControlsDeps) {
     if (o && !HELD.has(o.verb)) run(a, o.verb)
   }
 
+  /** A pointer press, kept to act on the release only if it still points at what it pressed. */
+  let down: { x: number; y: number; act: string } | undefined
+
   /** A click acts on what it pressed: under pointer lock the cursor never moves, but the view can turn to another act. */
   canvas.addEventListener('pointerdown', (e) => {
     canvas.setPointerCapture(e.pointerId)
     const { aimed, aimedKey } = aimNow()
-    s.down = { x: e.clientX, y: e.clientY, act: aimedKey }
+    down = { x: e.clientX, y: e.clientY, act: aimedKey }
     if (e.button === 0 && aimed && (captured() || viewNow() === 'overview')) pressMarked(aimed)
   })
 
   canvas.addEventListener('pointerup', (e) => {
-    if (e.button !== 0 || !boardNow() || !s.down) return
+    if (e.button !== 0 || !boardNow() || !down) return
     const { aimed, aimedKey } = aimNow()
-    if (Math.hypot(e.clientX - s.down.x, e.clientY - s.down.y) > 5 || aimedKey !== s.down.act) return unhold()
+    if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5 || aimedKey !== down.act) return unhold()
     if (viewNow() === 'overview' || captured()) return aimed && releaseMarked(aimed)
     closePanels()
     lock()

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { offersOf, type Act, type Offer } from './acts.ts'
+import { offersOf, type Act, type CatNames, type Offer } from './acts.ts'
 import { projectOfKey } from '/lib/board.js'
 import type { Board, Wait, Tower } from './api.ts'
 import { attentionOrder, isAsk, nextAttended, type Move, findCard, neighboursIn, shownKey } from './cards.ts'
@@ -195,10 +195,13 @@ export function startNavigation(started: NavigationDeps) {
     flyHome()
   }
 
+  /** What the renderer's settings name the cats. */
+  const catNames = () => (s.declared?.settings.cats ?? {}) as CatNames
+
   /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
   function offersNow() {
     const a = aimNow().offered
-    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: s.catNames, lost: s.lost, galleries: planNow().galleries, now: wallNow() }, reads) : []
+    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: catNames(), lost: port.state().attending.lost, galleries: planNow().galleries, now: wallNow() }, reads) : []
   }
 
   /** The crosshair or the pointer is on `a`, and the prompt offers its verbs, drawn by `at` when the pointer gives one. */
@@ -226,7 +229,7 @@ export function startNavigation(started: NavigationDeps) {
     const key = a ? `${aim.offeredKey}|${JSON.stringify(offers)}|${marked}|${Math.floor(s.simNow / 1000)}` : ''
     if (key !== promptKey) {
       promptKey = key
-      const html = a && boardNow() ? promptHtml(a, boardNow()!, offers, marked, s.catNames, planNow().galleries, reads, wallNow()) : ''
+      const html = a && boardNow() ? promptHtml(a, boardNow()!, offers, marked, catNames(), planNow().galleries, reads, wallNow()) : ''
       $('prompt').innerHTML = html
       show('prompt', Boolean(html))
     }

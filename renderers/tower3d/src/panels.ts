@@ -57,6 +57,8 @@ export type Panels = ReturnType<typeof startPanels>
  * briefs read for it, the draft editor, and the pet's hearts.
  */
 export function startPanels(started: PanelsDeps) {
+  /** The draft open in the editor, its body as typed (`extensions/drafts/client/drafts.ts`). */
+  let draft: Draft | undefined
   const { now: wallNow } = started.clock
   const { tower } = started
   const { port } = started
@@ -73,7 +75,7 @@ export function startPanels(started: PanelsDeps) {
   const { directory, isFresh, planNow, lookQuaternion, flyTo, frameOn, frameCabinet, floorOf, carry, drop } = started.world
   const { desk, reader, deskNow } = started.views
   const { draftIo, hire, saving, handOver, hireOnNote, openSpawn, openSpawnOnNote } = started.spawn
-  const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, seenSince, keepViewer, dottedNow, sawActions, sawDesk, drawSettings } = started.hud
+  const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, seenSince, keepViewer, dottedNow, clearDots, sawActions, sawDesk, drawSettings } = started.hud
   const { repaint } = started.pictures
   const { see, lookAtNew, closeSide, sideClosed, unfocus, closePanels, goShown, goDesk, goShell, goLevel, goMove, nextWaiting, overview, offersNow, aimAt, openShown } = started.navigation
 
@@ -151,7 +153,7 @@ export function startPanels(started: PanelsDeps) {
       $('logbook-text').innerHTML = logbookBriefHtml(board, c, panel.threads, briefLook($('logbook-text')))
     }
     if (panel.kind === 'draft') {
-      const d = s.draft!
+      const d = draft!
       const f = board.floors.find((f) => f.id === d.project)
       // The app closes the editor on a floor no longer keeping drafts once the building takes the board (`subjectLeft`).
       if (!f || !draftsOf(f)) return
@@ -225,7 +227,7 @@ export function startPanels(started: PanelsDeps) {
 
   /** What leaving the focused room does: the terminal closes, and what the desk mounted and showed with it. */
   function focusLeft() {
-    s.dotted.clear()
+    clearDots()
     closeTerm($('desk-screen'))
     show('desk', false)
     show('desk-brief', false)
@@ -543,7 +545,7 @@ export function startPanels(started: PanelsDeps) {
    */
   function deskEntered({ id }: { id: string }) {
     sideClosed()
-    s.dotted.clear()
+    clearDots()
     show('paused', false)
     show('desk', true)
     show('desk-brief', false)
@@ -1465,7 +1467,7 @@ export function startPanels(started: PanelsDeps) {
   /** The editor on `d`, the draft open before saved and closed first. */
   function openDraftPanel(d: Draft) {
     draftClosed()
-    s.draft = d
+    draft = d
     go({ kind: 'draft', project: d.project })
   }
 
@@ -1474,7 +1476,7 @@ export function startPanels(started: PanelsDeps) {
     sideClosed()
     show('paused', false)
     show('draft', true)
-    draftText.value = s.draft!.text
+    draftText.value = draft!.text
   }
 
   /** Leaving the editor: the draft saved, unless its floor no longer keeps drafts, where it is let go unsaved. */
@@ -1500,7 +1502,7 @@ export function startPanels(started: PanelsDeps) {
 
   function draftDropped() {
     clearTimeout(saveTimer)
-    s.draft = undefined
+    draft = undefined
     show('draft', false)
   }
 
@@ -1510,7 +1512,7 @@ export function startPanels(started: PanelsDeps) {
   }
 
   function draftClosed() {
-    const d = s.draft
+    const d = draft
     if (d) {
       if (keepsApart(d)) toast('Your edits were kept as a new draft')
       saving.last = leave(draftIo, d)
@@ -1520,21 +1522,21 @@ export function startPanels(started: PanelsDeps) {
 
   function saveDraft() {
     clearTimeout(saveTimer)
-    const d = s.draft!
+    const d = draft!
     saving.last = save(draftIo, d)
-    saving.last.then(() => s.draft === d && renderPanel())
+    saving.last.then(() => draft === d && renderPanel())
   }
 
   async function followDraft(d: Draft) {
     const outcome = await follow(draftIo, d, draftItem(boardNow()!.floors, d.project, d.id!))
-    if (s.draft !== d) return
+    if (draft !== d) return
     if (outcome === 'gone') return (dropDraftPanel(), toast('The draft was deleted elsewhere'))
     if (outcome === 'replaced') draftText.value = d.text
     renderPanel()
   }
 
   draftText.addEventListener('input', () => {
-    edit(s.draft!, draftText.value)
+    edit(draft!, draftText.value)
     clearTimeout(saveTimer)
     saveTimer = setTimeout(saveDraft, AUTOSAVE_MS)
     renderPanel()
@@ -1547,7 +1549,7 @@ export function startPanels(started: PanelsDeps) {
 
   $('draft-head').addEventListener('click', async (e) => {
     const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act
-    const d = s.draft
+    const d = draft
     if (!what || !d) return
     if (what === 'close') return (closeDraftPanel(), lock())
     if (what === 'carry') return d.conflict !== undefined ? toast('Settle the change made on disk first') : (closeDraftPanel(), carry(d.project, d.id!), lock())
@@ -1562,7 +1564,7 @@ export function startPanels(started: PanelsDeps) {
 
   $('draft-note').addEventListener('click', (e) => {
     const what = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act
-    const d = s.draft
+    const d = draft
     if (!d || (what !== 'take' && what !== 'keep')) return
     saving.last = settle(draftIo, d, what === 'take')
     if (what === 'take') draftText.value = d.text
@@ -1631,5 +1633,5 @@ export function startPanels(started: PanelsDeps) {
     })
   }
 
-  return { listen, display, renderPanel, focusDesk, mountDeskScreen, replay, focusShell, run, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, runCommand, tickPet, freshLogbooks, followDraft, askDraw }
+  return { listen, display, renderPanel, focusDesk, mountDeskScreen, replay, focusShell, run, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, runCommand, tickPet, freshLogbooks, followDraft, askDraw, draft: () => draft }
 }

@@ -19,7 +19,8 @@ import type { Navigation } from './navigation.ts'
 import type { Panels } from './panels.ts'
 import type { AppLoop } from './app-loop.ts'
 import type { Controls } from './controls.ts'
-import type { Frames } from './frames.ts'
+import type { Frames, Meter } from './frames.ts'
+import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Feed } from './feed.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
 
@@ -127,6 +128,10 @@ export type Engine = {
   offers(): Offer[]
   startHold(a: Act, o: Offer, by: string): void
   floorY(): number
+  /** Real frames over the last second, and what the last frame drew. */
+  meter(): Readonly<Meter>
+  /** The draft open in the editor. */
+  draft(): Draft | undefined
   /** The app's db: the panel open beside the world, the view, the desk's tab, a replay, motion, aim and capture. */
   app(): Db
   dispatch(event: AppEvent): void
@@ -205,7 +210,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
   const panelOf = (): DoorState['panel'] => {
     const { panel, deskTab, replay } = e.app()
     if (panel?.kind === 'logbook') return { kind: panel.kind, id: panel.card.id, tab: panel.tab, on: panel.on, read: panel.threads !== undefined }
-    if (panel?.kind === 'draft') return { kind: panel.kind, project: s.draft?.project, id: s.draft?.id }
+    if (panel?.kind === 'draft') return { kind: panel.kind, project: e.draft()?.project, id: e.draft()?.id }
     if (panel?.kind === 'desk') return { ...panel, tab: deskTab, ...(replay && replay.id === panel.id && { replay: replay.session }) }
     return panel
   }
@@ -219,7 +224,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
       walker: { ...s.me }, riding: ride !== undefined, flying: flight !== undefined,
       petting: pet && { name: pet.name, progress: petProgress(pet, s.simNow) },
       aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, s.simNow) },
-      fps: s.meter.fps, frameMs: s.meter.frameMs, drawn: { calls: s.meter.calls, triangles: s.meter.triangles },
+      fps: e.meter().fps, frameMs: e.meter().frameMs, drawn: { calls: e.meter().calls, triangles: e.meter().triangles },
       counts: { boards: s.boards, rebuilds: s.rebuilds, desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
     }
   }
@@ -307,7 +312,7 @@ export function startDoor(started: DoorDeps) {
   const { run, drawPending } = started.panels
   const { app } = started.app
   const { onKey } = started.controls
-  const { play, render, update } = started.frames
+  const { play, render, update, meter } = started.frames
   const { advance, ready } = started.feed
 
   /** Standing at `spot` on `level` at once, out of any ride or flight. */
@@ -317,6 +322,8 @@ export function startDoor(started: DoorDeps) {
     ready, pictured, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
     events: events.read,
     play,
+    meter,
+    draft: started.panels.draft,
     drive: started.input.drive,
   }, started.stage)
 }

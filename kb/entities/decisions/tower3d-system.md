@@ -159,7 +159,8 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   `listen` the app calls as it attaches, the HUD's before its own and the panels' after, so none can run before the
   app exists (a resource's start is an `await import` away from the next). A flag one resource keeps
   and another set is a function on its owner (the panels' `askDraw`, the frames' `beginDrawing`, `drawEachFrame` and `play`, the
-  editor's last save a cell hiring exposes).
+  editor's last save a cell hiring exposes), and so is a cell one resource keeps that others read or clear (the
+  frames' `meter`, the panels' open `draft`, the HUD's `clearDots`).
 - *No cycles.* [`importCycles`](ref:hub/scripts/tower3d-boot.ts#importCycles) in `test:tower3d-boot` walks the import
   graph esbuild reads for the four pages and fails, naming the modules, on any cycle. The one there was (`layout`,
   `meetings`, `zones`, `breaks`) is broken by [`prefab.ts`](ref:hub/renderers/tower3d/src/prefab.ts).
