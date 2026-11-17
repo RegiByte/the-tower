@@ -44,7 +44,7 @@ import {
 } from './bridge/worktrees.ts'
 import { changedSince, sinceOf, type Git } from './changed-files.ts'
 import { git, gitWith, GitTimeout, run, wholeTree } from './git.ts'
-import { copyIndex, privateIndex, sweepIndexes, type HeldIndex } from './private-index.ts'
+import { copyIndex, sweepIndexes, throughCopy } from './private-index.ts'
 import type { RepoLayout, Stale } from './bridge/repo-changes.ts'
 import type { ErrorCode } from './shared/api.ts'
 import { worktreeBrief, type Restored, type WorktreeBrief } from './shared/launch.ts'
@@ -396,20 +396,6 @@ const factsOf = async (dir: string): Promise<RepoFacts> => {
 }
 
 const statusOf = async (gitIn: Git, dir: string) => lines(await gitIn(dir, ['status', '--porcelain']))
-
-/**
- * Git reading checkout `checkout` of repo `repo` through its private index (`privateIndex`), held from the first call
- * until `release`: a checkout whose parts are all kept is never copied.
- */
-const throughCopy = (repo: string, checkout: string, gitDir: string) => {
-  let held: Promise<HeldIndex | undefined> | undefined
-  const gitIn = async (): Promise<Git> => {
-    const h = await (held ??= privateIndex(repo, checkout, gitDir))
-    return h ? gitWith({ GIT_INDEX_FILE: h.index }) : git
-  }
-  const release = async () => (await held?.catch(() => undefined))?.release()
-  return { gitIn, release }
-}
 
 /** A dir's refs read (`rereadRefs`): where its git lives and its own facts, which a checkouts read is judged on; none for a dir that is no repo. */
 export type RefsReading = { read: Extract<RefsRead, { git: false }> } | RepoRefsReading
