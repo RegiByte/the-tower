@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-17",
   "refs": ["hub/renderers/tower3d/src/acts.ts#offersOf", "hub/renderers/tower3d/src/acts.ts#OFFERS", "hub/renderers/tower3d/src/acts.ts#KEY", "hub/renderers/tower3d/src/acts.ts#HELD", "hub/renderers/tower3d/src/acts.ts#heldWhy", "hub/src/shared/health.ts#whyNot", "hub/renderers/tower3d/src/controls.ts#onKey", "hub/renderers/tower3d/src/ui.ts#promptHtml", "hub/renderers/tower3d/index.html"]
 }
 ---
