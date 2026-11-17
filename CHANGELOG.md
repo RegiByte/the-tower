@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.9.0
+
+Your own callsigns can join the tower's instead of replacing them (#659). Nothing to restart beyond the tower
+(`tower update` does it).
+
+- **Callsigns you add.** `callsigns` in the config also takes `{"names": [...], "mode": "add"}`: new workers draw
+  from the tower's names and yours, a name in both taken once. `"mode": "replace"` (or leaving `mode` out) uses only
+  yours, as a plain list always has. A setting that can't name workers says how to fix it, on the board and in
+  `tower config check`. Workers already named keep their names. **config**: optional; a list keeps working.
+
 ## v2.8.4
 
 Tower 3D's last shared state finds its owners, and the shared record is gone (#655, #656, #657). Nothing to restart
