@@ -9,6 +9,7 @@ import { purr, ring } from './life.ts'
 import { PET_MS } from './pet.ts'
 import { cabinetOf } from './layout.ts'
 import type { Clock } from './clock.ts'
+import type { Sim } from './sim.ts'
 import type { Archive } from './archive.ts'
 import { s, type Panel, type Standing } from './state.ts'
 import { aim } from './walker.ts'
@@ -28,7 +29,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the app resource is started with. */
-export type AppLoopDeps = { clock: Clock; tower: Tower; clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
+export type AppLoopDeps = { clock: Clock; sim: Sim; tower: Tower; clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type AppLoop = ReturnType<typeof startAppLoop>
 
@@ -38,6 +39,7 @@ export type AppLoop = ReturnType<typeof startAppLoop>
  */
 export function startAppLoop(started: AppLoopDeps) {
   const { now: wallNow, moves: clockMoves } = started.clock
+  const { now: simNow } = started.sim
   const { tower } = started
   const { port } = started
   const { draftsOf, floorThreadsOf } = started.clients
@@ -53,6 +55,9 @@ export function startAppLoop(started: AppLoopDeps) {
   const { renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk } = started.hud
   const { toDesk, toShell, goToAsk } = started.navigation
   const { display, focusDesk, mountDeskScreen, focusShell, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, freshLogbooks, followDraft, askDraw, draft: drafted } = started.panels
+
+  /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
+  let waitedAt = 0
 
   /** You stand at `spot` on `level`, the camera at your eyes. */
   function stand(level: number, spot: Standing) {
@@ -121,7 +126,7 @@ export function startAppLoop(started: AppLoopDeps) {
         renderHud()
       },
       fireworks: ({ cards }) => celebrate(cards),
-      'waits/began': () => void (s.waitedAt = s.simNow),
+      'waits/began': () => void (waitedAt = simNow()),
       asked: ({ ask }) => toast(`${ask.title}, asked by ${ask.cap}`, { label: 'Go', run: () => goToAsk(ask) }),
       'shown/arrived': ({ id, target, atDesk }) => shownArrives(id, target, atDesk),
       'game/frame': ({ project, id }) => frameCabinet(cabinetOf(planNow(), project, id)!),
@@ -156,5 +161,5 @@ export function startAppLoop(started: AppLoopDeps) {
 
   started.panels.listen()
 
-  return { app }
+  return { app, waitedAt: () => waitedAt }
 }

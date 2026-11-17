@@ -7,7 +7,7 @@ import type { Listener } from '/lib/machine.js'
  */
 
 /**
- * One event a loop handled. `at` is the simulated clock (`s.simNow`), which a stepped page steps. A board anywhere in
+ * One event a loop handled. `at` is the simulated clock (`sim.now()`), which a stepped page steps. A board anywhere in
  * the event or its effects is kept as its summary, `{ $board, floors, cards, waiting }`.
  */
 export type EventRecord = { n: number; loop: string; at: number; event: unknown; effects: readonly unknown[] }

@@ -95,8 +95,6 @@ export type State = {
   viewer: Viewer
   /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
   storedLayout: Layout | undefined
-  /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
-  waitedAt: number
 
   /** Where you stand and look: what the frames move, as walking, riding, petting or a cut moves you (the app's `Motion`). */
   me: Walker
@@ -115,12 +113,6 @@ export type State = {
    */
   doorMode: boolean
 
-  /**
-   * Simulated time in ms: what animations, holds, flights and cuts read. Live, real frames advance it; stepped, only
-   * the door does. `?stepped` starts it stopped, so a page's frames are the same on every load.
-   */
-  simNow: number
-  stepped: boolean
   /** Boards received and buildings built since load. */
   boards: number
   rebuilds: number
@@ -142,11 +134,11 @@ export const s: State = {
   levels: [],
   world: undefined,
   desks: new Map(), stations: new Map(), moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(),
-  visited: new Set(), viewer: VIEWER_DEFAULT, storedLayout: undefined, waitedAt: 0,
+  visited: new Set(), viewer: VIEWER_DEFAULT, storedLayout: undefined,
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 },
   hiring: noHires, seenShown: new Set(),
   carrying: undefined, beer: false,
   doorMode: false,
-  simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
+  boards: 0, rebuilds: 0,
   muted: false, fpsShown: false, origins: {},
 }

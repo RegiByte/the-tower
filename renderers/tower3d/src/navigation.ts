@@ -19,13 +19,14 @@ import type { World } from './building.ts'
 import type { Hud } from './hud.ts'
 import type { Stage } from './stage.ts'
 import type { Clock } from './clock.ts'
+import type { Sim } from './sim.ts'
 import type { Port } from './port.ts'
 import type { Clients } from './clients.ts'
 import type { Archive } from './archive.ts'
 import type { Titles } from './titles.ts'
 
 /** What the navigation resource is started with. */
-export type NavigationDeps = { clock: Clock; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
+export type NavigationDeps = { clock: Clock; sim: Sim; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
 
 export type Navigation = ReturnType<typeof startNavigation>
 
@@ -35,6 +36,7 @@ export type Navigation = ReturnType<typeof startNavigation>
  */
 export function startNavigation(started: NavigationDeps) {
   const { now: wallNow } = started.clock
+  const { now: simNow } = started.sim
   const { tower } = started
   const reads = { ...started.clients, ...started.titles, drawersAt: started.archive.drawersAt }
   const { port } = started
@@ -65,7 +67,7 @@ export function startNavigation(started: NavigationDeps) {
 
   function travel(level: number, spot: Standing, then: AppEvent) {
     if (level === s.me.level) return port.dispatch(then)
-    port.dispatch({ type: 'cut', cut: { at: s.simNow + CUT_MS, level, spot, then } })
+    port.dispatch({ type: 'cut', cut: { at: simNow() + CUT_MS, level, spot, then } })
   }
 
   function closeSide() {
@@ -174,7 +176,7 @@ export function startNavigation(started: NavigationDeps) {
 
   function startRide(to: number) {
     if (motionNow().ride || to === s.me.level || !inside(carBox(planNow()), s.me.x, s.me.z)) return
-    port.dispatch({ type: 'ride', ride: { from: s.me.level, to, start: s.simNow, move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) } })
+    port.dispatch({ type: 'ride', ride: { from: s.me.level, to, start: simNow(), move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) } })
   }
 
   function overview() {
@@ -227,7 +229,7 @@ export function startNavigation(started: NavigationDeps) {
     $('crosshair').classList.toggle('on', Boolean(a) && viewNow() === 'walk')
     const offers = offersNow()
     const marked = markedIn(aim, offers.length)
-    const key = a ? `${aim.offeredKey}|${JSON.stringify(offers)}|${marked}|${Math.floor(s.simNow / 1000)}` : ''
+    const key = a ? `${aim.offeredKey}|${JSON.stringify(offers)}|${marked}|${Math.floor(simNow() / 1000)}` : ''
     if (key !== promptKey) {
       promptKey = key
       const html = a && boardNow() ? promptHtml(a, boardNow()!, offers, marked, catNames(), planNow().galleries, reads, wallNow()) : ''
@@ -240,7 +242,7 @@ export function startNavigation(started: NavigationDeps) {
   }
 
   function startHold(a: Act, o: Offer, by: string) {
-    port.dispatch({ type: 'hold', hold: { act: a, verb: o.verb, start: s.simNow, by } })
+    port.dispatch({ type: 'hold', hold: { act: a, verb: o.verb, start: simNow(), by } })
   }
 
   /** A hold let go of: the key or the button released, or the page no longer seeing it held. */
