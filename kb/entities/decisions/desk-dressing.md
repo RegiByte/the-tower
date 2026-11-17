@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-17",
   "refs": [
     "hub/renderers/tower3d/src/dress.ts#dress",
     "hub/renderers/tower3d/src/dress.ts#pileState",
