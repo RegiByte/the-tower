@@ -27,9 +27,10 @@ import type { Stage } from './stage.ts'
 import type { Clients } from './clients.ts'
 import type { Clock } from './clock.ts'
 import type { Port } from './port.ts'
+import type { WalkerCell } from './walker.ts'
 
 /** What the hud resource is started with. */
-export type HudDeps = { clock: Clock; tower: Tower; lighting: Lighting; clients: Clients; stage: Stage; music: Music; port: Port; toasts: Toasts; world: World; views: Views; spawn: Spawn }
+export type HudDeps = { walker: WalkerCell; clock: Clock; tower: Tower; lighting: Lighting; clients: Clients; stage: Stage; music: Music; port: Port; toasts: Toasts; world: World; views: Views; spawn: Spawn }
 
 export type Hud = ReturnType<typeof startHud>
 
@@ -38,6 +39,7 @@ export type Hud = ReturnType<typeof startHud>
  * music and frame-rate toggles, and the viewer's record of what was seen.
  */
 export function startHud(started: HudDeps) {
+  const { me } = started.walker
   const { now: wallNow } = started.clock
   const { tower } = started
   const { port } = started
@@ -91,9 +93,9 @@ export function startHud(started: HudDeps) {
 
   function renderElevator() {
     const { ride } = motionNow()
-    const inCar = viewNow() === 'walk' && (ride !== undefined || inside(carBox(planNow()), s.me.x, s.me.z))
+    const inCar = viewNow() === 'walk' && (ride !== undefined || inside(carBox(planNow()), me().x, me().z))
     show('elevator', inCar)
-    if (inCar) $('elevator').innerHTML = elevatorHtml(planNow(), ride ? ride.to : s.me.level, ride !== undefined, heededWaits(boardNow()!, heed()))
+    if (inCar) $('elevator').innerHTML = elevatorHtml(planNow(), ride ? ride.to : me().level, ride !== undefined, heededWaits(boardNow()!, heed()))
   }
 
   tower.get('origins').then((o) => (s.origins = o), (err: Error) => toast(`origins: ${err.message}`))

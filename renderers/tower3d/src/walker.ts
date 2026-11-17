@@ -10,6 +10,20 @@ import { EYE, type Box } from './layout.ts'
  */
 export type Walker = { x: number; z: number; yaw: number; pitch: number; level: number; y: number; vy: number }
 
+export type WalkerCell = ReturnType<typeof startWalker>
+
+/**
+ * Where you stand and look, as the frames move you by the steps below and walking, riding, petting or a cut places
+ * you: a cell advanced by a frame, not a machine (decision `machines`). Every write replaces the whole walker.
+ */
+export function startWalker() {
+  let me: Walker = { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 }
+  return {
+    me: () => me,
+    set: (w: Walker) => void (me = w),
+  }
+}
+
 const WALK = 4.2
 const RUN = 8
 const LOOK = 0.0022

@@ -9,7 +9,7 @@ import { carBox, coreFront, deskOf, deskSpot, inside, kioskOf, levelOfCard, leve
 import { type Shown } from './showing.ts'
 import { promptHtml } from './ui.ts'
 import { s, type Standing } from './state.ts'
-import { aim } from './walker.ts'
+import { aim, type WalkerCell } from './walker.ts'
 import { DECK } from './floorplan.ts'
 import type { Toasts } from './toasts.ts'
 import type { Assets } from './loads.ts'
@@ -26,7 +26,7 @@ import type { Archive } from './archive.ts'
 import type { Titles } from './titles.ts'
 
 /** What the navigation resource is started with. */
-export type NavigationDeps = { clock: Clock; sim: Sim; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
+export type NavigationDeps = { walker: WalkerCell; clock: Clock; sim: Sim; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts; world: World; hud: Hud }
 
 export type Navigation = ReturnType<typeof startNavigation>
 
@@ -35,6 +35,7 @@ export type Navigation = ReturnType<typeof startNavigation>
  * and aiming at what the prompt offers.
  */
 export function startNavigation(started: NavigationDeps) {
+  const { me } = started.walker
   const { now: wallNow } = started.clock
   const { now: simNow } = started.sim
   const { tower } = started
@@ -66,7 +67,7 @@ export function startNavigation(started: NavigationDeps) {
   const CUT_MS = 200
 
   function travel(level: number, spot: Standing, then: AppEvent) {
-    if (level === s.me.level) return port.dispatch(then)
+    if (level === me().level) return port.dispatch(then)
     port.dispatch({ type: 'cut', cut: { at: simNow() + CUT_MS, level, spot, then } })
   }
 
@@ -175,8 +176,8 @@ export function startNavigation(started: NavigationDeps) {
   const nextWaiting = () => goMove('waiting')
 
   function startRide(to: number) {
-    if (motionNow().ride || to === s.me.level || !inside(carBox(planNow()), s.me.x, s.me.z)) return
-    port.dispatch({ type: 'ride', ride: { from: s.me.level, to, start: simNow(), move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(s.me.level)) / RIDE.speed) } })
+    if (motionNow().ride || to === me().level || !inside(carBox(planNow()), me().x, me().z)) return
+    port.dispatch({ type: 'ride', ride: { from: me().level, to, start: simNow(), move: Math.min(RIDE.most, RIDE.start + Math.abs(levelY(to) - levelY(me().level)) / RIDE.speed) } })
   }
 
   function overview() {
