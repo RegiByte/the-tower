@@ -241,11 +241,11 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
     ready: () => e.ready,
     pictured: e.pictured,
     capture() {
-      s.doorMode = true
+      e.dispatch({ type: 'door/mode', on: true })
       e.dispatch({ type: 'capture', by: 'door', held: e.app().view === 'walk' && !e.app().panel })
     },
     release() {
-      s.doorMode = false
+      e.dispatch({ type: 'door/mode', on: false })
       e.drive(undefined)
       e.dispatch({ type: 'capture', by: 'door', held: false })
     },

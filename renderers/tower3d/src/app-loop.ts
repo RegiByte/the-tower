@@ -53,7 +53,7 @@ export function startAppLoop(started: AppLoopDeps) {
   const { archivedAt, archivesSettled, drawersAt, readArchives } = started.archive
   const { desk } = started.views
   const { hiring } = started.spawn
-  const { renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk } = started.hud
+  const { renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk, turnMusic, showMeter } = started.hud
   const { toDesk, toShell, goToAsk } = started.navigation
   const { display, focusDesk, mountDeskScreen, focusShell, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, freshLogbooks, followDraft, askDraw, draft: drafted } = started.panels
 
@@ -77,7 +77,7 @@ export function startAppLoop(started: AppLoopDeps) {
       orbit.target.fromArray(center)
       orbit.enabled = true
     },
-    pet: () => s.muted || purr(PET_MS / 1000),
+    pet: () => port.state().muted || purr(PET_MS / 1000),
   }
 
   /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
@@ -89,7 +89,9 @@ export function startAppLoop(started: AppLoopDeps) {
       announce: () => {},
       notify: () => {},
       unnotify: () => {},
-      sound: ({ sound }) => void (s.doorMode || tower.framed || ring(sound)),
+      sound: ({ sound }) => void (port.state().doorMode || tower.framed || ring(sound)),
+      music: ({ on }) => turnMusic(on),
+      meter: ({ shown }) => showMeter(shown),
       keep: ({ field, value }) => keepViewer(field, value),
       leave: ({ panel }) => (LEAVE[panel.kind] as (p: Panel) => void)(panel),
       enter: ({ panel, from }) => (ENTER[panel.kind] as (p: Panel, from: Panel | undefined) => void)(panel, from),

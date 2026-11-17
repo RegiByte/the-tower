@@ -127,7 +127,7 @@ export function startPanels(started: PanelsDeps) {
       const id = panel.id
       const f = board.floors.find((f) => f.id === id)
       if (!f) return
-      $('side').innerHTML = floorHtml(board, f, s.origins, tower.framed, held, panel.tray, reads, wallNow())
+      $('side').innerHTML = floorHtml(board, f, port.state().origins, tower.framed, held, panel.tray, reads, wallNow())
     }
     if (panel.kind === 'archive') {
       const f = board.floors.find((f) => f.id === panel.id)
@@ -860,8 +860,8 @@ export function startPanels(started: PanelsDeps) {
     if (!name) return
     tower.store.get(layoutKey(name)).then((kept) => {
       const stored = (kept ?? undefined) as Layout | undefined
-      if (JSON.stringify(stored) === JSON.stringify(s.storedLayout)) return
-      s.storedLayout = stored
+      if (JSON.stringify(stored) === JSON.stringify(port.state().layout)) return
+      port.dispatch({ type: 'layout/stored', layout: stored })
       renderPanel()
     })
   }

@@ -97,7 +97,7 @@ export function startFrames(started: FramesDeps) {
     m.fps = (m.frames * 1000) / (now - m.since)
     m.frameMs = m.work / m.frames
     Object.assign(m, { since: now, frames: 0, work: 0 })
-    if (s.fpsShown) $('fps').textContent = `${Math.round(m.fps)} fps · ${m.frameMs.toFixed(1)} ms`
+    if (port.state().meterShown) $('fps').textContent = `${Math.round(m.fps)} fps · ${m.frameMs.toFixed(1)} ms`
   }
 
   let lastFrame = performance.now()

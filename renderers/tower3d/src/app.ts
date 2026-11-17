@@ -21,6 +21,7 @@ import type { Archived, Drawer } from './archive.ts'
 import type { Act } from './acts.ts'
 import type { Pet } from './pet.ts'
 import type { Hold, Panel, Standing, View } from './state.ts'
+import type { Layout } from '/lib/layout.js'
 import { shownTab, type DeskTab } from './ui.ts'
 
 /** The tab a desk opens on once it opens: its brief, its review thread, or lines of its Changes. */
@@ -137,6 +138,20 @@ export type Db = {
   aim: Aim
   capture: Capture
   stats: StatsRead
+  /**
+   * The door has captured: its capture stands in for pointer lock and follows every lock and unlock the way pointer
+   * lock would (`capture.door`), and the page plays and rings nothing.
+   */
+  doorMode: boolean
+  /** Kept by the tower for this page: the music off, the frame meter shown. */
+  muted: boolean
+  meterShown: boolean
+  /** The waits visited by N this round (`Heed`); what you dismissed and how waits ring are attention's (`attend.ts`). */
+  visited: ReadonlySet<string>
+  /** The web page of each project directory's origin remote. */
+  origins: Record<string, string>
+  /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
+  layout: Layout | undefined
 }
 
 export type AppEvent =
@@ -205,6 +220,20 @@ export type AppEvent =
   | { type: 'views/changed' }
   /** A view mounted in a panel handed `subject` to be placed (the kit's `display`). */
   | { type: 'display'; subject: Subject | string }
+  /** The door took over the mouse (`capture`) or gave it back (`release`). */
+  | { type: 'door/mode'; on: boolean }
+  /** The music turned off or on. */
+  | { type: 'music/muted'; muted: boolean }
+  /** The frame meter shown or hidden. */
+  | { type: 'meter/shown'; shown: boolean }
+  /** What the tower kept for this page, landed with the models: it sets the music's state without starting it. */
+  | { type: 'kept/landed'; muted: boolean; meterShown: boolean }
+  /** N went round the waits: those visited this round. */
+  | { type: 'visited'; visited: ReadonlySet<string> }
+  /** The origin remotes' web pages read. */
+  | { type: 'origins/read'; origins: Record<string, string> }
+  /** Your layout as `tower.store` keeps it, read again. */
+  | { type: 'layout/stored'; layout: Layout | undefined }
 
 export type AppEffect =
   | AttendOut
@@ -269,6 +298,10 @@ export type AppEffect =
   | { type: 'unlock' }
   /** The keys held let go of and the pause card drawn, as the mouse is taken or let go of. */
   | { type: 'captured' }
+  /** The music played, unless something keeps it quiet, or paused. */
+  | { type: 'music'; on: boolean }
+  /** The frame meter shown or hidden. */
+  | { type: 'meter'; shown: boolean }
 
 export const startingDb = (attending: Attending): Db => ({
   building: undefined,
@@ -283,6 +316,12 @@ export const startingDb = (attending: Attending): Db => ({
   aim: { aimed: undefined, aimedKey: actKey(undefined), offered: undefined, offeredKey: actKey(undefined), marked: 0, hold: undefined },
   capture: { locked: false, door: false, still: false },
   stats: { read: undefined, failed: undefined, at: undefined, scope: STATS_ALL, reading: 0 },
+  doorMode: false,
+  muted: false,
+  meterShown: false,
+  visited: new Set(),
+  origins: {},
+  layout: undefined,
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
@@ -636,5 +675,12 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   'let-go': (db) => [into(withCapture(db, { still: true })), UNLOCK],
   'views/changed': () => [DRAW],
   display: (_, { subject }) => [{ type: 'display', subject }],
+  'door/mode': (db, { on }) => [into({ ...db, doorMode: on })],
+  'music/muted': (db, { muted }) => [into({ ...db, muted }), { type: 'music', on: !muted }, { type: 'hud' }],
+  'meter/shown': (db, { shown }) => [into({ ...db, meterShown: shown }), { type: 'meter', shown }],
+  'kept/landed': (db, { muted, meterShown }) => [into({ ...db, muted, meterShown }), ...(meterShown ? [{ type: 'meter', shown: true } as const] : [])],
+  visited: (db, { visited }) => [into({ ...db, visited })],
+  'origins/read': (db, { origins }) => [into({ ...db, origins })],
+  'layout/stored': (db, { layout }) => [into({ ...db, layout })],
   arrived: (db, { at }) => (at.kind === 'ask' ? [...went(db, { kind: 'floor', id: at.project, tray: undefined }), { type: 'toast', text: at.said }] : [{ type: 'arrived', at }]),
 })

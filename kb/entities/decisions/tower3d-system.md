@@ -177,7 +177,7 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   resource listens on starts after it (the controls after the app, for blur and visibility). A listener that reads the app's db
   or dispatches to it is added only once the app is attached: the HUD's and the panels' are each gathered in a
   `listen` the app calls as it attaches, the HUD's before its own and the panels' after, so none can run before the
-  app exists (a resource's start is an `await import` away from the next). A flag one resource keeps
+  app exists (the HUD's read of the origins starts there, since its landing dispatches) (a resource's start is an `await import` away from the next). A flag one resource keeps
   and another set is a function on its owner (the panels' `askDraw`, the frames' `beginDrawing`, `drawEachFrame` and `play`, the
   editor's last save a cell hiring exposes), and so is a cell one resource keeps that others read or clear (the
   frames' `meter`, the panels' open `draft`, the HUD's `clearDots`, the app loop's `waitedAt`, stamped by its
@@ -220,7 +220,11 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
 - *The db* ([`Db`](ref:hub/renderers/tower3d/src/app.ts#Db)): what the building took (below), the panel open, attention, the view, the desk's tab,
   what is pending for the next board (a desk or shell to go to, the tab or showing a desk opens on), a replay, and
   what moves on its own (`motion`), what is aimed at and held (`aim`), whether walking has the mouse (`capture`), each
-  below, the board waiting for its floors' archives (`waiting`), and the Stats panel's read (`stats`).
+  below, the board waiting for its floors' archives (`waiting`), the Stats panel's read (`stats`), and the view
+  state the page keeps for you: whether the door has captured (`doorMode`, `door/mode`), the music off and the frame
+  meter shown (`muted`, `meterShown`: `music/muted` and `meter/shown` return a `music` or `meter` effect, and
+  `kept/landed` restores both from what the tower kept without starting the music), the waits N visited this round
+  (`visited`), the origin remotes' web pages (`origins/read`) and your stored layout (`layout/stored`).
   Readers call `app.state()`, through the port (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `now.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
   anything written every frame stay out of it.
@@ -391,5 +395,5 @@ reads) are each in the start of the resource they belong to, and a module is han
 needs no resource started before it. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`, started as the `spawn` resource: [`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), it stays out
 of the panel union. Motion, aim and capture are in the db as well. What is left outside it
-is the walker, its own resource, the door's mode and a pointer press.
+is the walker, its own resource, a pointer press, and the view state `state.ts` still holds.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.
