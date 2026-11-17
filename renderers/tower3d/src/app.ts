@@ -207,6 +207,12 @@ export type Db = {
 
 export type Hand = { t: 'empty' } | { t: 'note'; held: Held } | { t: 'beer' }
 
+/** The showings you have seen: known once the first board is taken, which primes them when nothing was kept. */
+export function seenIn(db: Db) {
+  if (!db.seen) throw new Error('the showings seen were read before the first board was taken: read them only once `building` is set')
+  return db.seen
+}
+
 /** The draft in `hand`, if it holds one. */
 export const heldIn = (hand: Hand) => (hand.t === 'note' ? hand.held : undefined)
 
@@ -788,7 +794,7 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   'music/muted': (db, { muted }) => [into({ ...db, muted }), { type: 'music', on: !muted }, { type: 'hud' }],
   'meter/shown': (db, { shown }) => [into({ ...db, meterShown: shown }), { type: 'meter', shown }],
   'kept/landed': (db, { muted, meterShown, seen }) => [into({ ...db, muted, meterShown, seen }), { type: 'meter', shown: meterShown }],
-  'seen/saw': (db, { key }) => [into({ ...db, seen: [...db.seen!.filter((k) => k !== key), key] }), { type: 'sides' }, { type: 'hud' }],
+  'seen/saw': (db, { key }) => [into({ ...db, seen: [...seenIn(db).filter((k) => k !== key), key] }), { type: 'sides' }, { type: 'hud' }],
   visited: (db, { visited }) => [into({ ...db, visited })],
   'origins/read': (db, { origins }) => [into({ ...db, origins })],
   'layout/stored': (db, { layout }) => [into({ ...db, layout })],

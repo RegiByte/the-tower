@@ -1,4 +1,5 @@
 import type { Tower } from './api.ts'
+import { seenIn } from './app.ts'
 import { nowOf } from './now.ts'
 import type { Port } from './port.ts'
 import type { Walker, WalkerCell } from './walker.ts'
@@ -27,7 +28,7 @@ export function startKeeper(started: KeeperDeps) {
   let keptKey = ''
   setInterval(() => {
     if (!boardNow() || viewNow() !== 'walk' || motionNow().ride || started.port.state().doorMode) return
-    const kept: Kept = { spot: spotOf(me()), muted: started.port.state().muted, fps: started.port.state().meterShown, seen: started.port.state().seen!.slice(-SEEN_KEPT) }
+    const kept: Kept = { spot: spotOf(me()), muted: started.port.state().muted, fps: started.port.state().meterShown, seen: seenIn(started.port.state()).slice(-SEEN_KEPT) }
     const key = JSON.stringify(kept)
     if (key !== keptKey) (keptKey = key, tower.remember(kept))
   }, 1000)
