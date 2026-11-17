@@ -12,7 +12,7 @@ import type { Clock } from './clock.ts'
 import type { Sim } from './sim.ts'
 import type { Archive } from './archive.ts'
 import { s, type Panel, type Standing } from './state.ts'
-import { aim } from './walker.ts'
+import { aim, type WalkerCell } from './walker.ts'
 import type { Toasts } from './toasts.ts'
 import type { Events } from './events.ts'
 import { $ } from './dom.ts'
@@ -29,7 +29,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the app resource is started with. */
-export type AppLoopDeps = { clock: Clock; sim: Sim; tower: Tower; clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
+export type AppLoopDeps = { walker: WalkerCell; clock: Clock; sim: Sim; tower: Tower; clients: Clients; archive: Archive; stage: Stage; input: Input; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; panels: Panels }
 
 export type AppLoop = ReturnType<typeof startAppLoop>
 
@@ -38,6 +38,7 @@ export type AppLoop = ReturnType<typeof startAppLoop>
  * window's focus and visibility it is told of.
  */
 export function startAppLoop(started: AppLoopDeps) {
+  const { me, set: setMe } = started.walker
   const { now: wallNow, moves: clockMoves } = started.clock
   const { now: simNow } = started.sim
   const { tower } = started
@@ -61,8 +62,8 @@ export function startAppLoop(started: AppLoopDeps) {
 
   /** You stand at `spot` on `level`, the camera at your eyes. */
   function stand(level: number, spot: Standing) {
-    s.me = { ...s.me, pitch: 0, ...spot, level, y: spot.y ?? 0, vy: 0 }
-    aim(camera, s.me, floorY())
+    setMe({ ...me(), pitch: 0, ...spot, level, y: spot.y ?? 0, vy: 0 })
+    aim(camera, me(), floorY())
     renderHud()
     renderElevator()
   }

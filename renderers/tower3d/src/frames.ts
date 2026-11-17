@@ -26,7 +26,7 @@ import type { AppLoop } from './app-loop.ts'
 import { poseFiling } from './filing.ts'
 import { fitPicture, placePicture } from './gallery.ts'
 import { s } from './state.ts'
-import { aim, fallTo, jump, look, walk } from './walker.ts'
+import { aim, fallTo, jump, look, walk, type WalkerCell } from './walker.ts'
 import { groundAt } from './floorplan.ts'
 import { panelGrid, setDoors } from './world.ts'
 import type { Music } from './music.ts'
@@ -42,7 +42,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the frames resource is started with. */
-export type FramesDeps = { clock: Clock; sim: Sim; tower: Tower; screens: Screens; pictures: Pictures; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels; app: AppLoop }
+export type FramesDeps = { walker: WalkerCell; clock: Clock; sim: Sim; tower: Tower; screens: Screens; pictures: Pictures; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels; app: AppLoop }
 
 export type Frames = ReturnType<typeof startFrames>
 
@@ -54,6 +54,7 @@ export type Meter = { since: number; frames: number; work: number; fps: number; 
  * and its render.
  */
 export function startFrames(started: FramesDeps) {
+  const { me, set: setMe } = started.walker
   const { now: wallNow } = started.clock
   const { now: simNow, advance, stepped } = started.sim
   const { waitedAt } = started.app
@@ -145,15 +146,15 @@ export function startFrames(started: FramesDeps) {
   /** What a frame sets on the scene before it is drawn: the screens painted, the levels shown, the lighting's passes. */
   function frameScene() {
     if (boardNow() && s.world) paintScreens(simNow(), screenDistance)
-    showLevels(levelsShown(viewNow(), motionNow(), s.me.level))
+    showLevels(levelsShown(viewNow(), motionNow(), me().level))
     if (lit) lightFrame()
   }
 
   /** The lighting's passes before the scene is drawn: the rig fitted to what is seen, and the contact shadows under your level, all counted on the meter. */
   function lightFrame() {
-    const y = planNow().levels[s.me.level]?.y ?? 0
+    const y = planNow().levels[me().level]?.y ?? 0
     const near = cameraOnLevel()
-    rigFrame(scene, { ...planNow(), top: planNow().levels.at(-1)?.y ?? 0, y, height: levelHeight(s.me.level), whole: !near, panels: panelGrid(planNow()) })
+    rigFrame(scene, { ...planNow(), top: planNow().levels.at(-1)?.y ?? 0, y, height: levelHeight(me().level), whole: !near, panels: panelGrid(planNow()) })
     renderer.info.autoReset = false
     renderer.info.reset()
     contactShadows(renderer, scene, near ? standingOn() : [], { ...planNow(), y })
@@ -162,12 +163,12 @@ export function startFrames(started: FramesDeps) {
   /** The camera is within your level's storey, out of the elevator: walking, seated, petting, or flying between those. */
   function cameraOnLevel() {
     const { x, y, z } = camera.position
-    const floor = levelY(s.me.level)
-    return !motionNow().ride && Math.abs(x) < planNow().width / 2 && Math.abs(z) < planNow().depth / 2 && y > floor && y < floor + levelHeight(s.me.level)
+    const floor = levelY(me().level)
+    return !motionNow().ride && Math.abs(x) < planNow().width / 2 && Math.abs(z) < planNow().depth / 2 && y > floor && y < floor + levelHeight(me().level)
   }
 
   /** What stands on your level and its own part of the building. */
-  const standingOn = () => (s.world ? [s.levels[s.me.level]?.group, s.world.levels[s.me.level]].filter((o) => o !== undefined) : [])
+  const standingOn = () => (s.world ? [s.levels[me().level]?.group, s.world.levels[me().level]].filter((o) => o !== undefined) : [])
 
   /** Your hands are in view while you walk or pet a cat, but not while the camera rides or flies. */
   const handsShown = () => (viewNow() === 'walk' || viewNow() === 'pet') && !motionNow().ride && !motionNow().flight
@@ -184,34 +185,34 @@ export function startFrames(started: FramesDeps) {
   function tickRide({ dt }: Frame) {
     const { ride } = motionNow()
     if (!ride) return
-    const out = Math.round(s.me.yaw / (2 * Math.PI)) * 2 * Math.PI
+    const out = Math.round(me().yaw / (2 * Math.PI)) * 2 * Math.PI
     const k = Math.min(1, dt * 3)
-    s.me = { ...s.me, yaw: s.me.yaw + (out - s.me.yaw) * k, pitch: s.me.pitch * (1 - k) }
+    setMe({ ...me(), yaw: me().yaw + (out - me().yaw) * k, pitch: me().pitch * (1 - k) })
     if (riddenFor(ride) < DOORS_SHUT + ride.move) return
-    s.me = { ...s.me, level: ride.to }
+    setMe({ ...me(), level: ride.to })
     port.dispatch({ type: 'ride-arrived' })
   }
 
   function tickWalker(f: Frame) {
-    const was = s.me
+    const was = me()
     stepWalker(f)
     const { pet } = motionNow()
     const stroke = pet && strokeAt(petProgress(pet, simNow()), pet.tailward)
     const note = carried()
     holdNote(landedHands(), note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
     holdBeer(landedHands(), s.beer)
-    poseHands(landedHands(), was, s.me, stroke, f.dt, f.t)
+    poseHands(landedHands(), was, me(), stroke, f.dt, f.t)
   }
 
   function stepWalker({ dt, turned }: Frame) {
-    s.me = fallTo(s.me, here().kind === 'floor' ? groundAt(planNow().loft, s.me.x, s.me.z, s.me.y) : 0, dt)
+    setMe(fallTo(me(), here().kind === 'floor' ? groundAt(planNow().loft, me().x, me().z, me().y) : 0, dt))
     if (viewNow() !== 'walk' || !captured()) return
-    s.me = look(s.me, turned)
+    setMe(look(me(), turned))
     if (motionNow().ride || motionNow().flight) return
-    const wasInCar = inside(carBox(planNow()), s.me.x, s.me.z)
+    const wasInCar = inside(carBox(planNow()), me().x, me().z)
     const m = move()
-    s.me = walk(jump(s.me, m), m, dt, boxesHere())
-    if (wasInCar !== inside(carBox(planNow()), s.me.x, s.me.z)) renderElevator()
+    setMe(walk(jump(me(), m), m, dt, boxesHere()))
+    if (wasInCar !== inside(carBox(planNow()), me().x, me().z)) renderElevator()
   }
 
   /** How open each level's landing doors are, 0 to 1, by level index. */
@@ -222,7 +223,7 @@ export function startFrames(started: FramesDeps) {
     if (motionNow().ride) return 0
     const leaving = [...s.leavers].filter((l) => l.level === level)
     if (leaving.some(boarded)) return 0
-    return level === s.me.level || leaving.some(nearDoors) ? 1 : 0
+    return level === me().level || leaving.some(nearDoors) ? 1 : 0
   }
 
   function tickDoors({ dt }: Frame) {
@@ -246,7 +247,7 @@ export function startFrames(started: FramesDeps) {
       camera.position.lerpVectors(flown.from.fromArray(flight.from), flown.to.fromArray(flight.to), ease(k))
       camera.quaternion.slerpQuaternions(flown.fromQ.fromArray(flight.fromQ), flown.toQ.fromArray(flight.toQ), ease(k))
       if (k === 1) port.dispatch({ type: 'flight-landed' })
-    } else if (viewNow() === 'walk') aim(camera, s.me, floorY())
+    } else if (viewNow() === 'walk') aim(camera, me(), floorY())
     else if (viewNow() === 'overview') orbit.update()
   }
 
@@ -275,7 +276,7 @@ export function startFrames(started: FramesDeps) {
 
   /** Everyone moves where they go every frame; bones are posed only on the levels drawn (`levelsShown`). */
   function tickPeople({ dt, t }: Frame) {
-    const shown = levelsShown(viewNow(), motionNow(), s.me.level)
+    const shown = levelsShown(viewNow(), motionNow(), me().level)
     for (const desk of s.desks.values()) poseDesk(desk, t, dt)
     for (const [id, a] of s.arrivals) if (walkIn(a, dt)) s.arrivals.delete(id)
     for (const desk of s.desks.values()) {
@@ -309,7 +310,7 @@ export function startFrames(started: FramesDeps) {
     const waiter = heededWaits(boardNow()!, heed()).map((w) => s.desks.get(w.id)).find(Boolean)
     const level = waiter && levelOfCard(planNow(), waiter.card.id)!.index
     const watcher = waiter && watcherOf(s.cats.values(), places, waiter.card.id, level!)
-    const follower = motionNow().ride ? undefined : followerOf(places, s.me.level)
+    const follower = motionNow().ride ? undefined : followerOf(places, me().level)
     for (const cat of s.cats.values()) {
       const place = places.get(cat.name)!
       keepEyeOn(cat, cat.name === watcher ? waiter!.card.id : undefined)
@@ -322,7 +323,7 @@ export function startFrames(started: FramesDeps) {
         const perch = deskPerch(waiter!)
         chase(cat, planNow(), level!, perch.at, perch.face, dt, t)
       }
-      else if (cat.following) tagAlong(cat, planNow(), s.me, dt, t)
+      else if (cat.following) tagAlong(cat, planNow(), me(), dt, t)
       else if (cat.returning) cat.returning = !steer(cat, planNow(), place.level, place, 0.05, CAT_SPEED, dt, t)
       else roam(cat, place, levelY(place.level), t)
       hang(cat.level, cat.root)
@@ -334,7 +335,7 @@ export function startFrames(started: FramesDeps) {
     duck(viewNow() === 'focus')
     const beat = beatAt(t)
     const roof = planNow().levels.at(-1)!
-    const posing = levelsShown(viewNow(), motionNow(), s.me.level)(roof.index)
+    const posing = levelsShown(viewNow(), motionNow(), me().level)(roof.index)
     for (const g of s.guests.values()) {
       const at = guestAt(g.card, t, planNow())
       placeGuest(g, at, roof.y)
@@ -353,8 +354,8 @@ export function startFrames(started: FramesDeps) {
   /** While you walk a floor, an arrow on the screen's edge toward each worker on it waiting on you that you can't see. */
   function tickCompass() {
     const walking = viewNow() === 'walk' && !motionNow().ride
-    const waits = walking ? heededWaits(boardNow()!, heed()).filter((w) => levelOfCard(planNow(), w.id)?.index === s.me.level && s.desks.has(w.id)) : []
-    const targets = waits.map((w) => ({ id: w.id, at: s.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(s.me.level) + HEAD_Y) }))
+    const waits = walking ? heededWaits(boardNow()!, heed()).filter((w) => levelOfCard(planNow(), w.id)?.index === me().level && s.desks.has(w.id)) : []
+    const targets = waits.map((w) => ({ id: w.id, at: s.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(me().level) + HEAD_Y) }))
     const card = (id: string) => findCard(boardNow()!, id)!
     camera.updateMatrixWorld()
     drawCompass($('compass'), pointers(camera, targets, innerWidth, innerHeight), (id) => `${bubbleOf(card(id))} ${card(id).callsign}`, (id) => statusColor(card(id)), (id) => onStatusColor(card(id)))

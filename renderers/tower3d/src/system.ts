@@ -31,6 +31,7 @@ import { startTitles } from './titles.ts'
 import { startArchive } from './archive.ts'
 import { startEvents } from './events.ts'
 import { startSim } from './sim.ts'
+import { startWalker } from './walker.ts'
 
 /**
  * Tower 3D as a system of braided resources, each started once its dependencies have (decision `tower3d-system`).
@@ -39,6 +40,7 @@ import { startSim } from './sim.ts'
  *   tower     the tower's API the page reads and writes through (`window.tower`, /lib/client.js)
  *   clock     the wall clock the page draws by, pinned by `?at=` (clock.ts)
  *   sim       the simulated clock animations read, which frames advance and `?stepped` starts stopped (sim.ts)
+ *   walker    where you stand and look, which the frames move and walking, rides and cuts place (walker.ts)
  *   lighting  whether the page draws the light rig, read before anything draws (light/setting.ts)
  *   clients   the extension clients whose words the page draws (clients.ts)
  *   stage     the renderer, scene, camera and the city outside, on the page's canvas (stage.ts)
@@ -72,6 +74,8 @@ const tower = defineResource({ start: (): Tower => window.tower, halt: () => {} 
 const clock = defineResource({ start: startClock, halt: () => {} })
 
 const sim = defineResource({ start: startSim, halt: () => {} })
+
+const walker = defineResource({ start: startWalker, halt: () => {} })
 
 const lighting = defineResource({ dependencies: ['tower'], start: startLighting, halt: () => {} })
 
@@ -114,7 +118,7 @@ const events = defineResource({
 })
 
 const world = defineResource({
-  dependencies: ['clock', 'sim', 'tower', 'assets', 'screens', 'pictures', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
+  dependencies: ['walker', 'clock', 'sim', 'tower', 'assets', 'screens', 'pictures', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
   start: startWorld,
   halt: () => {},
 })
@@ -132,13 +136,13 @@ const spawn = defineResource({
 })
 
 const hud = defineResource({
-  dependencies: ['clock', 'tower', 'lighting', 'clients', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
+  dependencies: ['walker', 'clock', 'tower', 'lighting', 'clients', 'stage', 'music', 'port', 'toasts', 'world', 'views', 'spawn'],
   start: startHud,
   halt: () => {},
 })
 
 const navigation = defineResource({
-  dependencies: ['clock', 'sim', 'tower', 'assets', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
+  dependencies: ['walker', 'clock', 'sim', 'tower', 'assets', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
   start: startNavigation,
   halt: () => {},
 })
@@ -150,21 +154,21 @@ const panels = defineResource({
 })
 
 const app = defineResource({
-  dependencies: ['clock', 'sim', 'tower', 'clients', 'archive', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
+  dependencies: ['walker', 'clock', 'sim', 'tower', 'clients', 'archive', 'stage', 'input', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'panels'],
   start: startAppLoop,
   halt: () => {},
 })
 
 /** After the app: its window blur and visibility listeners register after the app's own. */
 const controls = defineResource({
-  dependencies: ['stage', 'port', 'world', 'hud', 'navigation', 'panels', 'app'],
+  dependencies: ['walker', 'stage', 'port', 'world', 'hud', 'navigation', 'panels', 'app'],
   start: (started: ControlsDeps & { app: unknown }) => startControls(started),
   halt: () => {},
 })
 
 /** After the app and the controls: the frames it starts read the app's db, and the order is the page's. */
 const frames = defineResource({
-  dependencies: ['clock', 'sim', 'tower', 'screens', 'pictures', 'lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
+  dependencies: ['walker', 'clock', 'sim', 'tower', 'screens', 'pictures', 'lighting', 'stage', 'input', 'music', 'port', 'world', 'hud', 'navigation', 'panels', 'app', 'controls'],
   start: (started: FramesDeps & { controls: unknown }) => startFrames(started),
   halt: () => {},
 })
@@ -181,19 +185,19 @@ const feed = defineResource({
 })
 
 const door = defineResource({
-  dependencies: ['sim', 'pictures', 'stage', 'input', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
+  dependencies: ['walker', 'sim', 'pictures', 'stage', 'input', 'port', 'events', 'world', 'navigation', 'panels', 'app', 'controls', 'frames', 'feed'],
   start: startDoor,
   halt: () => {},
 })
 
 /** After the app: it reads the app's db every second. */
 const keeper = defineResource({
-  dependencies: ['tower', 'port', 'app'],
+  dependencies: ['walker', 'tower', 'port', 'app'],
   start: (started: KeeperDeps & { app: unknown }) => startKeeper(started),
   halt: () => {},
 })
 
-export const liveTower3d = { tower, clock, sim, lighting, clients, stage, input, music, screens, pictures, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
+export const liveTower3d = { tower, clock, sim, walker, lighting, clients, stage, input, music, screens, pictures, terminal, assets, port, toasts, titles, archive, events, world, views, spawn, hud, navigation, panels, app, controls, frames, feed, door, keeper }
 
 /**
  * A fixture page (`?board=<name>`): the live record with the resources that differ swapped, the page itself the same.
