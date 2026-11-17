@@ -1,7 +1,7 @@
 /**
  * The tower's edge to the OS's file events: a recursive watch of a tree that reports which paths changed, nothing
- * more, through `@parcel/watcher`. On macOS each subscription is an FSEvents stream of its own: Node's recursive
- * `fs.watch` shares one stream across the process and recreates it whenever a watch opens or closes, losing every
+ * more, through `@parcel/watcher`. On macOS each subscription is an FSEvents stream of its own: Node's `fs.watch` of a
+ * folder, recursive or not, shares one stream across the process and recreates it whenever a watch opens or closes, losing every
  * watch's events in between. On Linux it is inotify, a watch per directory, ignored ones skipped.
  */
 import watcher from '@parcel/watcher'

@@ -4,7 +4,7 @@
  * the jobs log and the jobs the jobs daemon holds, what sessions left running on the machine, and what git says about the tower's worktrees in every project dir.
  */
 import { movedKeys, movedLine } from './moved-keys.ts'
-import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { factsAfter, type Session } from './bridge/facts.ts'
@@ -25,7 +25,7 @@ import type { HeldJob } from './shared/jobs.ts'
 import { jobsOf, type JobRecord } from './bridge/jobs.ts'
 import type { LogFile, StreamMonth } from './bridge/retention.ts'
 import { factEvents, isArchived, logBytes, logFilesIn, logIdOf, tailLog } from './tail.ts'
-import { exitUnwatched, logged, loggedRead, serially, watchedOrExit } from './logged.ts'
+import { exitUnwatched, logged, loggedRead, serially } from './logged.ts'
 import { thrownWords } from './shared/thrown.ts'
 import { subscribe, type Subscription } from './subscribe.ts'
 
@@ -255,7 +255,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     notify()
     for (const check of waiters.keys()) check()
   }
-  const watchers: FSWatcher[] = []
   const subscriptions: Subscription[] = []
   const sessions = new Map<string, Session>()
   const logs = new Map<string, LogFile>()
@@ -542,7 +541,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     return release
   }
 
-  const watching = (watcher: FSWatcher, what: string) => watchers.push(watchedOrExit(watcher, what))
   /** Watches `dir`'s tree, made if missing; resolves once watching. */
   const subscribed = async (dir: string, changed: (paths: string[] | null) => void) => {
     mkdirSync(dir, { recursive: true })
@@ -566,13 +564,23 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     repoWatch.reconcile()
     onChange()
   }
-  /** Watches the folder holding `file` for changes to it. */
-  const watchingConfig = (file: string) =>
-    watching(watch(path.dirname(file), logged('config', (_: string, changed: string | null) => changed === path.basename(file) && configChanged())), file)
-  watchingConfig(paths.config)
+  /**
+   * Watches the folder holding `file` for changes to it. The folder is the system root, whose subfolders take every
+   * log and cache write: those it holds now are ignored, so their events never reach the process.
+   */
+  const watchingConfig = async (file: string) => {
+    const dir = realpathSync(path.dirname(file))
+    const real = path.join(dir, path.basename(file))
+    const subfolders = readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? [path.join(dir, entry.name)] : []))
+    const changed = (files: string[] | null) => {
+      if (files === null || files.includes(real)) configChanged()
+    }
+    subscriptions.push(await subscribe(dir, subfolders, changed, exitUnwatched(dir)))
+  }
+  await watchingConfig(paths.config)
   /** A config that is a link is written in its target's folder, which a watch of the link's folder doesn't see. */
   const target = realpathSync(paths.config)
-  if (path.dirname(target) !== realpathSync(path.dirname(paths.config))) watchingConfig(target)
+  if (path.dirname(target) !== realpathSync(path.dirname(paths.config))) await watchingConfig(target)
   await refreshLive()
   await refreshShells()
   await refreshJobs()
@@ -628,7 +636,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     stop: async () => {
       stopped = true
       repoWatch.pause()
-      for (const watcher of watchers) watcher.close()
       await Promise.all(subscriptions.map((s) => s.close()))
       for (const stopTail of tails.values()) stopTail()
       tails.clear()
