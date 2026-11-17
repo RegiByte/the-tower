@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-09",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-17",
   "refs": [
     "hub/src/bridge/facts.ts#stepAfter",
     "hub/src/bridge/facts.ts#killedOutside",
@@ -83,19 +83,13 @@ storing, and the capability belongs in the core, where every renderer and worker
   tower (or a renderer), and a race with a startup screen; the first prompt as an argument has neither.
 - A separate `carry-on` server verb. It would be `resume` with a prompt; one verb with an optional field keeps one
   queue and one set of refusals.
-- *Carry on on each card, beside resume.* Built first (2026-10-09), in the tower page's card and header and Tower 3D's
-  desk panel. Three buttons on a stranded card for one moment after a restart; the user kept resume all as where it
-  lives (2026-10-15): it prompts only the workers cut off mid-turn and resumes the rest plainly, so a worker kept
+- *Carry on on each card, beside resume.* Three buttons on a stranded card for one moment after a restart; resume all
+  is where it lives: it prompts only the workers cut off mid-turn and resumes the rest plainly, so a worker kept
   alive on purpose is never prompted. `calls['carry-on']` stays on the board for any renderer or worker.
 - A separate "carry on all" beside "resume all". Two floor buttons for one moment after a restart; the ask lists who
   carries on.
 - Storing that a session was cut off. It is computed from the log.
-- *The host logs the signal beside the exit code.* It would catch SIGKILL too, but a host change ends every running
-  session; Claude's own exit code already tells SIGTERM, the default of `kill` and `pkill`, from the host's SIGHUP.
-  Adopted on 2026-10-24, batched into the one host restart that also brought the header's `runtime` and a spawn's
-  facts (`HOST_PROTOCOL` 3): the exit code still tells a caught signal, the logged `signal` an uncaught one.
 - *Any exit the tower didn't ask for strands the worker.* Claude's ordinary exits (a crash, `/exit`) aren't told
   apart yet; signals only, until they are.
 
-**Impact.** A board field (`cutOff`), a card verb (`carry-on`) and `resume`'s `prompt`: API minor. No host change, no
-config change (the logged `signal` came later, with a host change of its own). The sandbox's sessions submit the prompt a resume passes.
+**Impact.** A board field (`cutOff`), a card verb (`carry-on`) and `resume`'s `prompt`: API minor. No config change. The sandbox's sessions submit the prompt a resume passes.

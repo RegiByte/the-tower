@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-29",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-17",
   "refs": [
     "hub/extensions/autotidy/extension.json",
     "hub/extensions/autotidy/server.ts",
@@ -86,18 +86,16 @@ theirs; the core reads nothing in it.
 - Tidy's own checks hold for every call: a plan that moved on is refused, an entry no longer listed is not applied.
 
 **Alternatives considered.**
-- *Recording each going in a stream of its own* (`home`, through a verb `record`), the trigger then reading it back:
-  it stored again a fact the session logs hold, and a record made from a card's settling after a restart was taken for
-  a going. Reading the cards keeps nothing.
+- *Recording each going in a stream of its own*, the trigger then reading it back: it stores again a fact the session
+  logs hold, and a record made from a card's settling after a restart reads as a going. Reading the cards keeps nothing.
 - *Keeping an off-duty card on the board a few minutes* in the core, so every going is seen in the fold: it changed
   what the board carries for every renderer, and the pair of boards already tells.
 - *Reacting to an event*: the core raises none when a worker ends, a link around `kill` misses a worker ending by
   itself, and at the moment of either what it left isn't on the board yet.
-- *A core config key* (`tidy.afterHome`) and a core loop applying `floor.afterHome`: built first and moved out. It put
-  a policy of acting by itself in the core, against Tidy's own decision, and needed a board field for it.
+- *A core config key* (`tidy.afterHome`) and a core loop applying it: a policy of acting by itself in the core, against
+  Tidy's own decision, and a board field for it.
 - *Applying every extension entry as it appears*, unattributed: it would file threads, and apply any extension's
   entries, of checkouts no worker went home from.
 - *Tidying every worker off duty*, archived ones included: it would act on workers gone home before the user turned it
   on.
-- *Watching a worker for days after it went home*, so a worktree merged later goes too, retried by a sweep: tried, and
-  dropped for acting only as a worker goes, so nothing is removed long after anyone looked at it.
+- *Watching a worker for days after it went home*, so a worktree merged later goes too, retried by a sweep: it would remove things long after anyone looked at them.
