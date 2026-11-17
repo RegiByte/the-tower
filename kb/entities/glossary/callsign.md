@@ -22,7 +22,8 @@ worker's peer name. Wherever the board or a brief points at another session (a c
 The names come from the config's top-level `callsigns`, the same on every floor, read through
 [`configuredCallsigns`](ref:hub/src/shared/model.ts#configuredCallsigns): left out, the tower uses
 [`CALLSIGNS`](ref:hub/src/shared/callsign.ts#CALLSIGNS). A list replaces them; an object `{names, mode}` replaces them
-too, or with `mode: "add"` (`"replace"` when left out) adds its names after them, a name already among them taken once. Each name is an upper case letter, then upper case letters
+too, or with `mode: "add"` (`"replace"` when left out) adds its names after them, a name already among them taken
+once. Each name is an upper case letter, then upper case letters
 and digits ([`CALLSIGN_NAME`](ref:hub/src/shared/callsign.ts#CALLSIGN_NAME)): a callsign is matched in upper case,
 lowercased it names the worktree a worker is cut into, and a reviewer's first prompt (`/reviews:review HOLMES-42`) and
 review note headings are read back by that shape. An empty list, a name of another shape or a name given twice (within
