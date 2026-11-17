@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-08",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-17",
   "refs": ["hub/src/shared/model.ts#runtimePlugins", "hub/src/moved-keys.ts#movedKeys", "hub/src/shared/launch.ts#pluginArgs", "hub/src/shared/launches.ts#spawnRequest", "hub/src/shared/launches.ts#resumeRequest", "hub/src/shared/launch.ts#hostSpawn", "hub/src/tower/extensions.ts#extensions", "hub/src/shared/launch-opencode.ts#configOf"]
 }
 ---
