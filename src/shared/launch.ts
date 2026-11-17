@@ -173,21 +173,23 @@ const nameArgs = (name: string) => ['--name', name]
 
 /**
  * Claude reads one `--settings`, the last it is given. `env`: what launch contributors set in the session's environment,
- * which Claude applies to itself and every command it runs. `dirs` are the session's directories, its own first
- * (`sessionDirs`): the others are granted file access only, so their CLAUDE.md and `.claude/` skills, commands and agents
- * stay out of the session, and a skill copied into several repos shows up once. Claude's fullscreen TUI keeps the
- * conversation on the alternate screen and reads the mouse, so a viewer's wheel scrolls Claude's transcript.
+ * which Claude applies to itself and every command it runs. `granted`: the directories beyond the one the session starts
+ * in (`grantedDirs`), granted file access only, so their CLAUDE.md and `.claude/` skills, commands and agents stay out of
+ * the session, and a skill copied into several repos shows up once. Claude asks to trust a directory passed as
+ * `--add-dir` outside a trusted one, each session again, since such a directory's `.claude/` loads; a granted one it
+ * doesn't ask about. Claude's fullscreen TUI keeps the conversation on the alternate screen and reads the mouse, so a
+ * viewer's wheel scrolls Claude's transcript.
  */
-const settingsArgs = ([, ...others]: string[], env: Record<string, string>) => [
+const settingsArgs = (granted: string[], env: Record<string, string>) => [
   '--settings',
-  JSON.stringify({ permissions: { additionalDirectories: others }, tui: 'fullscreen', ...(Object.keys(env).length && { env }) }),
+  JSON.stringify({ permissions: { additionalDirectories: granted }, tui: 'fullscreen', ...(Object.keys(env).length && { env }) }),
 ]
 
-/** A worker edits the items its floor keeps, outside its own directories. The directory holds no `.claude/`. */
-const keptArgs = (kept: string) => ['--add-dir', kept]
-
-/** A worktree's links lead into the main checkouts: writing through one asks no permission when its source is a directory of the session. */
-const linkArgs = (worktree: WorktreeBrief | undefined) => (worktree?.links ?? []).flatMap((source) => ['--add-dir', source])
+/**
+ * A session's directories after its own (`sessionDirs`); the items its floor keeps (`kept`), which a worker edits in
+ * place; and a worktree's link sources in the main checkouts, so writing through a link asks no permission.
+ */
+const grantedDirs = (s: Start): string[] => [...s.dirs.slice(1), s.kept, ...(s.worktree?.links ?? [])]
 
 /** The plugins the config names for the session's project (`runtimePlugins`) and the extensions on its floor, loaded beside the tower mod the host passes. */
 const pluginArgs = (plugins: string[]) => plugins.flatMap((dir) => ['--plugin-dir', dir])
@@ -240,9 +242,7 @@ export type Ran = { model?: string; effort?: string }
 const startArgs = (s: Start): string[] => [
   ...s.contributed.args,
   ...nameArgs(s.name),
-  ...settingsArgs(s.dirs, s.contributed.env),
-  ...keptArgs(s.kept),
-  ...linkArgs(s.worktree),
+  ...settingsArgs(grantedDirs(s), s.contributed.env),
   ...pluginArgs(s.plugins),
   ...briefArgs(s.user, s.worktree, s.contributed.systemPrompt),
 ]

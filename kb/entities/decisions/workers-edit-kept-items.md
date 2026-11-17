@@ -20,7 +20,7 @@
     "hub/src/bridge/facts.ts#factsAfter",
     "hub/src/bridge/board.ts#KeptBy",
     "hub/src/bridge/board.ts#keepers",
-    "hub/src/shared/launch.ts#keptArgs",
+    "hub/src/shared/launch.ts#grantedDirs",
     "hub/src/shared/launch.ts#towerBrief",
     "hub/src/shared/paths.ts#projectCollectionsPath",
     "hub/extensions/drafts/client/drafts.ts#follow",
@@ -56,10 +56,11 @@ versions of one idea with nothing saying which was current.
   never on its own judgment that it is done or stale. The brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) and the
   handbook say so. Where the floor has drafts, its extension adds the line that says to keep off-goal ideas and later
   prompts with `tower keep drafts` and carry on ([[brief-first]]).
-- Every spawn and resume passes the project's collections directory as `--add-dir`
-  ([`keptArgs`](ref:hub/src/shared/launch.ts#keptArgs)), so an edit there asks no permission. The directory holds no
-  `.claude/`, so [[repos-file-access-only]]'s reason for `additionalDirectories` does not apply, and the flag is the
-  client's: no host change. A project that has kept nothing yet has no directory; Claude starts anyway.
+- Every spawn and resume grants the project's collections directory as one of the session's
+  `additionalDirectories` ([`grantedDirs`](ref:hub/src/shared/launch.ts#grantedDirs)), so an edit there asks no
+  permission. The grant is the client's: no host change. A project that has kept nothing yet has no directory; Claude
+  starts anyway. Until Claude Code 2.1.326 it was `--add-dir`, which since then asks to trust a directory outside a
+  trusted one at every session start ([[repos-file-access-only]]).
 - `tower unkeep <tag|id>...` deletes items with the renderer API's `collection/delete`. Every name is resolved
   first ([`unkeepable`](ref:hub/src/directory.ts#unkeepable)), and one unknown, shared by two items or in an owned
   collection refuses the whole call, so a batch never stops halfway on a typo. The owned refusal reads the

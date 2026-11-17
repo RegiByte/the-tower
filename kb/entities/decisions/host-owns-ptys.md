@@ -51,8 +51,7 @@ deliberate restart, and anything that can live in a client does. New Claude opti
 - The classic hooks that post to the host are declared in the tower mod's `hooks.json` ([[hook-events]]), which each
   Claude reads as it starts, so the list changes with no host restart.
 - Clients compose the whole `--settings` object
-  ([`settingsArgs`](ref:hub/src/shared/launch.ts#settingsArgs): the session's other directories as
-  `additionalDirectories`, `tui` ([[fullscreen-tui]]) and the `env` launch contributors set, [[extensions]]): Claude reads one `--settings`, the last it is given, whole,
+  ([`settingsArgs`](ref:hub/src/shared/launch.ts#settingsArgs): the session's other directories, the
+  floor's collections and a worktree's link sources as `additionalDirectories`, [[tower-cuts-worktrees]], `tui` ([[fullscreen-tui]]) and the `env` launch contributors set, [[extensions]]): Claude reads one `--settings`, the last it is given, whole,
   so a host adding its own beside a client's would drop one.
-- Directories beyond the session's own (`--add-dir` for the floor's collections and a worktree's link sources,
-  [[tower-cuts-worktrees]]) and the project's plugins (`--plugin-dir`, [[plugins]]) are clients' args as well.
+- The project's plugins (`--plugin-dir`, [[plugins]]) are clients' args as well.
