@@ -27,8 +27,10 @@
 
 **Logs.** Each log is folded from its checkpoint ([`foldLog`](ref:hub/src/checkpoints.ts#foldLog),
 [[fold-checkpoints]]) and a running session's tail goes on from where the fold stopped; a session that exited, was let
-go ([[let-go]]) or broke ([[broken-logs]]) is not tailed. A watch of the sessions directory picks up a new log, an
-archived one, and an exited one that grew (a `tower.letGo`, folded again). Logs are read through
+go ([[let-go]]) or broke ([[broken-logs]]) is not tailed. A watch of the sessions directory
+([`subscribe`](ref:hub/src/subscribe.ts#subscribe)), started before the first scan for logs, picks up a new log, an
+archived one, and an exited one that grew (a `tower.letGo`, folded again): each log among a batch's changed files is
+refolded if its size moved, and every log when FSEvents can't say what changed. Logs are read through
 [`factEvents`](ref:hub/src/tail.ts#factEvents), a filter that tells from a line's bytes what the fold ignores: output
 once the session has started (output holds a fact only while it is `booting` or `blocked`) and a `PostToolUse` past
 its name. It folds the session's state over what it keeps, seeded with the state the read starts at, so a fold

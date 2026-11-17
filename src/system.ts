@@ -543,22 +543,18 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
   }
 
   const watching = (watcher: FSWatcher, what: string) => watchers.push(watchedOrExit(watcher, what))
-  watching(
-    watch(
-      paths.sessions,
-      logged('sessions', (_: string, file: string | null) => {
-        if (file && logFilesIn([file]).length) refoldGrown(file)
-        trackNew()
-      }),
-    ),
-    paths.sessions,
-  )
-  trackNew()
   /** Watches `dir`'s tree, made if missing; resolves once watching. */
-  const subscribed = async (dir: string, changed: () => void) => {
+  const subscribed = async (dir: string, changed: (paths: string[] | null) => void) => {
     mkdirSync(dir, { recursive: true })
     subscriptions.push(await subscribe(realpathSync(dir), [], changed, exitUnwatched(dir)))
   }
+  /** Each log among the changed files is refolded if it grew, every log when what changed is unknown. */
+  const sessionsChanged = (changed: string[] | null) => {
+    for (const file of logFilesIn(changed ? changed.map((file) => path.basename(file)) : readdirSync(paths.sessions))) refoldGrown(file)
+    trackNew()
+  }
+  await subscribed(paths.sessions, sessionsChanged)
+  trackNew()
   await subscribed(paths.collections, scheduleRescan)
   items = scanCollections(paths)
   await subscribed(systemStreamsPath(paths), scheduleStreams)
