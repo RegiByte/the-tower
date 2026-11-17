@@ -2,7 +2,7 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (the tower's API, the wall and simulated clocks, its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads, the port its reads send their events through, the titles read from items' texts and the archive's reads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the views, the world, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot. The modules below them read nothing as they load: what they draw by is handed to them, as arguments or a start's dependencies, and system.ts imports every module statically. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
+  "summary": "Tower 3D's long-lived pieces (the tower's API, the wall and simulated clocks, the walker, its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads, the port its reads send their events through, the titles read from items' texts and the archive's reads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the views, the world, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot. The modules below them read nothing as they load: what they draw by is handed to them, as arguments or a start's dependencies, and system.ts imports every module statically. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
@@ -10,6 +10,7 @@
   "refs": [
     "hub/renderers/tower3d/src/system.ts",
     "hub/renderers/tower3d/src/sim.ts#startSim",
+    "hub/renderers/tower3d/src/walker.ts#startWalker",
     "hub/renderers/tower3d/src/boot.ts",
     "hub/renderers/tower3d/src/titles.ts#startTitles",
     "hub/renderers/tower3d/src/archive.ts#startArchive",
@@ -118,6 +119,10 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   has stopped it; `play` runs it again. Its start reads `?stepped`, as the clock's reads `?at=`: a query read at a start, never as a module loads,
   and only `?board=`, which picks the record, is read by `boot.ts`. A builder that hangs by it takes it as an
   argument beside the wall instant (`galleryAfter`).
+- *Where you stand is a resource.* The walker is the `walker` resource
+  ([`startWalker`](ref:hub/renderers/tower3d/src/walker.ts#startWalker)), kept in `walker.ts` beside the pure steps
+  that move it: `me()` reads it and `set` replaces it whole. It is a leaf because four resources write it: the frames
+  each frame, the app loop's `stand`, the world as a board is first built, and the door's `aimAt`.
 - *A fixture page is a record, not a mode.* `system.ts` exports the live record (`liveTower3d`) and
   `fixtureTower3d(name)`, the live one with the resources that differ swapped: a `fixture` resource that reads the
   file ([`startFixture`](ref:hub/renderers/tower3d/src/fixtures.ts#startFixture)), the `tower` that answers from it
@@ -315,7 +320,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   ([`Arrival`](ref:hub/renderers/tower3d/src/app.ts#Arrival)): an ask's floor opened by `went`, the rest by
   [`ARRIVED`](ref:hub/renderers/tower3d/src/app-loop.ts#ARRIVED), since whether a desk or a kiosk still stands, the mouse,
   the orbit and a purr are the building's. A cut to where you already are fires its `then` at once
-  ([`travel`](ref:hub/renderers/tower3d/src/navigation.ts#travel)). The walker stays the frames': riding turns it to the doors
+  ([`travel`](ref:hub/renderers/tower3d/src/navigation.ts#travel)). The frames move the walker: riding turns it to the doors
   and sets its level as the ride ends, before `ride-arrived`; a `place` stands it where a cut or the door says, the ride
   and flight ended. The pet's hearts are three.js sprites, kept beside the frames that place them. A flight an
   executor starts (`fly-home`, a big screen or a game entered) is dispatched from it, so it lands in the db once the
@@ -378,5 +383,5 @@ reads) are each in the start of the resource they belong to, and a module is han
 needs no resource started before it. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`, started as the `spawn` resource: [`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), it stays out
 of the panel union. Motion, aim and capture are in the db as well. What is left outside it
-is the walker, which the frames own, the door's mode and a pointer press.
+is the walker, its own resource, the door's mode and a pointer press.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.
