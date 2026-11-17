@@ -44,7 +44,7 @@ export function startAppLoop(started: AppLoopDeps) {
   const { now: simNow } = started.sim
   const { tower } = started
   const { port } = started
-  const { draftsOf, floorThreadsOf } = started.clients
+  const { draftItem, draftsOf, floorThreadsOf } = started.clients
   const { camera, orbit } = started.stage
   const { releaseKeys } = started.input
   const { boardNow, panelAs } = nowOf(port)
@@ -84,7 +84,7 @@ export function startAppLoop(started: AppLoopDeps) {
   /** Notifications are the tower page's; the door rings nothing, nor does a framed page: the page framing it rings for the same waits. */
   const app = loop({
     state: startingDb(attending({ focused: document.hasFocus(), visible: document.visibilityState === 'visible' })),
-    handlers: appHandlers({ planOf, clockMoves, archivesSettled, archivedAt, drawersAt, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined }),
+    handlers: appHandlers({ planOf, clockMoves, archivesSettled, archivedAt, drawersAt, threadsOf: floorThreadsOf, keepsDrafts: (f) => draftsOf(f) !== undefined, holdsDraft: (board, held) => draftItem(board.floors, held.project, held.id) !== undefined }),
     execute: {
       ...(timers<AppEvent>() as Executors<TimerEffect<AppEvent>, AppEvent>),
       announce: () => {},

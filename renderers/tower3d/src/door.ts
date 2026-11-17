@@ -6,8 +6,8 @@ import type { Plan } from './layout.ts'
 import { SEED } from './random.ts'
 import { petProgress } from './pet.ts'
 import type { Pictures } from './showing.ts'
-import { s, type Standing, type View } from './state.ts'
-import { markedIn, type AppEvent, type Db } from './app.ts'
+import type { Standing, View } from './state.ts'
+import { heldIn, markedIn, type AppEvent, type Db } from './app.ts'
 import type { CatName } from './life.ts'
 import type { EventRecord } from './record.ts'
 import { nowOf } from './now.ts'
@@ -228,7 +228,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
     const offers = e.offers()
     return {
       seed: SEED, time: e.sim.now(), stepped: e.sim.stepped(), captured: e.captured(), view,
-      panel: panelOf(), carrying: s.carrying,
+      panel: panelOf(), carrying: heldIn(e.app().hand),
       walker: { ...e.walker.me() }, riding: ride !== undefined, flying: flight !== undefined,
       petting: pet && { name: pet.name, progress: petProgress(pet, e.sim.now()) },
       aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, e.sim.now()) },

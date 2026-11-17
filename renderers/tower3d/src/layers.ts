@@ -187,10 +187,10 @@ export const stationsOf = (models: Models, hires: Hiring<Held>): Layer<StationAt
 }
 
 type NoteAt = { project: string; id: string; tag: string; modifiedAt: number; level: number; x: number; y: number; z: number; tint: string }
-const carried = (at: NoteAt) => s.carrying?.project === at.project && s.carrying.id === at.id
+const isHeld = (held: Held | undefined, at: NoteAt) => held?.project === at.project && held.id === at.id
 
-/** Every draft pinned on its floor's corkboard, drawn again when its title (`noteTitle`'s) or tint changes; the one you carry is not there. */
-export const notesOf = (noteTitle: Titles['noteTitle']): Layer<NoteAt, Note> => ({
+/** Every draft pinned on its floor's corkboard, drawn again when its title (`noteTitle`'s) or tint changes; the one in your hand (`held`) is not there. */
+export const notesOf = (noteTitle: Titles['noteTitle'], held: () => Held | undefined): Layer<NoteAt, Note> => ({
   slots: (p) => floors(p).flatMap((level) => (level.cork?.notes ?? []).map((n) => {
     const at = { project: level.floor.id, id: n.id, tag: n.tag, modifiedAt: n.modifiedAt, level: level.index, x: n.x, y: level.y + n.y, z: level.cork!.z + 0.06, tint: tintOf(level.floor) }
     return [`${at.project}/${at.id}`, at] as [string, NoteAt]
@@ -199,13 +199,13 @@ export const notesOf = (noteTitle: Titles['noteTitle']): Layer<NoteAt, Note> => 
   make(at) {
     const note = makeNote(at.project, at.id, noteTitle(at.project, at), at.tag, at.tint)
     note.group.position.set(at.x, at.y, at.z)
-    note.group.visible = !carried(at)
+    note.group.visible = !isHeld(held(), at)
     return note
   },
   keep(note, at) {
     if (note.title !== noteTitle(at.project, at) || note.tint !== at.tint) return false
     note.group.position.set(at.x, at.y, at.z)
-    note.group.visible = !carried(at)
+    note.group.visible = !isHeld(held(), at)
     return true
   },
   root: (note) => note.group,

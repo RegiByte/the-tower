@@ -45,8 +45,9 @@ tower page.
   ([`notes.ts`](ref:hub/renderers/tower3d/src/notes.ts), through the shared
   [`itemTitles`](ref:hub/src/shared/titles.ts#itemTitles)); a [`notesOf`](ref:hub/renderers/tower3d/src/layers.ts#notesOf)
   layer keyed by project and id draws a note again when its title changes.
-- **Carrying** is renderer state, `{ project, id }`, not kept across reloads: the file never moves, so a reload
-  just puts the note back. The carried note's title is derived from the cache wherever it shows.
+- **Carrying** is renderer state, the app db's `hand` holding `{ project, id }` ([[tower3d-system]]), not kept across
+  reloads: the file never moves, so a reload just puts the note back. A draft deleted while in your hand leaves it,
+  with a toast. The carried note's title is derived from the cache wherever it shows.
 - **Verbs** ([`OFFERS`](ref:hub/renderers/tower3d/src/acts.ts#OFFERS)), with H meaning "hand over what you carry":
   to a worker offering `submit`, or to the open desk, which hires a worker on the note.
 - **Sent, then deleted** ([`sendCarried`](ref:hub/renderers/tower3d/src/spawn.ts#sendCarried)): the text is read

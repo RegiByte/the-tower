@@ -12,7 +12,7 @@ import { type Lines, type Subject } from '/lib/board.js'
 import { shelfFiles, shelfText, shelfUrl, type Board, type Brief, type Card, type Floor, type ShelfSelf, type Tower } from './api.ts'
 import { can, runVerb, pictureOf, rendererUrl, renderersHtml, shelfKind, shelfPage, tidiedLine, ago, cardsOf, heededWaits, current, findCard, gistLine, wordsOf, sendTarget, sentHome, shownHref, workerIn, callOf, noLongerOffered, offeredCall, landedRow, letGoneLine, resumeStranded, shellWhere, strandedOf, WORKTREE_DONE, discardedLine, keptLine, landingHtml } from './cards.ts'
 import type { ReadAnswer } from '../../../extensions/quota/client/quota.ts'
-import { threadSubjectKey, type AppEvent, type TabTo } from './app.ts'
+import { heldIn, threadSubjectKey, type AppEvent, type TabTo } from './app.ts'
 import type { DeskTab } from './ui.ts'
 import { loop, timers, type Executors, type Handlers, type StateEffect, type TimerEffect } from '/lib/machine.js'
 import { hueOf } from './avatar.ts'
@@ -30,7 +30,7 @@ import { CHANGES, THREAD } from './hosting.ts'
 import type { Archive } from './archive.ts'
 import { GAMES, gameItem } from './games.ts'
 import type { Titles } from './titles.ts'
-import { s, type GamePanel, type Panel, type Threads } from './state.ts'
+import type { GamePanel, Panel, Threads } from './state.ts'
 import { paintDirectory } from './world.ts'
 import type { Music } from './music.ts'
 import type { Term } from './term.ts'
@@ -75,7 +75,7 @@ export function startPanels(started: PanelsDeps) {
   const { boardNow, selfNow, unlock, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed } = nowOf(port)
   const { toast, call, tried, offered, copiedAs } = started.toasts
   const { events } = started
-  const { layers, directory, isFresh, planNow, lookQuaternion, flyTo, frameOn, frameCabinet, floorOf, carry, drop } = started.world
+  const { layers, directory, isFresh, planNow, lookQuaternion, flyTo, frameOn, frameCabinet, floorOf } = started.world
   const { desk, reader, deskNow } = started.views
   const { draftIo, hire, saving, handOver, hireOnNote, openSpawn, openSpawnOnNote } = started.spawn
   const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, seenSince, dottedNow, clearDots, sawActions, sawDesk, drawSettings } = started.hud
@@ -160,7 +160,7 @@ export function startPanels(started: PanelsDeps) {
       const f = board.floors.find((f) => f.id === d.project)
       // The app closes the editor on a floor no longer keeping drafts once the building takes the board (`subjectLeft`).
       if (!f || !draftsOf(f)) return
-      $('draft-head').innerHTML = draftHeadHtml(f, d, held, Boolean(s.carrying), reads)
+      $('draft-head').innerHTML = draftHeadHtml(f, d, held, port.state().hand.t === 'note', reads)
       $('draft-note').innerHTML = d.conflict !== undefined ? draftNoteHtml : ''
       show('draft-note', d.conflict !== undefined)
     }
@@ -731,7 +731,8 @@ export function startPanels(started: PanelsDeps) {
     station(a, verb) {
       if (verb === 'use') return void hire(a.project)
       if (verb === 'hand') return void hireOnNote(a.project)
-      return void (s.carrying ? openSpawnOnNote(a.project, s.carrying) : openSpawn(a.project))
+      const note = heldIn(port.state().hand)
+      return void (note ? openSpawnOnNote(a.project, note) : openSpawn(a.project))
     },
     shown(a) {
       const latest = findCard(boardNow()!, a.id)?.shown.at(-1)
@@ -762,9 +763,9 @@ export function startPanels(started: PanelsDeps) {
     },
     shelf: (a) => void openShelf(a.project, a.n),
     book: (a) => void openShelf(a.project, a.n, a.file),
-    cork: (a) => (s.carrying ? drop() : openDraftPanel(newDraft(a.project))),
+    cork: (a) => (port.state().hand.t === 'note' ? port.dispatch({ type: 'hand/drop' }) : openDraftPanel(newDraft(a.project))),
     note(a, verb) {
-      if (verb === 'use') return void carry(a.project, a.id)
+      if (verb === 'use') return void port.dispatch({ type: 'hand/carry', held: { project: a.project, id: a.id } })
       if (verb === 'brief') return void openNote(a.project, a.id)
       return void throwAway(a.project, a.id)
     },
@@ -774,7 +775,7 @@ export function startPanels(started: PanelsDeps) {
     directory: () => ({ type: 'go', to: { kind: 'directory' } }),
     stats: () => openStats(),
     dj: () => toggleMusic(),
-    bar: () => void (s.beer = !s.beer),
+    bar: () => port.dispatch({ type: port.state().hand.t === 'beer' ? 'hand/drop' : 'hand/beer' }),
     elevator: () => ({ type: 'go', to: { kind: 'elevator' } }),
   }
 
@@ -1550,7 +1551,7 @@ export function startPanels(started: PanelsDeps) {
     const d = draft
     if (!what || !d) return
     if (what === 'close') return (closeDraftPanel(), lock())
-    if (what === 'carry') return d.conflict !== undefined ? toast('Settle the change made on disk first') : (closeDraftPanel(), carry(d.project, d.id!), lock())
+    if (what === 'carry') return d.conflict !== undefined ? toast('Settle the change made on disk first') : (closeDraftPanel(), port.dispatch({ type: 'hand/carry', held: { project: d.project, id: d.id! } }), lock())
     if (what === 'delete') return (dropDraftPanel(), lock(), save(draftIo, d), deleted(await discardDraft(draftIo, d)))
     if (what !== 'start') return
     clearTimeout(saveTimer)

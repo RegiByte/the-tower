@@ -205,7 +205,7 @@ export function startNavigation(started: NavigationDeps) {
   /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
   function offersNow() {
     const a = aimNow().offered
-    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !port.state().muted, carrying: carried(), beer: s.beer, cats: catNames(), lost: port.state().attending.lost, galleries: planNow().galleries, now: wallNow() }, reads) : []
+    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !port.state().muted, carrying: carried(), beer: port.state().hand.t === 'beer', cats: catNames(), lost: port.state().attending.lost, galleries: planNow().galleries, now: wallNow() }, reads) : []
   }
 
   /** The crosshair or the pointer is on `a`, and the prompt offers its verbs, drawn by `at` when the pointer gives one. */

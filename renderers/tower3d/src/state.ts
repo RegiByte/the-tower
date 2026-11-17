@@ -1,4 +1,4 @@
-import type { Act, Held, Verb } from './acts.ts'
+import type { Act, Verb } from './acts.ts'
 import type { Brief, Card, Tower } from './api.ts'
 import type { Plan } from './layout.ts'
 import type { LogbookTab } from './ui.ts'
@@ -51,10 +51,6 @@ export type Spot = Pick<Walker, 'level' | 'x' | 'z' | 'yaw' | 'pitch' | 'y'>
 export type State = {
   /** Every showing you have opened, by `shownKey`, kept with your spot. */
   seenShown: Set<string>
-  /** The draft taken off a corkboard. */
-  carrying: Held | undefined
-  /** A beer from the roof's bar in your right hand. */
-  beer: boolean
 }
 
 const NO_PLATE = { width: 0, depth: 0 }
@@ -65,5 +61,4 @@ export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_
 
 export const s: State = {
   seenShown: new Set(),
-  carrying: undefined, beer: false,
 }

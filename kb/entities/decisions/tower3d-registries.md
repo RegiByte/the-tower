@@ -20,7 +20,7 @@ shape of a mod. These shapes extract; they are not a plugin API.
 
 **How.**
 - **One state record** ([`state.ts`](ref:hub/renderers/tower3d/src/state.ts)): what the page
-  has chosen and not yet put in the app's db, such as the note in your hand; the building as built, its level roots, its counts,
+  has chosen and not yet put in the app's db, now only the showings you have seen; the building as built, its level roots, its counts,
   its keyed layers' maps and the workers on their way are the world's cells ([[tower3d-system]]); the simulated clock and the walker, written from several resources, are leaf resources
   every reader is handed (`sim`, `walker`, [[tower3d-system]]); a cell one resource alone writes stays in its start (the frames'
   meter and landing doors, the panels' open draft, the HUD's new-action dots); what the page has decided (the panel, the view, a ride,
