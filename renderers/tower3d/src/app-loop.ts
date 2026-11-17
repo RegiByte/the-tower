@@ -121,7 +121,7 @@ export function startAppLoop(started: AppLoopDeps) {
         rereadViewer()
         worldRebuilt(was)
         hiring.dispatch({ type: 'board', board: boardNow()! })
-        worldFurnished(was)
+        worldFurnished(was, hiring.state())
         const draft = drafted()
         if (draft?.id) followDraft(draft)
         renderHud()

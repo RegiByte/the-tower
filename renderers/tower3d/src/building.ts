@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-import { reachOf, type Act, type Carried } from './acts.ts'
+import { reachOf, type Act, type Carried, type Held } from './acts.ts'
+import type { Hiring } from './hiring.ts'
 import { sessionWhen } from '/lib/brief.js'
 import { reducedMotion } from '/lib/viewer.js'
 import { defaultLimits } from '/lib/board.js'
@@ -403,9 +404,9 @@ export function startWorld(started: WorldDeps) {
     reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow(), loaded(), people), layers.desks)
   }
 
-  function worldFurnished(was: Board | undefined) {
+  function worldFurnished(was: Board | undefined, hires: Hiring<Held>) {
     const next = boardNow()!
-    syncStations()
+    syncStations(hires)
     dressLevels(next)
     seatChairs()
     reconcile(walls, layers.walls)
@@ -588,7 +589,8 @@ export function startWorld(started: WorldDeps) {
     syncNotes()
   }
 
-  const syncStations = () => reconcile(stationsOf(loaded().models), layers.stations)
+  /** The workstations in step with the plan, the open ones reading the hires in flight. */
+  const syncStations = (hires: Hiring<Held>) => reconcile(stationsOf(loaded().models, hires), layers.stations)
   const syncNotes = () => boardNow() && reconcile(notes, layers.notes)
 
   const syncCabinets = () => boardNow() && reconcile(cabinets, layers.cabinets)

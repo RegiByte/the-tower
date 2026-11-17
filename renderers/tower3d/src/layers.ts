@@ -1,5 +1,6 @@
 import * as THREE from 'three'
-import { act } from './acts.ts'
+import { act, type Held } from './acts.ts'
+import type { Hiring } from './hiring.ts'
 import { arcadeSignKey, buildArcadeSign, makeCabinet, type ArcadeSign, type Cabinet } from './arcade.ts'
 import { addedTidyOf, can, cardsOf, shownKey } from './cards.ts'
 import { makeNote, type Note } from './cork.ts'
@@ -146,18 +147,18 @@ export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: Desk
 /** `open`: where the floor's next worker sits; `lit` while the floor can spawn; `away`, the worker whose it is while it is in a meeting room. */
 type StationAt = { slot: StationSlot; level: number; y: number; project: string; open: boolean; lit: boolean; away?: AwaySlot }
 
-/** A workstation's look: the open one reads hiring while its floor's hire is in flight. */
-const lookOf = (project: string, lit: boolean, away: AwaySlot | undefined): StationLook => {
+/** A workstation's look: the open one reads hiring while its floor's hire is in flight in `hires`. */
+const lookOf = (hires: Hiring<Held>, project: string, lit: boolean, away: AwaySlot | undefined): StationLook => {
   if (away) return { t: 'away', callsign: away.card.callsign, room: away.room }
   if (!lit) return { t: 'dark' }
-  return s.hiring()[project] ? { t: 'hiring' } : { t: 'open' }
+  return hires[project] ? { t: 'hiring' } : { t: 'open' }
 }
 
 /**
  * Every workstation nobody sits at, by floor and number: the free ones, the open one lit while its floor can spawn,
- * and those whose workers are in a meeting room, saying where.
+ * reading hiring while `hires` holds its floor's, and those whose workers are in a meeting room, saying where.
  */
-export const stationsOf = (models: Models): Layer<StationAt, Station> => {
+export const stationsOf = (models: Models, hires: Hiring<Held>): Layer<StationAt, Station> => {
   const layer: Layer<StationAt, Station> = {
     slots: (p) => floors(p).flatMap((level) => [
       ...level.free.map((slot) => {
@@ -173,7 +174,7 @@ export const stationsOf = (models: Models): Layer<StationAt, Station> => {
       return station
     },
     keep(station, { slot, y, project, open, lit, away }) {
-      syncStation(station, lookOf(project, lit, away))
+      syncStation(station, lookOf(hires, project, lit, away))
       if (away) act(station.group, { kind: 'desk', id: away.card.id }, [])
       else act(station.group, { kind: 'station', project, n: slot.n, open }, [])
       station.group.position.set(slot.x, y, slot.z)

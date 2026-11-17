@@ -5,7 +5,6 @@ import type { Plan } from './layout.ts'
 import type { LogbookTab } from './ui.ts'
 import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
 import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
-import { noHires, type Hiring } from './hiring.ts'
 import type { Walker } from './walker.ts'
 
 export type View = 'walk' | 'focus' | 'overview' | 'pet'
@@ -59,8 +58,6 @@ export type State = {
   /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
   storedLayout: Layout | undefined
 
-  /** The hires in flight by floor, as the hiring machine in main holds them: read by the open workstations. */
-  hiring: () => Hiring<Held>
   /** Every showing you have opened, by `shownKey`, kept with your spot. */
   seenShown: Set<string>
   /** The draft taken off a corkboard. */
@@ -89,7 +86,7 @@ export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_
 
 export const s: State = {
   visited: new Set(), viewer: VIEWER_DEFAULT, storedLayout: undefined,
-  hiring: noHires, seenShown: new Set(),
+  seenShown: new Set(),
   carrying: undefined, beer: false,
   doorMode: false,
   muted: false, fpsShown: false, origins: {},

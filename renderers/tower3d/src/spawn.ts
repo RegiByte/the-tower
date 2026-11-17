@@ -156,13 +156,11 @@ export function startSpawn(started: SpawnDeps) {
       },
       open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
       toast: ({ text }) => toast(text),
-      draw: () => boardNow() && syncStations(),
+      draw: () => boardNow() && syncStations(hiring.state()),
     },
   })
 
   hiring.subscribe(events.listen('hiring'))
-
-  s.hiring = hiring.state
 
   async function openSpawnOnNote(project: string, note: Held) {
     if (hiredOn(note)) return toast(HIRED_ON_NOTE)
