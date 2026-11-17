@@ -4,12 +4,14 @@
  * anywhere else, everything since `HEAD`. A scope narrows it to what isn't committed yet, or to one of the commits
  * since the base. Files outside the repos aren't seen. Git is read on every request, never kept.
  */
-import { constants } from 'node:fs'
+import { constants, realpathSync } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { join } from 'node:path'
 import { beforeCount, linesThrough, MAX_BEFORE_LINES, parseDiff, withBefore } from './bridge/diff.ts'
 import { DIFF, MAX_UNTRACKED, sinceOf, untrackedIn } from './changed-files.ts'
 import { git, gitBytes, run } from './git.ts'
+import { throughCopy } from './private-index.ts'
+import { WORKTREES_DIR } from './shared/repos.ts'
 import type { Commit, DiffFile, RepoChanges } from './shared/repo-changes.ts'
 import { againstFor, isRepo } from './worktrees.ts'
 
@@ -175,14 +177,27 @@ const commitFiles = (dir: string, parent: string, commit: string) => async (want
   return wanted.map((w) => texts.get(w.path))
 }
 
-/** The working tree's diff from `from`, untracked files with it. */
+/** The hub a checkout `dir` belongs to, by its real path: the repo the board keys its checkouts' private indexes by. */
+const hubOf = (dir: string) => realpathSync(dir.split(`/${WORKTREES_DIR}/`)[0])
+
+/**
+ * The working tree's diff from `from`, untracked files with it, both read through the checkout's private index
+ * (`throughCopy`), the copy the board reads it through: one refreshed copy, so files a checkout or rebase left racy are
+ * hashed once rather than on every read, and both reads see the same index.
+ */
 const treeDiff = async (dir: string, from: string) => {
-  const untracked = await untrackedIn(dir)
-  const shown = untracked.slice(0, MAX_UNTRACKED)
-  const outs = await Promise.all([git(dir, [...DIFF, from]), ...shown.map((file) => untrackedDiff(dir, file))])
   // git names tracked files from the repo's top, which a hub in a subdirectory of the repo isn't.
-  const top = (await git(dir, ['rev-parse', '--show-toplevel'])).trim()
-  return { files: byPath(await withBeforeAll(outs.flatMap(parseDiff), treeFiles(top))), more: untracked.length - shown.length }
+  const [gitDir, top] = (await git(dir, ['rev-parse', '--path-format=absolute', '--git-dir', '--show-toplevel'])).trim().split('\n')
+  const { gitIn, release } = throughCopy(hubOf(dir), dir, gitDir)
+  try {
+    const inCopy = await gitIn()
+    const untracked = await untrackedIn(inCopy, dir)
+    const shown = untracked.slice(0, MAX_UNTRACKED)
+    const outs = await Promise.all([inCopy(dir, [...DIFF, from]), ...shown.map((file) => untrackedDiff(dir, file))])
+    return { files: byPath(await withBeforeAll(outs.flatMap(parseDiff), treeFiles(top))), more: untracked.length - shown.length }
+  } finally {
+    await release()
+  }
 }
 
 /**
