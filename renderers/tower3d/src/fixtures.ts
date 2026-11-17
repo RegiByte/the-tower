@@ -51,7 +51,8 @@ const notFound = (message: string) => Promise.reject(Object.assign(new Error(mes
 
 /**
  * A fixture worker's saved conversations: one per session it ran as, each resuming the one before, the latest first.
- * Its own session saves none until it is prompted.
+ * Its own session saves none until it is prompted. A session's answer is timed when the next one resumed it, the
+ * latest's when the worker entered its status.
  */
 function fixtureBriefs(c: Card): Brief[] {
   const conversation = c.conversations[0]
@@ -61,9 +62,10 @@ function fixtureBriefs(c: Card): Brief[] {
     const last = i === c.lineage.length - 1
     const prompt = last ? (conversation?.prompt ?? '') : `Session ${i + 1}: pick up where the last one stopped`
     const answer = last ? conversation?.answer : `Stopped after session ${i + 1}; saved for a resume.`
+    const answeredAt = last ? c.enteredAt : c.lineage[i + 1].startedAt
     return {
       id: `${session.id}-conversation`, at: 0, resumed: i > 0, saved: true, prompt, answer, resumes: of(i - 1), resumedBy: of(i + 1),
-      turns: [{ startedAt: session.startedAt, prompt, answer, session: session.id, steps: [] }], earlier: false, session: { ...session, callsign: c.callsign },
+      turns: [{ startedAt: session.startedAt, prompt, answer, answeredAt, session: session.id, steps: [] }], earlier: false, session: { ...session, callsign: c.callsign },
     }
   }).reverse()
 }
