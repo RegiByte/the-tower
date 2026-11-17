@@ -1,7 +1,7 @@
 import type { Tower } from './api.ts'
 import { nowOf } from './now.ts'
 import type { Port } from './port.ts'
-import { s, type Spot } from './state.ts'
+import type { Spot } from './state.ts'
 import type { Walker, WalkerCell } from './walker.ts'
 
 /** Where you stood, kept by the tower for this page so a reload puts you back, with the music on or off and what you've seen shown. */
@@ -25,7 +25,7 @@ export function startKeeper(started: KeeperDeps) {
   let keptKey = ''
   setInterval(() => {
     if (!boardNow() || viewNow() !== 'walk' || motionNow().ride || started.port.state().doorMode) return
-    const kept: Kept = { spot: spotOf(me()), muted: started.port.state().muted, fps: started.port.state().meterShown, seen: [...s.seenShown].slice(-SEEN_KEPT) }
+    const kept: Kept = { spot: spotOf(me()), muted: started.port.state().muted, fps: started.port.state().meterShown, seen: started.port.state().seen!.slice(-SEEN_KEPT) }
     const key = JSON.stringify(kept)
     if (key !== keptKey) (keptKey = key, tower.remember(kept))
   }, 1000)

@@ -43,7 +43,7 @@ import type { Pigeonhole } from './pigeonhole.ts'
 import type { Running } from './running.ts'
 import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer, type WallItem } from './layers.ts'
 import { SCREEN } from './arcade.ts'
-import { NO_PLAN, s } from './state.ts'
+import { NO_PLAN } from './state.ts'
 import { heldIn } from './app.ts'
 import { eyes, type Walker, type WalkerCell } from './walker.ts'
 import { layerAt, type Layer } from './floorplan.ts'
@@ -231,14 +231,12 @@ export function startWorld(started: WorldDeps) {
     }
   }
 
-  /** Nothing seen was kept (a first visit): what is shown already counts as seen, and only what comes after is new. */
-  let primeSeen = false
-  /** What was kept tells whether anything seen was: `prime` when nothing was. */
-  const primeSeenAs = (prime: boolean) => void (primeSeen = prime)
-
   const everyShown = (b: Board) => cardsOf(b).flatMap((c) => c.shown.map((sh) => ({ c, sh, key: shownKey(sh) })))
 
-  const isFresh = (c: Card, sh: Shown) => !s.seenShown.has(shownKey(sh))
+  /** Whether a showing is new to you, by its `shownKey`: one the building took is primed by then (`seen` in app.ts). */
+  const fresh = (key: string) => !port.state().seen!.includes(key)
+
+  const isFresh = (c: Card, sh: Shown) => fresh(shownKey(sh))
 
   /** The showings you have yet to open, of workers at a desk, newest first. */
   const freshShown = () => everyShown(boardNow()!).filter(({ c, sh }) => deskOf(planNow(), c.id) && isFresh(c, sh)).sort((a, b) => b.sh.at - a.sh.at)
@@ -249,7 +247,7 @@ export function startWorld(started: WorldDeps) {
    */
   function dressSides(was: Board | undefined) {
     for (const desk of layers.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)), posterOf)
-    reconcile(galleryAfter(was, posterOf, wallNow(), simNow() / 1000, layers.desks), layers.pictures)
+    reconcile(galleryAfter(was, posterOf, wallNow(), simNow() / 1000, layers.desks, fresh), layers.pictures)
     keepPosters(new Set([...[...layers.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...layers.pictures.keys()]))
   }
 
@@ -419,7 +417,6 @@ export function startWorld(started: WorldDeps) {
     dressAllPapers()
     reconcile(DANCE, layers.dance)
     reconcile(guestsOf(loaded().models), layers.guests)
-    if (!was && primeSeen) for (const { key } of everyShown(next)) s.seenShown.add(key)
     dressSides(was)
     pruneNoteTitles(next.floors)
     pruneKeptTitles(next.floors)
@@ -589,5 +586,5 @@ export function startWorld(started: WorldDeps) {
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { built, counts, layers, people, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
+  return { built, counts, layers, people, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, landChairs }
 }

@@ -237,6 +237,12 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   the new hand. A draft deleted while in your hand is dropped by the step that takes the board
   ([`took`](ref:hub/renderers/tower3d/src/app.ts#took), through `holdsDraft`), before `world/apply` runs, with a toast
   after it; nothing writes the hand from inside an executor, where a dispatch would wait and a read would see the old one.
+  The showings you have opened (`seen`, by `shownKey`, the most recent last, since the keeper keeps only the tail) are
+  restored by `kept/landed`, which lands before the feed takes any board. When nothing seen was kept they stay
+  undefined, and `took` primes them with every showing on the first board, so on a first visit only what comes after is
+  new; the db holds them before `world/apply` dresses the galleries. Opening a showing dispatches `seen/saw` from the
+  panel's enter, which moves it last and returns `sides` (each desk's second monitor and every gallery dressed again)
+  and `hud`, so the dressing runs once the db holds it.
   Readers call `app.state()`, through the port (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `now.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
   anything written every frame stay out of it.
@@ -407,5 +413,5 @@ reads) are each in the start of the resource they belong to, and a module is han
 needs no resource started before it. Every panel changes state only through the app loop, and the draw writes nothing back. The spawn dialog is not a panel: a modal over whatever panel is open, run by its own machines (`hiring`,
 `spawning`, started as the `spawn` resource: [`startSpawn`](ref:hub/renderers/tower3d/src/spawn.ts#startSpawn)), it stays out
 of the panel union. Motion, aim and capture are in the db as well. What is left outside it
-is the walker, its own resource, a pointer press, and the showings you have seen, which `state.ts` still holds.
+is the walker, its own resource, and a pointer press.
 [[tower3d-registries]] rejected a full split by concern for its cycles; this is where that changes.
