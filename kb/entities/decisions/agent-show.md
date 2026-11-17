@@ -32,7 +32,9 @@ worker that made it.
   so a renderer shows it again, as news. A showing names a path, never a copy: the tower page draws a shown file again,
   where it was scrolled to, each time the file at that path changes on disk, written in place or replaced by a rename,
   through the read's version stream (`version/shown/<id>/<path>`, `tower.versions`), watched only while its tab is
-  drawn ([[tower-server]]). A file deleted says so in its tab until it is written again. The card carries `shown`, `at` in epoch ms.
+  drawn ([[tower-server]]). Tower 3D does the same in its desk panel's tab and its reader, and paints the showing's
+  picture in the world again on each change it hears there; a picture whose showing nobody has open is not watched,
+  and keeps what it last read until one is opened. A file deleted says so in its tab until it is written again. The card carries `shown`, `at` in epoch ms.
 - A worker keeps what it showed across resumes: `card.shown` holds the showings of every session the worker ran
   as ([[resume]], [`lineage`](ref:hub/src/bridge/chains.ts#lineage)), each with the `session` that showed it,
   which is the one `/shown/<session>/<path>` serves it by. A target shown again in a later session moves last.
@@ -89,7 +91,8 @@ worker that made it.
   worker. Opening a file in the user's Finder or editor has its own verbs, `tower reveal` and `tower edit`
   ([[open-files]]).
 
-**Consequences.** Tower 3D reads a showing once, as it opens; following its versions there is still to come.
+**Consequences.** The monitors and the gallery catch up with a file only while someone has its showing open, or
+when the picture is painted for the first time.
 Showing an html file exposes its directory and below, its hidden files and folders apart, to
 pages at the tower's origin; an html shelf entry, which the user declares, still serves everything below its page. A file deleted after it was shown answers `not_found`. Closing a showing is per browser
 in the tower page; Tower 3D keeps no ×, and what it has opened is kept with its spot.

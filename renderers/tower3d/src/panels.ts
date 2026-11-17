@@ -20,9 +20,9 @@ import { type CatName } from './life.ts'
 import { PET_IN, dropHearts, makeHearts, petProgress, petSpot, placeHearts } from './pet.ts'
 import { sharing, startShare, stopShare } from './tv.ts'
 import { bigScreens, cabinetOf, kioskOf, levelY } from './layout.ts'
-import { isMarkdown, type Shown } from './showing.ts'
+import { isMarkdown, type Pictures, type Shown } from './showing.ts'
 import { SHELL_SCROLLBACK } from '/lib/terminal.js'
-import { activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, pictureHeadHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
+import { mdPage, activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, pictureHeadHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, panesOf } from '/lib/keys.js'
 import type { Clock } from './clock.ts'
 import { CHANGES, THREAD } from './hosting.ts'
@@ -48,7 +48,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the panels resource is started with. */
-export type PanelsDeps = { clock: Clock; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation }
+export type PanelsDeps = { clock: Clock; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; pictures: Pictures }
 
 export type Panels = ReturnType<typeof startPanels>
 
@@ -74,6 +74,7 @@ export function startPanels(started: PanelsDeps) {
   const { desk, reader, deskNow } = started.views
   const { draftIo, hire, saving, handOver, hireOnNote, openSpawn, openSpawnOnNote } = started.spawn
   const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, seenSince, keepViewer, dottedNow, sawActions, sawDesk, drawSettings } = started.hud
+  const { repaint } = started.pictures
   const { see, lookAtNew, closeSide, sideClosed, unfocus, closePanels, goShown, goDesk, goShell, goLevel, goMove, nextWaiting, overview, offersNow, aimAt, openShown } = started.navigation
 
   /**
@@ -243,6 +244,7 @@ export function startPanels(started: PanelsDeps) {
   function docClosed(open: Panel) {
     if (open.kind === 'logbook' && open.tab === 'screen') closeTerm($('logbook-screen'))
     show('doc', false)
+    readerFile.stop()
     closeDocRelay()
     reader.close()
     $('doc-body').innerHTML = ''
@@ -295,6 +297,53 @@ export function startPanels(started: PanelsDeps) {
   }
 
   const readerLeft = (panel: Panel) => docClosed(panel)
+
+  /**
+   * One file's versions followed while a panel draws it (`tower.versions`): `follow` hands each version after the
+   * first, the one the panel draws as it opens, to `changed`, and `stop` lets the stream go.
+   */
+  function versionFollow() {
+    let unwatch: (() => void) | undefined
+    const stop = () => (unwatch?.(), (unwatch = undefined))
+    const follow = (read: string, changed: (modifiedAt: number | null) => void) => {
+      stop()
+      let first = true
+      unwatch = tower.versions(read, (msg) => {
+        if (msg.t === 'error') return toast(msg.message)
+        if (first) return void (first = false)
+        changed(msg.modifiedAt)
+      })
+    }
+    return { follow, stop }
+  }
+
+  /** The file the reader draws, followed while it is open: a gallery's picture. */
+  const readerFile = versionFollow()
+
+  /** The file the desk's shown tab draws, followed while the tab is open. */
+  const deskFile = versionFollow()
+
+  /** A markdown frame given its page again, opening where it was scrolled to. */
+  function redrawMd(frame: HTMLIFrameElement | null, page: string) {
+    if (!frame) return
+    const y = frame.contentWindow?.scrollY ?? 0
+    frame.addEventListener('load', () => frame.contentWindow?.scrollTo(0, y), { once: true })
+    frame.srcdoc = page
+  }
+
+  /**
+   * A showing drawn in `el` changed on disk: its picture in the world painted again, and in `el` markdown read and set
+   * where it was scrolled to, while `still` says it is drawn there, and anything else loaded again at its version.
+   */
+  async function shownChanged(el: HTMLElement, sh: Shown, modifiedAt: number | null, still: () => boolean) {
+    repaint(sh)
+    if (!isMarkdown(sh)) {
+      const media = el.querySelector<HTMLIFrameElement | HTMLImageElement | HTMLVideoElement>('iframe, img, video')
+      return media?.setAttribute('src', `${shownHref(sh)}?v=${modifiedAt}`)
+    }
+    const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
+    if (still()) redrawMd(el.querySelector('iframe'), mdPage(md, shownHref(sh), tower.prefs.attributes()))
+  }
 
   /** Entering the Stats panel: read now, and again every minute while it is open. */
   function statsEntered(panel: Panel, from: Panel | undefined) {
@@ -370,6 +419,7 @@ export function startPanels(started: PanelsDeps) {
     $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: boardNow()!.floors.find((f) => f.id === project)!.hub }, tower.prefs.attributes())
   }
 
+
   /** The open `html` entry's page, given the board and the API. Tower 3D reads what it keeps in `tower.store` as it boots. */
   let docRelay: { close(): void } | undefined
 
@@ -438,6 +488,8 @@ export function startPanels(started: PanelsDeps) {
     const { worker, shown: sh } = pictureOf(planNow().galleries, boardNow()!, id, target)!
     see(sh)
     $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes())
+    const still = () => panelAs('picture')?.id === id && panelAs('picture')?.target === target
+    if (sh.kind === 'file') readerFile.follow(shownHref(sh).slice(1), (at) => void shownChanged($('doc-body'), sh, at, still))
     if (!isMarkdown(sh)) return
     const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
     const open = panelAs('picture')
@@ -1016,6 +1068,8 @@ export function startPanels(started: PanelsDeps) {
     see(sh)
     $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes())
     show('desk-shown', true)
+    const still = () => atDesk() === id && deskTabNow() === shownTab(sh)
+    if (sh.kind === 'file') deskFile.follow(shownHref(sh).slice(1), (at) => void shownChanged($('desk-shown'), sh, at, still))
     if (!isMarkdown(sh)) return
     const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
     if (atDesk() !== id || deskTabNow() !== shownTab(sh)) return
@@ -1023,6 +1077,7 @@ export function startPanels(started: PanelsDeps) {
   }
 
   function closeShown() {
+    deskFile.stop()
     show('desk-shown', false)
     $('desk-shown').innerHTML = ''
   }

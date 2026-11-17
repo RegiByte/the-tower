@@ -219,6 +219,27 @@ export function picturesOf(tower: Tower) {
   /** Each image showing's picture as the image alone, at its own proportions, by `shownKey`. */
   const images = new Map<string, THREE.CanvasTexture>()
 
+  /** Each poster's reads and paints, by `shownKey`: run as it is first used, and again by `repaint`. */
+  const fills = new Map<string, () => void>()
+
+  /** The showing's bare picture, `canvas`: a new texture, or the one already hung given the new canvas. */
+  function bareOf(key: string, canvas: HTMLCanvasElement) {
+    const known = images.get(key)
+    if (!known) return images.set(key, textureOf(canvas)).get(key)!
+    known.dispose()
+    known.image = canvas
+    known.needsUpdate = true
+    return known
+  }
+
+  /** A film no longer shown: paused, its blob let go. */
+  function unload(video: HTMLVideoElement) {
+    video.pause()
+    URL.revokeObjectURL(video.src)
+    video.removeAttribute('src')
+    video.load()
+  }
+
   /**
    * A showing's picture, painted on first use: its poster; for markdown the page once its text arrives, and again with
    * its images; for an image the image fitted to the sheet, kept bare for the gallery too (`imageOf`); for a video its
@@ -236,49 +257,60 @@ export function picturesOf(tower: Tower) {
     posters.set(key, texture)
     const current = () => posters.get(key) === texture
     const url = shownHref(s)
-    if (isMarkdown(s)) {
-      const typeset = async (md: string) => {
-        const tokens = marked.lexer(md)
-        const paint = (pictures: Map<string, HTMLCanvasElement>) => {
+    const fill = () => {
+      if (isMarkdown(s)) {
+        const typeset = async (md: string) => {
+          const tokens = marked.lexer(md)
+          const paint = (pictures: Map<string, HTMLCanvasElement>) => {
+            if (!current()) return
+            paintPage(g, s, c.callsign, tokens, pictures)
+            texture.needsUpdate = true
+          }
+          paint(new Map())
+          const pictures = await pageImages(tokens, url, tower.blob)
+          if (pictures.size) paint(pictures)
+        }
+        read(tower.text(url.slice(1)).then(typeset, () => undefined))
+      }
+      if (isImage(s)) {
+        const hang = (image: HTMLCanvasElement) => {
           if (!current()) return
-          paintPage(g, s, c.callsign, tokens, pictures)
+          paintImage(g, image)
           texture.needsUpdate = true
+          bareOf(key, image)
         }
-        paint(new Map())
-        const pictures = await pageImages(tokens, url, tower.blob)
-        if (pictures.size) paint(pictures)
+        read(tower.blob(url.slice(1)).then(decode).then(hang, () => undefined))
       }
-      read(tower.text(url.slice(1)).then(typeset, () => undefined))
-    }
-    if (isImage(s)) {
-      const hang = (image: HTMLCanvasElement) => {
-        if (!current()) return
-        paintImage(g, image)
-        texture.needsUpdate = true
-        images.set(key, textureOf(image))
-      }
-      read(tower.blob(url.slice(1)).then(decode).then(hang, () => undefined))
-    }
-    if (isVideo(s)) {
-      const film = (video: HTMLVideoElement) => {
-        if (!current()) return URL.revokeObjectURL(video.src)
-        const k = Math.min(1, VIDEO_SIDE / Math.max(video.videoWidth, video.videoHeight))
-        const frame = Object.assign(document.createElement('canvas'), { width: Math.round(video.videoWidth * k), height: Math.round(video.videoHeight * k) })
-        const bare = textureOf(frame)
-        const paint = () => {
-          frame.getContext('2d')!.drawImage(video, 0, 0, frame.width, frame.height)
-          paintImage(g, frame)
-          texture.needsUpdate = true
-          bare.needsUpdate = true
+      if (isVideo(s)) {
+        const film = (video: HTMLVideoElement) => {
+          if (!current()) return URL.revokeObjectURL(video.src)
+          const k = Math.min(1, VIDEO_SIDE / Math.max(video.videoWidth, video.videoHeight))
+          const frame = Object.assign(document.createElement('canvas'), { width: Math.round(video.videoWidth * k), height: Math.round(video.videoHeight * k) })
+          const bare = bareOf(key, frame)
+          const paint = () => {
+            frame.getContext('2d')!.drawImage(video, 0, 0, frame.width, frame.height)
+            paintImage(g, frame)
+            texture.needsUpdate = true
+            bare.needsUpdate = true
+          }
+          paint()
+          const shown = films.get(key)
+          if (shown) unload(shown.video)
+          films.set(key, { video, paint })
         }
-        paint()
-        images.set(key, bare)
-        films.set(key, { video, paint })
+        read(tower.blob(url.slice(1)).then(load).then(film, () => undefined))
       }
-      read(tower.blob(url.slice(1)).then(load).then(film, () => undefined))
     }
+    fills.set(key, fill)
+    fill()
     return texture
   }
+
+  /**
+   * The showing's picture read and painted again, onto the textures already hung, once its file changed on disk; one
+   * not painted yet is left to its first use.
+   */
+  const repaint = (s: Shown) => fills.get(shownKey(s))?.()
 
   /**
    * Plays the videos `playing` names (by `shownKey`) and pauses every other where it stands. A playing video paints
@@ -312,12 +344,10 @@ export function picturesOf(tower: Tower) {
 
   /** Lets go of every picture not in `keys`: only what stands in the building is kept. */
   function keepPosters(keys: ReadonlySet<string>) {
+    for (const key of fills.keys()) if (!keys.has(key)) fills.delete(key)
     for (const [key, { video }] of films) {
       if (keys.has(key)) continue
-      video.pause()
-      URL.revokeObjectURL(video.src)
-      video.removeAttribute('src')
-      video.load()
+      unload(video)
       films.delete(key)
     }
     for (const map of [posters, images]) {
@@ -329,7 +359,7 @@ export function picturesOf(tower: Tower) {
     }
   }
 
-  return { posterOf, playFilms, imageOf, isPosterTexture, keepPosters, pictured }
+  return { posterOf, repaint, playFilms, imageOf, isPosterTexture, keepPosters, pictured }
 }
 
 export type Pictures = ReturnType<typeof picturesOf>
