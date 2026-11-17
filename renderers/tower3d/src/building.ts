@@ -34,7 +34,7 @@ import { galleryOf } from './showings.ts'
 import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
 import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
-import { eyes, type Walker } from './walker.ts'
+import { eyes, type Walker, type WalkerCell } from './walker.ts'
 import { layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, setLimits, setShellTitles } from './world.ts'
 import type { Toasts } from './toasts.ts'
@@ -50,7 +50,7 @@ import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { clock: Clock; sim: Sim; tower: Tower; assets: Assets; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { walker: WalkerCell; clock: Clock; sim: Sim; tower: Tower; assets: Assets; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -59,6 +59,7 @@ export type World = ReturnType<typeof startWorld>
  * app took, the caches of what can be seen, bumped into and picked, and the camera's flights.
  */
 export function startWorld(started: WorldDeps) {
+  const { me, set: setMe } = started.walker
   const { now: wallNow } = started.clock
   const { now: simNow } = started.sim
   const { tower } = started
@@ -91,9 +92,9 @@ export function startWorld(started: WorldDeps) {
 
   function screensHere() {
     const overview = viewNow() === 'overview'
-    if (screensAt.plan === planNow() && screensAt.level === s.me.level && screensAt.overview === overview) return screensAt.spots
+    if (screensAt.plan === planNow() && screensAt.level === me().level && screensAt.overview === overview) return screensAt.spots
     const spots = new Map<string, THREE.Vector3[]>()
-    const levels = overview ? [...s.levels.map((l) => l.group), ...s.world!.levels] : [s.levels[s.me.level]?.group, s.world!.levels[s.me.level]]
+    const levels = overview ? [...s.levels.map((l) => l.group), ...s.world!.levels] : [s.levels[me().level]?.group, s.world!.levels[me().level]]
     for (const group of levels) {
       group?.traverse((o) => {
         const map = o instanceof THREE.Mesh ? (o.material as THREE.MeshBasicMaterial).map : undefined
@@ -101,7 +102,7 @@ export function startWorld(started: WorldDeps) {
         if (path) spots.set(path, [...(spots.get(path) ?? []), o.getWorldPosition(new THREE.Vector3())])
       })
     }
-    screensAt = { plan: planNow(), level: s.me.level, overview, spots }
+    screensAt = { plan: planNow(), level: me().level, overview, spots }
     return spots
   }
 
@@ -114,13 +115,13 @@ export function startWorld(started: WorldDeps) {
   let boxesAt: { plan?: Plan; level: number; layer?: Layer; boxes: Box[] } = { level: -1, boxes: [] }
 
   function boxesHere() {
-    const layer = layerAt(s.me.y)
-    if (boxesAt.plan === planNow() && boxesAt.level === s.me.level && boxesAt.layer === layer) return boxesAt.boxes
-    boxesAt = { plan: planNow(), level: s.me.level, layer, boxes: collidersOn(planNow(), here(), layer) }
+    const layer = layerAt(me().y)
+    if (boxesAt.plan === planNow() && boxesAt.level === me().level && boxesAt.layer === layer) return boxesAt.boxes
+    boxesAt = { plan: planNow(), level: me().level, layer, boxes: collidersOn(planNow(), here(), layer) }
     return boxesAt.boxes
   }
 
-  const here = () => planNow().levels[s.me.level]
+  const here = () => planNow().levels[me().level]
 
   const keepTexture = (t: THREE.Texture) => isScreenTexture(t) || isStillScreen(t) || isPosterTexture(t) || t === directory.texture || t === statsBoard.texture
 
@@ -379,15 +380,15 @@ export function startWorld(started: WorldDeps) {
         const cat = makeCat(loaded().models, name)
         s.cats.set(name, cat)
       }
-      s.me = { x: 0, z: coreFront(planNow()) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...(loaded().kept as Kept | null)?.spot }
+      setMe({ x: 0, z: coreFront(planNow()) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...(loaded().kept as Kept | null)?.spot })
       if (location.hash === '#tv') {
         const couch = loungeSpots(planNow()).couch
-        s.me = { ...s.me, level: 0, x: couch.x, z: couch.z - 1.4, yaw: Math.PI, pitch: 0.12 }
+        setMe({ ...me(), level: 0, x: couch.x, z: couch.z - 1.4, yaw: Math.PI, pitch: 0.12 })
         history.replaceState(null, '', location.pathname)
       }
       show('paused', !captured())
     }
-    if (s.me.level >= planNow().levels.length) s.me = { ...s.me, level: 0 }
+    if (me().level >= planNow().levels.length) setMe({ ...me(), level: 0 })
     if (!was) pictured().then(firstPictured)
   }
 
@@ -405,7 +406,7 @@ export function startWorld(started: WorldDeps) {
     port.dispatch({ type: 'fly', flight: { from: vec3(camera.position), to: vec3(to), fromQ: quat(camera.quaternion), toQ: quat(toQ), start: simNow(), ms: reducedMotion() ? 0 : ms, then } })
   }
 
-  const flyHome = () => flyTo(eyes(s.me, floorY(), new THREE.Vector3()), eyeQuaternion(s.me), 600)
+  const flyHome = () => flyTo(eyes(me(), floorY(), new THREE.Vector3()), eyeQuaternion(me()), 600)
 
   /** Frames a face `size` wide in the middle of the view, straight out from it: the camera stays in front, never in a wall. */
   function frameOn(point: THREE.Vector3, normal: THREE.Vector3, size: number) {
@@ -439,7 +440,7 @@ export function startWorld(started: WorldDeps) {
 
   function floorY() {
     const { ride } = motionNow()
-    if (!ride) return levelY(s.me.level)
+    if (!ride) return levelY(me().level)
     const k = ease(THREE.MathUtils.clamp((riddenFor(ride) - DOORS_SHUT) / ride.move, 0, 1))
     return THREE.MathUtils.lerp(levelY(ride.from), levelY(ride.to), k)
   }
@@ -468,10 +469,10 @@ export function startWorld(started: WorldDeps) {
 
   /** What stops a look across the level, as boxes in the world, rebuilt when the plan or your level changes. */
   function occludersHere() {
-    if (occluders.plan === planNow() && occluders.level === s.me.level) return occluders.boxes
-    const y = levelY(s.me.level)
+    if (occluders.plan === planNow() && occluders.level === me().level) return occluders.boxes
+    const y = levelY(me().level)
     const boxes = solids(planNow(), here()).map((b) => new THREE.Box3(new THREE.Vector3(b.minX, y + b.bottom, b.minZ), new THREE.Vector3(b.maxX, y + b.top, b.maxZ)))
-    occluders = { plan: planNow(), level: s.me.level, boxes }
+    occluders = { plan: planNow(), level: me().level, boxes }
     return boxes
   }
 
@@ -500,7 +501,7 @@ export function startWorld(started: WorldDeps) {
     const floor = floorY()
     const hit = raycaster.intersectObjects(pickables(), true).find((h) => {
       if (!shown(h.object) || !h.object.userData.act) return false
-      return viewNow() === 'overview' || (h.point.y > floor - 0.2 && h.point.y < floor + levelHeight(s.me.level))
+      return viewNow() === 'overview' || (h.point.y > floor - 0.2 && h.point.y < floor + levelHeight(me().level))
     })
     const a: Act | undefined = hit?.object.userData.act
     if (!a || viewNow() === 'overview') return a

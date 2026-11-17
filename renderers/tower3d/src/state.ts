@@ -96,8 +96,6 @@ export type State = {
   /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
   storedLayout: Layout | undefined
 
-  /** Where you stand and look: what the frames move, as walking, riding, petting or a cut moves you (the app's `Motion`). */
-  me: Walker
   /** The hires in flight by floor, as the hiring machine in main holds them: read by the open workstations. */
   hiring: () => Hiring<Held>
   /** Every showing you have opened, by `shownKey`, kept with your spot. */
@@ -135,7 +133,6 @@ export const s: State = {
   world: undefined,
   desks: new Map(), stations: new Map(), moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(),
   visited: new Set(), viewer: VIEWER_DEFAULT, storedLayout: undefined,
-  me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 },
   hiring: noHires, seenShown: new Set(),
   carrying: undefined, beer: false,
   doorMode: false,

@@ -23,7 +23,7 @@ import type { Frames, Meter } from './frames.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Feed } from './feed.ts'
 import type { Sim } from './sim.ts'
-import { aim, eyes, facing, type Walker } from './walker.ts'
+import { aim, eyes, facing, type Walker, type WalkerCell } from './walker.ts'
 
 /**
  * `window.tower3d`: the way an agent drives and sees Tower 3D. It injects the same intents the keyboard and mouse
@@ -117,6 +117,8 @@ export type Engine = {
   play(): void
   /** The simulated clock the door steps. */
   sim: Sim
+  /** Where you stand, which `aimAt` turns you in. */
+  walker: WalkerCell
   onKey(code: string, repeat: boolean): boolean
   /** Holds `move` as the walker's until the next drive; `undefined` hands it back to the keyboard. */
   drive(move: Move | undefined): void
@@ -193,7 +195,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
    * this before it renders, so a door call made before one (a stepped page, a teleport) reads it the same.
    */
   function current() {
-    showLevels(levelsShown(e.app().view, e.app().motion, s.me.level))
+    showLevels(levelsShown(e.app().view, e.app().motion, e.walker.me().level))
     scene.updateMatrixWorld()
   }
 
@@ -224,7 +226,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
     return {
       seed: SEED, time: e.sim.now(), stepped: e.sim.stepped(), captured: e.captured(), view,
       panel: panelOf(), carrying: s.carrying,
-      walker: { ...s.me }, riding: ride !== undefined, flying: flight !== undefined,
+      walker: { ...e.walker.me() }, riding: ride !== undefined, flying: flight !== undefined,
       petting: pet && { name: pet.name, progress: petProgress(pet, e.sim.now()) },
       aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, e.sim.now()) },
       fps: e.meter().fps, frameMs: e.meter().frameMs, drawn: { calls: e.meter().calls, triangles: e.meter().triangles },
@@ -244,7 +246,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
       e.drive(undefined)
       e.dispatch({ type: 'capture', by: 'door', held: false })
     },
-    teleport({ level, x, z, yaw = s.me.yaw, pitch = 0, y = 0 }) {
+    teleport({ level, x, z, yaw = e.walker.me().yaw, pitch = 0, y = 0 }) {
       if (!e.plan().levels[level]) throw new Error(`no level ${level}: the tower has ${e.plan().levels.length}`)
       if (e.app().view === 'overview') e.leaveOverview()
       e.place(level, { x, z, yaw, pitch, y })
@@ -257,8 +259,8 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
     aimAt(target) {
       if (e.app().view !== 'walk') throw new Error(`aimAt works while walking; the view is ${e.app().view}`)
       const at = centerOf(target)
-      s.me = { ...s.me, ...facing(eyes(s.me, e.floorY(), new THREE.Vector3()), at) }
-      aim(camera, s.me, e.floorY())
+      e.walker.set({ ...e.walker.me(), ...facing(eyes(e.walker.me(), e.floorY(), new THREE.Vector3()), at) })
+      aim(camera, e.walker.me(), e.floorY())
       camera.updateMatrixWorld()
       e.aimAt(e.pick(0, 0))
       return e.app().aim.aimed
@@ -303,7 +305,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
 }
 
 /** What the door is started with: every resource whose functions it drives. */
-export type DoorDeps = { sim: Sim; pictures: Pictures; stage: Stage; input: Input; port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
+export type DoorDeps = { sim: Sim; walker: WalkerCell; pictures: Pictures; stage: Stage; input: Input; port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
 
 /** The door filled, once every resource it drives has started (the `door` resource). */
 export function startDoor(started: DoorDeps) {
@@ -326,6 +328,7 @@ export function startDoor(started: DoorDeps) {
     events: events.read,
     play,
     sim: started.sim,
+    walker: started.walker,
     meter,
     draft: started.panels.draft,
     drive: started.input.drive,
