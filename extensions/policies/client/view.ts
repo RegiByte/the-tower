@@ -26,6 +26,7 @@ export const mount: Mount = async (host, { tower, board: first, subject, kit }) 
   let board = first
   const project = (subject.value as Floor).id
   const floor = () => board.floors.find((f) => f.id === project) as Floor
+  const now = kit.now ?? Date.now
   let dismissed = new Set((await readViewer(tower.store.get)).dismissed)
 
   host.innerHTML = `<style>${STYLE}</style><div class="shelf-head"></div><div class="policies-body"></div>`
@@ -34,7 +35,7 @@ export const mount: Mount = async (host, { tower, board: first, subject, kit }) 
   const draw = () => {
     const html = `<span class="label">Policies</span><span class="dim">${esc(floor().name)}</span><span class="actions">${closeHtml(board.keys)}</span>`
     if (head.innerHTML !== html) head.innerHTML = html
-    drawPanel(body, policiesHtml({ board, floor: floor(), now: Date.now(), dismissed }), {})
+    drawPanel(body, policiesHtml({ board, floor: floor(), now: now(), dismissed }), {})
   }
 
   /** A policy's Run now or Approve, or an offer's Accept: a run started opens its worker once the board carries it. */
