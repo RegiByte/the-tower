@@ -177,7 +177,7 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   resource listens on starts after it (the controls after the app, for blur and visibility). A listener that reads the app's db
   or dispatches to it is added only once the app is attached: the HUD's and the panels' are each gathered in a
   `listen` the app calls as it attaches, the HUD's before its own and the panels' after, so none can run before the
-  app exists (the HUD's read of the origins starts there, since its landing dispatches) (a resource's start is an `await import` away from the next). A flag one resource keeps
+  app exists (a resource's start is an `await import` away from the next). The HUD's read of the origins starts in its `listen` too, since its landing dispatches. A flag one resource keeps
   and another set is a function on its owner (the panels' `askDraw`, the frames' `beginDrawing`, `drawEachFrame` and `play`, the
   editor's last save a cell hiring exposes), and so is a cell one resource keeps that others read or clear (the
   frames' `meter`, the panels' open `draft`, the HUD's `clearDots`, the app loop's `waitedAt`, stamped by its
@@ -223,7 +223,7 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   below, the board waiting for its floors' archives (`waiting`), the Stats panel's read (`stats`), and the view
   state the page keeps for you: whether the door has captured (`doorMode`, `door/mode`), the music off and the frame
   meter shown (`muted`, `meterShown`: `music/muted` and `meter/shown` return a `music` or `meter` effect, and
-  `kept/landed` restores both from what the tower kept without starting the music), the waits N visited this round
+  `kept/landed` restores both from what the tower kept, the meter shown or hidden as kept, without starting the music), the waits N visited this round
   (`visited`), the origin remotes' web pages (`origins/read`) and your stored layout (`layout/stored`).
   Readers call `app.state()`, through the port (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `now.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
