@@ -12,6 +12,20 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.8.0
+
+Shown files and shelf pages follow their file live in Tower 3D and on the shelf, and fixture logbooks read real times
+(#639, #640). Nothing to restart beyond the tower (`tower update` does it).
+
+- **Tower 3D's showings stay current.** A file shown at a worker's desk, or a picture open in the reader, draws again
+  when it changes on disk, renamed or written in place, and keeps its scroll; the desk monitor and the gallery picture
+  repaint with it. A deleted file stays drawn until it is written again.
+- **Shelf markdown pages stay current,** on the tower page and in Tower 3D's reader, with their scroll kept. A file
+  newly matching a shelf entry's glob still shows on the next load.
+- **Views age what they draw by their renderer's clock.** A collection's tray and the Policies panel read the clock
+  the renderer lends them, so a pinned page (`?at`, a fixture) shows ages as of that instant.
+- **Tower 3D's fixture logbooks** draw an answer's time and how long it took, instead of "Invalid Date".
+
 ## v2.7.2
 
 Sessions start without a trust dialog again (#636). Nothing to restart beyond the tower (`tower update` does it).
