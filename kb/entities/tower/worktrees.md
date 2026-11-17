@@ -61,4 +61,5 @@ as old as the last fetch.
   ([[discard]]).
 - **Changes.** [`changesIn`](ref:hub/src/changes.ts#changesIn) serves `/changes/<id>`: per repo of a session, the diff
   since the ref its work is counted from ([`againstFor`](ref:hub/src/worktrees.ts#againstFor)), untracked files
-  included, with the commits since, narrowed by a scope. Git is read on every request, never kept ([[changes-view]]).
+  included, with the commits since, narrowed by a scope, the diff and untracked files read through the checkout's
+  private index as its status is. Git is read on every request, never kept ([[changes-view]]).

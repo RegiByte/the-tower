@@ -88,7 +88,8 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   hard link of its own until its checkout is read, since git reads a `GIT_INDEX_FILE` that is gone as an empty index,
   so a new copy replaces the checkout's older ones at once, and copies of checkouts a repo no longer lists are swept
   ([`sweepIndexes`](ref:hub/src/private-index.ts#sweepIndexes)). The verbs' reads go through the same copies
-  ([[tower-cuts-worktrees]]); the Changes and what discard throws away read the real index.
+  ([[tower-cuts-worktrees]]), and so do the Changes' diff and untracked files ([[changes-view]]), under the same
+  names, so a Changes read finds the copy the board refreshed; what discard throws away reads the real index.
 
 - **A repo that hangs delays only its own reads.** A hook or an fsmonitor can hold a git call to its timeout, a minute
   ([`src/git.ts`](ref:hub/src/git.ts)). Each dir has one read at a time and each read is answered as it settles, so

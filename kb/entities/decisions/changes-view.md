@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-06",
   "reviewed": "2026-11-16",
-  "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changed-files.ts#changedSince", "hub/src/changed-files.ts#sinceOf", "hub/src/worktrees.ts#againstChoice", "hub/src/shared/checkouts.ts#changedIn", "hub/src/views/changes.ts#tab", "hub/test/against.test.ts", "hub/src/changes.ts#changesIn", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/views/changes.ts#mount", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
+  "refs": ["hub/src/bridge/checkouts.ts#checkoutState", "hub/src/changed-files.ts#changedSince", "hub/src/changed-files.ts#sinceOf", "hub/src/worktrees.ts#againstChoice", "hub/src/shared/checkouts.ts#changedIn", "hub/src/views/changes.ts#tab", "hub/test/against.test.ts", "hub/src/changes.ts#changesIn", "hub/src/private-index.ts#throughCopy", "hub/src/shared/api.ts#QUERIES", "hub/src/shared/changes-reads.ts#viewedKey", "hub/src/shared/changes-reads.ts#liveScope", "hub/src/bridge/diff.ts#parseDiff", "hub/src/bridge/diff.ts#withBefore", "hub/src/shared/changes-panel.ts#readsWhole", "hub/src/tower/http.ts#changes", "hub/src/worktrees.ts#againstFor", "hub/src/shared/changes-panel.ts#markedChangesHtml", "hub/src/views/changes.ts#mount", "hub/src/shared/changes-lines.ts#splitRows", "hub/src/shared/changes-panel.ts#treeHtml", "hub/src/shared/words.ts#wordRanges", "hub/test/diff.test.ts", "hub/src/shared/changes-reads.ts#changesHandlers", "hub/src/shared/changes-reads.ts#readChanges"],
   "links": [
     { "to": "tower-server", "verb": "uses", "carries": "GET /changes/<id>?scope: each of the session's repos with its commits since its base, and its files and hunks as the scope shows them" }
   ]
@@ -25,7 +25,10 @@ request, never kept:
   the merge-base with the upstream, so a commit not yet pushed is still work to review and a note anchored to it stays
   anchored ([[review-threads]]). Anywhere else, since `HEAD`. One `git diff <since>` against the working tree covers
   commits, staged and unstaged; untracked files are diffed one by one against `/dev/null`, up to a cap. Files outside
-  the repos aren't seen.
+  the repos aren't seen. The diff and the untracked listing read the checkout's refreshed private index
+  ([`throughCopy`](ref:hub/src/private-index.ts#throughCopy), [[live-system]]), the copy the board's read of it uses:
+  files a checkout or rebase left racy are hashed once rather than on every poll, and both see one index. A commit's
+  own changes read no index.
 - **As data.** [`parseDiff`](ref:hub/src/bridge/diff.ts#parseDiff) turns git's output into files with their hunks,
   lines kept with git's marks. Every config of the user's that changes what `git diff` prints is set back on the
   command line.
