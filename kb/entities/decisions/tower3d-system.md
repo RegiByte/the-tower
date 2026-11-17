@@ -114,8 +114,8 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   desks' dressing, the stats board) take the instant they draw at as an argument.
 - *The simulated clock is a resource too, apart from the wall clock.* What animations, holds, flights and cuts read
   is the `sim` resource ([`startSim`](ref:hub/renderers/tower3d/src/sim.ts#startSim)), a leaf every reader depends
-  on: the frames `advance` it each real frame, the door's `step` stops it and advances it itself, `play` runs it
-  again. Its start reads `?stepped`, as the clock's reads `?at=`: a query read at a start, never as a module loads,
+  on: the frames' `update` alone `advance`s it, each real frame and each frame the door's `step` runs once it
+  has stopped it; `play` runs it again. Its start reads `?stepped`, as the clock's reads `?at=`: a query read at a start, never as a module loads,
   and only `?board=`, which picks the record, is read by `boot.ts`. A builder that hangs by it takes it as an
   argument beside the wall instant (`galleryAfter`).
 - *A fixture page is a record, not a mode.* `system.ts` exports the live record (`liveTower3d`) and
