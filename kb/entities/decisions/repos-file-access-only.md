@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-10-05",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-17",
   "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/launch.ts#grantedDirs", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch-opencode.ts#opencodeSpawn"]
 }
 ---
