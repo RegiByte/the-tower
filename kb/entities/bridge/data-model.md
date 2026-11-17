@@ -50,8 +50,8 @@ is in `docs/config.md`. Two of them throw a `ConfigError`, which the board shows
 can't name workers; [`callsignsOf`](ref:hub/src/shared/model.ts#callsignsOf) names a session id from it, and
 `spawnRequest` takes the name it gives ([[callsign]]). [`worktreeBrief`](ref:hub/src/shared/launch.ts#worktreeBrief) is what a worker in a
 worktree is told in its system prompt (its name, branch, directories, the main checkouts they copy, and the sources of
-its links); spawn and resume requests take it, `undefined` in a main checkout, and pass each link's source as
-`--add-dir`, so a write through a link stays inside the session's directories ([[tower-cuts-worktrees]]). Claude
+its links); spawn and resume requests take it, `undefined` in a main checkout, and grant each link's source as one of
+the session's `additionalDirectories`, so a write through a link stays inside the session's directories ([[tower-cuts-worktrees]]). Claude
 reads `--append-system-prompt` only when a conversation starts: `--resume` keeps the conversation's own system prompt
 and ignores a new one, so what a resume must tell the worker goes in its prompt. A resume that brought its gone
 worktree back says how ([`Restored`](ref:hub/src/shared/launch.ts#Restored)) in front of its prompt

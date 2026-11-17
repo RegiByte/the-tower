@@ -15,7 +15,7 @@ const merged = (result: ReturnType<typeof mergeParts>): Merged => {
 }
 
 test("the core's flags are read from what it composes: a spawn's and a resume's, the host's --plugin-dir among them", () => {
-  assert.deepEqual([...CORE_FLAGS.claude].sort(), ['--', '--add-dir', '--append-system-prompt', '--effort', '--model', '--name', '--plugin-dir', '--resume', '--settings'])
+  assert.deepEqual([...CORE_FLAGS.claude].sort(), ['--', '--append-system-prompt', '--effort', '--model', '--name', '--plugin-dir', '--resume', '--settings'])
 })
 
 test('parts merge in fold order: text concatenated, flags kept in order, env scrubbed of a parent session, defaults and exemptions by capability', () => {

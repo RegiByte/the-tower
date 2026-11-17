@@ -1478,7 +1478,7 @@ value off its schema, is a part the runtime can't place: on a spawn that set non
 every part the contributor gave, its `fields` with the rest, and the worker starts without them), `args.claude` (Claude's own flags, each `--flag` or `--flag=value`, placed before the
 tower's), `exempt: ['hiring']` and `reportsTo` (a callsign); `prompt`, `defaults`, `fields`, `exempt` and `reportsTo`
 count on a spawn only. A flag the tower passes (`--name`, `--settings`,
-`--add-dir`, `--plugin-dir`, `--append-system-prompt`, `--model`, `--effort`, `--resume`, `--`) or the config's `argv`
+`--plugin-dir`, `--append-system-prompt`, `--model`, `--effort`, `--resume`, `--`) or the config's `argv`
 command the session runs passes, an env key the config's `env` sets, and a flag, env key, `defaults` member or `reportsTo` two extensions both
 give, refuses the launch, naming both. A contributor that throws, doesn't settle within 10 s, or returns what the runtime can't place refuses a spawn that
 carries its fields, and otherwise is left out with a `launch` problem. `exempt` takes the worker out of its floor's hiring limits and

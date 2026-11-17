@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#linkArgs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/shared/spawn-form.ts#cutWhy", "hub/src/shared/spawn-form.ts#hireBlocked", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
+  "refs": ["hub/src/worktrees.ts#cut", "hub/src/git.ts#PINNED", "hub/src/git.ts#exec", "hub/src/worktrees.ts#deleteAt", "hub/src/worktrees.ts#writingConfig", "hub/src/worktrees.ts#fetchOrigin", "hub/src/worktrees.ts#fork", "hub/src/worktrees.ts#snapshot", "hub/src/worktrees.ts#readRepo", "hub/src/worktrees.ts#absorbed", "hub/src/worktrees.ts#tidyable", "hub/src/bridge/worktrees.ts#floorWorktrees", "hub/src/bridge/board.ts#occupantsOf", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch.ts#worktreeBrief", "hub/src/shared/launch.ts#grantedDirs", "hub/src/worktrees.ts#linkedSources", "hub/src/tower/dispatch.ts#spawnCut", "hub/src/packages.ts#packageDir", "hub/src/shared/spawn-form.ts#spawnFormHtml", "hub/src/shared/spawn-form.ts#defaultWhere", "hub/src/bridge/worktrees.ts#cuttable", "hub/src/shared/spawn-form.ts#cutWhy", "hub/src/shared/spawn-form.ts#hireBlocked", "hub/src/bridge/worktrees.ts#commonBases", "hub/src/bridge/worktrees.ts#sharedDefault"]
 }
 ---
 **Problem.** Workers sharing one checkout interleave edits, test each other's half-done changes and move each
@@ -69,10 +69,10 @@ again on every read; the pure fold
   Tidy removes it once nobody works there ([[reviewer]]).
 - **Links share state, never dependencies.** A link is one folder every worker writes back to the main checkout
   (a git-ignored notes folder shared by every worktree). Claude checks a write by the path it resolves to, so every
-  spawn and resume in a worktree passes each link's source as `--add-dir`
+  spawn and resume in a worktree grants each link's source as one of the session's `additionalDirectories`
   ([`linkedSources`](ref:hub/src/worktrees.ts#linkedSources): configured links whose source directory exists in a
-  repo's main checkout; composed in [`linkArgs`](ref:hub/src/shared/launch.ts#linkArgs)), the way
-  [[workers-edit-kept-items]] passes the kept items: the client's flag, no host change. `node_modules` is not linked:
+  repo's main checkout; composed in [`grantedDirs`](ref:hub/src/shared/launch.ts#grantedDirs)), the way
+  [[workers-edit-kept-items]] grants the kept items: the client's, no host change. `node_modules` is not linked:
   an install in a worktree would change the main checkout's; the tower reads the files it serves from packages
   through Node's resolver ([`packageDir`](ref:hub/src/packages.ts#packageDir)).
 - **No global prune.** The cut never runs `git worktree prune`: it would clear every lost worktree's ghost entry, the

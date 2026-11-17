@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-05",
   "reviewed": "2026-11-15",
-  "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch-opencode.ts#opencodeSpawn"]
+  "refs": ["hub/src/shared/launch.ts#settingsArgs", "hub/src/shared/launch.ts#grantedDirs", "hub/src/shared/model.ts#sessionDirs", "hub/src/shared/launch-opencode.ts#opencodeSpawn"]
 }
 ---
 **Context.** Sessions got the project's other dirs with `--add-dir`, which also loads each dir's `.claude/`
@@ -29,9 +29,13 @@ every skill). Keeping skills out of repos:
 puts the fix on every repo instead of the tower.
 
 **Consequences.** A repo's own skills are reachable only from a session started in it. A repo's CLAUDE.md was never
-loaded (that takes `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1`), and still is not. Clients still pass
-`--add-dir` for directories outside the project's repos: the floor's collections directory, and in a [[worktree]] the
-directory sources of its links ([[tower-cuts-worktrees]]); a `.claude/` in one of those would load. The settings are the clients' ([[host-owns-ptys]]).
+loaded (that takes `CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1`), and still is not. The directories outside
+the project's repos are granted the same way ([`grantedDirs`](ref:hub/src/shared/launch.ts#grantedDirs)): the floor's
+collections directory ([[workers-edit-kept-items]]), and in a [[worktree]] the directory sources of its links
+([[tower-cuts-worktrees]]). Since Claude Code 2.1.326, `--add-dir` asks to trust a directory outside a trusted one at
+every session start, an answer that holds for that session only, because the directory's `.claude/` loads; a directory
+in `additionalDirectories` it doesn't ask about, and an edit there in `acceptEdits` or auto mode asks no permission,
+as with `--add-dir`. The settings are the clients' ([[host-owns-ptys]]).
 An opencode session's launch passes none of these directories
 ([`opencodeSpawn`](ref:hub/src/shared/launch-opencode.ts#opencodeSpawn)).
 
