@@ -416,6 +416,13 @@ export const threadHeadHtml = (f: Floor, checkout: string, worker: Card | undefi
     <span class="acts">${closeButton}</span>`
 
 /**
+ * The sandbox of a markdown frame: nothing runs, links open a tab of their own, and the panel reaches in to keep where
+ * it was scrolled when the file is drawn again. It never gets `allow-scripts`: with `allow-same-origin` a script in the
+ * file would run as Tower 3D and could lift its own sandbox.
+ */
+const MD_SANDBOX = 'allow-same-origin allow-popups allow-popups-to-escape-sandbox'
+
+/**
  * A showing in the desk panel: a file framed from the tower, sandboxed; a web page framed at its address; markdown
  * set in the scheme, once its text is read; a link as one button, since a browser opens no tab without a click.
  */
@@ -427,7 +434,7 @@ export function shownHtml(callsign: string, s: Shown, root: string, md?: string)
   }
   if (isImage(s)) return `<img class="doc-image" src="${esc(shownHref(s))}" alt="${esc(shownTitle(s))}">`
   if (isVideo(s)) return `<video class="doc-video" controls autoplay src="${esc(shownHref(s))}"></video>`
-  if (isMarkdown(s)) return md === undefined ? '' : `<iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(md, shownHref(s), root))}"></iframe>`
+  if (isMarkdown(s)) return md === undefined ? '' : `<iframe class="doc-frame" sandbox="${MD_SANDBOX}" srcdoc="${esc(mdPage(md, shownHref(s), root))}"></iframe>`
   return `<iframe class="doc-frame" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write" src="${esc(shownHref(s))}"></iframe>`
 }
 
@@ -806,6 +813,6 @@ export function docHtml(doc: { files: string[]; file?: string; text: string; url
  * Markdown served at `url` as a page in the viewer's appearance, its root's attributes `root` (`tower.prefs.attributes`),
  * for a frame without scripts (`documentHtml` keeps raw HTML).
  */
-const mdPage = (text: string, url: string, root: string) =>
+export const mdPage = (text: string, url: string, root: string) =>
   `<!doctype html><html ${root}><meta charset="utf-8"><base target="_blank"><link rel="stylesheet" href="/design.css">
     <style>${documentCss}</style><article>${documentHtml(text, url)}</article>`

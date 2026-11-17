@@ -140,7 +140,7 @@ const navigation = defineResource({
 })
 
 const panels = defineResource({
-  dependencies: ['clock', 'tower', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation'],
+  dependencies: ['clock', 'tower', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'pictures'],
   start: startPanels,
   halt: () => {},
 })
