@@ -542,7 +542,6 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     return release
   }
 
-  trackNew()
   const watching = (watcher: FSWatcher, what: string) => watchers.push(watchedOrExit(watcher, what))
   watching(
     watch(
@@ -554,6 +553,7 @@ export const watchSystem = async (paths: SystemPaths, notify: () => void): Promi
     ),
     paths.sessions,
   )
+  trackNew()
   /** Watches `dir`'s tree, made if missing; resolves once watching. */
   const subscribed = async (dir: string, changed: () => void) => {
     mkdirSync(dir, { recursive: true })
