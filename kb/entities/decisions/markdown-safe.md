@@ -83,8 +83,9 @@ would reach for a markdown library's `parse` and draw it inline.
   and keys to check this, since `drive` is Chrome only.
 - Briefs and review notes in every renderer use `markdownHtml` as their `said` ([[brief-turns]]); shown, shelf and
   kept docs use `documentHtml` in the tower page (`tower/document`, [[ui-model]]); Tower 3D draws a kept item's
-  markdown with `markdownHtml`, and a shown or shelf document with `documentHtml` in a frame with neither scripts nor
-  the tower's origin ([`docHtml`](ref:hub/renderers/tower3d/src/ui.ts#docHtml)). `/marked.js` is served outside the
+  markdown with `markdownHtml`, and a shown or shelf document with `documentHtml` in a frame where no script runs,
+  `allow-same-origin` like the page's document frames so the panel keeps where it was scrolled when the file is drawn
+  again ([`docHtml`](ref:hub/renderers/tower3d/src/ui.ts#docHtml)). `/marked.js` is served outside the
   contract; Tower 3D keeps marked's lexer to typeset pages on canvas.
 - *The binding rule.* A document's raw HTML can hold elements that mimic the renderer's (a
   `<button data-action>`, a fake heading or section). So inside a document frame the renderer holds the elements it
