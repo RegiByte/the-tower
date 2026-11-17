@@ -88,7 +88,7 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   for the page's or the process's unhandled-rejection handling.
 - *Animation a frame advances is not a machine.* State a frame writes every tick, even timed state with several
   phases (Tower 3D's landing doors easing open and shut, [`tickDoors`](ref:hub/renderers/tower3d/src/frames.ts#tickDoors),
-  workers walking in and out, the walker), is a cell its owner keeps and advances by a pure step. Through the loop it
+  workers walking in and out, the walker), is a cell its owner keeps and advances each frame, in place. Through the loop it
   would cost a handler, every listener and a record entry per frame; what such a cell starts or ends that the page
   decides on (a ride, a flight, a cut) is an event to the machine.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
