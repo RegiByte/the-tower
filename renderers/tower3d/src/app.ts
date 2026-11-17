@@ -16,14 +16,54 @@ import { STATS_ALL, type Stats } from '/lib/stats.js'
 import { askTransitions, cardsOf, findCard, pictureOf, shownKey, transitions } from './cards.ts'
 import { gameItem } from './games.ts'
 import { cabinetOf, deskOf, kioskOf, type Plan } from './layout.ts'
-import type { Board, Floor, ShelfSelf } from './api.ts'
+import type { Board, Brief, Card, Floor, ShelfSelf, Tower } from './api.ts'
 import type { Archived, Drawer } from './archive.ts'
-import type { Act, Held } from './acts.ts'
+import type { Act, Held, Verb } from './acts.ts'
 import type { Pet } from './pet.ts'
-import type { Hold, Panel, Standing, View } from './state.ts'
 import type { Layout } from '/lib/layout.js'
 import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
-import { shownTab, type DeskTab } from './ui.ts'
+import { shownTab, type DeskTab, type LogbookTab } from './ui.ts'
+
+export type View = 'walk' | 'focus' | 'overview' | 'pet'
+/** Where to stand: `y` is how high over the level's floor, on a stair or the loft's deck, 0 unless given. */
+export type Standing = { x: number; z: number; yaw: number; pitch?: number; y?: number }
+export type Threads = Awaited<ReturnType<Tower['conversations']>>
+/** A game played beside its cabinet; `x` is where the camera framed it. */
+export type GamePanel = { kind: 'game'; project: string; id: string; x: number }
+export type Panel =
+  | { kind: 'desk'; id: string }
+  | { kind: 'shell'; id: string }
+  /** A floor's panel, with the tray unfolded under it: `worktrees`, a collection's id, or none. */
+  | { kind: 'floor'; id: string; tray: string | undefined }
+  /** A floor's past workers, filtered by `words`. */
+  | { kind: 'archive'; id: string; words: string[] }
+  | { kind: 'doc'; project: string; n: number; file?: string }
+  /** An item of any collection in the reader; `drawn`: the `modifiedAt` its body was read for. */
+  | { kind: 'kept'; project: string; collection: string; id: string; drawn: number }
+  /** A gallery's picture in the reader, by its worker and target. */
+  | { kind: 'picture'; id: string; target: string }
+  | { kind: 'directory' }
+  | { kind: 'elevator' }
+  /** Where a new shell can start, picked at a floor's console: that floor's places first. */
+  | { kind: 'shell-pick'; first: string }
+  | { kind: 'tv'; n: number }
+  /**
+   * A worker's logbook in the reader, for a worker with no desk (a guest, an archived folder): its card as read, its
+   * conversations once read and those read whole in them, the tab it shows, and the session whose last screen the
+   * Screen tab shows.
+   */
+  | { kind: 'logbook'; card: Card; threads: Threads | undefined; wholes: Brief[]; tab: LogbookTab; on: string }
+  /** A pulled drawer of a floor's filing cabinet, its folders listed beside the world. */
+  | { kind: 'drawer'; project: string; n: number }
+  /** The draft editor on a draft of `project`'s floor, its body in the panels' editor. */
+  | { kind: 'draft'; project: string }
+  /** A checkout's review thread read away from any desk, nobody working there now. */
+  | { kind: 'thread'; project: string; checkout: string }
+  /** The Stats panel in the reader. */
+  | { kind: 'stats' }
+  | GamePanel
+/** A verb whose key or button is held: it runs once held for long enough, `by` the key code, `mouse` or `door`. */
+export type Hold = { act: Act; verb: Verb; start: number; by: string }
 
 /** The tab a desk opens on once it opens: its brief, its review thread, or lines of its Changes. */
 export type PendingTab = { id: string; tab: 'brief' | 'reviews' } | { id: string; tab: 'changes'; lines: Lines }

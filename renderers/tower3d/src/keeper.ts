@@ -1,8 +1,10 @@
 import type { Tower } from './api.ts'
 import { nowOf } from './now.ts'
 import type { Port } from './port.ts'
-import type { Spot } from './state.ts'
 import type { Walker, WalkerCell } from './walker.ts'
+
+/** Where you stood, as kept. */
+export type Spot = Pick<Walker, 'level' | 'x' | 'z' | 'yaw' | 'pitch' | 'y'>
 
 /** Where you stood, kept by the tower for this page so a reload puts you back, with the music on or off and what you've seen shown. */
 export type Kept = { spot: Spot; muted: boolean; fps?: boolean; seen?: string[] }
