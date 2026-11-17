@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-27",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-17",
   "refs": ["hub/src/subscribe.ts#subscribe", "hub/src/system.ts#watchSystem", "hub/src/repo-watch.ts#watchRepos", "hub/src/file-versions.ts#fileVersions", "hub/package.json"]
 }
 ---
