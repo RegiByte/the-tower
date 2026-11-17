@@ -241,7 +241,7 @@ export const shownOn = (board: Board) => new Set(cardsOf(board).flatMap((c) => c
  * it stood on. A showing `was` didn't hold flies in from over its worker's head once it has been held up; the others
  * slide to their new places.
  */
-export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterOf'], now: number): Layer<PictureAt, Picture> {
+export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterOf'], now: number, t: number): Layer<PictureAt, Picture> {
   const before = was && shownOn(was)
   return {
     slots: (p) => floors(p).flatMap((level) => level.wall.pictures.map((slot) => {
@@ -253,13 +253,13 @@ export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterO
       const pic = makePicture(slot.worker, slot.shown, posterOf, now)
       const desk = s.desks.get(slot.worker.id)
       const arrives = before && !before.has(key) && desk
-      hang(pic, at, slot.w, s.simNow / 1000, arrives ? heldUpAt(desk) : 'now')
+      hang(pic, at, slot.w, t, arrives ? heldUpAt(desk) : 'now')
       dressPicture(pic, !s.seenShown.has(key), now)
       return pic
     },
     keep(pic, { slot, at }) {
       pic.worker = slot.worker
-      hang(pic, at, slot.w, s.simNow / 1000, 'slide')
+      hang(pic, at, slot.w, t, 'slide')
       dressPicture(pic, !s.seenShown.has(shownKey(slot.shown)), now)
       return true
     },

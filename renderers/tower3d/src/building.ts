@@ -27,6 +27,7 @@ import { fillBooks } from './room.ts'
 import { keymapSheetHtml } from '/lib/keys.js'
 import { random } from './random.ts'
 import type { Clock } from './clock.ts'
+import type { Sim } from './sim.ts'
 import { historyOf, type Archive, type Archived } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
@@ -49,7 +50,7 @@ import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { clock: Clock; tower: Tower; assets: Assets; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { clock: Clock; sim: Sim; tower: Tower; assets: Assets; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -59,6 +60,7 @@ export type World = ReturnType<typeof startWorld>
  */
 export function startWorld(started: WorldDeps) {
   const { now: wallNow } = started.clock
+  const { now: simNow } = started.sim
   const { tower } = started
   const { isScreenTexture, keepScreens, replayTexture, screenPathOf, screenTexture, monitorOf } = started.screens
   const { isPosterTexture, keepPosters, pictured, posterOf } = started.pictures
@@ -186,7 +188,7 @@ export function startWorld(started: WorldDeps) {
    */
   function dressSides(was: Board | undefined) {
     for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)), posterOf)
-    reconcile(galleryAfter(was, posterOf, wallNow()), s.pictures)
+    reconcile(galleryAfter(was, posterOf, wallNow(), simNow() / 1000), s.pictures)
     keepPosters(new Set([...[...s.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...s.pictures.keys()]))
   }
 
@@ -250,7 +252,7 @@ export function startWorld(started: WorldDeps) {
     const c = findCard(boardNow()!, id)!
     const sh = c.shown.find((sh) => sh.target === target)!
     const desk = s.desks.get(c.id)
-    if (desk) holdUp(desk, sh, s.simNow / 1000, posterOf)
+    if (desk) holdUp(desk, sh, simNow() / 1000, posterOf)
     tada()
     if (!atItsDesk) toast(`${c.callsign} showed you “${shownTitle(sh)}” · V to look`)
   }
@@ -400,7 +402,7 @@ export function startWorld(started: WorldDeps) {
   const quat = (q: THREE.Quaternion): Quat => [q.x, q.y, q.z, q.w]
 
   function flyTo(to: THREE.Vector3, toQ: THREE.Quaternion, ms = 700, then?: AppEvent) {
-    port.dispatch({ type: 'fly', flight: { from: vec3(camera.position), to: vec3(to), fromQ: quat(camera.quaternion), toQ: quat(toQ), start: s.simNow, ms: reducedMotion() ? 0 : ms, then } })
+    port.dispatch({ type: 'fly', flight: { from: vec3(camera.position), to: vec3(to), fromQ: quat(camera.quaternion), toQ: quat(toQ), start: simNow(), ms: reducedMotion() ? 0 : ms, then } })
   }
 
   const flyHome = () => flyTo(eyes(s.me, floorY(), new THREE.Vector3()), eyeQuaternion(s.me), 600)
@@ -428,7 +430,7 @@ export function startWorld(started: WorldDeps) {
   }
 
   /** How long the car has been riding, in seconds. */
-  const riddenFor = (ride: Ride) => (s.simNow - ride.start) / 1000
+  const riddenFor = (ride: Ride) => (simNow() - ride.start) / 1000
 
   const DOORS_SHUT = 0.55
 

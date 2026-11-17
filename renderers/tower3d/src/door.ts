@@ -22,6 +22,7 @@ import type { Controls } from './controls.ts'
 import type { Frames, Meter } from './frames.ts'
 import type { Draft } from '../../../extensions/drafts/client/drafts.ts'
 import type { Feed } from './feed.ts'
+import type { Sim } from './sim.ts'
 import { aim, eyes, facing, type Walker } from './walker.ts'
 
 /**
@@ -114,6 +115,8 @@ export type Engine = {
   render(): void
   /** Real frames run again, from now. */
   play(): void
+  /** The simulated clock the door steps. */
+  sim: Sim
   onKey(code: string, repeat: boolean): boolean
   /** Holds `move` as the walker's until the next drive; `undefined` hands it back to the keyboard. */
   drive(move: Move | undefined): void
@@ -197,7 +200,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
   /** `s.boards` when the clock last stepped. */
   let boardsStepped = 0
   /** Guests and cats are placed by a frame's ticks: on a stepped clock, one a board brought stands nowhere until a step. */
-  const unplaced = (target: Act) => (target.kind === 'guest' || target.kind === 'cat') && s.stepped && boardsStepped !== s.boards
+  const unplaced = (target: Act) => (target.kind === 'guest' || target.kind === 'cat') && e.sim.stepped() && boardsStepped !== s.boards
 
   function centerOf(target: Act) {
     if (unplaced(target)) throw new Error(`${target.kind}s take their places on a frame, and none has run since the last board: step() first`)
@@ -219,11 +222,11 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
     const { view, motion: { ride, flight, pet }, aim } = e.app()
     const offers = e.offers()
     return {
-      seed: SEED, time: s.simNow, stepped: s.stepped, captured: e.captured(), view,
+      seed: SEED, time: e.sim.now(), stepped: e.sim.stepped(), captured: e.captured(), view,
       panel: panelOf(), carrying: s.carrying,
       walker: { ...s.me }, riding: ride !== undefined, flying: flight !== undefined,
-      petting: pet && { name: pet.name, progress: petProgress(pet, s.simNow) },
-      aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, s.simNow) },
+      petting: pet && { name: pet.name, progress: petProgress(pet, e.sim.now()) },
+      aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, e.sim.now()) },
       fps: e.meter().fps, frameMs: e.meter().frameMs, drawn: { calls: e.meter().calls, triangles: e.meter().triangles },
       counts: { boards: s.boards, rebuilds: s.rebuilds, desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
     }
@@ -279,14 +282,14 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
       e.drive(m && { ahead: 0, side: 0, run: false, jump: false, ...m })
     },
     step(frames = 1, dt = STEP) {
-      s.stepped = true
+      e.sim.stop()
       for (let i = 0; i < frames; i++) (e.update(dt), (boardsStepped = s.boards))
       e.drawPending()
       e.render()
       return state()
     },
     play() {
-      s.stepped = false
+      e.sim.run()
       e.play()
     },
     advance: () => e.advance(),
@@ -300,7 +303,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
 }
 
 /** What the door is started with: every resource whose functions it drives. */
-export type DoorDeps = { pictures: Pictures; stage: Stage; input: Input; port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
+export type DoorDeps = { sim: Sim; pictures: Pictures; stage: Stage; input: Input; port: Port; events: Events; world: World; navigation: Navigation; panels: Panels; app: AppLoop; controls: Controls; frames: Frames; feed: Feed }
 
 /** The door filled, once every resource it drives has started (the `door` resource). */
 export function startDoor(started: DoorDeps) {
@@ -322,6 +325,7 @@ export function startDoor(started: DoorDeps) {
     ready, pictured, update, render, onKey, run, place, plan: planNow, leaveOverview, captured, pick, aimAt, offers: offersNow, startHold, floorY, pickables, advance, app: app.state, dispatch: app.dispatch, drawPending,
     events: events.read,
     play,
+    sim: started.sim,
     meter,
     draft: started.panels.draft,
     drive: started.input.drive,

@@ -25,6 +25,7 @@ import { SHELL_SCROLLBACK } from '/lib/terminal.js'
 import { mdPage, activityHtml, keptFileHtml, keptHeadHtml, keptTextHtml, archiveListHtml, archiveSideHtml, askHtml, drawerSideHtml, logbookBriefHtml, logbookHeadHtml, logbookHtml, logbookTabsHtml, sessionsHtml, stampHtml, deskHeadHtml, detailsHtml, deskDismissHtml, deskTabsHtml, directoryHtml, shellPickHtml, docHeadHtml, statsHeadHtml, docHtml, relayedFrameHtml, draftHeadHtml, draftNoteHtml, floorHtml, gameHeadHtml, gameHtml, pictureHeadHtml, shellHeadHtml, shownHtml, shownTab, threadHeadHtml, type LogbookTab } from './ui.ts'
 import { commandOf, panesOf } from '/lib/keys.js'
 import type { Clock } from './clock.ts'
+import type { Sim } from './sim.ts'
 import { CHANGES, THREAD } from './hosting.ts'
 import type { Archive } from './archive.ts'
 import { GAMES, gameItem } from './games.ts'
@@ -49,7 +50,7 @@ import type { Stage } from './stage.ts'
 import type { Port } from './port.ts'
 
 /** What the panels resource is started with. */
-export type PanelsDeps = { clock: Clock; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; pictures: Pictures }
+export type PanelsDeps = { clock: Clock; sim: Sim; assets: Assets; tower: Tower; clients: Clients; titles: Titles; archive: Archive; stage: Stage; music: Music; terminal: Term; port: Port; toasts: Toasts; events: Events; world: World; views: Views; spawn: Spawn; hud: Hud; navigation: Navigation; pictures: Pictures }
 
 export type Panels = ReturnType<typeof startPanels>
 
@@ -61,6 +62,7 @@ export function startPanels(started: PanelsDeps) {
   /** The draft open in the editor, its body as typed (`extensions/drafts/client/drafts.ts`). */
   let draft: Draft | undefined
   const { now: wallNow } = started.clock
+  const { now: simNow } = started.sim
   const { tower } = started
   const { port } = started
   const { AUTOSAVE_MS, DRAFTS, discard: discardDraft, discardItem, restore: restoreDraft, draftItem, draftsOf, edit, follow, keepsApart, leave, newDraft, openDraft, readDraft, save, sendable, settle, titleOf, THE_USER, floorThreadsOf, threadCheckout, probedLines } = started.clients
@@ -915,7 +917,7 @@ export function startPanels(started: PanelsDeps) {
   function startPet(name: CatName) {
     const cat = s.cats.get(name)!
     const spot = petSpot(cat, camera.position)
-    port.dispatch({ type: 'pet', pet: { name, start: s.simNow, tailward: spot.tailward } })
+    port.dispatch({ type: 'pet', pet: { name, start: simNow(), tailward: spot.tailward } })
     aimAt(undefined)
     petHearts = makeHearts()
     scene.add(petHearts)
@@ -929,7 +931,7 @@ export function startPanels(started: PanelsDeps) {
   function tickPet() {
     const p = motionNow().pet
     if (!p) return
-    const k = petProgress(p, s.simNow)
+    const k = petProgress(p, simNow())
     if (viewNow() === 'pet' && k < 1) return placeHearts(petHearts!, p, s.cats.get(p.name)!, k)
     dropHearts(petHearts!)
     petHearts = undefined

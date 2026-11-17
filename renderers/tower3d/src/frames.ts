@@ -21,6 +21,8 @@ import type { Screens } from './screens.ts'
 import { isVideo, type Pictures } from './showing.ts'
 import { type Turn } from './input.ts'
 import type { Clock } from './clock.ts'
+import type { Sim } from './sim.ts'
+import type { AppLoop } from './app-loop.ts'
 import { poseFiling } from './filing.ts'
 import { fitPicture, placePicture } from './gallery.ts'
 import { s } from './state.ts'
@@ -40,7 +42,7 @@ import type { Input } from './input.ts'
 import type { Port } from './port.ts'
 
 /** What the frames resource is started with. */
-export type FramesDeps = { clock: Clock; tower: Tower; screens: Screens; pictures: Pictures; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels }
+export type FramesDeps = { clock: Clock; sim: Sim; tower: Tower; screens: Screens; pictures: Pictures; lighting: Lighting; stage: Stage; input: Input; music: Music; port: Port; world: World; hud: Hud; navigation: Navigation; panels: Panels; app: AppLoop }
 
 export type Frames = ReturnType<typeof startFrames>
 
@@ -53,6 +55,8 @@ export type Meter = { since: number; frames: number; work: number; fps: number; 
  */
 export function startFrames(started: FramesDeps) {
   const { now: wallNow } = started.clock
+  const { now: simNow, advance, stepped } = started.sim
+  const { waitedAt } = started.app
   const { tower } = started
   const { paintScreens } = started.screens
   const { playFilms, imageOf } = started.pictures
@@ -102,7 +106,7 @@ export function startFrames(started: FramesDeps) {
     // A frame's timestamp is when it began, which can precede a performance.now() read moments earlier.
     const dt = Math.max(0, Math.min(0.05, (now - lastFrame) / 1000))
     lastFrame = now
-    if (s.stepped) return
+    if (stepped()) return
     const start = performance.now()
     update(dt)
     if (drawing && !covered()) render()
@@ -140,7 +144,7 @@ export function startFrames(started: FramesDeps) {
 
   /** What a frame sets on the scene before it is drawn: the screens painted, the levels shown, the lighting's passes. */
   function frameScene() {
-    if (boardNow() && s.world) paintScreens(s.simNow, screenDistance)
+    if (boardNow() && s.world) paintScreens(simNow(), screenDistance)
     showLevels(levelsShown(viewNow(), motionNow(), s.me.level))
     if (lit) lightFrame()
   }
@@ -173,7 +177,7 @@ export function startFrames(started: FramesDeps) {
 
   function tickCut() {
     const { cut } = motionNow()
-    if (cut && s.simNow >= cut.at) port.dispatch({ type: 'cut-reached' })
+    if (cut && simNow() >= cut.at) port.dispatch({ type: 'cut-reached' })
   }
 
   /** Riding turns you to face the doors, so you step out onto the floor. */
@@ -192,7 +196,7 @@ export function startFrames(started: FramesDeps) {
     const was = s.me
     stepWalker(f)
     const { pet } = motionNow()
-    const stroke = pet && strokeAt(petProgress(pet, s.simNow), pet.tailward)
+    const stroke = pet && strokeAt(petProgress(pet, simNow()), pet.tailward)
     const note = carried()
     holdNote(landedHands(), note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
     holdBeer(landedHands(), s.beer)
@@ -238,7 +242,7 @@ export function startFrames(started: FramesDeps) {
   function tickCamera() {
     const { flight } = motionNow()
     if (flight) {
-      const k = flight.ms ? Math.min(1, (s.simNow - flight.start) / flight.ms) : 1
+      const k = flight.ms ? Math.min(1, (simNow() - flight.start) / flight.ms) : 1
       camera.position.lerpVectors(flown.from.fromArray(flight.from), flown.to.fromArray(flight.to), ease(k))
       camera.quaternion.slerpQuaternions(flown.fromQ.fromArray(flight.fromQ), flown.toQ.fromArray(flight.toQ), ease(k))
       if (k === 1) port.dispatch({ type: 'flight-landed' })
@@ -256,7 +260,7 @@ export function startFrames(started: FramesDeps) {
     const { hold } = aimNow()
     if (!hold) return
     const ring = $('prompt').querySelector<HTMLElement>(`[data-verb="${hold.verb}"] kbd`)
-    const k = holdFill(hold.start, s.simNow)
+    const k = holdFill(hold.start, simNow())
     ring?.style.setProperty('--hold', String(k))
     if (k < 1) return
     port.dispatch({ type: 'hold-filled' })
@@ -312,7 +316,7 @@ export function startFrames(started: FramesDeps) {
       keepUp(cat, cat.name === follower && !cat.watching)
       const { pet } = motionNow()
       if (pet?.name === cat.name) {
-        const stroke = strokeAt(petProgress(pet, s.simNow), pet.tailward)
+        const stroke = strokeAt(petProgress(pet, simNow()), pet.tailward)
         leanIn(cat, stroke?.reach ?? 0, stroke?.press ?? 0, petHeight(cat, waiter), t)
       } else if (cat.watching) {
         const perch = deskPerch(waiter!)
@@ -369,7 +373,7 @@ export function startFrames(started: FramesDeps) {
     const board = boardNow()!
     const heeded = heededWaits(board, heed()).map((w) => findCard(board, w.id)!)
     const still = reducedMotion()
-    const pulse = still && t - s.waitedAt / 1000 > PULSE_S ? 1 : 0.55 + Math.abs(Math.sin(t * 4)) * 0.45
+    const pulse = still && t - waitedAt() / 1000 > PULSE_S ? 1 : 0.55 + Math.abs(Math.sin(t * 4)) * 0.45
     const flash = tower.prefs.get().waits === 'flash'
     const glow = (cards: Card[]) => (flash || loudest(cards) === 'needs' ? pulse : 1)
     for (const level of planNow().levels) {
@@ -401,7 +405,7 @@ export function startFrames(started: FramesDeps) {
    */
   function tickFilms() {
     const l = here()
-    const shown = l?.kind === 'floor' && !s.stepped
+    const shown = l?.kind === 'floor' && !stepped()
       ? [...l.wall.pictures.map((p) => ({ c: p.worker, sh: p.shown })), ...l.desks.flatMap((d) => d.card.shown.slice(-1).map((sh) => ({ c: d.card, sh })))]
       : []
     const newest = shown.filter(({ sh }) => isVideo(sh)).sort((a, b) => b.sh.at - a.sh.at).map(({ c, sh }) => shownKey(sh))
@@ -424,10 +428,10 @@ export function startFrames(started: FramesDeps) {
   const TICKS: ((f: Frame) => void)[] = [tickCut, tickRide, tickPet, tickWalker, tickDoors, tickCamera, tickAim, tickHold, tickPeople, tickFilings, tickGallery, tickFilms, tickParty, tickLamps, tickCompass, tickTraffic]
 
   function update(dt: number) {
-    s.simNow += dt * 1000
+    advance(dt)
     const turned = takeTurn()
     if (!boardNow() || !s.world) return
-    const f: Frame = { dt, t: s.simNow / 1000, turned }
+    const f: Frame = { dt, t: simNow() / 1000, turned }
     for (const tick of TICKS) tick(f)
   }
 
