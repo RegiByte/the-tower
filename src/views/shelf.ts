@@ -53,6 +53,10 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
   let drawnFile: string | undefined
   /** Stops following the versions of the file shown, while one is followed. */
   let unwatch: (() => void) | undefined
+  /** Counts the draws begun: a read that settles after a newer draw began draws nothing. */
+  let draws = 0
+  /** Where the file drawn again was scrolled to, kept until its frame has loaded and can say. */
+  let scrollWanted: number | undefined
   const offs: (() => void)[] = []
 
   const own = ({ html: `/run/${project}/${n}`, url: named.url, renderer: named.renderer && rendererUrl(named.renderer) } as Record<string, string | undefined>)[kind]
@@ -92,7 +96,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
 
   /**
    * The file shown: picked in the list, and followed on disk while it is shown, each new version drawn again
-   * (`drawDoc`).
+   * (`drawDoc`); a file deleted stays drawn as it was until it is written again.
    */
   const showDoc = (file: string) => {
     shown = file
@@ -107,6 +111,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     unwatch = tower.versions(path(file), (msg) => {
       if (msg.t === 'error') return kit.toast(msg.message)
       if (first) return void (first = false)
+      if (msg.modifiedAt === null) return void draws++
       void drawDoc(file)
     })
     return drawDoc(file)
@@ -118,10 +123,12 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
    * again opens where it was scrolled to.
    */
   const drawDoc = async (file: string) => {
+    const draw = ++draws
     const md = await tower.text(path(file)).catch((err: Error) => (kit.toast(err.message), undefined))
     const el = body.querySelector<HTMLElement>('.shelf-doc')
-    if (md === undefined || closed || shown !== file || !el) return
-    const scroll = drawnFile === file ? drawn?.scroll?.() : undefined
+    if (md === undefined || closed || shown !== file || draw !== draws || !el) return
+    const scroll = drawnFile === file ? drawn?.scroll?.() ?? scrollWanted : undefined
+    scrollWanted = scroll
     drawn?.close()
     const of = { ...subject, key: `${subject.key}/${file}`, value: { ...(subject.value as object), text: path(file), type: 'text/markdown' } }
     drawn = drawSections(el, {

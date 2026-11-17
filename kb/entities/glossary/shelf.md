@@ -15,7 +15,8 @@ kept in one of the project's collections, so a page a worker made lives in no ch
 
 A markdown entry's file, open in the tower page ([`tower/shelf`](ref:hub/src/views/shelf.ts#mount)) or Tower 3D's
 reader, follows its versions while it is open (`tower.versions('shelf/<project>/<n>/<file>')`, [[tower-server]]): a
-worker's edit draws it again where it was scrolled to. The list of files is read as the entry opens, so a file newly
+worker's edit draws it again where it was scrolled to, and a file deleted stays drawn as it was until it is written
+again. The list of files is read as the entry opens, so a file newly
 matching the glob shows once it is opened again.
 
 The shelf is not a [[collection]]. Workers learn it from the handbook (the user's word "shelf" means this), see the
