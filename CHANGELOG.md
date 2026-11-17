@@ -12,6 +12,16 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.7.2
+
+Sessions start without a trust dialog again (#636). Nothing to restart beyond the tower (`tower update` does it).
+
+- **No "Adding a new directory" dialog at every start.** Claude Code 2.1.326 asks to trust a directory passed as
+  `--add-dir` outside a trusted one, for that session only, so every spawn stopped on the floor's collections
+  directory. The tower now grants that directory, and a worktree's link sources, as `additionalDirectories` in the
+  session's settings, beside the project's other repos: the same file access, with no prompt and nothing loaded from
+  them. Launch contributors may now pass `--add-dir` themselves.
+
 ## v2.7.1
 
 Tower 3D's rewire is finished: every part is handed what it needs, and a fixture page is its own record (#633, #634).
