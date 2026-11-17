@@ -1,4 +1,5 @@
 import { statsQuery } from '/lib/stats.js'
+import { VIEWER_KEYS } from '/lib/viewer.js'
 import { ask } from '/lib/chrome.js'
 import type { Tower } from './api.ts'
 import { findCard } from './cards.ts'
@@ -11,7 +12,7 @@ import { cabinetOf } from './layout.ts'
 import type { Clock } from './clock.ts'
 import type { Sim } from './sim.ts'
 import type { Archive } from './archive.ts'
-import { s, type Panel, type Standing } from './state.ts'
+import type { Panel, Standing } from './state.ts'
 import { aim, type WalkerCell } from './walker.ts'
 import type { Toasts } from './toasts.ts'
 import type { Events } from './events.ts'
@@ -53,9 +54,9 @@ export function startAppLoop(started: AppLoopDeps) {
   const { archivedAt, archivesSettled, drawersAt, readArchives } = started.archive
   const { desk } = started.views
   const { hiring } = started.spawn
-  const { renderHud, renderElevator, showPaused, lock, unlocked, keepViewer, sawDesk, turnMusic, showMeter } = started.hud
+  const { renderHud, renderElevator, showPaused, lock, unlocked, sawDesk, turnMusic, showMeter } = started.hud
   const { toDesk, toShell, goToAsk } = started.navigation
-  const { display, focusDesk, mountDeskScreen, focusShell, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, freshLogbooks, followDraft, askDraw, draft: drafted } = started.panels
+  const { display, focusDesk, mountDeskScreen, focusShell, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, redrawDeskBrief, drawWaits, freshLogbooks, followDraft, askDraw, draft: drafted } = started.panels
 
   /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
   let waitedAt = 0
@@ -92,7 +93,9 @@ export function startAppLoop(started: AppLoopDeps) {
       sound: ({ sound }) => void (port.state().doorMode || tower.framed || ring(sound)),
       music: ({ on }) => turnMusic(on),
       meter: ({ shown }) => showMeter(shown),
-      keep: ({ field, value }) => keepViewer(field, value),
+      keep: ({ field, value }) => tower.store.set(VIEWER_KEYS[field], value),
+      'brief/redraw': () => redrawDeskBrief(),
+      'waits/redraw': () => drawWaits(),
       leave: ({ panel }) => (LEAVE[panel.kind] as (p: Panel) => void)(panel),
       enter: ({ panel, from }) => (ENTER[panel.kind] as (p: Panel, from: Panel | undefined) => void)(panel, from),
       'tab/leave': ({ tab }) => TAB_LEAVE(tab),
@@ -114,7 +117,7 @@ export function startAppLoop(started: AppLoopDeps) {
       notes: () => void syncNotes(),
       cabinets: () => void syncCabinets(),
       'stats/fetch': ({ reading }, dispatch) =>
-        void tower.stats(statsQuery(s.viewer.statsRange, wallNow())).then(
+        void tower.stats(statsQuery(port.state().viewer.statsRange, wallNow())).then(
           (read) => dispatch({ type: 'stats/landed', reading, read, at: wallNow() }),
           (err: Error) => dispatch({ type: 'stats/failed', reading, message: err.message }),
         ),

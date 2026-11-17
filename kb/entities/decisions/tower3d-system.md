@@ -224,7 +224,13 @@ cabinet's drawer still opens through a bridge (`openSide`), which shows the side
   state the page keeps for you: whether the door has captured (`doorMode`, `door/mode`), the music off and the frame
   meter shown (`muted`, `meterShown`: `music/muted` and `meter/shown` return a `music` or `meter` effect, and
   `kept/landed` restores both from what the tower kept, the meter shown or hidden as kept, without starting the music), the waits N visited this round
-  (`visited`), the origin remotes' web pages (`origins/read`) and your stored layout (`layout/stored`).
+  (`visited`), the origin remotes' web pages (`origins/read`), your stored layout (`layout/stored`), and your record
+  in `tower.store` (`viewer`). `stored` keeps that record whole as it is read, at the start and whenever another
+  renderer of yours may have changed it, and once there is a building returns what its changes draw again
+  ([`stored`](ref:hub/renderers/tower3d/src/app.ts#stored): a Stats range fires `stats/range`, the brief's markdown
+  `brief/redraw`, the dismissals `waits/redraw`); before one, nothing is drawn yet and the first board draws what the
+  record says. `viewer/kept` sets a field chosen here and returns `keep`, which writes it to `tower.store`; attention's
+  own `keep` (a dismissal, the ring) lands in the record in the same step.
   Readers call `app.state()`, through the port (`panelNow`, `viewNow`, `deskTabNow`, `replayNow` in `now.ts`; the door through
   [`Engine.app`](ref:hub/renderers/tower3d/src/door.ts#Engine)). Three.js objects, DOM handles, the walker and
   anything written every frame stay out of it.

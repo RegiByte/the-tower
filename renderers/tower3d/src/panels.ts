@@ -78,7 +78,7 @@ export function startPanels(started: PanelsDeps) {
   const { layers, directory, isFresh, planNow, lookQuaternion, flyTo, frameOn, frameCabinet, floorOf, carry, drop } = started.world
   const { desk, reader, deskNow } = started.views
   const { draftIo, hire, saving, handOver, hireOnNote, openSpawn, openSpawnOnNote } = started.spawn
-  const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, seenSince, keepViewer, dottedNow, clearDots, sawActions, sawDesk, drawSettings } = started.hud
+  const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, seenSince, dottedNow, clearDots, sawActions, sawDesk, drawSettings } = started.hud
   const { repaint } = started.pictures
   const { see, lookAtNew, closeSide, sideClosed, unfocus, closePanels, goShown, goDesk, goShell, goLevel, goMove, nextWaiting, overview, offersNow, aimAt, openShown } = started.navigation
 
@@ -177,7 +177,7 @@ export function startPanels(started: PanelsDeps) {
       const projects = board.floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
       const tabs = [{ id: STATS_ALL, label: 'Overview' }, ...projects.map(({ id, label }) => ({ id, label }))]
       const { read: stats, failed, at, scope } = port.state().stats
-      const range = s.viewer.statsRange
+      const range = port.state().viewer.statsRange
       drawPanel($('doc-body'), statsHtml({ stats, failed, at, range, projects, tabs, scope: tabs.some((t) => t.id === scope) ? scope : STATS_ALL }), {})
       showSince($('doc-body'))
     }
@@ -842,15 +842,10 @@ export function startPanels(started: PanelsDeps) {
   function rereadViewer() {
     rereadLayout()
     readViewer(tower.store.get).then((read) => {
-      const was = s.viewer
-      const viewer = { ...read, seen: seenSince(read.seen, was.seen) }
-      s.viewer = viewer
-      if (viewer.seen === null && boardNow()) keepViewer('seen', seenOf(null, offeredIds(boardNow()!)))
+      const viewer = { ...read, seen: seenSince(read.seen, port.state().viewer.seen) }
       port.dispatch({ type: 'stored', viewer })
-      if (viewer.statsRange !== was.statsRange) rangeStats()
-      if (viewer.briefMarkdown !== was.briefMarkdown) redrawDeskBrief()
+      if (viewer.seen === null && boardNow()) port.dispatch({ type: 'viewer/kept', field: 'seen', value: seenOf(null, offeredIds(boardNow()!)) })
       renderHud()
-      if (String(viewer.dismissed) !== String(was.dismissed)) drawWaits()
     })
   }
 
@@ -1044,11 +1039,11 @@ export function startPanels(started: PanelsDeps) {
   const toolRead = (key: string) => toolsRead.get(key)
 
   /** What the viewer opened in a drawn logbook, and how they read its words. */
-  const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expandedSaid(el), openTools: openTools(el), tools: toolRead, markdown: s.viewer.briefMarkdown })
+  const briefLook = (el: HTMLElement) => ({ open: openFolds(el), expanded: expandedSaid(el), openTools: openTools(el), tools: toolRead, markdown: port.state().viewer.briefMarkdown })
 
   function drawDeskBrief(same: boolean) {
     const c = findCard(boardNow()!, deskBrief!.id)!
-    const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), tools: toolRead, markdown: s.viewer.briefMarkdown }
+    const look = same ? briefLook($('desk-brief')) : { open: new Set<string>(), expanded: new Set<string>(), tools: toolRead, markdown: port.state().viewer.briefMarkdown }
     $('desk-brief').innerHTML = logbookHtml(boardNow()!, c, deskBrief!.threads, look, replayNow()?.id === c.id ? replayNow()!.session : undefined)
   }
 
@@ -1058,7 +1053,7 @@ export function startPanels(started: PanelsDeps) {
   }
 
   function chooseBriefMarkdown(markdown: BriefMarkdown) {
-    keepViewer('briefMarkdown', markdown)
+    port.dispatch({ type: 'viewer/kept', field: 'briefMarkdown', value: markdown })
     redrawDeskBrief()
     renderPanel()
     drawSettings()
@@ -1347,7 +1342,7 @@ export function startPanels(started: PanelsDeps) {
     const scope = el.closest<HTMLElement>('[data-stats-scope]')?.dataset.statsScope
     if (scope) return port.dispatch({ type: 'stats/scope', scope })
     const range = el.closest<HTMLElement>('[data-stats-range]')?.dataset.statsRange as StatsRange | undefined
-    if (range) return (keepViewer('statsRange', range), rangeStats())
+    if (range) return (port.dispatch({ type: 'viewer/kept', field: 'statsRange', value: range }), rangeStats())
     if (el.closest('[data-stats-read]')) port.dispatch({ type: 'stats/again' })
   }
 
@@ -1605,7 +1600,7 @@ export function startPanels(started: PanelsDeps) {
       const markdown = el.closest<HTMLElement>('[data-brief-markdown]')?.dataset.briefMarkdown
       if (markdown) return chooseBriefMarkdown(markdown as BriefMarkdown)
       const files = el.closest<HTMLElement>('[data-changes-files]')?.dataset.changesFiles
-      if (files) return (keepViewer('changesTree', files === 'shown'), renderPanel(), drawSettings())
+      if (files) return (port.dispatch({ type: 'viewer/kept', field: 'changesTree', value: files === 'shown' }), renderPanel(), drawSettings())
       const said = el.closest<HTMLElement>('[data-copy-said]')?.dataset.copySaid
       const atDesk = el.closest('#desk-brief')
       const threads = atDesk ? deskBrief?.threads : panelAs('logbook')?.threads
@@ -1636,5 +1631,5 @@ export function startPanels(started: PanelsDeps) {
     })
   }
 
-  return { listen, display, renderPanel, focusDesk, mountDeskScreen, replay, focusShell, run, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, runCommand, tickPet, freshLogbooks, followDraft, askDraw, draft: () => draft }
+  return { listen, display, renderPanel, focusDesk, mountDeskScreen, replay, focusShell, run, LEAVE, ENTER, TAB_LEAVE, TAB_ENTER, drawPending, rereadViewer, redrawDeskBrief, drawWaits, runCommand, tickPet, freshLogbooks, followDraft, askDraw, draft: () => draft }
 }
