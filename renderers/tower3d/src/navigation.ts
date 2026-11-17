@@ -146,7 +146,7 @@ export function startNavigation(started: NavigationDeps) {
    */
   function goMove(m: Move) {
     if (m !== 'waiting') {
-      const to = neighboursIn(boardNow()!, s.viewer.crewsOrder, atDesk(), heed())[m]
+      const to = neighboursIn(boardNow()!, port.state().viewer.crewsOrder, atDesk(), heed())[m]
       return to && goDesk(to.id)
     }
     const step = nextAttended(attentionOrder(boardNow()!, heed()), port.state().visited, { id: atDesk() })

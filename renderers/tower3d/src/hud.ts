@@ -4,7 +4,7 @@ import { markdownCss } from '/lib/markdown.js'
 import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
 import { placeOnOpen, watchTips, toastsCss, ask } from '/lib/chrome.js'
 import { ICON, panelsCss, itemsCss } from '/lib/view.js'
-import { VIEWER_KEYS, sawAll, seenOf, type Viewer } from '/lib/viewer.js'
+import { sawAll, seenOf } from '/lib/viewer.js'
 import { isFresh as isNewAction, offeredIds } from '/lib/layout.js'
 import { deskVerbs } from './desk-verbs.ts'
 import type { Board, Card, Tower } from './api.ts'
@@ -14,7 +14,6 @@ import { sharing } from './tv.ts'
 import { carBox, inside } from './layout.ts'
 import { lightingSection } from './light/setting.ts'
 import { elevatorHtml, hudHtml } from './ui.ts'
-import { s } from './state.ts'
 import type { Music } from './music.ts'
 import type { Toasts } from './toasts.ts'
 import { $, show } from './dom.ts'
@@ -119,13 +118,8 @@ export function startHud(started: HudDeps) {
    */
   const seenSince = (read: string[] | null, here: string[] | null) => (read && here ? (sawAll(read, here) ?? read) : (read ?? here))
 
-  function keepViewer<K extends keyof Viewer>(field: K, value: Viewer[K]) {
-    s.viewer = { ...s.viewer, [field]: value }
-    tower.store.set(VIEWER_KEYS[field], value)
-  }
-
   /** The actions you have seen, by `actionId`, across every renderer of yours. */
-  const seenNow = (board: Board) => seenOf(s.viewer.seen, offeredIds(board))
+  const seenNow = (board: Board) => seenOf(port.state().viewer.seen, offeredIds(board))
 
   /** The actions the open desk drew with a "new" dot: drawn so until its panel closes, though seen once drawn. */
   const dotted = new Set<string>()
@@ -143,7 +137,7 @@ export function startHud(started: HudDeps) {
   /** `ids` seen by you, kept for every renderer of yours when that adds any. */
   function sawActions(board: Board, ids: string[]) {
     const seen = sawAll(seenNow(board), ids)
-    if (seen) keepViewer('seen', seen)
+    if (seen) port.dispatch({ type: 'viewer/kept', field: 'seen', value: seen })
   }
 
   /**
@@ -180,7 +174,7 @@ export function startHud(started: HudDeps) {
   const drawSettings = () => settingsEl.matches(':popover-open') && paintSettings()
 
   function paintSettings() {
-    const html = settingsHtml([soundSection(port.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(s.viewer.briefMarkdown), changesSection(s.viewer.changesTree), lightingSection(chosen, lit)])
+    const html = settingsHtml([soundSection(port.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(port.state().viewer.briefMarkdown), changesSection(port.state().viewer.changesTree), lightingSection(chosen, lit)])
     if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
   }
 
@@ -235,5 +229,5 @@ export function startHud(started: HudDeps) {
     setInterval(() => boardNow() && renderHud(), 30_000)
   }
 
-  return { listen, held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, clearDots, sawActions, sawDesk, drawSettings, toggleFps, turnMusic, showMeter }
+  return { listen, held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, dottedNow, clearDots, sawActions, sawDesk, drawSettings, toggleFps, turnMusic, showMeter }
 }

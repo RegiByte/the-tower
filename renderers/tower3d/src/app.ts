@@ -22,6 +22,7 @@ import type { Act } from './acts.ts'
 import type { Pet } from './pet.ts'
 import type { Hold, Panel, Standing, View } from './state.ts'
 import type { Layout } from '/lib/layout.js'
+import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
 import { shownTab, type DeskTab } from './ui.ts'
 
 /** The tab a desk opens on once it opens: its brief, its review thread, or lines of its Changes. */
@@ -152,10 +153,19 @@ export type Db = {
   origins: Record<string, string>
   /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
   layout: Layout | undefined
+  /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range, the actions seen. */
+  viewer: Viewer
 }
+
+/** A field of your record and its value, as it is kept. */
+export type Kept = { [K in keyof Viewer]: { field: K; value: Viewer[K] } }[keyof Viewer]
 
 export type AppEvent =
   | AttendEvent
+  /** Your record as `tower.store` keeps it, read: at the start, and again whenever another renderer of yours may have changed it. */
+  | { type: 'stored'; viewer: Viewer }
+  /** A field of your record chosen here, kept for every renderer of yours. */
+  | ({ type: 'viewer/kept' } & Kept)
   | { type: 'go'; to: Panel | undefined }
   /** The open panel's own data changed, the same panel still open: a read landed, a filter typed, a tray unfolded. */
   | { type: 'panel'; to: Panel }
@@ -237,6 +247,12 @@ export type AppEvent =
 
 export type AppEffect =
   | AttendOut
+  /** A field of your record written to `tower.store`. */
+  | ({ type: 'keep' } & Kept)
+  /** The desk's logbook drawn again in your record's `briefMarkdown`. */
+  | { type: 'brief/redraw' }
+  /** The waits drawn again: the panel, the elevator and the directory, as your record's `dismissed` hides them. */
+  | { type: 'waits/redraw' }
   | StateEffect<Db>
   | TimerEffect<AppEvent>
   | { type: 'leave'; panel: Panel }
@@ -322,6 +338,7 @@ export const startingDb = (attending: Attending): Db => ({
   visited: new Set(),
   origins: {},
   layout: undefined,
+  viewer: VIEWER_DEFAULT,
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
@@ -340,9 +357,28 @@ const offering = (aim: Aim, act: Act | undefined, key: string): Aim =>
 /** Standing at `spot` on `level`, out of any ride or flight. */
 const placed = (db: Db, level: number, spot: Standing): AppEffect[] => [into(moved(db, { ride: undefined, flight: undefined })), { type: 'place', level, spot }]
 
+/** Attention's step, what it keeps of your record kept in the db's `viewer` as well. */
 const attend = (db: Db, e: AttendEvent): AppEffect[] => {
   const [attending, effects] = attendNext(db.attending, e)
-  return [into({ ...db, attending }), ...effects]
+  const viewer = effects.reduce((v, f) => (f.type === 'keep' ? { ...v, [f.field]: f.value } : v), db.viewer)
+  return [into({ ...db, attending, viewer }), ...effects]
+}
+
+/**
+ * Your record as read, kept whole, what its changes draw drawn again: nothing is drawn before the building, and the
+ * first board draws what the record says.
+ */
+function stored(db: Db, read: Extract<AppEvent, { type: 'stored' }>['viewer']): AppEffect[] {
+  const was = db.viewer
+  const viewer = { ...was, ...read }
+  const told = attend({ ...db, viewer }, { type: 'stored', viewer })
+  if (!db.building) return told
+  return [
+    ...told,
+    ...fire(viewer.statsRange === was.statsRange ? undefined : { type: 'stats/range' }),
+    ...(viewer.briefMarkdown === was.briefMarkdown ? [] : [{ type: 'brief/redraw' } as const]),
+    ...(String(viewer.dismissed) === String(was.dismissed) ? [] : [{ type: 'waits/redraw' } as const]),
+  ]
 }
 
 /** The panels that share one room, the desk's panel and the big screen: from one to another, the first isn't left. */
@@ -600,7 +636,8 @@ const tabTo = (db: Db, id: string, to: TabTo): AppEffect[] => [into({ ...db, des
 export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> => ({
   board: attend,
   lost: attend,
-  stored: attend,
+  stored: (db, { viewer }) => stored(db, viewer),
+  'viewer/kept': (db, kept) => [into({ ...db, viewer: { ...db.viewer, [kept.field]: kept.value } }), { ...kept, type: 'keep' }],
   dismiss: attend,
   ring: attend,
   remind: attend,
