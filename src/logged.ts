@@ -37,8 +37,6 @@ export const exitUnwatched =
     process.exit(1)
   }
 
-export const watchedOrExit = (watcher: FSWatcher, what: string): FSWatcher => watcher.on('error', exitUnwatched(what))
-
 /**
  * One run at a time: a call while a run is in flight gets that run, and the read runs once more after it, so a read
  * always starts after the last call.

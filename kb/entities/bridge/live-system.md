@@ -54,7 +54,9 @@ again once a write settles: only facts past where it stood are stepped, from `in
 `parse`, cached the same way), is not read again.
 
 **Config.** The config's directory is watched for the config file (an editor's save replaces it), and so is its
-target's directory when the config is a link into another folder, where its writes land; a change signals, and a config fixed after it broke
+target's directory when the config is a link into another folder, where its writes land, each through
+[`subscribe`](ref:hub/src/subscribe.ts#subscribe) with the subfolders it holds at start ignored (the root's take every
+log and cache write, [[parcel-watcher]]); a change to the config's own path signals, as does one FSEvents can't name, and a config fixed after it broke
 brings the board back ([[board-errors]]). `refreshConfig` signals the same change at once, called by the config verbs
 after the tower's own write ([[config-writes]]).
 [`readConfig`](ref:hub/src/system.ts#readConfig) throws a `ConfigError` naming the file for a file gone or unreadable, for JSON that doesn't parse, and for JSON
@@ -135,10 +137,10 @@ branches and origin's branches, without fetching, with `--no-optional-locks` (ev
   dir landing before its neighbour never makes a worktree spanning both look removable.
 - **Fresh for verbs.** A worktree verb and `refreshRepos` read every part afresh: every destructive verb decides from
   a read made after its fetch, never from the board's ([[tower-cuts-worktrees]]).
-- **Platforms.** Every recursive watch is a `@parcel/watcher` subscription behind
+- **Platforms.** Every folder watch is a `@parcel/watcher` subscription behind
   [`subscribe`](ref:hub/src/subscribe.ts#subscribe), ignores applied natively and events batched in native code. On
-  macOS each is an FSEvents stream of its own, however many files: Node's recursive `fs.watch` shares one stream per
-  process and recreates it whenever a watch opens or closes, so the repo watches coming and going with observers lost
+  macOS each is an FSEvents stream of its own, however many files: Node's `fs.watch` of a folder, recursive or not,
+  shares one stream per process and recreates it whenever a watch opens or closes, so the repo watches coming and going with observers lost
   the collections' and streams' writes. On Linux it is inotify, a watch per directory but the ignored (a walk at start,
   bounded by `max_user_watches`), and under WSL2 files on `/mnt/c` edited from Windows raise no events at all, so only
   the safety rounds see them.
@@ -151,7 +153,7 @@ keeps its last read (an unparseable config keeps every repo's) and says why in t
 until its reason changes or a read succeeds; a dir never read in full says it on its floor's `reading` too. One checkout's failure is not the repo's: it costs that checkout alone, on the board ([[worktrees]]). A log's tail whose
 watcher fails says so and that session's facts stop there; a failed watch of the sessions directory, the collections,
 the streams or the config's directory, or its root removed, ends the tower
-([`watchedOrExit`](ref:hub/src/logged.ts#watchedOrExit), [`exitUnwatched`](ref:hub/src/logged.ts#exitUnwatched)), since
+([`exitUnwatched`](ref:hub/src/logged.ts#exitUnwatched)), since
 every board after it would look current and be stale. A repo's watch that fails, or a dir that doesn't exist, says
 why once in the log and leaves that repo to the safety rounds until its watch starts again.
 
