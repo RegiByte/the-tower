@@ -23,8 +23,8 @@ a review thread. Standalone, a recursive `fs.watch` with another opening and clo
 watched. The repo watches ([`watchRepos`](ref:hub/src/repo-watch.ts#watchRepos)), the collections, system streams
 and project streams watches ([`watchSystem`](ref:hub/src/system.ts#watchSystem)), and the folders of files whose
 versions someone follows ([`fileVersions`](ref:hub/src/file-versions.ts#fileVersions), its subfolders ignored, opened
-and closed as views come and go) all go through it; the sessions
-directory and the config's directory (and a linked config's target directory) stay non-recursive `fs.watch`. On
+and closed as views come and go) and the sessions directory all go through it; the config's directory (and a linked
+config's target directory) stays a non-recursive `fs.watch`. On
 macOS libuv watches a folder through the same shared FSEventStream whether or not it is recursive; only a watch of a
 single file is kqueue. Measured the same way, a non-recursive folder `fs.watch` missed 30 to 55 of 200 events while
 another folder `fs.watch`, recursive or not, opened and closed every 3 ms, and none while a file watch or a parcel
