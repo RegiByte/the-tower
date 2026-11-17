@@ -12,6 +12,21 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.7.1
+
+Tower 3D's rewire is finished: every part is handed what it needs, and a fixture page is its own record (#633, #634).
+Nothing to restart beyond the tower (`tower update` does it). API 2.9.
+
+- **Tower 3D starts without a page-wide binding:** each module takes the resources it uses from its start or as
+  arguments, the archive reads and the titles are resources of their own, and every import is static again. Nothing
+  changes in what you see.
+- **Tower 3D's fixture pages (`?board=`) keep to their fixture.** A fixture page is started from its own record, with a
+  tower that answers from the fixture file, so it no longer recalls or writes the viewer's kept spot, and no longer
+  sends verbs or reads a floor's data from the tower it runs on. A kept item in a reviews collection reads on a
+  fixture page as it does live.
+- **For contributors:** Tower 3D's API, wall clock, monitors and pictures are resources, and the `FIXTURE` checks are
+  gone. A member added to the renderer API fails Tower 3D's typecheck until the fixture tower decides how to answer it.
+
 ## v2.7.0
 
 A shown file's tab follows the file as it changes, and Tower 3D's page is split into resources (#628, #629, #630,
