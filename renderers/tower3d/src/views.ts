@@ -24,13 +24,13 @@ export function startViews(started: ViewsDeps) {
   const { toast } = started.toasts
   const { boardNow } = nowOf(port)
 
+  /** What Tower 3D's `renderer.json` declares, as `GET /renderers` served it at start, once it loaded. */
+  const declared = () => started.assets.got()?.declared ?? undefined
+
   /**
    * The layout Tower 3D draws by (decision `region-overflow`): its `renderer.json`'s over what started extensions give
    * their own regions, then the config's less the regions whose layout fails its check, then yours.
    */
-  /** What Tower 3D's `renderer.json` declares, as `GET /renderers` served it at start, once it loaded. */
-  const declared = () => started.assets.got()?.declared ?? undefined
-
   const layoutNow = (board: Board) => layoutOf(declaredLayout(board, declared()?.layout ?? {}), declared() ? usableConfigLayout(declared()!) : {}, s.storedLayout)
   /** The desk's region as Tower 3D draws it now: what its `renderer.json` says it holds, and its entry in the layout. */
   const deskNow = (board: Board): DeskRegion => ({ holds: declared()?.regions?.find((r) => r.id === 'card.desk')?.holds ?? [], entry: layoutNow(board)['card.desk'] })

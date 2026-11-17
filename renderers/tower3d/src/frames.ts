@@ -76,6 +76,12 @@ export function startFrames(started: FramesDeps) {
     fitHands(hands, camera.aspect)
   }
 
+  /** The hands, which a frame poses only once a board is built, after the models landed. */
+  function landedHands() {
+    if (!hands) throw new Error('the frames posed your hands before the models landed: a board was built before the feed started the first')
+    return hands
+  }
+
   const meter: Meter = { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 }
 
   function measure(now: number, work: number) {
@@ -188,9 +194,9 @@ export function startFrames(started: FramesDeps) {
     const { pet } = motionNow()
     const stroke = pet && strokeAt(petProgress(pet, s.simNow), pet.tailward)
     const note = carried()
-    holdNote(hands!, note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
-    holdBeer(hands!, s.beer)
-    poseHands(hands!, was, s.me, stroke, f.dt, f.t)
+    holdNote(landedHands(), note && { title: note.title, tag: note.tag, tint: tintOf(floorOf(note.project)) })
+    holdBeer(landedHands(), s.beer)
+    poseHands(landedHands(), was, s.me, stroke, f.dt, f.t)
   }
 
   function stepWalker({ dt, turned }: Frame) {
