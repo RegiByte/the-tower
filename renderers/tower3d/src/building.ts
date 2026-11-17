@@ -14,7 +14,7 @@ import { tintOf } from './palette.ts'
 import { CABINET, cabinetOf, collidersOn, coreFront, deskOf, emptyChairs, loungeSpots, levelHeight, levelY, plan, solids, type Box, type Plan } from './layout.ts'
 import { chairKit, makeChairs, placeChairs, type ChairKit, type Chairs } from './chairs.ts'
 import { fillLayer, zonesPlaced, type Placed } from './kit.ts'
-import { hangOn, onLevel } from './levels.ts'
+import { hangOn, levelOf as levelOfIn, onLevel as onLevelIn, showLevels as showLevelsIn, type LevelRoot } from './levels.ts'
 import { DESK_DRESS, dress, pickOf } from './dress.ts'
 import { cityModel, furnish, type PrefabItem } from './zones.ts'
 import { stateKey } from './prefab.ts'
@@ -36,7 +36,7 @@ import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
 import { eyes, type Walker, type WalkerCell } from './walker.ts'
 import { layerAt, type Layer } from './floorplan.ts'
-import { boardFace, buildWorld, paintDirectory, setLimits, setShellTitles } from './world.ts'
+import { boardFace, buildWorld, paintDirectory, setLimits, setShellTitles, type World as Built } from './world.ts'
 import type { Toasts } from './toasts.ts'
 import type { Assets } from './loads.ts'
 import type { Models } from './models.ts'
@@ -80,6 +80,23 @@ export function startWorld(started: WorldDeps) {
   const { toast } = started.toasts
   const { buildingNow, boardNow, captured, viewNow, motionNow, replayNow, heed } = nowOf(started.port)
 
+  /** The building as last built, replaced on a rebuild. */
+  let building: Built | undefined
+  const built = () => building
+
+  /** Boards taken and buildings built since load. */
+  let boards = 0
+  let rebuilds = 0
+  const counts = () => ({ boards, rebuilds })
+
+  /** What stands on each level, by level index: its KayKit zones are refilled when the building is rebuilt, its workstations' KayKit models on every board. */
+  const roots: LevelRoot[] = []
+  const onLevel = (index: number) => onLevelIn(roots, scene, index)
+  const levelOf = (o: THREE.Object3D) => levelOfIn(roots, o)
+  /** Level `index`'s root, if it was made. */
+  const rootAt = (index: number): LevelRoot | undefined => roots[index]
+  const showLevels = (shown: (index: number) => boolean) => showLevelsIn(roots, building, shown)
+
   const directory = boardFace(640, 480)
 
   const statsBoard = boardFace(640, 400)
@@ -94,7 +111,7 @@ export function startWorld(started: WorldDeps) {
     const overview = viewNow() === 'overview'
     if (screensAt.plan === planNow() && screensAt.level === me().level && screensAt.overview === overview) return screensAt.spots
     const spots = new Map<string, THREE.Vector3[]>()
-    const levels = overview ? [...s.levels.map((l) => l.group), ...s.world!.levels] : [s.levels[me().level]?.group, s.world!.levels[me().level]]
+    const levels = overview ? [...roots.map((l) => l.group), ...building!.levels] : [roots[me().level]?.group, building!.levels[me().level]]
     for (const group of levels) {
       group?.traverse((o) => {
         const map = o instanceof THREE.Mesh ? (o.material as THREE.MeshBasicMaterial).map : undefined
@@ -128,7 +145,7 @@ export function startWorld(started: WorldDeps) {
   const discard = (o: THREE.Object3D) => (o.removeFromParent(), dispose(o, keepTexture))
 
   /** Puts `o` on level `index` of the building, out of wherever it hung before. */
-  const hang = (index: number, o: THREE.Object3D) => hangOn(scene, index, o)
+  const hang = (index: number, o: THREE.Object3D) => hangOn(roots, scene, index, o)
 
   /** Brings `layer`'s items in `items` in step with the plan as it stands now. */
   const reconcile = <S, T>(layer: SceneLayer<S, T>, items: Map<string, T>) => reconcileLayer(layer, items, planNow(), hang, discard)
@@ -149,15 +166,15 @@ export function startWorld(started: WorldDeps) {
   const limitsKey = (b: Board) => JSON.stringify([defaultLimits(b).rateLimits, b.today])
 
   function rebuildWorld() {
-    if (s.world) discard(s.world.group)
-    s.rebuilds++
-    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, loaded().models, draftsOf, screenTexture, wallNow())
-    scene.add(s.world.group)
-    for (const level of planNow().levels) fillLayer(loaded().kit, onLevel(scene, level.index).zones, zonesPlaced(loaded().kit, level))
-    for (const root of s.levels.slice(planNow().levels.length)) fillLayer(loaded().kit, root.zones, [])
-    const built = s.world
-    for (const b of s.world.bookcases) {
-      shelfFiles(tower, b.project, b.n).then((files) => s.world === built && fillBooks(b, files, built.pickables), (err: Error) => toast(`shelf: ${err.message}`))
+    if (building) discard(building.group)
+    rebuilds++
+    const b = buildWorld(planNow(), boardNow()!, directory, statsBoard, loaded().models, draftsOf, screenTexture, wallNow())
+    building = b
+    scene.add(b.group)
+    for (const level of planNow().levels) fillLayer(loaded().kit, onLevel(level.index).zones, zonesPlaced(loaded().kit, level))
+    for (const root of roots.slice(planNow().levels.length)) fillLayer(loaded().kit, root.zones, [])
+    for (const bc of b.bookcases) {
+      shelfFiles(tower, bc.project, bc.n).then((files) => building === b && fillBooks(bc, files, b.pickables), (err: Error) => toast(`shelf: ${err.message}`))
     }
   }
 
@@ -298,8 +315,8 @@ export function startWorld(started: WorldDeps) {
         }),
       ]
     })
-    placed.forEach((list, i) => fillLayer(loaded().kit, onLevel(scene, i).dressing, list))
-    for (const root of s.levels.slice(placed.length)) fillLayer(loaded().kit, root.dressing, [])
+    placed.forEach((list, i) => fillLayer(loaded().kit, onLevel(i).dressing, list))
+    for (const root of roots.slice(placed.length)) fillLayer(loaded().kit, root.dressing, [])
   }
 
   /** The meeting rooms' empty chairs, by level index, and what they are drawn from, made as the models land. */
@@ -337,11 +354,11 @@ export function startWorld(started: WorldDeps) {
     const next = boardNow()!
     const sheet = keymapSheetHtml(sheetKeys(next))
     if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
-    s.boards++
+    boards++
     const key = structureKey(planNow(), next)
     if (key !== builtShape) (builtShape = key, builtLimits = limitsKey(next), rebuildWorld())
-    if (limitsKey(next) !== builtLimits) (builtLimits = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
-    setShellTitles(s.world!, next.shells)
+    if (limitsKey(next) !== builtLimits) (builtLimits = limitsKey(next), setLimits(building!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
+    setShellTitles(building!, next.shells)
     reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow(), loaded()), s.desks)
   }
 
@@ -451,7 +468,7 @@ export function startWorld(started: WorldDeps) {
   const shown = (o: THREE.Object3D | null): boolean => !o || (o.visible && shown(o.parent))
 
   const pickables = () => [
-    ...(s.world?.pickables ?? []),
+    ...(building?.pickables ?? []),
     ...[...s.desks.values()].map((d) => d.group),
     ...[...s.stations.values()].map((st) => st.group),
     ...[...s.walls.values()].map((w) => w.wall.group),
@@ -483,7 +500,7 @@ export function startWorld(started: WorldDeps) {
 
   /** Whether a wall or a shut landing door stands between the ray's origin and `distance`. */
   function blocked(distance: number): boolean {
-    const doors = [...(s.world?.doors.values() ?? [])].flatMap((d) => [d.left, d.right])
+    const doors = [...(building?.doors.values() ?? [])].flatMap((d) => [d.left, d.right])
     const nearest = Math.min(
       ...occludersHere().map((b) => (raycaster.ray.intersectBox(b, hitPoint) ? hitPoint.distanceTo(raycaster.ray.origin) : Infinity)),
       ...raycaster.intersectObjects(doors.filter((d) => shown(d)), true).map((h) => h.distance),
@@ -542,5 +559,5 @@ export function startWorld(started: WorldDeps) {
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
+  return { built, counts, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
 }

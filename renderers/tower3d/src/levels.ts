@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import { makeLayer, type KitLayer } from './kit.ts'
 import type { Motion } from './app.ts'
-import { s, type View } from './state.ts'
+import type { View } from './state.ts'
+import type { World as Built } from './world.ts'
 
 /**
  * What stands on one level, under one group in building coordinates: its desks, stations, notes, pictures, walls,
@@ -10,25 +11,25 @@ import { s, type View } from './state.ts'
  */
 export type LevelRoot = { group: THREE.Group; zones: KitLayer; dressing: KitLayer }
 
-/** Level `index`'s root, made on first use and added to `scene`. */
-export function onLevel(scene: THREE.Scene, index: number): LevelRoot {
-  while (s.levels.length <= index) {
+/** Level `index`'s root in `roots`, the roots by level index, made on first use and added to `scene`. */
+export function onLevel(roots: LevelRoot[], scene: THREE.Scene, index: number): LevelRoot {
+  while (roots.length <= index) {
     const root = { group: new THREE.Group(), zones: makeLayer(), dressing: makeLayer() }
     root.group.add(root.zones.group, root.dressing.group)
     scene.add(root.group)
-    s.levels.push(root)
+    roots.push(root)
   }
-  return s.levels[index]
+  return roots[index]
 }
 
-/** Puts `o` under level `index`'s root in `scene`, out of wherever it hung before. */
-export function hangOn(scene: THREE.Scene, index: number, o: THREE.Object3D) {
-  const { group } = onLevel(scene, index)
+/** Puts `o` under level `index`'s root in `roots`, out of wherever it hung before. */
+export function hangOn(roots: LevelRoot[], scene: THREE.Scene, index: number, o: THREE.Object3D) {
+  const { group } = onLevel(roots, scene, index)
   if (o.parent !== group) group.add(o)
 }
 
-/** The level `o` stands on: whose root it hangs on. */
-export const levelOf = (o: THREE.Object3D) => s.levels.findIndex((root) => root.group === o.parent)
+/** The level `o` stands on: whose root in `roots` it hangs on. */
+export const levelOf = (roots: LevelRoot[], o: THREE.Object3D) => roots.findIndex((root) => root.group === o.parent)
 
 /**
  * The levels drawn. The building is a box whose slabs close off each level, and a ray that leaves a box never comes
@@ -44,8 +45,8 @@ export function levelsShown(view: View, { ride, flight }: Pick<Motion, 'ride' | 
   return (i) => i === level
 }
 
-/** Shows the levels `shown` keeps and hides the rest: what stands on each, and the building's own part of it. */
-export function showLevels(shown: (index: number) => boolean) {
-  s.levels.forEach((root, i) => (root.group.visible = shown(i)))
-  s.world?.levels.forEach((g, i) => (g.visible = shown(i)))
+/** Shows the levels `shown` keeps and hides the rest: what stands on each (`roots`), and the building's own part of it (`built`). */
+export function showLevels(roots: LevelRoot[], built: Built | undefined, shown: (index: number) => boolean) {
+  roots.forEach((root, i) => (root.group.visible = shown(i)))
+  built?.levels.forEach((g, i) => (g.visible = shown(i)))
 }

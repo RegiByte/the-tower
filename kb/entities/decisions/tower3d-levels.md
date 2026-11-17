@@ -38,7 +38,9 @@ landing doors of every level it passes go by.
   render; nothing about it is stored.
 - One root per level ([`onLevel`](ref:hub/renderers/tower3d/src/levels.ts#onLevel)): a group in building
   coordinates holding everything that stands on the level and two KayKit layers, its zones and its workstations'
-  dressing. [`reconcile`](ref:hub/renderers/tower3d/src/layers.ts#reconcile) hangs every keyed layer's item on its
+  dressing. The roots are the world's ([`startWorld`](ref:hub/renderers/tower3d/src/building.ts#startWorld)), made on
+  first use, and `levels.ts` takes them as an argument; the world hands the frames and the door its `levelOf` and
+  `showLevels` over them. [`reconcile`](ref:hub/renderers/tower3d/src/layers.ts#reconcile) hangs every keyed layer's item on its
   slot's level again on every keep, since a floor added under it renumbers the levels. A cat is re-hung every frame,
   because it can move to another level.
 - The building's own part per level ([`buildWorld`](ref:hub/renderers/tower3d/src/world.ts#buildWorld)'s
