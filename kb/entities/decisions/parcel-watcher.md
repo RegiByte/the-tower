@@ -24,8 +24,12 @@ watched. The repo watches ([`watchRepos`](ref:hub/src/repo-watch.ts#watchRepos))
 and project streams watches ([`watchSystem`](ref:hub/src/system.ts#watchSystem)), and the folders of files whose
 versions someone follows ([`fileVersions`](ref:hub/src/file-versions.ts#fileVersions), its subfolders ignored, opened
 and closed as views come and go) all go through it; the sessions
-directory and the config's directory (and a linked config's target directory) stay non-recursive `fs.watch` (kqueue,
-which FSEvents' churn does not touch).
+directory and the config's directory (and a linked config's target directory) stay non-recursive `fs.watch`. On
+macOS libuv watches a folder through the same shared FSEventStream whether or not it is recursive; only a watch of a
+single file is kqueue. Measured the same way, a non-recursive folder `fs.watch` missed 30 to 55 of 200 events while
+another folder `fs.watch`, recursive or not, opened and closed every 3 ms, and none while a file watch or a parcel
+subscription did. Nothing in the tower opens or closes a folder `fs.watch` today (the tails watch files), so those
+two watches lose nothing now; a folder `fs.watch` added later that comes and goes would make them lose events.
 A subscription resolves once watching, so each reader starts watching before its first read. FSEvents' "must
 rescan", which `fs.watch` never surfaced, is reported as an unknown change; a removed root, which parcel reports once
 and then goes silent on, as a failure. Measured with the same churn: a parcel subscription missed 0 of 200 under
