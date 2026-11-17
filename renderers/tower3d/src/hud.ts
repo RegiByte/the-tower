@@ -69,14 +69,12 @@ export function startHud(started: HudDeps) {
    * Music unless you turned it off, kept with your spot, and never over a game, which may play its own. The door plays
    * none: an agent's browser has no one to hear it.
    */
-  const startMusic = () => !s.muted && !s.doorMode && panelNow()?.kind !== 'game' && !playing() && play()
+  const startMusic = () => !port.state().muted && !port.state().doorMode && panelNow()?.kind !== 'game' && !playing() && play()
 
-  function toggleMusic() {
-    s.muted = !s.muted
-    if (s.muted) pause()
-    else startMusic()
-    renderHud()
-  }
+  const toggleMusic = () => port.dispatch({ type: 'music/muted', muted: !port.state().muted })
+
+  /** The music played as `startMusic` would, or paused (the app's `music`). */
+  const turnMusic = (on: boolean) => void (on ? startMusic() : pause())
 
   let hudKey = ''
 
@@ -84,7 +82,7 @@ export function startHud(started: HudDeps) {
     const waits = heededWaits(boardNow()!, heed())
     const asks = heededAsks(boardNow()!, heed())
     document.title = waits.length + asks.length ? `(${waits.length + asks.length}) The Tower` : 'The Tower'
-    const html = hudHtml(boardNow()!, here(), { music: !s.muted, sharing: sharing(), fresh: freshShown().length, waits, asks: asks.length, now: wallNow() }, started.clients)
+    const html = hudHtml(boardNow()!, here(), { music: !port.state().muted, sharing: sharing(), fresh: freshShown().length, waits, asks: asks.length, now: wallNow() }, started.clients)
     if (html !== hudKey) ($('hud').innerHTML = hudKey = html)
     drawSettings()
     const notes = untestedHtml(boardNow()!) ?? ''
@@ -98,8 +96,6 @@ export function startHud(started: HudDeps) {
     if (inCar) $('elevator').innerHTML = elevatorHtml(planNow(), ride ? ride.to : me().level, ride !== undefined, heededWaits(boardNow()!, heed()))
   }
 
-  tower.get('origins').then((o) => (s.origins = o), (err: Error) => toast(`origins: ${err.message}`))
-
   /** The pause card stands for the free mouse only while nothing else holds it: a panel, the spawn dialog, or P. */
   const showPaused = () => show('paused', !captured() && viewNow() === 'walk' && !panelNow() && !port.state().capture.still && !spawn.open)
 
@@ -107,7 +103,7 @@ export function startHud(started: HudDeps) {
   function lock() {
     startMusic()
     show('paused', false)
-    if (s.doorMode) return port.dispatch({ type: 'capture', by: 'door', held: true })
+    if (port.state().doorMode) return port.dispatch({ type: 'capture', by: 'door', held: true })
     canvas.requestPointerLock().catch((err: Error) => (show('paused', true), toast(`pointer lock: ${err.message}`)))
   }
 
@@ -211,10 +207,10 @@ export function startHud(started: HudDeps) {
 
   tower.prefs.on(() => drawSettings())
 
-  function toggleFps() {
-    s.fpsShown = !s.fpsShown
-    show('fps', s.fpsShown)
-  }
+  const toggleFps = () => port.dispatch({ type: 'meter/shown', shown: !port.state().meterShown })
+
+  /** The frame meter shown or hidden (the app's `meter`). */
+  const showMeter = (shown: boolean) => show('fps', shown)
 
   spawn.addEventListener('close', showPaused)
 
@@ -223,6 +219,8 @@ export function startHud(started: HudDeps) {
    * the app as it attaches, so none can run before it.
    */
   function listen() {
+    tower.get('origins').then((origins) => port.dispatch({ type: 'origins/read', origins }), (err: Error) => toast(`origins: ${err.message}`))
+
     document.addEventListener('pointerlockchange', () => port.dispatch({ type: 'capture', by: 'pointer', held: document.pointerLockElement === canvas }))
 
     /**
@@ -237,5 +235,5 @@ export function startHud(started: HudDeps) {
     setInterval(() => boardNow() && renderHud(), 30_000)
   }
 
-  return { listen, held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, clearDots, sawActions, sawDesk, drawSettings, toggleFps }
+  return { listen, held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, unlocked, seenSince, keepViewer, dottedNow, clearDots, sawActions, sawDesk, drawSettings, toggleFps, turnMusic, showMeter }
 }

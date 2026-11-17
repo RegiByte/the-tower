@@ -24,8 +24,8 @@ export function startKeeper(started: KeeperDeps) {
   /** Kept only for a person: the door's walks would move their spot. */
   let keptKey = ''
   setInterval(() => {
-    if (!boardNow() || viewNow() !== 'walk' || motionNow().ride || s.doorMode) return
-    const kept: Kept = { spot: spotOf(me()), muted: s.muted, fps: s.fpsShown, seen: [...s.seenShown].slice(-SEEN_KEPT) }
+    if (!boardNow() || viewNow() !== 'walk' || motionNow().ride || started.port.state().doorMode) return
+    const kept: Kept = { spot: spotOf(me()), muted: started.port.state().muted, fps: started.port.state().meterShown, seen: [...s.seenShown].slice(-SEEN_KEPT) }
     const key = JSON.stringify(kept)
     if (key !== keptKey) (keptKey = key, tower.remember(kept))
   }, 1000)

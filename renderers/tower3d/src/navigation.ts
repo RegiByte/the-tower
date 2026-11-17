@@ -149,8 +149,8 @@ export function startNavigation(started: NavigationDeps) {
       const to = neighboursIn(boardNow()!, s.viewer.crewsOrder, atDesk(), heed())[m]
       return to && goDesk(to.id)
     }
-    const step = nextAttended(attentionOrder(boardNow()!, heed()), s.visited, { id: atDesk() })
-    s.visited = step.visited
+    const step = nextAttended(attentionOrder(boardNow()!, heed()), port.state().visited, { id: atDesk() })
+    port.dispatch({ type: 'visited', visited: step.visited })
     if (!step.to) return
     if (isAsk(step.to)) return goToAsk(step.to)
     goDesk((step.to as Wait).id)
@@ -205,7 +205,7 @@ export function startNavigation(started: NavigationDeps) {
   /** What the prompt's act offers now: derived from the board and what you hold, never kept. */
   function offersNow() {
     const a = aimNow().offered
-    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !s.muted, carrying: carried(), beer: s.beer, cats: catNames(), lost: port.state().attending.lost, galleries: planNow().galleries, now: wallNow() }, reads) : []
+    return a && boardNow() ? offersOf(a, boardNow()!, { sharing: sharing(), framed: tower.framed, music: !port.state().muted, carrying: carried(), beer: s.beer, cats: catNames(), lost: port.state().attending.lost, galleries: planNow().galleries, now: wallNow() }, reads) : []
   }
 
   /** The crosshair or the pointer is on `a`, and the prompt offers its verbs, drawn by `at` when the pointer gives one. */

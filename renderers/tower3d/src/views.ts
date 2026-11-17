@@ -5,7 +5,6 @@ import type { DeskRegion } from './desk-verbs.ts'
 import { deskViews, readerView, viewHosting } from './hosting.ts'
 import type { Clock } from './clock.ts'
 import type { Port } from './port.ts'
-import { s } from './state.ts'
 import { nowOf } from './now.ts'
 import type { Toasts } from './toasts.ts'
 import type { Assets } from './loads.ts'
@@ -31,7 +30,7 @@ export function startViews(started: ViewsDeps) {
    * The layout Tower 3D draws by (decision `region-overflow`): its `renderer.json`'s over what started extensions give
    * their own regions, then the config's less the regions whose layout fails its check, then yours.
    */
-  const layoutNow = (board: Board) => layoutOf(declaredLayout(board, declared()?.layout ?? {}), declared() ? usableConfigLayout(declared()!) : {}, s.storedLayout)
+  const layoutNow = (board: Board) => layoutOf(declaredLayout(board, declared()?.layout ?? {}), declared() ? usableConfigLayout(declared()!) : {}, port.state().layout)
   /** The desk's region as Tower 3D draws it now: what its `renderer.json` says it holds, and its entry in the layout. */
   const deskNow = (board: Board): DeskRegion => ({ holds: declared()?.regions?.find((r) => r.id === 'card.desk')?.holds ?? [], entry: layoutNow(board)['card.desk'] })
 

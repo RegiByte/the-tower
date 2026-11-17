@@ -1,7 +1,7 @@
 import { captured as capturedBy } from './app.ts'
 import type { Heed } from './cards.ts'
 import type { Port } from './port.ts'
-import { s, type Panel } from './state.ts'
+import type { Panel } from './state.ts'
 
 /** What the app decided, read through the port, and the dispatches that are one event each: the same wherever they are read. */
 export type Now = ReturnType<typeof nowOf>
@@ -47,7 +47,7 @@ export function nowOf(port: Port) {
   const replayNow = () => port.state().replay
 
   /** What you did about the waits (`Heed`): dismissed, the attention machine's, and visited by N this round. */
-  const heed = (): Heed => ({ dismissed: port.state().attending.dismissed, visited: s.visited })
+  const heed = (): Heed => ({ dismissed: port.state().attending.dismissed, visited: port.state().visited })
 
   /**
    * What the aimed thing offers, each verb on its own key. The mouse wheel marks one and a click runs it; a verb that

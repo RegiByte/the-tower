@@ -36,7 +36,6 @@ function feedOf(started: FeedDeps, onModels: () => void) {
   const { toast } = started.toasts
   const { firstBuilt, primeSeenAs, landChairs } = started.world
   const { landHands } = started.frames
-  const { toggleFps } = started.hud
 
   let built: () => void
 
@@ -56,10 +55,9 @@ function feedOf(started: FeedDeps, onModels: () => void) {
     landChairs(m)
     flyPlane(m.plane)
     landHands(m)
-    s.muted = (kept as Kept | null)?.muted ?? false
     s.seenShown = new Set((kept as Kept | null)?.seen)
     primeSeenAs((kept as Kept | null)?.seen === undefined)
-    if ((kept as Kept | null)?.fps) toggleFps()
+    port.dispatch({ type: 'kept/landed', muted: (kept as Kept | null)?.muted ?? false, meterShown: (kept as Kept | null)?.fps ?? false })
     onModels()
   }, failStart)
 
