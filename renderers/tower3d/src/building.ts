@@ -12,7 +12,7 @@ import { launch } from './fireworks.ts'
 import { CATS, makeCat, tada } from './life.ts'
 import { tintOf } from './palette.ts'
 import { CABINET, cabinetOf, collidersOn, coreFront, deskOf, emptyChairs, loungeSpots, levelHeight, levelY, plan, solids, type Box, type Plan } from './layout.ts'
-import { makeChairs, placeChairs } from './chairs.ts'
+import { makeChairs, placeChairs, type Chairs } from './chairs.ts'
 import { fillLayer, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, onLevel } from './levels.ts'
 import { DESK_DRESS, dress, pickOf } from './dress.ts'
@@ -289,17 +289,24 @@ export function startWorld(started: WorldDeps) {
     for (const root of s.levels.slice(placed.length)) fillLayer(s.kit!, root.dressing, [])
   }
 
+  /** The meeting rooms' empty chairs, by level index. */
+  const chairs: Chairs[] = []
+
   /** Every level's empty meeting chairs, instanced on its root. */
   function seatChairs() {
-    const levels = Math.max(planNow().levels.length, s.chairs.length)
+    const levels = Math.max(planNow().levels.length, chairs.length)
     for (let i = 0; i < levels; i++) {
       const level = planNow().levels[i]
       const at = level?.kind === 'floor' ? emptyChairs(level).map((pl) => ({ x: pl.x, y: level.y, z: pl.z, turn: pl.turn })) : []
-      s.chairs[i] ??= makeChairs()
-      hang(i, s.chairs[i].group)
-      placeChairs(s.chairs[i], s.chairKit!, at)
+      chairs[i] ??= makeChairs()
+      hang(i, chairs[i].group)
+      placeChairs(chairs[i], s.chairKit!, at)
     }
   }
+
+  /** What made the building's shape and its rate-limit plaques, as last built. */
+  let builtShape = ''
+  let builtLimits = ''
 
   /**
    * The world takes the board the building took once its archives are read (`board/arrived`), `was` the board before: rebuilt when its shape
@@ -313,8 +320,8 @@ export function startWorld(started: WorldDeps) {
     if ($('keys-sheet').innerHTML !== sheet) $('keys-sheet').innerHTML = sheet
     s.boards++
     const key = structureKey(planNow(), next)
-    if (key !== s.worldKey) (s.worldKey = key, s.limitsKey = limitsKey(next), rebuildWorld())
-    if (limitsKey(next) !== s.limitsKey) (s.limitsKey = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
+    if (key !== builtShape) (builtShape = key, builtLimits = limitsKey(next), rebuildWorld())
+    if (limitsKey(next) !== builtLimits) (builtLimits = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
     setShellTitles(s.world!, next.shells)
     reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow()), s.desks)
   }

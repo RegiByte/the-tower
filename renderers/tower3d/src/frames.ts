@@ -43,6 +43,9 @@ export type FramesDeps = { clock: Clock; tower: Tower; screens: Screens; picture
 
 export type Frames = ReturnType<typeof startFrames>
 
+/** Real frames over the last second: how many, and the ms each spent in update and render; and what the last frame drew of the scene. */
+export type Meter = { since: number; frames: number; work: number; fps: number; frameMs: number; calls: number; triangles: number }
+
 /**
  * The frames: each one's update of what moves on its own, the walker, the camera, the aim and the life of the building,
  * and its render.
@@ -63,8 +66,10 @@ export function startFrames(started: FramesDeps) {
   const { aimAt, offerNothing } = started.navigation
   const { run, tickPet } = started.panels
 
+  const meter: Meter = { since: 0, frames: 0, work: 0, fps: 0, frameMs: 0, calls: 0, triangles: 0 }
+
   function measure(now: number, work: number) {
-    const m = s.meter
+    const m = meter
     m.frames++
     m.work += work
     if (now - m.since < 1000) return
@@ -113,7 +118,7 @@ export function startFrames(started: FramesDeps) {
     frameScene()
     renderer.render(scene, camera)
     if (lit) bloom(renderer, scene, camera, wallNow())
-    Object.assign(s.meter, { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles })
+    Object.assign(meter, { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles })
     if (s.hands && handsShown()) drawHands(renderer, s.hands)
   }
 
@@ -189,6 +194,9 @@ export function startFrames(started: FramesDeps) {
     if (wasInCar !== inside(carBox(planNow()), s.me.x, s.me.z)) renderElevator()
   }
 
+  /** How open each level's landing doors are, 0 to 1, by level index. */
+  const doorOpen = new Map<number, number>()
+
   /** A landing's doors: shut for a ride and behind a leaver who boarded; open where you stand and ahead of a leaver. */
   function doorTarget(level: number) {
     if (motionNow().ride) return 0
@@ -200,9 +208,9 @@ export function startFrames(started: FramesDeps) {
   function tickDoors({ dt }: Frame) {
     for (const level of planNow().levels) {
       const target = doorTarget(level.index)
-      const open = s.doorOpen.get(level.index) ?? 0
+      const open = doorOpen.get(level.index) ?? 0
       const next = open + Math.sign(target - open) * Math.min(Math.abs(target - open), dt * 2.2)
-      s.doorOpen.set(level.index, next)
+      doorOpen.set(level.index, next)
       setDoors(s.world!.doors.get(level.index)!, next)
     }
     s.world!.car.position.y = floorY()
@@ -260,7 +268,7 @@ export function startFrames(started: FramesDeps) {
       l.chair ??= chairLeft(l.desk)
       const inside = walkOut(l, dt)
       if (shown(l.level)) leaverPose(l, inside, t)
-      if (inside && s.doorOpen.get(l.level) === 0) (s.leavers.delete(l), discard(l.group))
+      if (inside && doorOpen.get(l.level) === 0) (s.leavers.delete(l), discard(l.group))
     }
     tickCats(dt, t)
   }
@@ -421,5 +429,5 @@ export function startFrames(started: FramesDeps) {
 
   requestAnimationFrame(frame)
 
-  return { beginDrawing, drawEachFrame, play, render, frameScene, update }
+  return { beginDrawing, drawEachFrame, play, render, frameScene, update, meter: (): Readonly<Meter> => meter }
 }

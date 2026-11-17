@@ -1,4 +1,3 @@
-import { type CatNames } from './acts.ts'
 import { readViewer } from '/lib/viewer.js'
 import type { Board, ShelfSelf, Tower } from './api.ts'
 import { boardErrorTitle } from './cards.ts'
@@ -58,7 +57,6 @@ function feedOf(started: FeedDeps, onModels: () => void) {
     checkWardrobe(m.catalogue)
     s.models = m
     s.chairKit = chairKit(m.desk.getObjectByName('chair')!)
-    s.catNames = (renderer?.settings.cats ?? {}) as CatNames
     s.kit = kit
     flyPlane(m.plane)
     s.hands = makeHands(m)
@@ -92,9 +90,9 @@ export function startFeed(started: FeedDeps): Feed {
     $('board-error').querySelector('span')!.textContent = err.message
     show('board-error', true)
     if (loading.shown()) loading.fail(`${boardErrorTitle(err.code)}: ${err.message}`)
-    s.lost = err.code === 'disconnected'
-    port.dispatch({ type: 'lost', lost: s.lost })
-    if (s.lost) hiring.dispatch({ type: 'lost' })
+    const lost = err.code === 'disconnected'
+    port.dispatch({ type: 'lost', lost })
+    if (lost) hiring.dispatch({ type: 'lost' })
     renderPanel()
   }
 
@@ -111,7 +109,6 @@ export function startFeed(started: FeedDeps): Feed {
 
   function onLiveBoard(next: Board, at: ShelfSelf | undefined) {
     show('board-error', false)
-    s.lost = false
     port.dispatch({ type: 'lost', lost: false })
     port.dispatch({ type: 'board', board: next })
     if (!loaded || starting) return void (latest = [next, at])

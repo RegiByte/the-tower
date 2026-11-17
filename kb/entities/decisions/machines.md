@@ -14,6 +14,7 @@
     "hub/src/shared/loop.ts#Executors",
     "hub/src/shared/loop.ts#TimerEffect",
     "hub/src/shared/loop.ts#timers",
+    "hub/renderers/tower3d/src/frames.ts#tickDoors",
     "hub/src/shared/loop.ts#Listener",
     "hub/test/loop.test.ts",
     "hub/src/shared/reads.ts#Held",
@@ -85,6 +86,11 @@ I/O at the edge ([[renderer-is-disposable]]: what a next renderer would need is 
   (Tower 3D's door, [[tower3d-door]]) and a missing effect shows in it. A listener watches and never steers: one that
   throws leaves the loop as it was, every queued event still handled, and its error rejects a promise of its own,
   for the page's or the process's unhandled-rejection handling.
+- *Animation a frame advances is not a machine.* State a frame writes every tick, even timed state with several
+  phases (Tower 3D's landing doors easing open and shut, [`tickDoors`](ref:hub/renderers/tower3d/src/frames.ts#tickDoors),
+  workers walking in and out, the walker), is a cell its owner keeps and advances by a pure step. Through the loop it
+  would cost a handler, every listener and a record entry per frame; what such a cell starts or ends that the page
+  decides on (a ride, a flight, a cut) is an event to the machine.
 - *Where it lives.* A machine any renderer needs is a module in `src/shared`, served as `/<name>.js` (an API
   minor): held reads ([`heldHandlers`](ref:hub/src/shared/reads.ts#heldHandlers)), attention (`attend.ts`), the
   new-worker dialog ([`spawnHandlers`](ref:hub/src/shared/spawn.ts#spawnHandlers)), a hosted view's lifecycle
