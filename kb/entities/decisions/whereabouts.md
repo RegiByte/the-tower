@@ -99,7 +99,7 @@ It can be a pure function of one board: the board keeps today's sent-home cards 
 - *The largest crew always in the larger room*: crews would swap rooms as they grow. The first to gather keeps it.
 - *A reviewer at the free seat nearest its author*: by then the seats beside its author are taken, and the nearest
   free one, down the table, reads as unrelated. Standing over its shoulder reads as review.
-- *Two objects per worker in a meeting* (its desk with the avatar hidden, and a seat): every reader of `s.desks`
+- *Two objects per worker in a meeting* (its desk with the avatar hidden, and a seat): every reader of the desks layer
   (waits, the cat's perch, going to a worker) would follow the empty desk.
 - *Teleporting between desk and room*: every move walks.
 - *Empty chairs as a clone of the desk model's chair each*: a clone per chair costs all its meshes in every pass;

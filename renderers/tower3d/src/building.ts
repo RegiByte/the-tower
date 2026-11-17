@@ -31,7 +31,16 @@ import type { Sim } from './sim.ts'
 import { historyOf, type Archive, type Archived } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
-import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
+import type { ArcadeSign, Cabinet } from './arcade.ts'
+import type { Note } from './cork.ts'
+import type { Desk, Station } from './desk.ts'
+import type { Filing } from './filing.ts'
+import type { Picture } from './gallery.ts'
+import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
+import type { DanceFloors, Guest } from './party.ts'
+import type { Pigeonhole } from './pigeonhole.ts'
+import type { Running } from './running.ts'
+import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer, type WallItem } from './layers.ts'
 import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
 import { eyes, type Walker, type WalkerCell } from './walker.ts'
@@ -53,6 +62,35 @@ import type { Titles } from './titles.ts'
 export type WorldDeps = { walker: WalkerCell; clock: Clock; sim: Sim; tower: Tower; assets: Assets; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
+
+/** The world's keyed layers, by worker, workstation, level, draft or showing, kept across boards in step with the plan; and the cats, made with the first board. */
+export type Layers = {
+  desks: Map<string, Desk>
+  stations: Map<string, Station>
+  walls: Map<string, WallItem>
+  /** Each floor's Running board, and its pigeonhole of review threads, by level index. */
+  running: Map<string, Running>
+  pigeonholes: Map<string, Pigeonhole>
+  arcadeSigns: Map<string, ArcadeSign>
+  filings: Map<string, Filing>
+  guests: Map<string, Guest>
+  dance: Map<string, DanceFloors & { key: string }>
+  notes: Map<string, Note>
+  cabinets: Map<string, Cabinet>
+  pictures: Map<string, Picture>
+  cats: Map<CatName, Cat>
+}
+
+/**
+ * Workers on their way, by worker: those walking in from the elevator, those walking out to it, and where each one
+ * leaving its desk for another on its level (to or from a meeting) sets off from, until its new desk is made. The
+ * world's desk layer makes each entry; the frames advance and remove them, and never add one.
+ */
+export type People = {
+  arrivals: Map<string, Arrival>
+  leavers: Set<Leaver>
+  moves: Map<string, Origin>
+}
 
 /**
  * The building in the scene: its plan, what stands on each level, every keyed layer reconciled against the board the
@@ -88,6 +126,9 @@ export function startWorld(started: WorldDeps) {
   let boards = 0
   let rebuilds = 0
   const counts = () => ({ boards, rebuilds })
+
+  const layers: Layers = { desks: new Map(), stations: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), cats: new Map() }
+  const people: People = { arrivals: new Map(), leavers: new Set(), moves: new Map() }
 
   /** What stands on each level, by level index: its KayKit zones are refilled when the building is rebuilt, its workstations' KayKit models on every board. */
   const roots: LevelRoot[] = []
@@ -205,14 +246,14 @@ export function startWorld(started: WorldDeps) {
    * gallery, its pictures ribboned while new, a showing `was` didn't hold flying in.
    */
   function dressSides(was: Board | undefined) {
-    for (const desk of s.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)), posterOf)
-    reconcile(galleryAfter(was, posterOf, wallNow(), simNow() / 1000), s.pictures)
-    keepPosters(new Set([...[...s.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...s.pictures.keys()]))
+    for (const desk of layers.desks.values()) dressSide(desk, desk.card.shown.at(-1), desk.card.shown.some((sh) => isFresh(desk.card, sh)), posterOf)
+    reconcile(galleryAfter(was, posterOf, wallNow(), simNow() / 1000, layers.desks), layers.pictures)
+    keepPosters(new Set([...[...layers.desks.values()].flatMap((d) => d.card.shown.slice(-1).map((sh) => shownKey(sh))), ...layers.pictures.keys()]))
   }
 
   /** The review notes new to each worker, stacked on its own desk, beside its logbook; a reviewer beside its author has neither. */
   function dressAllPapers() {
-    for (const desk of s.desks.values()) {
+    for (const desk of layers.desks.values()) {
       dressPapers(desk, desk.side ? (cardReviews(desk.card)?.unseen ?? 0) : 0)
       dressBinder(desk, desk.card.lineage.length)
     }
@@ -221,7 +262,7 @@ export function startWorld(started: WorldDeps) {
   /** The replayed past session on its worker's monitor, every other monitor on its own screen. */
   function dressReplays() {
     const replaying = replayNow()
-    for (const desk of s.desks.values()) {
+    for (const desk of layers.desks.values()) {
       const session = replaying?.id === desk.card.id ? desk.card.lineage.find((l) => l.id === replaying.session) : undefined
       showOnMonitor(desk, session ? replayTexture(`screen/${session.id}`, `REPLAY · ${sessionWhen(session.startedAt)}`) : monitorOf(desk.card))
     }
@@ -269,7 +310,7 @@ export function startWorld(started: WorldDeps) {
   function shownArrives(id: string, target: string, atItsDesk: boolean) {
     const c = findCard(boardNow()!, id)!
     const sh = c.shown.find((sh) => sh.target === target)!
-    const desk = s.desks.get(c.id)
+    const desk = layers.desks.get(c.id)
     if (desk) holdUp(desk, sh, simNow() / 1000, posterOf)
     tada()
     if (!atItsDesk) toast(`${c.callsign} showed you “${shownTitle(sh)}” · V to look`)
@@ -302,12 +343,12 @@ export function startWorld(started: WorldDeps) {
       return [
         ...level.desks.filter((slot) => !slot.beside && !slot.meeting).flatMap((slot) => {
           const pick = pickOf(slot.card, month, loaded().kit.prefabs[DESK_DRESS])
-          return inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, loaded().kit.models))
+          return inDesk(layers.desks.get(slot.card.id)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, loaded().kit.models))
         }),
-        ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, loaded().kit.prefabs[DESK_DRESS].items)),
+        ...level.free.flatMap((slot) => inDesk(layers.stations.get(`${level.floor.id}/${slot.n}`)!.group, loaded().kit.prefabs[DESK_DRESS].items)),
         ...level.away.flatMap((slot) => {
           const pick = pickOf(slot.card, month, loaded().kit.prefabs[DESK_DRESS])
-          return inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, loaded().kit.models))
+          return inDesk(layers.stations.get(`${level.floor.id}/${slot.n}`)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, loaded().kit.models))
         }),
         ...level.tables.flatMap((t) => {
           const frame = frameAt(t.x, level.y, t.z, t.turn)
@@ -359,7 +400,7 @@ export function startWorld(started: WorldDeps) {
     if (key !== builtShape) (builtShape = key, builtLimits = limitsKey(next), rebuildWorld())
     if (limitsKey(next) !== builtLimits) (builtLimits = limitsKey(next), setLimits(building!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
     setShellTitles(building!, next.shells)
-    reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow(), loaded()), s.desks)
+    reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow(), loaded(), people), layers.desks)
   }
 
   function worldFurnished(was: Board | undefined) {
@@ -367,15 +408,15 @@ export function startWorld(started: WorldDeps) {
     syncStations()
     dressLevels(next)
     seatChairs()
-    reconcile(walls, s.walls)
-    reconcile(runningOn(next), s.running)
-    reconcile(pigeonholes, s.pigeonholes)
-    reconcile(ARCADE_SIGNS, s.arcadeSigns)
+    reconcile(walls, layers.walls)
+    reconcile(runningOn(next), layers.running)
+    reconcile(pigeonholes, layers.pigeonholes)
+    reconcile(ARCADE_SIGNS, layers.arcadeSigns)
     syncFilings()
     readArchives(next)
     dressAllPapers()
-    reconcile(DANCE, s.dance)
-    reconcile(guestsOf(loaded().models), s.guests)
+    reconcile(DANCE, layers.dance)
+    reconcile(guestsOf(loaded().models), layers.guests)
     if (!was && primeSeen) for (const { key } of everyShown(next)) s.seenShown.add(key)
     dressSides(was)
     pruneNoteTitles(next.floors)
@@ -395,7 +436,7 @@ export function startWorld(started: WorldDeps) {
     if (!was) {
       for (const name of CATS) {
         const cat = makeCat(loaded().models, name)
-        s.cats.set(name, cat)
+        layers.cats.set(name, cat)
       }
       setMe({ x: 0, z: coreFront(planNow()) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...(loaded().kept as Kept | null)?.spot })
       if (location.hash === '#tv') {
@@ -469,17 +510,17 @@ export function startWorld(started: WorldDeps) {
 
   const pickables = () => [
     ...(building?.pickables ?? []),
-    ...[...s.desks.values()].map((d) => d.group),
-    ...[...s.stations.values()].map((st) => st.group),
-    ...[...s.walls.values()].map((w) => w.wall.group),
-    ...[...s.running.values()].map((r) => r.group),
-    ...[...s.pigeonholes.values()].map((r) => r.group),
-    ...[...s.filings.values()].map((f) => f.group),
-    ...[...s.guests.values()].map((g) => g.group),
-    ...[...s.notes.values()].map((n) => n.group),
-    ...[...s.cabinets.values()].map((c) => c.group),
-    ...[...s.pictures.values()].map((p) => p.group),
-    ...[...s.cats.values()].map((c) => c.root),
+    ...[...layers.desks.values()].map((d) => d.group),
+    ...[...layers.stations.values()].map((st) => st.group),
+    ...[...layers.walls.values()].map((w) => w.wall.group),
+    ...[...layers.running.values()].map((r) => r.group),
+    ...[...layers.pigeonholes.values()].map((r) => r.group),
+    ...[...layers.filings.values()].map((f) => f.group),
+    ...[...layers.guests.values()].map((g) => g.group),
+    ...[...layers.notes.values()].map((n) => n.group),
+    ...[...layers.cabinets.values()].map((c) => c.group),
+    ...[...layers.pictures.values()].map((p) => p.group),
+    ...[...layers.cats.values()].map((c) => c.root),
   ]
 
   let occluders: { plan?: Plan; level: number; boxes: THREE.Box3[] } = { level: -1, boxes: [] }
@@ -547,17 +588,17 @@ export function startWorld(started: WorldDeps) {
     syncNotes()
   }
 
-  const syncStations = () => reconcile(stationsOf(loaded().models), s.stations)
-  const syncNotes = () => boardNow() && reconcile(notes, s.notes)
+  const syncStations = () => reconcile(stationsOf(loaded().models), layers.stations)
+  const syncNotes = () => boardNow() && reconcile(notes, layers.notes)
 
-  const syncCabinets = () => boardNow() && reconcile(cabinets, s.cabinets)
+  const syncCabinets = () => boardNow() && reconcile(cabinets, layers.cabinets)
 
   /** Each floor's filing cabinet in step with its archive's drawers. */
-  const syncFilings = () => reconcile(filings, s.filings)
+  const syncFilings = () => reconcile(filings, layers.filings)
 
   /** Settles once the first board's building is pictured, the start's last wait (`ready`). */
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { built, counts, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
+  return { built, counts, layers, people, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
 }

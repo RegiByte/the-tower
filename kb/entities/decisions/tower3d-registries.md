@@ -19,9 +19,9 @@ must be handed every closure.
 shape of a mod. These shapes extract; they are not a plugin API.
 
 **How.**
-- **One state record** ([`state.ts`](ref:hub/renderers/tower3d/src/state.ts)): the layers'
-  maps and the door's mode; the building as built, its level roots and its counts of boards and rebuilds are the
-  world's cells ([[tower3d-system]]); the simulated clock and the walker, written from several resources, are leaf resources
+- **One state record** ([`state.ts`](ref:hub/renderers/tower3d/src/state.ts)): what the page
+  has chosen and not yet put in the app's db, such as the door's mode and the note in your hand; the building as built, its level roots, its counts,
+  its keyed layers' maps and the workers on their way are the world's cells ([[tower3d-system]]); the simulated clock and the walker, written from several resources, are leaf resources
   every reader is handed (`sim`, `walker`, [[tower3d-system]]); a cell one resource alone writes stays in its start (the frames'
   meter and landing doors, the panels' open draft, the HUD's new-action dots); what the page has decided (the panel, the view, a ride,
   a flight, a cut, a pet, what is aimed at and held, whether walking has the mouse) is the app loop's db

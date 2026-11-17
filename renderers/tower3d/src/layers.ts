@@ -22,7 +22,9 @@ import { buildPigeonhole, pigeonholeKey, type Pigeonhole } from './pigeonhole.ts
 import type { Archive } from './archive.ts'
 import type { Clients } from './clients.ts'
 import { buildFiling, filingKey, type Filing } from './filing.ts'
-import { s, type WallItem } from './state.ts'
+import { s } from './state.ts'
+import type { People } from './building.ts'
+import type { VideoWall } from './room.ts'
 import type { Board, Card } from './api.ts'
 import type { AddedTidy } from '/lib/extension.js'
 
@@ -84,8 +86,8 @@ const kindOfSlot = (slot: DeskSlot) => (slot.meeting ? (slot.meeting.stand ? 'st
 const kindOfDesk = (desk: Desk) => (desk.meeting ? (desk.meeting.stand ? 'stand' : 'seat') : desk.side ? 'own' : 'beside')
 
 /** How far onto its chair a worker at `desk` sits: not at all while it still walks there, or standing at a meeting. */
-const seatedAt = (desk: Desk, id: string) => {
-  const arriving = s.arrivals.get(id)
+const seatedAt = (arrivals: People['arrivals'], desk: Desk, id: string) => {
+  const arriving = arrivals.get(id)
   if (desk.meeting?.stand) return 0
   return !arriving ? 1 : arriving.sat > 0 ? seatedness(desk.models.cast, desk.avatar.rig) : 0
 }
@@ -96,7 +98,7 @@ export const slotsAt = (kit: Kit, author: Card, now: number) => deskSlots(pickOf
 /** What the layers make their things from, as loaded. */
 export type Art = { models: Models; kit: Kit }
 
-export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: DeskReads, now: number, { models, kit }: Art): Layer<DeskAt, Desk> => ({
+export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: DeskReads, now: number, { models, kit }: Art, { arrivals, leavers, moves }: People): Layer<DeskAt, Desk> => ({
   slots: (p) => floors(p).flatMap((level) => level.desks.map((slot) => {
     const author = slot.beside ? level.desks.find((d) => d.card.id === slot.beside)!.card : slot.card
     return [slot.card.id, { slot, level: level.index, y: level.y, author }] as [string, DeskAt]
@@ -109,17 +111,17 @@ export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: Desk
     if (desk.side) act(desk.side.group, { kind: 'shown', id: slot.card.id }, [])
     desk.group.position.set(slot.x, y, slot.z)
     desk.group.rotation.y = slot.turn * DEG
-    const from = s.moves.get(slot.card.id)
-    s.moves.delete(slot.card.id)
+    const from = moves.get(slot.card.id)
+    moves.delete(slot.card.id)
     const coming = from ? moveTo(p, desk, from) : was === undefined ? undefined : arrival(p, desk)
     if (!from && coming && kindOfDesk(desk) === 'beside') carryIn(coming)
-    if (coming) s.arrivals.set(slot.card.id, coming)
+    if (coming) arrivals.set(slot.card.id, coming)
     return desk
   },
   keep(desk, { slot, y, author }, p) {
     const moved = desk.meeting && (desk.group.position.x !== slot.x || desk.group.position.z !== slot.z)
     if (kindOfDesk(desk) !== kindOfSlot(slot) || moved) {
-      if (desk.avatar.root.visible) s.moves.set(slot.card.id, originOf(p, desk, seatedAt(desk, slot.card.id)))
+      if (desk.avatar.root.visible) moves.set(slot.card.id, originOf(p, desk, seatedAt(arrivals, desk, slot.card.id)))
       return false
     }
     situate(desk, slotsAt(kit, author, now))
@@ -132,12 +134,12 @@ export const desksAfter = (was: Board | undefined, toLevel: ToLevel, reads: Desk
   leave(desk, id, p) {
     if (desk.avatar.root.visible) {
       const level = p.levels.find((l) => l.y === desk.group.position.y)!.index
-      const l = leaver(p, desk, level, seatedAt(desk, id), models)
-      s.leavers.add(l)
+      const l = leaver(p, desk, level, seatedAt(arrivals, desk, id), models)
+      leavers.add(l)
       toLevel(level, l.group)
       if (kindOfDesk(desk) === 'beside') carryChair(l, desk)
     }
-    s.arrivals.delete(id)
+    arrivals.delete(id)
   },
 })
 
@@ -241,7 +243,7 @@ export const shownOn = (board: Board) => new Set(cardsOf(board).flatMap((c) => c
  * it stood on. A showing `was` didn't hold flies in from over its worker's head once it has been held up; the others
  * slide to their new places.
  */
-export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterOf'], now: number, t: number): Layer<PictureAt, Picture> {
+export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterOf'], now: number, t: number, desks: ReadonlyMap<string, Desk>): Layer<PictureAt, Picture> {
   const before = was && shownOn(was)
   return {
     slots: (p) => floors(p).flatMap((level) => level.wall.pictures.map((slot) => {
@@ -251,7 +253,7 @@ export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterO
     level: (at) => at.level,
     make({ slot, at }, key) {
       const pic = makePicture(slot.worker, slot.shown, posterOf, now)
-      const desk = s.desks.get(slot.worker.id)
+      const desk = desks.get(slot.worker.id)
       const arrives = before && !before.has(key) && desk
       hang(pic, at, slot.w, t, arrives ? heldUpAt(desk) : 'now')
       dressPicture(pic, !s.seenShown.has(key), now)
@@ -266,6 +268,9 @@ export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterO
     root: (pic) => pic.group,
   }
 }
+
+/** A floor's video wall, and what it showed when built. */
+export type WallItem = { key: string; wall: VideoWall }
 
 /** Each floor's video wall, its monitors' streams from `screenTexture`, rebuilt when what it shows changes. */
 export const wallsOf = (screenTexture: Screens['screenTexture']): Layer<{ level: FloorLevel; key: string }, WallItem> => ({

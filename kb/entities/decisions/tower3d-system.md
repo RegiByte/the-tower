@@ -123,6 +123,14 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   ([`startWalker`](ref:hub/renderers/tower3d/src/walker.ts#startWalker)), kept in `walker.ts` beside the pure steps
   that move it: `me()` reads it and `set` replaces it whole. It is a leaf because four resources write it: the frames
   each frame, the app loop's `stand`, the world as a board is first built, and the door's `aimAt`.
+- *The world owns its caches.* The building as last built, its level roots, its counts of boards and rebuilds, its
+  keyed layers' maps (`layers`, the cats among them) and the workers on their way (`people`: arrivals, leavers and
+  moves) are cells of [`startWorld`](ref:hub/renderers/tower3d/src/building.ts#startWorld), one record each
+  ([`Layers`](ref:hub/renderers/tower3d/src/building.ts#Layers), [`People`](ref:hub/renderers/tower3d/src/building.ts#People)),
+  handed to the resources after it; the builders in `layers.ts` take what they write or read of them as arguments
+  (`desksAfter` the people, `galleryAfter` the desks). `people` has two writers: the world makes each entry, as its
+  desk layer reconciles, and the frames advance and remove them each frame, a per-frame lifecycle stepped by its pure
+  step ([[machines]]). The frames never add one.
 - *A fixture page is a record, not a mode.* `system.ts` exports the live record (`liveTower3d`) and
   `fixtureTower3d(name)`, the live one with the resources that differ swapped: a `fixture` resource that reads the
   file ([`startFixture`](ref:hub/renderers/tower3d/src/fixtures.ts#startFixture)), the `tower` that answers from it
