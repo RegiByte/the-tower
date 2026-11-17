@@ -101,7 +101,11 @@ as a blob ([[blob-reads]]), anything else a poster. Only the newest videos on yo
 ([`playFilms`](ref:hub/renderers/tower3d/src/showing.ts#playFilms)), and none on a stepped clock. A showing new
 since the last board is held up over the worker's head, then laid on the monitor
 ([`holdUp`](ref:hub/renderers/tower3d/src/desk.ts#holdUp)), wearing a NEW ribbon until opened
-([`dressSide`](ref:hub/renderers/tower3d/src/desk.ts#dressSide)).
+([`dressSide`](ref:hub/renderers/tower3d/src/desk.ts#dressSide)). A shown file open in the desk panel or the reader,
+and a shelf markdown file open in the reader, follow their versions ([`tower.versions`](ref:hub/renderers/tower3d/src/panels.ts#versionFollow))
+while they are open: each change draws the file again, a markdown page where it was scrolled to, and paints its
+picture in the world again onto the textures already hung
+([`repaint`](ref:hub/renderers/tower3d/src/showing.ts#repaint)). A picture nobody has open keeps what it last read.
 
 **The big screens** ([`startShare`](ref:hub/renderers/tower3d/src/tv.ts#startShare)): one in the lobby lounge and a
 jumbotron behind the roof's DJ, showing one canvas a viewer shares through `getDisplayMedia`. Capture refuses opaque

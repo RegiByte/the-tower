@@ -317,7 +317,7 @@ export function startPanels(started: PanelsDeps) {
     return { follow, stop }
   }
 
-  /** The file the reader draws, followed while it is open: a gallery's picture. */
+  /** The file the reader draws, followed while it is open: a shelf entry's open file, a gallery's picture. */
   const readerFile = versionFollow()
 
   /** The file the desk's shown tab draws, followed while the tab is open. */
@@ -412,6 +412,11 @@ export function startPanels(started: PanelsDeps) {
     if (shelfKind(entry) === 'html') return relayDoc(shelfUrl(project, n, shelfPage(entry)), { project, n })
     const files = await shelfFiles(tower, project, n).catch((err: Error) => (toast(err.message), []))
     const shown = file ?? files[0]
+    const still = () => {
+      const doc = panelAs('doc')
+      return doc?.project === project && doc.n === n && (doc.file === undefined || doc.file === shown)
+    }
+    if (shown && still()) readerFile.follow(shelfUrl(project, n, shown).slice(1), () => void shelfChanged(project, n, shown))
     const text = shown ? await shelfText(tower, project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
     const doc = panelAs('doc')
     if (doc?.project !== project || doc.n !== n) return
@@ -419,6 +424,13 @@ export function startPanels(started: PanelsDeps) {
     $('doc-body').innerHTML = docHtml({ files, file: shown, text, url: shelfUrl(project, n, shown ?? ''), hub: boardNow()!.floors.find((f) => f.id === project)!.hub }, tower.prefs.attributes())
   }
 
+  /** The shelf file open in the reader changed on disk: read and set again where it was scrolled to. */
+  async function shelfChanged(project: string, n: number, file: string) {
+    const text = await shelfText(tower, project, n, file).catch((err: Error) => `*${err.message}*`)
+    const doc = panelAs('doc')
+    if (doc?.project !== project || doc.n !== n || doc.file !== file) return
+    redrawMd($('doc-body').querySelector('iframe'), mdPage(text, shelfUrl(project, n, file), tower.prefs.attributes()))
+  }
 
   /** The open `html` entry's page, given the board and the API. Tower 3D reads what it keeps in `tower.store` as it boots. */
   let docRelay: { close(): void } | undefined

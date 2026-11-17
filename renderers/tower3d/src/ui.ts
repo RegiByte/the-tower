@@ -806,7 +806,7 @@ export const relayedFrameHtml = '<iframe class="doc-frame" sandbox="allow-script
 
 export function docHtml(doc: { files: string[]; file?: string; text: string; url: string; hub: string }, root: string) {
   const list = doc.files.map((f) => `<div class="doc-file-row"><button class="doc-file${f === doc.file ? ' on' : ''}" data-file="${esc(f)}"${f === doc.file ? ' aria-current="true"' : ''} data-tip="${esc(f)}">${esc(base(f).replace(/\.md$/, ''))}</button>${fileButtonsHtml(onDisk(doc.hub, f))}</div>`).join('')
-  return `<div class="doc-files">${list || '<i>no files</i>'}</div><iframe class="doc-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${esc(mdPage(doc.text, doc.url, root))}"></iframe>`
+  return `<div class="doc-files">${list || '<i>no files</i>'}</div><iframe class="doc-frame" sandbox="${MD_SANDBOX}" srcdoc="${esc(mdPage(doc.text, doc.url, root))}"></iframe>`
 }
 
 /**
