@@ -83,8 +83,9 @@ and a framed document's section are the same thing.
   `display`, `go`, `bus`, `toast`, `notice` (a toast standing until closed,
   [`noticer`](ref:hub/src/shared/toasts.ts#noticer)), `confirm`, `href`, `showing`, `location` (where the renderer is,
   read-only, told again through `update` as it changes), `spawn` and `now` (the renderer's clock, which a view stamps
-  what it reads with, so a renderer with a pinned clock, Tower 3D on a fixture or under `?at`, shows a read's age the
-  same on every load: the Changes stamp their read with it), named in its `renderer.json`; a view is offered
+  what it reads with and ages what it draws by, so a renderer with a pinned clock, Tower 3D on a fixture or under `?at`,
+  shows an age the same on every load: the Changes stamp their read with it, a collection's items and the Policies
+  panel's slots are aged by it), named in its `renderer.json`; a view is offered
   only where the kit holds what it needs ([`offeredIn`](ref:hub/src/shared/views.ts#offeredIn)). `region` fills one of
   the renderer's regions inside a view (`item.head` in the drafts editor) with what extensions add to a subject, drawn
   and run the renderer's way ([`kitRegion`](ref:hub/renderers/page/page.js#kitRegion)), each hold in the element of the
