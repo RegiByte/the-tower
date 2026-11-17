@@ -48,8 +48,11 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
   let files: string[] = []
   let shown = args?.[0]
   let closed = false
-  /** The file drawn by sections, while one is. */
+  /** The file drawn by sections, while one is, and which file it is. */
   let drawn: Drawn | undefined
+  let drawnFile: string | undefined
+  /** Stops following the versions of the file shown, while one is followed. */
+  let unwatch: (() => void) | undefined
   const offs: (() => void)[] = []
 
   const own = ({ html: `/run/${project}/${n}`, url: named.url, renderer: named.renderer && rendererUrl(named.renderer) } as Record<string, string | undefined>)[kind]
@@ -88,10 +91,10 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
   }
 
   /**
-   * The file drawn by sections, its links written where they go: its sections are of the entry's file, a subject keyed
-   * `<entry key>/<file>` whose text is that file, so each file's sections and their marks are its own.
+   * The file shown: picked in the list, and followed on disk while it is shown, each new version drawn again
+   * (`drawDoc`).
    */
-  const showDoc = async (file: string) => {
+  const showDoc = (file: string) => {
     shown = file
     kit.go({ view: ID, subject: subject.key, args: [file] })
     for (const el of body.querySelectorAll<HTMLElement>('[data-doc]')) {
@@ -99,12 +102,33 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
       if (el.dataset.doc === file) el.setAttribute('aria-current', 'true')
       else el.removeAttribute('aria-current')
     }
+    unwatch?.()
+    let first = true
+    unwatch = tower.versions(path(file), (msg) => {
+      if (msg.t === 'error') return kit.toast(msg.message)
+      if (first) return void (first = false)
+      void drawDoc(file)
+    })
+    return drawDoc(file)
+  }
+
+  /**
+   * The file drawn by sections, its links written where they go: its sections are of the entry's file, a subject keyed
+   * `<entry key>/<file>` whose text is that file, so each file's sections and their marks are its own. The file drawn
+   * again opens where it was scrolled to.
+   */
+  const drawDoc = async (file: string) => {
     const md = await tower.text(path(file)).catch((err: Error) => (kit.toast(err.message), undefined))
     const el = body.querySelector<HTMLElement>('.shelf-doc')
     if (md === undefined || closed || shown !== file || !el) return
+    const scroll = drawnFile === file ? drawn?.scroll?.() : undefined
     drawn?.close()
     const of = { ...subject, key: `${subject.key}/${file}`, value: { ...(subject.value as object), text: path(file), type: 'text/markdown' } }
-    drawn = drawSections(el, { tower, kit, of, text: md, url: `/${path(file)}`, title: fileName(entry, file), docCss: '', links: () => placed(file) })
+    drawn = drawSections(el, {
+      tower, kit, of, text: md, url: `/${path(file)}`, title: fileName(entry, file), docCss: '', links: () => placed(file),
+      ...(scroll !== undefined && { opened: (doc: Document) => doc.defaultView!.scrollTo(0, scroll) }),
+    })
+    drawnFile = file
   }
 
   /**
@@ -137,6 +161,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
   const open = () => {
     drawn?.close()
     drawn = undefined
+    drawnFile = undefined
     body.innerHTML = ''
     if (kind === 'html') showPage(`/${path(shelfPage(entry))}`)
     if (kind === 'renderer') showPage(rendererUrl(named.renderer!))
@@ -156,7 +181,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
 
   /** The viewer's appearance changed: a drawn document is drawn again in it, a url page told its scheme. */
   const restyle = () => {
-    if (kind === 'md' && shown !== undefined && files.includes(shown)) void showDoc(shown)
+    if (kind === 'md' && shown !== undefined && files.includes(shown)) void drawDoc(shown)
     sendScheme()
   }
   offs.push(tower.prefs.on(restyle), tower.onScheme(restyle))
@@ -171,6 +196,7 @@ export const mount: Mount = (host, { tower, board, subject, kit, args }) => {
     visible: (on) => drawn?.visible?.(on),
     close() {
       closed = true
+      unwatch?.()
       drawn?.close()
       offs.forEach((off) => off())
     },
