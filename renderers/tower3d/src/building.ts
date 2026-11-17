@@ -43,7 +43,7 @@ import type { Pigeonhole } from './pigeonhole.ts'
 import type { Running } from './running.ts'
 import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer, type WallItem } from './layers.ts'
 import { SCREEN } from './arcade.ts'
-import { heldIn } from './app.ts'
+import { heldIn, seenIn } from './app.ts'
 import { eyes, type Walker, type WalkerCell } from './walker.ts'
 import { anchorsOf, layerAt, loftOf, roomsOf, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, setLimits, setShellTitles, type World as Built } from './world.ts'
@@ -239,7 +239,7 @@ export function startWorld(started: WorldDeps) {
   const everyShown = (b: Board) => cardsOf(b).flatMap((c) => c.shown.map((sh) => ({ c, sh, key: shownKey(sh) })))
 
   /** Whether a showing is new to you, by its `shownKey`: one the building took is primed by then (`seen` in app.ts). */
-  const fresh = (key: string) => !port.state().seen!.includes(key)
+  const fresh = (key: string) => !seenIn(port.state()).includes(key)
 
   const isFresh = (c: Card, sh: Shown) => fresh(shownKey(sh))
 
