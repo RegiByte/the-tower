@@ -20,7 +20,7 @@
     "hub/renderers/tower3d/src/layout.ts#workstations",
     "hub/renderers/tower3d/src/layout.ts#deskSpot",
     "hub/renderers/tower3d/src/layers.ts#desksAfter",
-    "hub/renderers/tower3d/src/layers.ts#STATIONS",
+    "hub/renderers/tower3d/src/layers.ts#stationsOf",
     "hub/renderers/tower3d/src/layout.ts#emptyChairs",
     "hub/renderers/tower3d/src/chairs.ts#placeChairs",
     "hub/renderers/tower3d/src/layout.ts#colliders",

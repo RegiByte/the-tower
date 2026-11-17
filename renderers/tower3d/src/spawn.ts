@@ -7,7 +7,6 @@ import type { Tower } from './api.ts'
 import { type SpawnForm, spawnCall, spawnDefaults } from './cards.ts'
 import { loop } from '/lib/machine.js'
 import { floorSignHtml } from './ui.ts'
-import { STATIONS } from './layers.ts'
 import type { Titles } from './titles.ts'
 import { s } from './state.ts'
 import type { Toasts } from './toasts.ts'
@@ -33,7 +32,7 @@ export function startSpawn(started: SpawnDeps) {
   const { port } = started
   const { toast, offered } = started.toasts
   const { events } = started
-  const { reconcile, planNow, floorOf, drop } = started.world
+  const { syncStations, planNow, floorOf, drop } = started.world
   const { noteText } = started.titles
   const { boardNow, unlock } = nowOf(port)
 
@@ -157,7 +156,7 @@ export function startSpawn(started: SpawnDeps) {
       },
       open: ({ project, on, text }) => spawning.dispatch({ type: 'open', project, on, text }),
       toast: ({ text }) => toast(text),
-      draw: () => boardNow() && reconcile(STATIONS, s.stations),
+      draw: () => boardNow() && syncStations(),
     },
   })
 

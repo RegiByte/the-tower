@@ -12,7 +12,7 @@ import { launch } from './fireworks.ts'
 import { CATS, makeCat, tada } from './life.ts'
 import { tintOf } from './palette.ts'
 import { CABINET, cabinetOf, collidersOn, coreFront, deskOf, emptyChairs, loungeSpots, levelHeight, levelY, plan, solids, type Box, type Plan } from './layout.ts'
-import { makeChairs, placeChairs, type Chairs } from './chairs.ts'
+import { chairKit, makeChairs, placeChairs, type ChairKit, type Chairs } from './chairs.ts'
 import { fillLayer, zonesPlaced, type Placed } from './kit.ts'
 import { hangOn, onLevel } from './levels.ts'
 import { DESK_DRESS, dress, pickOf } from './dress.ts'
@@ -30,13 +30,16 @@ import type { Clock } from './clock.ts'
 import { historyOf, type Archive, type Archived } from './archive.ts'
 import { buildingSeats } from './seating.ts'
 import { galleryOf } from './showings.ts'
-import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, GUESTS, notesOf, pigeonholesOf, STATIONS, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
+import { ARCADE_SIGNS, cabinetsOf, DANCE, filingsOf, guestsOf, notesOf, pigeonholesOf, stationsOf, wallsOf, desksAfter, galleryAfter, reconcile as reconcileLayer, runningOn, slotsAt, type Layer as SceneLayer } from './layers.ts'
 import { SCREEN } from './arcade.ts'
 import { NO_PLAN, s } from './state.ts'
 import { eyes, type Walker } from './walker.ts'
 import { layerAt, type Layer } from './floorplan.ts'
 import { boardFace, buildWorld, paintDirectory, setLimits, setShellTitles } from './world.ts'
 import type { Toasts } from './toasts.ts'
+import type { Assets } from './loads.ts'
+import type { Models } from './models.ts'
+import type { Kept } from './keeper.ts'
 import { $, show } from './dom.ts'
 import { sheetKeys } from './keymap-here.ts'
 import { nowOf } from './now.ts'
@@ -46,7 +49,7 @@ import type { Port } from './port.ts'
 import type { Titles } from './titles.ts'
 
 /** What the world is started with. */
-export type WorldDeps = { clock: Clock; tower: Tower; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
+export type WorldDeps = { clock: Clock; tower: Tower; assets: Assets; screens: Screens; pictures: Pictures; clients: Clients; titles: Titles; archive: Archive; stage: Stage; port: Port; toasts: Toasts }
 
 export type World = ReturnType<typeof startWorld>
 
@@ -64,6 +67,13 @@ export function startWorld(started: WorldDeps) {
   const { noteTitle, pruneNoteTitles, pruneKeptTitles, gameTitle, pruneGameTitles } = started.titles
   const { readArchives, drawersAt } = started.archive
   const { port } = started
+
+  /** What loaded: the world takes no board before the loads land, since the feed starts the first once they have. */
+  function loaded() {
+    const got = started.assets.got()
+    if (!got) throw new Error('the world read the models before they loaded: a board was taken before the feed started the first')
+    return got
+  }
   const { toast } = started.toasts
   const { buildingNow, boardNow, captured, viewNow, motionNow, replayNow, heed } = nowOf(started.port)
 
@@ -138,10 +148,10 @@ export function startWorld(started: WorldDeps) {
   function rebuildWorld() {
     if (s.world) discard(s.world.group)
     s.rebuilds++
-    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, s.models!, draftsOf, screenTexture, wallNow())
+    s.world = buildWorld(planNow(), boardNow()!, directory, statsBoard, loaded().models, draftsOf, screenTexture, wallNow())
     scene.add(s.world.group)
-    for (const level of planNow().levels) fillLayer(s.kit!, onLevel(scene, level.index).zones, zonesPlaced(s.kit!, level))
-    for (const root of s.levels.slice(planNow().levels.length)) fillLayer(s.kit!, root.zones, [])
+    for (const level of planNow().levels) fillLayer(loaded().kit, onLevel(scene, level.index).zones, zonesPlaced(loaded().kit, level))
+    for (const root of s.levels.slice(planNow().levels.length)) fillLayer(loaded().kit, root.zones, [])
     const built = s.world
     for (const b of s.world.bookcases) {
       shelfFiles(tower, b.project, b.n).then((files) => s.world === built && fillBooks(b, files, built.pickables), (err: Error) => toast(`shelf: ${err.message}`))
@@ -222,9 +232,9 @@ export function startWorld(started: WorldDeps) {
    */
   function planOf({ board, archived, at }: Building): Plan {
     if (planned?.board === board && planned.archived === archived && planned.at === at) return planned.plan
-    const prefabs = s.kit!.prefabs
+    const prefabs = loaded().kit.prefabs
     const reads = { draftsOf, keepsThreads: floorKeepsThreads, floorThreadsOf, ...historyReads(board, archived) }
-    const p = furnish(plan(board, at, (author) => besideOf(slotsAt(author, wallNow())), meetingKit(prefabs), (room) => standingIn(room, prefabs), reads), prefabs, tintsOf(board), new Date(at).getMonth())
+    const p = furnish(plan(board, at, (author) => besideOf(slotsAt(loaded().kit, author, wallNow())), meetingKit(prefabs), (room) => standingIn(room, prefabs), reads), prefabs, tintsOf(board), new Date(at).getMonth())
     planned = { board, archived, at, plan: p }
     return p
   }
@@ -271,26 +281,28 @@ export function startWorld(started: WorldDeps) {
       if (level.kind === 'roof') return []
       return [
         ...level.desks.filter((slot) => !slot.beside && !slot.meeting).flatMap((slot) => {
-          const pick = pickOf(slot.card, month, s.kit!.prefabs[DESK_DRESS])
-          return inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, s.kit!.models))
+          const pick = pickOf(slot.card, month, loaded().kit.prefabs[DESK_DRESS])
+          return inDesk(s.desks.get(slot.card.id)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, loaded().kit.models))
         }),
-        ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, s.kit!.prefabs[DESK_DRESS].items)),
+        ...level.free.flatMap((slot) => inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, loaded().kit.prefabs[DESK_DRESS].items)),
         ...level.away.flatMap((slot) => {
-          const pick = pickOf(slot.card, month, s.kit!.prefabs[DESK_DRESS])
-          return inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, s.kit!.models))
+          const pick = pickOf(slot.card, month, loaded().kit.prefabs[DESK_DRESS])
+          return inDesk(s.stations.get(`${level.floor.id}/${slot.n}`)!.group, dress(slot.card, pick.items, deskSlots(pick.slots).trophies, loaded().kit.models))
         }),
         ...level.tables.flatMap((t) => {
           const frame = frameAt(t.x, level.y, t.z, t.turn)
-          return s.kit!.prefabs[TABLE].states[stateKey([t.state])].items.map((item) => ({ item, frame, theme: item.theme }))
+          return loaded().kit.prefabs[TABLE].states[stateKey([t.state])].items.map((item) => ({ item, frame, theme: item.theme }))
         }),
       ]
     })
-    placed.forEach((list, i) => fillLayer(s.kit!, onLevel(scene, i).dressing, list))
-    for (const root of s.levels.slice(placed.length)) fillLayer(s.kit!, root.dressing, [])
+    placed.forEach((list, i) => fillLayer(loaded().kit, onLevel(scene, i).dressing, list))
+    for (const root of s.levels.slice(placed.length)) fillLayer(loaded().kit, root.dressing, [])
   }
 
-  /** The meeting rooms' empty chairs, by level index. */
+  /** The meeting rooms' empty chairs, by level index, and what they are drawn from, made as the models land. */
   const chairs: Chairs[] = []
+  let chairKitLanded: ChairKit | undefined
+  const landChairs = (models: Models) => void (chairKitLanded = chairKit(models.desk.getObjectByName('chair')!))
 
   /** Every level's empty meeting chairs, instanced on its root. */
   function seatChairs() {
@@ -300,7 +312,7 @@ export function startWorld(started: WorldDeps) {
       const at = level?.kind === 'floor' ? emptyChairs(level).map((pl) => ({ x: pl.x, y: level.y, z: pl.z, turn: pl.turn })) : []
       chairs[i] ??= makeChairs()
       hang(i, chairs[i].group)
-      placeChairs(chairs[i], s.chairKit!, at)
+      placeChairs(chairs[i], chairKitLanded!, at)
     }
   }
 
@@ -323,12 +335,12 @@ export function startWorld(started: WorldDeps) {
     if (key !== builtShape) (builtShape = key, builtLimits = limitsKey(next), rebuildWorld())
     if (limitsKey(next) !== builtLimits) (builtLimits = limitsKey(next), setLimits(s.world!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
     setShellTitles(s.world!, next.shells)
-    reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow()), s.desks)
+    reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow(), loaded()), s.desks)
   }
 
   function worldFurnished(was: Board | undefined) {
     const next = boardNow()!
-    reconcile(STATIONS, s.stations)
+    syncStations()
     dressLevels(next)
     seatChairs()
     reconcile(walls, s.walls)
@@ -339,7 +351,7 @@ export function startWorld(started: WorldDeps) {
     readArchives(next)
     dressAllPapers()
     reconcile(DANCE, s.dance)
-    reconcile(GUESTS, s.guests)
+    reconcile(guestsOf(loaded().models), s.guests)
     if (!was && primeSeen) for (const { key } of everyShown(next)) s.seenShown.add(key)
     dressSides(was)
     pruneNoteTitles(next.floors)
@@ -358,10 +370,10 @@ export function startWorld(started: WorldDeps) {
     paintDirectory(directory, planNow(), heededWaits(next, heed()))
     if (!was) {
       for (const name of CATS) {
-        const cat = makeCat(s.models!, name)
+        const cat = makeCat(loaded().models, name)
         s.cats.set(name, cat)
       }
-      s.me = { x: 0, z: coreFront(planNow()) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...s.saved }
+      s.me = { x: 0, z: coreFront(planNow()) + 10.5, yaw: Math.PI, pitch: -0.05, level: 0, y: 0, vy: 0, ...(loaded().kept as Kept | null)?.spot }
       if (location.hash === '#tv') {
         const couch = loungeSpots(planNow()).couch
         s.me = { ...s.me, level: 0, x: couch.x, z: couch.z - 1.4, yaw: Math.PI, pitch: 0.12 }
@@ -511,6 +523,7 @@ export function startWorld(started: WorldDeps) {
     syncNotes()
   }
 
+  const syncStations = () => reconcile(stationsOf(loaded().models), s.stations)
   const syncNotes = () => boardNow() && reconcile(notes, s.notes)
 
   const syncCabinets = () => boardNow() && reconcile(cabinets, s.cabinets)
@@ -522,5 +535,5 @@ export function startWorld(started: WorldDeps) {
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs }
+  return { directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, carry, drop, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, primeSeenAs, landChairs }
 }

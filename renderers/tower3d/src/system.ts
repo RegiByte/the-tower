@@ -110,13 +110,13 @@ const events = defineResource({
 })
 
 const world = defineResource({
-  dependencies: ['clock', 'tower', 'screens', 'pictures', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
+  dependencies: ['clock', 'tower', 'assets', 'screens', 'pictures', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts'],
   start: startWorld,
   halt: () => {},
 })
 
 const views = defineResource({
-  dependencies: ['tower', 'clock', 'port', 'toasts'],
+  dependencies: ['tower', 'clock', 'port', 'toasts', 'assets'],
   start: startViews,
   halt: () => {},
 })
@@ -134,13 +134,13 @@ const hud = defineResource({
 })
 
 const navigation = defineResource({
-  dependencies: ['clock', 'tower', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
+  dependencies: ['clock', 'tower', 'assets', 'clients', 'titles', 'archive', 'stage', 'port', 'toasts', 'world', 'hud'],
   start: startNavigation,
   halt: () => {},
 })
 
 const panels = defineResource({
-  dependencies: ['clock', 'tower', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'pictures'],
+  dependencies: ['clock', 'tower', 'assets', 'clients', 'titles', 'archive', 'stage', 'music', 'terminal', 'port', 'toasts', 'events', 'world', 'views', 'spawn', 'hud', 'navigation', 'pictures'],
   start: startPanels,
   halt: () => {},
 })

@@ -1,17 +1,12 @@
-import type { ChairKit } from './chairs.ts'
 import type { Act, Held, Verb } from './acts.ts'
 import type { Brief, Card, Tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
-import type { Renderer } from '/lib/board.js'
 import type { Note } from './cork.ts'
 import type { ArcadeSign, Cabinet } from './arcade.ts'
 import type { Desk, Station } from './desk.ts'
 import type { Picture } from './gallery.ts'
-import type { Hands } from './hands.ts'
 import type { Plan } from './layout.ts'
 import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
-import type { Models } from './models.ts'
-import type { Kit } from './kit.ts'
 import type { LevelRoot } from './levels.ts'
 import type { DanceFloors, Guest } from './party.ts'
 import type { VideoWall } from './room.ts'
@@ -70,21 +65,13 @@ export type WallItem = { key: string; wall: VideoWall }
 
 /** Tower 3D's state: everything the page knows and is doing, in one record the shell's modules read and write. */
 export type State = {
-  /** The Blender models, parsed before the first board is built. */
-  models: Models | undefined
-  /** The KayKit models, loaded before the first board is built. */
-  kit: Kit | undefined
   /** What stands on each level, by level index: its KayKit zones are refilled when the building is rebuilt, its workstations' KayKit models on every board. */
   levels: LevelRoot[]
-  /** Your hands in first person, made from the models. */
-  hands: Hands | undefined
   /** The building as last built, and what made its shape and its rate-limit plaques. */
   world: World | undefined
   /** Keyed layers, by worker, workstation, level, draft or showing: kept across boards, in step with the plan. */
   desks: Map<string, Desk>
   stations: Map<string, Station>
-  /** What the meeting rooms' empty chairs are drawn from. */
-  chairKit: ChairKit | undefined
   walls: Map<string, WallItem>
   /** Each floor's Running board, and its pigeonhole of review threads, by level index. */
   running: Map<string, Running>
@@ -106,8 +93,6 @@ export type State = {
   visited: ReadonlySet<string>
   /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range, the actions seen. */
   viewer: Viewer
-  /** Tower 3D as `GET /renderers` served it at start: what its `renderer.json` lays out and the config's layout for it. */
-  declared: Renderer | undefined
   /** Your own layout of Tower 3D, kept in `tower.store` under `layout.tower3d`, over the config's and the renderer's. */
   storedLayout: Layout | undefined
   /** When someone last started waiting on you, in simulated ms: with reduced motion, waiting lights pulse once from then. */
@@ -140,8 +125,7 @@ export type State = {
   boards: number
   rebuilds: number
 
-  /** Kept by the tower for this page: where you stood, the music off, the frame meter shown. */
-  saved: Spot | undefined
+  /** Kept by the tower for this page: the music off, the frame meter shown. */
   muted: boolean
   fpsShown: boolean
   /** The web page of each project directory's origin remote. */
@@ -155,14 +139,14 @@ const NO_ROOMS = roomsOf(NO_PLATE)
 export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
 
 export const s: State = {
-  models: undefined, kit: undefined, levels: [], hands: undefined,
+  levels: [],
   world: undefined,
-  desks: new Map(), stations: new Map(), chairKit: undefined, moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(),
-  visited: new Set(), viewer: VIEWER_DEFAULT, declared: undefined, storedLayout: undefined, waitedAt: 0,
+  desks: new Map(), stations: new Map(), moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(),
+  visited: new Set(), viewer: VIEWER_DEFAULT, storedLayout: undefined, waitedAt: 0,
   me: { x: 0, z: 0, yaw: Math.PI, pitch: 0, level: 0, y: 0, vy: 0 },
   hiring: noHires, seenShown: new Set(),
   carrying: undefined, beer: false,
   doorMode: false,
   simNow: 0, stepped: new URLSearchParams(location.search).has('stepped'), boards: 0, rebuilds: 0,
-  saved: undefined, muted: false, fpsShown: false, origins: {},
+  muted: false, fpsShown: false, origins: {},
 }
