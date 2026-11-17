@@ -2,13 +2,14 @@
 {
   "type": "decision",
   "name": "Tower 3D starts as a braided system of its long-lived resources",
-  "summary": "Tower 3D's long-lived pieces (the tower's API, its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads, the port its reads send their events through, the titles read from items' texts and the archive's reads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the views, the world, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot. The modules below them read nothing as they load: what they draw by is handed to them, as arguments or a start's dependencies, and system.ts imports every module statically. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
+  "summary": "Tower 3D's long-lived pieces (the tower's API, the wall and simulated clocks, its lighting setting, the extension clients, the stage, input, music, the terminal, the asset loads, the port its reads send their events through, the titles read from items' texts and the archive's reads) are braided resources: plain start and stop functions in their own modules, wired in one record (system.ts) that boot.ts starts, each once its dependencies have. The page itself is resources too, each in its module and handed what it reads, started in this order: the views, the world, hiring (spawn), the HUD, navigation, the panels, the app loop, the controls, the frames, the feed of boards, the door and the keeper of your spot. The modules below them read nothing as they load: what they draw by is handed to them, as arguments or a start's dependencies, and system.ts imports every module statically. A resource that fails, and each one skipped for it, is said on the loading screen by name. No module imports itself through others, and test:tower3d-boot fails on a cycle. Inside the page, one app loop holds what it has decided (app.ts): panels move by a `go` event whose pure handler returns leave, enter and draw effects at once, re-frame style, and a draw only writes the DOM.",
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-11-16",
   "reviewed": "2026-11-17",
   "refs": [
     "hub/renderers/tower3d/src/system.ts",
+    "hub/renderers/tower3d/src/sim.ts#startSim",
     "hub/renderers/tower3d/src/boot.ts",
     "hub/renderers/tower3d/src/titles.ts#startTitles",
     "hub/renderers/tower3d/src/archive.ts#startArchive",
@@ -111,6 +112,12 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   ([`startClock`](ref:hub/renderers/tower3d/src/clock.ts#startClock)): `now` and whether it `moves`. The resources
   that stamp or draw an age read it from their start; the pure builders below them (`ui.ts`'s, the gallery's, the
   desks' dressing, the stats board) take the instant they draw at as an argument.
+- *The simulated clock is a resource too, apart from the wall clock.* What animations, holds, flights and cuts read
+  is the `sim` resource ([`startSim`](ref:hub/renderers/tower3d/src/sim.ts#startSim)), a leaf every reader depends
+  on: the frames `advance` it each real frame, the door's `step` stops it and advances it itself, `play` runs it
+  again. Its start reads `?stepped`, as the clock's reads `?at=`: a query read at a start, never as a module loads,
+  and only `?board=`, which picks the record, is read by `boot.ts`. A builder that hangs by it takes it as an
+  argument beside the wall instant (`galleryAfter`).
 - *A fixture page is a record, not a mode.* `system.ts` exports the live record (`liveTower3d`) and
   `fixtureTower3d(name)`, the live one with the resources that differ swapped: a `fixture` resource that reads the
   file ([`startFixture`](ref:hub/renderers/tower3d/src/fixtures.ts#startFixture)), the `tower` that answers from it
@@ -160,7 +167,8 @@ of tolerating it, and gives later passes a place to put what `main.ts` holds tod
   app exists (a resource's start is an `await import` away from the next). A flag one resource keeps
   and another set is a function on its owner (the panels' `askDraw`, the frames' `beginDrawing`, `drawEachFrame` and `play`, the
   editor's last save a cell hiring exposes), and so is a cell one resource keeps that others read or clear (the
-  frames' `meter`, the panels' open `draft`, the HUD's `clearDots`).
+  frames' `meter`, the panels' open `draft`, the HUD's `clearDots`, the app loop's `waitedAt`, stamped by its
+  `waits/began` executor and read by the frames' lamps).
 - *No cycles.* [`importCycles`](ref:hub/scripts/tower3d-boot.ts#importCycles) in `test:tower3d-boot` walks the import
   graph esbuild reads for the four pages and fails, naming the modules, on any cycle. The one there was (`layout`,
   `meetings`, `zones`, `breaks`) is broken by [`prefab.ts`](ref:hub/renderers/tower3d/src/prefab.ts).
