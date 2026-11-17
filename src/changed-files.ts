@@ -3,7 +3,7 @@
  * counts of them (`src/worktrees.ts`), one definition for both, so a tally drawn from the board is the one the Changes
  * show once read.
  */
-import { git, run } from './git.ts'
+import { run } from './git.ts'
 
 /** Untracked files diffed one by one past this many would be a forgotten ignore rule, not work. */
 export const MAX_UNTRACKED = 300
@@ -14,10 +14,8 @@ export const DIFF = ['-c', 'core.quotepath=false', '-c', 'diff.suppressBlankEmpt
 /** Git run in a dir, its output returned: `git`, or `gitWith` an index of its own. */
 export type Git = (dir: string, args: string[]) => Promise<string>
 
-const untrackedBy = async (gitIn: Git, dir: string): Promise<string[]> => (await gitIn(dir, ['ls-files', '-z', '--others', '--exclude-standard'])).split('\0').filter(Boolean)
-
-/** The files git doesn't track and doesn't ignore, by their paths from `dir`. */
-export const untrackedIn = (dir: string): Promise<string[]> => untrackedBy(git, dir)
+/** The files git doesn't track and doesn't ignore, as `gitIn` reads them, by their paths from `dir`. */
+export const untrackedIn = async (gitIn: Git, dir: string): Promise<string[]> => (await gitIn(dir, ['ls-files', '-z', '--others', '--exclude-standard'])).split('\0').filter(Boolean)
 
 /**
  * The commit a checkout's work is counted from: where `head` left `against`; `undefined` when the two share no history.
@@ -34,6 +32,6 @@ export const sinceOf = async (dir: string, against: string, head: string): Promi
  * without their diffs.
  */
 export const changedSince = async (gitIn: Git, dir: string, since: string): Promise<number> => {
-  const [names, untracked] = await Promise.all([gitIn(dir, [...DIFF, '--name-only', '-z', since]), untrackedBy(gitIn, dir)])
+  const [names, untracked] = await Promise.all([gitIn(dir, [...DIFF, '--name-only', '-z', since]), untrackedIn(gitIn, dir)])
   return names.split('\0').filter(Boolean).length + Math.min(untracked.length, MAX_UNTRACKED)
 }
