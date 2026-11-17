@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-07",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-17",
   "refs": ["hub/src/shared/model.ts#ExtensionConfig", "hub/src/shared/extensions.ts#ExtensionView", "hub/src/shared/extensions.ts#settingsOf", "hub/examples/extensions/narrate/voices/elevenlabs.sh"]
 }
 ---

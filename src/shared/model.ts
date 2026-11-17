@@ -218,16 +218,34 @@ export const configuredKeys = (config: Config, extensionIds: readonly string[]):
   return keymapOf(overrides)
 }
 
-/** The names workers are called by: the config's `callsigns`, or `CALLSIGNS` when it names none. A list that can't name workers is a config error. */
-export const configuredCallsigns = (config: Config): readonly string[] => {
-  const names = config.callsigns ?? CALLSIGNS
-  if (!Array.isArray(names) || !names.length) throw new ConfigError(`callsigns in the config must be a list of at least one name, not ${JSON.stringify(names)}`)
+/** The user's names in a `callsigns` setting, under its key `at`: at least one, each a valid name, none twice. */
+const validCallsigns = (at: string, names: unknown): readonly string[] => {
+  if (!Array.isArray(names) || !names.length) throw new ConfigError(`${at} in the config must be a list of at least one name, not ${JSON.stringify(names)}`)
   const bad = names.find((name) => typeof name !== 'string' || !CALLSIGN_NAME.test(name))
-  if (bad !== undefined) throw new ConfigError(`callsigns in the config can't call a worker ${JSON.stringify(bad)}: a name is an upper case letter, then upper case letters and digits`)
+  if (bad !== undefined) throw new ConfigError(`${at} in the config can't call a worker ${JSON.stringify(bad)}: a name is an upper case letter, then upper case letters and digits`)
   const twice = names.find((name, i) => names.indexOf(name) !== i)
-  if (twice !== undefined) throw new ConfigError(`callsigns in the config names ${twice} twice`)
+  if (twice !== undefined) throw new ConfigError(`${at} in the config names ${twice} twice`)
   return names
 }
+
+const CALLSIGNS_KEYS = ['names', 'mode']
+
+/** The names a `callsigns` setting puts in force: a list replaces `CALLSIGNS`; `{names, mode}` replaces them or, `mode: "add"`, joins them, a name in both taken once. */
+const callsignsInForce = (setting: Callsigns): readonly string[] => {
+  if (Array.isArray(setting)) return validCallsigns('callsigns', setting)
+  if (typeof setting !== 'object' || setting === null) throw new ConfigError(`callsigns in the config must be a list of names, or {"names": [...], "mode": "add"} to add them to the tower's, not ${JSON.stringify(setting)}`)
+  const unknown = Object.keys(setting).find((key) => !CALLSIGNS_KEYS.includes(key))
+  if (unknown !== undefined) throw new ConfigError(`callsigns in the config has no key "${unknown}": it takes names and mode`)
+  if (!Object.hasOwn(setting, 'names')) throw new ConfigError('callsigns in the config names no names: give {"names": [...]} the names to use')
+  const names = validCallsigns('callsigns.names', setting.names)
+  const mode = setting.mode ?? 'replace'
+  if (mode === 'replace') return names
+  if (mode === 'add') return [...new Set([...CALLSIGNS, ...names])]
+  throw new ConfigError(`callsigns.mode in the config is "replace" (the default) or "add", not ${JSON.stringify(mode)}`)
+}
+
+/** The names workers are called by: those the config's `callsigns` puts in force, or `CALLSIGNS` when it names none. A setting that can't name workers is a config error. */
+export const configuredCallsigns = (config: Config): readonly string[] => (config.callsigns === undefined ? CALLSIGNS : callsignsInForce(config.callsigns))
 
 /** The loopback port the tower serves on: the config's `port`, 4317 when it names none. A port that isn't one is a config error. */
 export const towerPort = (config: Config): number => {
@@ -320,6 +338,9 @@ export const projectPreferredCommand = (config: Config, projectId: string, runti
  * The whole system's configuration. The directory holding this file is the system's root:
  * session logs and the host sockets live next to it.
  */
+/** The config's `callsigns`: a list of names in place of `CALLSIGNS`, or `{names, mode}`, whose `mode` (`"replace"` when left out) says whether they replace `CALLSIGNS` or are added to them. */
+export type Callsigns = string[] | { names: string[]; mode?: 'replace' | 'add' }
+
 export type Config = {
   /**
    * What serves each runtime's own harness, by runtime: its commands and its plugins. Claude's is required; a runtime
@@ -339,7 +360,7 @@ export type Config = {
   editor?: EditorConfig
 
   /** The names worker callsigns are drawn from, the same on every floor; `CALLSIGNS` when left out. */
-  callsigns?: string[]
+  callsigns?: Callsigns
   /** The loopback port the tower serves on, 4317 when left out (`towerPort`). */
   port?: number
   /** Names the tower answers to beside 127.0.0.1 and localhost, such as `mini.localhost` (`towerHosts`). */
