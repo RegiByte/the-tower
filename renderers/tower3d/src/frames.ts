@@ -67,7 +67,7 @@ export function startFrames(started: FramesDeps) {
   const { move, takeTurn } = started.input
   const { beatAt, duck, setRoom } = started.music
   const { boardNow, captured, panelNow, panelAs, viewNow, motionNow, heed, aimNow } = nowOf(port)
-  const { built, levelOf, rootAt, showLevels, screenDistance, boxesHere, here, discard, hang, planNow, ease, riddenFor, DOORS_SHUT, floorY, pick, floorOf, carried } = started.world
+  const { built, layers, people, levelOf, rootAt, showLevels, screenDistance, boxesHere, here, discard, hang, planNow, ease, riddenFor, DOORS_SHUT, floorY, pick, floorOf, carried } = started.world
   const { renderElevator } = started.hud
   const { aimAt, offerNothing } = started.navigation
   const { run, tickPet } = started.panels
@@ -224,7 +224,7 @@ export function startFrames(started: FramesDeps) {
   /** A landing's doors: shut for a ride and behind a leaver who boarded; open where you stand and ahead of a leaver. */
   function doorTarget(level: number) {
     if (motionNow().ride) return 0
-    const leaving = [...s.leavers].filter((l) => l.level === level)
+    const leaving = [...people.leavers].filter((l) => l.level === level)
     if (leaving.some(boarded)) return 0
     return level === me().level || leaving.some(nearDoors) ? 1 : 0
   }
@@ -273,26 +273,26 @@ export function startFrames(started: FramesDeps) {
 
   /** The chair of the workstation standing where a worker left its desk at `desk`, once one stands there. */
   function chairLeft(desk: THREE.Vector3) {
-    const station = [...s.stations.values()].find((st) => st.group.position.equals(desk))
+    const station = [...layers.stations.values()].find((st) => st.group.position.equals(desk))
     return station && { chair: station.chair, seat: station.chair.position.clone() }
   }
 
   /** Everyone moves where they go every frame; bones are posed only on the levels drawn (`levelsShown`). */
   function tickPeople({ dt, t }: Frame) {
     const shown = levelsShown(viewNow(), motionNow(), me().level)
-    for (const desk of s.desks.values()) poseDesk(desk, t, dt)
-    for (const [id, a] of s.arrivals) if (walkIn(a, dt)) s.arrivals.delete(id)
-    for (const desk of s.desks.values()) {
+    for (const desk of layers.desks.values()) poseDesk(desk, t, dt)
+    for (const [id, a] of people.arrivals) if (walkIn(a, dt)) people.arrivals.delete(id)
+    for (const desk of layers.desks.values()) {
       if (!shown(levelOf(desk.group))) continue
-      const arriving = s.arrivals.get(desk.card.id)
+      const arriving = people.arrivals.get(desk.card.id)
       if (arriving) arrivalPose(desk.models, arriving, t)
       else poseRigs(desk, t, opened + t)
     }
-    for (const l of s.leavers) {
+    for (const l of people.leavers) {
       l.chair ??= chairLeft(l.desk)
       const inside = walkOut(l, dt)
       if (shown(l.level)) leaverPose(l, inside, t)
-      if (inside && doorOpen.get(l.level) === 0) (s.leavers.delete(l), discard(l.group))
+      if (inside && doorOpen.get(l.level) === 0) (people.leavers.delete(l), discard(l.group))
     }
     tickCats(dt, t)
   }
@@ -310,11 +310,11 @@ export function startFrames(started: FramesDeps) {
 
   function tickCats(dt: number, t: number) {
     const places = new Map(CATS.map((name) => [name, catAt(name, opened + t, planNow())]))
-    const waiter = heededWaits(boardNow()!, heed()).map((w) => s.desks.get(w.id)).find(Boolean)
+    const waiter = heededWaits(boardNow()!, heed()).map((w) => layers.desks.get(w.id)).find(Boolean)
     const level = waiter && levelOfCard(planNow(), waiter.card.id)!.index
-    const watcher = waiter && watcherOf(s.cats.values(), places, waiter.card.id, level!)
+    const watcher = waiter && watcherOf(layers.cats.values(), places, waiter.card.id, level!)
     const follower = motionNow().ride ? undefined : followerOf(places, me().level)
-    for (const cat of s.cats.values()) {
+    for (const cat of layers.cats.values()) {
       const place = places.get(cat.name)!
       keepEyeOn(cat, cat.name === watcher ? waiter!.card.id : undefined)
       keepUp(cat, cat.name === follower && !cat.watching)
@@ -339,14 +339,14 @@ export function startFrames(started: FramesDeps) {
     const beat = beatAt(t)
     const roof = planNow().levels.at(-1)!
     const posing = levelsShown(viewNow(), motionNow(), me().level)(roof.index)
-    for (const g of s.guests.values()) {
+    for (const g of layers.guests.values()) {
       const at = guestAt(g.card, t, planNow())
       placeGuest(g, at, roof.y)
       if (posing) poseGuest(g, at, beat, t)
     }
     animateParty(built()!.party, beat)
     if (posing) poseStaff(built()!.party, beat, t)
-    for (const df of s.dance.values()) animateDanceFloors(df, beat)
+    for (const df of layers.dance.values()) animateDanceFloors(df, beat)
     tickFireworks(scene, dt)
   }
 
@@ -357,8 +357,8 @@ export function startFrames(started: FramesDeps) {
   /** While you walk a floor, an arrow on the screen's edge toward each worker on it waiting on you that you can't see. */
   function tickCompass() {
     const walking = viewNow() === 'walk' && !motionNow().ride
-    const waits = walking ? heededWaits(boardNow()!, heed()).filter((w) => levelOfCard(planNow(), w.id)?.index === me().level && s.desks.has(w.id)) : []
-    const targets = waits.map((w) => ({ id: w.id, at: s.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(me().level) + HEAD_Y) }))
+    const waits = walking ? heededWaits(boardNow()!, heed()).filter((w) => levelOfCard(planNow(), w.id)?.index === me().level && layers.desks.has(w.id)) : []
+    const targets = waits.map((w) => ({ id: w.id, at: layers.desks.get(w.id)!.group.getWorldPosition(head).clone().setY(levelY(me().level) + HEAD_Y) }))
     const card = (id: string) => findCard(boardNow()!, id)!
     camera.updateMatrixWorld()
     drawCompass($('compass'), pointers(camera, targets, innerWidth, innerHeight), (id) => `${bubbleOf(card(id))} ${card(id).callsign}`, (id) => statusColor(card(id)), (id) => onStatusColor(card(id)))
@@ -385,7 +385,7 @@ export function startFrames(started: FramesDeps) {
       const waits = heeded.filter((c) => level.desks.some((d) => d.card.id === c.id))
       built()!.waitLamps.get(level.index)!.color.set(waits.length ? WORLD[loudest(waits)!] : '#2a2f3a').multiplyScalar(glow(waits))
     }
-    for (const { wall } of s.walls.values()) {
+    for (const { wall } of layers.walls.values()) {
       for (const f of wall.frames) {
         const c = findCard(board, f.id)
         if (c) f.material.color.set(statusColor(c)).multiplyScalar(heeded.includes(c) ? glow([c]) : 1)
@@ -397,7 +397,7 @@ export function startFrames(started: FramesDeps) {
 
   /** A frame's work, in order: where you are, what the camera sees, what you aim at, then everything alive. */
   function tickGallery({ t }: Frame) {
-    for (const pic of s.pictures.values()) (fitPicture(pic, imageOf), placePicture(pic, t))
+    for (const pic of layers.pictures.values()) (fitPicture(pic, imageOf), placePicture(pic, t))
   }
 
   /** At most this many videos play at once: each decodes and copies its frames to the GPU. */
@@ -423,7 +423,7 @@ export function startFrames(started: FramesDeps) {
   /** Each filing cabinet's drawers: the pulled one out while its folders are listed, every other in. */
   function tickFilings({ dt }: Frame) {
     const pulled = panelAs('drawer')
-    for (const [index, filing] of s.filings) {
+    for (const [index, filing] of layers.filings) {
       const level = planNow().levels[Number(index)]
       poseFiling(filing, level?.kind === 'floor' && level.floor.id === pulled?.project ? pulled.n : undefined, dt)
     }

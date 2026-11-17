@@ -49,7 +49,7 @@ export function startAppLoop(started: AppLoopDeps) {
   const { boardNow, panelAs } = nowOf(port)
   const { toast } = started.toasts
   const { events } = started
-  const { celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets, syncFilings } = started.world
+  const { layers, celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets, syncFilings } = started.world
   const { archivedAt, archivesSettled, drawersAt, readArchives } = started.archive
   const { desk } = started.views
   const { hiring } = started.spawn
@@ -70,7 +70,7 @@ export function startAppLoop(started: AppLoopDeps) {
 
   /** What arriving somewhere does that only the building can say: whether the desk or the kiosk still stands, the mouse, the orbit, a purr. */
   const ARRIVED: { [K in Exclude<Arrival, { kind: 'ask' }>['kind']]: (at: Extract<Arrival, { kind: K }>) => void } = {
-    desk: ({ id }) => s.desks.has(id) && focusDesk(id),
+    desk: ({ id }) => layers.desks.has(id) && focusDesk(id),
     shell: ({ id }) => focusShell(id),
     level: () => lock(),
     overview: ({ center }) => {

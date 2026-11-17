@@ -1,17 +1,7 @@
 import type { Act, Held, Verb } from './acts.ts'
 import type { Brief, Card, Tower } from './api.ts'
 import type { Layout } from '/lib/layout.js'
-import type { Note } from './cork.ts'
-import type { ArcadeSign, Cabinet } from './arcade.ts'
-import type { Desk, Station } from './desk.ts'
-import type { Picture } from './gallery.ts'
 import type { Plan } from './layout.ts'
-import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
-import type { DanceFloors, Guest } from './party.ts'
-import type { VideoWall } from './room.ts'
-import type { Running } from './running.ts'
-import type { Pigeonhole } from './pigeonhole.ts'
-import type { Filing } from './filing.ts'
 import type { LogbookTab } from './ui.ts'
 import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
 import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
@@ -59,30 +49,9 @@ export type Panel =
 /** A verb whose key or button is held: it runs once held for long enough, `by` the key code, `mouse` or `door`. */
 export type Hold = { act: Act; verb: Verb; start: number; by: string }
 export type Spot = Pick<Walker, 'level' | 'x' | 'z' | 'yaw' | 'pitch' | 'y'>
-export type WallItem = { key: string; wall: VideoWall }
 
 /** Tower 3D's state: everything the page knows and is doing, in one record the shell's modules read and write. */
 export type State = {
-  /** Keyed layers, by worker, workstation, level, draft or showing: kept across boards, in step with the plan. */
-  desks: Map<string, Desk>
-  stations: Map<string, Station>
-  walls: Map<string, WallItem>
-  /** Each floor's Running board, and its pigeonhole of review threads, by level index. */
-  running: Map<string, Running>
-  pigeonholes: Map<string, Pigeonhole>
-  arcadeSigns: Map<string, ArcadeSign>
-  filings: Map<string, Filing>
-  guests: Map<string, Guest>
-  dance: Map<string, DanceFloors & { key: string }>
-  notes: Map<string, Note>
-  cabinets: Map<string, Cabinet>
-  pictures: Map<string, Picture>
-  /** Workers walking in from the elevator, by worker, and those walking out to it. */
-  arrivals: Map<string, Arrival>
-  leavers: Set<Leaver>
-  /** Where each worker leaving its desk for another on its level (to or from a meeting) sets off from, until its new desk is made. */
-  moves: Map<string, Origin>
-  cats: Map<CatName, Cat>
   /** The waits visited by N this round (`Heed`); what you dismissed and how waits ring are the attention machine's (`attend.ts`). */
   visited: ReadonlySet<string>
   /** What you keep in `tower.store` for every renderer of yours: the ring, the logbook's and Changes' looks, the Stats range, the actions seen. */
@@ -119,7 +88,6 @@ const NO_ROOMS = roomsOf(NO_PLATE)
 export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
 
 export const s: State = {
-  desks: new Map(), stations: new Map(), moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(),
   visited: new Set(), viewer: VIEWER_DEFAULT, storedLayout: undefined,
   hiring: noHires, seenShown: new Set(),
   carrying: undefined, beer: false,

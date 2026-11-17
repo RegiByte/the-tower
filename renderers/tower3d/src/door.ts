@@ -120,7 +120,7 @@ export type Engine = {
   /** Where you stand, which `aimAt` turns you in. */
   walker: WalkerCell
   /** The building: its levels shown, its counts. */
-  world: Pick<World, 'counts' | 'showLevels'>
+  world: Pick<World, 'counts' | 'showLevels' | 'layers' | 'people'>
   onKey(code: string, repeat: boolean): boolean
   /** Holds `move` as the walker's until the next drive; `undefined` hands it back to the keyboard. */
   drive(move: Move | undefined): void
@@ -224,6 +224,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
 
   const state = (): DoorState => {
     const { view, motion: { ride, flight, pet }, aim } = e.app()
+    const { layers, people } = e.world
     const offers = e.offers()
     return {
       seed: SEED, time: e.sim.now(), stepped: e.sim.stepped(), captured: e.captured(), view,
@@ -232,7 +233,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
       petting: pet && { name: pet.name, progress: petProgress(pet, e.sim.now()) },
       aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, e.sim.now()) },
       fps: e.meter().fps, frameMs: e.meter().frameMs, drawn: { calls: e.meter().calls, triangles: e.meter().triangles },
-      counts: { ...e.world.counts(), desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
+      counts: { ...e.world.counts(), desks: layers.desks.size, stations: layers.stations.size, guests: layers.guests.size, walls: layers.walls.size, notes: layers.notes.size, pictures: layers.pictures.size, leavers: people.leavers.size, arrivals: people.arrivals.size },
     }
   }
 

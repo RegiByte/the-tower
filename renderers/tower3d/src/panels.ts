@@ -75,7 +75,7 @@ export function startPanels(started: PanelsDeps) {
   const { boardNow, selfNow, unlock, atDesk, panelNow, panelAs, go, patchPanel, viewNow, motionNow, deskTabNow, replayNow, heed } = nowOf(port)
   const { toast, call, tried, offered, copiedAs } = started.toasts
   const { events } = started
-  const { directory, isFresh, planNow, lookQuaternion, flyTo, frameOn, frameCabinet, floorOf, carry, drop } = started.world
+  const { layers, directory, isFresh, planNow, lookQuaternion, flyTo, frameOn, frameCabinet, floorOf, carry, drop } = started.world
   const { desk, reader, deskNow } = started.views
   const { draftIo, hire, saving, handOver, hireOnNote, openSpawn, openSpawnOnNote } = started.spawn
   const { held, answered, startMusic, toggleMusic, renderHud, renderElevator, showPaused, lock, seenSince, keepViewer, dottedNow, clearDots, sawActions, sawDesk, drawSettings } = started.hud
@@ -718,7 +718,7 @@ export function startPanels(started: PanelsDeps) {
       goDesk(a.id)
     },
     binder(a) {
-      if (!s.desks.has(a.id)) return
+      if (!layers.desks.has(a.id)) return
       port.dispatch({ type: 'pend', pending: { tab: { id: a.id, tab: 'brief' } } })
       focusDesk(a.id)
     },
@@ -915,7 +915,7 @@ export function startPanels(started: PanelsDeps) {
    * raising hearts, and the camera flies home once it's done (`tickPet`).
    */
   function startPet(name: CatName) {
-    const cat = s.cats.get(name)!
+    const cat = layers.cats.get(name)!
     const spot = petSpot(cat, camera.position)
     port.dispatch({ type: 'pet', pet: { name, start: simNow(), tailward: spot.tailward } })
     aimAt(undefined)
@@ -932,7 +932,7 @@ export function startPanels(started: PanelsDeps) {
     const p = motionNow().pet
     if (!p) return
     const k = petProgress(p, simNow())
-    if (viewNow() === 'pet' && k < 1) return placeHearts(petHearts!, p, s.cats.get(p.name)!, k)
+    if (viewNow() === 'pet' && k < 1) return placeHearts(petHearts!, p, layers.cats.get(p.name)!, k)
     dropHearts(petHearts!)
     petHearts = undefined
     port.dispatch({ type: 'pet-done' })
