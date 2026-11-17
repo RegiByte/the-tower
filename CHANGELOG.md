@@ -19,8 +19,6 @@ New callsigns to draw workers' names from, and Tower 3D's world and view state f
 
 - **92 more callsigns.** New workers draw from 248 names; `DANTES` is now `DANTE`. Workers already named keep their
   names. A `callsigns` list in the config still replaces the default one.
-- **Tower 3D keeps the meter as you left it.** Turning the fps meter on before the models finish loading no longer
-  leaves the readout on while Tower 3D thinks it is off: the kept setting decides both.
 - **For contributors:** Tower 3D's world owns what it builds (its levels, layers and the people walking in and
   out), hiring hands the world its hires, and the door mode, music, meter, visited floors, origins and stored layout
   live in the app's db, each changed by an event. Four view-state fields are left in the shared record.
