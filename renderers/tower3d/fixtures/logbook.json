@@ -186,7 +186,7 @@
               },
               {
                 "id": "20261004-090007-logs",
-                "callsign": "SHACKLETON-77",
+                "callsign": "GATEKEEPER-77",
                 "runtime": "claude",
                 "project": "logs",
                 "cwd": "/work/logs",
@@ -275,7 +275,7 @@
               },
               {
                 "id": "20261004-090014-logs",
-                "callsign": "RANGER-90",
+                "callsign": "CASSANDRA-90",
                 "runtime": "claude",
                 "project": "logs",
                 "cwd": "/work/logs",
@@ -928,7 +928,7 @@
         },
         {
           "id": "20261004-090049-logs",
-          "callsign": "DARWIN-44",
+          "callsign": "PASCAL-44",
           "runtime": "claude",
           "project": "logs",
           "cwd": "/work/logs",

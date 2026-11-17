@@ -161,7 +161,7 @@
                     "modifiedAt": 1791118800000,
                     "keptBy": {
                       "session": "20261004-090014-alph",
-                      "callsign": "FIXER-48"
+                      "callsign": "LUKE-48"
                     }
                   },
                   {
@@ -193,7 +193,7 @@
             "cards": [
               {
                 "id": "20261004-090000-alph",
-                "callsign": "ATLAS-97",
+                "callsign": "CHURCH-97",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -242,7 +242,7 @@
                     "prompt": "continue",
                     "resumes": {
                       "id": "20261004-090042-alph",
-                      "callsign": "MAGELLAN-36",
+                      "callsign": "ARGON-36",
                       "startedAt": 1791125400000
                     },
                     "actions": []
@@ -277,7 +277,7 @@
               },
               {
                 "id": "20261004-090007-alph",
-                "callsign": "EITRI-96",
+                "callsign": "ECHO-96",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -341,7 +341,7 @@
               },
               {
                 "id": "20261004-090014-alph",
-                "callsign": "FIXER-48",
+                "callsign": "LUKE-48",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -642,7 +642,7 @@
               },
               {
                 "id": "20261004-090035-alph",
-                "callsign": "KEPLER-63",
+                "callsign": "TYRION-63",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -698,7 +698,7 @@
               },
               {
                 "id": "20261004-090042-alph",
-                "callsign": "MAGELLAN-36",
+                "callsign": "ARGON-36",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -775,7 +775,7 @@
                     "answer": "Started; picked up in a resume.",
                     "resumedBy": {
                       "id": "20261004-090000-alph",
-                      "callsign": "ATLAS-97",
+                      "callsign": "CHURCH-97",
                       "startedAt": 1791118800000
                     },
                     "actions": [
@@ -1455,7 +1455,7 @@
               },
               {
                 "id": "20261004-090007-gamm",
-                "callsign": "DARWIN-30",
+                "callsign": "FREYA-30",
                 "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
@@ -1518,7 +1518,7 @@
               },
               {
                 "id": "20261004-090014-gamm",
-                "callsign": "POLLUX-48",
+                "callsign": "GREMLIN-48",
                 "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
@@ -2097,7 +2097,7 @@
                     "modifiedAt": 1791118800000,
                     "keptBy": {
                       "session": "20261004-090014-alph",
-                      "callsign": "FIXER-48"
+                      "callsign": "LUKE-48"
                     }
                   },
                   {
@@ -2129,7 +2129,7 @@
             "cards": [
               {
                 "id": "20261004-090000-alph",
-                "callsign": "ATLAS-97",
+                "callsign": "CHURCH-97",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -2178,7 +2178,7 @@
                     "prompt": "continue",
                     "resumes": {
                       "id": "20261004-090042-alph",
-                      "callsign": "MAGELLAN-36",
+                      "callsign": "ARGON-36",
                       "startedAt": 1791125400000
                     },
                     "actions": []
@@ -2213,7 +2213,7 @@
               },
               {
                 "id": "20261004-090007-alph",
-                "callsign": "EITRI-96",
+                "callsign": "ECHO-96",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -2277,7 +2277,7 @@
               },
               {
                 "id": "20261004-090014-alph",
-                "callsign": "FIXER-48",
+                "callsign": "LUKE-48",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -2593,7 +2593,7 @@
               },
               {
                 "id": "20261004-090035-alph",
-                "callsign": "KEPLER-63",
+                "callsign": "TYRION-63",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -2649,7 +2649,7 @@
               },
               {
                 "id": "20261004-090042-alph",
-                "callsign": "MAGELLAN-36",
+                "callsign": "ARGON-36",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -2726,7 +2726,7 @@
                     "answer": "Started; picked up in a resume.",
                     "resumedBy": {
                       "id": "20261004-090000-alph",
-                      "callsign": "ATLAS-97",
+                      "callsign": "CHURCH-97",
                       "startedAt": 1791118800000
                     },
                     "actions": [
@@ -3406,7 +3406,7 @@
               },
               {
                 "id": "20261004-090007-gamm",
-                "callsign": "DARWIN-30",
+                "callsign": "FREYA-30",
                 "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
@@ -3469,7 +3469,7 @@
               },
               {
                 "id": "20261004-090014-gamm",
-                "callsign": "POLLUX-48",
+                "callsign": "GREMLIN-48",
                 "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
@@ -4048,7 +4048,7 @@
                     "modifiedAt": 1791118800000,
                     "keptBy": {
                       "session": "20261004-090014-alph",
-                      "callsign": "FIXER-48"
+                      "callsign": "LUKE-48"
                     }
                   },
                   {
@@ -4080,7 +4080,7 @@
             "cards": [
               {
                 "id": "20261004-090000-alph",
-                "callsign": "ATLAS-97",
+                "callsign": "CHURCH-97",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -4129,7 +4129,7 @@
                     "prompt": "continue",
                     "resumes": {
                       "id": "20261004-090042-alph",
-                      "callsign": "MAGELLAN-36",
+                      "callsign": "ARGON-36",
                       "startedAt": 1791125400000
                     },
                     "actions": []
@@ -4164,7 +4164,7 @@
               },
               {
                 "id": "20261004-090007-alph",
-                "callsign": "EITRI-96",
+                "callsign": "ECHO-96",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -4237,7 +4237,7 @@
               },
               {
                 "id": "20261004-090014-alph",
-                "callsign": "FIXER-48",
+                "callsign": "LUKE-48",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -4545,7 +4545,7 @@
               },
               {
                 "id": "20261004-090035-alph",
-                "callsign": "KEPLER-63",
+                "callsign": "TYRION-63",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -4610,7 +4610,7 @@
               },
               {
                 "id": "20261004-090042-alph",
-                "callsign": "MAGELLAN-36",
+                "callsign": "ARGON-36",
                 "runtime": "claude",
                 "project": "alpha",
                 "cwd": "/work/alpha",
@@ -4687,7 +4687,7 @@
                     "answer": "Started; picked up in a resume.",
                     "resumedBy": {
                       "id": "20261004-090000-alph",
-                      "callsign": "ATLAS-97",
+                      "callsign": "CHURCH-97",
                       "startedAt": 1791118800000
                     },
                     "actions": [
@@ -5359,7 +5359,7 @@
               },
               {
                 "id": "20261004-090007-gamm",
-                "callsign": "DARWIN-30",
+                "callsign": "FREYA-30",
                 "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",
@@ -5431,7 +5431,7 @@
               },
               {
                 "id": "20261004-090014-gamm",
-                "callsign": "POLLUX-48",
+                "callsign": "GREMLIN-48",
                 "runtime": "claude",
                 "project": "gamma",
                 "cwd": "/work/gamma",

@@ -106,7 +106,7 @@
                     "modifiedAt": 1791118800000,
                     "keptBy": {
                       "session": "20261004-090021-arca",
-                      "callsign": "AMUNDSEN-97"
+                      "callsign": "EXPLAINER-97"
                     }
                   },
                   {
@@ -116,7 +116,7 @@
                     "modifiedAt": 1791122400000,
                     "keptBy": {
                       "session": "20261004-090014-arca",
-                      "callsign": "WHEELMAN-31"
+                      "callsign": "KHAN-31"
                     }
                   }
                 ]
@@ -214,7 +214,7 @@
               },
               {
                 "id": "20261004-090007-arca",
-                "callsign": "HUGO-68",
+                "callsign": "PASCAL-68",
                 "runtime": "claude",
                 "project": "arcade",
                 "cwd": "/work/arcade",
@@ -306,7 +306,7 @@
               },
               {
                 "id": "20261004-090014-arca",
-                "callsign": "WHEELMAN-31",
+                "callsign": "KHAN-31",
                 "runtime": "claude",
                 "project": "arcade",
                 "cwd": "/work/arcade",
@@ -398,7 +398,7 @@
               },
               {
                 "id": "20261004-090021-arca",
-                "callsign": "AMUNDSEN-97",
+                "callsign": "EXPLAINER-97",
                 "runtime": "claude",
                 "project": "arcade",
                 "cwd": "/work/arcade",
@@ -490,7 +490,7 @@
               },
               {
                 "id": "20261004-090028-arca",
-                "callsign": "PROMETHEUS-16",
+                "callsign": "TROUBLE-16",
                 "runtime": "claude",
                 "project": "arcade",
                 "cwd": "/work/arcade",
@@ -582,7 +582,7 @@
               },
               {
                 "id": "20261004-090035-arca",
-                "callsign": "HECTOR-60",
+                "callsign": "WARRIOR-60",
                 "runtime": "claude",
                 "project": "arcade",
                 "cwd": "/work/arcade",
@@ -660,7 +660,7 @@
               },
               {
                 "id": "20261004-090042-arca",
-                "callsign": "ALTAIR-72",
+                "callsign": "GATEKEEPER-72",
                 "runtime": "claude",
                 "project": "arcade",
                 "cwd": "/work/arcade",
@@ -813,7 +813,7 @@
               },
               {
                 "id": "20261004-090056-arca",
-                "callsign": "TURING-38",
+                "callsign": "CASSANDRA-38",
                 "runtime": "claude",
                 "project": "arcade",
                 "cwd": "/work/arcade",
@@ -1127,7 +1127,7 @@
               },
               {
                 "id": "20261004-090014-quie",
-                "callsign": "WALT-02",
+                "callsign": "HUBBLE-02",
                 "runtime": "claude",
                 "project": "quiet",
                 "cwd": "/work/quiet/.worktrees/release-script",
@@ -1219,7 +1219,7 @@
                   "gone": false
                 },
                 "crew": {
-                  "callsign": "WALT-02",
+                  "callsign": "HUBBLE-02",
                   "session": "20261004-090014-quie",
                   "by": "reviews"
                 },
@@ -1231,7 +1231,7 @@
                 ],
                 "x": {
                   "reviews": {
-                    "of": "WALT-02"
+                    "of": "HUBBLE-02"
                   }
                 },
                 "status": "done",
@@ -1247,7 +1247,7 @@
                 "onDuty": true,
                 "hiredBy": {
                   "session": "20261004-090014-quie",
-                  "callsign": "WALT-02",
+                  "callsign": "HUBBLE-02",
                   "project": "quiet"
                 },
                 "enteredAt": 1791125100000,
@@ -1269,9 +1269,9 @@
                   {
                     "id": "20261004-090021-quie-conversation",
                     "startedAt": 1791124500000,
-                    "prompt": "/reviews:review WALT-02",
+                    "prompt": "/reviews:review HUBBLE-02",
                     "answer": "Two notes left on the thread.",
-                    "promptBy": "WALT-02",
+                    "promptBy": "HUBBLE-02",
                     "actions": []
                   }
                 ],
@@ -1313,7 +1313,7 @@
                 "reportsTo": "20261004-090014-quie",
                 "waitsOn": {
                   "id": "20261004-090014-quie",
-                  "callsign": "WALT-02"
+                  "callsign": "HUBBLE-02"
                 }
               }
             ],

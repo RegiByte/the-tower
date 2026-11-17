@@ -173,7 +173,7 @@
             "cards": [
               {
                 "id": "20261004-090000-opsx",
-                "callsign": "OTTO-29",
+                "callsign": "ALEXANDER-29",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops",
@@ -293,7 +293,7 @@
               },
               {
                 "id": "20261004-090007-opsx",
-                "callsign": "BISHOP-22",
+                "callsign": "DOOMSLAYER-22",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops",
@@ -401,7 +401,7 @@
               },
               {
                 "id": "20261004-090014-opsx",
-                "callsign": "SOCRATES-17",
+                "callsign": "KHAN-17",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops",
@@ -834,7 +834,7 @@
               },
               {
                 "id": "20261004-090049-opsx",
-                "callsign": "ARGUS-93",
+                "callsign": "LINK-93",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops/.worktrees/stage-bench",
