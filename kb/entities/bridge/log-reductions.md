@@ -4,7 +4,7 @@
   "name": "Log reductions",
   "summary": "Pure functions over session logs and streams: status, facts, screens, conversations, briefs, resume chains, messages, leftovers and peer names, rate-limit readings, stats, and the board that gathers them for every renderer.",
   "in": "bridge",
-  "reviewed": "2026-11-15",
+  "reviewed": "2026-11-17",
   "refs": ["hub/src/bridge/defaults.ts#runtimeDefaults", "hub/src/bridge/defaults.ts#reportedModels", "hub/src/bridge/status.ts#nextState", "hub/src/bridge/blocked.ts#blockedBy", "hub/src/bridge/facts.ts#factsAfter", "hub/src/bridge/rate-limits.ts#accountLimits", "hub/src/bridge/stats.ts#stats", "hub/src/bridge/messages.ts#deliveries", "hub/src/bridge/messages.ts#delivered", "hub/src/bridge/messages.ts#receipts", "hub/test/stats.test.ts", "hub/src/bridge/screen.ts#snapshot", "hub/src/bridge/screen.ts#lastFrame", "hub/src/bridge/status.ts#withLiveness", "hub/src/bridge/turns.ts#briefOf", "hub/src/bridge/screen.ts#mirrorOf", "hub/src/bridge/screen.ts#headlessTerminal", "hub/test/screen.test.ts", "hub/src/bridge/conversation.ts#conversationsAfter", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/resources.ts#resources", "hub/src/bridge/resources.ts#peers", "hub/src/bridge/board.ts#board", "hub/src/bridge/folds.ts#foldBoard", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/verbs.ts", "hub/src/bridge/checkouts.ts", "hub/src/bridge/worktrees.ts", "hub/src/bridge/retention.ts", "hub/src/bridge/landed.ts"]
 }
 ---
@@ -21,8 +21,8 @@ never a runtime's raw fields ([[runtime-normalizers]]):
   with `source: compact` ([[claude-code]]): a manual `/compact` is `working` between the two, then `idle`, or
   `watching` again when it started while the session watched; any other trigger leaves the status as it was. A
   `blocked` state carries its screen and nothing else, any other the compaction in progress, and the card says
-  `compacting` while one runs in a working session. A subagent's compaction raises the same hooks, carrying `agent_id`
-  since Claude 2.1.323, and is then left out. On an older release nothing tells it apart, so its start can show a
+  `compacting` while one runs in a working session. A subagent's compaction raises the same hooks; where they carry its
+  `agent_id` it is left out. On a release whose hooks name no subagent nothing tells it apart, so its start can show a
   working main loop as `compacting` until the loop's next step, and its end can end a manual one early (known gaps).
   The mod's `session.compact` names no subagent on any release, so outside an organization a subagent's still reads
   as the main loop's automatic start, with the same `compacting` gap. For opencode ([[opencode]]): a session is `idle` once its plugin says it is ready, a question form is

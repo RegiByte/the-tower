@@ -2,16 +2,16 @@
 {
   "type": "decision",
   "name": "The library: one curated surface for code outside the core",
-  "summary": "Code outside the core builds on the library, 25 modules at /lib/<module>.js, each a file of src/lib/ holding only named re-exports, and a deprecated alias for a name on its way out. One specifier works in a browser, in server code through the resolve hook, and in a bundler through a tsconfig path. API_VERSION versions it, every name with its since, and five checks in npm test hold it: shape, declarations, reach, runtimes and direction.",
+  "summary": "Code outside the core builds on the library, modules at /lib/<module>.js, each a file of src/lib/ holding only named re-exports, and a deprecated alias for a name on its way out. One specifier works in a browser, in server code through the resolve hook, and in a bundler through a tsconfig path. API_VERSION versions it, every name with its since, and five checks in npm test hold it: shape, declarations, reach, runtimes and direction.",
   "in": "tower",
   "status": "accepted",
   "date": "2026-11-05",
-  "reviewed": "2026-11-14",
+  "reviewed": "2026-11-17",
   "refs": ["hub/src/lib/words.ts", "hub/src/shared/view-parts.ts", "hub/src/lib/extension.ts", "hub/src/tower/served.ts#LIBRARY", "hub/src/tower/served.ts#SERVER_ONLY", "hub/src/tower/served.ts#serverOnlyModule", "hub/src/lent-modules.ts", "hub/src/types.ts#writeTypes", "hub/test/types.test.ts", "hub/tsconfig.types.json", "hub/test/library.ts#shapeOf", "hub/test/library.ts#reachNow", "hub/test/library.ts#libraryInCore", "hub/test/library.test.ts", "hub/test/runtimes/generic.json"]
 }
 ---
 **Problem.** The contract for code outside the core was whatever `src/shared` happened to export through a barrel:
-`/cards.js` alone served 280 values, most of them helpers exported for a sibling module. An extension's server and
+`/cards.js` alone served hundreds of values, most of them helpers exported for a sibling module. An extension's server and
 client had no single way to import a name, since a client used `/media.js` and server code `tower:media.js`. The
 bundled extensions used no public name at all. Nothing could be refactored freely, because nobody had chosen what was
 API.
@@ -35,9 +35,7 @@ contract if authors can find everything they need on it.
   (`RegionOptions`, `Kit.region`'s), or when it is a field of a kept type whose value every view or extension
   author handles in their own code (`Scale`, each view's `ctx.scale`). A type only a host or renderer author builds
   in place is not: it is spelled through its holder (`HostDeps['fills']`, not `Fills`). A name that has met one consumer is marked `@provisional`: it may change in a minor until a second
-  consumer promotes it. 2.0 applied it once: the names with two consumers among the page, Tower 3D and the core views
-  lost their marks, the view host's types, `Loop` and `ArchiveReads` with them; `seenMarker` and `Loop.until`, with one
-  consumer each, stay provisional. A name whose output carries something for the core alone says that part is unspecified:
+  consumer promotes it. A name whose output carries something for the core alone says that part is unspecified:
   `sectionsHtml`'s html draws the sections, and the source marks in it are not contract.
 - **A core view is a client.** `src/views/` imports the library by URL, and reaches `src/shared` by path for what only
   the views use, until a second consumer asks. A sibling renderer can mount a core view, so a view's drawing is no
@@ -60,7 +58,7 @@ contract if authors can find everything they need on it.
   declarations; reach, nothing in `extensions/`, `examples/`, `renderers/` and `apps/` importing the core by path, nor through
   its old served modules or a core view's URL; runtimes; direction, nothing in `src/` importing the library by path, and only a core
   view by URL.
-- **The old way out is closed.** The 28 modules served before the library answer `not_found` since 2.0;
+- **The old way out is closed.** The modules served before the library answer `not_found`;
   `docs/migrating-to-2.md` maps each, and every 1.x name the library no longer exports, to what replaces it.
 - **Types outside the checkout.** `tower types <dir>` ([`writeTypes`](ref:hub/src/types.ts#writeTypes)) writes the
   declarations the checkout's TypeScript emits for the library and the bundled clients (`tsconfig.types.json`, comments
@@ -70,19 +68,16 @@ contract if authors can find everything they need on it.
   unsaid. A fixture in `test/outside/`,
   importing from every module, typechecks in a temporary folder against that tree alone.
 
-**Alternatives considered.** Keeping the 28 modules with named lists fixes accidents but keeps the grab-bags. Two
+**Alternatives considered.** Keeping the old served modules with named lists fixes accidents but keeps the grab-bags. Two
 surfaces, one for authors and one for renderers, means two contracts. An npm package needs an account and a release
 step, and the project is local only. `tower:` as the one specifier can't resolve in a browser without an import map on
 every page. A version number of the library's own would be a second number that must agree with `API_VERSION`. A digest of the
-declarations each module reaches, kept in `served-exports.json` to show in review which modules' types moved, was
-dropped: it hashed the transitive declaration closure by file path, so moving a type between files, or nearly any
-shared-type edit, moved it with no change to a library type. Of the 33 commits that touched the list, 13 moved only
-digests, usually 17 to 19 of 24 modules, a pure refactor among them. A signal that fires on every change gets
-regenerated unread, and adds a conflict-prone diff to most pull requests. A note that doesn't fail would be as
+declarations each module reaches, kept in `served-exports.json` to show in review which modules' types moved, moves
+with no change to a library type: it hashes the transitive declaration closure by file path, so moving a type between
+files, or nearly any shared-type edit, moves it. A signal that fires on every change gets regenerated unread, and adds a conflict-prone diff to most pull requests. A note that doesn't fail would be as
 unread, and a per-name signature is a larger design than the contract needs; the hard failure on a removed name is
 what holds it.
 
-**Impact.** The library landed additive: nothing moved onto it in the minor that added it, and each later change
-deleted its lines from a reach list that only shrank, until none reached in and the list became the plain rule. Only `/lib/` is contract, which the docs say plainly; the repo's checks hold the repo, and
+**Impact.** Only `/lib/` is contract, which the docs say plainly; the repo's checks hold the repo, and
 an outside author can still import a checkout path. See [[renderer-api-contract]], [[renderer-shared-modules]] and
 [[extensions]].
