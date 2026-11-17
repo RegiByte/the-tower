@@ -88,7 +88,9 @@ function fixturePlot(): Promise<Blob> {
  * The tower a fixture page reads through, with the live one's interface: what the fixture holds it answers (a worker's
  * Changes and where its thread's anchors stand, the floors' origins as none, the review threads', drafts' and games'
  * texts, each board's archive and its workers' conversations), `store` is kept in the page, its streams never open,
- * every video it shows is the same test pattern and every image the same plot, and nothing is written anywhere.
+ * every video it shows is the same test pattern and every image the same plot, a conversation, tool call or landing
+ * read is refused, no key reaches a session, and nothing is written anywhere. Every member is named, so one the API
+ * adds is a type error here until it is decided.
  */
 export function fixtureTower({ fixture, clients }: { fixture: Fixture; clients: Pick<Clients, 'DRAFTS'> }): Tower {
   const live = window.tower
@@ -128,12 +130,22 @@ export function fixtureTower({ fixture, clients }: { fixture: Fixture; clients: 
   }
 
   return {
-    ...live,
     /**
-     * These pass to the live tower: they read the tower's own config and the sandbox's settings (the renderers it
-     * serves, this renderer's settings, the viewer's appearance, the stats), not a floor's data. So does `get`'s
-     * `renderers`.
+     * These pass to the live tower: the page's own shell (the frame it is in, the code served, the tower page's view
+     * and its relay), the tower's own config and the sandbox's settings (the renderers it serves, this renderer's
+     * settings, the viewer's appearance, the stats), not a floor's data. So does `get`'s `renderers`.
      */
+    framed: live.framed,
+    version: live.version,
+    viewer: live.viewer,
+    select: live.select,
+    served: live.served,
+    stale: live.stale,
+    onStale: live.onStale,
+    ui: live.ui,
+    relay: live.relay,
+    scheme: live.scheme,
+    onScheme: live.onScheme,
     renderer: live.renderer,
     prefs: live.prefs,
     stats: live.stats,
@@ -143,9 +155,15 @@ export function fixtureTower({ fixture, clients }: { fixture: Fixture; clients: 
     call: noTower as Tower['call'],
     run: noTower,
     watch: () => () => {},
+    versions: () => () => {},
+    keys: () => {},
+    shellKeys: () => {},
     blob: (path) => (path.endsWith('.webm') ? film : fixturePlot()),
     archive: (project) => Promise.resolve(fixture.delivered().archive.filter((c) => c.project === project)),
     conversations,
+    conversation: (session, id) => answersNo(`conversations/${session}/${id}`),
+    toolCall: (session, call) => answersNo(`tool-calls/${session}/${call}`),
+    landing: ({ project, branch }) => answersNo(`landing/${project}?branch=${branch}`),
     recall: () => Promise.resolve(null),
     remember: () => {},
     subscribe: fromFile,
