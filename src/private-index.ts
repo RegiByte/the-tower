@@ -11,7 +11,8 @@
 import { createHash } from 'node:crypto'
 import { copyFileSync, existsSync, linkSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, utimesSync } from 'node:fs'
 import path from 'node:path'
-import { gitWith } from './git.ts'
+import type { Git } from './changed-files.ts'
+import { git, gitWith } from './git.ts'
 import { configPath, systemPaths } from './shared/paths.ts'
 
 /**
@@ -110,6 +111,20 @@ const refreshed = async (real: string, folder: string, copy: string, checkout: s
   } finally {
     rmSync(staging, { force: true })
   }
+}
+
+/**
+ * Git reading checkout `checkout` of repo `repo` through its private index (`privateIndex`), held from the first call
+ * until `release`: a checkout whose parts are all kept is never copied.
+ */
+export const throughCopy = (repo: string, checkout: string, gitDir: string) => {
+  let held: Promise<HeldIndex | undefined> | undefined
+  const gitIn = async (): Promise<Git> => {
+    const h = await (held ??= privateIndex(repo, checkout, gitDir))
+    return h ? gitWith({ GIT_INDEX_FILE: h.index }) : git
+  }
+  const release = async () => (await held?.catch(() => undefined))?.release()
+  return { gitIn, release }
 }
 
 /** Repo `repo`'s copies of checkouts other than `checkouts`, swept. An emptied folder stays: a read may be making a copy in it. */
