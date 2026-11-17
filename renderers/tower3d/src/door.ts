@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { HELD, HOLD_MS, holdFill, type Act, type Held, type Offer, type Verb } from './acts.ts'
-import { levelsShown, showLevels } from './levels.ts'
+import { levelsShown } from './levels.ts'
 import type { Input, Move } from './input.ts'
 import type { Plan } from './layout.ts'
 import { SEED } from './random.ts'
@@ -119,6 +119,8 @@ export type Engine = {
   sim: Sim
   /** Where you stand, which `aimAt` turns you in. */
   walker: WalkerCell
+  /** The building: its levels shown, its counts. */
+  world: Pick<World, 'counts' | 'showLevels'>
   onKey(code: string, repeat: boolean): boolean
   /** Holds `move` as the walker's until the next drive; `undefined` hands it back to the keyboard. */
   drive(move: Move | undefined): void
@@ -195,14 +197,14 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
    * this before it renders, so a door call made before one (a stepped page, a teleport) reads it the same.
    */
   function current() {
-    showLevels(levelsShown(e.app().view, e.app().motion, e.walker.me().level))
+    e.world.showLevels(levelsShown(e.app().view, e.app().motion, e.walker.me().level))
     scene.updateMatrixWorld()
   }
 
-  /** `s.boards` when the clock last stepped. */
+  /** The boards taken when the clock last stepped. */
   let boardsStepped = 0
   /** Guests and cats are placed by a frame's ticks: on a stepped clock, one a board brought stands nowhere until a step. */
-  const unplaced = (target: Act) => (target.kind === 'guest' || target.kind === 'cat') && e.sim.stepped() && boardsStepped !== s.boards
+  const unplaced = (target: Act) => (target.kind === 'guest' || target.kind === 'cat') && e.sim.stepped() && boardsStepped !== e.world.counts().boards
 
   function centerOf(target: Act) {
     if (unplaced(target)) throw new Error(`${target.kind}s take their places on a frame, and none has run since the last board: step() first`)
@@ -230,7 +232,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
       petting: pet && { name: pet.name, progress: petProgress(pet, e.sim.now()) },
       aimed: aim.aimed, offers, marked: markedIn(aim, offers.length), holding: aim.hold && { verb: aim.hold.verb, fill: holdFill(aim.hold.start, e.sim.now()) },
       fps: e.meter().fps, frameMs: e.meter().frameMs, drawn: { calls: e.meter().calls, triangles: e.meter().triangles },
-      counts: { boards: s.boards, rebuilds: s.rebuilds, desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
+      counts: { ...e.world.counts(), desks: s.desks.size, stations: s.stations.size, guests: s.guests.size, walls: s.walls.size, notes: s.notes.size, pictures: s.pictures.size, leavers: s.leavers.size, arrivals: s.arrivals.size },
     }
   }
 
@@ -285,7 +287,7 @@ export function installDoor(e: Engine, { camera, canvas, scene }: Pick<Stage, 'c
     },
     step(frames = 1, dt = STEP) {
       e.sim.stop()
-      for (let i = 0; i < frames; i++) (e.update(dt), (boardsStepped = s.boards))
+      for (let i = 0; i < frames; i++) (e.update(dt), (boardsStepped = e.world.counts().boards))
       e.drawPending()
       e.render()
       return state()
@@ -329,6 +331,7 @@ export function startDoor(started: DoorDeps) {
     play,
     sim: started.sim,
     walker: started.walker,
+    world: started.world,
     meter,
     draft: started.panels.draft,
     drive: started.input.drive,

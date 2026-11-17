@@ -15,7 +15,7 @@ import { DESK, carBox, inside, levelHeight, levelOfCard, levelY } from './layout
 import { bloom } from './light/bloom.ts'
 import { contactShadows } from './light/contact.ts'
 import { rigFrame } from './light/rig.ts'
-import { levelOf, levelsShown, showLevels } from './levels.ts'
+import { levelsShown } from './levels.ts'
 import { animateDanceFloors, animateParty, placeGuest, poseGuest, poseStaff } from './party.ts'
 import type { Screens } from './screens.ts'
 import { isVideo, type Pictures } from './showing.ts'
@@ -67,7 +67,7 @@ export function startFrames(started: FramesDeps) {
   const { move, takeTurn } = started.input
   const { beatAt, duck, setRoom } = started.music
   const { boardNow, captured, panelNow, panelAs, viewNow, motionNow, heed, aimNow } = nowOf(port)
-  const { screenDistance, boxesHere, here, discard, hang, planNow, ease, riddenFor, DOORS_SHUT, floorY, pick, floorOf, carried } = started.world
+  const { built, levelOf, rootAt, showLevels, screenDistance, boxesHere, here, discard, hang, planNow, ease, riddenFor, DOORS_SHUT, floorY, pick, floorOf, carried } = started.world
   const { renderElevator } = started.hud
   const { aimAt, offerNothing } = started.navigation
   const { run, tickPet } = started.panels
@@ -145,7 +145,7 @@ export function startFrames(started: FramesDeps) {
 
   /** What a frame sets on the scene before it is drawn: the screens painted, the levels shown, the lighting's passes. */
   function frameScene() {
-    if (boardNow() && s.world) paintScreens(simNow(), screenDistance)
+    if (boardNow() && built()) paintScreens(simNow(), screenDistance)
     showLevels(levelsShown(viewNow(), motionNow(), me().level))
     if (lit) lightFrame()
   }
@@ -168,7 +168,10 @@ export function startFrames(started: FramesDeps) {
   }
 
   /** What stands on your level and its own part of the building. */
-  const standingOn = () => (s.world ? [s.levels[me().level]?.group, s.world.levels[me().level]].filter((o) => o !== undefined) : [])
+  const standingOn = () => {
+    const b = built()
+    return b ? [rootAt(me().level)?.group, b.levels[me().level]].filter((o) => o !== undefined) : []
+  }
 
   /** Your hands are in view while you walk or pet a cat, but not while the camera rides or flies. */
   const handsShown = () => (viewNow() === 'walk' || viewNow() === 'pet') && !motionNow().ride && !motionNow().flight
@@ -232,9 +235,9 @@ export function startFrames(started: FramesDeps) {
       const open = doorOpen.get(level.index) ?? 0
       const next = open + Math.sign(target - open) * Math.min(Math.abs(target - open), dt * 2.2)
       doorOpen.set(level.index, next)
-      setDoors(s.world!.doors.get(level.index)!, next)
+      setDoors(built()!.doors.get(level.index)!, next)
     }
-    s.world!.car.position.y = floorY()
+    built()!.car.position.y = floorY()
   }
 
   /** Where a flight goes from and to, written in place each frame it flies. */
@@ -341,8 +344,8 @@ export function startFrames(started: FramesDeps) {
       placeGuest(g, at, roof.y)
       if (posing) poseGuest(g, at, beat, t)
     }
-    animateParty(s.world!.party, beat)
-    if (posing) poseStaff(s.world!.party, beat, t)
+    animateParty(built()!.party, beat)
+    if (posing) poseStaff(built()!.party, beat, t)
     for (const df of s.dance.values()) animateDanceFloors(df, beat)
     tickFireworks(scene, dt)
   }
@@ -380,7 +383,7 @@ export function startFrames(started: FramesDeps) {
     for (const level of planNow().levels) {
       if (level.kind !== 'floor') continue
       const waits = heeded.filter((c) => level.desks.some((d) => d.card.id === c.id))
-      s.world!.waitLamps.get(level.index)!.color.set(waits.length ? WORLD[loudest(waits)!] : '#2a2f3a').multiplyScalar(glow(waits))
+      built()!.waitLamps.get(level.index)!.color.set(waits.length ? WORLD[loudest(waits)!] : '#2a2f3a').multiplyScalar(glow(waits))
     }
     for (const { wall } of s.walls.values()) {
       for (const f of wall.frames) {
@@ -389,7 +392,7 @@ export function startFrames(started: FramesDeps) {
       }
     }
     const all = loudest(heeded)
-    s.world!.beacon.color.set(all ? WORLD[all] : '#ff3b3b').multiplyScalar(all ? glow(heeded) : still ? 0.5 : 0.5 + Math.sin(t * 1.5) * 0.3)
+    built()!.beacon.color.set(all ? WORLD[all] : '#ff3b3b').multiplyScalar(all ? glow(heeded) : still ? 0.5 : 0.5 + Math.sin(t * 1.5) * 0.3)
   }
 
   /** A frame's work, in order: where you are, what the camera sees, what you aim at, then everything alive. */
@@ -431,7 +434,7 @@ export function startFrames(started: FramesDeps) {
   function update(dt: number) {
     advance(dt)
     const turned = takeTurn()
-    if (!boardNow() || !s.world) return
+    if (!boardNow() || !built()) return
     const f: Frame = { dt, t: simNow() / 1000, turned }
     for (const tick of TICKS) tick(f)
   }

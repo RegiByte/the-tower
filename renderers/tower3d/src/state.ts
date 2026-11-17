@@ -7,7 +7,6 @@ import type { Desk, Station } from './desk.ts'
 import type { Picture } from './gallery.ts'
 import type { Plan } from './layout.ts'
 import type { Arrival, Cat, CatName, Leaver, Origin } from './life.ts'
-import type { LevelRoot } from './levels.ts'
 import type { DanceFloors, Guest } from './party.ts'
 import type { VideoWall } from './room.ts'
 import type { Running } from './running.ts'
@@ -18,7 +17,6 @@ import { VIEWER_DEFAULT, type Viewer } from '/lib/viewer.js'
 import { anchorsOf, loftOf, roomsOf } from './floorplan.ts'
 import { noHires, type Hiring } from './hiring.ts'
 import type { Walker } from './walker.ts'
-import type { World } from './world.ts'
 
 export type View = 'walk' | 'focus' | 'overview' | 'pet'
 /** Where to stand: `y` is how high over the level's floor, on a stair or the loft's deck, 0 unless given. */
@@ -65,10 +63,6 @@ export type WallItem = { key: string; wall: VideoWall }
 
 /** Tower 3D's state: everything the page knows and is doing, in one record the shell's modules read and write. */
 export type State = {
-  /** What stands on each level, by level index: its KayKit zones are refilled when the building is rebuilt, its workstations' KayKit models on every board. */
-  levels: LevelRoot[]
-  /** The building as last built, and what made its shape and its rate-limit plaques. */
-  world: World | undefined
   /** Keyed layers, by worker, workstation, level, draft or showing: kept across boards, in step with the plan. */
   desks: Map<string, Desk>
   stations: Map<string, Station>
@@ -111,10 +105,6 @@ export type State = {
    */
   doorMode: boolean
 
-  /** Boards received and buildings built since load. */
-  boards: number
-  rebuilds: number
-
   /** Kept by the tower for this page: the music off, the frame meter shown. */
   muted: boolean
   fpsShown: boolean
@@ -129,13 +119,10 @@ const NO_ROOMS = roomsOf(NO_PLATE)
 export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
 
 export const s: State = {
-  levels: [],
-  world: undefined,
   desks: new Map(), stations: new Map(), moves: new Map(), walls: new Map(), running: new Map(), pigeonholes: new Map(), arcadeSigns: new Map(), filings: new Map(), guests: new Map(), dance: new Map(), notes: new Map(), cabinets: new Map(), pictures: new Map(), arrivals: new Map(), leavers: new Set(), cats: new Map(),
   visited: new Set(), viewer: VIEWER_DEFAULT, storedLayout: undefined,
   hiring: noHires, seenShown: new Set(),
   carrying: undefined, beer: false,
   doorMode: false,
-  boards: 0, rebuilds: 0,
   muted: false, fpsShown: false, origins: {},
 }
