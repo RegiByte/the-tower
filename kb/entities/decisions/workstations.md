@@ -74,7 +74,8 @@ defaults, and the new-worker form as the optional path.
   hold is a Tower 3D machine because only the world hires without the form; the shared machine runs one dialog,
   not one per floor, and ends its wait on the reply, before the desk shows.
 - A free desk is a `station` in the stations layer ([`stationsOf`](ref:hub/renderers/tower3d/src/layers.ts#stationsOf)),
-  keyed by floor and number. An occupied one stays a worker's `Desk`, keyed by session, with its own copy of
+  keyed by floor and number, made from the hires in flight it is handed: the world's furnishing gets them from the
+  app loop as it applies a board, and the hiring machine's own draw passes its state. An occupied one stays a worker's `Desk`, keyed by session, with its own copy of
   the same furniture ([`makeStation`](ref:hub/renderers/tower3d/src/desk.ts#makeStation) shares it). When a
   worker comes or goes, one gives way to the other at the same spot, so nothing visibly changes but the
   occupant. A worker away from its desk keeps its workstation: a station again, dressed as its worker's and saying
