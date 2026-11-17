@@ -235,7 +235,7 @@
             "cards": [
               {
                 "id": "20261004-090000-f2xx",
-                "callsign": "MARCO-42",
+                "callsign": "ARTEMIS-42",
                 "runtime": "claude",
                 "project": "f2",
                 "cwd": "/work/f2",
@@ -365,7 +365,7 @@
             "cards": [
               {
                 "id": "20261004-090000-f3xx",
-                "callsign": "COURIER-65",
+                "callsign": "ROMANOV-65",
                 "runtime": "claude",
                 "project": "f3",
                 "cwd": "/work/f3",
@@ -876,7 +876,7 @@
             "cards": [
               {
                 "id": "20261004-090000-f7xx",
-                "callsign": "PORTHOS-18",
+                "callsign": "ROMANOV-18",
                 "runtime": "claude",
                 "project": "f7",
                 "cwd": "/work/f7",
@@ -1508,7 +1508,7 @@
             "cards": [
               {
                 "id": "20261004-090000-f12x",
-                "callsign": "ENDURANCE-88",
+                "callsign": "POTATO-88",
                 "runtime": "claude",
                 "project": "f12",
                 "cwd": "/work/f12",

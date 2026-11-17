@@ -330,7 +330,7 @@
               },
               {
                 "id": "20261004-090021-p1xx",
-                "callsign": "CHIRON-43",
+                "callsign": "MAGNUS-43",
                 "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
@@ -402,7 +402,7 @@
               },
               {
                 "id": "20261004-090028-p1xx",
-                "callsign": "HANZ-81",
+                "callsign": "LINK-81",
                 "runtime": "claude",
                 "project": "p1",
                 "cwd": "/work/p1",
@@ -1166,7 +1166,7 @@
               },
               {
                 "id": "20261004-090007-p3xx",
-                "callsign": "MARSHAL-83",
+                "callsign": "ACTUATOR-83",
                 "runtime": "claude",
                 "project": "p3",
                 "cwd": "/work/p3",
@@ -1238,7 +1238,7 @@
               },
               {
                 "id": "20261004-090014-p3xx",
-                "callsign": "POLO-56",
+                "callsign": "ROMANOV-56",
                 "runtime": "claude",
                 "project": "p3",
                 "cwd": "/work/p3",
@@ -1310,7 +1310,7 @@
               },
               {
                 "id": "20261004-090021-p3xx",
-                "callsign": "HECTOR-73",
+                "callsign": "HAMMER-73",
                 "runtime": "claude",
                 "project": "p3",
                 "cwd": "/work/p3",
@@ -1512,7 +1512,7 @@
               },
               {
                 "id": "20261004-090007-p4xx",
-                "callsign": "DANTES-14",
+                "callsign": "NIKO-14",
                 "runtime": "claude",
                 "project": "p4",
                 "cwd": "/work/p4",
@@ -1584,7 +1584,7 @@
               },
               {
                 "id": "20261004-090014-p4xx",
-                "callsign": "SANCHO-84",
+                "callsign": "LUKE-84",
                 "runtime": "claude",
                 "project": "p4",
                 "cwd": "/work/p4",
@@ -1930,7 +1930,7 @@
               },
               {
                 "id": "20261004-090014-p5xx",
-                "callsign": "ADLER-77",
+                "callsign": "ORACLE-77",
                 "runtime": "claude",
                 "project": "p5",
                 "cwd": "/work/p5",
@@ -2060,7 +2060,7 @@
             "cards": [
               {
                 "id": "20261004-090000-p6xx",
-                "callsign": "DANTES-66",
+                "callsign": "ROTOR-66",
                 "runtime": "claude",
                 "project": "p6",
                 "cwd": "/work/p6",
@@ -2262,7 +2262,7 @@
             "cards": [
               {
                 "id": "20261004-090000-p7xx",
-                "callsign": "WHEELMAN-89",
+                "callsign": "SISYPHUS-89",
                 "runtime": "claude",
                 "project": "p7",
                 "cwd": "/work/p7",
@@ -2334,7 +2334,7 @@
               },
               {
                 "id": "20261004-090007-p7xx",
-                "callsign": "DUMONT-21",
+                "callsign": "NAPOLEON-21",
                 "runtime": "claude",
                 "project": "p7",
                 "cwd": "/work/p7",

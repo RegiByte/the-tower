@@ -114,7 +114,7 @@
             "cards": [
               {
                 "id": "20261004-090000-opsx",
-                "callsign": "OTTO-29",
+                "callsign": "ALEXANDER-29",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops",
@@ -186,7 +186,7 @@
               },
               {
                 "id": "20261004-090007-opsx",
-                "callsign": "BISHOP-22",
+                "callsign": "DOOMSLAYER-22",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops",
@@ -207,7 +207,7 @@
                 "onDuty": true,
                 "hiredBy": {
                   "session": "20261004-090000-opsx",
-                  "callsign": "OTTO-29",
+                  "callsign": "ALEXANDER-29",
                   "project": "ops"
                 },
                 "enteredAt": 1791124860000,
@@ -231,7 +231,7 @@
                     "startedAt": 1791124800000,
                     "prompt": "Find every env var the deploy reads",
                     "answer": "Three: DEPLOY_ENV, REGION and the token path.",
-                    "promptBy": "OTTO-29",
+                    "promptBy": "ALEXANDER-29",
                     "actions": []
                   }
                 ],
@@ -273,12 +273,12 @@
                 "reportsTo": "20261004-090000-opsx",
                 "waitsOn": {
                   "id": "20261004-090000-opsx",
-                  "callsign": "OTTO-29"
+                  "callsign": "ALEXANDER-29"
                 }
               },
               {
                 "id": "20261004-090014-opsx",
-                "callsign": "SOCRATES-17",
+                "callsign": "KHAN-17",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops",
@@ -638,7 +638,7 @@
               },
               {
                 "id": "20261004-090049-opsx",
-                "callsign": "ARGUS-93",
+                "callsign": "LINK-93",
                 "runtime": "claude",
                 "project": "ops",
                 "cwd": "/work/ops",

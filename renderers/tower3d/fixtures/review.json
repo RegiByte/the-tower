@@ -142,7 +142,7 @@
             "cards": [
               {
                 "id": "20261004-090000-labx",
-                "callsign": "DARTAGNAN-67",
+                "callsign": "SKYWALKER-67",
                 "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget",
@@ -251,7 +251,7 @@
                   "gone": false
                 },
                 "crew": {
-                  "callsign": "DARTAGNAN-67",
+                  "callsign": "SKYWALKER-67",
                   "session": "20261004-090000-labx",
                   "by": "reviews"
                 },
@@ -323,7 +323,7 @@
                   {
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
-                    "prompt": "/reviews:review DARTAGNAN-67",
+                    "prompt": "/reviews:review SKYWALKER-67",
                     "actions": []
                   }
                 ],
@@ -459,7 +459,7 @@
               },
               {
                 "id": "20261004-090021-labx",
-                "callsign": "AMUNDSEN-99",
+                "callsign": "ORACLE-99",
                 "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab",
@@ -1177,7 +1177,7 @@
             "cards": [
               {
                 "id": "20261004-090000-labx",
-                "callsign": "DARTAGNAN-67",
+                "callsign": "SKYWALKER-67",
                 "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget",
@@ -1286,7 +1286,7 @@
                   "gone": false
                 },
                 "crew": {
-                  "callsign": "DARTAGNAN-67",
+                  "callsign": "SKYWALKER-67",
                   "session": "20261004-090000-labx",
                   "by": "reviews"
                 },
@@ -1358,7 +1358,7 @@
                   {
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
-                    "prompt": "/reviews:review DARTAGNAN-67",
+                    "prompt": "/reviews:review SKYWALKER-67",
                     "actions": [
                       {
                         "verb": "resume",
@@ -1494,7 +1494,7 @@
               },
               {
                 "id": "20261004-090021-labx",
-                "callsign": "AMUNDSEN-99",
+                "callsign": "ORACLE-99",
                 "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab",
@@ -2212,7 +2212,7 @@
             "cards": [
               {
                 "id": "20261004-090000-labx",
-                "callsign": "DARTAGNAN-67",
+                "callsign": "SKYWALKER-67",
                 "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab/.worktrees/retry-budget",
@@ -2321,7 +2321,7 @@
                   "gone": false
                 },
                 "crew": {
-                  "callsign": "DARTAGNAN-67",
+                  "callsign": "SKYWALKER-67",
                   "session": "20261004-090000-labx",
                   "by": "reviews"
                 },
@@ -2393,7 +2393,7 @@
                   {
                     "id": "20261004-090007-labx-conversation",
                     "startedAt": 1791125280000,
-                    "prompt": "/reviews:review DARTAGNAN-67",
+                    "prompt": "/reviews:review SKYWALKER-67",
                     "actions": []
                   }
                 ],
@@ -2529,7 +2529,7 @@
               },
               {
                 "id": "20261004-090021-labx",
-                "callsign": "AMUNDSEN-99",
+                "callsign": "ORACLE-99",
                 "runtime": "claude",
                 "project": "lab",
                 "cwd": "/work/lab",
@@ -3108,7 +3108,7 @@
     }
   ],
   "threads": {
-    "lab/retry-budget.md": "# retry-budget\n\n## user · 2026-10-04 14:10 · n1\nKeep the budget per minute, not per job: the scheduler restarts jobs.\n\n## DARTAGNAN-67 · 2026-10-04 14:22 · n2 · re n1\nDone: the budget is a token bucket refilled every minute.\n\n## FREYR-79 · 2026-10-04 14:51 · n3\n`lab-api:src/scheduler.ts:41-43`\n```ts\n  if (bucket.tokens <= 0) return defer(job)\n  bucket.tokens -= 1\n  return run(job)\n```\n**bug** · correctness: a deferred job never refunds its token, so a burst of deferrals drains the bucket for the minute.\n\n## FREYR-79 · 2026-10-04 14:53 · n4\n`lab-api:src/config.ts:7`\n```ts\nexport const RETRY_BUDGET = 60\n```\n**nit** · naming: say the unit, `RETRIES_PER_MINUTE`.\n\n## FREYR-79 · 2026-10-04 14:55 · n5\n**fix first**: n3 loses retries under load. Ran `npm test` in my fork: green, the burst case isn't covered.\n",
+    "lab/retry-budget.md": "# retry-budget\n\n## user · 2026-10-04 14:10 · n1\nKeep the budget per minute, not per job: the scheduler restarts jobs.\n\n## SKYWALKER-67 · 2026-10-04 14:22 · n2 · re n1\nDone: the budget is a token bucket refilled every minute.\n\n## FREYR-79 · 2026-10-04 14:51 · n3\n`lab-api:src/scheduler.ts:41-43`\n```ts\n  if (bucket.tokens <= 0) return defer(job)\n  bucket.tokens -= 1\n  return run(job)\n```\n**bug** · correctness: a deferred job never refunds its token, so a burst of deferrals drains the bucket for the minute.\n\n## FREYR-79 · 2026-10-04 14:53 · n4\n`lab-api:src/config.ts:7`\n```ts\nexport const RETRY_BUDGET = 60\n```\n**nit** · naming: say the unit, `RETRIES_PER_MINUTE`.\n\n## FREYR-79 · 2026-10-04 14:55 · n5\n**fix first**: n3 loses retries under load. Ran `npm test` in my fork: green, the burst case isn't covered.\n",
     "lab/readme.md": "# readme\n\n## user · 2026-10-04 13:02 · n1\n`lab:README.md:3`\n```md\nRun it with `npm start`.\n```\nSay which port it listens on.\n\n## RAGNAR-12 · 2026-10-04 13:20 · n2 · re n1\nAdded: it listens on 5173.\n",
     "lab/old-flags.md": "# old-flags\n\n## user · 2026-10-04 11:40 · n1\nBefore this lands: who still reads `LEGACY_FLAGS`?\n"
   },
