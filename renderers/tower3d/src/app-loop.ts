@@ -50,7 +50,7 @@ export function startAppLoop(started: AppLoopDeps) {
   const { boardNow, panelAs } = nowOf(port)
   const { toast } = started.toasts
   const { events } = started
-  const { layers, celebrate, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets, syncFilings } = started.world
+  const { layers, celebrate, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets, syncFilings } = started.world
   const { archivedAt, archivesSettled, drawersAt, readArchives } = started.archive
   const { desk } = started.views
   const { hiring } = started.spawn
@@ -109,6 +109,7 @@ export function startAppLoop(started: AppLoopDeps) {
       place: ({ level, spot }) => stand(level, spot),
       fade: ({ on }) => void $('fade').classList.toggle('on', on),
       hud: () => renderHud(),
+      sides: () => dressSides(boardNow()),
       elevator: () => renderElevator(),
       arrived: ({ at }) => (ARRIVED[at.kind] as (at: Arrival) => void)(at),
       toast: ({ text }) => toast(text),

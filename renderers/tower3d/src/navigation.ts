@@ -8,7 +8,7 @@ import { sharing } from './tv.ts'
 import { carBox, coreFront, deskOf, deskSpot, inside, kioskOf, levelOfCard, levelOfShell, levelY } from './layout.ts'
 import { type Shown } from './showing.ts'
 import { promptHtml } from './ui.ts'
-import { s, type Standing } from './state.ts'
+import type { Standing } from './state.ts'
 import { aim, type WalkerCell } from './walker.ts'
 import { DECK } from './floorplan.ts'
 import type { Toasts } from './toasts.ts'
@@ -44,16 +44,11 @@ export function startNavigation(started: NavigationDeps) {
   const { orbit } = started.stage
   const { boardNow, unlock, atDesk, panelNow, go, viewNow, motionNow, heed, aimNow } = nowOf(port)
   const { toast } = started.toasts
-  const { freshShown, dressSides, planNow, lookQuaternion, vec3, flyTo, flyHome, RIDE, carried } = started.world
-  const { renderHud, showPaused, lock } = started.hud
+  const { freshShown, planNow, lookQuaternion, vec3, flyTo, flyHome, RIDE, carried } = started.world
+  const { showPaused, lock } = started.hud
 
   /** Seen again, it moves last: the oldest are the first to go once more than `SEEN_KEPT` are kept. */
-  function see(sh: Shown) {
-    s.seenShown.delete(shownKey(sh))
-    s.seenShown.add(shownKey(sh))
-    dressSides(boardNow())
-    renderHud()
-  }
+  const see = (sh: Shown) => port.dispatch({ type: 'seen/saw', key: shownKey(sh) })
 
   /** To the newest showing you have yet to open, at its worker's desk. */
   function lookAtNew() {

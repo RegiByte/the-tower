@@ -6,7 +6,6 @@ import { checkWardrobe } from './closet.ts'
 import type { Fixture } from './fixtures.ts'
 import * as loading from './loading.ts'
 import type { Archive } from './archive.ts'
-import { s } from './state.ts'
 import type { Assets } from './loads.ts'
 import type { Toasts } from './toasts.ts'
 import { $, show } from './dom.ts'
@@ -34,7 +33,7 @@ function feedOf(started: FeedDeps, onModels: () => void) {
   const { port } = started
   const { flyPlane } = started.stage
   const { toast } = started.toasts
-  const { firstBuilt, primeSeenAs, landChairs } = started.world
+  const { firstBuilt, landChairs } = started.world
   const { landHands } = started.frames
 
   let built: () => void
@@ -55,9 +54,7 @@ function feedOf(started: FeedDeps, onModels: () => void) {
     landChairs(m)
     flyPlane(m.plane)
     landHands(m)
-    s.seenShown = new Set((kept as Kept | null)?.seen)
-    primeSeenAs((kept as Kept | null)?.seen === undefined)
-    port.dispatch({ type: 'kept/landed', muted: (kept as Kept | null)?.muted ?? false, meterShown: (kept as Kept | null)?.fps ?? false })
+    port.dispatch({ type: 'kept/landed', muted: (kept as Kept | null)?.muted ?? false, meterShown: (kept as Kept | null)?.fps ?? false, seen: (kept as Kept | null)?.seen })
     onModels()
   }, failStart)
 

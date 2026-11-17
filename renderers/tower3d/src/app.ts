@@ -157,6 +157,12 @@ export type Db = {
   viewer: Viewer
   /** What is in your hand: nothing, a draft taken off a corkboard, or a beer from the roof's bar. */
   hand: Hand
+  /**
+   * Every showing you have opened, by `shownKey`, the most recent last: the oldest are the first to go once more than
+   * the keeper keeps are seen. `undefined` while nothing seen was kept (a first visit): the first board taken then counts
+   * all it shows as seen, and only what comes after is new.
+   */
+  seen: readonly string[] | undefined
 }
 
 export type Hand = { t: 'empty' } | { t: 'note'; held: Held } | { t: 'beer' }
@@ -246,7 +252,9 @@ export type AppEvent =
   /** The frame meter shown or hidden. */
   | { type: 'meter/shown'; shown: boolean }
   /** What the tower kept for this page, landed with the models: it sets the music's state without starting it. */
-  | { type: 'kept/landed'; muted: boolean; meterShown: boolean }
+  | { type: 'kept/landed'; muted: boolean; meterShown: boolean; seen: readonly string[] | undefined }
+  /** A showing opened, by `shownKey`: seen, it moves last. */
+  | { type: 'seen/saw'; key: string }
   /** N went round the waits: those visited this round. */
   | { type: 'visited'; visited: ReadonlySet<string> }
   /** The origin remotes' web pages read. */
@@ -322,6 +330,8 @@ export type AppEffect =
   /** The screen faded out to black, or back in. */
   | { type: 'fade'; on: boolean }
   | { type: 'hud' }
+  /** Each desk's second monitor and every gallery dressed again for what you have seen. */
+  | { type: 'sides' }
   | { type: 'elevator' }
   /** What is done once there that the db can't decide: a desk or a kiosk still standing, the mouse, the orbit, a purr. */
   | { type: 'arrived'; at: Exclude<Arrival, { kind: 'ask' }> }
@@ -355,6 +365,7 @@ export const startingDb = (attending: Attending): Db => ({
   layout: undefined,
   viewer: VIEWER_DEFAULT,
   hand: EMPTY,
+  seen: undefined,
 })
 
 const into = (db: Db): AppEffect => ({ type: 'state', state: db })
@@ -595,7 +606,7 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
   const held = heldIn(db.hand)
   const gone = held !== undefined && !reads.holdsDraft(next, held)
   return steps(
-    { ...db, building, hand: gone ? EMPTY : db.hand },
+    { ...db, building, hand: gone ? EMPTY : db.hand, seen: db.seen ?? [...new Set(cardsOf(next).flatMap((c) => c.shown.map(shownKey)))] },
     (db) => [
       into(db),
       ...(fireworks.length ? [{ type: 'fireworks', cards: fireworks } as const] : []),
@@ -736,7 +747,8 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
   'door/mode': (db, { on }) => [into({ ...db, doorMode: on })],
   'music/muted': (db, { muted }) => [into({ ...db, muted }), { type: 'music', on: !muted }, { type: 'hud' }],
   'meter/shown': (db, { shown }) => [into({ ...db, meterShown: shown }), { type: 'meter', shown }],
-  'kept/landed': (db, { muted, meterShown }) => [into({ ...db, muted, meterShown }), { type: 'meter', shown: meterShown }],
+  'kept/landed': (db, { muted, meterShown, seen }) => [into({ ...db, muted, meterShown, seen }), { type: 'meter', shown: meterShown }],
+  'seen/saw': (db, { key }) => [into({ ...db, seen: [...db.seen!.filter((k) => k !== key), key] }), { type: 'sides' }, { type: 'hud' }],
   visited: (db, { visited }) => [into({ ...db, visited })],
   'origins/read': (db, { origins }) => [into({ ...db, origins })],
   'layout/stored': (db, { layout }) => [into({ ...db, layout })],

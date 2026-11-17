@@ -23,7 +23,6 @@ import { buildPigeonhole, pigeonholeKey, type Pigeonhole } from './pigeonhole.ts
 import type { Archive } from './archive.ts'
 import type { Clients } from './clients.ts'
 import { buildFiling, filingKey, type Filing } from './filing.ts'
-import { s } from './state.ts'
 import type { People } from './building.ts'
 import type { VideoWall } from './room.ts'
 import type { Board, Card } from './api.ts'
@@ -244,7 +243,7 @@ export const shownOn = (board: Board) => new Set(cardsOf(board).flatMap((c) => c
  * it stood on. A showing `was` didn't hold flies in from over its worker's head once it has been held up; the others
  * slide to their new places.
  */
-export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterOf'], now: number, t: number, desks: ReadonlyMap<string, Desk>): Layer<PictureAt, Picture> {
+export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterOf'], now: number, t: number, desks: ReadonlyMap<string, Desk>, fresh: (key: string) => boolean): Layer<PictureAt, Picture> {
   const before = was && shownOn(was)
   return {
     slots: (p) => floors(p).flatMap((level) => level.wall.pictures.map((slot) => {
@@ -257,13 +256,13 @@ export function galleryAfter(was: Board | undefined, posterOf: Pictures['posterO
       const desk = desks.get(slot.worker.id)
       const arrives = before && !before.has(key) && desk
       hang(pic, at, slot.w, t, arrives ? heldUpAt(desk) : 'now')
-      dressPicture(pic, !s.seenShown.has(key), now)
+      dressPicture(pic, fresh(key), now)
       return pic
     },
     keep(pic, { slot, at }) {
       pic.worker = slot.worker
       hang(pic, at, slot.w, t, 'slide')
-      dressPicture(pic, !s.seenShown.has(shownKey(slot.shown)), now)
+      dressPicture(pic, fresh(shownKey(slot.shown)), now)
       return true
     },
     root: (pic) => pic.group,

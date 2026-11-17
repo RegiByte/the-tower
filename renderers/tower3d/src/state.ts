@@ -47,18 +47,8 @@ export type Panel =
 export type Hold = { act: Act; verb: Verb; start: number; by: string }
 export type Spot = Pick<Walker, 'level' | 'x' | 'z' | 'yaw' | 'pitch' | 'y'>
 
-/** Tower 3D's state: everything the page knows and is doing, in one record the shell's modules read and write. */
-export type State = {
-  /** Every showing you have opened, by `shownKey`, kept with your spot. */
-  seenShown: Set<string>
-}
-
 const NO_PLATE = { width: 0, depth: 0 }
 const NO_LOFT = loftOf(NO_PLATE, 0)
 const NO_ROOMS = roomsOf(NO_PLATE)
 /** The plan of no board: no levels, nothing to stand on. */
 export const NO_PLAN: Plan = { ...NO_PLATE, levels: [], galleries: [], loft: NO_LOFT, rooms: NO_ROOMS, anchors: anchorsOf(NO_PLATE, NO_LOFT, NO_ROOMS, 0, { x: 0, first: 0, last: 0 }, { x: 0, z: 0 }), until: Infinity }
-
-export const s: State = {
-  seenShown: new Set(),
-}
