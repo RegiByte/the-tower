@@ -93,8 +93,22 @@ export const privateIndex = async (repo: string, checkout: string, gitDir: strin
   const folder = path.join(repoCache(repo), hashed(checkout))
   const key = `${ino}-${mtimeNs}-${size}`
   const copy = path.join(folder, key)
-  const held = holdOn(copy) ?? (await refreshed(real, folder, copy, checkout))
+  const held = await inCache(checkout, async () => holdOn(copy) ?? (await refreshed(real, folder, copy, checkout)))
   return { index: held, release: () => rmSync(held, { force: true }) }
+}
+
+/**
+ * `make`, a file it fails to write under the cache said with its fix: the read of checkout `checkout` needs its copy,
+ * and the cache is safe to delete. Any other failure (git's, the real index's) passes as it is.
+ */
+const inCache = async <T>(checkout: string, make: () => Promise<T>): Promise<T> => {
+  try {
+    return await make()
+  } catch (err) {
+    const { cache } = systemPaths(configPath())
+    if (!(err as NodeJS.ErrnoException).path?.startsWith(cache + path.sep)) throw err
+    throw new Error(`${checkout} is read through a private copy of its index under ${path.join(cache, 'index')}, which could not be written (${(err as Error).message}): free the disk or fix the folder's owner, or delete ${cache}, which is safe: the tower makes it again`, { cause: err })
+  }
 }
 
 /** A refreshed copy of `real` made at `copy`, held (`holdOn`) before it is named, and the folder's others swept. */
