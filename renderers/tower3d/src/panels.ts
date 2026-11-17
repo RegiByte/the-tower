@@ -300,18 +300,22 @@ export function startPanels(started: PanelsDeps) {
 
   /**
    * One file's versions followed while a panel draws it (`tower.versions`): `follow` hands each version after the
-   * first, the one the panel draws as it opens, to `changed`, and `stop` lets the stream go.
+   * first, the one the panel draws as it opens, to `changed` with `latest`, true while no newer version has been heard,
+   * so a read that settles after a newer one began draws nothing. A file deleted is drawn as it was until written
+   * again. `stop` lets the stream go.
    */
   function versionFollow() {
     let unwatch: (() => void) | undefined
-    const stop = () => (unwatch?.(), (unwatch = undefined))
-    const follow = (read: string, changed: (modifiedAt: number | null) => void) => {
+    let heard = 0
+    const stop = () => (unwatch?.(), (unwatch = undefined), heard++)
+    const follow = (read: string, changed: (modifiedAt: number, latest: () => boolean) => void) => {
       stop()
       let first = true
       unwatch = tower.versions(read, (msg) => {
         if (msg.t === 'error') return toast(msg.message)
+        const mine = ++heard
         if (first) return void (first = false)
-        changed(msg.modifiedAt)
+        if (msg.modifiedAt !== null) changed(msg.modifiedAt, () => mine === heard)
       })
     }
     return { follow, stop }
@@ -323,19 +327,27 @@ export function startPanels(started: PanelsDeps) {
   /** The file the desk's shown tab draws, followed while the tab is open. */
   const deskFile = versionFollow()
 
-  /** A markdown frame given its page again, opening where it was scrolled to. */
+  /** Where each markdown frame being given its page again was scrolled to, until the page loads. */
+  const scrollsWanted = new WeakMap<HTMLIFrameElement, number>()
+
+  /** A markdown frame given its page again, opening where it was scrolled to, a page still loading or not. */
   function redrawMd(frame: HTMLIFrameElement | null, page: string) {
     if (!frame) return
-    const y = frame.contentWindow?.scrollY ?? 0
-    frame.addEventListener('load', () => frame.contentWindow?.scrollTo(0, y), { once: true })
+    const loading = scrollsWanted.has(frame)
+    if (!loading) scrollsWanted.set(frame, frame.contentWindow?.scrollY ?? 0)
     frame.srcdoc = page
+    if (loading) return
+    frame.addEventListener('load', () => {
+      frame.contentWindow?.scrollTo(0, scrollsWanted.get(frame)!)
+      scrollsWanted.delete(frame)
+    }, { once: true })
   }
 
   /**
    * A showing drawn in `el` changed on disk: its picture in the world painted again, and in `el` markdown read and set
    * where it was scrolled to, while `still` says it is drawn there, and anything else loaded again at its version.
    */
-  async function shownChanged(el: HTMLElement, sh: Shown, modifiedAt: number | null, still: () => boolean) {
+  async function shownChanged(el: HTMLElement, sh: Shown, modifiedAt: number, still: () => boolean) {
     repaint(sh)
     if (!isMarkdown(sh)) {
       const media = el.querySelector<HTMLIFrameElement | HTMLImageElement | HTMLVideoElement>('iframe, img, video')
@@ -416,7 +428,7 @@ export function startPanels(started: PanelsDeps) {
       const doc = panelAs('doc')
       return doc?.project === project && doc.n === n && (doc.file === undefined || doc.file === shown)
     }
-    if (shown && still()) readerFile.follow(shelfUrl(project, n, shown).slice(1), () => void shelfChanged(project, n, shown))
+    if (shown && still()) readerFile.follow(shelfUrl(project, n, shown).slice(1), (_, latest) => void shelfChanged(project, n, shown, latest))
     const text = shown ? await shelfText(tower, project, n, shown).catch((err: Error) => `*${err.message}*`) : ''
     const doc = panelAs('doc')
     if (doc?.project !== project || doc.n !== n) return
@@ -425,10 +437,10 @@ export function startPanels(started: PanelsDeps) {
   }
 
   /** The shelf file open in the reader changed on disk: read and set again where it was scrolled to. */
-  async function shelfChanged(project: string, n: number, file: string) {
+  async function shelfChanged(project: string, n: number, file: string, latest: () => boolean) {
     const text = await shelfText(tower, project, n, file).catch((err: Error) => `*${err.message}*`)
     const doc = panelAs('doc')
-    if (doc?.project !== project || doc.n !== n || doc.file !== file) return
+    if (!latest() || doc?.project !== project || doc.n !== n || doc.file !== file) return
     redrawMd($('doc-body').querySelector('iframe'), mdPage(text, shelfUrl(project, n, file), tower.prefs.attributes()))
   }
 
@@ -501,7 +513,7 @@ export function startPanels(started: PanelsDeps) {
     see(sh)
     $('doc-body').innerHTML = shownHtml(worker.callsign, sh, tower.prefs.attributes())
     const still = () => panelAs('picture')?.id === id && panelAs('picture')?.target === target
-    if (sh.kind === 'file') readerFile.follow(shownHref(sh).slice(1), (at) => void shownChanged($('doc-body'), sh, at, still))
+    if (sh.kind === 'file') readerFile.follow(shownHref(sh).slice(1), (at, latest) => void shownChanged($('doc-body'), sh, at, () => latest() && still()))
     if (!isMarkdown(sh)) return
     const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
     const open = panelAs('picture')
@@ -1081,7 +1093,7 @@ export function startPanels(started: PanelsDeps) {
     $('desk-shown').innerHTML = shownHtml(c.callsign, sh, tower.prefs.attributes())
     show('desk-shown', true)
     const still = () => atDesk() === id && deskTabNow() === shownTab(sh)
-    if (sh.kind === 'file') deskFile.follow(shownHref(sh).slice(1), (at) => void shownChanged($('desk-shown'), sh, at, still))
+    if (sh.kind === 'file') deskFile.follow(shownHref(sh).slice(1), (at, latest) => void shownChanged($('desk-shown'), sh, at, () => latest() && still()))
     if (!isMarkdown(sh)) return
     const md = await tower.text(shownHref(sh).slice(1)).catch((err: Error) => `*${err.message}*`)
     if (atDesk() !== id || deskTabNow() !== shownTab(sh)) return

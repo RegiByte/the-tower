@@ -33,8 +33,9 @@ worker that made it.
   where it was scrolled to, each time the file at that path changes on disk, written in place or replaced by a rename,
   through the read's version stream (`version/shown/<id>/<path>`, `tower.versions`), watched only while its tab is
   drawn ([[tower-server]]). Tower 3D does the same in its desk panel's tab and its reader, and paints the showing's
-  picture in the world again on each change it hears there; a picture whose showing nobody has open is not watched,
-  and keeps what it last read until one is opened. A file deleted says so in its tab until it is written again. The card carries `shown`, `at` in epoch ms.
+  picture in the world again on each change it hears there, a file deleted staying drawn as it was until it is
+  written again; a picture whose showing nobody has open is not watched, and keeps what it last read until one is
+  opened. A file deleted says so in its tab until it is written again. The card carries `shown`, `at` in epoch ms.
 - A worker keeps what it showed across resumes: `card.shown` holds the showings of every session the worker ran
   as ([[resume]], [`lineage`](ref:hub/src/bridge/chains.ts#lineage)), each with the `session` that showed it,
   which is the one `/shown/<session>/<path>` serves it by. A target shown again in a later session moves last.
