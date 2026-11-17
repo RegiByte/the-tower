@@ -12,6 +12,18 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.8.1
+
+The tower watches its sessions and config through the same file watcher as everything else, and Tower 3D's shared
+state starts folding into its owners (#642, #643). Nothing to restart beyond the tower (`tower update` does it).
+
+- **The sessions and config watches no longer share Node's folder watch.** On macOS that watch runs every folder
+  through one FSEvents stream, which drops events whenever another folder watch opens or closes. Both now go
+  through parcel like the tower's other watches, the config's ignoring the system root's folders, so log and cache
+  writes never reach it. A session log made while the tower starts is no longer missed.
+- **For contributors:** ten of Tower 3D's shared `s` fields now live with the module that owns them, and the kb's
+  `machines` decision says when per-frame animation is a cell rather than a machine. Nothing changes in what you see.
+
 ## v2.8.0
 
 Shown files and shelf pages follow their file live in Tower 3D and on the shelf, and fixture logbooks read real times
