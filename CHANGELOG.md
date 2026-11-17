@@ -12,6 +12,19 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.8.2
+
+The Changes panel reads a checkout through its private index copy, and Tower 3D's shared state keeps folding into
+its owners (#645, #646, #647, #649). Nothing to restart beyond the tower (`tower update` does it).
+
+- **The Changes panel reads through the checkout's private index copy,** the one the board's status reads already
+  use: it no longer rehashes recently touched files on every poll, and its untracked list and diff read one
+  snapshot of the index. What it shows is unchanged. When the copy can't be written under `cache/index`, the read
+  fails with what to do: free the disk, fix the folder's owner, or delete the system root's `cache/`, which is safe.
+- **For contributors:** Tower 3D's models and kit come through `assets.got()`, its simulated clock is the `sim`
+  resource (`?stepped` read where it starts), and where you stand is the `walker` resource. A read of the models
+  before they load fails by name. Nothing changes in what you see.
+
 ## v2.8.1
 
 The tower watches its sessions and config through the same file watcher as everything else, and Tower 3D's shared
