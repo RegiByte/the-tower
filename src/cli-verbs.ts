@@ -68,7 +68,16 @@ export const CLI_VERBS = {
     help: "this session: callsign, peer name, floor and its dirs, its worktree and branch if it has one, the floor's shelf and collections, and the config's path",
   },
   agents: { of: 'worker', usage: 'agents [--all]', help: "the workers on duty on this session's floor, each under the one it reports to; --all, on every floor" },
-  agent: { of: 'worker', usage: 'agent <CALLSIGN> [conversation]', help: 'one worker: its last prompts and answers in full, per conversation, saying when earlier turns are left out; with [conversation], every turn of that one, oldest first' },
+  agent: {
+    of: 'worker',
+    usage: 'agent <CALLSIGN|session> [conversation]',
+    help: "one worker, by callsign (the one on duty, else the latest to carry it) or by any of its sessions' ids: its last prompts and answers in full, per conversation, saying when earlier turns are left out; with [conversation], every turn of that one, oldest first",
+  },
+  callsign: {
+    of: 'worker',
+    usage: 'callsign <CALLSIGN>',
+    help: 'every worker that ever carried a callsign, the first first: its floor, when it ran, its first prompt and the session `tower agent` reads it by',
+  },
   extensions: {
     of: 'worker',
     usage: 'extensions [restart <id> | check <dir> | freeze <dir>]',
