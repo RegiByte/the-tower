@@ -19,6 +19,7 @@
     "hub/src/shared/settings.ts#PREF_SECTIONS",
     "hub/src/shared/settings.ts#prefSections",
     "hub/src/shared/settings.ts#wirePrefs",
+    "hub/src/shared/settings.ts#keepingTyped",
     "hub/src/shared/settings.ts#faceInstalled",
     "hub/src/shared/tips.ts",
     "hub/src/shared/tips.ts#watchTips",
@@ -84,7 +85,12 @@ they are written once in shared code and a next renderer gets them by importing 
   [`PREF_SECTIONS`](ref:hub/src/shared/settings.ts#PREF_SECTIONS) describes each appearance setting by kind;
   [`prefSections`](ref:hub/src/shared/settings.ts#prefSections) draws them and
   [`wirePrefs`](ref:hub/src/shared/settings.ts#wirePrefs) wires them, so a next setting is a descriptor with no
-  renderer to touch. It is a native `popover` (light dismiss, top layer, not a modal). Tower 3D adds its own section
+  renderer to touch. It is a native `popover` (light dismiss, top layer, not a modal), drawn again while open through
+  the morph (`morphPanel`), its fields carrying the ids `pref:<key>`. A pref another window changes while the viewer is
+  typing in its field doesn't take their text or caret
+  ([`keepingTyped`](ref:hub/src/shared/settings.ts#keepingTyped)): leaving the field changed sets their text, the
+  latest change winning as it does between any two windows, and leaving it as it was shows the other window's value.
+  Tower 3D adds its own section
   ([`paintSettings`](ref:hub/renderers/tower3d/src/hud.ts#paintSettings)) and offers no alerts: the page framing it
   sends the notifications.
 - *Terminals* ([`terminal.ts`](ref:hub/src/shared/terminal.ts), [`term-view.ts`](ref:hub/src/shared/term-view.ts))
@@ -127,6 +133,8 @@ they are written once in shared code and a next renderer gets them by importing 
 - *Keeping `title`s, worded better*: shown late, never on focus, styled by the OS. A tooltip in CSS alone is clipped
   by a scrolling parent and can't stay inside the viewport.
 - *A face picker listing installed faces* (Local Font Access): Chrome only, behind a permission prompt.
+- *The other window's value taking a field being typed in*: the morph would do it by itself, but it replaces the
+  viewer's text under their caret mid-word; the field they hold is theirs until they leave it.
 
 **Impact.** Every page that links `/design.css` and `/tower.js` gets the viewer's scheme, faces, motion and contrast,
 a framed renderer through the relay; a next renderer gets the popover and the tooltips by importing `/lib/settings.js`

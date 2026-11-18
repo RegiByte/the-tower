@@ -1,7 +1,7 @@
 import { SOUNDS } from '/lib/cards.js'
 import { placeOnOpen } from '/lib/chrome.js'
-import { alertsSection, changesSection, faceInstalled, markdownSection, prefSections, settingsHtml, soundSection, tipsSection, wirePrefs } from '/lib/settings.js'
-import { ICON } from '/lib/view.js'
+import { alertsSection, changesSection, faceInstalled, markdownSection, keepingTyped, prefSections, settingsHtml, soundSection, tipsSection, wirePrefs } from '/lib/settings.js'
+import { ICON, morphPanel } from '/lib/view.js'
 import { $ } from './kit.js'
 
 /**
@@ -32,18 +32,11 @@ export function settingsPane(deps) {
     drawSettings()
   }
 
-  /** The settings popover, drawn again whenever what it shows may have changed: only while open. @type {string | undefined} */
-  let settingsDrawn
-
   const drawSettings = () => $('settings').matches(':popover-open') && paintSettings()
 
   function paintSettings() {
     const html = settingsHtml([alertsSection(Notification.permission), soundSection(page.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(viewer().briefMarkdown), changesSection(viewer().changesTree), tipsSection(viewer().tips, viewer().tipsDismissed.length)])
-    if (html === settingsDrawn) return
-    const focused = document.activeElement?.closest('#settings [data-ring-choice], #settings [data-sound-play], #settings [data-brief-markdown], #settings [data-changes-files], #settings [data-tips], #settings [data-pref]')
-    const again = focused && [...focused.attributes].filter((a) => a.name.startsWith('data-') && a.name !== 'data-tip').map((a) => `[${a.name}="${CSS.escape(a.value)}"]`).join('')
-    $('settings').innerHTML = settingsDrawn = html
-    if (again) $('settings').querySelector(again)?.focus()
+    keepingTyped($('settings'), () => morphPanel($('settings'), html))
   }
 
   $('settings-open').innerHTML = ICON.settings

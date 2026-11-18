@@ -2181,6 +2181,9 @@
         "faceInstalled": {
           "since": "2.0"
         },
+        "keepingTyped": {
+          "since": "2.19"
+        },
         "markdownSection": {
           "since": "2.0"
         },
