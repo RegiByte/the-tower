@@ -2108,6 +2108,10 @@
         "rankingOf": {
           "since": "2.0",
           "stability": "provisional"
+        },
+        "subjectMenu": {
+          "since": "2.16",
+          "stability": "provisional"
         }
       },
       "types": {
@@ -2115,8 +2119,32 @@
           "since": "2.0",
           "stability": "provisional"
         },
+        "MenuContext": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
+        "MenuGroup": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
+        "MenuLine": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
+        "MenuPick": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
+        "MenuSub": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
         "Openable": {
           "since": "2.0",
+          "stability": "provisional"
+        },
+        "Opened": {
+          "since": "2.16",
           "stability": "provisional"
         },
         "PaletteGroup": {
@@ -2125,6 +2153,10 @@
         },
         "Pick": {
           "since": "2.0"
+        },
+        "SubjectMenu": {
+          "since": "2.16",
+          "stability": "provisional"
         }
       }
     },
