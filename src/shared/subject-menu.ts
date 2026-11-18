@@ -61,6 +61,12 @@ const PANE_OF: Partial<Record<VerbId, string>> = Object.fromEntries(
   Object.entries(VERB_WORDS).flatMap(([id, words]) => PANES.filter((p) => p.command === words.command).map((p) => [id, p.view])),
 )
 
+/** The view a collection's line opens: every item it keeps, whichever view the collection's own kind prefers. */
+const COLLECTION_VIEW = 'tower/collection'
+
+/** The host a web page is on, as a line names it: `github.com`. */
+const hostOf = (href: string) => new URL(href).host
+
 const isOpen = (ctx: MenuContext, subject: string, view?: string) => ctx.open.some((o) => o.subject === subject && (view === undefined || o.view === view))
 
 /** What extensions offer on `subject`, each a line. */
@@ -84,7 +90,7 @@ const floorMenu = (board: Board, f: Floor, ctx: MenuContext): SubjectMenu => {
   const archive: MenuLine[] = past ? [{ id: 'archive', label: 'Archive', hint: `${past} past workers and their conversations`, open: isOpen(ctx, key, 'tower/archive'), does: { t: 'open', subject: key, view: 'tower/archive' } }] : []
   const kept = f.collections.map((c): MenuLine => {
     const subject = `collection:${f.id}/${c.id}`
-    return { id: subject, label: c.label, hint: `${c.items.length} kept${c.description ? `: ${c.description}` : ''}`, open: isOpen(ctx, subject), does: { t: 'display', subject } }
+    return { id: subject, label: c.label, hint: `${c.items.length} kept${c.description ? `: ${c.description}` : ''}`, open: isOpen(ctx, subject, COLLECTION_VIEW), does: { t: 'open', subject, view: COLLECTION_VIEW } }
   })
   const shelf = (f.shelf ?? []).map((entry, n): MenuLine => {
     const subject = `shelf:${f.id}/${n}`
@@ -97,7 +103,7 @@ const floorMenu = (board: Board, f: Floor, ctx: MenuContext): SubjectMenu => {
     lines: [
       ...(can(f, 'shell') ? [{ id: `shell:${dir}`, label: VERB_WORDS['floor/shell'].label, hint: `A login shell in ${dir}.`, does: { t: 'dir', verb: 'shell', project: f.id, dir } } as const] : []),
       ...(can(f, 'editor') ? [{ id: `editor:${dir}`, label: VERB_WORDS['floor/editor'].label, hint: `${dir} in a new window of your editor.`, does: { t: 'dir', verb: 'editor', project: f.id, dir } } as const] : []),
-      ...(ctx.origins[dir] ? [{ id: `origin:${dir}`, label: 'On the web', hint: ctx.origins[dir], does: { t: 'link', href: ctx.origins[dir] } } as const] : []),
+      ...(ctx.origins[dir] ? [{ id: `origin:${dir}`, label: `Open on ${hostOf(ctx.origins[dir])}`, hint: ctx.origins[dir], does: { t: 'link', href: ctx.origins[dir] } } as const] : []),
     ],
   }))
   return {
@@ -150,27 +156,41 @@ const cardMenu = (board: Board, c: Card, ctx: MenuContext): SubjectMenu => {
   }
 }
 
-const shownMenu = (board: Board, c: Card, s: CardShown, ctx: MenuContext): SubjectMenu => ({
+/** The worker's tab a showing's menu goes to: its terminal while it drives, else its brief; none when it offers neither. */
+const workerLine = (c: Card): MenuLine[] => {
+  const verb = can(c, 'drive') ? 'drive' : can(c, 'brief') ? 'brief' : undefined
+  if (!verb) return []
+  return [{ id: `worker:${c.id}`, label: `${c.callsign}'s ${verb === 'drive' ? 'terminal' : 'brief'}`, hint: verbHint('card', verb, c), does: { t: 'action', subject: 'card', verb, id: c.id } }]
+}
+
+/** A showing's menu, which a click on the showing opens already: so it offers a browser tab and its worker, not itself. */
+const shownMenu = (board: Board, c: Card, s: CardShown): SubjectMenu => ({
   title: shownTitle(s),
   groups: groups(
-    {
-      label: shownTitle(s),
-      lines: [
-        { ...shownLine(c, s, ctx), label: 'Open' },
-        { id: 'out', label: 'Open in a browser tab', hint: s.target, does: { t: 'link', href: shownHref(s) } },
-        { id: `worker:${c.id}`, label: `Go to ${c.callsign}`, does: { t: 'go', target: { t: 'worker', id: c.id } } },
-      ],
-    },
+    { label: shownTitle(s), lines: [{ id: 'out', label: 'Open in a browser tab', hint: s.target, does: { t: 'link', href: shownHref(s) } }, ...workerLine(c)] },
     { label: 'Extensions', lines: addedLines(board, shownSubject(c, s)) },
   ),
 })
+
+/** Every line of `m`, its submenus' included. */
+const linesOf = (m: SubjectMenu): MenuLine[] => m.groups.flatMap((g) => g.lines.flatMap((l) => ('lines' in l ? l.lines : [l])))
+
+/** `m`, its line ids each once: a renderer finds a picked line by its id, so two alike would run one for the other. */
+const unique = (key: string, m: SubjectMenu): SubjectMenu => {
+  const ids = linesOf(m).map((l) => l.id)
+  const twice = ids.find((id, n) => ids.indexOf(id) !== n)
+  if (twice !== undefined) throw new Error(`subjectMenu: ${key}'s menu has two lines with the id ${twice}: each line's id must be its own`)
+  return m
+}
 
 /**
  * The menu of the subject `key` names (`floor:<project>`, `card:<id>`, `shown:<card>/<at>`) as the board holds it now:
  * its verbs, each run with the call the board offers; then what it holds: a floor its archive, collections, shelf,
  * repos (a shell, the editor and the web page of each) and what extensions offer on it; a worker its showings, earlier
- * conversations and processes and extensions' actions; a showing itself, its worker and extensions' actions. Ticks
- * (`open`) for what `ctx.open` holds. Undefined for a key the board doesn't hold, or of another kind.
+ * conversations and processes and extensions' actions; a showing a browser tab, its worker's tab and extensions'
+ * actions. A menu never offers what a click on its subject does already. Ticks (`open`) for what `ctx.open` holds.
+ * Each line's id is its own in the menu, and a menu that would hold two alike throws. Undefined for a key the board
+ * doesn't hold, or of another kind.
  */
 export const subjectMenu = (board: Board, key: string, ctx: MenuContext): SubjectMenu | undefined => {
   const at = key.indexOf(':')
@@ -179,18 +199,18 @@ export const subjectMenu = (board: Board, key: string, ctx: MenuContext): Subjec
   const rest = key.slice(at + 1)
   if (kind === 'floor') {
     const f = board.floors.find((g) => g.id === rest)
-    return f && floorMenu(board, f, ctx)
+    return f && unique(key, floorMenu(board, f, ctx))
   }
   const cards = board.floors.flatMap((f) => f.cards)
   if (kind === 'card') {
     const c = cards.find((d) => d.id === rest)
-    return c && cardMenu(board, c, ctx)
+    return c && unique(key, cardMenu(board, c, ctx))
   }
   if (kind === 'shown') {
     const slash = rest.lastIndexOf('/')
     const c = cards.find((d) => d.id === rest.slice(0, slash))
     const s = c?.shown.find((t) => String(t.at) === rest.slice(slash + 1))
-    return c && s && shownMenu(board, c, s, ctx)
+    return c && s && unique(key, shownMenu(board, c, s))
   }
   return undefined
 }
