@@ -1,6 +1,6 @@
 /**
  * The tower's elements (`/lib-ui/`) in a page that redraws them through the morph every 100 ms, as a renderer does, in
- * a real browser: typing into `<tower-combobox>` and choosing from it, `<tower-menu>` opened by a right-click on a
+ * a real browser, drawn by `/lib/elements.js` as a view draws them: typing into `<tower-combobox>` and choosing from it, `<tower-menu>` opened by a right-click on a
  * `<tower-menu-area>` and by Enter on a `<tower-menu-button>`, its submenu, its action and its focus coming back, each
  * checked as it happens. The page is served by this script on a free port, the modules as the tower serves them
  * (`servedModule`); a check failing fails the run. Run it on every bump of the UI SDK, in both engines:
@@ -62,23 +62,20 @@ const PAGE = `<!doctype html>
 <div id="view"></div>
 <script type="module">
 import { morph } from '/lib/morph.js'
+import { comboboxHtml, subjectHtml, subjectMenuHtml } from '/lib/elements.js'
 import '/lib-ui/menu.js'
 import '/lib-ui/combobox.js'
 
 const subjects = ${JSON.stringify(SUBJECTS)}
 const fruits = ['Apple', 'Apricot', 'Banana', 'Cherry', 'Peach', 'Pear', 'Plum'].map((label) => ({ value: label.toLowerCase(), label }))
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 
 let fruit = null
 let tick = 0
-const row = (s) => \`<tower-menu-area for="subject-menu" payload="\${s.id}" tabindex="0">
-  <span class="name">\${s.name}</span><span class="age">\${tick % 60}s</span>
-  <tower-menu-button for="subject-menu" payload="\${s.id}" label="\${s.name}: menu" data-owned="children"></tower-menu-button>
-</tower-menu-area>\`
+const row = (s) => subjectHtml(s.id, \`\${s.name}: menu\`, \`<span class="name">\${s.name}</span><span class="age">\${tick % 60}s</span>\`)
 const view = () => \`<div class="head">render \${tick}</div>
-<tower-combobox id="fruit" name="fruit" label="Fruit" placeholder="Search fruits" empty="No fruit"\${fruit ? \` value="\${fruit}"\` : ''} options="\${esc(JSON.stringify(fruits))}" data-tick="\${tick}" data-owned="children"></tower-combobox>
+\${comboboxHtml({ id: 'fruit', name: 'fruit', label: 'Fruit', placeholder: 'Search fruits', empty: 'No fruit', value: fruit, options: fruits })}
 <div id="rows">\${subjects.map(row).join('')}</div>
-<tower-menu id="subject-menu" data-tick="\${tick}" data-owned="children"></tower-menu>\`
+\${subjectMenuHtml()}\`
 
 const root = document.getElementById('view')
 const render = () => (tick++, morph(root, view()))
@@ -164,7 +161,7 @@ window.check = {
     return seen
   },
   ownAttributes: () => {
-    const written = { 'tower-combobox': ['id', 'name', 'label', 'placeholder', 'empty', 'value', 'options', 'data-tick', 'data-owned'], 'tower-menu': ['id', 'data-tick', 'data-owned'],
+    const written = { 'tower-combobox': ['id', 'name', 'label', 'placeholder', 'empty', 'value', 'options', 'data-owned'], 'tower-menu': ['id', 'data-owned'],
       'tower-menu-area': ['for', 'payload', 'tabindex'], 'tower-menu-button': ['for', 'payload', 'label', 'data-owned'] }
     const extra = Object.entries(written).flatMap(([tag, names]) => [...document.querySelectorAll(tag)].flatMap((el) => [...el.attributes].map((a) => a.name).filter((n) => !names.includes(n)).map((n) => \`\${tag} \${n}\`)))
     if (extra.length) fail('an element wrote an attribute on itself', extra)
