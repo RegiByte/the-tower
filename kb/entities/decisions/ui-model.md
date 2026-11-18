@@ -242,7 +242,8 @@ and a framed document's section are the same thing.
   [`regions`](ref:hub/renderers/page/regions.js#regions); its click switchboard leaves a view's presses to the view,
   but for the regions it fills there. Where a `one` region would close its view as the location leaves, the page keeps
   the workers left last drawn and hidden ([`CARDS_KEPT`](ref:hub/renderers/page/regions.js#CARDS_KEPT)), each told
-  `visible(false)`, so a worker is as it was left when gone back to. A worker the board left is a read subject the page
+  `visible(false)`, so a worker is as it was left when gone back to, its terminal focused as on its first opening
+  when that is the tab open. A worker the board left is a read subject the page
   holds ([`archive`](ref:hub/renderers/page/archive.js#archive)).
 - *The grid* ([`examples/extensions/grid`](ref:hub/examples/extensions/grid/extension.json)) proves the model: reloaded
   at its location, its cells and head toggle kept in its state, each cell its own region `card.cell`, holding

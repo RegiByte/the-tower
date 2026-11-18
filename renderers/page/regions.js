@@ -184,7 +184,7 @@ export function regions(deps) {
    * the PTY to nothing). The tab open is the location's for the main pane's worker (`scope`), else the region's own;
    * none named, the terminal while the worker drives, else its brief.
    * @param {HTMLElement} host @param {Region} region @param {Subject} subject @param {Record<string, Record<string, unknown>>} options @param {PaneScope | undefined} scope
-   * @returns {RegionHandle & { tabs: () => { views: string[], open: string | undefined, at: { view: string, subject: string } | undefined }, toPane: (id: string) => boolean }}
+   * @returns {RegionHandle & { tabs: () => { views: string[], open: string | undefined, at: { view: string, subject: string } | undefined }, toPane: (id: string) => boolean, focusTerminal: () => void }}
    */
   function tabs(host, region, subject, options, scope) {
     const hostView = /** @type {HTMLElement | null} */ (host.closest('[data-view]'))?.dataset.view
@@ -703,6 +703,10 @@ export function regions(deps) {
         })
         return true
       },
+      /** Focuses the open tab's terminal, if it has one, as the terminal focuses itself when it first opens. */
+      focusTerminal() {
+        mounted.get(open ?? '')?.hosted.terminal()?.focus()
+      },
       close() {
         tabbed.delete(self)
         resized.disconnect()
@@ -745,8 +749,8 @@ export function regions(deps) {
   }
 
   /**
-   * Enters `location`: a worker kept is shown again, any other view mounted afresh; a subject that isn't there takes the
-   * page home.
+   * Enters `location`: a worker kept is shown again, its open terminal focused as when it first opened, any other view
+   * mounted afresh; a subject that isn't there takes the page home.
    * @param {Location} location
    */
   function enter(location) {
@@ -758,6 +762,7 @@ export function regions(deps) {
       open = back
       reveal(back, true)
       back.hosted.update(/** @type {Subject} */ (subjectOf(key)))
+      regionsByHost.get(back.el)?.focusTerminal()
       return
     }
     const view = views().find((v) => v.id === location.view)
