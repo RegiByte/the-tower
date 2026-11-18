@@ -41,9 +41,16 @@ export const SUBJECT_MENU = 'subject-menu'
 export const subjectMenuHtml = (): string => `<tower-menu id="${SUBJECT_MENU}" data-owned="children"></tower-menu>`
 
 /**
- * A subject's own markup, `row`, made the place its menu opens: a right-click, the context-menu key or a long press on
- * it, and the ⋯ button drawn at its end, named `label`, open the subject menu for `key` (a subject key, `card:<id>`).
+ * A subject's own markup, `html`, made the place its menu opens: a right-click, the context-menu key on what is focused
+ * in it, or a long press opens the subject menu for `key` (a subject key, `card:<id>`) at the pointer. `id` names it
+ * among the page's elements, from the subject's key and where it is drawn, so a redraw finds it again.
  */
-export const subjectHtml = (key: string, label: string, row: string): string =>
-  `<tower-menu-area for="${SUBJECT_MENU}" payload="${esc(key)}" tabindex="0">${row}` +
-  `<tower-menu-button for="${SUBJECT_MENU}" payload="${esc(key)}" label="${esc(label)}" data-owned="children"></tower-menu-button></tower-menu-area>`
+export const subjectAreaHtml = (id: string, key: string, html: string): string =>
+  `<tower-menu-area id="${esc(id)}" for="${SUBJECT_MENU}" payload="${esc(key)}">${html}</tower-menu-area>`
+
+/** The ⋯ button that opens the subject menu for `key` from a press or the keyboard, named `label`; `id` as an area's. */
+export const subjectButtonHtml = (id: string, key: string, label: string): string =>
+  `<tower-menu-button id="${esc(id)}" for="${SUBJECT_MENU}" payload="${esc(key)}" label="${esc(label)}" data-owned="children"></tower-menu-button>`
+
+/** A subject's markup, `row`, as an area with its ⋯ button, named `label`, drawn at its end; the button's id is the area's, `/menu` after it. */
+export const subjectHtml = (id: string, key: string, label: string, row: string): string => subjectAreaHtml(id, key, row + subjectButtonHtml(`${id}/menu`, key, label))

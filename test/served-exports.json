@@ -1552,6 +1552,14 @@
           "since": "2.15",
           "stability": "provisional"
         },
+        "subjectAreaHtml": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
+        "subjectButtonHtml": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
         "subjectHtml": {
           "since": "2.15",
           "stability": "provisional"

@@ -71,7 +71,7 @@ const fruits = ['Apple', 'Apricot', 'Banana', 'Cherry', 'Peach', 'Pear', 'Plum']
 
 let fruit = null
 let tick = 0
-const row = (s) => subjectHtml(s.id, \`\${s.name}: menu\`, \`<span class="name">\${s.name}</span><span class="age">\${tick % 60}s</span>\`)
+const row = (s) => subjectHtml(\`row-\${s.id}\`, s.id, \`\${s.name}: menu\`, \`<span class="name">\${s.name}</span><span class="age">\${tick % 60}s</span>\`)
 const view = () => \`<div class="head">render \${tick}</div>
 \${comboboxHtml({ id: 'fruit', name: 'fruit', label: 'Fruit', placeholder: 'Search fruits', empty: 'No fruit', value: fruit, options: fruits })}
 <div id="rows">\${subjects.map(row).join('')}</div>
@@ -88,6 +88,7 @@ const itemsOf = (id) => {
     { type: 'group', label: s.name, items: verbs.map((v) => ({ value: \`\${id}/\${v.toLowerCase()}\`, label: v })) },
     { type: 'separator' },
     { type: 'submenu', label: 'Kept', items: [{ value: \`\${id}/drafts\`, label: 'Drafts' }, { value: \`\${id}/reviews\`, label: 'Reviews' }] },
+    { type: 'checkbox', value: \`\${id}/open\`, label: 'Open here', checked: true, closeOnSelect: true },
   ]
 }
 
@@ -97,6 +98,7 @@ const log = []
 root.addEventListener('payloadchange', (e) => { log.push(['payload', e.detail.value]); menu.items = itemsOf(e.detail.value) })
 root.addEventListener('openchange', (e) => log.push([e.target.localName, 'open', e.detail.value, e.detail.reason]))
 root.addEventListener('action', (e) => log.push(['action', e.detail.value]))
+root.addEventListener('checkedchange', (e) => log.push(['checked', e.detail.value, e.detail.checked]))
 root.addEventListener('valuechange', (e) => { log.push(['value', e.detail.value, e.detail.reason]); fruit = e.detail.value })
 
 const fail = (what, seen) => { throw new Error(\`\${what}: \${JSON.stringify(seen)}\`) }
@@ -145,6 +147,11 @@ window.check = {
     if (seen.open || seen.last?.[1] !== value || seen.marked.length) fail(\`the menu didn't run \${value} and close\`, seen)
     return seen
   },
+  checked: (value) => {
+    const seen = { open: menu.open, last: log.filter((l) => l[0] === 'checked').at(-1) }
+    if (seen.open || seen.last?.[1] !== value || seen.last?.[2] !== false) fail(\`the menu didn't fire checkedchange for \${value} and close\`, seen)
+    return seen
+  },
   openAt: (i) => (menu.openAt(subjects[i].id, area(i)), true),
   focusButton: (i) => { area(i).querySelector('tower-menu-button button').focus(); return document.activeElement.getAttribute('aria-label') },
   anchored: (i) => {
@@ -162,7 +169,7 @@ window.check = {
   },
   ownAttributes: () => {
     const written = { 'tower-combobox': ['id', 'name', 'label', 'placeholder', 'empty', 'value', 'options', 'data-owned'], 'tower-menu': ['id', 'data-owned'],
-      'tower-menu-area': ['for', 'payload', 'tabindex'], 'tower-menu-button': ['for', 'payload', 'label', 'data-owned'] }
+      'tower-menu-area': ['id', 'for', 'payload'], 'tower-menu-button': ['id', 'for', 'payload', 'label', 'data-owned'] }
     const extra = Object.entries(written).flatMap(([tag, names]) => [...document.querySelectorAll(tag)].flatMap((el) => [...el.attributes].map((a) => a.name).filter((n) => !names.includes(n)).map((n) => \`\${tag} \${n}\`)))
     if (extra.length) fail('an element wrote an attribute on itself', extra)
     return tick
@@ -214,6 +221,12 @@ const STEPS = (shots: (name: string) => Step[]): Step[] => [
   { key: 'Escape' },
   { wait: 500 },
   { eval: 'check.closedTo(0)' },
+  { key: 'Enter' },
+  { wait: 500 },
+  { key: 'End' },
+  { key: 'Enter' },
+  { wait: 500 },
+  { eval: `check.checked('${SUBJECTS[0]!.id}/open')` },
   { rclick: rowPoint(3) },
   { wait: 500 },
   { eval: `check.menuAt('${SUBJECTS[3]!.id}', ${JSON.stringify(rowPoint(3))}, 'Open')` },

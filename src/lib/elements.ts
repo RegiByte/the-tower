@@ -2,6 +2,8 @@
 export {
   /** @provisional */ comboboxHtml,
   /** @provisional */ SUBJECT_MENU,
+  /** @provisional */ subjectAreaHtml,
+  /** @provisional */ subjectButtonHtml,
   /** @provisional */ subjectHtml,
   /** @provisional */ subjectMenuHtml,
 } from '../shared/elements.ts'
