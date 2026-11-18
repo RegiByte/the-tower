@@ -340,8 +340,8 @@ const SHELF_VIEW = 'tower/shelf'
 
 /** A floor's past workers in the main pane. @param {string} project */
 const openArchive = (project) => goTo({ view: ARCHIVE_VIEW, subject: `floor:${project}` })
-/** The foot's Extensions entry, opening every extension's status in the main pane. */
-const extensionsFoot = extensionsEntry({ board, open: (location) => goTo(location), isOpen: () => at(EXTENSIONS_VIEW) !== undefined })
+/** The foot's Extensions entry, opening every extension's status in the main pane, on one extension from its list. */
+const extensionsFoot = extensionsEntry({ board, open: (location) => openFresh(mainViewOf(location, has)), isOpen: () => at(EXTENSIONS_VIEW) !== undefined })
 /** A wait's notification. @param {Wait} w */
 const showWaitAlert = (w) => showAlert(/** @type {Card} */ (findCard(w.id)), w)
 
@@ -1854,7 +1854,14 @@ const goTo = (location) => opening(mainViewOf(location, has))
  * @param {string} wanted
  */
 function route(wanted) {
-  const named = viewOf(wanted, board(), has)
+  openFresh(viewOf(wanted, board(), has))
+}
+
+/**
+ * Opens `named`; afresh when the view open is the same place on other args, which a view reads once at its mount.
+ * @param {MainView | import('./view.js').Lookup} named
+ */
+function openFresh(named) {
   const at = view()
   if (named.t === 'view' && at.t === 'view' && sameRoom(at, named) && String(named.location.args) !== String(at.location.args)) return reopen(named)
   void opening(named)
