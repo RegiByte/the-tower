@@ -90,7 +90,6 @@ export const OPENCODE: Runtime<OpencodeLaunch> = {
   plain: LAUNCHES.plain,
   launches: Object.values(LAUNCHES),
   scenarios: SCENARIOS,
-  unrecorded: UNRECORDED,
   configOf: () => ({ runtimes: { claude: { argv: ['claude'] }, opencode: { argv: ['opencode'] } }, env: {} }),
   started: (live, _blocked, io) => io.waitForFirst(live.tail, [{ event: 'plugin.started' }], 0),
   subagent: (hook) => hook.parentID !== undefined,

@@ -375,8 +375,7 @@ async function recorded(hub: string, group: Scenario[], vars: Record<string, str
   const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)
   const dirOf = (s: Scenario) => (s.fresh ? path.join(ROOT, 'fresh', stamp, s.name) : path.join(ROOT, KEPT, s.name))
   for (const s of group) seedDir(dirOf(s), s.seed, vars)
-  rmSync(path.join(ROOT, 'signed-out'), { recursive: true, force: true })
-  mkdirSync(path.join(ROOT, 'signed-out'))
+  RUNTIME.prepare?.(ROOT)
   const dirs = group.map(dirOf)
   const scenarios: ScenarioRun[] = []
   for (const launch of RUNTIME.launches) {

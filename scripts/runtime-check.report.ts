@@ -105,5 +105,6 @@ export const checkLines = (checks: Check[]) => ['## Surfaces no fixture covers',
 
 export const unrecordedLines = (scenarios: Scenario[], unrecorded: Record<string, string>) => {
   const fixtures = new Set(scenarios.flatMap((s) => Object.values(s.recordings).flatMap((r) => (r.fixture ? [r.fixture] : []))))
-  return ['## Not recorded', Object.entries(unrecorded).filter(([name]) => !fixtures.has(name)).map(([name, why]) => `- ${name}: ${why}`).join('\n'), '']
+  const left = Object.entries(unrecorded).filter(([name]) => !fixtures.has(name))
+  return ['## Not recorded', left.length ? left.map(([name, why]) => `- ${name}: ${why}`).join('\n') : 'Every fixture has a scenario.', '']
 }
