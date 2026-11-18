@@ -2491,11 +2491,17 @@
         "panelsCss": {
           "since": "2.0"
         },
+        "pressOf": {
+          "since": "2.17"
+        },
         "pressTrayHtml": {
           "since": "2.0"
         },
         "pressing": {
           "since": "2.0"
+        },
+        "pressingAs": {
+          "since": "2.17"
         },
         "readsText": {
           "since": "2.0",
@@ -2552,6 +2558,9 @@
         "Placing": {
           "since": "2.0",
           "stability": "provisional"
+        },
+        "Press": {
+          "since": "2.17"
         },
         "RegionHandle": {
           "since": "2.0"

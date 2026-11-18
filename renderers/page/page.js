@@ -13,7 +13,7 @@ import { wireSpawn } from '/lib/spawn.js'
 import '/lib-ui/combobox.js'
 import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
-import { copyTelling, fileButtonsHtml, fileCall, itemsCss, keepingFocus, panelsCss, pressing } from '/lib/view.js'
+import { pressOf, copyTelling, fileButtonsHtml, fileCall, itemsCss, keepingFocus, panelsCss, pressing, pressingAs } from '/lib/view.js'
 import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
 import { probedLines } from './clients.js'
@@ -55,7 +55,7 @@ import { gapBeside, isCut, lineWidth, roomOf } from './fit.js'
  * @import { MenuPick, Opened, Openable, Pick } from '/lib/palette.js'
  * @import { SpawnEvent, Spawning } from '/lib/spawn.js'
  * @import { StatsRange } from '/lib/stats.js'
- * @import { CommandKit, Placing } from '/lib/view.js'
+ * @import { Press, CommandKit, Placing } from '/lib/view.js'
  * @import { Viewer } from '/lib/viewer.js'
  * @import { MenuCheck, MenuEntry, MenuItem } from './menu.js'
  * @import { ReadAnswer } from '../../extensions/quota/client/quota.ts'
@@ -423,16 +423,16 @@ function goToFloor(project) {
 }
 
 /**
- * Runs what a palette entry does (`/lib/palette.js`) through the handlers its buttons and keys run; `row` is the entry's
- * row, busy while a request it makes is in flight.
- * @param {Pick} does @param {HTMLElement} row
+ * Runs what a palette entry does (`/lib/palette.js`) through the handlers its buttons and keys run, a request it makes
+ * in flight as `press`.
+ * @param {Pick} does @param {Press} press
  */
-function doPick(does, row) {
+function doPick(does, press) {
   if (does.t === 'command') return void run(does.id, { repeat: false })
   if (does.t === 'patterns') return void showPatterns()
   if (does.t === 'reload') return location.reload()
   if (does.t === 'learn') return learnPick(does.id)
-  if (does.t === 'added') return void runAddedAt(row, does)
+  if (does.t === 'added') return void runAdded(press, subjectOf(does.subject), does.action)
   if (does.t === 'open') return display(does.subject, { view: does.view })
   if (does.t === 'go') {
     const to = does.target
@@ -446,52 +446,60 @@ function doPick(does, row) {
     const f = /** @type {Floor} */ (floorOf(does.project))
     if (does.verb === 'spawn' || does.verb === 'cut') return openSpawn(f.id)
     if (does.verb === 'shell') return void spawnShellAt(f.id, f.hub)
-    if (does.verb === 'editor') return void openInEditor(row, f, f.hub)
-    return void tidyAll(row, f)
+    if (does.verb === 'editor') return void openInEditor(press, f, f.hub)
+    return void tidyAll(press, f)
   }
   const c = findCard(does.id)
   if (!c) return toast('That worker is no longer on the board')
   if (does.subject === 'resource') {
     const r = c.resources.find((r) => r.pid === does.pid)
     const call = r && callOf(r, 'reap')
-    return call ? void told(pressing(row, () => tower.run(call))) : toast(noLongerOffered(`process ${does.pid}`, 'reap'))
+    return call ? void told(pressingAs(press, () => tower.run(call))) : toast(noLongerOffered(`process ${does.pid}`, 'reap'))
   }
   if (does.subject === 'conversation') {
     const conv = c.conversations.find((v) => v.id === does.conversation)
     const call = conv && callOf(conv, 'resume')
     if (does.verb === 'goto' && conv?.resumedBy) return moveTo(conv.resumedBy.id)
-    return call ? void resume(row, call) : toast(noLongerOffered(c.callsign, does.verb))
+    return call ? void resume(press, call) : toast(noLongerOffered(c.callsign, does.verb))
   }
   const verb = does.verb
   if (verb === 'resume' || verb === 'carry-on') {
     const call = callOf(c, verb)
-    return call ? void resume(row, call) : toast(noLongerOffered(c.callsign, verb))
+    return call ? void resume(press, call) : toast(noLongerOffered(c.callsign, verb))
   }
   if (verb === 'goto') {
     const to = c.conversations.at(-1)?.resumedBy
     return to ? moveTo(to.id) : toast(noLongerOffered(c.callsign, verb))
   }
-  if (verb === 'reap') return void reapAll(row, c)
-  if (verb === 'let-go') return void letGo(row, c)
-  if (verb === 'send-home') return void sendHome(row, c)
+  if (verb === 'reap') return void reapAll(press, c)
+  if (verb === 'let-go') return void letGo(press, c)
+  if (verb === 'send-home') return void sendHome(press, c)
 }
 
 /**
- * Runs what a line of a subject menu does (`subjectMenu` of `/lib/palette.js`): its own picks here, a palette entry's
- * through `doPick`. A worker's terminal and brief open on that worker, whichever is selected.
- * @param {MenuPick} does @param {HTMLElement} at
+ * The runner of each kind of line a subject menu holds (`subjectMenu` of `/lib/palette.js`), by its `t`: the menu's
+ * own here, a palette entry's through `doPick`. A worker's terminal and brief open on that worker, whichever is
+ * selected. A kind with no runner fails the typecheck.
+ * @type {{ [T in MenuPick['t']]: (does: Extract<MenuPick, { t: T }>, press: Press) => void }}
  */
-function doMenuPick(does, at) {
-  if (does.t === 'display') return display(does.subject)
-  if (does.t === 'link') return void window.open(does.href, '_blank', 'noreferrer')
-  if (does.t === 'dir') {
+const MENU_PICKS = {
+  display: (does) => display(does.subject),
+  link: (does) => void window.open(does.href, '_blank', 'noreferrer'),
+  dir: (does, press) => {
     const f = /** @type {Floor} */ (floorOf(does.project))
-    return does.verb === 'shell' ? void spawnShellAt(f.id, does.dir) : void openInEditor(at, f, does.dir)
-  }
-  if (does.t === 'action' && does.subject === 'card' && (does.verb === 'drive' || does.verb === 'brief'))
-    return goTo({ view: WORKER, subject: `card:${does.id}`, pane: { view: does.verb === 'drive' ? 'tower/terminal' : 'tower/brief' } })
-  doPick(does, at)
+    return does.verb === 'shell' ? void spawnShellAt(f.id, does.dir) : void openInEditor(press, f, does.dir)
+  },
+  action: (does, press) =>
+    does.subject === 'card' && (does.verb === 'drive' || does.verb === 'brief')
+      ? goTo({ view: WORKER, subject: `card:${does.id}`, pane: { view: does.verb === 'drive' ? 'tower/terminal' : 'tower/brief' } })
+      : doPick(does, press),
+  added: doPick,
+  open: doPick,
+  go: doPick,
 }
+
+/** Runs what a line of a subject menu does, by its runner (`MENU_PICKS`). @param {MenuPick} does @param {Press} press */
+const doMenuPick = (does, press) => /** @type {(does: MenuPick, press: Press) => void} */ (MENU_PICKS[does.t])(does, press)
 
 /** The views open in the main pane, each on its subject: the main view, and the tab open in it. @returns {Opened[]} */
 function openedViews() {
@@ -509,11 +517,11 @@ function learnPick(id) {
   const capability = /** @type {Capability} */ (CAPABILITIES.find((k) => k.id === id))
   const floor = capability.verb && floorOf(findCard(selected())?.project ?? '')
   const verb = capability.verb
-  const action = floor && verb && can(floor, verb) ? { label: verbLabel('floor', verb), run: () => doPick({ t: 'action', subject: 'floor', verb, project: floor.id }, $('palette-input')) } : undefined
+  const action = floor && verb && can(floor, verb) ? { label: verbLabel('floor', verb), run: () => doPick({ t: 'action', subject: 'floor', verb, project: floor.id }, { key: `learn ${id}`, marks: '#palette-input' }) } : undefined
   toast(capability.text.replace(/`/g, ''), action)
 }
 
-const { openPalette, redraw, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: doPick, opens: () => opensHere() })
+const { openPalette, redraw, showPatterns } = await palette({ board, selected, draftTitle, heed, pick: (does, row) => doPick(does, pressOf(row)), opens: () => opensHere() })
 redrawPalette = redraw
 
 /** This renderer's name, from the path it is served at: `/r/<name>/`. */
@@ -1414,18 +1422,24 @@ function goToSubject(key) {
 }
 
 /**
- * Runs an action an extension added, asked first when its words say it destroys: its verb called with its call, or its
- * command run on its subject as the board holds it now.
- * @param {HTMLElement} el @param {{ subject: string, action: Added<Action> }} added
+ * Runs an action an extension added, asked first when its words say it destroys, in flight as `press`: its verb called
+ * with its call, or its command run on `subject`, its subject as the page holds it now.
+ * @param {Press} press @param {Subject | undefined} subject @param {Added<Action>} action
  */
-async function runAddedAt(el, { subject: key, action }) {
-  const subject = isCommand(action) ? subjectOf(key) ?? viewerSubjectAt(el, key) : undefined
+async function runAdded(press, subject, action) {
   if (isCommand(action) && !subject) return toast('That is no longer on the board')
   const words = actionWords(board(), action)
   if (words.destructive && !(await ask(`${words.label}?`, words.label))) return
   markSeen([actionId(action)])
-  await told(pressing(el, () => (isCommand(action) ? runCommandWith(board(), action, /** @type {Subject} */ (subject), commandKit) : runVerb(action))))
+  await told(pressingAs(press, () => (isCommand(action) ? runCommandWith(board(), action, /** @type {Subject} */ (subject), commandKit) : runVerb(action))))
 }
+
+/**
+ * Runs an action an extension added for a press of `el`: on its subject as the board holds it, else as the region
+ * `el` is drawn in holds it.
+ * @param {HTMLElement} el @param {{ subject: string, action: Added<Action> }} added
+ */
+const runAddedAt = (el, { subject: key, action }) => runAdded(pressOf(el), subjectOf(key) ?? viewerSubjectAt(el, key), action)
 
 /** The worker a key moved to, its sidebar row scrolled into view when it is out of sight. @param {string} id */
 function moveTo(id) {
@@ -1489,39 +1503,39 @@ const spawning = wireSpawn(/** @type {HTMLDialogElement} */ ($('spawn')), {
 /** @param {string} project @param {{ d: Draft, text: string }} [sent] */
 const openSpawn = (project, sent) => spawning.dispatch({ type: 'open', project, on: sent?.d, text: sent?.text ?? '' })
 
-/** @param {HTMLElement} button @param {Call<'resume'>} call */
-async function resume(button, call) {
-  const reply = await told(pressing(button, () => tower.run(call)))
+/** @param {Press} press @param {Call<'resume'>} call */
+async function resume(press, call) {
+  const reply = await told(pressingAs(press, () => tower.run(call)))
   if (reply?.t === 'spawned') selectArriving(reply.id)
 }
 
 /** Every stranded worker of a floor resumed, one after another, asked first with the list. */
-/** @param {HTMLElement} button @param {Floor} f */
-async function resumeAll(button, f) {
+/** @param {Press} press @param {Floor} f */
+async function resumeAll(press, f) {
   const stranded = strandedOf(f)
   if (!(await ask(resumeAllAsk(f, stranded), 'Resume all'))) return
-  const line = await pressing(button, () => resumeStranded(stranded, tower.run))
+  const line = await pressingAs(press, () => resumeStranded(stranded, tower.run))
   if (line) toast(line)
 }
 
-/** Ends everything a worker left running, asked first. @param {HTMLElement} button @param {Card} c */
-async function reapAll(button, c) {
-  if (await ask(reapAsk(c), 'End them')) told(pressing(button, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
+/** Ends everything a worker left running, asked first. @param {Press} press @param {Card} c */
+async function reapAll(press, c) {
+  if (await ask(reapAsk(c), 'End them')) told(pressingAs(press, async () => tower.run(offeredCall(c, 'reap', c.callsign))))
 }
 
-/** Does all a floor's Tidy lists, asked first with the list. @param {HTMLElement} button @param {Floor} f */
-async function tidyAll(button, f) {
-  if (await ask(tidyAllAsk(f, Date.now(), addedTidyOf(board(), f)), verbLabel('floor', 'tidy'))) told(pressing(button, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
+/** Does all a floor's Tidy lists, asked first with the list. @param {Press} press @param {Floor} f */
+async function tidyAll(press, f) {
+  if (await ask(tidyAllAsk(f, Date.now(), addedTidyOf(board(), f)), verbLabel('floor', 'tidy'))) told(pressingAs(press, async () => tower.run(offeredCall(f, 'tidy', f.name)))).then((r) => r && toast(tidiedLine(r)))
 }
 
-/** Opens one of a floor's dirs in the user's editor. @param {HTMLElement} button @param {Floor} f @param {string} dir */
-const openInEditor = (button, f, dir) => told(pressing(button, async () => tower.run(offeredCall(f, 'editor', f.name), { dir })))
+/** Opens one of a floor's dirs in the user's editor. @param {Press} press @param {Floor} f @param {string} dir */
+const openInEditor = (press, f, dir) => told(pressingAs(press, async () => tower.run(offeredCall(f, 'editor', f.name), { dir })))
 
-/** Ends a worker with everyone under it that runs, asked first; the toast offers the resume of one sent home alone. @param {HTMLElement} button @param {Card} c */
-async function sendHome(button, c) {
+/** Ends a worker with everyone under it that runs, asked first; the toast offers the resume of one sent home alone. @param {Press} press @param {Card} c */
+async function sendHome(press, c) {
   const sent = sentHome(cards(), c)
   if (!(await ask(sendHomeAsk(c, sent), verbLabel('card', 'send-home')))) return
-  const ended = await pressing(button, async () => {
+  const ended = await pressingAs(press, async () => {
     for (const call of callOf(c, 'send-home') ?? []) if (!(await told(tower.run(call)))) return false
     return true
   })
@@ -1535,10 +1549,10 @@ async function sendHome(button, c) {
   if (ended) toast(`Sent ${sent.map((h) => h.callsign).join(', ')} home`, sent.length === 1 ? { label: verbLabel('card', 'resume'), run: () => void resumeIt() } : undefined)
 }
 
-/** @param {HTMLElement} button @param {Card} c */
-async function letGo(button, c) {
+/** @param {Press} press @param {Card} c */
+async function letGo(press, c) {
   if (!(await ask(letGoAsk(c), verbLabel('card', 'let-go')))) return
-  if (await told(pressing(button, async () => tower.run(offeredCall(c, 'let-go', c.callsign))))) toast(letGoneLine(c))
+  if (await told(pressingAs(press, async () => tower.run(offeredCall(c, 'let-go', c.callsign))))) toast(letGoneLine(c))
 }
 
 /** Whether `el` is a view's own, drawn inside one and in no region the page fills there. @param {Element} el */
@@ -1606,13 +1620,13 @@ document.addEventListener('click', async (e) => {
   const tidyCall = target.closest('[data-tidy-call]')
   if (tidyCall) return (await ask(/** @type {string} */ (tidyCall.dataset.tidyAsk), 'Tidy')) && told(pressing(tidyCall, () => tower.run(/** @type {Call<'tidy'>} */ (JSON.parse(/** @type {string} */ (tidyCall.dataset.tidyCall)))))).then((r) => r && toast(tidiedLine(r)))
   const tidy = target.closest('[data-tidy]')
-  if (tidy) return tidyAll(tidy, /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy))))
+  if (tidy) return tidyAll(pressOf(tidy), /** @type {Floor} */ (floorOf(/** @type {string} */ (tidy.dataset.tidy))))
   const resumeAllButton = target.closest('[data-resume-all]')
-  if (resumeAllButton) return resumeAll(resumeAllButton, /** @type {Floor} */ (floorOf(/** @type {string} */ (resumeAllButton.dataset.resumeAll))))
+  if (resumeAllButton) return resumeAll(pressOf(resumeAllButton), /** @type {Floor} */ (floorOf(/** @type {string} */ (resumeAllButton.dataset.resumeAll))))
   const letGoButton = target.closest('[data-let-go]')
-  if (letGoButton) return letGo(letGoButton, /** @type {Card} */ (findCard(letGoButton.dataset.letGo)))
+  if (letGoButton) return letGo(pressOf(letGoButton), /** @type {Card} */ (findCard(letGoButton.dataset.letGo)))
   const resumeButton = target.closest('[data-resume]')
-  if (resumeButton) return resume(resumeButton, JSON.parse(/** @type {string} */ (resumeButton.dataset.resume)))
+  if (resumeButton) return resume(pressOf(resumeButton), JSON.parse(/** @type {string} */ (resumeButton.dataset.resume)))
   if (target.closest('[data-side]')) return toggleSide()
   const sideTo = /** @type {SideView | undefined} */ (target.closest('[data-side-view]')?.dataset.sideView)
   if (sideTo) return sideView.dispatch({ type: 'side', side: sideTo })
@@ -1638,7 +1652,7 @@ document.addEventListener('click', async (e) => {
   const out = target.closest('[data-out]')?.dataset.out
   if (out) return window.open(out, '_blank', 'noreferrer')
   const open = target.closest('[data-open]')
-  if (open) return openInEditor(open, /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.open))
+  if (open) return openInEditor(pressOf(open), /** @type {Floor} */ (floorOf(/** @type {string} */ (open.dataset.openProject))), /** @type {string} */ (open.dataset.open))
   const shelved = target.closest('[data-shelf]')
   if (shelved) return openShelf(/** @type {string} */ (shelved.dataset.shelf), Number(shelved.dataset.n))
   const newShell = target.closest('[data-shell-dir]')
@@ -1662,7 +1676,7 @@ document.addEventListener('click', async (e) => {
   const reapOne = target.closest('[data-reap-process]')
   if (reapOne) return told(pressing(reapOne, () => tower.run(JSON.parse(/** @type {string} */ (reapOne.dataset.reapProcess)))))
   const reapable = target.closest('[data-reap]')
-  if (reapable) return reapAll(reapable, /** @type {Card} */ (findCard(reapable.dataset.reap)))
+  if (reapable) return reapAll(pressOf(reapable), /** @type {Card} */ (findCard(reapable.dataset.reap)))
   const actor = target.closest('[data-act]')
   const act = actor?.dataset.act
   if (act === 'home') return goHome()

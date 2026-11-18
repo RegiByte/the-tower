@@ -49,7 +49,12 @@ export {
   panelsCss,
 } from '../shared/panels-css.ts'
 export {
+  pressOf,
   pressing,
+  pressingAs,
+} from '../shared/press.ts'
+export type {
+  Press,
 } from '../shared/press.ts'
 export {
   closeHtml,
