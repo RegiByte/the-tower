@@ -13,7 +13,7 @@ import { wireSpawn } from '/lib/spawn.js'
 import '/lib-ui/combobox.js'
 import { STATS_ALL } from '/lib/stats.js'
 import { loadTerminalFont } from '/lib/terminal.js'
-import { pressOf, copyTelling, fileButtonsHtml, fileCall, itemsCss, keepingFocus, panelsCss, pressing, pressingAs } from '/lib/view.js'
+import { pressOf, copyTelling, fileButtonsHtml, fileCall, itemsCss, keepingFocus, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
 import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
 import { probedLines } from './clients.js'
@@ -33,7 +33,7 @@ import { subjectMenus } from './subject-menus.js'
 import { archive } from './archive.js'
 import { EXTENSIONS_VIEW, extensionsEntry } from './extensions-entry.js'
 import { boardKit } from './board.js'
-import { onDuty, $, signHtml, topAnchorOf, sightAnchorOf, holdRow, paintOnce, repaint, announce, toast, notice, closableNotice, told } from './kit.js'
+import { onDuty, $, signHtml, topAnchorOf, sightAnchorOf, holdRow, paintOnce, announce, toast, notice, closableNotice, told } from './kit.js'
 import { DRAFTS, draftsOf, keepUnsent, titleOf } from './clients.js'
 import { palette } from './palette.js'
 import { actionsHtml, asksHtml, badgeHtml, drawCount } from './added.js'
@@ -128,7 +128,7 @@ function render() {
     holdRow(floors, anchor)
   })
   drawSideView()
-  repaint($('rail'), railHtml(waiting))
+  morphPanel($('rail'), railHtml(waiting))
   extensionsFoot.paint()
   $('side-foot').innerHTML = board().config ? `<span>config</span><code data-tip="${esc(board().config)}"><bdi>${esc(board().config)}</bdi></code>${fileButtonsHtml(board().config)}` : ''
   mainRegion.update()
