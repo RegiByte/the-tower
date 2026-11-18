@@ -4,7 +4,7 @@ import { placeOnOpen } from '/lib/chrome.js'
 import { subjectAreaHtml, subjectButtonHtml, subjectHtml } from '/lib/elements.js'
 import { keyshortcuts } from '/lib/keys.js'
 import { addedActions, badgesOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
-import { ICON, keyedTip, originIcon, SHELF_ICON, withIcons } from '/lib/view.js'
+import { ICON, keyedTip, morphPanel, originIcon, SHELF_ICON, withIcons } from '/lib/view.js'
 import { domId } from '/lib/morph.js'
 import { base, esc, noun, plural, span } from '/lib/words.js'
 import { commandProbes, PROBE_ATTENTION, probeLine, probeTitle } from './clients.js'
@@ -530,7 +530,7 @@ export async function sidebar(deps) {
     const p = commandProbes(board()).find((probe) => probe.command === entry.command)
     if (!p) return ''
     const named = entry.command === undefined ? '' : ` data-probe-command="${esc(entry.command)}"`
-    return `<small class="probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}<button class="probe-run" data-probe-run="quota"${named} data-tip="read it now: at most once a minute">read now</button></small>`
+    return `<small class="probe ${PROBE_ATTENTION[p.state]}" id="${esc(domId('probe', entry.command ?? ''))}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}<button class="probe-run" data-probe-run="quota"${named} data-tip="read it now: at most once a minute">read now</button></small>`
   }
 
   /** Extra usage while it is on, as the probe last read it. @param {CommandLimits} entry @param {number} now */
@@ -577,7 +577,6 @@ export async function sidebar(deps) {
       tip: `${whose}${r.kind.replaceAll('_', ' ')}: ${r.percentUsed}% used, the tightest of ${plural(all.length, 'limit')}, as of ${span(age)} ago: click for all of them` }
   }
 
-  let limitsPainted = ''
   function paintLimits() {
     const now = Date.now()
     const pill = limitsPill(now)
@@ -585,8 +584,7 @@ export async function sidebar(deps) {
     open.className = pill.cls
     open.dataset.tip = pill.tip
     if (open.innerHTML !== pill.html) open.innerHTML = pill.html
-    const html = limitsHtml(now)
-    if (html !== limitsPainted) $('limits').innerHTML = limitsPainted = html
+    morphPanel($('limits'), limitsHtml(now))
   }
   placeOnOpen($('limits'), () => $('limits-open'))
 
