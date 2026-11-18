@@ -8,6 +8,7 @@ import type { RepoChanges } from '/lib/changes.js'
 import { checkoutDirs } from '/lib/files.js'
 import { type ReadEvent, type Reads, failureOf, valueOf } from '/lib/machine.js'
 import { markdownHtml } from '/lib/markdown.js'
+import { domId } from '/lib/morph.js'
 import { ICON, failedHtml, fileButtonsHtml, highlightLines, settledHtml } from '/lib/view.js'
 import { esc, noun } from '/lib/words.js'
 import { anchorWhere } from './anchors.ts'
@@ -43,6 +44,8 @@ export type ThreadView = {
   project: string; checkout: string; tag: string | undefined; thread: ReviewThread | undefined; failed: string | undefined; reader: Worker | undefined
   states: AnchorStates | undefined; targets: Worker[]; target: Worker | undefined; re: number | undefined; user: string
   files: ThreadFiles; state: ThreadState; noting: boolean
+  /** The mount drawing it (`ctx.scope`), first in each id's place: one thread can be drawn in several views at once. */
+  scope: string
 }
 
 /** Where a checkout's thread is kept (none when its floor keeps no threads), and the dirs its anchors' repos are. */
@@ -113,10 +116,10 @@ export const readThread = (text: (path: string) => Promise<string>) => (slot: st
 
 /**
  * What the viewer holds of a thread: the thread as last read (`failed`, why that read failed), the reader's Changes,
- * the worker it picked to send to, and the note its composer answers.
+ * the worker it picked to send to, the note its composer answers, and the scope of the mount drawing it.
  */
 export type ThreadViewer = {
-  thread: ReviewThread | undefined; failed: string | undefined; changes: RepoChanges[] | undefined; picked: string | undefined; re: number | undefined
+  thread: ReviewThread | undefined; failed: string | undefined; changes: RepoChanges[] | undefined; picked: string | undefined; re: number | undefined; scope: string
 }
 
 /** What the viewer holds of a thread, its anchors' states read as the reviews extension reads them (`anchors/<project>`). @since 1.116 */
@@ -128,7 +131,7 @@ export function threadViewAt(board: Board, at: ThreadPlace, viewer: ThreadStates
   return {
     project: at.project, checkout: at.checkout, tag: f.collections.find((c) => c.id === REVIEWS)?.items.find((i) => i.id === at.id)?.tag, thread: viewer.thread, failed: viewer.failed,
     reader: at.reader, states: viewer.states, targets: sendTargets(f, at.checkout), target: sendTarget(f, at.checkout, viewer.picked), re: viewer.re,
-    user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: at.note !== undefined,
+    user: board.user.name, files: threadItemFiles(f, at.checkout, at.id), state: at.state, noting: at.note !== undefined, scope: viewer.scope,
   }
 }
 
@@ -159,21 +162,24 @@ export const resolveAction = (v: Pick<ThreadView, 'project' | 'checkout' | 'user
   ({ verb: 'reviews/resolve', call: { project: v.project, checkout: v.checkout, author: v.user, notes: [n] } }) as const
 
 /** `resolvedBy`: the note that resolved this one, when one did. A note can be resolved while the work goes on, unless it is a resolution. */
-const noteHtml = (v: ThreadView, m: Message, fresh: boolean, resolvedBy: number | undefined) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''} ${resolvedBy ? 'resolved' : ''}" data-note="${m.n}">
+const noteHtml = (v: ThreadView, m: Message, fresh: boolean, resolvedBy: number | undefined) => `<article class="note ${fresh ? 'new' : ''} ${m.author === v.user ? 'mine' : ''} ${resolvedBy ? 'resolved' : ''}" id="${esc(domId(`${v.scope}/note`, String(m.n)))}" data-note="${m.n}">
   <header><b>${esc(m.author)}</b><span>${esc(m.at)}</span><span class="n">n${m.n}</span>${m.re ? `<button class="re" data-to-note="${m.re}">re n${m.re}</button>` : ''}${
     resolvedBy ? `<button class="resolved-mark" data-to-note="${resolvedBy}" data-tip="resolved by n${resolvedBy}">resolved</button>` : ''}${
     fresh ? `<span class="new-mark" data-tip="${esc(v.reader!.callsign)} hasn't seen it">new</span>` : ''}${v.noting ? `<button data-reply="${m.n}">reply</button>` : ''}${
     v.noting && !resolvedBy && !resolvesOf(m).length ? `<button data-resolve="${m.n}" data-tip="mark n${m.n} resolved, with a note of its own">resolve</button>` : ''}</header>
   ${m.anchors.map((a, i) => anchorHtml(v, a, i, m.n)).join('')}${m.body ? `<div class="body md">${markdownHtml(m.body)}</div>` : ''}</article>`
 
+/** The thread's key in its parts' ids: one composer and one Send per checkout's thread in a mount. */
+const threadKey = (v: ThreadView) => `${v.project}/${v.checkout}`
+
 function sendHtml(v: ThreadView) {
   const option = (t: Worker) => `<option value="${esc(t.id)}" ${t.id === v.target?.id ? 'selected' : ''}>${esc(t.callsign)} · ${esc(t.checkout)}</option>`
   return `<span class="send"><button class="primary" data-send ${v.target ? '' : 'disabled'} data-tip="type a pointer to the new notes into the worker's composer">Send to <b>${v.target ? esc(v.target.callsign) : '…'}</b></button>
-    <select data-send-pick aria-label="send to another worker" data-tip="send to another worker">${v.target ? '' : '<option value="">pick a worker</option>'}${v.targets.map(option).join('')}</select></span>`
+    <select id="${esc(domId(`${v.scope}/send`, threadKey(v)))}" data-send-pick aria-label="send to another worker" data-tip="send to another worker">${v.target ? '' : '<option value="">pick a worker</option>'}${v.targets.map(option).join('')}</select></span>`
 }
 
 const composerHtml = (v: ThreadView) => `<div class="composer">${v.re ? `<div class="re-chip">answering <code>n${v.re}</code><button class="icon-btn" data-reply-clear aria-label="not an answer" data-tip="not an answer">${ICON.close}</button></div>` : ''}
-      <textarea data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
+      <textarea id="${esc(domId(`${v.scope}/note-text`, threadKey(v)))}" data-note-text placeholder="a note on ${esc(v.checkout)} as a whole, as ${esc(v.user)} (⌘⏎ adds it)"></textarea>
       <div class="actions"><button class="primary" data-note-add>Add note</button></div></div>`
 
 /** When Tidy filed the thread of landed work, said under the line saying the work landed. */

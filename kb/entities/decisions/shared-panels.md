@@ -71,7 +71,8 @@ are the same view in every renderer; only where they sit, their state and a few 
   client holds them (`/x/reviews/anchors.js`).
 - *A protocol of data attributes*, listed once in the module's header, which each renderer wires to its own state.
   File buttons (`data-reveal`, `data-edit`) are calls already: `fileCall` gives the request ([[open-files]]). Text boxes are named by attribute, not id, so
-  one panel can be drawn in two places.
+  one panel can be drawn in two places; one a morph keeps carries an id too, under its mount's scope (the reviews
+  thread's box, `{scope}/note-text:{project}/{checkout}`).
 - *Redraws keep what is being typed.* [`drawPanel`](ref:hub/src/shared/panel-kit.ts#drawPanel) replaces the element's
   html only when it changed, keeps the element's scroll and that of each `data-keep-scroll` inside it (WebKit drops
   the element's when the swap flips a `:has` rule it matches, as the Changes' file tree does), sets each text box from
