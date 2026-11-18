@@ -294,7 +294,7 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
             return [...unknownKeysAt(`${at}.shelf[${n}]`, entry, shelfKeys(entry)), ...(problem ? [fail(`${at}.shelf[${n}]`, problem)] : [])]
           })
   const onFloor = [...extensions.resolved.accepted.values()].filter((a) => !a.off.includes(id))
-  const floorCollectionIds = [...collectionIds, ...onFloor.flatMap((a) => Object.keys(a.manifest.collections ?? {}))]
+  const floorCollectionIds = [...collectionIds, ...onFloor.flatMap((a) => Object.entries(a.manifest.collections ?? {}).flatMap(([c, { scope }]) => (scope === 'system' ? [] : [c])))]
   const contributedShelf = onFloor.flatMap((a) =>
     (a.manifest.shelf ?? []).flatMap((entry, n) => {
       const problem = renderers && shelfProblem(project, entry, renderers, floorCollectionIds)

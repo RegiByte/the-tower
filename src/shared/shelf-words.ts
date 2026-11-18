@@ -46,15 +46,18 @@ export const onDisk = (hub: string, rel: string): string => (rel === '.' ? hub :
 
 /**
  * The files an entry's head offers on disk, for Finder and the editor: the file a page shows and the folder it sits in,
- * or the folder of a markdown glob. A url, a link or a renderer has none.
+ * or the folder of a markdown glob. A url, a link or a renderer has none, nor an item the floor doesn't keep. An item
+ * an extension contributes offers its extension's folder alone: its file is the extension's, edited as a copy (`tower own`).
  */
 export const shelfPaths = (floor: Pick<Floor, 'hub' | 'collections'>, entry: ShelfEntry): { file?: string; folder?: string } => {
   if ('md' in entry) return { folder: onDisk(floor.hub, globFolder(entry.md)) }
   if ('html' in entry) return { file: onDisk(floor.hub, entry.html), folder: onDisk(floor.hub, parentOf(entry.html)) }
   if ('item' in entry) {
     const { collection, id } = shelfItem(entry)
-    const dir = floor.collections.find((c) => c.id === collection)!.dir
-    return { file: `${dir}/${id}`, folder: dir }
+    const kept = floor.collections.find((c) => c.id === collection)
+    if (!kept) return {}
+    const from = kept.items.find((i) => i.id === id)?.from
+    return from ? { folder: kept.sources![from] } : { file: `${kept.dir}/${id}`, folder: kept.dir }
   }
   return {}
 }
