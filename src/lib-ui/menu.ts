@@ -26,7 +26,7 @@ export const elements = {
       openAt: '`openAt(payload, anchor)`: opens it for a subject at an element or a point (`{x, y}`), as a right-click on an area does; resolves once it closes.',
     },
     events: {
-      payloadchange: '`detail.value`: the subject it is about to open for. Set `items` for it here.',
+      payloadchange: '`detail.value`: the subject it is about to open for, on every opening, the same subject again included. Set `items` for it here.',
       action: "`detail.value`: the value of the item chosen. It closes after.",
       checkedchange: "A checkbox item of `items` chosen: `detail.value`, the item's value; `detail.checked`, whether it turns on. `preventDefault()` refuses it. It closes after where the item sets `closeOnSelect`.",
       openchange: '`detail.value`: whether it opens or closes, `detail.reason` why. `preventDefault()` keeps it as it is.',
@@ -80,6 +80,8 @@ class TowerMenu extends HTMLElement {
     this.append(inner)
     this.#inner = inner
     if (this.#items) inner.items = this.#items
+    inner.addEventListener('payloadchange', () => (this.#announced = true))
+    inner.addEventListener('openchange', (event) => this.#announce(event as CustomEvent<{ value: boolean; reason: string }>), { capture: true })
     relay(inner, this, ['payloadchange', 'action', 'openchange'])
     inner.addEventListener('checkedchange', (event) => this.#checked(event as CustomEvent<{ value: boolean }>), { capture: true })
     inner.addEventListener('openchange', (event) => {
@@ -92,6 +94,21 @@ class TowerMenu extends HTMLElement {
 
   attributeChangedCallback(name: string, was: string | null, value: string | null) {
     if (this.#inner && was !== value) this.#copy(this.#inner, name)
+  }
+
+  /** Whether this opening has said its subject: the SDK says it only when it changes. */
+  #announced = false
+
+  /**
+   * An opening for the subject the menu was last filled for, said as a `payloadchange` too, before the opening's
+   * `openchange`, so its owner fills it as the page stands now.
+   */
+  #announce(event: CustomEvent<{ value: boolean; reason: string }>) {
+    if (event.detail.value && !this.#announced) {
+      const detail = { value: this.#inner!.api.getPayload(), reason: event.detail.reason }
+      this.dispatchEvent(new CustomEvent('payloadchange', { detail, bubbles: true }))
+    }
+    this.#announced = event.detail.value
   }
 
   /** A checkbox item's own `checkedchange`, which doesn't bubble, fired again on the menu with the item's value. */
