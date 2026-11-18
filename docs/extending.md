@@ -1426,8 +1426,9 @@ the tower or the extension (a clone, an install, a build) is a job: `ctx.jobs.st
 answers `{ id }` and `ctx.jobs.cancel(id)` stops it. The jobs daemon runs it in a PTY nobody types into, so
 `env` must stop prompts (`GIT_TERMINAL_PROMPT=0`); `env` is never logged, while `argv` is kept in the jobs log every
 renderer and worker reads, so a secret never goes in `argv`. The job is the capability's, even when a handler starts
-it for someone else. Each job on `board.jobs` carries its `pid`, which is also its process group (2.10): what it runs
-on the machine is that group, unless a process leaves it. What it led to is the extension's to decide: read the ended jobs it owns on `board.jobs` (a
+it for someone else. Each job on `board.jobs` carries its `pid`, which is also its process group (2.10): while its `state` is
+`running`, what it runs on the machine is that group, unless a process leaves it. Once the job is over (`ended`,
+`cancelled`, `lost`) the system may give the number to another process, so read it only on a running job. What it led to is the extension's to decide: read the ended jobs it owns on `board.jobs` (a
 `board` trigger reading only the next board), act through a verb of its own, and record what it did in a stream of
 its own, so a restart that fires the trigger again changes nothing. `/lib/time.js` says a rule in words and
 finds its next slot (`ruleWords`, `nextSlot`, `slotWords`); the board lists each extension's `slots`.

@@ -57,7 +57,7 @@ export const jobState = (job: JobRecord, held: ReadonlySet<string> | undefined):
 /** A job as renderers and extensions read it: its facts and its state, its end flattened. Times are epoch ms. */
 export type Job = {
   id: string
-  /** Its process's id, which is also its process group: what it starts stays in the group unless it leaves it. @since 2.10 */
+  /** Its process's id, which is also its process group: what it starts stays in the group unless it leaves it. Only while `state` is `running`: once the job is over, the system may give the number to another process. @since 2.10 */
   pid: number
   owner: string
   label: string
