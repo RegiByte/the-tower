@@ -1048,6 +1048,21 @@ export const Manifest = z
           "Items it contributes, by collection: a folder of its own whose files join the collection, read in place and never written. The collection is its own, the config's, or one of a capability it requires or wants; one another capability owns is refused.",
         ),
     ),
+    renderers: since212(
+      z
+        .record(
+          Word,
+          z.strictObject({
+            root: Path.describe('The folder of its built files, inside the extension: all served below /r/<name>/.'),
+            entry: Path.optional().describe('Its page in the root, index.html unless set.'),
+            settings: z.record(z.string(), z.unknown()).optional().describe('Its own configuration, passed through unread: the config\'s renderers.<name>.settings replaces it.'),
+          }),
+        )
+        .optional()
+        .describe(
+          "Renderers it contributes, each named `<provides>` or `<provides>.<name>`, as the config's renderers declares one: served at /r/<name>/ while it is accepted. The config's renderers.<name> overrides its fields; a built-in's name is refused.",
+        ),
+    ),
     streams: since(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
     facts: since(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),
     client: since(Path.optional().describe('Its folder of files served at /x/<capability>/: its commands\' modules.')),

@@ -163,7 +163,8 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
   generic writes, naming its create door ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)); one with
   `scope: "system"` is tower-wide, kept under `_tower/` and on no floor ([[collections]]). `items` contributes a
   folder of its own to a collection, read in place and joined to it on the floors where the extension is on
-  ([[collections]]). A stream is
+  ([[collections]]). `renderers` contributes renderers served at `/r/<name>/` while it is accepted
+  ([[renderers-in-config]]). A stream is
   always its extension's: only its ctx appends, each fact checked by its code's schema, and its closed months are
   archived as the core's are ([[log-retention]]). ctx carries `streams`, `facts` (logged through the host's `fact`,
   [[let-go]]), `collections` and `own` ([`storesOf`](ref:hub/src/tower/stores.ts#storesOf)): each `reduce` folded by

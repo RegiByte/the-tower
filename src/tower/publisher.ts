@@ -14,6 +14,7 @@ import { API_VERSION, apiError, type ApiError } from '../shared/api.ts'
 import type { BoardMsg } from '../shared/shelf-page.ts'
 import type { Config } from '../shared/model.ts'
 import { renderersOf } from '../renderers.ts'
+import { contributedRenderers } from '../bridge/extensions.ts'
 import { frozen } from '../bridge/frozen.ts'
 import { errorOf } from './answers.ts'
 import { eventStream } from './encoding.ts'
@@ -64,11 +65,15 @@ export const publisher = defineResource({
 
     const currentBoard = (): string => built().text
 
-    /** The chords the renderers keep, read again only when the config's renderers change: their files are the checkout's and the config's roots'. */
+    /**
+     * The chords the renderers keep, read again only when the config's renderers or the extensions' change: their files
+     * are the checkout's, the extensions' and the config's roots'.
+     */
     let kept: { renderers: string; keeps: string[] } | undefined
     const keepsOf = (config: Config): string[] => {
-      const renderers = JSON.stringify(config.renderers ?? {})
-      if (kept?.renderers !== renderers) kept = { renderers, keeps: renderersOf(config).flatMap((r) => r.keeps ?? []) }
+      const contributed = contributedRenderers(extensions.accepted())
+      const renderers = JSON.stringify([config.renderers ?? {}, contributed])
+      if (kept?.renderers !== renderers) kept = { renderers, keeps: renderersOf(config, contributed).flatMap((r) => r.keeps ?? []) }
       return kept.keeps
     }
 

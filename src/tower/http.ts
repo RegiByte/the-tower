@@ -125,6 +125,7 @@ import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { DispatchResource } from './dispatch.ts'
 import { collectionOn, contributedTo } from '../bridge/stores.ts'
+import { contributedRenderers } from '../bridge/extensions.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
@@ -607,12 +608,12 @@ export const httpServer = defineResource({
 
     /** `/`: the configured renderer, at its own URL, so its files resolve below its root. */
     const home = (res: http.ServerResponse, query: string) =>
-      withConfig(res, (config) => res.writeHead(302, { location: `/r/${defaultRenderer(config, renderersOf(config)).name}/${query}`, ...FRESH }).end())
+      withConfig(res, (config) => res.writeHead(302, { location: `/r/${defaultRenderer(config, renderersOf(config, contributedRenderers(extensions.accepted()))).name}/${query}`, ...FRESH }).end())
 
     /** A declared renderer: trusted like the tower page, at the tower's origin, so `/tower.js` calls the routes directly. */
     const rendered = (res: http.ServerResponse, name: string, file: string | undefined, query: string) =>
       withConfig(res, (config) => {
-        const renderers = renderersOf(config)
+        const renderers = renderersOf(config, contributedRenderers(extensions.accepted()))
         const renderer = renderers.find((r) => r.name === name)
         const built = renderers.filter((r) => r.available).map((r) => `<a href="/r/${esc(r.name)}/">${esc(r.name)}</a>`).join(', ')
         if (!renderer) return htmlPage(res, ERROR_STATUS.not_found, problemPage(`No renderer "${name}"`, `The renderers are ${renderers.map((r) => r.name).join(', ')}`, `Declare it in <code>renderers</code> in <code>${esc(paths.config)}</code>, or open one that is built: ${built}.`))
@@ -691,7 +692,7 @@ export const httpServer = defineResource({
     /** Every renderer, and the one `/` opens. */
     function renderersRead(): ReadReply {
       const config = readConfig()
-      const renderers = renderersOf(config)
+      const renderers = renderersOf(config, contributedRenderers(extensions.accepted()))
       const reach = layoutReachOf(extensions.accepted().map((a) => a.manifest))
       return json({ default: defaultRenderer(config, renderers).name, renderers: withLayoutProblems(renderers, reach) } satisfies Reads['renderers'])
     }
@@ -986,7 +987,7 @@ export const httpServer = defineResource({
       apiRead('shelf/<project>/<n>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), undefined) }),
       apiRead('shelf/<project>/<n>/<file>', { path: /^\/shelf\/(?<project>[\w-]+)\/(?<n>\d+)\/(?<file>.+)$/, answer: ({ params }) => shelf(params.project!, Number(params.n), params.file) }),
       plain('page', { path: /^\/run\/(?<project>[\w-]+)\/(?<n>\d+)(?:\/(?<file>.+))?$/, serve: ({ res, params, search }) => run(res, params.project!, Number(params.n), params.file, search) }),
-      plain('page', { path: /^\/r\/(?<name>[\w-]+)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
+      plain('page', { path: /^\/r\/(?<name>[\w-]+(?:\.[\w-]+)?)(?:\/(?<file>.*))?$/, serve: ({ res, params, search }) => rendered(res, params.name!, params.file, search) }),
       plain('page', { path: /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/, serve: ({ req, res, params }) => clientFile(req, res, params.cap!, params.file!) }),
       apiRead('shown/<id>/<path>', { path: /^\/shown\/(?<id>[\w-]+)(?<path>\/.+)$/, answer: ({ params }) => shownFile(params.id!, params.path!) }),
     ] as const satisfies readonly Read[]

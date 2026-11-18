@@ -10,7 +10,7 @@ import { SVG_PATH } from '../shared/icons.ts'
 import { BUNDLED, capabilityOf, GuidanceConfig, type Guided, matchRead, STARTED_KEYS, Manifest, MANIFEST_SCHEMA, meets, paramsOf, qualifiedOf, versionOf, type Add, type ExtensionProblem, type ExtensionView, type Fold } from '../shared/extensions.ts'
 import { HOOKS, VERBS, type Query } from '../shared/api.ts'
 import { wordsOf, type Word, type WordField } from '../shared/cli-words.ts'
-import { RUNTIMES } from '../shared/model.ts'
+import { BUILT_IN_RENDERERS, RUNTIMES, type ContributedRenderer } from '../shared/model.ts'
 import { USER_LAYOUT_KEYS, type RendererRegions } from '../shared/regions.ts'
 import { FACT_KINDS } from '../shared/rate-limits.ts'
 import type { Config, ExtensionConfig } from '../shared/model.ts'
@@ -374,6 +374,21 @@ const storeRuleProblems = (manifest: Manifest, provides: string): LoadProblem[] 
     }),
   ]
 }
+
+/** Each renderer the manifest contributes that isn't named `<provides>` or `<provides>.<name>`, or takes a built-in's name. */
+const rendererNameProblems = (manifest: Manifest, provides: string): LoadProblem[] =>
+  Object.keys(manifest.renderers ?? {}).flatMap((name) => {
+    if ((BUILT_IN_RENDERERS as readonly string[]).includes(name)) return [error('conflict', `renderer ${name} is the core's: name it ${provides} or ${provides}.<name>`, `renderers.${name}`)]
+    return name === provides || new RegExp(`^${provides}\\.[a-z0-9-]+$`).test(name) ? [] : [error('invalid', `renderer ${name} is named by the capability: ${provides}, or ${provides}.<name>`, `renderers.${name}`)]
+  })
+
+/** The renderers the accepted extensions contribute, by name, each root resolved inside its extension's folder. */
+export const contributedRenderers = (accepted: Iterable<Pick<Accepted, 'dir' | 'manifest' | 'provides'>>): Record<string, ContributedRenderer> =>
+  Object.fromEntries(
+    [...accepted].flatMap(({ dir, manifest, provides }) =>
+      Object.entries(manifest.renderers ?? {}).map(([name, { root, ...rest }]) => [name, { ...rest, root: path.join(dir, root), from: provides }]),
+    ),
+  )
 
 /** Each items folder the manifest names that isn't a folder inside the extension. */
 const itemFolderProblems = (manifest: Manifest, found: Found): LoadProblem[] =>
@@ -863,7 +878,7 @@ export const readOne = (found: Found, entry: ExtensionConfig | undefined, tower:
   const stores = storeSchemas(manifest)
   const folds = compileFolds(manifest, capabilityOf(manifest))
   const fields = compileFields(manifest, capabilityOf(manifest))
-  const broken = [...itemFolderProblems(manifest, found), ...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...cliProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...idSpaceProblems(manifest), ...iconProblems(manifest, found.client)]
+  const broken = [...itemFolderProblems(manifest, found), ...rendererNameProblems(manifest, capabilityOf(manifest)), ...storeRuleProblems(manifest, capabilityOf(manifest)), ...stores.problems, ...folds.problems, ...checkProblems(manifest), ...cliProblems(manifest), ...fields.problems, ...viewProblems(manifest), ...idSpaceProblems(manifest), ...iconProblems(manifest, found.client)]
   if (broken.length) return { found, claims, manifest, problems: broken }
   const warnings = [
     ...ownContractProblems(found, manifest),
