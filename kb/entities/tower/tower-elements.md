@@ -25,7 +25,8 @@ wrap the SDK this way is [[tower-elements-wrap-the-sdk]].
   properties only for what no render holds (a menu's `items`, the SDK's `api`). It shows its own state through
   `ElementInternals` (`tower-menu-area:state(open)`), so a page marks it `data-owned="children"` and the morph
   ([[renderer-shared-modules]]) loses nothing. Its SDK events are fired again on it, bubbling and cancelable
-  ([`relay`](ref:hub/src/lib-ui/sdk.ts#relay)), so a core view listens on its host.
+  ([`relay`](ref:hub/src/lib-ui/sdk.ts#relay)), so a core view listens on its host; one the element refused itself is
+  not, since it never happened.
 - **One subject menu per page.** `<tower-menu>` holds the SDK's data menu; each subject's area and ⋯ button name it by
   `for` and the subject by `payload`, and its owner sets `items` on `payloadchange`, which it fires on every opening:
   the SDK says a payload only when it changes, so an opening for the subject it was last filled for is said too, before
