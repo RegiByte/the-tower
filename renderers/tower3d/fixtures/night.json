@@ -1822,9 +1822,9 @@
             "outside": 0,
             "usdPerPercent": 14.1,
             "usdLeft": 1029.3,
-            "pace": {
-              "perDay": 343.1,
-              "runsOutAt": 1791297000000
+            "day": {
+              "since": 1791099000000,
+              "spend": 386
             }
           }
         },

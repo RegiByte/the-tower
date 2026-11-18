@@ -3782,7 +3782,7 @@
           "additionalProperties": false
         },
         "budget": {
-          "$ref": "#/definitions/WeeklyBudget"
+          "$ref": "#/definitions/BoardBudget"
         }
       },
       "required": [
@@ -3794,9 +3794,13 @@
       "additionalProperties": false,
       "description": "Today so far, as the board carries it: spend, agent-hours and the waits answered since `since`, the local day's start (epoch ms), and `budget`, the weekly budget."
     },
-    "WeeklyBudget": {
+    "BoardBudget": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
+        "pace": {
+          "$ref": "#/definitions/Pace"
+        },
         "percentUsed": {
           "type": "number"
         },
@@ -3820,19 +3824,33 @@
         "usdLeft": {
           "type": "number"
         },
-        "pace": {
-          "$ref": "#/definitions/Pace"
+        "day": {
+          "type": "object",
+          "properties": {
+            "since": {
+              "type": "number"
+            },
+            "spend": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "since",
+            "spend"
+          ],
+          "additionalProperties": false,
+          "description": "This account's spend today, since the local day's start (`since`, epoch ms): its pace at any moment is `pace` (src/shared/limits.ts)."
         }
       },
       "required": [
+        "day",
+        "outside",
         "percentUsed",
         "resetsAt",
         "since",
-        "spent",
-        "outside"
+        "spent"
       ],
-      "additionalProperties": false,
-      "description": "The weekly limit as a budget: over the window it is in now, from its first reading (`since`) to the latest where its percent moved, what was spent and how far the percent climbed for it, so what 1% buys and what the percent left buys at that rate. The rate is unknown until the percent has climbed for the tower's spend."
+      "description": "The weekly budget as the board carries it: the facts, which change only with the logs. `pace` has not been on the board since API 2.12, so the board stays put while nothing happens: a renderer computes it at its own clock with `pace(budget, budget.day, now)` from /lib/cards.js. It stays in the type so an older renderer still reads it as absent."
     },
     "Pace": {
       "type": "object",

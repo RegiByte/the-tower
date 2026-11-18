@@ -86,7 +86,8 @@ import http from 'node:http'
 import path from 'node:path'
 import { z } from 'zod'
 import { accountsOf } from '../bridge/rate-limits.ts'
-import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats } from '../bridge/stats.ts'
+import { bucketStart, outsideIn, stats, weeklyBudget, weeklyRead, type Stats, type WeeklyBudget } from '../bridge/stats.ts'
+import { pace } from '../shared/limits.ts'
 import { withLiveness } from '../bridge/status.ts'
 import { briefOf, toolCallOf, wholeConversation } from '../bridge/turns.ts'
 import { isLive } from '../bridge/verbs.ts'
@@ -365,6 +366,9 @@ export const httpServer = defineResource({
       }
     }
 
+    /** The weekly budget with its pace at `now`: a read is answered once, so it can carry what the board leaves to the renderer. */
+    const budgetAt = (budget: WeeklyBudget | undefined, now: number) => budget && { ...budget, pace: pace(budget, budget.day, now) }
+
     async function statsRead(query: z.output<typeof QUERIES.stats>): Promise<ReadReply> {
       const now = Date.now()
       const { to = now, bucket, project } = query
@@ -379,7 +383,7 @@ export const httpServer = defineResource({
       const read = new Map(dirs.map((dir, i) => [dir, reads[i]]))
       const landed = Object.fromEntries(projects.map(([id, p]) => [id, projectDirs(p).map((dir) => read.get(dir)!)]))
       const [account] = accountsOf(readConfig(), sessions, extensions.readings())
-      return json({ ...stats(scoped, landed, { from, to, bucket }), budget: weeklyBudget(account.sessions, account.streams, now), weekly: weeklyRead(account.sessions, account.streams, { from, to }), outside: outsideIn(account.sessions, account.streams, { from, to }) } satisfies Stats)
+      return json({ ...stats(scoped, landed, { from, to, bucket }), budget: budgetAt(weeklyBudget(account.sessions, account.streams, now), now), weekly: weeklyRead(account.sessions, account.streams, { from, to }), outside: outsideIn(account.sessions, account.streams, { from, to }) } satisfies Stats)
     }
 
     async function origins(): Promise<ReadReply> {

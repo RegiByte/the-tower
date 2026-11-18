@@ -6,7 +6,7 @@
   "in": "tower3d",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": ["hub/renderers/tower3d/src/door.ts", "hub/renderers/tower3d/src/record.ts", "hub/renderers/tower3d/src/input.ts", "hub/renderers/tower3d/src/random.ts", "hub/renderers/tower3d/src/clock.ts", "hub/renderers/tower3d/src/walker.ts", "hub/renderers/tower3d/src/feed.ts#failStart", "hub/renderers/tower3d/src/fixtures.ts#startFixture", "hub/renderers/tower3d/src/fixtures.ts#fixtureTower", "hub/scripts/tower3d-fixtures.ts#FIXTURES", "hub/renderers/tower3d/src/fixture-file.ts#FixtureFile", "hub/test/tower3d-fixtures.test.ts", "hub/src/bridge/life.ts#lifeOf", "hub/src/bridge/board.ts#withReports", "hub/renderers/tower3d/src/contract.ts#CONTRACT", "hub/scripts/drive.ts", "hub/scripts/sandbox.ts", "hub/scripts/frames.ts", "hub/scripts/frames.scenario.js", "hub/scripts/frames.panels.js", "hub/scripts/tower3d-boot.ts", "hub/test/models.test.ts"]
 }
 ---
