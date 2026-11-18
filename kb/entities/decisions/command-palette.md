@@ -62,7 +62,10 @@ same palette, and only the drawing is a renderer's.
   [`VERB_WORDS`](ref:hub/src/shared/verb-words.ts#VERB_WORDS), keyed `<subject>/<verb>`, linked by `api` to its agent
   facet in `VERBS` ([[board-verbs]]); the page's buttons read the same table.
 - The tower page ([`palette`](ref:hub/renderers/page/palette.js#palette)) draws it as a `<dialog>`, opens it on the
-  keymap command `palette` (⌘K, rebound by the config's `keys`, [[keymap]]), dispatches picks through
+  keymap command `palette` (⌘K, rebound by the config's `keys`, [[keymap]]), redraws its list through the morph,
+  each row's id `pal:<entry id>`, and holds the active row by its entry: a redraw while the viewer moves through the
+  list (a draft's title arriving) leaves it on the entry it was on, and a keystroke moves it to the first match. It
+  dispatches picks through
   [`doPick`](ref:hub/renderers/page/page.js#doPick) and keeps recent picks in `tower.store` as view state. A pick of
   an extension's action runs it through the handler its button runs
   ([`runAddedAt`](ref:hub/renderers/page/page.js#runAddedAt)), which marks it seen for the viewer

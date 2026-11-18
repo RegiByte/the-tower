@@ -1,7 +1,9 @@
 import { CAPABILITIES } from '/lib/capabilities.js'
+import { domId } from '/lib/morph.js'
 import { chordLabel } from '/lib/keys.js'
 import { markdownHtml } from '/lib/markdown.js'
 import { paletteEntries, rankingOf, rankPalette } from '/lib/palette.js'
+import { morphPanel } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { draftsOf } from './clients.js'
 import { $, told } from './kit.js'
@@ -42,46 +44,48 @@ export async function palette(deps) {
   let recent = /** @type {string[] | undefined} */ (await tower.store.get(RECENT_KEY)) ?? []
   /** @type {Entry[]} */
   let shown = []
-  let active = 0
+  /** The entry the active row shows, by its id: a redraw that moves it keeps it active. @type {string | undefined} */
+  let active
 
   const context = () => ({ board: board(), selected: selected(), capabilities: CAPABILITIES, recent, heed: heed(), draftsOf, draftTitle, opens: opens(), stale: tower.stale() !== null })
 
-  /** @param {Entry} e @param {number} n */
-  const rowHtml = (e, n) => `<div class="pal-item${e.destructive ? ' danger' : ''}${e.learn ? ' learn' : ''}" role="option" id="pal-${n}" aria-selected="${n === active}" data-palette-entry="${esc(e.id)}">
+  /** @param {Entry} e */
+  const rowHtml = (e) => `<div class="pal-item${e.destructive ? ' danger' : ''}${e.learn ? ' learn' : ''}" role="option" id="${esc(domId('pal', e.id))}" aria-selected="${e.id === active}" data-palette-entry="${esc(e.id)}">
     <span class="pal-label">${esc(e.label)}</span>${e.hint ? `<span class="pal-hint">${esc(e.hint)}</span>` : ''}
     ${e.chords?.length ? `<span class="pal-chords">${e.chords.map((t) => `<kbd>${esc(chordLabel(t))}</kbd>`).join('')}</span>` : ''}</div>`
 
   /** @param {PaletteGroup[]} groups */
-  const listHtml = (groups) => {
-    let n = 0
-    return groups.map((g, i) => `<div role="group" aria-labelledby="pal-g${i}"><div class="eyebrow pal-group" id="pal-g${i}">${esc(g.group)}</div>${g.entries.map((e) => rowHtml(e, n++)).join('')}</div>`).join('')
-  }
+  const listHtml = (groups) =>
+    groups.map((g) => `<div role="group" aria-labelledby="${esc(domId('pal/group', g.group))}"><div class="eyebrow pal-group" id="${esc(domId('pal/group', g.group))}">${esc(g.group)}</div>${g.entries.map(rowHtml).join('')}</div>`).join('')
+
+  /** The entry of a row drawn in the list, read from its data. @param {Element} row */
+  const entryOf = (row) => /** @type {HTMLElement} */ (row).dataset.paletteEntry
 
   function draw() {
     const ctx = context()
     const groups = rankPalette(paletteEntries(ctx), input.value, rankingOf(ctx))
     shown = groups.flatMap((g) => g.entries)
-    active = Math.min(active, Math.max(shown.length - 1, 0))
-    $('palette-list').innerHTML = shown.length ? listHtml(groups) : `<div class="pal-empty">${input.value.trim() ? 'Nothing matches' : 'Type to go to a worker, a floor or a draft, or to run a command'}</div>`
+    if (!shown.some((e) => e.id === active)) active = shown[0]?.id
+    morphPanel($('palette-list'), shown.length ? listHtml(groups) : `<div class="pal-empty">${input.value.trim() ? 'Nothing matches' : 'Type to go to a worker, a floor or a draft, or to run a command'}</div>`)
     drawActive()
   }
 
   function drawActive() {
-    for (const row of $('palette-list').querySelectorAll('[role=option]')) row.setAttribute('aria-selected', String(row.id === `pal-${active}`))
-    const row = shown.length ? $(`pal-${active}`) : undefined
+    for (const row of $('palette-list').querySelectorAll('[role=option]')) row.setAttribute('aria-selected', String(entryOf(row) === active))
+    const row = active === undefined ? undefined : document.getElementById(domId('pal', active))
     row?.scrollIntoView({ block: 'nearest' })
     if (row) input.setAttribute('aria-activedescendant', row.id)
     else input.removeAttribute('aria-activedescendant')
-    $('palette-hint').textContent = shown[active]?.hint ?? ''
+    $('palette-hint').textContent = shown.find((e) => e.id === active)?.hint ?? ''
   }
 
-  /** @param {number} n */
-  function choose(n) {
-    const e = shown[n]
+  /** @param {string | undefined} id */
+  function choose(id) {
+    const e = shown.find((e) => e.id === id)
     if (!e) return
     recent = [e.id, ...recent.filter((id) => id !== e.id)].slice(0, RECENT_MAX)
     tower.store.set(RECENT_KEY, recent)
-    const row = /** @type {HTMLElement} */ ($(`pal-${n}`))
+    const row = /** @type {HTMLElement} */ (document.getElementById(domId('pal', e.id)))
     dialog.close()
     pick(e.does, row)
   }
@@ -89,18 +93,19 @@ export async function palette(deps) {
   function openPalette() {
     if (dialog.open) return dialog.close()
     input.value = ''
-    active = 0
+    active = undefined
     draw()
     dialog.showModal()
     input.focus()
   }
 
-  input.addEventListener('input', () => ((active = 0), draw()))
+  input.addEventListener('input', () => ((active = undefined), draw()))
   input.addEventListener('keydown', (e) => {
     const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
     if (step && shown.length) {
       e.preventDefault()
-      active = (active + step + shown.length) % shown.length
+      const at = shown.findIndex((e) => e.id === active)
+      active = shown[(at + step + shown.length) % shown.length].id
       return drawActive()
     }
     if (e.key === 'Enter' && !e.isComposing) {
@@ -110,12 +115,12 @@ export async function palette(deps) {
   })
   $('palette-list').addEventListener('pointermove', (e) => {
     const row = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest('[role=option]'))
-    const n = row ? Number(row.id.slice('pal-'.length)) : active
-    if (n !== active) ((active = n), drawActive())
+    const id = row ? entryOf(row) : active
+    if (id !== active) ((active = id), drawActive())
   })
   $('palette-list').addEventListener('click', (e) => {
     const row = /** @type {Element} */ (e.target).closest('[role=option]')
-    if (row) choose(Number(row.id.slice('pal-'.length)))
+    if (row) choose(entryOf(row))
   })
 
   /** A pattern, its story's hard-wrapped lines joined. @param {Pattern} p */
