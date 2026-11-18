@@ -2742,6 +2742,9 @@
           "action": {
             "since": "2.15"
           },
+          "checkedchange": {
+            "since": "2.16"
+          },
           "openchange": {
             "since": "2.15"
           },
