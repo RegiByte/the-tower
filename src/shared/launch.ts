@@ -189,7 +189,7 @@ const settingsArgs = (granted: string[], env: Record<string, string>) => [
  * A session's directories after its own (`sessionDirs`); the items its floor keeps (`kept`), which a worker edits in
  * place; and a worktree's link sources in the main checkouts, so writing through a link asks no permission.
  */
-const grantedDirs = (s: Start): string[] => [...s.dirs.slice(1), s.kept, ...(s.worktree?.links ?? [])]
+const grantedDirs = (s: Start): string[] => [...s.dirs.slice(1), ...s.kept, ...(s.worktree?.links ?? [])]
 
 /** The plugins the config names for the session's project (`runtimePlugins`) and the extensions on its floor, loaded beside the tower mod the host passes. */
 const pluginArgs = (plugins: string[]) => plugins.flatMap((dir) => ['--plugin-dir', dir])
@@ -205,8 +205,8 @@ export const NOTHING_CONTRIBUTED: Contributed = { systemPrompt: [], prompt: [], 
 /**
  * A session the host starts. `name`: the worker's callsign (`callsignsOf`), or a fork's own (`resumeName`). `dirs`: the
  * session's directories (`sessionDirs`). `user`: the config's `user.name`. `worktree`: the brief of the worktree `cwd`
- * is, `undefined` in a main checkout (`worktreeBrief`). `kept`: the project's collections directory
- * (`projectCollectionsPath`). `plugins`: the plugin directories for the project (`runtimePlugins`, and the extensions'
+ * is, `undefined` in a main checkout (`worktreeBrief`). `kept`: the directories its worker keeps items in, the
+ * project's collections and the tower-wide ones (`keptPaths`). `plugins`: the plugin directories for the project (`runtimePlugins`, and the extensions'
  * on its floor). `facts`: `tower.*` facts the host logs before the session's first event.
  */
 export type Start = {
@@ -218,7 +218,7 @@ export type Start = {
   dirs: string[]
   user: string | undefined
   worktree: WorktreeBrief | undefined
-  kept: string
+  kept: string[]
   plugins: string[]
   contributed: Contributed
   facts: ModEvent[]
@@ -306,7 +306,7 @@ export const flagName = (arg: string): string => arg.split('=')[0]
 
 /** A launch with every part the core composes, so the flags it passes can be read from it. */
 export const EVERY_PART: Start = {
-  runtime: 'claude', id: 'id', name: 'name', project: 'project', cwd: 'cwd', dirs: ['dir', 'other'], user: 'user', kept: 'kept',
+  runtime: 'claude', id: 'id', name: 'name', project: 'project', cwd: 'cwd', dirs: ['dir', 'other'], user: 'user', kept: ['kept'],
   worktree: { name: 'name', branch: 'branch', dirs: ['dir'], mains: ['main'], links: ['link'] }, plugins: ['plugin'], contributed: NOTHING_CONTRIBUTED, facts: [],
 }
 

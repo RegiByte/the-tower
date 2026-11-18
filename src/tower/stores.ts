@@ -17,7 +17,7 @@ import { hostRequest } from '../machine.ts'
 import { streamFolder, type FoldCtx, type Item, type ParsedItem, type StartCtx, type Started, type StreamAt, type StreamFact } from '../shared/extensions.ts'
 import type { OwnAt } from '../bridge/folds.ts'
 import { projectStreamPath, systemStreamPath } from '../shared/paths.ts'
-import type { CollectionItem } from '../shared/model.ts'
+import { TOWER_WIDE, type CollectionItem } from '../shared/model.ts'
 import { KIND_SCHEMAS, type FactKind } from '../shared/rate-limits.ts'
 import { tagOf } from '../shared/tags.ts'
 import { appendFact } from '../streams.ts'
@@ -62,9 +62,14 @@ export const storesOf = (a: Accepted, config: ConfigResource, live: SystemResour
     return { declared, stream, dir: projectStreamPath(paths, at.project, stream) }
   }
 
-  /** One of its own collections on a floor it is on. */
+  /** One of its own collections on a floor it is on, or a tower-wide one of its own under `_tower`. */
   const collectionOf = (project: string, name: string) => {
-    if (!manifest.collections?.[name]) throw new Error(`${provides} declares no collection ${name}`)
+    const declared = manifest.collections?.[name]
+    if (!declared) throw new Error(`${provides} declares no collection ${name}`)
+    if (declared.scope === 'system') {
+      if (project !== TOWER_WIDE) throw new Error(`${name} is a tower-wide collection: name its project ${TOWER_WIDE}`)
+      return
+    }
     if (!Object.hasOwn(config.read().projects, project)) throw new Error(`no project ${project}`)
     if (!on(project)) throw new Error(`${provides} is off on ${project}`)
   }
