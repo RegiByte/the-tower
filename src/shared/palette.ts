@@ -6,11 +6,11 @@
 import type { Board, Card, Floor, FloorItem } from '../bridge/board.ts'
 import type { CardVerb, ConversationVerb, FloorVerb, ResourceVerb } from '../bridge/verbs.ts'
 import type { Capability } from './capabilities.ts'
-import { actionWords, addedActions, boardSubject, cardSubject, commandName, floorSubject, gistLine, itemSubject, heededWaits, unboundCommands, type Heed } from './cards.ts'
+import { actionWords, addedActions, boardSubject, cardSubject, floorSubject, gistLine, itemSubject, heededWaits, offersReap, reapLine, unboundCommands, type Heed } from './cards.ts'
 import type { Action, Added, Words } from './extensions.ts'
 import type { Subject } from './subjects.ts'
 import { chordsOf, COMMANDS, panesOf } from './keymap.ts'
-import { VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
+import { earlierLabel, VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
 export type GoTarget =
   | { t: 'worker'; id: string }
@@ -137,16 +137,19 @@ const commandHint = (capabilities: readonly Capability[], id: string, otherwise:
 
 const cardOf = (board: Board, id: string | undefined): Card | undefined => (id === undefined ? undefined : board.floors.flatMap((f) => f.cards).find((c) => c.id === id))
 
-/** The selected worker's verbs: those a keymap command does run as that command, with its chords. */
+/**
+ * The selected worker's verbs: those a keymap command does run as that command, with its chords. Its processes are one
+ * entry, `End 3 processes…`, found by their pids and ports too; none while it works (`offersReap`).
+ */
 const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card): Entry[] => {
-  const verbs = c.actions.filter((a) => !UNLISTED.has(verbId('card', a.verb))).map((a): Entry => {
+  const verbs = c.actions.filter((a) => !UNLISTED.has(verbId('card', a.verb)) && (a.verb !== 'reap' || offersReap(c))).map((a): Entry => {
     const words = VERB_WORDS[verbId('card', a.verb)]
     return {
       id: verbId('card', a.verb),
       group: c.callsign,
-      label: words.label,
+      label: a.verb === 'reap' ? reapLine(c) : words.label,
       hint: words.command ? commandHint(capabilities, words.command, words.hint) : verbHint('card', a.verb, c),
-      keywords: [c.callsign, a.verb],
+      keywords: [c.callsign, a.verb, ...(a.verb === 'reap' ? c.resources.flatMap((r) => [String(r.pid), ...r.ports.map(String)]) : [])],
       chords: words.command && chordsOf(board.keys, words.command),
       destructive: words.destructive,
       card: c.id,
@@ -158,24 +161,14 @@ const cardEntries = (board: Board, capabilities: readonly Capability[], c: Card)
   const earlier = c.conversations.filter((v) => v !== latest).flatMap((v) => v.actions.map((a): Entry => ({
     id: `${verbId('conversation', a.verb)}@${v.id}`,
     group: c.callsign,
-    label: `${VERB_WORDS[verbId('conversation', a.verb)].label}: an earlier conversation`,
+    label: earlierLabel(a.verb, v),
     hint: v.prompt ?? verbHint('conversation', a.verb, c),
     keywords: [c.callsign, a.verb, v.prompt ?? ''],
     card: c.id,
     project: c.project,
     does: { t: 'action', subject: 'conversation', verb: a.verb, id: c.id, conversation: v.id },
   })))
-  const processes = c.resources.flatMap((r) => r.actions.map((a): Entry => ({
-    id: `${verbId('resource', a.verb)}@${r.pid}`,
-    group: c.callsign,
-    label: `${VERB_WORDS[verbId('resource', a.verb)].label} ${r.pid} ${commandName(r.command)}`,
-    hint: r.command,
-    keywords: [c.callsign, String(r.pid), ...r.ports.map(String)],
-    card: c.id,
-    project: c.project,
-    does: { t: 'action', subject: 'resource', verb: a.verb, id: c.id, pid: r.pid },
-  })))
-  return [...verbs, ...earlier, ...processes]
+  return [...verbs, ...earlier]
 }
 
 /** What extensions offer on `subject`, each an entry in `group`, about the worker `card` and the floor `project` when it has them. */
@@ -352,20 +345,20 @@ const SECTIONS = ['reload', 'go:worker', 'command', 'action', 'added', 'open', '
 
 const sectionOf = (e: Entry) => SECTIONS.indexOf(e.learn ? 'learn' : e.does.t === 'go' ? `go:${e.does.target.t}` : e.does.t)
 
-/** A verb of the selected worker's earlier conversations or processes, which the catalog lists apart from its own verbs. */
-const isEarlier = (e: Entry) => e.does.t === 'action' && (e.does.subject === 'conversation' || e.does.subject === 'resource')
+/** A verb of the selected worker's earlier conversations, which the catalog lists apart from its own verbs. */
+const isEarlier = (e: Entry) => e.does.t === 'action' && e.does.subject === 'conversation'
 
 /**
  * Every entry not in `shown`, in groups: the sections in order, the viewer's floor first within each, and within a
  * group the viewer's floor first, then by boost. Workers are split into the viewer's floor's and the others'; the
- * selected worker's earlier conversations and processes are a group of their own. A floor's verbs are a group per
+ * selected worker's earlier conversations are a group of their own. A floor's verbs are a group per
  * floor, kept apart from any group of the same name.
  */
 const catalog = (entries: Entry[], shown: ReadonlySet<string>, r: Ranking): PaletteGroup[] => {
   const here = (e: Entry) => r.floor !== undefined && e.project === r.floor
   const floorName = entries.find((e) => e.id === `floor:${r.floor}`)?.label
   const groupOf = (e: Entry) =>
-    isEarlier(e) ? `${e.group}: earlier conversations and processes`
+    isEarlier(e) ? `${e.group}: earlier conversations`
     : e.does.t !== 'go' || e.does.target.t !== 'worker' || floorName === undefined ? e.group
     : here(e) ? `Workers on ${floorName}` : 'Workers on other floors'
   const keyOf = (e: Entry) => [sectionOf(e), e.does.t === 'action' && e.does.subject === 'floor' ? e.project : '', groupOf(e)].join('\0')

@@ -110,7 +110,10 @@ its kind (`MenuPick`'s `t`), one typed table where a kind with no runner fails t
 presses as itself: keyed by the subject and the line's id, the subject's areas busy meanwhile ([[press-feedback]]). A
 menu never offers what a click on its subject does already ([`subjectMenu`](ref:hub/src/shared/subject-menu.ts#subjectMenu)):
 a shown tab's menu has no Open, and goes to its worker's terminal, or its brief once the worker went home, by name; a
-collection's line opens every item it keeps (`tower/collection`), whatever view the collection's own kind prefers. A
+collection's line opens every item it keeps (`tower/collection`), whatever view the collection's own kind prefers; a
+worker's processes are one line, "End 3 processes…", which asks through the card's own reap confirm and is left out
+while the worker works, when its processes are its tool commands in flight; its earlier conversations are a group of
+their own, each by its first prompt on one line. A
 menu's line ids are each its own, and `subjectMenu` throws on two alike. Their ids follow the id rule: `sign:floor:<p>`,
 `row:card:<id>`, `tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. While the menu is open the sidebar's floors and
 the tab row are not painted, and are painted once as it closes: a ⋯-opened menu is anchored to its button, which the
