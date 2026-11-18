@@ -51,7 +51,7 @@ kbd { display: inline-grid; place-items: center; min-width: 1.7em; padding: var(
 #hud-notes { max-width: calc(100vw - 370px); padding: var(--sp-xs) var(--sp-m); border-radius: 12px; font-size: var(--fs-xs); color: var(--muted); overflow-wrap: anywhere;
   background: color-mix(in oklab, var(--panel) 82%, transparent); backdrop-filter: blur(6px); box-shadow: 0 1px 3px #0005; }
 #hud-notes:empty { display: none; }
-#hud-notes .untested { font-size: var(--fs-xs); white-space: normal; }
+#hud-notes .untested { display: block; font-size: var(--fs-xs); white-space: normal; }
 .hud-limits .meter { width: 24px; height: 4px; }
 .hud-limits small { color: var(--faint); font-weight: 400; }
 .hud-limits.stale > span:not(.hud-probe) { opacity: .5; }
