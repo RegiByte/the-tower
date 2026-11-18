@@ -3,7 +3,8 @@ import { shellWhere, whyNot } from '/lib/cards.js'
 import { placeOnOpen } from '/lib/chrome.js'
 import { shellPlaces } from '/lib/spawn.js'
 import { mountTermView } from '/lib/terminal.js'
-import { ICON, pressing } from '/lib/view.js'
+import { ICON, morphPanel, pressing } from '/lib/view.js'
+import { domId } from '/lib/morph.js'
 import { esc } from '/lib/words.js'
 import { $, byStart, toast, told } from './kit.js'
 
@@ -52,14 +53,17 @@ export function shells(deps) {
   $('shell-pick').addEventListener('toggle', (e) => e.newState === 'open' && ($('shell-pick').innerHTML = shellPickHtml()))
   placeOnOpen($('shell-pick'), () => /** @type {HTMLElement} */ ($('tabs').querySelector('.tab-add')))
 
-  function renderDock() {
-    if (!board().termsUp) return ($('tabs').innerHTML = `<span>shells: ${esc(whyNot(board(), 'shell'))}</span>`)
-    if (!board().shells.length) return ($('tabs').innerHTML = `${shellAddHtml()}<span>no shells · ${ICON.plus} starts one in a floor's directory</span>`)
-    $('tabs').innerHTML = shellAddHtml() + [...board().shells].sort(byStart).map((sh) =>
-      `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" style="${paint(sh.project)}" data-shell="${sh.id}" data-tip="${esc(sh.cwd)}">
+  /** The dock's tabs, each shell's by its id. */
+  function dockHtml() {
+    if (!board().termsUp) return `<span>shells: ${esc(whyNot(board(), 'shell'))}</span>`
+    if (!board().shells.length) return `${shellAddHtml()}<span>no shells · ${ICON.plus} starts one in a floor's directory</span>`
+    return shellAddHtml() + [...board().shells].sort(byStart).map((sh) =>
+      `<button class="tab ${sh.id === shell?.id ? 'open' : ''}" id="${esc(domId('shell', sh.id))}" style="${paint(sh.project)}" data-shell="${sh.id}" data-tip="${esc(sh.cwd)}">
       <span class="where">${esc(shellWhere(shellFloor(sh), sh))}</span><span class="what">${esc(sh.activity)}</span>
       <span class="icon-btn" data-kill-shell="${sh.id}" aria-hidden="true" data-tip="kill this shell">${ICON.close}</span></button>`).join('')
   }
+
+  const renderDock = () => morphPanel($('tabs'), dockHtml())
 
   /** @param {string} id */
   function openShell(id) {
