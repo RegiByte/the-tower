@@ -228,7 +228,7 @@ const pane = (name: string, shows: string[], words: Words, needs: KitMember[]): 
  * `tower/link` for an address a worker showed.
  */
 export const CORE_VIEWS: readonly View[] = [
-  served(core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }), ['display', 'run']),
+  { ...served(core('tower/skyline', ['board'], ['pane'], { label: 'Skyline', hint: 'every floor and who works on it' }), ['region', 'display', 'run']), regions: ['board.skyline'] },
   served({ ...core('tower/card', ['card'], ['pane', 'cell'], { label: 'Worker', hint: "the worker's head and its tabs" }), regions: ['card.panes'] }, ['region', 'run', 'display', 'toast', 'confirm']),
   pane('terminal', [], { label: 'Terminal', hint: 'the session in its terminal' }, ['terminal']),
   { ...pane('brief', ['conversation', 'said'], { label: 'Brief', hint: 'the last prompts and answers of each conversation, in full' }, ['region', 'bus', 'toast']), regions: ['card.composer'], tab: 'tab' },
