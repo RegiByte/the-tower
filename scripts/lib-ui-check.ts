@@ -1,6 +1,6 @@
 /**
  * The tower's elements (`/lib-ui/`) in a page that redraws them through the morph every 100 ms, as a renderer does, in
- * a real browser, drawn by `/lib/elements.js` as a view draws them: typing into `<tower-combobox>` and choosing from it, one named by a label drawn apart (`labelledby`), `<tower-menu>` opened by a right-click on a
+ * a real browser, drawn by `/lib/elements.js` as a view draws them: typing into `<tower-combobox>` and choosing from it, its Enter and ⌘↵ kept from the page while open and passed on while closed, one named by a label drawn apart (`labelledby`), `<tower-menu>` opened by a right-click on a
  * `<tower-menu-area>` and by Enter on a `<tower-menu-button>`, its submenu, its action and its focus coming back, each
  * checked as it happens. The page is served by this script on a free port, the modules as the tower serves them
  * (`servedModule`); a check failing fails the run. Run it on every bump of the UI SDK, in both engines:
@@ -102,6 +102,7 @@ root.addEventListener('payloadchange', (e) => { log.push(['payload', e.detail.va
 root.addEventListener('openchange', (e) => log.push([e.target.localName, 'open', e.detail.value, e.detail.reason]))
 root.addEventListener('action', (e) => log.push(['action', e.detail.value]))
 root.addEventListener('checkedchange', (e) => log.push(['checked', e.detail.value, e.detail.checked]))
+root.addEventListener('keydown', (e) => e.key === 'Enter' && log.push(['enter-out', e.metaKey]))
 root.addEventListener('valuechange', (e) => { log.push(['value', e.detail.value, e.detail.reason]); fruit = e.detail.value })
 
 const fail = (what, seen) => { throw new Error(\`\${what}: \${JSON.stringify(seen)}\`) }
@@ -128,6 +129,12 @@ window.check = {
     const seen = { value: combo.value, attribute: combo.getAttribute('value'), open: combo.open, text: combo.querySelector('input').value, log: log.filter((l) => l[0] === 'value') }
     if (seen.value !== value || seen.attribute !== value || seen.open) fail(\`the combobox didn't keep "\${value}"\`, seen)
     if (seen.log.some((l) => l[2] !== 'item-press')) fail('the value written back fired an event', seen)
+    return seen
+  },
+  keys: (want) => {
+    const input = combo.querySelector('input')
+    const seen = { value: combo.value, text: input.value, open: combo.open, out: log.filter((l) => l[0] === 'enter-out').length }
+    if (Object.entries(want).some(([k, v]) => seen[k] !== v)) fail(\`the combobox's keys: want \${JSON.stringify(want)}\`, seen)
     return seen
   },
   labelled: () => {
@@ -203,10 +210,30 @@ const STEPS = (shots: (name: string) => Step[]): Step[] => [
   { wait: 1200 },
   { eval: `check.combobox('pea', ['Peach', 'Pear'])` },
   ...shots('combobox'),
-  { key: 'ArrowDown' },
   { key: 'Enter' },
   { wait: 500 },
   { eval: `check.picked('peach')` },
+  { key: 'Meta+Enter' },
+  { wait: 300 },
+  { eval: `check.keys({ value: 'peach', open: false, out: 1 })` },
+  { key: 'z' },
+  { key: 'z' },
+  { wait: 500 },
+  { key: 'Enter' },
+  { key: 'Meta+Enter' },
+  { wait: 300 },
+  { eval: `check.keys({ value: 'peach', text: 'Peachzz', open: true, out: 1 })` },
+  { key: 'Escape' },
+  { wait: 500 },
+  { eval: `check.keys({ value: 'peach', text: 'Peach', open: false, out: 1 })` },
+  { eval: `document.getElementById('check:fruit').querySelector('input').select(), true` },
+  { key: 'p' },
+  { key: 'l' },
+  { key: 'u' },
+  { wait: 500 },
+  { key: 'Meta+Enter' },
+  { wait: 500 },
+  { eval: `check.keys({ value: 'plum', text: 'Plum', open: false, out: 1 })` },
   { eval: 'check.labelled()' },
   { eval: 'check.blur()' },
   { rclick: rowPoint(1) },

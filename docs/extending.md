@@ -569,6 +569,10 @@ host.addEventListener('valuechange', (e) => keep(e.detail.value))
 - **A value written back is quiet.** `<tower-combobox>` reports a choice with `valuechange`; keep it and render it as
   `value`, which applies with no event. Its id is `domId(place, name)`. A form whose label holds more than words (a
   hint, a mark) draws it apart, with an id, and names it in `labelledby`: the combobox then draws no label of its own.
+- **It keeps a form's keys as a select does.** While its list is open, typing highlights the first match, and Enter or
+  ⌘↵ chooses the highlighted option, or does nothing with none, and stops there: a form's submit key never sees it.
+  Closed, the keys pass on. Leaving without choosing shows the chosen option again: text typed but not chosen is never
+  a value, and is gone when the list opens again.
 - **One subject menu per page.** Draw `subjectMenuHtml()` once, outside anything that redraws, and wrap each
   subject's markup with `subjectHtml(place, key, label, row)`: a right-click, the context-menu key or a long press on the
   row opens the menu at the pointer, and the ⋯ button it draws at the row's end opens it from the keyboard (macOS sends

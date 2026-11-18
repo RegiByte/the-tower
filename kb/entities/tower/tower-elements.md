@@ -41,6 +41,10 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
 - **A combobox named from outside.** `labelledby` names a label the form draws itself (an eyebrow, an optional mark, a
   hint): the element then draws no label part and points its input's `aria-labelledby` at it. A `<label>` around it
   would take a press in its list for one on the box.
+- **A combobox keeps a form's keys as a native select.** Open, typing highlights the first match (the SDK's
+  `auto-highlight`), and an Enter, ⌘↵ included, chooses the highlighted option or does nothing, then stops at the
+  element, so a form's submit key fires only while it is closed. Leaving without choosing shows the chosen label again;
+  the half-typed query is not kept for the next opening, which the SDK resets to the chosen label.
 - **Strings for core views.** A core view draws an element through `/lib/elements.js`
   ([`comboboxHtml`](ref:hub/src/shared/elements.ts#comboboxHtml), [`subjectHtml`](ref:hub/src/shared/elements.ts#subjectHtml)),
   which imports nothing of `/lib-ui/`. Each builder takes a place and a key and derives its ids by the id rule,
@@ -64,4 +68,7 @@ and WebKit, and is run on every SDK bump, which is its own commit with the pins 
 
 The SDK's own docs and skill ship in `node_modules` at the pinned version (AGENTS.md says where); their rules on
 tests, JSDoc and agent-readiness yield to PRINCIPLES.md. Not yet tried: a touch device's long press, VoiceOver, the
-sheet presentation, Firefox.
+sheet presentation, Firefox. A known SDK gap: the SDK gives the trigger that opened the menu
+its id (`<menu>--ui-trigger`) and names the menu by it, and with no trigger (a right-click on an area) every ⋯ holds
+that id and the menu is named by the page's first; its `open` takes no trigger to name. The subject's title is still
+said, as the menu's first group label, and no id the tower spells or reads is affected.
