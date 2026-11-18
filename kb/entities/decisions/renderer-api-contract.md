@@ -63,15 +63,17 @@ went wrong, and know which changes can break it.
   reserved first segment ([`RESERVED`](ref:hub/src/shared/extensions.ts#RESERVED)) is an addition too: a user's
   extension of that name is refused until renamed, the refusal and the changelog saying so (`config`, 1.147).
 - **The served modules are part of the contract.** Every module of the library ([`/lib/`](ref:hub/src/tower/served.ts#libraryUrls)),
+  each of the tower's elements ([`/lib-ui/`](ref:hub/src/tower/served.ts#libUiUrls): a `tower-*` tag's attributes,
+  properties, events and custom states, never the SDK parts it builds inside, [[tower-elements]]),
   `/design.css` (its custom properties and classes) and `/tower.js` (the members of `window.tower`) are imported by URL
   by a renderer copied out of the checkout, so they are versioned with the API: removing or renaming a name is a major,
   with a CHANGELOG line saying what to use instead; adding one is a minor; a name on its way out stays `@deprecated`
   until a major. The libraries served beside them (`/xterm.js`, `/marked.js`…) are those libraries' own APIs, outside
   the contract, and so are the internal URLs each served module's files and packages are loaded from (`/shared/…`,
-  `/src/…`, `/vendor/…`, [[renderer-shared-modules]]): a library module names what it re-exports from those files,
+  `/src/…`, `/vendor/…`, `/lib-ui/sdk.js`, [[renderer-shared-modules]]): a library module names what it re-exports from those files,
   and its names are what a renderer imports, chosen name by name ([[library]]).
   [`test/served-exports.json`](ref:hub/test/served-exports.json) lists every served name as of the major it
-  was written at; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major
+  was written at, the elements' names under `libUi`; [`served.test.ts`](ref:hub/test/served.test.ts) fails when a listed name is gone and the major
   hasn't moved, and on any other difference, so an addition is a deliberate `npm run served:update` that shows in the
   diff. `window.tower` is typed once, as [`Tower`](ref:hub/src/shared/shelf-page.ts#Tower) beside the protocol it
   speaks: `tower.js` is checked against it through JSDoc ([`tsconfig.client.json`](ref:hub/tsconfig.client.json), run

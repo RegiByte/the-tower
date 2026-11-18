@@ -56,7 +56,8 @@ contract if authors can find everything they need on it.
   the test. What a name's type means is for the pull request to call a minor or a major.
 - **Five checks in `npm test`** ([`library.test.ts`](ref:hub/test/library.test.ts)): shape, with once across modules;
   declarations; reach, nothing in `extensions/`, `examples/`, `renderers/` and `apps/` importing the core by path, nor through
-  its old served modules or a core view's URL; runtimes; direction, nothing in `src/` importing the library by path, and only a core
+  its old served modules or a core view's URL (the tower's elements, `/lib-ui/<module>.js` but its internal SDK bundle,
+  are reached by URL like the library, [[tower-elements]]); runtimes; direction, nothing in `src/` importing the library by path, and only a core
   view by URL.
 - **The old way out is closed.** The modules served before the library answer `not_found`;
   `docs/migrating-to-2.md` maps each, and every 1.x name the library no longer exports, to what replaces it.
