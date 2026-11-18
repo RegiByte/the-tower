@@ -49,15 +49,22 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
  * Runs `write`, which may replace the html inside `el`, and gives focus back to the control that had it: itself when
  * `write` put it back in `el` (a view's host the redraw moved), else the one element of the same tag and the same
  * attributes naming what it does (`data-` ones but a tip, a time or a hold, an `href`, a `popovertarget`), so a keyboard
- * keeps its place through a redraw. A control nothing names, or that two now match, loses focus.
+ * keeps its place through a redraw. A control inside an element that builds its own parts (`data-owned`, as a
+ * `tower-*` element is) is named by that element's id instead: the one control of its tag in the element of that id.
+ * A control nothing names, or that two now match, loses focus.
  */
 export function keepingFocus(el: HTMLElement, write: () => void) {
   const had = document.activeElement
-  const id = had && had !== el && el.contains(had) ? identityOf(had) : undefined
+  const inside = had && had !== el && el.contains(had) ? had : undefined
+  const id = inside && identityOf(inside)
+  const owner = inside?.closest('[data-owned][id]')
+  const ownerId = owner && owner !== el && el.contains(owner) ? owner.id : undefined
   write()
-  if (id && had !== document.activeElement && el.contains(had)) return (had as HTMLElement).focus({ preventScroll: true })
-  if (!id || id === had!.localName || el.contains(document.activeElement)) return
-  const again = el.querySelectorAll<HTMLElement>(id)
+  if (inside && inside !== document.activeElement && el.contains(inside)) return (inside as HTMLElement).focus({ preventScroll: true })
+  if (!inside || el.contains(document.activeElement)) return
+  const again = ownerId
+    ? (el.querySelector(`[id="${CSS.escape(ownerId)}"]`)?.querySelectorAll<HTMLElement>(inside.localName) ?? [])
+    : id === inside.localName ? [] : el.querySelectorAll<HTMLElement>(id!)
   if (again.length === 1) again[0].focus({ preventScroll: true })
 }
 
