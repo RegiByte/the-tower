@@ -39,25 +39,35 @@ key path.
 
 ## Your own renderer
 
-A renderer is a directory of built files. Declare it under `renderers` and the tower serves it at `/r/<name>/`, at
-the tower's origin, so it calls the API directly. `renderer` names the one `/` opens.
+A renderer is a directory of built files, served at `/r/<name>/` at the tower's origin, so it calls the API directly.
+Ship it as an extension: an `extension.json` at the root of its repo declares it, with `root` the folder its build
+writes, and the config adds the extension by its folder. `renderer` names the one `/` opens.
+
+```json
+{ "id": "mine", "version": "1.0", "title": "Mine", "requires": { "tower": "2.12" },
+  "renderers": { "mine": { "root": "out", "settings": { "badge": "mine" } } } }
+```
 
 ```json
 {
-  "renderers": { "mine": { "root": "/Users/you/code/my-tower", "settings": { "badge": "mine" } } },
+  "extensions": { "mine": { "path": "/Users/you/code/my-tower" } },
   "renderer": "mine"
 }
 ```
 
-- `root` is an absolute directory, outside the tower's checkout. `entry` is its page, `index.html` unless set.
-  Anything below `root` is served with it, nothing above.
+- `root` is a folder inside the extension, `entry` its page in it, `index.html` unless set. Anything below `root` is
+  served with it, nothing above. A renderer is named by the extension's capability, `mine` or `mine.<name>`, so one
+  extension may ship several ([Contributing surfaces](#contributing-surfaces)).
+- The config's `renderers` declares one too, with no extension: `{ "renderers": { "mine": { "root": "<absolute
+  folder>" } } }`. Under the name of an extension's renderer it sets that renderer's fields, so
+  `renderers.mine.settings` in the config is the user's settings over the extension's.
 - `settings` is your renderer's own configuration. The tower passes it through unread; your page reads it with
   `await tower.renderer()`, which answers `{ name, root, entry, available, settings }`, and what its `renderer.json`
   declares.
 - A renderer is available while its entry exists. `GET /renderers` lists every one, and the tower page lists them at
   the foot of its sidebar.
 - A name the core declares (`page`, `week`, `tower3d`) overrides that renderer's fields: `{ "tower3d": { "settings": … } }`
-  keeps its root.
+  keeps its root. No extension may take one of those names.
 
 A renderer says where it draws in `renderer.json` at its root, and `GET /renderers` serves what it
 declares beside its fields; a renderer with no file declares nothing. The tower page's is
@@ -257,8 +267,9 @@ absolute URL, so the folder runs from anywhere.
    <script type="module" src="mine.js"></script>
    ```
 
-4. Declare it and make it the default, as in the config above, then `tower config check`. `/` now opens
-   `/r/mine/`. No restart: the tower reads the config again.
+4. Declare it in an `extension.json` beside the copy, `"renderers": { "mine": { "root": "." } }`, add the extension
+   and make it the default, as in the config above, then `tower config check`. `/` now opens `/r/mine/`. No
+   restart: the tower reads the config again.
 
 Taking an update is then: copy the folder again, add the two lines again. Keep that as a script in your repo:
 
@@ -1502,6 +1513,31 @@ carries its fields, and otherwise is left out with a `launch` problem. `exempt` 
 `reportsTo` puts it in that worker's crew: each is logged as a core fact (`tower.exempt`, `tower.reports-to`) before it
 starts, shown on its card and by `tower whoami`, and listed at `GET /extensions`. `runtimes.claude.plugins` names a Claude plugin
 folder in the extension, loaded into every session on floors where it is on: [An extension's Claude plugin](#an-extensions-claude-plugin).
+
+### Contributing surfaces
+
+A capability often starts as a config key and moves into an extension once it is worth sharing. Three of the config's
+surfaces take the same data from a manifest, so an extension ships them with nothing in the user's config (since 2.12):
+
+| Manifest key | The config's twin | Where it shows |
+|---|---|---|
+| `renderers: { <name>: { root, entry?, settings? } }` | `renderers` | At `/r/<name>/` while the extension is accepted, after the built-ins. The name is `<provides>` or `<provides>.<name>`; a built-in's name refuses the extension. `root` is inside the extension. The config's `renderers.<name>` sets fields over it. |
+| `shelf: [{ label, renderer \| item \| url \| link }]` | `projects.<p>.shelf` | On every floor where the extension is on, after the config's entries. A page is a renderer of its own or an item it contributes, so no entry names a path. |
+| `items: { <collection>: "<folder>" }` | the files of `collections/<p>/<c>/` | In the collection on every floor where the extension is on, read in place ([Collections](#collections)). |
+
+Each contributed thing carries `from`, the capability it came from: a renderer in `GET /renderers`, a shelf entry
+and an item on the board. The extension's folder is read when the tower resolves its extensions, so an edit there
+shows after `tower extensions restart <id>`, as code does. Turning the capability off on a floor
+(`projects.<p>.capabilities.<cap>.off`) hides its shelf entries and items there; its renderers are the tower's, on no
+floor. `tower config check` checks each contributed shelf entry on each floor, at `extensions.<id>.shelf[<n>]`.
+
+```json
+{
+  "id": "lobby", "version": "1.0", "title": "Lobby", "requires": { "tower": "2.12" },
+  "renderers": { "lobby": { "root": "out" } },
+  "shelf": [{ "label": "Lobby", "renderer": "lobby" }]
+}
+```
 
 ### An extension's Claude plugin
 
