@@ -33,7 +33,8 @@ with none, and reports, by scenario and event, everything that reads differently
 taken on. It exits 0 when nothing does, 1 when there is something to read.
 The runner knows no runtime by name: `tool:claude-check` is `tool:runtime-check -- claude`, and what is
 Claude's (its launches, the trust screen, the peer registry, the usage probe and the report's own surfaces) is one
-record, [`CLAUDE`](ref:hub/scripts/runtime-check.claude.ts#CLAUDE).
+record, [`CLAUDE`](ref:hub/scripts/runtime-check.claude.ts#CLAUDE); opencode's check runs on the same runner
+([[new-opencode-release]]).
 Before it reports, each scenario that stopped short, replays differently or misses a check of its own sessions is
 recorded again, up to `--retries` times (1 unless set), and only its last attempt is read, the report naming what each
 earlier one missed ([`scenarioDifferences`](ref:hub/scripts/runtime-check.report.ts#scenarioDifferences)): Haiku's
