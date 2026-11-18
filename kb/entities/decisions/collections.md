@@ -7,7 +7,7 @@
   "status": "accepted",
   "date": "2026-10-04",
   "reviewed": "2026-11-18",
-  "refs": [
+  "refs": ["hub/extensions/guides/extension.json", 
     "hub/src/shared/model.ts#CollectionType",
     "hub/src/shared/model.ts#projectCollections",
     "hub/src/collections.ts",
@@ -100,6 +100,9 @@ primitives every renderer can reach.
 - Two collections are bundled extensions' with a meaning of their own: `reviews`, the review threads, owned by the
   reviews extension and written only by appending through `reviews/append` ([[review-threads]]), and `policies`, standing work the tower starts at its slots, whose facts live
   in the project's streams, never beside the file ([[policies]]).
+- `guides` is the bundled guides extension's tower-wide collection: its own guides and any extension's arrive through
+  `items`, each a markdown file with a `# Title` line and a json header, read by its view `guides/center` and by the
+  `tower:guide` skill's tour.
 - Drafts are the bundled drafts extension's ([[extensions]]): an open collection, so its doors are the generic
   verbs, declared by `extensions/drafts` and on every floor where the capability is on, with no server code. A
   config's `collections.drafts` line overrides its label and description; on a floor with

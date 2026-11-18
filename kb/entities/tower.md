@@ -25,7 +25,7 @@ capability is a primitive in the core, open to every renderer and every worker (
 - [[terms]]: a second detached process owning plain shells in project directories.
 - [[jobs]]: a third, running commands to their end outside the tower and writing what happened to each in the jobs log.
 - [[extensions]]: folders with a manifest and optional server code, each one capability the tower starts beside its
-  own pieces; the bundled ones (drafts, quota, policies, reviews, autotidy, floors) live in `extensions/`.
+  own pieces; the bundled ones (drafts, quota, policies, reviews, autotidy, floors, guides) live in `extensions/`.
 - [[bridge]]: pure reductions over the logs and the live store a renderer subscribes to. This is the
   contract a new renderer plugs into.
 - [[tower-core]]: the tower server (the renderer API), the modules renderers share, git for worktrees, and the

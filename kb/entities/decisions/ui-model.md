@@ -286,6 +286,7 @@ flowchart LR
   board["the page"] --> main["board.main: one view, pane scale"]
   board --> strip["board.strip: one view of the board, row"]
   board --> bsign["board.sign: commands about no floor, as icons"]
+  main --> sky["board.skyline: commands about no floor, in tower/skyline's greeting"]
   board --> notes["board.notes: asks about no floor"]
   board --> sign["floor.sign: commands, as icons"]
   board --> fsec["floor.section: badges, verbs, asks, tidy"]
