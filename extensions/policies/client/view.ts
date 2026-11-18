@@ -1,6 +1,6 @@
 import { itemSubject, type Floor } from '/lib/board.js'
 import { dismissing } from '/lib/cards.js'
-import { closeHtml, copyTelling, drawPanel, fileCall, panelsCss, pressing, viewCss, type Mount } from '/lib/view.js'
+import { closeHtml, copyTelling, fileCall, morphPanel, panelsCss, pressing, viewCss, type Mount } from '/lib/view.js'
 import { readViewer, VIEWER_KEYS } from '/lib/viewer.js'
 import { esc } from '/lib/words.js'
 import type { PolicyReplies } from '../policies.ts'
@@ -34,8 +34,8 @@ export const mount: Mount = async (host, { tower, board: first, subject, kit }) 
 
   const draw = () => {
     const html = `<span class="label">Policies</span><span class="dim">${esc(floor().name)}</span><span class="actions">${closeHtml(board.keys)}</span>`
-    if (head.innerHTML !== html) head.innerHTML = html
-    drawPanel(body, policiesHtml({ board, floor: floor(), now: now(), dismissed }), {})
+    morphPanel(head, html)
+    morphPanel(body, policiesHtml({ board, floor: floor(), now: now(), dismissed }))
   }
 
   /** A policy's Run now or Approve, or an offer's Accept: a run started opens its worker once the board carries it. */

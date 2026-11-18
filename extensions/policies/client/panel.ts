@@ -4,6 +4,7 @@
  */
 import { callOf, type Board, type Floor } from '/lib/board.js'
 import { DISMISS_OFFER_TITLE } from '/lib/cards.js'
+import { domId } from '/lib/morph.js'
 import { fileButtonsHtml, ICON } from '/lib/view.js'
 import { esc } from '/lib/words.js'
 import { shortHash, type Offer, type PolicyReplies, type PolicyView, type ValidPolicyView } from '../policies.ts'
@@ -68,29 +69,32 @@ const policyHeadHtml = (v: PoliciesView, p: PolicyView, acts: string) => {
 }
 
 function policyHtml(v: PoliciesView, p: PolicyView) {
-  if (!p.header) return `<article class="policy invalid">${policyHeadHtml(v, p, '')}<p class="rule">invalid: it never runs until fixed</p>${problemsHtml(p.problems)}</article>`
+  const id = esc(domId('policy', p.id))
+  if (!p.header) return `<article class="policy invalid" id="${id}">${policyHeadHtml(v, p, '')}<p class="rule">invalid: it never runs until fixed</p>${problemsHtml(p.problems)}</article>`
   const call = callOf(p, 'run')
   const run = call ? callHtml(call, 'Run now', 'start a run now, by hand: no slot, the file as it is', 'primary') : `<button disabled data-tip="${esc(runHeld(p))}">Run now</button>`
   const next = p.next === undefined ? 'no slot ahead' : `next ${slotWords(p.next, tzOf(p), v.now)}`
   const live = `<span>live ${p.live.length}/${p.header.live}${p.live.length ? `: ${p.live.map((id) => workerHtml(v.board, id)).join(', ')}` : ''}</span>`
-  return `<article class="policy">${policyHeadHtml(v, p, approveHtml(p) + run)}
+  return `<article class="policy" id="${id}">${policyHeadHtml(v, p, approveHtml(p) + run)}
     <p class="rule">${esc(p.rule)} · ${esc(next)}</p>
     <p class="now">${esc(standingWords(p, v.board, v.now))}</p>
     <p class="facts">${approvalHtml(v.board, p)}${live}${lastHtml(v.board, p, v.now)}</p></article>`
 }
 
 /** A policy that needs you: Approve for an auto policy edited since its approval, its problems for an invalid file, the holding runs for a slot held while live is full. Nothing rings for it. */
-const needsHtml = (v: PoliciesView, p: PolicyView) =>
+const needsHtml = (v: PoliciesView, p: PolicyView) => `<div class="need" id="${esc(domId('need', p.id))}">${needBodyHtml(v, p)}</div>`
+
+const needBodyHtml = (v: PoliciesView, p: PolicyView) =>
   !p.header
-    ? `<div class="need">${policyHeadHtml(v, p, '')}<p>approved once, invalid now: it doesn't run until fixed</p>${problemsHtml(p.problems)}</div>`
+    ? `${policyHeadHtml(v, p, '')}<p>approved once, invalid now: it doesn't run until fixed</p>${problemsHtml(p.problems)}`
     : p.needs!.kind === 'held'
-    ? `<div class="need">${policyHeadHtml(v, p, '')}<p>${esc(heldWords(p, p.needs!, v.now))}${p.next === undefined ? '' : `: end a run for ${esc(slotWords(p.next, tzOf(p), v.now))} to start`}</p></div>`
-    : `<div class="need">${policyHeadHtml(v, p, approveHtml(p))}<p>edited since its approval of ${esc(shortHash(p.needs!.approved))}: its slots are offered until you approve these words</p></div>`
+    ? `${policyHeadHtml(v, p, '')}<p>${esc(heldWords(p, p.needs!, v.now))}${p.next === undefined ? '' : `: end a run for ${esc(slotWords(p.next, tzOf(p), v.now))} to start`}</p>`
+    : `${policyHeadHtml(v, p, approveHtml(p))}<p>edited since its approval of ${esc(shortHash(p.needs!.approved))}: its slots are offered until you approve these words</p>`
 
 const offerRowHtml = (v: PoliciesView, o: Offer) => {
   const dismissed = v.dismissed.has(offerAskKey(o))
   const dismiss = dismissed ? '<small>dismissed</small>' : `<button class="icon-btn" data-offer-dismiss="${esc(offerAskKey(o))}" aria-label="${DISMISS_OFFER_TITLE}" data-tip="${DISMISS_OFFER_TITLE}">${ICON.close}</button>`
-  return `<div class="offer${dismissed ? ' dismissed' : ''}"><span class="lamp"></span><button class="title" data-policy-open="${esc(o.policy)}" data-tip="open its file">${esc(o.title ?? o.tag)}</button>
+  return `<div class="offer${dismissed ? ' dismissed' : ''}" id="${esc(domId('offer', offerAskKey(o)))}"><span class="lamp"></span><button class="title" data-policy-open="${esc(o.policy)}" data-tip="open its file">${esc(o.title ?? o.tag)}</button>
     <span class="when">${esc(offerWords(v.board, o, v.now))}</span><span class="acts">${callHtml(callOf(o, 'accept')!, 'Accept', 'start the run this slot offers, on the file as it is now', 'primary')}${dismiss}</span></div>`
 }
 
