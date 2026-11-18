@@ -42,6 +42,7 @@
     "test:morph-webkit": "tsx scripts/morph-check.ts webkit",
     "tool:contrast": "tsx scripts/contrast.ts",
     "tool:claude-check": "tsx scripts/runtime-check.ts claude",
+    "tool:opencode-check": "tsx scripts/runtime-check.ts opencode",
     "tool:runtime-check": "tsx scripts/runtime-check.ts",
     "seating:update": "UPDATE_SEATING=1 node --import tsx --import ./test/served-urls.ts --test test/seating.test.ts",
     "served:update": "UPDATE_SERVED=1 node --import tsx --import ./test/served-urls.ts --test test/served.test.ts",
