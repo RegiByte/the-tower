@@ -68,8 +68,7 @@ test("a worker's menu: its verbs less the prompt's and kill, its tabs ticked whe
   assert.equal(menu.title, 'ODIN-07')
   assert.deepEqual(labels(menu.groups[0]), ['Open terminal', 'Brief', 'Send home'])
   assert.deepEqual(ticks(menu.groups[0]), [false, true, undefined])
-  const shown = group(menu.groups, 'Shown').lines[0] as MenuSub
-  assert.deepEqual(shown.lines.map((l) => [l.label, l.does]), [
+  assert.deepEqual((group(menu.groups, 'Shown').lines as MenuLine[]).map((l) => [l.label, l.does]), [
     ['Page', { t: 'display', subject: 'shown:w1/20' }],
     ['report.html', { t: 'display', subject: 'shown:w1/10' }],
   ])
