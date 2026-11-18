@@ -160,7 +160,7 @@ const cardMenu = (board: Board, c: Card, ctx: MenuContext): SubjectMenu => {
 const workerLine = (c: Card): MenuLine[] => {
   const verb = can(c, 'drive') ? 'drive' : can(c, 'brief') ? 'brief' : undefined
   if (!verb) return []
-  return [{ id: `worker:${c.id}`, label: `${c.callsign}'s ${verb === 'drive' ? 'terminal' : 'brief'}`, hint: verbHint('card', verb, c), does: { t: 'action', subject: 'card', verb, id: c.id } }]
+  return [{ id: `worker:${c.id}`, label: `Show ${c.callsign}'s ${verb === 'drive' ? 'terminal' : 'brief'}`, hint: verbHint('card', verb, c), does: { t: 'action', subject: 'card', verb, id: c.id } }]
 }
 
 /** A showing's menu, which a click on the showing opens already: so it offers a browser tab and its worker, not itself. */
