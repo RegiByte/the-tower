@@ -66,7 +66,8 @@ renderer's root that isn't hidden there (`.git`, `.env`), at the tower's origin 
 any origin, so a renderer framed on a shelf at an opaque origin still loads its modules. Framed at the tower's
 origin, as a shown URL, `tower.js` calls the routes itself; only a frame at an origin of its own is relayed. `/` redirects to the configured
 one ([`home`](ref:hub/src/tower/http.ts#home)), and `GET /renderers` lists every one
-([`renderersOf`](ref:hub/src/renderers.ts#renderersOf)), built or not ([[renderers-in-config]]). A renderer that
+([`renderersOf`](ref:hub/src/renderers.ts#renderersOf)), built or not, those extensions contribute marked `from`
+([[renderers-in-config]]). A renderer that
 isn't built, or a config that can't be read, shows as an HTML page saying so: a reader of `/` is in a browser tab.
 A running extension's `client` folder is served the same way at [`/x/<cap>/`](ref:hub/src/tower/http.ts#clientFile),
 readable from any origin: its commands' modules, which renderers import ([[extensions]]).
@@ -119,7 +120,8 @@ With no validators a browser may keep a response for the life of its process; on
 cached outright. What renderers build on is part of the
 API's contract ([[renderer-api-contract]]); the internal URLs are not.
 
-Shelf entries are served only when declared in the config, with a CSP `sandbox` header
+Shelf entries are served only when declared in the config or contributed by an extension on the floor, indexed
+config's first, with a CSP `sandbox` header
 ([`sandboxed`](ref:hub/src/tower/http.ts#sandboxed)); a video or a sound (a `video/*` or `audio/*` media type) gets
 `nosniff` instead: it runs no script, and Chrome plays no media document under a sandbox. A page a renderer frames is
 held by that header and by its iframe's own `sandbox` attribute at once, so it gets what the two share: a new
@@ -130,7 +132,8 @@ which WebKit refuses it as a media element's `src` (`MEDIA_ERR_SRC_NOT_SUPPORTED
 ([`byteRange`](ref:hub/src/tower/http.ts#byteRange)), as media players ask to stream and seek a file. An html one gets `<script src="/frame-keys.js">` appended,
 which sends its keys, and nothing else, to the tower framing it ([[keymap]]), and `<script src="/frame-picks.js">`
 before it, which sends its selection ([[passage-picks]]). So are collection items
-(`/collection/<project>/<collection>/<item>`), and [`inCollection`](ref:hub/src/tower/dispatch.ts#inCollection)
+(`/collection/<project>/<collection>/<item>`, the project `_tower` for a tower-wide one; a contributed item from its
+extension's folder while the store holds none of its id), and [`inCollection`](ref:hub/src/tower/dispatch.ts#inCollection)
 changes items only inside a collection the config declares for the project ([[collections]]). A file a worker
 showed (`/shown/<id>/<path>`) is served the same way, and only while that session's log shows it ([[agent-show]]). `/submit` types a prompt
 into a worker's composer through [`submitText`](ref:hub/src/machine.ts#submitText), and `/submit/at-prompt` only while

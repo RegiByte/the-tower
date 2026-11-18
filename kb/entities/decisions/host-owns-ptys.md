@@ -6,7 +6,7 @@
   "in": "host",
   "status": "accepted",
   "date": "2026-09-30",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": [
     "hub/src/host/main.ts#spawnSession",
     "hub/src/shared/launch.ts#hostSpawn",
@@ -52,6 +52,6 @@ deliberate restart, and anything that can live in a client does. New Claude opti
   Claude reads as it starts, so the list changes with no host restart.
 - Clients compose the whole `--settings` object
   ([`settingsArgs`](ref:hub/src/shared/launch.ts#settingsArgs): the session's other directories, the
-  floor's collections and a worktree's link sources as `additionalDirectories`, [[tower-cuts-worktrees]], `tui` ([[fullscreen-tui]]) and the `env` launch contributors set, [[extensions]]): Claude reads one `--settings`, the last it is given, whole,
+  floor's collections and the tower-wide ones (`_tower/`) and a worktree's link sources as `additionalDirectories`, [[tower-cuts-worktrees]], `tui` ([[fullscreen-tui]]) and the `env` launch contributors set, [[extensions]]): Claude reads one `--settings`, the last it is given, whole,
   so a host adding its own beside a client's would drop one.
 - The project's plugins (`--plugin-dir`, [[plugins]]) are clients' args as well.
