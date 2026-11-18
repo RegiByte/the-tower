@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-16",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -22,7 +22,7 @@ board left out, the drafts' titles and new-worker form, a kept item and the dial
 `kit.js`, what they read off the board alike [`boardKit`](ref:hub/renderers/page/board.js#boardKit). The rest of the
 main pane is views the page hosts ([[ui-model]]): the skyline home ([`tower/skyline`](ref:hub/src/views/skyline.ts#mount))
 shows projects as buildings and sessions as lit windows, and welcomes the user on a tower no worker has run on; a
-floor's archive, a collection and a shelf entry are the core's views too, the drafts editor and the Policies panel
+floor's archive, a collection, a shelf entry and every extension's status (`tower/extensions`) are the core's views too, the drafts editor and the Policies panel
 their extensions'.
 
 **The sidebar.** Each project directory links the web page of its origin remote (`GET /origins`). Each floor lists
@@ -30,7 +30,11 @@ its workers by crew ([[crews]]), each row with its lamp, callsign, status word
 ([`statusWord`](ref:hub/src/shared/status-words.ts#statusWord)), time in state, and what extensions add, drawn in the
 form the layout picks for `card.row` ([[region-overflow]], [`drawCount`](ref:hub/renderers/page/added.js#drawCount));
 running subagents hang under it as satellites ([`satellitesOf`](ref:hub/src/shared/subagents.ts#satellitesOf)). The
-rate limits fold into one chip naming the tightest limit ([[probes]]). A floor folds to its sign, which then carries
+rate limits fold into one chip naming the tightest limit, whose popover holds the limits and the probe that reads
+them ([[probes]]). The foot's Extensions entry ([`extensionsEntry`](ref:hub/renderers/page/extensions-entry.js#extensionsEntry))
+lamps as loud as the loudest extension: a pointer resting on it or a keyboard reaching it lists every extension with
+its problems, and a click or a tap opens `tower/extensions` in the main pane, a row of the list opening it on that
+extension ([[extensions]]). A floor folds to its sign, which then carries
 its waits on you, its offers and its workers lamped by their loudest attention
 ([`loudest`](ref:hub/src/shared/status-words.ts#loudest)); which floors a viewer folded is view state in
 `tower.store`, and a floor never chosen is open while a worker on it needs you. A viewer who has waits flash sees

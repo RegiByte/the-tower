@@ -1,5 +1,5 @@
 import { boardSubject, callOf, can, cardSubject, crewFoldsOf, crewTreeIn, dutyOrderIn, floorSubject, goneHome, goneHomeLine, hiresBy, orderMoving, projectOfKey, workerKeyOf, workersIn } from '/lib/board.js'
-import { addedTidyOf, ATTENTION_NAME, branchLine, carriedLine, editedRows, EXTENSION_ATTENTION, extensionLine, extensionTitle, extraUsageLine, gistLine, goneBases, heededAsks, heededWaits, heldActions, keptBranchLines, lampOf, mainUnreadHtml, LIMITS_STALE_MS, limitsFromTitle, loudest, paceLine, pairLineOf, pastCount, renderersHtml, resetLine, risky, satellitesOf, shelfKind, shelfSource, statusName, statusTitle, statusWord, strandedOf, SUBAGENT_FADE_MS, subagentTitle, tidyLine, tidyRowAsk, tidyRows, verbHint, verbLabel, WAITING_NAME, weekElapsed, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, worktreeBranch, worktreeRisk } from '/lib/cards.js'
+import { addedTidyOf, ATTENTION_NAME, branchLine, carriedLine, editedRows, extraUsageLine, gistLine, goneBases, heededAsks, heededWaits, heldActions, keptBranchLines, lampOf, mainUnreadHtml, LIMITS_STALE_MS, limitsFromTitle, loudest, paceLine, pairLineOf, pastCount, renderersHtml, resetLine, risky, satellitesOf, shelfKind, shelfSource, statusName, statusTitle, statusWord, strandedOf, SUBAGENT_FADE_MS, subagentTitle, tidyLine, tidyRowAsk, tidyRows, verbHint, verbLabel, WAITING_NAME, weekElapsed, WORKTREE_STATE_NAME, WORKTREE_VERB_NAME, worktreeBranch, worktreeRisk } from '/lib/cards.js'
 import { placeOnOpen } from '/lib/chrome.js'
 import { keyshortcuts } from '/lib/keys.js'
 import { addedActions, badgesOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
@@ -531,10 +531,6 @@ export async function sidebar(deps) {
     return `<small class="probe ${PROBE_ATTENTION[p.state]}" data-tip="${esc(probeTitle(p, now))}"><span class="lamp"></span>${esc(probeLine(p, now))}<button class="probe-run" data-probe-run="quota"${named} data-tip="read it now: at most once a minute">read now</button></small>`
   }
 
-  /** Each extension the tower found, after the probes: its line, its state's colour on the lamp, and in full on hover. */
-  const extensionsHtml = () =>
-    board().extensions.map((e) => `<small class="extension ${EXTENSION_ATTENTION[e.state]}" data-tip="${esc(extensionTitle(e))}"><span class="lamp"></span>${esc(extensionLine(e))}</small>`).join('')
-
   /** Extra usage while it is on, as the probe last read it. @param {CommandLimits} entry @param {number} now */
   const extraHtml = ({ extraUsage: e }, now) =>
     e?.enabled ? `<small class="extra${e.reached ? ' spent' : ''}" data-tip="credits spent past the plan's limits, read ${span(now - e.at)} ago">${esc(extraUsageLine(e))}</small>` : ''
@@ -553,8 +549,8 @@ export async function sidebar(deps) {
     <small class="asof ${age > LIMITS_STALE_MS ? 'stale' : ''}" data-tip="${esc(limitsFromTitle(entry))}">as of ${span(age)} ago</small>${after}</div>`
   }
 
-  /** Each command's limits, then the extensions. Rate limits on the board come with when they were read. @param {number} now */
-  const limitsHtml = (now) => `${board().limits.map((entry) => commandLimitsHtml(entry, now)).join('')}${extensionsHtml()}`
+  /** Each command's limits. Rate limits on the board come with when they were read. @param {number} now */
+  const limitsHtml = (now) => board().limits.map((entry) => commandLimitsHtml(entry, now)).join('')
 
   /** The limit closest to running out, of any command: the one with the most used, with the entry it is of. */
   const tightestLimit = () =>
@@ -568,7 +564,7 @@ export async function sidebar(deps) {
   /** The limits folded into one chip: the tightest limit's name and percentage, loud once it is hot. @param {number} now */
   const limitsPill = (now) => {
     const all = board().limits.flatMap((entry) => entry.rateLimits)
-    if (!all.length) return { cls: 'chip quiet', html: '<span class="lamp"></span>no limits read', tip: 'no rate-limit reading yet: click for the probes' }
+    if (!all.length) return { cls: 'chip quiet', html: '<span class="lamp"></span>no limits read', tip: 'no rate-limit reading yet: click for the probe that reads them' }
     const { limit: r, entry } = tightestLimit()
     const tone = limitTone(r.percentUsed)
     const name = r.kind.replace('five_hour', '5h').replace('seven_day', 'week').replaceAll('_', ' ')

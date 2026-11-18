@@ -6,7 +6,7 @@
   "in": "bridge",
   "status": "accepted",
   "date": "2026-10-06",
-  "reviewed": "2026-11-16",
+  "reviewed": "2026-11-18",
   "refs": ["hub/src/bridge/board.ts#board", "hub/src/bridge/board.ts#onBoard", "hub/src/bridge/board.ts#allCards", "hub/src/bridge/board.ts#archiveOf", "hub/src/bridge/board.ts#archiveAtOf", "hub/src/tower/http.ts#archive", "hub/src/tower/publisher.ts#archivedCards", "hub/src/tower/publisher.ts#archiveCore", "hub/src/shared/past.ts#pastOf", "hub/src/shared/past.ts#archiveKey", "hub/src/bridge/chains.ts#threads", "hub/src/bridge/chains.ts#SessionRef", "hub/src/shared/status-words.ts#bubbleOf", "hub/src/shared/crews.ts#findCard", "hub/src/directory.ts#everyCard", "hub/src/directory.ts#readArchive", "hub/renderers/page/index.html", "hub/renderers/page/page.js"]
 }
 ---
