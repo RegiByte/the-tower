@@ -12,6 +12,24 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.12.1
+
+Every line of the subject menu works, and the spawn form's model and effort are comboboxes on every runtime (#677).
+API 2.17. Nothing to restart beyond the tower (`tower update` does it).
+
+- **Subject-menu lines run as themselves.** A line no longer borrows the menu area as its control, which made most
+  lines fail with "pressing: … names nothing it does" (New draft, Open in editor, Reviews, Add to grid, Name tab,
+  Narrate). Each kind of line has one runner, so a kind with none fails the typecheck. `/lib/view.js` gains
+  `pressingAs(ask, request)`, which marks controls busy by a key of their own; `pressing` is built on it.
+- **Menus say what is true and where they go.** Kept → a collection opens the collection, not a new item's editor.
+  Ticks follow what is open each time the menu opens: `tower-menu` fires `payloadchange` on every opening, as its
+  contract says. A repo's link reads "Open on <host>"; a showing's worker line names the worker's terminal or, once
+  it has gone home, its brief. A menu never repeats what clicking its subject already does. Line ids are unique
+  within a menu, checked as it is built.
+- **`tower-combobox` takes `custom`:** typed text that matches no option can be the value, chosen only by Enter or
+  ⌘↵; arrows or an exact label choose an option, and leaving the box restores the chosen value. The spawn form's
+  model and effort use it for runtimes whose model list may not name every model (opencode).
+
 ## v2.12.0
 
 The tower's own elements, built on the UI SDK, and the page's first use of them: a subject menu on every floor,
