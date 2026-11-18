@@ -59,6 +59,9 @@ export const elements = {
 /** The id of the SDK menu inside a `<tower-menu>`: its triggers name it. */
 const innerId = (id: string) => `${id}--ui`
 
+/** The parts a data menu copies for its items: a checkbox item shows its check. */
+const PARTS = '<template><ui-menu-checkbox-item><ui-menu-item-indicator></ui-menu-item-indicator></ui-menu-checkbox-item></template>'
+
 /** Each area's internals, through which its menu marks it open. */
 const areaStates = new WeakMap<Element, CustomStateSet>()
 
@@ -72,6 +75,7 @@ class TowerMenu extends HTMLElement {
     if (!this.id) throw new Error('<tower-menu> needs an id: its buttons and areas name it with for="<id>"')
     const inner = document.createElement('ui-menu')
     inner.id = innerId(this.id)
+    inner.innerHTML = PARTS
     for (const name of TowerMenu.observedAttributes) this.#copy(inner, name)
     this.append(inner)
     this.#inner = inner
