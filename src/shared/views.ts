@@ -40,6 +40,8 @@ export type Pane = { view: string; subject?: string; shows?: string; args?: stri
 /**
  * What a view is handed as it mounts. `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the
  * scale of the region it is mounted in, where that region declares one (@since 1.112); `args`, its location's (a shelf entry's file).
+ * `scope` names this mount, unique on the page (`v7`), and stays its own across its redraws: a view that can be mounted
+ * twice at once puts it first in each id's place, `domId(scope + '/row', key)` spelling `v7/row:<key>` (@since 2.18).
  */
 export type ViewCtx = {
   tower: Tower
@@ -49,6 +51,7 @@ export type ViewCtx = {
   state: { get(key: string): Promise<unknown>; set(key: string, value: unknown): void }
   options: Record<string, unknown>
   scale?: Scale
+  scope: string
   args?: string[]
 }
 

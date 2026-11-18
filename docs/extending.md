@@ -543,7 +543,7 @@ writers already hold: a control `pressing` marks stays `aria-busy`, and a shown 
 Spell each id with `domId(place, key)` of the same module (provisional), as the tower's views do: `<place>:<key>`.
 `place` is words of `[a-z0-9-]` joined by `/` that your code names, saying what the element is and where it is drawn
 (`row`, `tab`); a part of it goes in the place, not after the key (`row/menu`), and a view that can be mounted twice at
-once puts its mount's scope first. `key` comes from your data, never from a position: a subject key (`card:<id>`) or
+once puts its mount's scope first (`ctx.scope`, [Views](#views)). `key` comes from your data, never from a position: a subject key (`card:<id>`) or
 a field's name. Find an element by its id with `getElementById`, and never parse an id back into data: read it from a
 `data-` attribute.
 
@@ -1159,9 +1159,11 @@ credential ([the config](config.md)): an integration that needs one keeps it in 
 
 Its module's export is `mount(host, ctx)`, returning (or resolving to) `{ update(board, subject), show?(subject),
 visible?(on), tab?(), options?(options), close() }` (`Mount` in `/lib/view.js`); `options` takes its options as they
-stand now, drawn in place, and a view without it is mounted afresh when they change. `ctx` is `{ tower, board, subject, kit, state, options, scale?, args? }`:
+stand now, drawn in place, and a view without it is mounted afresh when they change. `ctx` is `{ tower, board, subject, kit, state, options, scale?, scope, args? }`:
 `state` is `tower.store` under `view.<id>.<key>`, the view's own; `scale`, the scale of the region it is mounted in,
-where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell); `args`, its
+where it declares one (`pane` in the main pane and a worker's tabs, `cell` in a grid's cell); `scope` (since 2.18), a
+name of this mount unique on the page (`v7`), which a view that can be mounted twice at once (a worker in the main
+pane and in a grid cell) puts first in the place of every id it spells, `domId(scope + '/row', key)`; `args`, its
 location's (a shelf entry's file); `kit` is what the renderer lends, `terminal(host, path)` (a terminal on `terminal/<id>` or
 `shell/<id>` with the renderer's xterm, font, scheme and keymap, or on `job/<id>`, a job's screen, read only and at
 the job's size), `href(to)` (the hash of the renderer's page
