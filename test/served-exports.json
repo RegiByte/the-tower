@@ -2095,6 +2095,10 @@
     "/lib/morph.js": {
       "runtime": "browser",
       "values": {
+        "domId": {
+          "since": "2.16",
+          "stability": "provisional"
+        },
         "morph": {
           "since": "2.2",
           "stability": "provisional"
