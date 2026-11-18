@@ -4,7 +4,7 @@
   "name": "System root",
   "summary": "The directory holding config.json (intent), the logs (facts: sessions/<id>.jsonl by the host, jobs/ by the jobs daemon, streams/ by the tower) and collections/ (files kept for later): the only stored state of the system.",
   "in": "tower",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": ["hub/src/shared/paths.ts#systemPaths", "hub/src/shared/paths.ts#systemStreamsPath", "hub/src/checkpoints.ts#foldLog", "hub/src/shared/model.ts#Config", "hub/src/shared/model.ts#LogEvent", "hub/src/collections.ts", "hub/src/shared/paths.ts#configPath"]
 }
 ---
@@ -26,7 +26,8 @@
   Logs like the session logs, not a fourth kind of state ([[logs-are-facts]]).
 - `jobs/YYYY-MM.jsonl`: the jobs log, in the streams' format (stream `jobs`), written only by the [[jobs-daemon]]:
   each job's `started`, `cancelled` and `ended`, never its output or env ([[jobs-own-daemon]]).
-- `collections/<project>/<collection>/<item>`: each project's [[collections]], any format, written by the tower
+- `collections/<project>/<collection>/<item>`: each project's [[collections]], and under `_tower/` the tower-wide
+  ones (never a floor id), any format, written by the tower
   ([`src/collections.ts`](ref:hub/src/collections.ts)), by sessions or by hand. Dot files are staging files, never
   items. A collection an extension owns is written only by that extension ([[extensions]]): a `reviews` thread only
   through the reviews extension's `reviews/append` ([[review-threads]]).
