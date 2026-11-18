@@ -1,22 +1,22 @@
 /**
- * What `scripts/claude-check.ts` reads of a run, as pure functions over recorded logs: the shapes of what Claude
- * posted, the status timeline each recording folds to, the surfaces no fixture covers, the release's changelog, and
- * the report that says whether the release moves the tested range.
+ * What `scripts/runtime-check.ts` reads of a run, as pure functions over recorded logs: the shapes of what a runtime
+ * posted and the status timeline each recording folds to, for every runtime; and what only Claude has: the surfaces
+ * no fixture covers, what its `sec-default` mod holds back, and the release's changelog.
  */
 import { timeline } from '../test/replay.ts'
 import type { Status } from '../src/bridge/status.ts'
 import type { SessionLog } from '../src/shared/model.ts'
-import type { Ignore } from './claude-check.scenarios.ts'
+import type { Ignore } from './runtime-check.scenario.ts'
 
 /**
- * Each event's name and payload keys, one level into objects, sorted: what a recording says of Claude's surfaces. A key
+ * Each event's name and payload keys, one level into objects, sorted: what a recording says of the runtime's surfaces. A key
  * missing from some of the event's occurrences is optional, marked `?` (a classic hook names `agent_id` only when a
  * subagent raised it), as is an event some take of the recording missed (`Notification` comes after a minute idle).
  */
 export type Shapes = Record<string, string[]>
 
 /** The committed baseline: each recording's shapes, and the release they were taken on. */
-export type Baseline = { claude: string; recordings: Record<string, Shapes> }
+export type Baseline = { release: string; recordings: Record<string, Shapes> }
 
 /** Keys whose objects are a tool's own input or output, which change with the tool and the model's call. */
 const CONTENT = new Set(['tool_input', 'tool_response'])
@@ -31,13 +31,13 @@ const keysOf = (payload: Record<string, unknown>): string[] =>
     ? Object.keys(payload).filter((k) => TOOL_CALL_KEYS.has(k))
     : Object.entries(payload).flatMap(([k, v]) => [k, ...(isObject(v) && !CONTENT.has(k) ? Object.keys(v).map((inner) => `${k}.${inner}`) : [])])
 
-/** Claude's events in a log: what the tower writes itself (`tower.*`) is left out. */
-const claudeEvents = (log: SessionLog): Record<string, unknown>[] =>
+/** The runtime's events in a log: what the tower writes itself (`tower.*`) is left out. */
+const runtimeEvents = (log: SessionLog): Record<string, unknown>[] =>
   log.events.flatMap((e) => (e[1] === 'h' && !String(e[2].hook_event_name).startsWith('tower.') ? [e[2] as Record<string, unknown>] : []))
 
 export const shapesOf = (log: SessionLog): Shapes => {
   const seen = new Map<string, { times: number; keys: Map<string, number> }>()
-  for (const payload of claudeEvents(log)) {
+  for (const payload of runtimeEvents(log)) {
     const name = String(payload.hook_event_name)
     const event = seen.get(name) ?? { times: 0, keys: new Map() }
     event.times++

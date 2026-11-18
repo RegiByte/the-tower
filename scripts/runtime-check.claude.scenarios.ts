@@ -1,72 +1,19 @@
 /**
- * The scenarios `scripts/claude-check.ts` drives on a new Claude release, as data: one per fixture recorded from
+ * The scenarios `scripts/runtime-check.ts` drives on a new Claude release, as data: one per fixture recorded from
  * real Claude in `test/fixtures` (and a few with none, for their shapes), each driven the way its fixture was so an
- * unchanged release replays to the same statuses.
- *
- * A scenario runs in its own directory, its own git repo (Claude keeps folder trust per repo root), seeded again with
- * `seed` files on each run. The directory is the same on every run, so Claude asks to trust it only on the first; a
- * `fresh` scenario, which needs the trust screen, gets a directory Claude has never seen. Its steps run in order: each waits on what the session's log says (`on`), then `pause`s, then does
- * one thing (`do`). An `on` reads the log after the previous step: after its action when it acted, else after the
- * event it waited on. Every session it spawned is killed after its last step, and each log is a recording, named
- * after its session.
+ * unchanged release replays to the same statuses. What a scenario is: `runtime-check.scenario.ts`.
  */
-import type { Status } from '../src/bridge/status.ts'
 import type { BlockedKind } from '../src/bridge/blocked.ts'
+import type { Ignore, On, Scenario as AnyScenario, Step } from './runtime-check.scenario.ts'
 
 /**
- * What a status replay leaves out to compare a recording with its fixture (`comparedForm`): `trust`, the trust screen's
- * leading `blocked`, left out of every scenario but a `fresh` one or one held at start by a `blocked` screen, since a
- * fixture and a run may differ in whether the directory was trusted; `watching` and `repeats`, for subagents that race the main loop to the end of its turn and
- * report in as many turns as the race leaves.
+ * Claude's flags beyond the tower's own, and its environment: `tools` are allowed without asking, `argv` follows them,
+ * `{root}` is the run's root.
  */
-export type Ignore = 'trust' | 'watching' | 'repeats'
+export type ClaudeLaunch = { name: string; tools: string[]; argv?: string[]; env?: Record<string, string> }
 
-/**
- * What a step waits for in a session's log. `event`: a hook event by name, the main loop's only unless `agents`,
- * whose fields equal each `where` string or match each pattern; the `count`th such. `status`: the session's folded
- * status entering it, the `count`th time.
- */
-export type On =
-  | { event: string; where?: Record<string, string | RegExp>; agents?: true; count?: number; within?: number }
-  | { status: Status; count?: number; within?: number }
-
-/**
- * What a step does. `spawn`: a session named `as` in the scenario's directory, answering the trust screen the
- * directory's first session raises, or held by `blocked`'s; `resume`: a session named `as` continuing the conversation of `from`, killed by
- * then; `keys`: raw input; `submit`: text typed and sent, as `POST /submit`; `atPrompt`: the same as
- * `POST /submit/at-prompt`, which must answer the error code `refused` names when it names one; `write`: a file in the directory;
- * `kill`: the session, waited on until it exits.
- */
-export type Act =
-  | { spawn: string; prompt?: string; model?: string; callsign?: string; blocked?: BlockedKind }
-  | { resume: string; from: string }
-  | { keys: string }
-  | { submit: string }
-  | { atPrompt: string; refused?: 'not_at_prompt' | 'composer_holds' | 'moved' }
-  | { write: string; text: string }
-  | { kill: true }
-
-/** `in`: the session the step waits on and acts in, the first spawned when left out. */
-export type Step = { in?: string; on?: On; pause?: number; do?: Act }
-
-/**
- * Claude's flags beyond the tower's own, and its environment: `{root}` is the run's root. Every scenario with the same
- * launch runs together, the config written once for them.
- */
-export type Launch = { name: string; tools: string[]; argv?: string[]; env?: Record<string, string> }
-
-/**
- * `recordings`: each session it records, by name, with the fixture its timeline replays against and what that leaves
- * out. `fresh`: it runs in a directory Claude has never trusted.
- */
-export type Scenario = {
-  name: string
-  fresh?: true
-  launch: Launch
-  seed: Record<string, string>
-  recordings: Record<string, { fixture?: string; ignore?: Ignore[] }>
-  steps: Step[]
-}
+type Scenario = AnyScenario<ClaudeLaunch>
+type Launch = ClaudeLaunch
 
 const ESC = '\x1b'
 const ENTER = '\r'
