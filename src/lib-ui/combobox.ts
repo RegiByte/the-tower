@@ -8,8 +8,9 @@
  * match; Enter, with any modifier (⌘↵ too), chooses the highlighted option and closes the list, or does nothing when
  * none is highlighted, and goes no further: the form never sees it, so a submit key doesn't submit. Closed, the keys
  * pass on as from any field. Leaving without choosing (Escape, Tab, a press outside) shows the chosen option's label
- * again, or the empty box: text typed but not chosen is never a value. With `custom`, Enter with no option highlighted
- * chooses the text typed; leaving still restores what was chosen.
+ * again, or the empty box: text typed but not chosen is never a value. With `custom`, typing highlights nothing, as a
+ * datalist's box: Enter chooses the text typed, or the option an arrow key moved to, or the option whose label is
+ * exactly the text; leaving still restores what was chosen.
  */
 import type { ListData } from '@ui-sdk/web/combobox'
 import { relay, type ElementContract } from './sdk.ts'
@@ -27,7 +28,7 @@ export const elements = {
       empty: 'What the list says when no option matches.',
       disabled: 'It can be neither focused nor changed, and submits nothing.',
       required: 'A form will not submit until an option is chosen.',
-      custom: 'Text that matches no option is chosen too, by Enter (⌘↵ too) with no option highlighted; leaving the box without choosing still shows what was chosen.',
+      custom: 'Text typed is chosen too, by Enter (⌘↵ too): typing highlights no option, so Enter takes the text, the option an arrow key moved to, or the one labelled exactly the text; leaving the box without choosing still shows what was chosen.',
     },
     properties: {
       value: 'The value of the option chosen, or null.',
@@ -59,7 +60,6 @@ class TowerCombobox extends HTMLElement {
     if (this.#inner) return
     const inner = document.createElement('ui-combobox')
     inner.innerHTML = PARTS
-    inner.setAttribute('auto-highlight', '')
     this.append(inner)
     this.#inner = inner
     for (const name of TowerCombobox.observedAttributes) this.#sync(inner, name)
@@ -97,7 +97,10 @@ class TowerCombobox extends HTMLElement {
     else if (name === 'label' || name === 'labelledby') this.#label(inner)
     else if (name === 'empty') inner.querySelector('ui-combobox-empty')!.textContent = value ?? ''
     else if (name === 'placeholder') inner.querySelector<HTMLInputElement>('input')!.placeholder = value ?? ''
-    else if (name === 'custom') inner.toggleAttribute('allow-custom-value', value !== null)
+    else if (name === 'custom') {
+      inner.toggleAttribute('allow-custom-value', value !== null)
+      inner.toggleAttribute('auto-highlight', value === null)
+    }
     else if (value === null) inner.removeAttribute(name)
     else inner.setAttribute(name, value)
   }
