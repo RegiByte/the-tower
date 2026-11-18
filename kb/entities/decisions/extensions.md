@@ -417,6 +417,6 @@ extension can't be enters the core, in the order [[renderer-is-disposable]] give
 - *Guidance in the system prompt or a SessionStart addition*: the first reaches a worker only after a tower restart,
   the second puts every extension's text in every session.
 
-**Impact.** The core holds the mechanism and what extensions stand on; drafts, policies, quota, reviews, autotidy and
-floors are bundled extensions, and `examples/extensions/` holds folders to copy. Every addition to the manifest or ctx
+**Impact.** The core holds the mechanism and what extensions stand on; drafts, policies, quota, reviews, autotidy,
+floors and guides are bundled extensions, and `examples/extensions/` holds folders to copy. Every addition to the manifest or ctx
 is an API minor, recorded by `x-since` and `CTX_SINCE`. No host change.
