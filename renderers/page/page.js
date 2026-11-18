@@ -80,6 +80,8 @@ const pageNow = () => lostAt() ?? Date.now()
 const view = () => page.state().view
 /** The worker the main pane is on. */
 const selected = () => cardIdOf(view())
+/** Whether the page holds its sidebar's and tab row's markup as they are: while the subject menu is open. */
+let paintHeld = () => false
 /** The main pane's view while it is a `t`. @template {MainView['t']} T @param {T} t */
 const viewing = (t) => {
   const v = view()
@@ -118,7 +120,8 @@ function render() {
   // The selected worker's row stays where a move or a click left it while in sight, so a move key's target stays in view.
   const anchor = sightAnchorOf(floors, selected()) ?? topAnchorOf(floors)
   // A board that changes nothing drawn here keeps every control, so a press already down on one still clicks it.
-  keepingFocus(floors, () => {
+  // While the subject menu is open the floors keep their markup, which holds the ⋯ button it is anchored to.
+  if (!paintHeld()) keepingFocus(floors, () => {
     if (!paintOnce(floors, floorsTopDown().map(floorHtml).join(''))) return floorTrays.refresh(floors)
     floorTrays.place(floors)
     holdRow(floors, anchor)
@@ -497,7 +500,8 @@ function openedViews() {
   return [{ view: v.location.view, subject: v.location.subject ?? 'board' }, ...(tab ? [tab] : [])]
 }
 
-subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick })
+const subjectMenu = subjectMenus({ board, opened: openedViews, origins, pick: doMenuPick, closed: render })
+paintHeld = subjectMenu.open
 
 /** A capability shown: its words, with the verb it names on the selected worker's floor when that floor offers it. @param {string} id */
 function learnPick(id) {
@@ -1256,6 +1260,7 @@ function started(reply) {
 
 const mainRegion = regions({
   board,
+  held: () => paintHeld(),
   views: () => viewsOf(board()),
   layout,
   declared: () => placing().regions,
