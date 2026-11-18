@@ -43,7 +43,9 @@ them.
 - [`pressing(control, request)`](ref:hub/src/shared/press.ts#pressing) keeps every control of the same identity
   `aria-busy` until the request settles, and ignores a press of a busy one. The identity is the tag and the
   attributes naming what the control does ([`identityOf`](ref:hub/src/shared/press.ts#identityOf)), so a button a
-  board redraw replaces, or the same call drawn elsewhere, is busy alike. A control that names nothing fails loudly,
+  board redraw replaces, or the same call drawn elsewhere, is busy alike. A button a morph keeps loses the mark its
+  new html lacks ([[renderer-shared-modules]]), so the mark is put back after an attribute change as after a redraw, written only where
+  it is missing so its own write ends there. A control that names nothing fails loudly,
   since it would mark every button of its tag. Its core is
   [`pressingAs(press, request)`](ref:hub/src/shared/press.ts#pressingAs), keyed by a `Press`: a key naming what is
   asked and the selector of what is drawn busy; `pressing` runs it over the control's own
