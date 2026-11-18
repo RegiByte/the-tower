@@ -5,9 +5,10 @@
 import { buildSync } from 'esbuild'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
-import type { ClientRead, Found } from './bridge/extensions.ts'
+import { contributedRenderers, resolve, type ClientRead, type Found } from './bridge/extensions.ts'
 import type { ContributedItems } from './bridge/stores.ts'
-import { fileBelow } from './renderers.ts'
+import { fileBelow, type Contributed } from './renderers.ts'
+import { API_VERSION } from './shared/api.ts'
 import { BUNDLED } from './shared/extensions.ts'
 import type { Config } from './shared/model.ts'
 
@@ -154,6 +155,9 @@ export const discover = (config: Config, root = BUNDLED_DIR): Found[] => {
     })
   return [...found, ...added]
 }
+
+/** The renderers the extensions the config would accept contribute, as a process with no running tower reads them. */
+export const contributedIn = (config: Config): Contributed => contributedRenderers(resolve(discover(config), config, API_VERSION).accepted.values())
 
 /** The newest modification time of any file below `dir` (epoch ms), dot files and `node_modules` aside: a code edit moves it. */
 export const newestIn = (dir: string): number =>

@@ -6,10 +6,10 @@
  */
 import { existsSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { guidanceOf, manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
+import { contributedRenderers, guidanceOf, manifestOf, parseSettings, resolve, zodOf, type Found, type Resolved } from './bridge/extensions.ts'
 import { discover } from './extensions.ts'
 import { API_VERSION } from './shared/api.ts'
-import { declaredOf, defaultRenderer, layoutProblems, layoutReachOf, renderersOf } from './renderers.ts'
+import { declaredOf, defaultRenderer, layoutProblems, layoutReachOf, renderersOf, unrooted } from './renderers.ts'
 import type { Layout } from './shared/regions.ts'
 import { GuidanceConfig, type ViewDecl } from './shared/extensions.ts'
 import { SHELF_KINDS, shelfProblem } from './shelf.ts'
@@ -314,17 +314,18 @@ const projectProblems = (config: Config, id: string, project: Project, renderers
 export const configProblems = (config: Config): ConfigProblem[] => {
   const moved = movedKeys(config)
   const isMoved = (p: ConfigProblem) => p.level === 'warn' && moved.some((m) => m.key === p.key)
+  const projects = isObject(config.projects) ? Object.entries(config.projects) : []
+  const found = discover(isObject(config.extensions) ? config : { ...config, extensions: undefined })
+  const extensions: Extensions = { found, resolved: resolve(found, { ...config, projects: Object.fromEntries(projects) }, API_VERSION) }
+  const contributed = contributedRenderers(extensions.resolved.accepted.values())
   const renderers = (() => {
     try {
-      return renderersOf(config)
+      return renderersOf(config, contributed)
     } catch (err) {
       if (err instanceof ConfigError) return undefined
       throw err
     }
   })()
-  const projects = isObject(config.projects) ? Object.entries(config.projects) : []
-  const found = discover(isObject(config.extensions) ? config : { ...config, extensions: undefined })
-  const extensions: Extensions = { found, resolved: resolve(found, { ...config, projects: Object.fromEntries(projects) }, API_VERSION) }
   return [
     ...unknownKeys('', config, CONFIG_KEYS).filter((p) => p.key !== 'probes'),
     ...('probes' in config ? [fail('probes', probesGone(config.probes))] : []),
@@ -342,8 +343,9 @@ export const configProblems = (config: Config): ConfigProblem[] => {
     ...checked('callsigns', () => callsignsOf(config)),
     ...checked('port', () => towerPort(config)),
     ...checked('hosts', () => towerHosts(config)),
-    ...checked('renderers', () => renderersOf(config)),
+    ...checked('renderers', () => renderersOf(config, contributed)),
     ...unknownKeysEach('renderers', config.renderers, RENDERER_KEYS),
+    ...unrooted(config, contributed).map((name): ConfigProblem => ({ level: 'warn', key: `renderers.${name}`, problem: 'sets no "root", and no accepted extension contributes it: it serves nothing until one does, or give it the directory its built files are in' })),
     ...(renderers ?? []).flatMap((r): ConfigProblem[] => (r.problem ? [{ level: 'warn', key: `renderers.${r.name}`, problem: `${r.root}/${r.problem}: it declares no regions` }] : [])),
     ...(renderers ? checked('renderer', () => defaultRenderer(config, renderers)) : []),
     ...(renderers ?? []).flatMap((r) => layoutOptionProblems(r.name, r.configLayout, extensions.resolved)),

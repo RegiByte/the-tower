@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { contractOf, goneFrom, parseContract, readOne, rendererLayoutProblems, replacementProblem, type LoadProblem } from './bridge/extensions.ts'
 import { CliError } from './cli-error.ts'
-import { BUNDLED_DIR, CONTRACT_FILE, foundIn, MANIFEST_FILE } from './extensions.ts'
+import { BUNDLED_DIR, contributedIn, CONTRACT_FILE, foundIn, MANIFEST_FILE } from './extensions.ts'
 import { rendererRegions } from './renderers.ts'
 import { runProcess } from './run.ts'
 import { API_VERSION } from './shared/api.ts'
@@ -71,7 +71,7 @@ export const checkFolder = async (dir: string, config: Config, views: ExtensionV
   if (!read.manifest || read.problems.some((p) => p.level === 'error')) return { id, problems: read.problems }
   const cap = capabilityOf(read.manifest)
   const replaced = (BUNDLED as readonly string[]).includes(cap) ? replacementProblem(read.manifest, found, foundIn(cap, true, path.join(BUNDLED_DIR, cap))) : undefined
-  const problems = [...read.problems, ...rendererLayoutProblems(read.manifest, rendererRegions(config)), ...(replaced ? [replaced] : []), ...(views ? runningProblems(read.manifest, id, views) : [])]
+  const problems = [...read.problems, ...rendererLayoutProblems(read.manifest, rendererRegions(config, contributedIn(config))), ...(replaced ? [replaced] : []), ...(views ? runningProblems(read.manifest, id, views) : [])]
   return { id, problems: [...problems, ...(await startProblems(dir, read.settings))], manifest: read.manifest }
 }
 

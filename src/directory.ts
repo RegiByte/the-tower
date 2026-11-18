@@ -23,6 +23,7 @@ import { nextSlot, ruleWords, slotWords } from './shared/slots.ts'
 import { capabilityOf, FACT_DOOR, type Deprecated, type ExtensionView } from './shared/extensions.ts'
 import { helpLines, jsonArgument, jsonRefusal, missingLine, parseWord, printedOf, readUrl, unknownWordLines, usageOf, wordNamed, type Word } from './shared/cli-words.ts'
 import { renderersOf } from './renderers.ts'
+import { contributedIn } from './extensions.ts'
 import { layoutOf } from './shared/views.ts'
 import type { BoardMsg, Reads } from './shared/shelf-page.ts'
 import { ago, CLI_REGIONS, exemptionWords, landing, landingLine, linesOf, sizeOf, hiresBy, extensionLine, EXTENSION_STATE_NAME, problemLine, base, callOf, can, crewOf, crewTree, GIST_MARK, gistLine, hirerName, hiresOf, holdersOf, workerAt, modelName, hireBlocked, modelNote, runtimeRefusal, spawnCall, spawnForm, shelfSource, statusName, UNRESUMABLE_TITLE, type SpawnForm } from './shared/cards.ts'
@@ -838,7 +839,7 @@ export const WORKER_RUNS: Record<VerbOf<'worker'>, Run> = {
       for (const p of problems) console.log(`${{ error: 'error', warn: 'warn ', info: 'note ' }[p.level]}  ${problemLine(p)}`)
       if (manifest) {
         const why = (r: Renderer) => (r.problem ? `its ${r.problem}` : r.available ? undefined : "isn't built: build it for its renderer.json to be read")
-        const drawers = [...renderersOf(config).map((r) => ({ name: r.name, regions: r.regions, why: why(r), kit: r.kit, layout: layoutOf(r.layout ?? {}, r.configLayout, undefined) })), { name: 'cli', regions: CLI_REGIONS }]
+        const drawers = [...renderersOf(config, contributedIn(config)).map((r) => ({ name: r.name, regions: r.regions, why: why(r), kit: r.kit, layout: layoutOf(r.layout ?? {}, r.configLayout, undefined) })), { name: 'cli', regions: CLI_REGIONS }]
         for (const l of landing(drawers, { ...manifest, cap: capabilityOf(manifest) })) console.log(`lands  ${landingLine(l)}`)
       }
       if (!views) console.log(`note   not resolved against a running tower: none answers at ${towerAt()}`)

@@ -1,10 +1,10 @@
-/** The renderers the tower serves at `/r/<name>/`: the built-ins, then the config's, which add to them or override them. */
+/** The renderers the tower serves at `/r/<name>/`: the built-ins, then the extensions', then the config's, which add to them or override their fields. */
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { z } from 'zod'
 import { hiddenBelow } from './shelf.ts'
 import { chordProblem } from './shared/keymap.ts'
-import { ConfigError, type Config, type Renderer, type RendererConfig } from './shared/model.ts'
+import { BUILT_IN_RENDERERS, ConfigError, type Config, type ContributedRenderer, type Renderer, type RendererConfig } from './shared/model.ts'
 import { capabilityOf, type Manifest } from './shared/extensions.ts'
 import { addsLinesOn, BUDGETS, HOLDS, KIT_MEMBERS, OVERFLOWS, overflowOf, REGION_ID, SCALES, type Declared, type Hold, type Layout, type LayoutEntry, type LayoutProblem, type Overflow, type Region, type RendererRegions } from './shared/regions.ts'
 
@@ -14,40 +14,56 @@ export const DEFAULT_RENDERER = 'page'
 const RENDERERS_DIR = path.join(import.meta.dirname, '..', 'renderers')
 
 /** The renderers the core declares: the tower page, the week as a yearbook, and Tower 3D once `npm run tower3d` has built `out/`. */
-const BUILT_INS: Record<string, RendererConfig> = {
+const BUILT_INS: Record<(typeof BUILT_IN_RENDERERS)[number], RendererConfig> = {
   page: { root: path.join(RENDERERS_DIR, 'page') },
   week: { root: path.join(RENDERERS_DIR, 'week') },
   tower3d: { root: path.join(RENDERERS_DIR, 'tower3d', 'out') },
 }
 
-/** A name that is one path segment of `/r/<name>/`. */
-export const RENDERER_NAME = /^[\w-]+$/
+/** A name that is one path segment of `/r/<name>/`: a word, or two joined by a dot, as an extension's `<provides>.<name>`. */
+export const RENDERER_NAME = /^[\w-]+(\.[\w-]+)?$/
 
-/** Each renderer's name and its config, the built-in's fields under the config's: the built-ins in their order, then the config's own. */
-const configsOf = (config: Config): [string, RendererConfig][] => {
+/** The renderers extensions contribute, by name: none unless the caller read them from the accepted extensions. */
+export type Contributed = Record<string, ContributedRenderer>
+
+/**
+ * Each renderer's name and its config, the config's fields over the extension's over the built-in's: the built-ins in
+ * their order, then the extensions', then the config's own. A config entry with no root over nothing, such as the
+ * settings of an extension's renderer while that extension isn't accepted, is no renderer (`unrooted`).
+ */
+const configsOf = (config: Config, contributed: Contributed): [string, RendererConfig & { from?: string }][] => {
   const declared = config.renderers ?? {}
-  return [...new Set([...Object.keys(BUILT_INS), ...Object.keys(declared)])].map((name) => [name, { ...BUILT_INS[name], ...declared[name] }])
+  const builtIn: Record<string, RendererConfig> = BUILT_INS
+  const serveNothing = unrooted(config, contributed)
+  return [...new Set([...Object.keys(BUILT_INS), ...Object.keys(contributed), ...Object.keys(declared)])]
+    .filter((name) => !serveNothing.includes(name))
+    .map((name) => [name, { ...builtIn[name], ...contributed[name], ...declared[name] }])
 }
+
+/** The config's renderers that set no root and override no built-in's or accepted extension's: they serve nothing. */
+export const unrooted = (config: Config, contributed: Contributed): string[] =>
+  Object.entries(config.renderers ?? {})
+    .filter(([name, r]) => !r?.root && !Object.hasOwn(BUILT_INS, name) && !Object.hasOwn(contributed, name))
+    .map(([name]) => name)
 
 /**
  * The regions each renderer declares in its `renderer.json`: what no extension lays out, the config's renderers
  * included. Read apart from `renderersOf`, so a config's bad layout doesn't hide them; a renderer given no root declares none.
  */
-export const rendererRegions = (config: Config): RendererRegions =>
-  configsOf(config).map(([name, { root, entry = 'index.html' }]) => {
+export const rendererRegions = (config: Config, contributed: Contributed): RendererRegions =>
+  configsOf(config, contributed).map(([name, { root, entry = 'index.html' }]) => {
     const declared = root ? declaredAt(root, entry) : undefined
     return { name, regions: declared && 'regions' in declared ? declared.regions.map((r) => r.id) : [] }
   })
 
-/** Every renderer: the built-ins in their order, then the config's own. A config renderer with no root to serve is a config error. */
-export const renderersOf = (config: Config): Renderer[] =>
-  configsOf(config).map(([name, renderer]) => {
-    if (!RENDERER_NAME.test(name)) throw new ConfigError(`renderers."${name}" in the config: a renderer's name is letters, digits, "_" and "-"`)
-    const { root, entry = 'index.html', settings = {}, layout = {} } = renderer
-    if (!root) throw new ConfigError(`renderers.${name} in the config has no "root": the directory its built files are in`)
+/** Every renderer: the built-ins in their order, then those the accepted extensions contribute, then the config's own. */
+export const renderersOf = (config: Config, contributed: Contributed): Renderer[] =>
+  configsOf(config, contributed).map(([name, renderer]) => {
+    if (!RENDERER_NAME.test(name)) throw new ConfigError(`renderers."${name}" in the config: a renderer's name is letters, digits, "_" and "-", or two such words joined by "."`)
+    const { root, entry = 'index.html', settings = {}, layout = {}, from } = renderer as RendererConfig & { root: string; from?: string }
     const configLayout = LayoutSchema.safeParse(layout)
     if (!configLayout.success) throw new ConfigError(`renderers.${name}.layout in the config: ${layoutIssues(configLayout.error)}`)
-    return { name, root, entry, available: existsSync(path.join(root, entry)), settings, configLayout: configLayout.data, ...declaredAt(root, entry) }
+    return { name, ...(from && { from }), root, entry, available: existsSync(path.join(root, entry)), settings, configLayout: configLayout.data, ...declaredAt(root, entry) }
   })
 
 /** The file a renderer declares its regions in, at its root. */
