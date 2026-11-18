@@ -124,7 +124,7 @@ import { hookEvents, logFileOf, readLog } from '../tail.ts'
 import { landingOf, WorktreeError } from '../worktrees.ts'
 import { errorOf, OK, type Answer } from './answers.ts'
 import { DispatchResource } from './dispatch.ts'
-import { collectionOn, contributedTo } from '../bridge/stores.ts'
+import { collectionOn, contributedTo, floorShelf } from '../bridge/stores.ts'
 import { contributedRenderers } from '../bridge/extensions.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
@@ -573,9 +573,14 @@ export const httpServer = defineResource({
       return OK
     }
 
+    /** A floor's shelf entry `n`: of the config's entries, then the extensions' on the floor. */
+    const shelfEntry = (config: Config, projectId: string, n: number): ShelfEntry | undefined =>
+      config.projects[projectId] && floorShelf(config, projectId, extensions.registry().stores)[n]
+
     function shelf(projectId: string, n: number, file: string | undefined): ReadReply {
-      const project = readConfig().projects[projectId]
-      const entry = project?.shelf?.[n]
+      const config = readConfig()
+      const project = config.projects[projectId]
+      const entry = shelfEntry(config, projectId, n)
       if (!entry) return failed('not_found', `"${projectId}" has no shelf entry ${n}`)
       if (file === undefined) return json(shelfFiles(project, entry).filter((f) => !('message' in shelfFile(projectId, project, entry, f))))
       if (!shelfServes(project, entry, file)) return failed('not_found', `The shelf entry serves no "${file}"`)
@@ -701,7 +706,7 @@ export const httpServer = defineResource({
     const run = (res: http.ServerResponse, projectId: string, n: number, file: string | undefined, query: string) =>
       withConfig(res, (config) => {
         const project = config.projects[projectId]
-        const entry = project?.shelf?.[n]
+        const entry = shelfEntry(config, projectId, n)
         if (!entry || shelfKind(entry) !== 'html') return fail(res, 'not_found', `"${projectId}" has no html or item shelf entry ${n}`)
         if (file === undefined) return res.writeHead(302, { location: `/run/${projectId}/${n}/${shelfPage(entry)}${query}`, ...FRESH }).end()
         if (!shelfServes(project, entry, file)) return fail(res, 'not_found', `The shelf entry serves no "${file}"`)

@@ -218,7 +218,7 @@ test('a manifest within the rules is accepted with its stores, each schema read 
 })
 
 test("a floor's collections: the config's, then an extension's where it is on, by it, the config's words over its own; off, only the config's stay, open", () => {
-  const stores = [{ provides: 'pulse', chain: ['pulse'], answers: [], contributed: {}, collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
+  const stores = [{ provides: 'pulse', chain: ['pulse'], answers: [], contributed: {}, shelf: [], collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
   const c = config({
     collections: { drafts: { label: 'Drafts' }, pulse: { label: 'Our beats' } },
     projects: { app: { name: 'App', hub: '/app', repos: [] }, site: { name: 'Site', hub: '/site', repos: [], capabilities: { pulse: { off: true } } } },
@@ -441,8 +441,8 @@ test('a floor setting settings on an extension that takes none is a problem, as 
 test("a collection's items: the user's and the extensions' on the floor, the first contributor's of an id, a user's item shadowing one of its id", () => {
   const item = (id: string) => ({ id, size: 1, modifiedAt: 1 })
   const stores = [
-    { provides: 'guides', chain: ['guides'], answers: [], collections: {}, contributed: { notes: { dir: '/g', items: [item('a.md'), item('b.md')] } } },
-    { provides: 'more', chain: ['more'], answers: [], collections: {}, contributed: { notes: { dir: '/m', items: [item('b.md'), item('c.md')] } } },
+    { provides: 'guides', chain: ['guides'], answers: [], shelf: [], collections: {}, contributed: { notes: { dir: '/g', items: [item('a.md'), item('b.md')] } } },
+    { provides: 'more', chain: ['more'], answers: [], shelf: [], collections: {}, contributed: { notes: { dir: '/m', items: [item('b.md'), item('c.md')] } } },
   ]
   const c = config({ projects: { app: { name: 'App', hub: '/app', repos: [], capabilities: { more: { off: true } } } } })
   const contributed = contributedTo(c, 'app', 'notes', stores)

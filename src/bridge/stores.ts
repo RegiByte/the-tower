@@ -3,7 +3,7 @@
  * those of the extensions on there, who owns each, and an extension's session facts over a worker's lineage.
  */
 import type { Collection, Doors, SessionFact } from '../shared/extensions.ts'
-import { projectCollections, TOWER_WIDE, type CollectionItem, type CollectionType, type Config } from '../shared/model.ts'
+import { projectCollections, TOWER_WIDE, type CollectionItem, type CollectionType, type Config, type FloorShelfEntry, type ShelfEntry } from '../shared/model.ts'
 import { EXTENSION_FACTS, type Session } from './facts.ts'
 
 /** A file an extension contributes to a collection, as discovery read it: `modifiedAt` epoch ms. */
@@ -16,11 +16,17 @@ export type ContributedItems = Record<string, { dir: string; items: ItemRead[] }
  * What an accepted extension declares of its collections, the capabilities it is off with (`Accepted.chain`), and the
  * hooks it answers while it runs.
  */
-export type ExtensionStores = { provides: string; chain: string[]; collections: Record<string, Collection>; contributed: ContributedItems; answers: string[] }
+export type ExtensionStores = { provides: string; chain: string[]; collections: Record<string, Collection>; contributed: ContributedItems; shelf: ShelfEntry[]; answers: string[] }
 
 /** Whether a running extension on the floor answers `hook`: a discard is offered only where one records it. */
 export const answeredOn = (config: Config, project: string, extensions: ExtensionStores[], hook: string): boolean =>
   extensions.some((x) => x.answers.includes(hook) && !offOn(config, project, x.chain))
+
+/** A floor's shelf: the config's entries, then those each extension on the floor contributes, marked `from` it. */
+export const floorShelf = (config: Config, project: string, extensions: ExtensionStores[]): FloorShelfEntry[] => [
+  ...(config.projects[project].shelf ?? []),
+  ...extensions.filter((x) => !offOn(config, project, x.chain)).flatMap((x) => x.shelf.map((entry) => ({ ...entry, from: x.provides }))),
+]
 
 /** Whether an extension is off on a floor: a capability of its `chain` is off there. */
 export const offOn = (config: Config, project: string, chain: string[]): boolean =>

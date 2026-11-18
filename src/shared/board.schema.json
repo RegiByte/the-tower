@@ -276,6 +276,13 @@
         "id": {
           "type": "string"
         },
+        "shelf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FloorShelfEntry"
+          },
+          "description": "The config's shelf entries, then those the extensions on the floor contribute, each marked `from` its capability (since 2.12)."
+        },
         "runtimes": {
           "type": "object",
           "additionalProperties": {
@@ -400,12 +407,6 @@
         "color": {
           "type": "string",
           "description": "A CSS color renderers mark the project's things with."
-        },
-        "shelf": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ShelfEntry"
-          }
         }
       },
       "required": [
@@ -428,6 +429,129 @@
         "worktrees"
       ],
       "description": "A project as a floor: its config, shelf included, its sessions' cards, its collections, and the tower's worktrees and kept branches in its repos. `bases`: the origin branches a cut can name for every repo at once, in the hub's order, `defaultBase` first when there is one; empty when a dir isn't a git repo with an origin, or when their default branches differ and share no other (a cut unnamed still starts each repo from its own)."
+    },
+    "FloorShelfEntry": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "html": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "html",
+            "label"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "md": {
+              "type": "string"
+            },
+            "order": {
+              "type": "string",
+              "const": "desc"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "md"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "url"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "link": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "link"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "renderer": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "renderer"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "item": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "item",
+            "label"
+          ]
+        }
+      ],
+      "description": "A shelf entry as a floor shows it: the config's, or one an extension contributes, `from` its capability (since 2.12)."
     },
     "FloorRuntime": {
       "type": "object",
@@ -2445,111 +2569,6 @@
         }
       ],
       "description": "A verb offered now, with its call when it has one: `drive`, `brief` and `goto` have none."
-    },
-    "ShelfEntry": {
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "html": {
-              "type": "string"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "html",
-            "label"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "md": {
-              "type": "string"
-            },
-            "order": {
-              "type": "string",
-              "const": "desc"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "label",
-            "md"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "label",
-            "url"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "link": {
-              "type": "string"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "label",
-            "link"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "renderer": {
-              "type": "string"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "label",
-            "renderer"
-          ]
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "item": {
-              "type": "string"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "item",
-            "label"
-          ]
-        }
-      ],
-      "description": "Something kept on a project's shelf, to read or use beside its sessions: a page the project builds (`html`), a set of markdown files (`md`, a glob, in name order or `desc`), a web page shown in place (`url`), such as a local server's UI, or one opened in a new tab (`link`), for pages that refuse to be framed, such as claude.ai artifacts, a declared renderer framed as a page (`renderer`, its name), or an item of one of the project's collections (`item`, `<collection>/<id>`, the id its file name): a markdown item is read like an `md` entry's file, any other is framed like an `html` entry's page, alone. Paths are relative to the project's hub."
     },
     "Wait": {
       "type": "object",

@@ -1,5 +1,5 @@
 import { addedKeys, type AddedDefaults, type DroppedKey, type Keys } from '../shared/keymap.ts'
-import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, runtimeOf, isRuntime, configuredRuntimes, type Runtime, type CollectionItem, type Config, type HiringConfig, type Project } from '../shared/model.ts'
+import { MAIN_CHECKOUT, floorOf, inProject, sessionDirs, projectDirs, worktreeName, worktreesConfig, hiringConfig, userName, configuredKeys, callsignsOf, commandNames, projectPreferredCommand, runtimeOf, isRuntime, configuredRuntimes, type Runtime, type CollectionItem, type Config, type FloorShelfEntry, type HiringConfig, type Project } from '../shared/model.ts'
 import { launchOf } from '../shared/launch.ts'
 import { tagOf } from '../shared/tags.ts'
 import { current } from '../shared/status-words.ts'
@@ -34,7 +34,7 @@ import {
 } from './verbs.ts'
 import { HOOKS } from '../shared/api.ts'
 import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.ts'
-import { answeredOn, collectionItems, contributedTo, floorCollections, towerCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
+import { answeredOn, collectionItems, contributedTo, floorCollections, floorShelf, towerCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
 import { TOWER_WIDE } from '../shared/model.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
 import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReading, projectReads, projectRefs, readsSince, restoreOf, treeAt, type FirstRead, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
@@ -294,8 +294,10 @@ export type FloorRuntime = {
  * order, `defaultBase` first when there is one; empty when a dir isn't a git repo with an origin, or when their default
  * branches differ and share no other (a cut unnamed still starts each repo from its own).
  */
-export type Floor = Omit<Project, 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities' | 'runtimes'> & {
+export type Floor = Omit<Project, 'shelf' | 'collections' | 'worktrees' | 'hiring' | 'brief' | 'extensions' | 'capabilities' | 'runtimes'> & {
   id: string
+  /** The config's shelf entries, then those the extensions on the floor contribute, each marked `from` its capability (since 2.12). */
+  shelf?: FloorShelfEntry[]
   /** The floor's part of each runtime the tower knows, by the same ids as `board.runtimes`. @since 2.0 */
   runtimes: Record<string, FloorRuntime>
   /** The cards of its present (`onBoard`); the rest are its archive, read at `GET /archive/<project>`. */
@@ -937,7 +939,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     config: paths.config,
     viewers,
     collections: collectionsOf(towerCollections(stores), TOWER_WIDE, paths.collections, items, keptBy, (c) => contributedTo(config, TOWER_WIDE, c, stores)),
-    floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, runtimes: _______, ...project }]) => {
+    floors: Object.entries(config.projects).map(([id, { shelf: _shelf, collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, runtimes: _______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)
       const { worktrees, branches, main } = git
       const refs = projectRefs(projectDirs(project), repos, firstReads) ?? []
@@ -947,6 +949,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
       const floorCards = cards.filter((c) => c.project === id)
       const present = floorCards.filter(kept)
       const collections = floorCollections(config, id, stores)
+      const shelf = floorShelf(config, id, stores)
       const tidy: TidyPlan = {
         worktrees: worktrees.filter((w) => w.state === 'removable').map((w) => w.name),
         branches: branches.filter((b) => b.absorbed).map((b) => b.name),
@@ -957,6 +960,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
       return {
         id,
         ...project,
+        ...(shelf.length && { shelf }),
         cards: present,
         archived: floorCards.length - present.length,
         collections: collectionsOf(collections, id, paths.collections, items, keptBy, (c) => contributedTo(config, id, c, stores)),

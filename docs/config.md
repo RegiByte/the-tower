@@ -273,6 +273,9 @@ A page a worker made goes on the shelf as an `item`: kept with `tower keep`, it 
 several files belongs in a repo as an `html` entry, in the hub's main checkout, not a worktree the tower will tidy
 away. The shelf is not a collection, though an `item` entry shows one of a collection's files.
 
+An extension may add entries of its own (its manifest's `shelf`, see [docs/extending.md](extending.md)): they follow
+the config's on every floor where the extension is on, and `projects.<p>.capabilities.<cap>.off` hides them there.
+
 ## Collections
 
 A collection is a kind of file a floor keeps in the system root, `collections/<project>/<collection>/<item>`, declared

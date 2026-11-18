@@ -1063,6 +1063,21 @@ export const Manifest = z
           "Renderers it contributes, each named `<provides>` or `<provides>.<name>`, as the config's renderers declares one: served at /r/<name>/ while it is accepted. The config's renderers.<name> overrides its fields; a built-in's name is refused.",
         ),
     ),
+    shelf: since212(
+      z
+        .array(
+          z.union([
+            z.strictObject({ label: z.string().min(1), renderer: z.string().min(1) }),
+            z.strictObject({ label: z.string().min(1), item: z.string().regex(/^[^/]+\/[^/]+$/, '"<collection>/<id>"') }),
+            z.strictObject({ label: z.string().min(1), url: z.string().regex(/^https?:\/\//, 'an http(s) URL') }),
+            z.strictObject({ label: z.string().min(1), link: z.string().regex(/^https?:\/\//, 'an http(s) URL') }),
+          ]),
+        )
+        .optional()
+        .describe(
+          "Shelf entries it contributes, after the config's on each floor where it is on: a renderer, an item of a collection the floor keeps, a URL framed or a link opened, as projects.<p>.shelf takes them. A page is a renderer or an item, so no entry names a path.",
+        ),
+    ),
     streams: since(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
     facts: since(z.record(Word, Fact).optional().describe('Its session facts, logged as `tower.x.<provides>.<name>`.')),
     client: since(Path.optional().describe('Its folder of files served at /x/<capability>/: its commands\' modules.')),
