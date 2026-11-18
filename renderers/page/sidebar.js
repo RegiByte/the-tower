@@ -5,6 +5,7 @@ import { subjectAreaHtml, subjectButtonHtml, subjectHtml } from '/lib/elements.j
 import { keyshortcuts } from '/lib/keys.js'
 import { addedActions, badgesOf, exemptionsOf, lineId, overflowOf, rankedBadges, rankedLines } from '/lib/layout.js'
 import { ICON, keyedTip, originIcon, SHELF_ICON, withIcons } from '/lib/view.js'
+import { domId } from '/lib/morph.js'
 import { base, esc, noun, plural, span } from '/lib/words.js'
 import { commandProbes, PROBE_ATTENTION, probeLine, probeTitle } from './clients.js'
 import { onDuty, lineOf, $, fillOf, told } from './kit.js'
@@ -589,14 +590,14 @@ export async function sidebar(deps) {
   }
   placeOnOpen($('limits'), () => $('limits-open'))
 
-  /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty. */
+  /** The collapsed sidebar: a way back, the waiting count, and a lamp per session on duty, each by its card's id. */
   /** @param {number} waiting */
   const railHtml = (waiting) =>
     `<button class="icon-btn" data-side aria-label="show the sidebar" ${keyedTip(board().keys, 'show the sidebar', 'sidebar')}>${ICON.sidebar}</button>
   ${waiting ? `<span class="count" data-tip="waiting on you">${waiting}<span class="sr-only"> waiting on you</span></span>` : ''}
   ${dutyOrderIn(board(), viewer().crewsOrder).map((c) => {
       const title = esc(callsign(c.id) + ' · ' + statusName(c) + (gistLine(c) ? ' · ' + gistLine(c) : ''))
-      return `<a class="lamp ${lampOf(c)} ${callsYou(c) ? 'calls' : ''} ${c.id === selected() ? 'sel' : ''}" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`
+      return `<a class="lamp ${lampOf(c)} ${callsYou(c) ? 'calls' : ''} ${c.id === selected() ? 'sel' : ''}" id="${esc(domId('rail', `card:${c.id}`))}" href="#${c.id}"${c.id === selected() ? ' aria-current="true"' : ''} aria-label="${title}" data-tip="${title}"></a>`
     }).join('')}`
 
   /** The header's buttons name the chords of the commands they share, as the config binds them. */
