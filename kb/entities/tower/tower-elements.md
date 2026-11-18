@@ -47,9 +47,10 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
 - **A combobox keeps a form's keys as a native select.** Open, typing highlights the first match (the SDK's
   `auto-highlight`), and an Enter, ⌘↵ included, chooses the highlighted option or does nothing, then stops at the
   element, so a form's submit key fires only while it is closed. Leaving without choosing shows the chosen label again;
-  the half-typed query is not kept for the next opening, which the SDK resets to the chosen label. With `custom`, Enter
-  with no option highlighted chooses the text typed (a model id a runtime's list misses); leaving still restores what
-  was chosen, the element refusing the value the SDK's `allow-custom-value` would take as the list closes: a choice is
+  the half-typed query is not kept for the next opening, which the SDK resets to the chosen label. With `custom`, typing
+  highlights nothing, as a datalist's box does, so Enter chooses the text typed (a model id a runtime's list misses,
+  `openai/gpt-5` beside a listed `openai/gpt-5-mini`), an option only once an arrow key moved to it or its label is
+  exactly the text; leaving still restores what was chosen, the element refusing the value the SDK's `allow-custom-value` would take as the list closes: a choice is
   always made on purpose.
 - **Strings for core views.** A core view draws an element through `/lib/elements.js`
   ([`comboboxHtml`](ref:hub/src/shared/elements.ts#comboboxHtml), [`subjectHtml`](ref:hub/src/shared/elements.ts#subjectHtml)),
