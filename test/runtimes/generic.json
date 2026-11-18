@@ -32,6 +32,7 @@
     "../../src/lib/cards.ts",
     "../../src/lib/stats.ts",
     "../../src/lib/extensions-panel.ts",
-    "../../src/lib/capabilities.ts"
+    "../../src/lib/capabilities.ts",
+    "../../src/lib/elements.ts"
   ]
 }

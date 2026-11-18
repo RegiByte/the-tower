@@ -50,6 +50,9 @@
  *   GET  /lib/<module>.js   the library: what code outside the core builds on, each module a file of `src/lib/` naming its
  *                       re-exports, served like the files below and held by test/served-exports.json; `/lib/extension.js`
  *                       is server code, and a browser that loads it is told so
+ *   GET  /lib-ui/<module>.js   the tower's elements: each module a file of `src/lib-ui/` defining its `tower-*` tags,
+ *                       what each takes and fires held by test/served-exports.json; `/lib-ui/sdk.js`, the UI SDK they
+ *                       build on, bundled once, is internal
  *   GET  /fonts/<file>  a face the design names
  *   GET  /shared/<file>.js, /src/<path>.js, /vendor/<package>.js   internal, not contract: each file below src/ a library module,
  *                       core view or client reaches, transpiled alone with its imports as URLs, and each npm package one
@@ -129,7 +132,7 @@ import { contributedRenderers } from '../bridge/extensions.ts'
 import type { ExtensionsResource } from './extensions.ts'
 import type { PublisherResource } from './publisher.ts'
 import { lastFrames, screenMirrors } from './screens.ts'
-import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, FRAME_PICKS, hashedUrl, importMap, moduleGraph, moduleScripts, SERVER_ONLY, serverOnlyModule, sourceModule, towerClient, unhashedUrl, urlSource, urlVendor, vendorModule, withImportMap, withPreloads } from './served.ts'
+import { clientModule, CORE_VIEWS_DIR, FRAME_KEYS, FRAME_PICKS, hashedUrl, importMap, moduleGraph, moduleScripts, servedModule, towerClient, unhashedUrl, withImportMap, withPreloads } from './served.ts'
 import type { ConfigResource, SystemResource } from './spine.ts'
 
 /**
@@ -219,15 +222,6 @@ export const httpServer = defineResource({
         .end(readFileSync(fontFile(font)))
     }
 
-    /** A file below `src/` or an npm package's module, each served once at its own URL for the library modules, core views and clients that import it. */
-    const sourceText = (url: string): Promise<string> | undefined => {
-      if (SERVER_ONLY.includes(url)) return serverOnlyModule(url)
-      const file = urlSource(url)
-      if (file !== undefined) return sourceModule(file)
-      const specifier = urlVendor(url)
-      return specifier === undefined ? undefined : vendorModule(specifier)
-    }
-
     /**
      * Every hashed URL a page's import map named, with its text: a page still open asks for what its map named. It grows
      * only as files change, by one text per change, for the life of the process.
@@ -240,9 +234,9 @@ export const httpServer = defineResource({
      */
     async function served(req: http.IncomingMessage, res: http.ServerResponse, url: string) {
       const base = unhashedUrl(url)
-      const now = base === undefined ? undefined : sourceText(base)
+      const now = base === undefined ? undefined : servedModule(base)
       if (!now) {
-        const plain = sourceText(url)
+        const plain = servedModule(url)
         if (!plain) return fail(res, 'not_found', `The tower serves no module at "${url}"`)
         return revalidated(req, res, 'text/javascript', await plain)
       }
@@ -656,7 +650,7 @@ export const httpServer = defineResource({
 
     /** A module's text as the tower serves it at `url`, if it serves one there: what a page's imports reach. */
     async function moduleText(url: string): Promise<string | undefined> {
-      const source = sourceText(url)
+      const source = servedModule(url)
       if (source) return source
       const client = /^\/x\/(?<cap>[a-z][a-z0-9-]*)\/(?<file>.+)$/.exec(url)?.groups
       const dir = client && (client.cap === 'tower' ? CORE_VIEWS_DIR : clientDirOf(client.cap!))
@@ -1163,7 +1157,7 @@ export const httpServer = defineResource({
       }
       if (req.method === 'GET' && url.split('?')[0] === '/tower.js') return revalidated(req, res, 'text/javascript', towerClient(servedNow))
       if (req.method === 'GET' && /^\/(design\.css|fonts\/)/.test(url)) return design(req, res, url)
-      if (req.method === 'GET' && /^\/(lib|shared|src|vendor)\//.test(url)) return served(req, res, url.split('?')[0])
+      if (req.method === 'GET' && /^\/(lib|lib-ui|shared|src|vendor)\//.test(url)) return served(req, res, url.split('?')[0])
       const [pathname, search] = url.split('?')
       if (req.method === 'GET') return route(req, res, pathname, search === undefined ? '' : `?${search}`)
       if (req.method === 'POST') return command(req, res, pathname.slice(1))

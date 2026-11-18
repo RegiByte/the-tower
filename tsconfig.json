@@ -13,7 +13,8 @@
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "paths": {
-      "/lib/*.js": ["./src/lib/*.ts"]
+      "/lib/*.js": ["./src/lib/*.ts"],
+      "/lib-ui/*.js": ["./src/lib-ui/*.ts"]
     }
   },
   "include": [

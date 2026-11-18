@@ -4,6 +4,7 @@ import { attending } from '/lib/attend.js'
 import { briefHtml } from '/lib/brief.js'
 import { changedFiles } from '/lib/changes.js'
 import { toaster } from '/lib/chrome.js'
+import { comboboxHtml } from '/lib/elements.js'
 import type { Tower } from '/lib/client.js'
 import { chordLabel, DEFAULT_KEYS } from '/lib/keys.js'
 import { actionId } from '/lib/layout.js'
@@ -16,7 +17,7 @@ import { closeHtml, type Mount } from '/lib/view.js'
 import { readViewer } from '/lib/viewer.js'
 import { DRAFTS } from '/x/drafts/drafts.js'
 
-export const reach = [attending, briefHtml, changedFiles, toaster, chordLabel, actionId, morph, rankPalette, settingsHtml, spawnDefaults, readViewer, DRAFTS]
+export const reach = [attending, briefHtml, changedFiles, toaster, comboboxHtml, chordLabel, actionId, morph, rankPalette, settingsHtml, spawnDefaults, readViewer, DRAFTS]
 
 const page: Tower = tower
 
