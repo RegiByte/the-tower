@@ -14,9 +14,11 @@
  *   start-turn [--prompt <text>]                   the user's prompt opens a turn
  *   message --from <callsign> [--text <text>]      another worker's message arrives and opens a turn
  *   tool [--name <tool>] [--running]               a tool call (Read by default; Bash, Grep and Edit get inputs of their
- *                                                  own), finished at once, or left running with --running
+ *                                                  own), finished at once, or left running with --running; one that
+ *                                                  opens a message of Claude's raises its tool_use step after the call,
+ *                                                  as Claude does: one beside a running call shares that one's message
  *   finish                                         the oldest running tool call finishes
- *   step <text>                                    Claude says something between tool calls
+ *   step <text>                                    Claude says something: the text of a message whose tool calls follow
  *   answer [--text <text>] [--answer-lines <n>]    the turn ends on its answer: its last step, Stop and turn.complete
  *   conversation                                   a new conversation, as `/clear` starts one; the next prompt saves it
  *   post <json>                                    one event exactly as given, for a shape the verbs don't make
@@ -57,7 +59,8 @@ type Scene = {
   conversation?: string
   /** The prompt the open conversation last accepted, which every classic hook of its turn names. */
   promptId?: string
-  turn?: { id: string; startedAt: number; steps: number }
+  /** `last`: the turn's latest step or tool call, which says whether the next call opens a message of Claude's. */
+  turn?: { id: string; startedAt: number; steps: number; last?: 'step' | 'call' }
   /** Tool calls started and not finished, oldest first. */
   running: { id: string; tool: string; input: Record<string, unknown> }[]
   model: string
@@ -81,13 +84,13 @@ const sceneStep = (scene: Scene, hook: Hook, at: number): Scene => {
     case 'turn.step':
       return {
         ...scene, model: String(hook.model), effort: hook.effort as string | undefined,
-        turn: scene.turn && { ...scene.turn, steps: scene.turn.steps + 1 },
+        turn: scene.turn && { ...scene.turn, steps: scene.turn.steps + 1, last: 'step' },
       }
     case 'turn.complete':
       return { ...scene, turn: undefined, running: [] }
     case 'tool.call': {
       const { tool, tool_use_id, hook_event_name, ...input } = hook
-      return { ...scene, running: [...scene.running, { id: String(tool_use_id), tool: String(tool), input }] }
+      return { ...scene, turn: scene.turn && { ...scene.turn, last: 'call' }, running: [...scene.running, { id: String(tool_use_id), tool: String(tool), input }] }
     }
     case 'tower.tool.result':
     case 'tower.tool.abandoned':
@@ -152,10 +155,18 @@ const finished = (scene: Scene, call: Scene['running'][number]): Hook[] => [
   { tool: call.tool, tool_use_id: call.id, hook_event_name: 'tower.tool.result' },
 ]
 
+/**
+ * Whether a tool call opens a message of Claude's, which raises its own `tool_use` step: one called beside a call still
+ * running shares that call's message, and one after a `step` is that step's.
+ */
+const opensMessage = (scene: Scene) => scene.turn!.last !== 'step' && !(scene.turn!.last === 'call' && scene.running.length)
+
+/** A tool call as Claude makes one: the call, the step of the message it opens, the check, and its end unless it runs on. */
 const calling = (scene: Scene, tool: string, running: boolean): Hook[] => {
   const call = { id: `toolu_${randomUUID().replaceAll('-', '').slice(0, 24)}`, tool, input: inputFor(tool, scene.cwd) }
   return [
     { ...call.input, tool, tool_use_id: call.id, hook_event_name: 'tool.call' },
+    ...(opensMessage(scene) ? [stepOf(scene, 'tool_use', '')] : []),
     ofTurn(scene, 'PreToolUse', { tool_name: tool, tool_input: call.input, tool_use_id: call.id }),
     { tool, tool_use_id: call.id, result: { decision: 'allow' }, hook_event_name: 'tool.check' },
     ...(running ? [] : finished(scene, call)),
@@ -213,7 +224,13 @@ const OPTIONS = {
 
 type Values = { prompt?: string; 'answer-lines'?: string; text?: string; from?: string; name?: string; running?: boolean }
 
-const answerOf = (values: Values) => values.text ?? lines(Number(values['answer-lines'] ?? 3))
+const answerLines = (given: string | undefined): number => {
+  const n = Number(given ?? 3)
+  if (!Number.isInteger(n) || n < 1) throw new Refused(`--answer-lines takes a whole number from 1, not "${given}"`)
+  return n
+}
+
+const answerOf = (values: Values) => values.text ?? lines(answerLines(values['answer-lines']))
 
 /**
  * The events a verb posts, given where the session stands. A whole turn plans each piece on the scene the one before
@@ -257,12 +274,20 @@ const plan = (scene: Scene, verb: string, positionals: string[], values: Values)
       return clearing(scene)
     case 'post': {
       if (!positionals[0]) throw new Refused('post needs the event, as JSON')
-      const event = JSON.parse(positionals[0])
+      const event = parsed(positionals[0])
       if (typeof event?.hook_event_name !== 'string') throw new Refused(`post needs an event with a hook_event_name: ${positionals[0]}`)
       return [event]
     }
     default:
       throw new Refused(`no verb "${verb}": turn, start-turn, message, tool, finish, step, answer, conversation, post`)
+  }
+}
+
+const parsed = (json: string): Hook => {
+  try {
+    return JSON.parse(json)
+  } catch (err) {
+    throw new Refused(`post needs the event as JSON, and ${JSON.stringify(json)} isn't: ${(err as Error).message}`)
   }
 }
 
