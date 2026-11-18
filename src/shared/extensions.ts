@@ -1075,7 +1075,7 @@ export const Manifest = z
         )
         .optional()
         .describe(
-          "Shelf entries it contributes, after the config's on each floor where it is on: a renderer, an item of a collection the floor keeps, a URL framed or a link opened, as projects.<p>.shelf takes them. A page is a renderer or an item, so no entry names a path.",
+          "Shelf entries it contributes, after the config's on each floor where it is on: a renderer, an item of a collection the floor keeps (`<collection>/<id>`, never a tower-wide collection's), a URL framed or a link opened, as projects.<p>.shelf takes them. A page is a renderer or an item, so no entry names a path.",
         ),
     ),
     streams: since(z.record(Word, Stream).optional().describe('Its streams, `streams/{system|projects/<p>}/<provides>.<name>/`: always its own to write.')),
