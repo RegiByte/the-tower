@@ -52,7 +52,7 @@ test("a floor's menu: its verbs less those each dir or the form offers, its arch
   const repos = group(menu.groups, 'Repos').lines as MenuSub[]
   assert.deepEqual(repos.map((r) => [r.label, r.lines.map((l) => l.label)]), [
     ['the-tower', ['New shell', 'Open in editor']],
-    ['site', ['New shell', 'Open in editor', 'On the web']],
+    ['site', ['New shell', 'Open in editor', 'Open on example.com']],
   ])
   assert.deepEqual(repos[1].lines[0].does, { t: 'dir', verb: 'shell', project: 'p', dir: '/code/site' })
 })
@@ -61,6 +61,7 @@ test("a floor's archive and collections tick where the renderer has them open", 
   const menu = subjectMenu(board, 'floor:p', { open: [{ view: 'tower/archive', subject: 'floor:p' }, { view: 'tower/collection', subject: 'collection:p/drafts' }], origins: {} })!
   assert.deepEqual(ticks(menu.groups[0]), [undefined, true])
   assert.deepEqual(ticks(group(menu.groups, 'Kept')), [true])
+  assert.deepEqual((group(menu.groups, 'Kept').lines[0] as MenuLine).does, { t: 'open', subject: 'collection:p/drafts', view: 'tower/collection' }, "every item, whichever view the collection's own kind prefers")
 })
 
 test("a worker's menu: its verbs less the prompt's and kill, its tabs ticked where open, its showings newest first", () => {
@@ -74,14 +75,19 @@ test("a worker's menu: its verbs less the prompt's and kill, its tabs ticked whe
   ])
 })
 
-test("a showing's menu opens it, beside the browser, and goes to its worker", () => {
+test("a showing's menu offers a browser tab and its worker's tab, not the showing a click opens already", () => {
   const menu = subjectMenu(board, 'shown:w1/10', { open: [{ view: 'tower/document', subject: 'shown:w1/10' }], origins: {} })!
-  assert.deepEqual(menu.groups[0].lines.map((l) => [l.label, (l as MenuLine).open]), [
-    ['Open', true],
-    ['Open in a browser tab', undefined],
-    ['Go to ODIN-07', undefined],
-  ])
-  assert.deepEqual((menu.groups[0].lines[1] as MenuLine).does, { t: 'link', href: '/shown/s1/tmp/a/report.html' })
+  assert.deepEqual(labels(menu.groups[0]), ['Open in a browser tab', "ODIN-07's terminal"])
+  assert.deepEqual((menu.groups[0].lines[0] as MenuLine).does, { t: 'link', href: '/shown/s1/tmp/a/report.html' })
+  assert.deepEqual((menu.groups[0].lines[1] as MenuLine).does, { t: 'action', subject: 'card', verb: 'drive', id: 'w1' })
+  const home = { ...card, onDuty: false, actions: [{ verb: 'brief' }] } as unknown as Card
+  const gone = subjectMenu({ ...board, floors: [{ ...floor, cards: [home] }] } as unknown as Board, 'shown:w1/10', nothingOpen)!
+  assert.deepEqual((gone.groups[0].lines[1] as MenuLine).label, "ODIN-07's brief", 'a worker gone home has no terminal')
+})
+
+test("a menu's line ids are each its own: a menu that would hold two alike throws", () => {
+  const twice = { ...board, floors: [{ ...floor, collections: [...floor.collections, ...floor.collections] }] } as unknown as Board
+  assert.throws(() => subjectMenu(twice, 'floor:p', nothingOpen), /two lines with the id collection:p\/drafts/)
 })
 
 test('a key the board no longer holds, or of another kind, has no menu', () => {
