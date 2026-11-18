@@ -37,6 +37,8 @@ export function extensionsEntry({ board, open, isOpen }) {
   let timer
   const shown = () => pop.matches(':popover-open')
   const within = (/** @type {EventTarget | null} */ el) => el instanceof Node && (button.contains(el) || pop.contains(el))
+  /** A keyboard holds the list open while its focus is in it; focus a click left behind does not. */
+  const keyboardWithin = () => within(document.activeElement) && /** @type {Element} */ (document.activeElement).matches(':focus-visible')
 
   function show() {
     clearTimeout(timer)
@@ -53,7 +55,7 @@ export function extensionsEntry({ board, open, isOpen }) {
 
   for (const el of [button, pop]) {
     el.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && (shown() ? show() : later(show, OPEN_AFTER_MS)))
-    el.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && !within(document.activeElement) && later(hide, CLOSE_AFTER_MS))
+    el.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && !keyboardWithin() && later(hide, CLOSE_AFTER_MS))
     el.addEventListener('focusout', (e) => within(e.relatedTarget) || hide())
     el.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape' || !shown()) return
