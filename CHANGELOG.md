@@ -12,6 +12,17 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.12.2
+
+Pass 3's last polish (#679). API unchanged. Nothing to restart beyond the tower (`tower update` does it).
+
+- **Every worker offers its Brief, whatever its state.** A session that ended without a conversation now has an
+  empty Brief ("no conversation yet", no composer) instead of none, so a worker's tabs, and the ⌃⇧<number> keys that
+  reach them, are the same on every worker.
+- **`<tower-menu>` takes no place in its page's layout.** A page whose body is a grid gained an extra row from the
+  closed menu, which left a band below the frame when the sidebar was short.
+- A showing's worker line in the subject menu reads "Show <CALLSIGN>'s terminal" or "Show <CALLSIGN>'s brief".
+
 ## v2.12.1
 
 Every line of the subject menu works, and the spawn form's model and effort are comboboxes on every runtime (#677).
