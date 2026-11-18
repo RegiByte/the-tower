@@ -9,7 +9,7 @@
  * The lowest and the highest release the tower ran on with every surface below checked, both included. The fixtures
  * reach back to 2.1.287, but the mods API's `$.session.version` was first checked on 2.1.292.
  */
-export const CLAUDE_TESTED: TestedRange = { lowest: '2.1.292', highest: '2.1.323' }
+export const CLAUDE_TESTED: TestedRange = { lowest: '2.1.292', highest: '2.1.327' }
 
 /** What a renderer prints for Claude's runtime instead of naming it. */
 export const CLAUDE_LABEL = 'Claude Code'
