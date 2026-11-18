@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { Board, Card, Floor } from '../src/bridge/board.ts'
+import type { Board, Card, CardResource, Floor } from '../src/bridge/board.ts'
 import { subjectMenu, type MenuContext, type MenuGroup, type MenuLine, type MenuSub } from '../src/shared/subject-menu.ts'
 
 const card = {
@@ -73,6 +73,19 @@ test("a worker's menu: its verbs less the prompt's and kill, its tabs ticked whe
     ['Page', { t: 'display', subject: 'shown:w1/20' }],
     ['report.html', { t: 'display', subject: 'shown:w1/10' }],
   ])
+})
+
+test("a worker's processes are one line that asks first, none while it works; its earlier conversations a group of one-line labels", () => {
+  const resources = [101, 102].map((pid): CardResource => ({ pid, command: `bash -c 'eval run ${pid}'`, ports: [], orphan: false, actions: [{ verb: 'reap', call: ['reap/process', { id: 'w1', pid }] }] }))
+  const earlier = { id: 'c0', prompt: 'Fix the login form\n\nIt drops the session cookie when the user signs in from a phone on the slow network', actions: [{ verb: 'resume', call: ['resume', { id: 'w1', conversation: 'c0' }] }] }
+  const left = { ...card, status: 'idle', resources, conversations: [earlier, ...card.conversations], actions: card.actions.toSpliced(3, 0, { verb: 'reap', call: ['reap', { id: 'w1' }] }) } as unknown as Card
+  const menuOf = (c: Card) => subjectMenu({ ...board, floors: [{ ...floor, cards: [c] }] } as unknown as Board, 'card:w1', nothingOpen)!
+  const menu = menuOf(left)
+  assert.deepEqual(labels(menu.groups[0]), ['Open terminal', 'Brief', 'End 2 processes…', 'Send home'])
+  assert.deepEqual((menu.groups[0].lines[2] as MenuLine).does, { t: 'action', subject: 'card', verb: 'reap', id: 'w1' }, "the card's reap, which asks with every process listed")
+  assert.deepEqual(labels(group(menu.groups, 'Earlier conversations')), ['Resume: Fix the login form It drops the session cookie when the use…'])
+  assert.equal(labels(menuOf({ ...left, resources: resources.slice(0, 1) } as Card).groups[0])[2], 'End 1 process…')
+  assert.ok(!labels(menuOf({ ...left, status: 'working' } as Card).groups[0]).some((l) => l.startsWith('End')), "while it works its processes are its own tool commands")
 })
 
 test("a showing's menu offers a browser tab and its worker's tab, not the showing a click opens already", () => {

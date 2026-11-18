@@ -5,11 +5,11 @@
  * here runs anything.
  */
 import type { Board, Card, CardShown, Floor } from '../bridge/board.ts'
-import { actionWords, addedActions, base, can, cardSubject, commandName, floorSubject, pastCount, shownHref, shownSubject, shownTitle } from './cards.ts'
+import { actionWords, addedActions, base, can, cardSubject, floorSubject, offersReap, pastCount, reapLine, shownHref, shownSubject, shownTitle } from './cards.ts'
 import { PANES } from './keymap.ts'
 import type { ActionPick, AddedPick, GoTarget, OpenPick } from './palette.ts'
 import type { Subject } from './subjects.ts'
-import { VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
+import { earlierLabel, VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
 /** Showing the subject a key names, in the view the renderer picks for it. */
 export type DisplayPick = { t: 'display'; subject: string }
@@ -124,33 +124,28 @@ const shownLine = (c: Card, s: CardShown, ctx: MenuContext): MenuLine => {
   return { id: subject, label: shownTitle(s), hint: s.target, open: isOpen(ctx, subject), does: { t: 'display', subject } }
 }
 
+/** Its processes are one line, `End 3 processes…`, which asks with them listed; none while it works (`offersReap`). */
 const cardMenu = (board: Board, c: Card, ctx: MenuContext): SubjectMenu => {
   const key = `card:${c.id}`
-  const verbs = c.actions.filter((a) => !UNLISTED.has(verbId('card', a.verb))).map((a): MenuLine => {
+  const verbs = c.actions.filter((a) => !UNLISTED.has(verbId('card', a.verb)) && (a.verb !== 'reap' || offersReap(c))).map((a): MenuLine => {
     const id = verbId('card', a.verb)
     const words = VERB_WORDS[id]
     const pane = PANE_OF[id]
-    return { id, label: words.label, hint: verbHint('card', a.verb, c), ...(words.destructive && { destructive: true as const }), ...(pane && { open: isOpen(ctx, key, pane) }), does: { t: 'action', subject: 'card', verb: a.verb, id: c.id } }
+    return { id, label: a.verb === 'reap' ? reapLine(c) : words.label, hint: verbHint('card', a.verb, c), ...(words.destructive && { destructive: true as const }), ...(pane && { open: isOpen(ctx, key, pane) }), does: { t: 'action', subject: 'card', verb: a.verb, id: c.id } }
   })
   const latest = c.conversations.at(-1)
   const earlier = c.conversations.filter((v) => v !== latest).flatMap((v) => v.actions.map((a): MenuLine => ({
     id: `${verbId('conversation', a.verb)}@${v.id}`,
-    label: `${VERB_WORDS[verbId('conversation', a.verb)].label}: ${v.prompt ?? 'an earlier conversation'}`,
+    label: earlierLabel(a.verb, v),
     hint: verbHint('conversation', a.verb, c),
     does: { t: 'action', subject: 'conversation', verb: a.verb, id: c.id, conversation: v.id },
-  })))
-  const processes = c.resources.flatMap((r) => r.actions.map((a): MenuLine => ({
-    id: `${verbId('resource', a.verb)}@${r.pid}`,
-    label: `${VERB_WORDS[verbId('resource', a.verb)].label} ${r.pid} ${commandName(r.command)}`,
-    hint: r.command,
-    does: { t: 'action', subject: 'resource', verb: a.verb, id: c.id, pid: r.pid },
   })))
   return {
     title: c.callsign,
     groups: groups(
       { label: c.callsign, lines: verbs },
       { label: 'Shown', lines: c.shown.map((s) => shownLine(c, s, ctx)).reverse() },
-      { label: 'Earlier conversations and processes', lines: [...earlier, ...processes] },
+      { label: 'Earlier conversations', lines: earlier },
       { label: 'Extensions', lines: addedLines(board, cardSubject(c)) },
     ),
   }
@@ -187,7 +182,7 @@ const unique = (key: string, m: SubjectMenu): SubjectMenu => {
  * The menu of the subject `key` names (`floor:<project>`, `card:<id>`, `shown:<card>/<at>`) as the board holds it now:
  * its verbs, each run with the call the board offers; then what it holds: a floor its archive, collections, shelf,
  * repos (a shell, the editor and the web page of each) and what extensions offer on it; a worker its showings, earlier
- * conversations and processes and extensions' actions; a showing a browser tab, its worker's tab and extensions'
+ * conversations and extensions' actions, its processes one verb; a showing a browser tab, its worker's tab and extensions'
  * actions. A menu never offers what a click on its subject does already. Ticks (`open`) for what `ctx.open` holds.
  * Each line's id is its own in the menu, and a menu that would hold two alike throws. Undefined for a key the board
  * doesn't hold, or of another kind.

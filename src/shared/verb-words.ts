@@ -9,6 +9,7 @@
 import type { Card } from '../bridge/board.ts'
 import type { BranchVerb, CardVerb, ConversationVerb, FloorVerb, ResourceVerb, WorktreeVerb } from '../bridge/verbs.ts'
 import type { Verb } from './api.ts'
+import { clipped } from './format.ts'
 import type { CommandId } from './keymap.ts'
 
 /** What each subject on the board offers, by the name its `actions` carry. */
@@ -68,6 +69,9 @@ export const verbHint = <S extends 'card' | 'conversation'>(subject: S, verb: Su
   const id = verbId(subject, verb)
   return RESUMES.has(id) && card.worktree?.gone ? `${VERB_WORDS[id].hint} ${RECUT_ON_RESUME}` : VERB_WORDS[id].hint
 }
+
+/** A verb of an earlier conversation as one line, the conversation by its first prompt: `Resume: fix the login form`. */
+export const earlierLabel = (verb: ConversationVerb, v: { prompt?: string }) => `${VERB_WORDS[verbId('conversation', verb)].label}: ${v.prompt ? clipped(v.prompt, 60) : 'an earlier conversation'}`
 
 /** A verb's label, as a button says it. */
 export const verbLabel = <S extends Subject>(subject: S, verb: SubjectVerbs[S]) => VERB_WORDS[verbId(subject, verb)].label

@@ -16,6 +16,12 @@ export const sizeOf = (bytes: number) => {
   return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`
 }
 
+/** `text` on one line of at most `chars`: its whitespace runs one space each, cut with `…`. */
+export const clipped = (text: string, chars: number) => {
+  const line = text.replace(/\s+/g, ' ').trim()
+  return line.length > chars ? `${line.slice(0, chars - 1).trimEnd()}…` : line
+}
+
 /** Markdown on one line: emphasis and code marks only get in the way. */
 export const plain = (text: string) => text.replace(/\*\*|`/g, '')
 /** `claude-haiku-4-5-20251001` → `haiku 4.5` */
