@@ -35,6 +35,10 @@ Each piece, and the kb entity that holds the rest:
 - **system** (`src/system.ts`): the live view a renderer subscribes to. `live-system`
 - **shared** (`src/shared`): the data model, the protocols, and what every renderer draws alike, served as
   `/<name>.js`. `data-model`, `renderer-shared-modules`
+- **lib-ui** (`src/lib-ui`): the tower's elements, `tower-*` tags served at `/lib-ui/<module>.js`, wrapping the UI SDK's
+  parts; `sdk.ts` bundles the SDK once. The SDK's docs are `node_modules/@ui-sdk/web/docs/llms.txt` and its skill
+  `node_modules/@ui-sdk/core/skills/ui-sdk`: read them for the SDK's API; their rules on tests, JSDoc and
+  agent-readiness yield to PRINCIPLES.md. `tower-elements`
 - **tower** (`src/tower`): the renderer API at the config's `port`, the slot loop, the served modules. `tower-server`,
   `spine`
 - **renderers** (`renderers/`): the tower page, The Week and Tower 3D, disposable, served at `/r/<name>/`.

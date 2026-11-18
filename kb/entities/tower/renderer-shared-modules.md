@@ -104,6 +104,9 @@ behavior ([[renderer-is-disposable]]):
   its own handlers, and [`rankPalette`](ref:hub/src/shared/palette.ts#rankPalette), which groups them for what was
   typed by one table of weights ([[command-palette]]).
 - `markdown.ts`: markdown as html, the only way a renderer draws it ([[markdown-safe]]).
+- `elements.ts`: the html of the tower's elements (`/lib/elements.js`): a `<tower-combobox>`, the page's one subject
+  menu and a subject's place to open it, as strings a core view writes, marked as the morph must leave them; the
+  elements themselves are `/lib-ui/`'s ([[tower-elements]]).
 - `morph.ts`: new html morphed into an element's children ([`morph`](ref:hub/src/shared/morph.ts#morph), `/lib/morph.js`),
   keeping each node the html still describes, so text typed, a caret, a selection and focus survive a redraw: matched
   by id, then by tag and position, a text box that lost focus given it back by its id. A node marked `data-owned` is
