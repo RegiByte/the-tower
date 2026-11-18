@@ -1,5 +1,5 @@
 import type { Floor, FloorCollection } from '/lib/board.js'
-import { ICON, itemsCss, pressTrayHtml, type Mount } from '/lib/view.js'
+import { ICON, itemsCss, morphPanel, pressTrayHtml, type Mount } from '/lib/view.js'
 import { floorPolicies } from './policies.ts'
 
 /**
@@ -16,7 +16,6 @@ export const mount: Mount = (host, { board: first, subject, kit }) => {
   let board = first
   const project = (subject.value as FloorCollection & { project: string }).project
   const floorKey = `floor:${project}`
-  let painted = ''
 
   const draw = () => {
     const { policies, offers } = floorPolicies(board.floors.find((f) => f.id === project) as Floor)
@@ -27,7 +26,7 @@ export const mount: Mount = (host, { board: first, subject, kit }) => {
     const html = !policies.length
       ? ''
       : `<style>:where([data-view="${ID}"]) { ${itemsCss} }</style>${pressTrayHtml(at?.view === VIEW && at.subject === floorKey, label, 'standing work the tower runs at its slots: rules, standing, Run now and Approve, in the main pane')}`
-    if (html !== painted) host.innerHTML = painted = html
+    morphPanel(host, html)
   }
 
   host.addEventListener('click', (e) => {

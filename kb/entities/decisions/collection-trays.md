@@ -36,8 +36,9 @@ and reads items alike ([[renderer-is-disposable]]).
   board: a changed item is read again, a deleted one closes.
 - A sidebar tray is bounded ([`collectionPeekHtml`](ref:hub/src/shared/items.ts#collectionPeekHtml)) and lists the
   rest in the main pane, so a floor keeping many drafts doesn't push its workers out of sight.
-- A tray redraws through the morph (`morphPanel`), each item's row carrying the id `kept:<project>|<collection>|<id>`,
-  so a row or a tray button holding the keyboard's focus keeps it while items arrive, leave or reorder.
+- A tray redraws through the morph (`morphPanel`), each item's row carrying the id `kept:<project>|<collection>|<id>`
+  and each open thread's `thread:<key>`, so a row or a tray button holding the keyboard's focus keeps it while items
+  arrive, leave or reorder.
 - Drafts keep their own tray on the shared rows (`drafts/tray`), with a way to make one, where the floor's `drafts`
   collection is the drafts extension's (a plain one of that name is drawn by `tower/tray`); review threads keep theirs
   (`reviews/tray`): each open thread opened in the Reviews tab of the worker in its checkout, on duty or not (where the
