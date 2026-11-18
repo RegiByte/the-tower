@@ -27,7 +27,9 @@ wrap the SDK this way is [[tower-elements-wrap-the-sdk]].
   ([[renderer-shared-modules]]) loses nothing. Its SDK events are fired again on it, bubbling and cancelable
   ([`relay`](ref:hub/src/lib-ui/sdk.ts#relay)), so a core view listens on its host.
 - **One subject menu per page.** `<tower-menu>` holds the SDK's data menu; each subject's area and ⋯ button name it by
-  `for` and the subject by `payload`, and its owner sets `items` on `payloadchange`. The area handles `contextmenu`
+  `for` and the subject by `payload`, and its owner sets `items` on `payloadchange`, which it fires on every opening:
+  the SDK says a payload only when it changes, so an opening for the subject it was last filled for is said too, before
+  its `openchange`, and the menu is filled as the page stands then. The area handles `contextmenu`
   and a long press itself, by the SDK's own context trigger's rules (a finger may move 10 px, the browser's long-press
   menu is refused while it is down, the click its release makes after a hold is eaten) without binding the SDK's hold,
   which writes on the element it binds, and opens the menu at the point through the SDK's controller; the menu marks the areas of
@@ -44,7 +46,10 @@ menu to copy, and its `checkedchange`, which doesn't bubble, is fired again on t
 - **A combobox keeps a form's keys as a native select.** Open, typing highlights the first match (the SDK's
   `auto-highlight`), and an Enter, ⌘↵ included, chooses the highlighted option or does nothing, then stops at the
   element, so a form's submit key fires only while it is closed. Leaving without choosing shows the chosen label again;
-  the half-typed query is not kept for the next opening, which the SDK resets to the chosen label.
+  the half-typed query is not kept for the next opening, which the SDK resets to the chosen label. With `custom`, Enter
+  with no option highlighted chooses the text typed (a model id a runtime's list misses); leaving still restores what
+  was chosen, the element refusing the value the SDK's `allow-custom-value` would take as the list closes: a choice is
+  always made on purpose.
 - **Strings for core views.** A core view draws an element through `/lib/elements.js`
   ([`comboboxHtml`](ref:hub/src/shared/elements.ts#comboboxHtml), [`subjectHtml`](ref:hub/src/shared/elements.ts#subjectHtml)),
   which imports nothing of `/lib-ui/`. Each builder takes a place and a key and derives its ids by the id rule,

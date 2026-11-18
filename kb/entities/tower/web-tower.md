@@ -5,7 +5,7 @@
   "summary": "The tower page, the renderer / opens by default: projects as floors, sessions as terminals, shells docked as tabs, and each project's shelf.",
   "in": "tower-core",
   "reviewed": "2026-11-18",
-  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft", "hub/renderers/page/subject-menus.js#subjectMenus", "hub/renderers/page/page.js#doMenuPick", "hub/src/shared/spawn-form.ts#spawnFormHtml"]
+  "refs": ["hub/renderers/page/index.html", "hub/renderers/page/clients.js", "hub/renderers/page/page.js", "hub/renderers/page/page.js#pageHandlers", "hub/renderers/page/kit.js", "hub/renderers/page/board.js#boardKit", "hub/renderers/page/sidebar.js#sidebar", "hub/renderers/page/added.js#drawCount", "hub/renderers/page/regions.js#regions", "hub/renderers/page/stats.js#stats", "hub/renderers/page/extensions-entry.js#extensionsEntry", "hub/renderers/page/view.js#hashOf", "hub/renderers/page/view.js#viewOf", "hub/renderers/page/page.js#go", "hub/tsconfig.page.json", "hub/scripts/page-boot.ts", "hub/src/shared/items.ts#collectionTrayHtml", "hub/src/shared/panel-kit.ts#keepingFocus", "hub/src/shared/waits.ts#waitsBeganLine", "hub/src/shared/press.ts#pressing", "hub/src/shared/toasts.ts#toaster", "hub/src/views/card.ts#mount", "hub/renderers/page/page.js#kitRegion", "hub/renderers/page/page.js#markSeen", "hub/renderers/page/menu.js#menu", "hub/renderers/page/fit.js#lineWidth", "hub/renderers/page/page.js#pinIn", "hub/src/shared/adds.ts#rankedActions", "hub/src/shared/viewer.ts#seenOf", "hub/renderers/page/page.js#subjectLeft", "hub/renderers/page/subject-menus.js#subjectMenus", "hub/renderers/page/page.js#doMenuPick", "hub/renderers/page/page.js#MENU_PICKS", "hub/src/shared/subject-menu.ts#subjectMenu", "hub/src/shared/spawn-form.ts#spawnFormHtml"]
 }
 ---
 Built to learn from and throw away ([[renderer-is-disposable]]): it draws the board the [[tower-server]] serves and
@@ -44,7 +44,8 @@ a draft starts a worker through the page's new-worker dialog or is submitted to 
 through the same dialog with `kit.spawn` and stays where it is. The dialog draws a choice of runtime only when the
 config runs more than one, Claude first and picked, and redraws its runtime part (commands, model, effort) from
 `board.runtimes[id]` ([`providerHtml`](ref:hub/src/shared/spawn-form.ts#providerHtml)): a runtime whose list may miss
-models it runs takes any id typed, the list as suggestions, with a note when the id isn't in it ([[opencode]]). Its
+models it runs takes any model or effort typed and chosen by Enter (the combobox's `custom`), the list as suggestions,
+with a note when the id isn't in it ([[opencode]]); the effort's options follow the model. Its
 choices (from, runtime, command, model, effort, an extension's field with options) are `<tower-combobox>`es
 ([[tower-elements]], [`spawnFormHtml`](ref:hub/src/shared/spawn-form.ts#spawnFormHtml)), each named by its own label
 through `labelledby`; a field left to its default is empty, its placeholder saying what the default is. Tower 3D draws
@@ -103,8 +104,14 @@ viewer runs it or it is drawn in place in a focused window ([`markSeen`](ref:hub
 **Subject menus.** Every floor's sign, worker row and shown tab is a `<tower-menu-area>` with a ⋯ button: a
 right-click, the context-menu key, a long press or the ⋯ opens the page's one `<tower-menu>`
 ([`subjectMenus`](ref:hub/renderers/page/subject-menus.js#subjectMenus)), filled from `subjectMenu` of `/lib/palette.js`
-as the board and the page's open views stand when it opens ([[command-palette]]); a line chosen runs as a palette pick
-([`doMenuPick`](ref:hub/renderers/page/page.js#doMenuPick)). Their ids follow the id rule: `sign:floor:<p>`,
+as the board and the page's open views stand when it opens ([[command-palette]]). A line chosen runs by the runner of
+its kind (`MenuPick`'s `t`), one typed table where a kind with no runner fails the typecheck
+([`MENU_PICKS`](ref:hub/renderers/page/page.js#MENU_PICKS)), a palette pick's through the palette's handlers, and
+presses as itself: keyed by the subject and the line's id, the subject's areas busy meanwhile ([[press-feedback]]). A
+menu never offers what a click on its subject does already ([`subjectMenu`](ref:hub/src/shared/subject-menu.ts#subjectMenu)):
+a shown tab's menu has no Open, and goes to its worker's terminal, or its brief once the worker went home, by name; a
+collection's line opens every item it keeps (`tower/collection`), whatever view the collection's own kind prefers. A
+menu's line ids are each its own, and `subjectMenu` throws on two alike. Their ids follow the id rule: `sign:floor:<p>`,
 `row:card:<id>`, `tab:shown:<card>/<at>`, each ⋯ its place's `/menu`. While the menu is open the sidebar's floors and
 the tab row are not painted, and are painted once as it closes: a ⋯-opened menu is anchored to its button, which the
 SDK closes it on losing, and both are drawn by innerHTML until the morph reaches them.

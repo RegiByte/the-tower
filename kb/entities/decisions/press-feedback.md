@@ -11,6 +11,8 @@
     "hub/src/shared/press.ts#pressing",
     "hub/renderers/page/dialogs.js#dialogs",
     "hub/src/shared/press.ts#identityOf",
+    "hub/src/shared/press.ts#pressingAs",
+    "hub/src/shared/press.ts#pressOf",
     "hub/src/shared/toasts.ts#toaster",
     "hub/src/shared/toasts.ts#sameToast",
     "hub/src/shared/toasts.ts#toastsCss",
@@ -42,7 +44,11 @@ them.
   `aria-busy` until the request settles, and ignores a press of a busy one. The identity is the tag and the
   attributes naming what the control does ([`identityOf`](ref:hub/src/shared/press.ts#identityOf)), so a button a
   board redraw replaces, or the same call drawn elsewhere, is busy alike. A control that names nothing fails loudly,
-  since it would mark every button of its tag.
+  since it would mark every button of its tag. Its core is
+  [`pressingAs(press, request)`](ref:hub/src/shared/press.ts#pressingAs), keyed by a `Press`: a key naming what is
+  asked and the selector of what is drawn busy; `pressing` runs it over the control's own
+  ([`pressOf`](ref:hub/src/shared/press.ts#pressOf)). A press that is no control's, a subject menu's line, names its
+  own.
 - The new-worker form ([`spawnFormHtml`](ref:hub/src/shared/spawn-form.ts#spawnFormHtml)) stays open while Start is busy,
   closes on a new worker and shows a refusal in its own alert line with the prompt still in place, so a prompt a
   worker already has is never kept as a draft. Starting is a state of its machine
