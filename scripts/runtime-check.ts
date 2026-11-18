@@ -55,11 +55,12 @@ import { releaseRange } from '../src/shared/claude.ts'
 import type { Config, LogEvent } from '../src/shared/model.ts'
 import { sessionLogPath, systemPaths } from '../src/shared/paths.ts'
 import { CLAUDE } from './runtime-check.claude.ts'
+import { OPENCODE } from './runtime-check.opencode.ts'
 import { mergedShapes, shapesOf, type Baseline } from './runtime-check.read.ts'
 import { scenarioDifferences } from './runtime-check.report.ts'
 import type { Act, Launch, Live, On, Run, Runtime, Scenario, ScenarioRun, Step, Tail } from './runtime-check.scenario.ts'
 
-const RUNTIMES: Record<string, unknown> = { claude: CLAUDE }
+const RUNTIMES: Record<string, unknown> = { claude: CLAUDE, opencode: OPENCODE }
 
 const REPO = path.join(import.meta.dirname, '..')
 const AT_ONCE = 5
@@ -435,17 +436,17 @@ async function run() {
   return report()
 }
 
+/** An empty baseline, before a runtime's first `accept`. */
+const baselineOf = (file: string): Baseline => (existsSync(file) ? readJson<Baseline>(file) : { release: '', recordings: {} })
+
 function report() {
   if (!existsSync(RUN)) throw new Error(`no run in ${ROOT}: npm run tool:runtime-check -- ${RUNTIME.id} run`)
   const result = readJson<Run>(RUN)
-  const { markdown, clean } = RUNTIME.report({ run: result, recordings: recordingsOf(result.scenarios), baseline: readJson<Baseline>(RUNTIME.baseline), fixture: fixtureOf, root: ROOT })
+  const { markdown, clean } = RUNTIME.report({ run: result, recordings: recordingsOf(result.scenarios), baseline: baselineOf(RUNTIME.baseline), fixture: fixtureOf, root: ROOT })
   writeFileSync(path.join(ROOT, 'report.md'), markdown)
   console.log(markdown)
   process.exitCode = clean ? 0 : 1
 }
-
-/** An empty baseline, for a runtime's first `accept`. */
-const baselineOf = (file: string): Baseline => (existsSync(file) ? readJson<Baseline>(file) : { release: '', recordings: {} })
 
 function accept() {
   const result = readJson<Run>(RUN)
