@@ -29,7 +29,9 @@ and a framed document's section are the same thing.
   returning `{ update, show?, visible?, tab?, options?, close }` ([`Mounted`](ref:hub/src/shared/views.ts#Mounted)), on
   the kinds in `on`, handed those in `shows`, drawing the types it `accepts` at its `scales`, needing kit members.
   `ctx` ([`ViewCtx`](ref:hub/src/shared/views.ts#ViewCtx)) is the tower, the board, the subject, the kit, its own
-  `state` in `tower.store`, its options, the `scale` its region declares and its location's `args`. A region handle's
+  `state` in `tower.store`, its options, the `scale` its region declares, its mount's `scope` (a name unique on the
+  page, which a view mounted twice at once puts first in every id it spells, so the morph and `aria-*` references
+  find each mount's own) and its location's `args`. A region handle's
   `options(next)` hands the view it holds new options, drawn in place by its `options`; a view without one is mounted
   afresh. A view never imports another and calls verbs only on a press inside it, wiring its own presses and bringing
   its styles in a `<style>` inside its host. A view's `on` may name `collection.<id>`, one collection alone

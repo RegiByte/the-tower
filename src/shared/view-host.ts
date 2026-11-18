@@ -14,6 +14,9 @@ import { offeredIn, pickView, type Kit, type Mount, type Mounted, type RegionHan
 /** How long a view's mount may take before its region says it failed. */
 const MOUNT_MS = 10_000
 
+/** How many views were mounted on this page: each mount's scope is its own. */
+let mounts = 0
+
 /**
  * What a renderer lends the views it hosts, of the kit `renderer.json` names: a member left out throws naming itself
  * if a view calls it. `spawn` is told `open`, whether the view that asked still stands. The host makes `region` and
@@ -241,6 +244,7 @@ export function viewHost(deps: HostDeps) {
    */
   function mountView(view: View, el: HTMLElement, subject: Subject, { scale, options, showing, args }: Placed) {
     el.dataset.view = view.id
+    const scope = `v${++mounts}`
     const own = new Set<TermViewHandle>()
     const inner = new Set<RegionHandle>()
     /** The keys it published on the bus, once per publish: cleared with it. */
@@ -309,7 +313,7 @@ export function viewHost(deps: HostDeps) {
         mount: ({ mount, subject, options }, dispatch) => {
           const broke = (err: Error) => dispatch({ type: 'broke', why: err.message })
           try {
-            const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, scale, ...(args && { args }) }
+            const ctx = { tower, board: board(), subject, kit, state: stateOf(view.id), options, scale, scope, ...(args && { args }) }
             Promise.resolve(mount(el, ctx)).then((done) => dispatch({ type: 'settled', done }), broke)
           } catch (err) {
             broke(err as Error)
