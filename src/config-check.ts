@@ -45,6 +45,7 @@ import {
   type Renderer,
 } from './shared/model.ts'
 import { keysProblems } from './shared/keymap.ts'
+import { TOWER_WIDE } from './shared/paths.ts'
 import { isObject, probesGone, readConfig, validArgv } from './system.ts'
 import { movedKeys, movedLine } from './moved-keys.ts'
 
@@ -261,6 +262,7 @@ const projectCommand = (config: Config, key: string, command: unknown): ConfigPr
 
 const projectProblems = (config: Config, id: string, project: Project, renderers: Renderer[] | undefined, extensions: Extensions): ConfigProblem[] => {
   const at = `projects.${id}`
+  if (id === TOWER_WIDE) return [fail(at, `"${TOWER_WIDE}" is the folder of the tower-wide collections, never a floor's id: pick another`)]
   if (!isObject(project)) return [fail(at, 'takes an object: name, hub and repos at least')]
   const shape = [
     ...(typeof project.name === 'string' && project.name ? [] : [fail(`${at}.name`, 'takes the name the floor is shown by')]),

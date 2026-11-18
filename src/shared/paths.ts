@@ -31,6 +31,12 @@ export const systemPaths = (config: string): SystemPaths => {
   }
 }
 
+/**
+ * The folder under the collections root that holds the tower-wide collections, those of no one floor. It is never a
+ * floor's id: a floor named so would share the folder with them.
+ */
+export const TOWER_WIDE = '_tower'
+
 /** Where a project's collections are, one directory each. */
 export const projectCollectionsPath = (paths: SystemPaths, project: string): string => path.join(paths.collections, project)
 
