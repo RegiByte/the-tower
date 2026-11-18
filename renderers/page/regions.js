@@ -43,6 +43,7 @@ import { menu } from './menu.js'
  *   contributions: (el: HTMLElement, id: string, subject: Subject, options: { omit?: string[] }) => RegionHandle,
  *   subjectOf: (key: string) => Subject | undefined,
  *   unshown: () => ReadonlySet<string>,
+ *   held: () => boolean,
  *   mainPane: () => Pane | undefined,
  *   gone: () => void,
  *   left: () => void,
@@ -74,7 +75,7 @@ const tabKey = (view, subject) => `${view}|${subject}`
  * @param {RegionsDeps} deps
  */
 export function regions(deps) {
-  const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, mainPane, gone, left } = deps
+  const { board, views, layout, declared, termFont, scheme, run, commandKit, tower, contributions, subjectOf, unshown, held, mainPane, gone, left } = deps
 
   /** The command that opens the view `id` where it is a pane. @param {string} id */
   const paneCommand = (id) => panesOf(board()).find((p) => p.view === id)?.command
@@ -364,7 +365,7 @@ export function regions(deps) {
       handOpen(all)
       const name = formOf()
       if (name !== formNow.name) formNow.close(), (formNow = { name, ...forms[name]() })
-      formNow.draw(all, shownAddsHtml(all))
+      if (!held()) formNow.draw(all, shownAddsHtml(all))
     }
 
     /**

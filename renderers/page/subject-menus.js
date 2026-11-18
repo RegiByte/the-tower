@@ -13,6 +13,7 @@ import { subjectMenu } from '/lib/palette.js'
  *   opened: () => Opened[],
  *   origins: () => Record<string, string>,
  *   pick: (does: MenuPick, at: HTMLElement) => void,
+ *   closed: () => void,
  * }} SubjectMenusDeps
  */
 
@@ -32,12 +33,12 @@ const linesOf = (m) => new Map(m.groups.flatMap((g) => g.lines.flatMap((l) => ('
 /**
  * The page's one subject menu, drawn once at the end of the body, where no redraw reaches it: filled from
  * `subjectMenu` for the subject it opens for, as the board and the page's open views stand then, and a chosen line run
- * through `pick`, busy on the subject's area.
+ * through `pick`, busy on the subject's area. `closed` is told as it closes. Answers whether it is open.
  * @param {SubjectMenusDeps} deps
  */
-export function subjectMenus({ board, opened, origins, pick }) {
+export function subjectMenus({ board, opened, origins, pick, closed }) {
   document.body.insertAdjacentHTML('beforeend', subjectMenuHtml())
-  const menu = /** @type {HTMLElement & { items: unknown }} */ (document.getElementById(SUBJECT_MENU))
+  const menu = /** @type {HTMLElement & { items: unknown, open: boolean }} */ (document.getElementById(SUBJECT_MENU))
   /** The subject the menu was filled for, and its lines by id. */
   let filled = { key: '', lines: /** @type {Map<string, MenuLine>} */ (new Map()) }
 
@@ -57,4 +58,8 @@ export function subjectMenus({ board, opened, origins, pick }) {
   }
   menu.addEventListener('action', run)
   menu.addEventListener('checkedchange', run)
+  menu.addEventListener('openchange', (e) => {
+    if (!(/** @type {CustomEvent<{ value: boolean }>} */ (e).detail.value)) queueMicrotask(closed)
+  })
+  return { open: () => menu.open }
 }
