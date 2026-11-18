@@ -57,6 +57,8 @@ export const jobState = (job: JobRecord, held: ReadonlySet<string> | undefined):
 /** A job as renderers and extensions read it: its facts and its state, its end flattened. Times are epoch ms. */
 export type Job = {
   id: string
+  /** Its process's id, which is also its process group: what it starts stays in the group unless it leaves it. @since 2.10 */
+  pid: number
   owner: string
   label: string
   argv: string[]
@@ -75,8 +77,8 @@ export type Job = {
 export const jobsNow = (jobs: JobRecord[], held: ReadonlySet<string> | undefined): Job[] =>
   jobs
     .map((job) => {
-      const { id, owner, label, argv, cwd, startedAt, ended } = job
-      return { id, owner, label, argv, cwd, state: jobState(job, held), startedAt, ...(ended && { endedAt: ended.at, exit: ended.exit, signal: ended.signal }) }
+      const { id, pid, owner, label, argv, cwd, startedAt, ended } = job
+      return { id, pid, owner, label, argv, cwd, state: jobState(job, held), startedAt, ...(ended && { endedAt: ended.at, exit: ended.exit, signal: ended.signal }) }
     })
     .sort((a, b) => b.startedAt - a.startedAt)
 
