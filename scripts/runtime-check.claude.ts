@@ -6,7 +6,7 @@
  * `sec-default` mod held back, and the release's changelog with the entries about the tower's surfaces marked.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { USAGE_ARGS, usageAnswer, usageRan, USAGE_REQUEST, USAGE_TIMEOUT_MS } from '../extensions/quota/usage.ts'
@@ -146,7 +146,7 @@ const report: Runtime<ClaudeLaunch>['report'] = ({ run: plain, recordings, basel
 /**
  * Claude, about 30 Haiku sessions, 5 at a time, ~6 minutes a run. The trust screen is answered when Claude shows it,
  * which it does only in a directory it has not trusted before, once its output goes quiet (down, then enter, as two
- * writes); `--debug-file` names each event Claude's built-in `sec-default` mod keeps from the tower's.
+ * writes); the sign-in screen's launch reads an empty `<root>/signed-out` as its config dir; `--debug-file` names each event Claude's built-in `sec-default` mod keeps from the tower's.
  */
 export const CLAUDE: Runtime<ClaudeLaunch> = {
   id: 'claude',
@@ -160,7 +160,6 @@ export const CLAUDE: Runtime<ClaudeLaunch> = {
   plain: LAUNCHES.plain,
   launches: Object.values(LAUNCHES),
   scenarios: SCENARIOS,
-  unrecorded: UNRECORDED,
   configOf: (launch) => ({ runtimes: { claude: { argv: ['claude', '--permission-mode', 'default', '--allowedTools', ...launch.tools, ...(launch.argv ?? [])] } }, env: launch.env ?? {} }),
   started: async (live, blocked, io) => {
     const at = await io.waitForFirst(live.tail, blocked ? [{ status: 'blocked' }] : [{ status: 'blocked' }, { event: 'SessionStart' }], 0)
@@ -173,6 +172,10 @@ export const CLAUDE: Runtime<ClaudeLaunch> = {
       await io.keys(live.id, '\r')
     }
     return at
+  },
+  prepare: (root) => {
+    rmSync(path.join(root, 'signed-out'), { recursive: true, force: true })
+    mkdirSync(path.join(root, 'signed-out'))
   },
   subagent: (hook) => hook.agentId !== undefined,
   conversation: (events) => {

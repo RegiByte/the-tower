@@ -143,8 +143,6 @@ export type Runtime<L extends Launch = Launch> = {
   plain: L
   launches: L[]
   scenarios: Scenario<L>[]
-  /** The fixtures of this runtime's no scenario records, and why. */
-  unrecorded: Record<string, string>
   /** The config's `runtimes` and `env` for a launch, every value expanded by the runner. */
   configOf: (launch: L) => Pick<Config, 'runtimes' | 'env'>
   /** Waits until a directory's first session, or one held by `blocked`'s screen, has started: the index it read up to. */
@@ -158,6 +156,8 @@ export type Runtime<L extends Launch = Launch> = {
    * absent for a runtime that registers none.
    */
   registered?: (log: SessionLog) => boolean | undefined
+  /** What a take of the scenarios needs in the run's root beyond their directories, made again before each take. */
+  prepare?: (root: string) => void
   /** Local services a run's scenarios reach, started before it and stopped after. */
   services?: () => Promise<Services>
   /** What the runtime is asked once the system is down, kept in `run.json`. */
