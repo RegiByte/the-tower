@@ -54,9 +54,12 @@ export async function palette(deps) {
     <span class="pal-label">${esc(e.label)}</span>${e.hint ? `<span class="pal-hint">${esc(e.hint)}</span>` : ''}
     ${e.chords?.length ? `<span class="pal-chords">${e.chords.map((t) => `<kbd>${esc(chordLabel(t))}</kbd>`).join('')}</span>` : ''}</div>`
 
+  /** A group's head by its first entry: two groups may share a name (two floors' verbs), never an entry. @param {PaletteGroup} g */
+  const groupId = (g) => esc(domId('pal/group', g.entries[0].id))
+
   /** @param {PaletteGroup[]} groups */
   const listHtml = (groups) =>
-    groups.map((g) => `<div role="group" aria-labelledby="${esc(domId('pal/group', g.group))}"><div class="eyebrow pal-group" id="${esc(domId('pal/group', g.group))}">${esc(g.group)}</div>${g.entries.map(rowHtml).join('')}</div>`).join('')
+    groups.map((g) => `<div role="group" aria-labelledby="${groupId(g)}"><div class="eyebrow pal-group" id="${groupId(g)}">${esc(g.group)}</div>${g.entries.map(rowHtml).join('')}</div>`).join('')
 
   /** The entry of a row drawn in the list, read from its data. @param {Element} row */
   const entryOf = (row) => /** @type {HTMLElement} */ (row).dataset.paletteEntry
