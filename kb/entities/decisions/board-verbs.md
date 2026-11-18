@@ -25,7 +25,7 @@ its type there (`CardVerb`, `ConversationVerb`, `FloorVerb`, `WorktreeVerb`, `Br
 `PolicyVerb` and `OfferVerb` of the policies extension); the rules that read other decisions:
 - A card ([`cardVerbs`](ref:hub/src/bridge/verbs.ts#cardVerbs)) is `live` ([`isLive`](ref:hub/src/bridge/verbs.ts#isLive))
   while its PTY runs: `drive` and `kill` then. `submit` while at Claude's composer, not on a startup screen nor a
-  question ([[collections]]); `prompt` while it sits at its prompt with nothing in its composer ([[submit-at-prompt]]); `brief` while it is live, empty until Claude saves a [[conversation]] (a composer in the Brief sends its first prompt), and after it ends while it has one; `carry-on` beside `resume` when the host
+  question ([[collections]]); `prompt` while it sits at its prompt with nothing in its composer ([[submit-at-prompt]]); `brief` always, whatever its state, so every card has the same tabs: empty until Claude saves a [[conversation]] (a composer in the Brief sends a running worker's first prompt); `carry-on` beside `resume` when the host
   cut it off mid-turn ([[carry-on]]); `reap` while it
   has [[leftover]]s; `send-home` while any of its crew runs ([`sendHomeActions`](ref:hub/src/bridge/verbs.ts#sendHomeActions),
   [[crews]]); `let-go` while stranded on duty ([[let-go]]). Review and a note on the review thread are no card verbs:
