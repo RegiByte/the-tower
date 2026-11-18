@@ -7,7 +7,7 @@ import { type Broken, byCategory, type Guide, GUIDES, guideOf, isGuide, matches,
 /**
  * `guides/center`, the learning center on the board: every guide in the tower-wide `guides` collection, the ones the
  * guides extension ships, those other extensions contribute and the user's own, listed by category and order and
- * searched by title and keyword, the one picked drawn beside the list. A guide's relative images are read from beside
+ * searched by title, keywords and body, the one picked drawn beside the list. A guide's relative images are read from beside
  * it in the collection.
  */
 
@@ -55,6 +55,8 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   let query = ''
   let open: string | undefined
   const reads = new Map<string, Read>()
+  /** The version of each guide being read now: a read of an older one is dropped when it lands. */
+  const reading = new Map<string, number>()
 
   host.innerHTML = `<style>${STYLE}${markdownCss}</style>
   <div class="shelf-head"><span class="label">Learning center</span><span class="dim">how to do things in the tower</span>
@@ -66,16 +68,19 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   /** The guides' files on the board: markdown only, an image beside a guide being one of its parts. */
   const files = () => (board.collections.find((c) => c.id === GUIDES)?.items ?? []).filter((i) => i.id.endsWith('.md'))
 
-  /** Reads each guide the board shows at a version not yet read, then draws again. */
+  /** Reads each guide the board shows at a version neither read nor being read, then draws again. */
   const readAll = async () => {
-    const stale = files().filter((i) => reads.get(i.id)?.modifiedAt !== i.modifiedAt)
+    const stale = files().filter((i) => reads.get(i.id)?.modifiedAt !== i.modifiedAt && reading.get(i.id) !== i.modifiedAt)
     if (!stale.length) return
     await Promise.all(
       stale.map(async (i) => {
+        reading.set(i.id, i.modifiedAt)
         const guide = await tower.text(pathOf(i.id)).then(
           (text) => guideOf(i.id, text),
           (err: Error) => ({ id: i.id, why: err.message }),
         )
+        if (reading.get(i.id) !== i.modifiedAt) return
+        reading.delete(i.id)
         reads.set(i.id, { modifiedAt: i.modifiedAt, guide })
       }),
     )

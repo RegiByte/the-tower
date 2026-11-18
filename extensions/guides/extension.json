@@ -18,7 +18,7 @@
       "module": "commands.js",
       "export": "openCenter",
       "on": ["board"],
-      "words": { "label": "Learning center", "hint": "guides to the tower's gestures, searchable", "icon": "help" }
+      "words": { "label": "Learning center", "hint": "guides to the tower's gestures, searched by title, keywords and body", "icon": "help" }
     },
     "tour": {
       "module": "commands.js",
@@ -34,7 +34,7 @@
       "on": ["board"],
       "scales": ["pane"],
       "needs": ["display", "run", "toast"],
-      "words": { "label": "Learning center", "hint": "the tower's guides by category, searchable by keyword" }
+      "words": { "label": "Learning center", "hint": "the tower's guides by category, searched by title, keywords and body" }
     }
   },
   "guidance": {
