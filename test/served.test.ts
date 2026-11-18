@@ -11,7 +11,8 @@ import { clientModule, towerClient } from '../src/tower/served.ts'
 import { FACT_KINDS } from '../src/shared/rate-limits.ts'
 import { CLI_REGIONS, type Region } from '../src/shared/regions.ts'
 import { declaredAt } from '../src/renderers.ts'
-import { libraryNow, type Library } from './library.ts'
+import { elementsOf, libraryNow, libUiNow, type Library, type LibUi } from './library.ts'
+import { libUiUrls } from '../src/tower/served.ts'
 
 /**
  * Holds what the tower serves to `test/served-exports.json`, and what extensions build on beside it: a removal without a
@@ -19,8 +20,8 @@ import { libraryNow, type Library } from './library.ts'
  * library name stamped with this minor, a known one keeping its `since`; commit it.
  */
 
-/** What renderers may build on, by URL, as of the API major it was written at. */
-type Served = { major: number; served: Record<string, string[]>; library: Library }
+/** What renderers may build on, by URL, as of the API major it was written at: the tower's elements by tag. */
+type Served = { major: number; served: Record<string, string[]>; library: Library; libUi: LibUi }
 
 const REPO = path.join(import.meta.dirname, '..')
 const LIST = path.join(import.meta.dirname, 'served-exports.json')
@@ -89,15 +90,21 @@ function servedNow(): Record<string, string[]> {
   return Object.fromEntries(Object.entries(served).map(([url, names]) => [url, [...names].sort()]))
 }
 
-test('the served modules keep every export renderers may import, until the API major moves', () => {
+/** Each name a module of `/lib-ui/` lists, as `<tag> <kind> <name>`. */
+const elementNames = (tags: LibUi[string] | undefined): string[] =>
+  Object.entries(tags ?? {}).flatMap(([tag, kinds]) => Object.entries(kinds).flatMap(([kind, names]) => Object.keys(names).map((name) => `${tag} ${kind} ${name}`)))
+
+test('the served modules keep every export renderers may import, until the API major moves', async () => {
   const listed: Served = JSON.parse(readFileSync(LIST, 'utf8'))
   const now = servedNow()
   const major = Number(API_VERSION.split('.')[0])
   const library = libraryNow(listed.library, API_VERSION)
+  const libUi = await libUiNow(listed.libUi, API_VERSION)
   const heldBy = (mod: Library[string] | undefined) => ({ ...mod?.values, ...mod?.types })
   const gone = [
     ...Object.entries(listed.served).flatMap(([url, names]) => names.filter((n) => !now[url]?.includes(n)).map((n) => `  ${url}  ${n}`)),
     ...Object.entries(listed.library).flatMap(([url, mod]) => Object.keys(heldBy(mod)).filter((n) => !(n in heldBy(library[url]))).map((n) => `  ${url}  ${n}`)),
+    ...Object.entries(listed.libUi).flatMap(([url, tags]) => elementNames(tags).filter((n) => !elementNames(libUi[url]).includes(n)).map((n) => `  ${url}  ${n}`)),
   ]
   if (gone.length && major === listed.major) {
     assert.fail(
@@ -110,7 +117,7 @@ test('the served modules keep every export renderers may import, until the API m
       ].join('\n'),
     )
   }
-  const written = `${JSON.stringify({ major, served: now, library } satisfies Served, null, 2)}\n`
+  const written = `${JSON.stringify({ major, served: now, library, libUi } satisfies Served, null, 2)}\n`
   if (process.env.UPDATE_SERVED) return writeFileSync(LIST, written)
   assert.equal(readFileSync(LIST, 'utf8'), written, `${path.relative(process.cwd(), LIST)} is stale: what the tower serves changed. Run \`${UPDATE}\` and commit it.`)
 })
@@ -156,6 +163,28 @@ test("docs/extending.md's renderers table is the renderers' declarations", () =>
   const written = docs.replace(TABLE, (_, open: string, close: string) => `${open}${regionsTable()}\n${close}`)
   if (process.env.UPDATE_SERVED) return writeFileSync(DOCS, written)
   assert.equal(docs, written, `docs/extending.md's renderers table is stale: a renderer.json or cli.regions changed. Run \`${UPDATE}\` and commit it.`)
+})
+
+const ELEMENTS = /(<!-- lib-ui: [^\n]*-->\n)[\s\S]*?(<!-- \/lib-ui -->)/
+
+/** docs/extending.md's table of the tower's elements: each tag's attributes, properties, events and states, as its module's `elements` says. */
+async function elementsTable(): Promise<string> {
+  const cell = (names: Record<string, string>) => Object.entries(names).map(([name, means]) => `\`${name}\`: ${means.replace(/\|/g, '\\|')}`).join('<br>') || 'none'
+  const rows = await Promise.all(
+    libUiUrls().map(async (url) =>
+      Object.entries(await elementsOf(url)).map(([tag, c]) => `| \`<${tag}>\`, \`${url}\` | ${cell(c.attributes)} | ${cell(c.properties)} | ${cell(c.events)} | ${cell(c.states)} |`),
+    ),
+  )
+  return ['| Element | Attributes | Properties | Events | States |', '|---|---|---|---|---|', ...rows.flat()].join('\n')
+}
+
+test("docs/extending.md's table of the tower's elements is what their modules export", async () => {
+  const docs = readFileSync(DOCS, 'utf8')
+  assert.match(docs, ELEMENTS, 'docs/extending.md has no <!-- lib-ui: … --> … <!-- /lib-ui --> block')
+  const table = await elementsTable()
+  const written = docs.replace(ELEMENTS, (_, open: string, close: string) => `${open}${table}\n${close}`)
+  if (process.env.UPDATE_SERVED) return writeFileSync(DOCS, written)
+  assert.equal(docs, written, `docs/extending.md's elements table is stale: an element's contract changed. Run \`${UPDATE}\` and commit it.`)
 })
 
 test("a bundled client's imports of the library, /tower.js and an extension's client stay those URLs, in the checkout or out of it", async () => {

@@ -1541,6 +1541,37 @@
         }
       }
     },
+    "/lib/elements.js": {
+      "runtime": "generic",
+      "values": {
+        "SUBJECT_MENU": {
+          "since": "2.15",
+          "stability": "provisional"
+        },
+        "comboboxHtml": {
+          "since": "2.15",
+          "stability": "provisional"
+        },
+        "subjectHtml": {
+          "since": "2.15",
+          "stability": "provisional"
+        },
+        "subjectMenuHtml": {
+          "since": "2.15",
+          "stability": "provisional"
+        }
+      },
+      "types": {
+        "Combobox": {
+          "since": "2.15",
+          "stability": "provisional"
+        },
+        "ComboboxOption": {
+          "since": "2.15",
+          "stability": "provisional"
+        }
+      }
+    },
     "/lib/extension.js": {
       "runtime": "server",
       "values": {
@@ -2592,6 +2623,135 @@
         }
       },
       "types": {}
+    }
+  },
+  "libUi": {
+    "/lib-ui/combobox.js": {
+      "tower-combobox": {
+        "attributes": {
+          "disabled": {
+            "since": "2.15"
+          },
+          "empty": {
+            "since": "2.15"
+          },
+          "label": {
+            "since": "2.15"
+          },
+          "name": {
+            "since": "2.15"
+          },
+          "options": {
+            "since": "2.15"
+          },
+          "placeholder": {
+            "since": "2.15"
+          },
+          "required": {
+            "since": "2.15"
+          },
+          "value": {
+            "since": "2.15"
+          }
+        },
+        "properties": {
+          "api": {
+            "since": "2.15"
+          },
+          "open": {
+            "since": "2.15"
+          },
+          "value": {
+            "since": "2.15"
+          }
+        },
+        "events": {
+          "openchange": {
+            "since": "2.15"
+          },
+          "valuechange": {
+            "since": "2.15"
+          }
+        },
+        "states": {}
+      }
+    },
+    "/lib-ui/menu.js": {
+      "tower-menu": {
+        "attributes": {
+          "id": {
+            "since": "2.15"
+          },
+          "loop": {
+            "since": "2.15"
+          },
+          "modal": {
+            "since": "2.15"
+          },
+          "presentation": {
+            "since": "2.15"
+          }
+        },
+        "properties": {
+          "api": {
+            "since": "2.15"
+          },
+          "items": {
+            "since": "2.15"
+          },
+          "open": {
+            "since": "2.15"
+          },
+          "openAt": {
+            "since": "2.15"
+          }
+        },
+        "events": {
+          "action": {
+            "since": "2.15"
+          },
+          "openchange": {
+            "since": "2.15"
+          },
+          "payloadchange": {
+            "since": "2.15"
+          }
+        },
+        "states": {}
+      },
+      "tower-menu-button": {
+        "attributes": {
+          "for": {
+            "since": "2.15"
+          },
+          "label": {
+            "since": "2.15"
+          },
+          "payload": {
+            "since": "2.15"
+          }
+        },
+        "properties": {},
+        "events": {},
+        "states": {}
+      },
+      "tower-menu-area": {
+        "attributes": {
+          "for": {
+            "since": "2.15"
+          },
+          "payload": {
+            "since": "2.15"
+          }
+        },
+        "properties": {},
+        "events": {},
+        "states": {
+          "open": {
+            "since": "2.15"
+          }
+        }
+      }
     }
   }
 }

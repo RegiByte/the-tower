@@ -5,7 +5,10 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { LIBRARY, libraryUrls, urlSource, urlVendor } from '../src/tower/served.ts'
+import { build, type Plugin } from 'esbuild'
+import vm from 'node:vm'
+import { LIBRARY, libraryUrls, libUiUrls, urlSource, urlVendor } from '../src/tower/served.ts'
+import type { ElementContract } from '../src/lib-ui/sdk.ts'
 
 export const REPO = path.join(import.meta.dirname, '..')
 const TSC = path.join(REPO, 'node_modules', '.bin', 'tsc')
@@ -119,11 +122,11 @@ const sourcesIn = (dir: string): string[] =>
 export const specifiersOf = (text: string): string[] =>
   [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)(['"])([^'"\n]+)\1/gm)].map((m) => m[2]!)
 
-/** A file's way into the core outside the library: a path below `src/`, or an internal URL. */
+/** A file's way into the core outside the library and the tower's elements: a path below `src/`, or an internal URL. */
 export const reachesCore = (file: string, specifier: string): boolean =>
   specifier.startsWith('.')
     ? path.resolve(REPO, path.dirname(file), specifier).startsWith(path.join(REPO, 'src') + path.sep)
-    : specifier.startsWith('/') && !specifier.startsWith(LIBRARY) && (urlSource(specifier) ?? urlVendor(specifier)) !== undefined
+    : specifier.startsWith('/') && !specifier.startsWith(LIBRARY) && !libUiUrls().includes(specifier) && (urlSource(specifier) ?? urlVendor(specifier)) !== undefined
 
 /** Each way into the core outside the library from code that isn't the core, once per file: `<file> -> <specifier>`. */
 export const reachNow = (): string[] => [
@@ -148,3 +151,42 @@ export const libraryInCore = (): string[] =>
         .filter((specifier) => (specifier.startsWith('.') ? path.resolve(REPO, path.dirname(file), specifier).startsWith(path.join(REPO, 'src', 'lib') + path.sep) : specifier.startsWith('/lib/') && !file.startsWith(path.join('src', 'views') + path.sep)))
         .map((specifier) => `${file} -> ${specifier}`),
     )
+
+/** Each element a module of `/lib-ui/` defines, by tag, as its `elements` export says. */
+export type ElementsModule = Record<string, ElementContract>
+
+/**
+ * A module of `/lib-ui/`'s `elements`, read in node: bundled with the SDK left out, and run where `HTMLElement` is a bare
+ * class and `customElements` takes each definition without running it, which is all the module does as it loads.
+ */
+export async function elementsOf(url: string): Promise<ElementsModule> {
+  const sdk: Plugin = {
+    name: 'no-sdk',
+    setup(b) {
+      b.onResolve({ filter: /\/sdk\.ts$/ }, () => ({ path: 'sdk', namespace: 'no-sdk' }))
+      b.onLoad({ filter: /.*/, namespace: 'no-sdk' }, () => ({ contents: 'export const relay = () => {}', loader: 'js' }))
+    },
+  }
+  const { outputFiles } = await build({ entryPoints: [urlSource(url)!], bundle: true, format: 'iife', globalName: 'served', write: false, logLevel: 'silent', plugins: [sdk] })
+  const page = { HTMLElement: class {}, customElements: { define: () => {} } }
+  return (vm.runInNewContext(`${outputFiles[0]!.text};served`, page) as { elements: ElementsModule }).elements
+}
+
+/** What a tower element's contract lists, by kind: each name with its `since`. */
+export type ElementNames = Record<keyof ElementContract, Record<string, { since: string }>>
+export type LibUi = Record<string, Record<string, ElementNames>>
+
+/** `/lib-ui/` as it stands now, each name with the `since` `listed` gives it, a new one with `since`. */
+export async function libUiNow(listed: LibUi, since: string): Promise<LibUi> {
+  const kinds = ['attributes', 'properties', 'events', 'states'] as const
+  const stamped = (names: Record<string, string>, kept: Record<string, { since: string }> | undefined) =>
+    Object.fromEntries(Object.keys(names).sort().map((name) => [name, { since: kept?.[name]?.since ?? since }]))
+  const modules = await Promise.all(
+    libUiUrls().map(async (url) => {
+      const elements = await elementsOf(url)
+      const tags = Object.entries(elements).map(([tag, contract]) => [tag, Object.fromEntries(kinds.map((kind) => [kind, stamped(contract[kind], listed[url]?.[tag]?.[kind])]))])
+      return [url, Object.fromEntries(tags)] as const
+    }),
+  )
+  return Object.fromEntries(modules)
+}

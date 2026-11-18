@@ -7,6 +7,13 @@
  * what it re-exports. It is served like any other file, and `src/lent-modules.ts` lends it to server code at the same
  * specifier, so a module shared by an extension's server and client imports it one way.
  *
+ * The tower's elements, `/lib-ui/<module>.js`, are the library's browser half for what a page draws as a tag: each module a
+ * file of `src/lib-ui/` that defines its `tower-*` elements as it is imported and exports what each one takes and
+ * fires as data (`elements`), which test/served-exports.json lists. They build the UI SDK's `ui-*` parts inside
+ * themselves, from `/lib-ui/sdk.js`, which is internal: the SDK entries in use bundled once, packages inlined, so a
+ * page has one SDK core. They import only the library and that bundle, and nothing outside `/lib-ui/` imports them but
+ * a renderer or an extension's client.
+ *
  * Every source file under `src/` that a page reaches is served once, at a URL of its own, so a module has one
  * instance on a page however many modules import it: a library module, a core view or a bundled client imports what
  * it reaches under `src/` by URL. Those URLs (`/shared/…`, `/src/…`, and each npm package at `/vendor/…`, and their
@@ -25,6 +32,7 @@ import { GENERIC_FACES, PREFS_DEFAULT, PREF_CHOICES, TERM_SIZES } from '../share
 const SRC = path.join(import.meta.dirname, '..')
 const SHARED = path.join(SRC, 'shared')
 const LIB = path.join(SRC, 'lib')
+const LIB_UI = path.join(SRC, 'lib-ui')
 const REPO = path.join(SRC, '..')
 
 /** Where the library is served, and where server code imports it from. */
@@ -32,6 +40,19 @@ export const LIBRARY = '/lib/'
 
 /** The library's URLs, one per file of `src/lib/`. */
 export const libraryUrls = () => readdirSync(LIB).filter((f) => f.endsWith('.ts')).map((f) => `${LIBRARY}${f.replace(/\.ts$/, '.js')}`).sort()
+
+/** Where the tower's elements are served. */
+export const LIB_UI_PREFIX = '/lib-ui/'
+
+/** The UI SDK as the elements use it, bundled once: internal, imported only by the modules beside it. */
+export const UI_SDK = path.join(LIB_UI, 'sdk.ts')
+
+/** The URLs of the tower's elements, one per module of `src/lib-ui/` but the SDK's bundle. */
+export const libUiUrls = () =>
+  readdirSync(LIB_UI)
+    .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts') && path.join(LIB_UI, f) !== UI_SDK)
+    .map((f) => `${LIB_UI_PREFIX}${f.replace(/\.ts$/, '.js')}`)
+    .sort()
 
 /** Library modules that hold server code: a browser asking for one is told so (`serverOnlyModule`), and takes its types with `import type`. */
 export const SERVER_ONLY = ['/lib/extension.js']
@@ -43,6 +64,7 @@ export const CORE_VIEWS_DIR = path.join(import.meta.dirname, '..', 'views')
 const SOURCE_DIRS: [dir: string, url: string][] = [
   [CORE_VIEWS_DIR, '/x/tower/'],
   [LIB, LIBRARY],
+  [LIB_UI, LIB_UI_PREFIX],
   [SHARED, '/shared/'],
   [SRC, '/src/'],
 ]
@@ -82,8 +104,8 @@ const servedImports = (name: string, served: (file: string) => { path: string; e
 /** Every import of a file transpiled alone stays an import: of a file below `src/` at its URL, of a package at its `/vendor/` URL. */
 const sourceImports = servedImports('source-imports', (file) => ({ path: sourceUrl(file), external: true }), (specifier) => ({ path: vendorUrl(specifier), external: true }))
 
-/** An import of a URL the tower serves stays that URL, whatever a tsconfig path would make of it: the library, `/tower.js` and an extension's client. */
-const SERVED_URL = /^\/(?:lib\/|x\/|tower\.js$)/
+/** An import of a URL the tower serves stays that URL, whatever a tsconfig path would make of it: the library, the tower's elements, `/tower.js` and an extension's client. */
+const SERVED_URL = /^\/(?:lib\/|lib-ui\/|x\/|tower\.js$)/
 const servedUrls: Plugin = {
   name: 'served-urls',
   setup(b) {
@@ -129,11 +151,33 @@ export const serverOnlyModule = (url: string) =>
     return { text: [`throw new Error(${JSON.stringify(said)})`, ...names.map((name) => `export const ${name} = undefined`)].join('\n') + '\n', metafile }
   })
 
+/**
+ * `/lib-ui/sdk.js`: the UI SDK's entries the elements use, its packages inlined and minified, with the stylesheet
+ * beside it as text. The SDK's components share one core for their layers and popups, so it is bundled once, never
+ * reached through `/vendor/`, which bundles each package entry alone.
+ */
+export const uiSdkModule = () =>
+  cached('ui-sdk', () => esm({ entryPoints: [UI_SDK], platform: 'browser', minify: true, target: 'es2023', loader: { '.css': 'text' } }))
+
 /** An npm package's module bundled as one ES module. */
 export const vendorModule = (specifier: string) => cached(`vendor:${specifier}`, () => esm({ entryPoints: [specifier], platform: 'browser' }))
 
 /** A core view or a client's `.ts` module bundled with its own modules and packages, what it reaches below `src/` imported by URL, and the library, `/tower.js` and `/x/` kept as the URLs they are. */
 export const clientModule = (file: string) => cached(`client:${file}`, () => esm({ entryPoints: [file], plugins: [servedUrls, clientImports] }))
+
+/**
+ * A module served at its own URL for the library, the tower's elements, core views and clients that import it: a file
+ * below `src/` transpiled alone, the UI SDK's bundle, a library module of server code as a browser gets it, or an npm
+ * package's module.
+ */
+export function servedModule(url: string): Promise<string> | undefined {
+  if (SERVER_ONLY.includes(url)) return serverOnlyModule(url)
+  const file = urlSource(url)
+  if (file === UI_SDK) return uiSdkModule()
+  if (file !== undefined) return sourceModule(file)
+  const specifier = urlVendor(url)
+  return specifier === undefined ? undefined : vendorModule(specifier)
+}
 
 /** `/frame-keys.js`: a framed page's keys sent to the tower framing it, run by every sandboxed html page and by `/tower.js`. */
 export const FRAME_KEYS = path.join(import.meta.dirname, 'frame-keys.js')
@@ -256,7 +300,7 @@ export const unhashedUrl = (url: string): string | undefined => /^(?<base>\/.+)\
  * one changes. Modules keep importing the unhashed URLs; the map resolves them, so each still has one record.
  */
 export function importMap(modules: Map<string, string>): Record<string, string> {
-  const own = (url: string) => /^\/(lib|shared|src|vendor)\//.test(url)
+  const own = (url: string) => /^\/(lib|lib-ui|shared|src|vendor)\//.test(url)
   return Object.fromEntries([...modules].filter(([url]) => own(url)).map(([url, text]) => [url, hashedUrl(url, text)]))
 }
 
