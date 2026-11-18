@@ -534,6 +534,13 @@ attributes and the mark itself included, or
 `data-owned="children"` to have it update the node's attributes and leave its children; ids inside an owned node take
 no part in matching. The mark is plain html, so a pure function drawing the view can emit it.
 
+Spell each id with `domId(place, key)` of the same module (provisional), as the tower's views do: `<place>:<key>`.
+`place` is words of `[a-z0-9-]` joined by `/` that your code names, saying what the element is and where it is drawn
+(`row`, `tab`); a part of it goes in the place, not after the key (`row/menu`), and a view that can be mounted twice at
+once puts its mount's scope first. `key` comes from your data, never from a position: a subject key (`card:<id>`) or
+a field's name. Find an element by its id with `getElementById`, and never parse an id back into data: read it from a
+`data-` attribute.
+
 ### The tower's elements
 
 `/lib-ui/<module>.js` is the library's half for what a page draws as a tag (API 2.15): importing a module defines its
