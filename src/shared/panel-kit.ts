@@ -49,8 +49,9 @@ export function drawPanel(el: HTMLElement, html: string, texts: Partial<Record<T
 /**
  * Morphs `html` into `el` when it differs from what `el` shows (`morph`): every node the html still describes stays
  * itself, so a text box keeps its text, its caret and its focus, a control keeps its focus, and what scrolls keeps where
- * it was. A control the morph had to make anew gets focus back by its identity (`keepingFocus`). A redraw that changes
- * nothing leaves `el` as it is. @since 2.19
+ * it was. A control the morph had to make anew gets focus back by its identity (`keepingFocus`). A box the morph makes
+ * anew starts from its html: a caller holding its text sets the box's value after. A redraw that changes nothing leaves
+ * `el` as it is. @since 2.19
  */
 export function morphPanel(el: HTMLElement, html: string) {
   const was = painted.get(el)
