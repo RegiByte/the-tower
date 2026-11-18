@@ -6,7 +6,7 @@
   "in": "tower",
   "status": "accepted",
   "date": "2026-10-04",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": [
     "hub/src/shared/model.ts#CollectionType",
     "hub/src/shared/model.ts#projectCollections",
@@ -21,7 +21,8 @@
     "hub/src/shared/shelf-page.ts",
     "hub/src/shared/titles.ts",
     "hub/src/bridge/stores.ts#floorCollections",
-    "hub/src/bridge/stores.ts#ownedRefusal"
+    "hub/src/bridge/stores.ts#ownedRefusal",
+    "hub/src/shared/paths.ts#TOWER_WIDE"
   ]
 }
 ---
@@ -44,7 +45,9 @@ primitives every renderer can reach.
   extension included. Created items are named by the moment they were made, to the second in UTC, and by a slug of
   the `name` `collection/create` was given ([`slugOf`](ref:hub/src/collections.ts#slugOf)), with `-2`, `-3`… for a
   second item of the same second and name: names sort in creation order, a person browsing the directory reads what
-  each holds, and an edit never renames one. Nothing parses an id, so older ids without a slug read alike, and tags
+  each holds, and an edit never renames one. The folder [`_tower`](ref:hub/src/shared/paths.ts#TOWER_WIDE) under
+  the collections root is reserved for the tower-wide collections, those of no one floor: `tower config check`
+  refuses it as a floor id, so `config/add` (and the floors extension through it) never takes it. Nothing parses an id, so older ids without a slug read alike, and tags
   derive from either ([[item-tags]]).
 - [`src/collections.ts`](ref:hub/src/collections.ts) is the only writer the tower has. Writes are staged in a dot
   file and renamed into place, so a reader never sees half a file; a create first claims its name with an exclusive
