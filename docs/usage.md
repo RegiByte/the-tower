@@ -71,8 +71,10 @@ that exact callsign is on duty. The callsign is kept for good, across resumes.
 > "Ask ODIN-07 which branch its fix is on."
 
 A worker reads another's recent prompts and answers with `tower agent <CALLSIGN>`, which says when it left earlier
-turns out, and `tower agent <CALLSIGN> <conversation>` prints every turn, oldest first. It messages a worker by the name `tower agents`
-gives. You see the same in the brief (a worker's last turns) on the tower page.
+turns out, and `tower agent <CALLSIGN> <conversation>` prints every turn, oldest first. A callsign comes back once its
+worker is off duty: `tower callsign <CALLSIGN>` lists every worker that carried it, each with the session id that
+`tower agent <session>` reads it by, and `tower kept` names the conversation each item was kept in. It messages a
+worker by the name `tower agents` gives. You see the same in the brief (a worker's last turns) on the tower page.
 
 A worker's terminal is Claude Code's own screen, so its keys are Claude's: drag to select and Ctrl+C copies (⌘C
 doesn't; Claude also copies as you select unless its `copyOnSelect` setting is off), and Ctrl+V pastes text and images.
