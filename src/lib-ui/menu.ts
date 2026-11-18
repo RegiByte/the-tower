@@ -79,6 +79,9 @@ class TowerMenu extends HTMLElement {
     inner.addEventListener('openchange', (event) => {
       if (!event.defaultPrevented) this.#mark(event.detail.value ? (inner.api.getPayload() as string | undefined) : undefined)
     })
+    inner.addEventListener('payloadchange', (event) => {
+      if (!event.defaultPrevented && inner.open) this.#mark(event.detail.value as string | undefined)
+    })
   }
 
   attributeChangedCallback(name: string, was: string | null, value: string | null) {

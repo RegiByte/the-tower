@@ -148,6 +148,7 @@ window.check = {
     if (seen.open || seen.last?.[1] !== value || seen.marked.length) fail(\`the menu didn't run \${value} and close\`, seen)
     return seen
   },
+  openAt: (i) => (menu.openAt(subjects[i].id, area(i)), true),
   focusButton: (i) => { area(i).querySelector('tower-menu-button button').focus(); return document.activeElement.getAttribute('aria-label') },
   anchored: (i) => {
     const b = area(i).querySelector('tower-menu-button button').getBoundingClientRect()
@@ -222,6 +223,9 @@ const STEPS = (shots: (name: string) => Step[]): Step[] => [
   { rclick: rowPoint(2) },
   { wait: 500 },
   { eval: `check.menuAt('${SUBJECTS[2]!.id}', ${JSON.stringify(rowPoint(2))}, 'Open')` },
+  { eval: 'check.openAt(1)' },
+  { wait: 500 },
+  { eval: `check.menuAt('${SUBJECTS[1]!.id}', null, 'Open')` },
   { key: 'Escape' },
   { wait: 300 },
   { eval: 'check.stop()' },
