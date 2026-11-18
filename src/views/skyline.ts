@@ -110,7 +110,7 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     <dl><dt>A floor</dt><dd>is a project: the directory its workers start in, and the repos they work in.</dd>
       <dt>A worker</dt><dd>is a Claude Code session the tower runs, with a callsign of its own.</dd></dl>
     <div class="starts">${board.floors.map(firstWorkerHtml).join('')}</div>
-    <div class="sub">Then ask it “give me a tour of the tower”: it shows you the tower on your own floors.</div>`
+    <div class="sub">Ask your first worker for a tour of the tower: it shows you the tower on your own floors.</div>`
 
   const helloHtml = () => {
     const waiting = heededWaits(board, { dismissed }).length
