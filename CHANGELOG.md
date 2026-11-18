@@ -12,6 +12,15 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.12.3
+
+A worker gone back to is ready to type (#681, thanks @GlaucoNeves). API unchanged. Nothing to restart beyond the
+tower (`tower update` does it).
+
+- **A worker kept and gone back to has its terminal focused,** as when it first opened. Clicking a worker opened
+  earlier in the sidebar left focus on the link, so its terminal needed a click before typing. A worker left on
+  another tab (Brief, Changes…) keeps the focus where it is.
+
 ## v2.12.2
 
 Pass 3's last polish (#679). API unchanged. Nothing to restart beyond the tower (`tower update` does it).
