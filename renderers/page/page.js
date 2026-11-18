@@ -16,6 +16,7 @@ import { loadTerminalFont } from '/lib/terminal.js'
 import { pressOf, copyTelling, fileButtonsHtml, fileCall, itemsCss, keepingFocus, morphPanel, panelsCss, pressing, pressingAs } from '/lib/view.js'
 import { readViewer, seenMarker, seenOf, VIEWER_KEYS } from '/lib/viewer.js'
 import { ago, esc, plural } from '/lib/words.js'
+import { domId } from '/lib/morph.js'
 import { probedLines } from './clients.js'
 import { HOME, SKYLINE, cardIdOf, floorOfView, hashOf, isHome, located, mainClass, mainViewOf, sameRoom, viewOf } from './view.js'
 import { regions } from './regions.js'
@@ -106,16 +107,16 @@ function render() {
   const waiting = heededWaits(board(), heed()).length
   const offered = heededAsks(board(), heed()).length
   document.title = waiting + offered ? `(${waiting + offered}) The Tower` : 'The Tower'
-  paintOnce($('tally'), `<span class="chip waits ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
-    (offered ? `<span class="chip offered some" tabindex="0" data-tip="${esc(withKeys("what extensions ask of you that you haven't dismissed: the next waiting goes to them after the workers waiting on you", 'next-waiting'))}"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
+  morphPanel($('tally'), `<span class="chip waits ${loudest(waitsOnYou()) ?? 'quiet'} ${waiting ? 'some' : ''}" id="${domId('tally', 'waits')}" tabindex="0" data-tip="${esc(`${WAITING_NAME}: ${WAITING_MEANS}`)}"><span class="lamp"></span><b>${waiting}</b> ${WAITING_NAME}</span>` +
+    (offered ? `<span class="chip offered some" id="${domId('tally', 'offered')}" tabindex="0" data-tip="${esc(withKeys("what extensions ask of you that you haven't dismissed: the next waiting goes to them after the workers waiting on you", 'next-waiting'))}"><span class="lamp"></span><b>${offered}</b> offered</span>` : '') +
     /** @type {Attention[]} */ (['needs', 'ready', 'working', 'quiet', 'broken'])
-      .map((a) => `<span class="chip ${a}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
+      .map((a) => `<span class="chip ${a}" id="${domId('tally', a)}" tabindex="0" data-tip="${esc(`${ATTENTION_NAME[a]}: ${ATTENTION_MEANS[a]}\n\n${ON_DUTY_MEANS}`)}"><span class="lamp"></span><b>${count(a)}</b> ${ATTENTION_NAME[a]}</span>`).join(''))
   const host = lostAt() ? 'unknown' : hostState(board())
-  paintOnce($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
+  morphPanel($('host'), `<span class="host-state ${HOST_ATTENTION[host]}" tabindex="0" data-tip="${esc(HOST_MEANS[host])}"><span class="lamp"></span>${HOST_NAME[host]}</span>`)
   paintStrip()
   $('notes').innerHTML = `${untestedHtml(board()) ?? ''}${layoutNoteHtml()}${asksHtml(board(), heededAsks(board(), heed()).filter((a) => !projectOfKey(board(), a.subject)), pageNow())}`
   paintKeys()
-  paintOnce($('board-sign'), boardSignHtml())
+  morphPanel($('board-sign'), boardSignHtml())
   paintLimits()
   const floors = $('floors')
   // The selected worker's row stays where a move or a click left it while in sight, so a move key's target stays in view.
