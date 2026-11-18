@@ -113,8 +113,8 @@ behavior ([[renderer-is-disposable]]):
   left whole, or with `data-owned="children"` has only its attributes updated, and ids inside it take no part in
   matching, so a mounted view, a frame or a terminal inside drawn html keeps its own nodes. Datastar's morph with
   parts of idiomorph (`THIRD_PARTY.md`); `npm run test:morph` runs its cases in headless Chrome, `test:morph-webkit`
-  in WebKit. A panel draws with it through `morphPanel` beside `drawPanel` ([[shared-panels]]); none does yet, and
-  `drawPanel` still replaces its element's html. What script writes on a drawn node is drawn or owned
+  in WebKit. A panel draws with it through `morphPanel` beside `drawPanel` ([[shared-panels]]): the tower page's Stats
+  does, and the panels still on `drawPanel` replace their element's html. What script writes on a drawn node is drawn or owned
   ([[drawn-or-owned]]).
 - `press.ts`: a control that asks the tower something stays `aria-busy` while its request is in flight, found again
   by its identity in html drawn anew ([`pressing`](ref:hub/src/shared/press.ts#pressing), [[press-feedback]]).
