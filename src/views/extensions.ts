@@ -1,6 +1,6 @@
 import type { Board } from '/lib/board.js'
 import { extensionAnchor, extensionsPanelHtml, extensionsSummary } from '/lib/extensions-panel.js'
-import { closeHtml, type Mount, paintOnce, viewCss } from '/lib/view.js'
+import { closeHtml, type Mount, paintOnce, panelsCss, viewCss } from '/lib/view.js'
 
 /**
  * `tower/extensions`, the board's view of every extension the tower found: each one's state, version, where it is off,
@@ -17,7 +17,7 @@ const STYLE = viewCss(
 )
 
 export const mount: Mount = (host, { board: first, kit, args }) => {
-  host.innerHTML = `<style>${STYLE}</style><div class="shelf-head"></div><div class="extensions"></div>`
+  host.innerHTML = `<style>${STYLE}${panelsCss}</style><div class="shelf-head"></div><div class="extensions"></div>`
   const [head, list] = [host.querySelector('.shelf-head')!, host.querySelector<HTMLElement>('.extensions')!]
 
   /** The extension the view opened on, marked in the list. */
