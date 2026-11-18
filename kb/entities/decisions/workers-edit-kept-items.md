@@ -22,6 +22,7 @@
     "hub/src/bridge/board.ts#keepers",
     "hub/src/shared/launch.ts#grantedDirs",
     "hub/src/shared/launch.ts#towerBrief",
+    "hub/src/shared/paths.ts#keptPaths",
     "hub/src/shared/paths.ts#projectCollectionsPath",
     "hub/extensions/drafts/client/drafts.ts#follow",
     "hub/src/mod/skills/handbook/SKILL.md",
@@ -57,7 +58,8 @@ versions of one idea with nothing saying which was current.
   never on its own judgment that it is done or stale. The brief ([`towerBrief`](ref:hub/src/shared/launch.ts#towerBrief)) and the
   handbook say so. Where the floor has drafts, its extension adds the line that says to keep off-goal ideas and later
   prompts with `tower keep drafts` and carry on ([[brief-first]]).
-- Every spawn and resume grants the project's collections directory as one of the session's
+- Every spawn and resume grants the project's collections directory and the tower-wide one, `_tower`
+  ([`keptPaths`](ref:hub/src/shared/paths.ts#keptPaths)), as the session's
   `additionalDirectories` ([`grantedDirs`](ref:hub/src/shared/launch.ts#grantedDirs)), so an edit there asks no
   permission. The grant is the client's: no host change. A project that has kept nothing yet has no directory; Claude
   starts anyway. Until Claude Code 2.1.326 it was `--add-dir`, which since then asks to trust a directory outside a

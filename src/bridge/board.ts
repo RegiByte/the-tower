@@ -34,7 +34,8 @@ import {
 } from './verbs.ts'
 import { HOOKS } from '../shared/api.ts'
 import type { Adds, BoardAsk, Doors, ExtensionView } from '../shared/extensions.ts'
-import { answeredOn, floorCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
+import { answeredOn, floorCollections, towerCollections, type ExtensionStores, type FloorCollectionType } from './stores.ts'
+import { TOWER_WIDE } from '../shared/model.ts'
 import { checkoutState, mainCheckouts, type CheckoutsRead, type CheckoutState, type MainCheckouts } from './checkouts.ts'
 import { commonBases, cuttable, floorBranches, sharedDefault, floorWorktrees, projectReading, projectReads, projectRefs, readsSince, restoreOf, treeAt, type FirstRead, type FloorBranch, type FloorWorktree, type Occupant, type RepoRead } from './worktrees.ts'
 import { jobsNow, recentJobs, type Job, type JobRecord } from './jobs.ts'
@@ -378,6 +379,11 @@ export type Board = {
   /** Every command's chords by id, the config's `keys` over the keymap's defaults (`keymap.ts`). */
   keys: Keys
   floors: Floor[]
+  /**
+   * The tower-wide collections, those of no one floor, kept under the collections root's `_tower/`: the verbs and
+   * reads name their project `_tower`. @since 2.12
+   */
+  collections: FloorCollection[]
   /** Who waits on you, in the order to go to them. */
   waiting: Wait[]
   /**
@@ -899,6 +905,7 @@ export const boardOf = (view: SystemView, cards: Card[]): Board => {
     keys,
     config: paths.config,
     viewers,
+    collections: collectionsOf(towerCollections(stores), TOWER_WIDE, paths.collections, items, keptBy),
     floors: Object.entries(config.projects).map(([id, { collections: _, worktrees: __, hiring: ___, brief: ____, extensions: _____, capabilities: ______, runtimes: _______, ...project }]) => {
       const git = floorGit(config, id, project, repos, occupants, mainInUse(cards, id), stores)
       const { worktrees, branches, main } = git

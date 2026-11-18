@@ -22,7 +22,9 @@
     "hub/src/shared/titles.ts",
     "hub/src/bridge/stores.ts#floorCollections",
     "hub/src/bridge/stores.ts#ownedRefusal",
-    "hub/src/shared/paths.ts#TOWER_WIDE"
+    "hub/src/shared/model.ts#TOWER_WIDE",
+    "hub/src/bridge/stores.ts#towerCollections",
+    "hub/src/bridge/stores.ts#collectionOn"
   ]
 }
 ---
@@ -45,7 +47,7 @@ primitives every renderer can reach.
   extension included. Created items are named by the moment they were made, to the second in UTC, and by a slug of
   the `name` `collection/create` was given ([`slugOf`](ref:hub/src/collections.ts#slugOf)), with `-2`, `-3`… for a
   second item of the same second and name: names sort in creation order, a person browsing the directory reads what
-  each holds, and an edit never renames one. The folder [`_tower`](ref:hub/src/shared/paths.ts#TOWER_WIDE) under
+  each holds, and an edit never renames one. The folder [`_tower`](ref:hub/src/shared/model.ts#TOWER_WIDE) under
   the collections root is reserved for the tower-wide collections, those of no one floor: `tower config check`
   refuses it as a floor id, so `config/add` (and the floors extension through it) never takes it. Nothing parses an id, so older ids without a slug read alike, and tags
   derive from either ([[item-tags]]).
@@ -70,7 +72,12 @@ primitives every renderer can reach.
   bracketed pastes small enough to land as typed text ([`promptPastes`](ref:hub/src/shared/protocol.ts#promptPastes),
   whose comment says why), then Enter as its own write once the host has written the last paste.
 - An extension may declare collections too, named by its capability ([[extensions]]): they join the floors it is on
-  ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections)). A config entry of the same name is no
+  ([`floorCollections`](ref:hub/src/bridge/stores.ts#floorCollections)). One declared with `scope: "system"` (since
+  2.12) is a tower-wide collection instead, on no floor: its items are at `collections/_tower/<collection>/`, the board
+  carries it in `board.collections` ([`towerCollections`](ref:hub/src/bridge/stores.ts#towerCollections)), the verbs,
+  reads and `ctx.collections` name its project `_tower` ([`collectionOn`](ref:hub/src/bridge/stores.ts#collectionOn)),
+  and a worker's `keep`, `kept`, `read` and `unkeep` reach it after the floor's. A config entry of its id is refused,
+  so an id names one collection. A config entry of the same name is no
   conflict: its `label` and `description` win, since they are what workers read. One the extension declares `owned`
   is written only through its owner's verbs: `collection/create`, `write`, `restore` and `delete` (and so `tower
   keep`) answer `refused`, naming its create door ([`ownedRefusal`](ref:hub/src/bridge/stores.ts#ownedRefusal)),
