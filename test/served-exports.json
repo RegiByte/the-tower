@@ -2675,6 +2675,9 @@
     "/lib-ui/combobox.js": {
       "tower-combobox": {
         "attributes": {
+          "custom": {
+            "since": "2.17"
+          },
           "disabled": {
             "since": "2.15"
           },

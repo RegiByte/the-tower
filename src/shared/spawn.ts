@@ -1,6 +1,6 @@
 import type { Board, Floor } from '../bridge/board.ts'
 import type { Call, Replies, Verbs } from './api.ts'
-import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, effortOptions, formFields, modelNote, promptPlaceholder, providerHtml, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
+import { branchPlaceholder, callsignRefusal, cutLine, cutNameOf, effortChoices, formFields, modelNote, promptPlaceholder, providerHtml, spawnCall, spawnForm, spawnFormHtml, spawnSummaryHtml, type SpawnForm } from './cards.ts'
 import { commandOf } from './keymap.ts'
 import { tagOf } from './tags.ts'
 import { loop, type Handlers, type Loop, type StateEffect } from './loop.ts'
@@ -128,7 +128,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
     const s = machine.state()
     return floorOf(s.t === 'closed' ? '' : s.project)!
   }
-  /** The runtime's part of the form, drawn again when another runtime is picked; its effort suggestions and model note follow the model. */
+  /** The runtime's part of the form, drawn again when another runtime is picked; its efforts and model note follow the model. */
   const syncProvider = (f: Floor, v: SpawnForm) => {
     const runtime = io.board().runtimes[v.runtime]
     const part = dialog.querySelector<HTMLElement>('[data-provider]')!
@@ -137,8 +137,7 @@ export function wireSpawn<D, I, K extends KeptDraft>(dialog: HTMLDialogElement, 
       prompt().placeholder = promptPlaceholder(runtime.label)
       return spawnForm(f, new FormData(form()))
     }
-    const efforts = dialog.querySelector('#spawn-efforts')
-    if (efforts) efforts.innerHTML = effortOptions(runtime, v.model)
+    dialog.querySelector('tower-combobox[name=effort]')!.setAttribute('options', JSON.stringify(effortChoices(runtime, v.model)))
     const note = dialog.querySelector('[data-model-note]')
     if (note) note.textContent = modelNote(runtime, v.model)
     return v
