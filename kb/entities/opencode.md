@@ -4,7 +4,7 @@
   "name": "opencode",
   "summary": "The opencode v2 TUI, the tower's second runtime: one standalone server per session in a real PTY, configured through its env and read through the tower's plugin on its event bus.",
   "in": "tower",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": ["hub/src/shared/opencode.ts#OPENCODE_TESTED", "hub/src/shared/opencode.ts#OPENCODE_SURFACES", "hub/src/shared/launch-opencode.ts", "hub/src/mod/opencode/tui.ts", "hub/src/opencode-state.ts#sweepOpencodeStates", "hub/src/bridge/runtimes/opencode.ts#normalizeOpencode", "hub/test/opencode.test.ts", "hub/src/doctor.ts#readiness", "hub/src/shared/spawn-form.ts#modelNote"],
   "links": [
     { "to": "tower-mod", "verb": "triggers", "carries": "bus events to the tower's opencode plugin (session.*, permission.*, form.*, mcp.status.changed) and its tool, shell and session context hooks" }
