@@ -1,4 +1,4 @@
-import { type Board, can, type Card, type Floor, floorSubject } from '/lib/board.js'
+import { type Board, boardSubject, can, type Card, type Floor, floorSubject } from '/lib/board.js'
 import { gistLine, heededWaits, HOST_MEANS, loudest, statusName, whyNot } from '/lib/cards.js'
 import { skyAt } from '/lib/design.js'
 import { chordLabel } from '/lib/keys.js'
@@ -9,7 +9,8 @@ import { paintOf } from '../shared/view-parts.ts'
 
 /**
  * `tower/skyline`, the board's view: a building per floor with a window per recent worker, under a sky that follows
- * the viewer's clock, and what waits on them; the welcome on a tower no worker has run on.
+ * the viewer's clock, and what waits on them; the welcome on a tower no worker has run on. Its greeting holds the
+ * region `board.skyline`, where the commands extensions offer on the board are drawn, in the welcome as every day.
  */
 
 const ID = 'tower/skyline'
@@ -41,6 +42,9 @@ const STYLE = `@keyframes beacon { 0%, 60%, 100% { opacity: .2; } 70%, 85% { opa
   & .welcome .starts { display: flex; flex-wrap: wrap; gap: var(--sp-s); margin-top: var(--sp-l); }
   & .welcome .starts button { min-height: var(--control); padding: 0 var(--sp-l); }
   & .welcome .sub { margin-top: var(--sp-m); }
+  & .hello .acts { display: flex; flex-wrap: wrap; gap: var(--sp-s); }
+  & .hello .acts:not(:empty) { margin-top: var(--sp-l); }
+  & .hello .acts button { min-height: var(--control); padding: 0 var(--sp-l); }
   & .hello .clock { color: var(--faint); font-size: var(--fs-s); margin-top: var(--sp-2xs); font-variant-numeric: tabular-nums; }
   & .city { position: relative; margin-top: auto; display: flex; align-items: flex-end; justify-content: center; gap: min(34px, 2vw); padding: 0 var(--sp-2xl); }
   & .building { flex: 0 1 196px; min-width: 0; container-type: inline-size; display: flex; flex-direction: column; align-items: center; }
@@ -102,12 +106,11 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     return can(f, 'spawn') ? `<button class="primary" data-spawn="${esc(f.id)}">${esc(label)}</button>` : ''
   }
 
-  const welcomeHtml = () => `<div class="hello welcome"><div class="big">Welcome to the tower</div>
+  const welcomeHtml = () => `<div class="big">Welcome to the tower</div>
     <dl><dt>A floor</dt><dd>is a project: the directory its workers start in, and the repos they work in.</dd>
       <dt>A worker</dt><dd>is a Claude Code session the tower runs, with a callsign of its own.</dd></dl>
     <div class="starts">${board.floors.map(firstWorkerHtml).join('')}</div>
-    <div class="sub">Then ask it “give me a tour of the tower”: it shows you the tower on your own floors.</div>
-    <div class="clock"></div></div>`
+    <div class="sub">Then ask it “give me a tour of the tower”: it shows you the tower on your own floors.</div>`
 
   const helloHtml = () => {
     const waiting = heededWaits(board, { dismissed }).length
@@ -115,11 +118,13 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     const big = waiting ? `<b>${waiting}</b> waiting on you` : working ? `${working} at work` : 'all quiet'
     const next = board.keys['next-waiting']
     const sub = waiting && next?.length ? `press ${next.map(chordLabel).join(' or ')} to go to the next one` : !board.hostUp ? `click a window to read it · ${esc(whyNot(board, 'spawn') ?? '')}` : 'click a window, or + on a floor to start a session'
-    return `<div class="hello"><div class="big">${big}</div><div class="sub">${sub}</div><div class="clock"></div></div>`
+    return `<div class="big">${big}</div><div class="sub">${sub}</div>`
   }
 
-  host.innerHTML = `<style>${STYLE}</style><div class="stars"></div><div class="orb"></div><div style="display: contents"></div><div style="display: contents"></div>`
+  host.innerHTML = `<style>${STYLE}</style><div class="stars"></div><div class="orb"></div>
+    <div class="hello"><div class="words"></div><div class="acts"></div><div class="clock"></div></div><div style="display: contents"></div>`
   const [hello, city] = [...host.children].slice(-2) as HTMLElement[]
+  const acts = kit.region(hello.querySelector('.acts')!, 'board.skyline', boardSubject(board))
 
   /** The sky follows the viewer's clock, as Tower 3D's does: the sun crosses by day, the moon hangs at night. */
   const paintSky = () => {
@@ -137,7 +142,9 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
   }
 
   const draw = () => {
-    paintOnce(hello, firstRun(board) ? welcomeHtml() : helloHtml())
+    const welcome = firstRun(board)
+    hello.classList.toggle('welcome', welcome)
+    paintOnce(hello.querySelector('.words')!, welcome ? welcomeHtml() : helloHtml())
     const heeded = new Set(heededWaits(board, { dismissed }).map((w) => w.id))
     paintOnce(city, `<div class="city">${board.floors.map((f, i) => buildingHtml(f, i, heeded)).join('')}</div><div class="street"></div>`)
     paintSky()
@@ -168,10 +175,12 @@ export const mount: Mount = async (host, { tower, board: first, kit }) => {
     update(next) {
       board = next
       lost = false
+      acts.update(boardSubject(board))
       draw()
     },
     close() {
       clearInterval(clock)
+      acts.close()
       offStore()
       offError()
     },
