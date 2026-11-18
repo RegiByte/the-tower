@@ -3983,7 +3983,7 @@
         },
         "pid": {
           "type": "number",
-          "description": "Its process's id, which is also its process group: what it starts stays in the group unless it leaves it."
+          "description": "Its process's id, which is also its process group: what it starts stays in the group unless it leaves it. Only while `state` is `running`: once the job is over, the system may give the number to another process."
         },
         "owner": {
           "type": "string"
