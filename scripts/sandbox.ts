@@ -43,6 +43,9 @@
  *     http://host/hooks/<id>                                                                     a release untested
  *   SH
  *
+ * A session at work, its turns, tool calls and messages arriving on cue while a page is open: `tool:act`
+ * (`scripts/act.ts`), in place of hand-posted hook events, which break a session's fold when they miss a field.
+ *
  * Acting as a worker on the sandbox: `tower keep`, `tower show` and a review's `resolve` need a worker session, which
  * `run` unsets. Spawn one and name it, with no hand-edited config:
  *

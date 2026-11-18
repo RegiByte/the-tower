@@ -51,7 +51,8 @@
     "tool:webkit": "tsx scripts/webkit.ts",
     "tool:lib-ui": "tsx scripts/lib-ui-check.ts",
     "tool:extension-shots": "tsx scripts/extension-shots.ts",
-    "tool:stress": "tsx scripts/stress.ts"
+    "tool:stress": "tsx scripts/stress.ts",
+    "tool:act": "tsx scripts/act.ts"
   },
   "dependencies": {
     "@fontsource/atkinson-hyperlegible": "^5.3.0",
