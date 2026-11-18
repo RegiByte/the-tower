@@ -5,6 +5,7 @@ import { subjectMenu } from '/lib/palette.js'
 /**
  * @import { Board } from '/lib/board.js'
  * @import { MenuLine, MenuPick, MenuSub, Opened, SubjectMenu } from '/lib/palette.js'
+ * @import { Press } from '/lib/view.js'
  */
 
 /**
@@ -12,7 +13,7 @@ import { subjectMenu } from '/lib/palette.js'
  *   board: () => Board,
  *   opened: () => Opened[],
  *   origins: () => Record<string, string>,
- *   pick: (does: MenuPick, at: HTMLElement) => void,
+ *   pick: (does: MenuPick, press: Press) => void,
  *   closed: () => void,
  * }} SubjectMenusDeps
  */
@@ -31,9 +32,15 @@ const itemsOf = (m) =>
 const linesOf = (m) => new Map(m.groups.flatMap((g) => g.lines.flatMap((l) => ('lines' in l ? /** @type {MenuSub} */ (l).lines : [/** @type {MenuLine} */ (l)]))).map((l) => [l.id, l]))
 
 /**
+ * The press picking `line` of the menu of the subject `key` makes: keyed by the line on that subject, so a second pick
+ * is ignored while it is in flight, the subject's areas busy meanwhile. @param {string} key @param {MenuLine} line @returns {Press}
+ */
+const linePress = (key, line) => ({ key: `menu ${key} ${line.id}`, marks: `tower-menu-area[payload="${CSS.escape(key)}"]` })
+
+/**
  * The page's one subject menu, drawn once at the end of the body, where no redraw reaches it: filled from
  * `subjectMenu` for the subject it opens for, as the board and the page's open views stand then, and a chosen line run
- * through `pick`, busy on the subject's area. `closed` is told as it closes. Answers whether it is open.
+ * through `pick` as its press (`linePress`). `closed` is told as it closes. Answers whether it is open.
  * @param {SubjectMenusDeps} deps
  */
 export function subjectMenus({ board, opened, origins, pick, closed }) {
@@ -52,9 +59,7 @@ export function subjectMenus({ board, opened, origins, pick, closed }) {
   /** @param {Event} e */
   const run = (e) => {
     const line = filled.lines.get(/** @type {CustomEvent<{ value: string }>} */ (e).detail.value)
-    if (!line) return
-    const area = document.querySelector(`tower-menu-area[payload="${CSS.escape(filled.key)}"]`)
-    pick(line.does, /** @type {HTMLElement} */ (area ?? menu))
+    if (line) pick(line.does, linePress(filled.key, line))
   }
   menu.addEventListener('action', run)
   menu.addEventListener('checkedchange', run)

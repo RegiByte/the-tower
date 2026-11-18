@@ -7,7 +7,7 @@
 import type { Board, Card, CardShown, Floor } from '../bridge/board.ts'
 import { actionWords, addedActions, base, can, cardSubject, commandName, floorSubject, pastCount, shownHref, shownSubject, shownTitle } from './cards.ts'
 import { PANES } from './keymap.ts'
-import type { Pick } from './palette.ts'
+import type { ActionPick, AddedPick, GoTarget, OpenPick } from './palette.ts'
 import type { Subject } from './subjects.ts'
 import { VERB_WORDS, verbHint, verbId, type VerbId } from './verb-words.ts'
 
@@ -20,8 +20,14 @@ export type DirPick = { t: 'dir'; verb: 'shell' | 'editor'; project: string; dir
 /** A page of the web, opened beside the renderer. */
 export type LinkPick = { t: 'link'; href: string }
 
-/** What picking a line of a subject's menu does: a palette entry's pick, or one of the menu's own. */
-export type MenuPick = Pick | DisplayPick | DirPick | LinkPick
+/** Going where the palette goes: a worker, a floor, a shelf page or a draft. */
+export type GoPick = { t: 'go'; target: GoTarget }
+
+/**
+ * What picking a line of a subject's menu does, tagged by `t`: a verb the board offers, an extension's action, a view
+ * opened or a place gone to, as the palette's entries do; or one of the menu's own.
+ */
+export type MenuPick = ActionPick | AddedPick | OpenPick | GoPick | DisplayPick | DirPick | LinkPick
 
 /**
  * One line: its `id`, unique in the menu; `open`, on what can be open, whether the renderer has it open (a tick),
