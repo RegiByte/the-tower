@@ -54,8 +54,8 @@ const conversationVerbs = (live: boolean, resumable: boolean, resumedBy: Session
 
 /**
  * `atPrompt`: it takes a prompt now (`promptRefusal`). `awaitsResume`: stranded, on duty until its latest conversation
- * is resumed or it is let go. `cutOff`: stranded mid-turn. A running worker offers its `brief` before its first turn, so
- * a composer there can send the first prompt; a session that ended offers it while it has conversations to read.
+ * is resumed or it is let go. `cutOff`: stranded mid-turn. Every worker offers its `brief`, empty until its first
+ * turn, so every card has the same tabs whatever its state and a composer there can send a running worker's first prompt.
  */
 const cardVerbs = (status: Status, atPrompt: boolean, resumable: boolean, conversations: { resumedBy?: SessionRef }[], leftovers: number, awaitsResume: boolean, cutOff: boolean): CardVerb[] => {
   const live = isLive(status)
@@ -66,7 +66,7 @@ const cardVerbs = (status: Status, atPrompt: boolean, resumable: boolean, conver
     ...(atPrompt ? ['prompt' as const] : []),
     ...(latest ? conversationVerbs(live, resumable, latest.resumedBy) : []),
     ...(awaitsResume && cutOff ? ['carry-on' as const] : []),
-    ...(live || conversations.length > 0 ? ['brief' as const] : []),
+    'brief',
     ...(leftovers > 0 ? ['reap' as const] : []),
     ...(live ? ['kill' as const] : []),
     ...(awaitsResume ? ['let-go' as const] : []),

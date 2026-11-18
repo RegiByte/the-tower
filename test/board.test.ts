@@ -196,11 +196,12 @@ test('a worker reused with /clear holds both conversations, each resumable on it
   )
 })
 
-test('sessions that never held a conversation resume nothing', () => {
+test('sessions that never held a conversation resume nothing, and offer their Brief as every worker does', () => {
   const fresh = fixture('api-error')
   const unprompted = (id: string, startedAt: number) => ({ header: { ...fresh.header, id, startedAt }, events: fresh.events.filter((e) => e[0] < 14) })
   const cards = cardsOf([unprompted('first', 1000), unprompted('second', 2000)])
   assert.deepEqual(cards.map((c) => c.conversations), [[], []])
+  assert.deepEqual(cards.map((c) => verbsOf(c)), [['brief'], ['brief']])
 })
 
 test('verbs: a live session is driven and killed, takes a prompt at its composer and at its prompt, and is briefed from its start', () => {
