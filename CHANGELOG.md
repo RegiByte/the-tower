@@ -12,6 +12,23 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.10.0
+
+Extensions get a place of their own, and a job on the board carries its process (#661, #662, #663, #664). API 2.11.
+Nothing to restart beyond the tower (`tower update` does it).
+
+- **Extensions, off the quota badge.** The sidebar's foot has an Extensions entry, marked when an extension isn't
+  running. Hovering or focusing it lists every extension with its state, each problem written out; a click opens the
+  Extensions view in the main pane: each extension's version, whether it is bundled or yours, what it offers, and
+  each problem with its fix. The quota badge keeps only rate limits.
+- **For renderers:** `/lib/extensions-panel.js` draws the same panel from `board.extensions` in any renderer, and
+  the core's `tower/extensions` view mounts it (API 2.11).
+- **A job's pid.** Each job on `board.jobs` and `GET /jobs` carries its `pid`, which is also its process group, so
+  an extension can find what a job runs on the machine. Read it only while the job's `state` is `running`: once it
+  is over, the system may give the number to another process (API 2.10). Thanks, Felipe.
+- **Untested runtimes,** when more than one is, each take a line of their own in the page's notes and Tower 3D's
+  HUD. Thanks, Felipe.
+
 ## v2.9.0
 
 Your own callsigns can join the tower's instead of replacing them (#659). Nothing to restart beyond the tower
