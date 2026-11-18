@@ -4,6 +4,7 @@
  * client that draws it, imports the element's module (`/lib-ui/combobox.js`, `/lib-ui/menu.js`) once.
  */
 import { esc } from './format.ts'
+import { domId } from './dom-id.ts'
 
 /** An option of a `<tower-combobox>`: one to choose, a named group of them, or a line between them. */
 export type ComboboxOption =
@@ -11,10 +12,13 @@ export type ComboboxOption =
   | { type: 'group'; label: string; items: ComboboxOption[] }
   | { type: 'separator' }
 
-/** What a `<tower-combobox>` draws: its options, the value chosen (none when absent) and its words. */
+/**
+ * What a `<tower-combobox>` draws: its options, the value chosen (none when absent) and its words. Its id is
+ * `domId(place, name)`, `name` the field it submits.
+ */
 export type Combobox = {
-  id?: string
-  name?: string
+  place: string
+  name: string
   label: string
   placeholder?: string
   empty?: string
@@ -30,7 +34,7 @@ const attribute = (name: string, value: string | boolean | null | undefined) =>
 
 /** A `<tower-combobox>`: a text box filtering `options` to choose one, the value kept by its `valuechange` written back as `value`. */
 export const comboboxHtml = (c: Combobox): string =>
-  `<tower-combobox${attribute('id', c.id)}${attribute('name', c.name)}${attribute('label', c.label)}${attribute('placeholder', c.placeholder)}` +
+  `<tower-combobox${attribute('id', domId(c.place, c.name))}${attribute('name', c.name)}${attribute('label', c.label)}${attribute('placeholder', c.placeholder)}` +
   `${attribute('empty', c.empty)}${attribute('value', c.value)}${attribute('options', JSON.stringify(c.options))}` +
   `${attribute('disabled', c.disabled)}${attribute('required', c.required)} data-owned="children"></tower-combobox>`
 
@@ -42,15 +46,16 @@ export const subjectMenuHtml = (): string => `<tower-menu id="${SUBJECT_MENU}" d
 
 /**
  * A subject's own markup, `html`, made the place its menu opens: a right-click, the context-menu key on what is focused
- * in it, or a long press opens the subject menu for `key` (a subject key, `card:<id>`) at the pointer. `id` names it
- * among the page's elements, from the subject's key and where it is drawn, so a redraw finds it again.
+ * in it, or a long press opens the subject menu for `key` (a subject key, `card:<id>`) at the pointer. Its id is
+ * `domId(place, key)`, `place` naming where it is drawn (`row`), so a redraw finds it again.
  */
-export const subjectAreaHtml = (id: string, key: string, html: string): string =>
-  `<tower-menu-area id="${esc(id)}" for="${SUBJECT_MENU}" payload="${esc(key)}">${html}</tower-menu-area>`
+export const subjectAreaHtml = (place: string, key: string, html: string): string =>
+  `<tower-menu-area id="${esc(domId(place, key))}" for="${SUBJECT_MENU}" payload="${esc(key)}">${html}</tower-menu-area>`
 
-/** The ⋯ button that opens the subject menu for `key` from a press or the keyboard, named `label`; `id` as an area's. */
-export const subjectButtonHtml = (id: string, key: string, label: string): string =>
-  `<tower-menu-button id="${esc(id)}" for="${SUBJECT_MENU}" payload="${esc(key)}" label="${esc(label)}" data-owned="children"></tower-menu-button>`
+/** The ⋯ button that opens the subject menu for `key` from a press or the keyboard, named `label`; its id is `domId(<place>/menu, key)`. */
+export const subjectButtonHtml = (place: string, key: string, label: string): string =>
+  `<tower-menu-button id="${esc(domId(`${place}/menu`, key))}" for="${SUBJECT_MENU}" payload="${esc(key)}" label="${esc(label)}" data-owned="children"></tower-menu-button>`
 
-/** A subject's markup, `row`, as an area with its ⋯ button, named `label`, drawn at its end; the button's id is the area's, `/menu` after it. */
-export const subjectHtml = (id: string, key: string, label: string, row: string): string => subjectAreaHtml(id, key, row + subjectButtonHtml(`${id}/menu`, key, label))
+/** A subject's markup, `row`, as an area at `place` with its ⋯ button, named `label`, drawn at its end. */
+export const subjectHtml = (place: string, key: string, label: string, row: string): string =>
+  subjectAreaHtml(place, key, row + subjectButtonHtml(place, key, label))

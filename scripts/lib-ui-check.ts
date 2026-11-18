@@ -71,9 +71,9 @@ const fruits = ['Apple', 'Apricot', 'Banana', 'Cherry', 'Peach', 'Pear', 'Plum']
 
 let fruit = null
 let tick = 0
-const row = (s) => subjectHtml(\`row-\${s.id}\`, s.id, \`\${s.name}: menu\`, \`<span class="name">\${s.name}</span><span class="age">\${tick % 60}s</span>\`)
+const row = (s) => subjectHtml('row', s.id, \`\${s.name}: menu\`, \`<span class="name">\${s.name}</span><span class="age">\${tick % 60}s</span>\`)
 const view = () => \`<div class="head">render \${tick}</div>
-\${comboboxHtml({ id: 'fruit', name: 'fruit', label: 'Fruit', placeholder: 'Search fruits', empty: 'No fruit', value: fruit, options: fruits })}
+\${comboboxHtml({ place: 'check', name: 'fruit', label: 'Fruit', placeholder: 'Search fruits', empty: 'No fruit', value: fruit, options: fruits })}
 <div id="rows">\${subjects.map(row).join('')}</div>
 \${subjectMenuHtml()}\`
 
@@ -93,7 +93,7 @@ const itemsOf = (id) => {
 }
 
 const menu = document.getElementById('subject-menu')
-const combo = document.getElementById('fruit')
+const combo = document.getElementById('check:fruit')
 const log = []
 root.addEventListener('payloadchange', (e) => { log.push(['payload', e.detail.value]); menu.items = itemsOf(e.detail.value) })
 root.addEventListener('openchange', (e) => log.push([e.target.localName, 'open', e.detail.value, e.detail.reason]))

@@ -281,7 +281,7 @@ export function regions(deps) {
       const from = shownFrom(card.lineage, s)
       const what = `${card.callsign} showed ${s.target} · ${ago(Date.now() - s.at)} ago${from ? ` · in ${from.label}` : ''}`
       const subject = shownSubject(card, s).key
-      return subjectAreaHtml(`tab:${subject}`, subject, `<button class="pane-tab shown-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
+      return subjectAreaHtml('tab', subject, `<button class="pane-tab shown-tab ${on ? 'on' : ''}" role="tab" aria-selected="${on}" tabindex="${on ? 0 : -1}" aria-controls="${panel}" data-tip="${esc(what)}" data-tab="${esc(key)}">` +
         `<span class="shown-name">${s.kind === 'link' ? `${ICON.remote} ` : ''}${esc(shownTitle(s))}</span>${from ? `<small>${from.mark}</small>` : ''}` +
         (on ? heldHtml('shown.tab', shownSubject(card, s), iconActionsHtml) : '') +
         (on && s.kind !== 'link' ? `<span class="icon-btn" data-out="${esc(shownHref(s))}" aria-hidden="true" data-tip="open in a browser tab">${ICON.remote}</span>` : '') +
@@ -395,7 +395,7 @@ export function regions(deps) {
       const showing = all.find((t) => t.key === open)?.showing
       if (!showing) return ''
       const subject = shownSubject(card, showing)
-      const menu = subjectButtonHtml(`head:${subject.key}/menu`, subject.key, `${shownTitle(showing)}: menu`)
+      const menu = subjectButtonHtml('head', subject.key, `${shownTitle(showing)}: menu`)
       return `<span class="shown-adds" role="group" aria-label="on ${esc(shownTitle(showing))}">${heldHtml('shown.head', subject, actionsHtml)}${menu}</span>`
     }
 

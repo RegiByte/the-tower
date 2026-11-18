@@ -552,7 +552,7 @@ client, then draw the tags as html:
 import '/lib-ui/combobox.js'
 import { comboboxHtml } from '/lib/elements.js'
 
-host.innerHTML = comboboxHtml({ name: 'model', label: 'Model', value: 'opus', options: [{ value: 'opus', label: 'Opus' }, { value: 'haiku', label: 'Haiku' }] })
+host.innerHTML = comboboxHtml({ place: 'my-form', name: 'model', label: 'Model', value: 'opus', options: [{ value: 'opus', label: 'Opus' }, { value: 'haiku', label: 'Haiku' }] })
 host.addEventListener('valuechange', (e) => keep(e.detail.value))
 ```
 
@@ -567,12 +567,14 @@ host.addEventListener('valuechange', (e) => keep(e.detail.value))
   state, `tower-menu-area:state(open)`. A `<tower-menu-area>` is not owned: its children are your row.
 - **Events bubble** from the element, so a view listens on its own host. `preventDefault()` on a change refuses it.
 - **A value written back is quiet.** `<tower-combobox>` reports a choice with `valuechange`; keep it and render it as
-  `value`, which applies with no event.
+  `value`, which applies with no event. Its id is `domId(place, name)`. A form whose label holds more than words (a
+  hint, a mark) draws it apart, with an id, and names it in `labelledby`: the combobox then draws no label of its own.
 - **One subject menu per page.** Draw `subjectMenuHtml()` once, outside anything that redraws, and wrap each
-  subject's markup with `subjectHtml(id, key, label, row)`: a right-click, the context-menu key or a long press on the
+  subject's markup with `subjectHtml(place, key, label, row)`: a right-click, the context-menu key or a long press on the
   row opens the menu at the pointer, and the ⋯ button it draws at the row's end opens it from the keyboard (macOS sends
   no `contextmenu` for Shift+F10). `subjectAreaHtml` and `subjectButtonHtml` draw the two apart, for a row whose button
-  sits elsewhere in it. `id` names each among the page's elements, from the subject's key and where it is drawn. On
+  sits elsewhere in it. Each derives its id from `place`, where it is drawn, and `key`: the area's `domId(place, key)`,
+  the button's `domId(<place>/menu, key)`. On
   `payloadchange`, set the menu's `items` for `detail.value`, the subject's key; on `action`, run `detail.value`, and on
   `checkedchange` too for a checkbox item. `subjectMenu(board, key, context)` of `/lib/palette.js` says what the core's
   subjects offer (`floor:<project>`, `card:<id>`, `shown:<card>/<at>`), each line's `does` run as a palette entry's is.
