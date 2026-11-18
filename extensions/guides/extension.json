@@ -1,0 +1,38 @@
+{
+  "id": "guides",
+  "version": "1.0",
+  "title": "Guides",
+  "description": "The learning center: short guides to the tower's gestures, its own and any extension's, read in a view of their own, and a guided tour by a worker.",
+  "requires": { "tower": "2.14" },
+  "client": "client",
+  "collections": {
+    "guides": {
+      "label": "Guides",
+      "description": "How to do one thing in the tower, one markdown file each: a `# Title` line, a ```json header with keywords, category and order, then the body. Images sit beside it.",
+      "scope": "system"
+    }
+  },
+  "items": { "guides": "guides" },
+  "commands": {
+    "open": {
+      "module": "commands.js",
+      "export": "openCenter",
+      "on": ["board"],
+      "words": { "label": "Learning center", "hint": "guides to the tower's gestures, searchable", "icon": "help" }
+    }
+  },
+  "views": {
+    "center": {
+      "module": "center.js",
+      "export": "mount",
+      "on": ["board"],
+      "scales": ["pane"],
+      "needs": ["display", "run", "toast"],
+      "words": { "label": "Learning center", "hint": "the tower's guides by category, searchable by keyword" }
+    }
+  },
+  "guidance": {
+    "brief": "Guides to the tower's gestures: `tower kept guides` lists them, `tower read <tag>` reads one; teach from them when the user asks how to do something in the tower.",
+    "full": "The `guides` collection is tower-wide: the guides this extension ships, those other extensions contribute, and the user's own. Each is markdown: a `# Title` line, a ```json header (`keywords`, `category`, `order`), then the body. `tower kept guides` lists them and `tower read <tag>` prints one. A guide you write for the user goes in with `tower keep guides`, in the same format. When the user asks for a tour, the `tower:guide` skill says how to give one."
+  }
+}
