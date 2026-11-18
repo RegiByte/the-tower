@@ -1,6 +1,6 @@
 import { failRead, failureOf, landRead, loop, noReads, reading, refreshRead, stepped, timers, valueOf } from '/lib/machine.js'
 import { STATS_ALL, statsHtml, statsQuery } from '/lib/stats.js'
-import { drawPanel } from '/lib/view.js'
+import { morphPanel } from '/lib/view.js'
 import { floorOfView } from './view.js'
 import { $, toast } from './kit.js'
 
@@ -85,7 +85,7 @@ export async function stats(deps) {
     const tabs = [...(floor ? [{ id: floor.id, label: floor.name }] : []), { id: STATS_ALL, label: 'All floors' }]
     const projects = board().floors.map((f) => ({ id: f.id, label: f.name, color: f.color }))
     const held = valueOf(reads.held[STATS_SLOT])
-    drawPanel($('stats'), statsHtml({ stats: held?.stats, at: held?.at, failed: failureOf(reads.held[STATS_SLOT]), range: viewer().statsRange, projects, tabs, scope: all || !floor ? STATS_ALL : floor.id }), {})
+    morphPanel($('stats'), statsHtml({ stats: held?.stats, at: held?.at, failed: failureOf(reads.held[STATS_SLOT]), range: viewer().statsRange, projects, tabs, scope: all || !floor ? STATS_ALL : floor.id }))
   }
 
   /** @type {Loop<SideState, SideEvent>} */
