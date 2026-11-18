@@ -1,5 +1,6 @@
 import { type Floor, type FloorCollection, itemKey, workerIn } from '/lib/board.js'
-import { ICON, type Mount, foldTrayHtml, itemsCss, openItemOf } from '/lib/view.js'
+import { domId } from '/lib/morph.js'
+import { ICON, type Mount, foldTrayHtml, itemsCss, morphPanel, openItemOf } from '/lib/view.js'
 import { esc, noun, plural } from '/lib/words.js'
 import { floorThreadsOf } from './panel.ts'
 import { landedThreads, REVIEWS } from './reviews.ts'
@@ -39,19 +40,18 @@ export const mount: Mount = (host, { board: first, subject, kit, state }) => {
   const landedKey = `landed.${subject.key}`
   let unfolded = false
   let landedOpen = false
-  let painted = ''
 
   const threadsHtml = () => {
     const rows = floorThreadsOf(floor()).map((t) => {
       const meta = [t.tag, plural(t.messages, 'note'), t.last && `last ${t.last.author}`, t.landed && 'landed'].filter(Boolean).join(' · ')
-      return `<button class="thread-row" data-thread="${esc(t.checkout)}" data-key="${esc(t.key)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}">${ICON.thread}<span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
+      return `<button class="thread-row" id="${esc(domId('thread', t.key))}" data-thread="${esc(t.checkout)}" data-key="${esc(t.key)}" data-tip="${esc(`${t.id}${t.last ? `\nn${t.last.n} by ${t.last.author}, ${t.last.at}` : ''}`)}">${ICON.thread}<span class="t">${esc(t.checkout)}</span><span class="meta">${esc(meta)}</span></button>`
     })
     const landed = landedThreads(collection.items)
     const open = openItemOf(kit.location?.(), project, REVIEWS)
     const filed = !landed.length
       ? ''
       : `<button class="landed-fold" data-landed aria-expanded="${landedOpen}" data-tip="threads Tidy filed once their work landed: read them here">${ICON.caret} ${landed.length} landed</button>
-    ${landedOpen ? landed.map((t) => `<button class="kept-row ${open === t.id ? 'sel' : ''}" data-filed="${esc(t.id)}" data-tip="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
+    ${landedOpen ? landed.map((t) => `<button class="kept-row ${open === t.id ? 'sel' : ''}" id="${esc(domId('kept', `${project}|${REVIEWS}|${t.id}`))}" data-filed="${esc(t.id)}" data-tip="${esc(t.id)}"><span class="t">${esc(t.checkout)}</span><span class="meta">${esc(`${t.tag} · landed ${t.landed}`)}</span></button>`).join('') : ''}`
     return `<div class="tray-open threads"><div class="threads-head eyebrow">Review threads</div>${rows.join('') || '<div class="threads-none">none open</div>'}${filed}</div>`
   }
 
@@ -61,7 +61,7 @@ export const mount: Mount = (host, { board: first, subject, kit, state }) => {
     const html = !threads && !landed
       ? ''
       : `<style>${STYLE}</style>${foldTrayHtml(unfolded, `${ICON.thread} <b>${threads}</b> ${noun(threads, 'thread')}${landed ? `, ${landed} landed` : ''}`, 'review threads, one per checkout: notes from you, its workers and reviewers')}${unfolded ? threadsHtml() : ''}`
-    if (html !== painted) host.innerHTML = painted = html
+    morphPanel(host, html)
   }
 
   host.addEventListener('click', (e) => {
