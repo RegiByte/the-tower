@@ -12,6 +12,38 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.11.0
+
+Extensions contribute surfaces, the tower gets a learning center, past conversations are reachable by session, and
+the board stops resending every second (#666, #667, #668, #669, #670, #671). API 2.14. Nothing to restart beyond the
+tower (`tower update` does it).
+
+- **Extensions contribute renderers, shelf entries and collection items.** An extension declares them in its
+  manifest (`renderers`, `shelf`, `items`) as the same data as their config entries; enabling the extension is the
+  only config it needs. A collection is the union of your files and each extension's folder, read in place: your
+  item of the same name shadows an extension's, `tower own <tag>` copies one into your collection to edit (your copy
+  gets no updates from the extension; delete it to get the extension's back), and `tower unkeep` refuses an
+  extension's items. A contributed policy offers until you approve it, as any policy does; its `check` line runs
+  before any approval, as the extension's own code does. A renderer of your own can ship as an extension
+  (docs/extending.md).
+- **Tower-wide collections.** An extension's collection with `scope: "system"` is kept for every floor under
+  `collections/_tower/<collection>/`. **config**: `_tower` is never a floor id, and `tower config check` refuses it.
+  A config `renderers` entry with no `root` over nothing is now a warning, not a failure.
+- **The learning center.** The welcome and the skyline's greeting carry Learning center and Take the tour: the
+  center lists the guides by category and searches their titles, keywords and text; the tour starts a worker on your
+  first floor that teaches from them (on Claude only for now). An extension's guides appear in it with its name. The
+  skyline's greeting is a region, `board.skyline`, any extension can put a board command in (API 2.14).
+- **Past conversations.** `tower agent` takes a session id as well as a callsign, so an older holder of a callsign is
+  reachable; `tower callsign <CALLSIGN>` lists every worker that carried one; `tower kept` names the conversation
+  each item was kept in. The handbook tells workers to read past conversations this way, never from a log.
+- **A quieter board.** The weekly budget's pace leaves the board: renderers compute it with `pace()` from
+  `/lib/cards.js` and the budget's new `day` (API 2.12), so a board that didn't change isn't sent again. The event
+  streams and served modules go gzipped. On a test tower: about a fifth as many boards a minute, and 19 times fewer
+  bytes per open page. **For renderers:** `board.today.budget.pace` was always optional and is now absent; a renderer
+  that drew it computes it instead (`/stats` still carries it).
+- **Runtime checks.** One runner checks a new Claude or opencode release against its recorded scenarios; Claude
+  2.1.327 is tested.
+
 ## v2.10.0
 
 Extensions get a place of their own, and a job on the board carries its process (#661, #662, #663, #664). API 2.11.
