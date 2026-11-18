@@ -534,6 +534,12 @@ attributes and the mark itself included, or
 `data-owned="children"` to have it update the node's attributes and leave its children; ids inside an owned node take
 no part in matching. The mark is plain html, so a pure function drawing the view can emit it.
 
+The morph makes a kept node's attributes what the new html says, so an attribute your script writes onto a node the
+html draws is gone on the next redraw. Render that state into the html instead, or mark the node `data-owned` and give
+it an id: an owned node without an id matches only a new owned node (decision `drawn-or-owned`). The library's own
+writers already hold: a control `pressing` marks stays `aria-busy`, and a shown tip stays its control's
+`aria-describedby`.
+
 Spell each id with `domId(place, key)` of the same module (provisional), as the tower's views do: `<place>:<key>`.
 `place` is words of `[a-z0-9-]` joined by `/` that your code names, saying what the element is and where it is drawn
 (`row`, `tab`); a part of it goes in the place, not after the key (`row/menu`), and a view that can be mounted twice at

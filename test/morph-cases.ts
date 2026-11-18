@@ -5,6 +5,7 @@
  */
 import { morph } from '../src/shared/morph.ts'
 import { pressing } from '../src/shared/press.ts'
+import { watchTips } from '../src/shared/tips.ts'
 
 export type CaseResult = { name: string; error?: string }
 
@@ -395,6 +396,23 @@ const CASES: Case[] = [
       await asked
       await settled()
       check(!button.hasAttribute('aria-busy'), `the settled button is ${button.outerHTML}`)
+    },
+  },
+  {
+    name: 'keeps a shown tip described on a control a morph keeps',
+    async run(work) {
+      watchTips(document)
+      work.innerHTML = '<button data-act="go" data-tip="Go now">go</button>'
+      const button = one<HTMLButtonElement>(work, 'button')
+      button.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
+      await new Promise((resolve) => setTimeout(resolve, 400))
+      check(button.getAttribute('aria-describedby') === 'tower-tip', `the hovered button is ${button.outerHTML}`)
+      morph(work, '<button data-act="go" data-tip="Go now">go</button>')
+      await settled()
+      check(work.firstElementChild === button, 'the button was replaced')
+      check(button.getAttribute('aria-describedby') === 'tower-tip', `the morphed button is ${button.outerHTML}`)
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      document.getElementById('tower-tip')?.remove()
     },
   },
 ]

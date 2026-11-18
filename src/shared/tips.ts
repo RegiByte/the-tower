@@ -73,13 +73,20 @@ export function watchTips(doc: Document) {
   let shown: HTMLElement | undefined
   let pending: ReturnType<typeof setTimeout> | undefined
   let warmUntil = 0
-  /** A redraw may take the element away while its tip shows: the tip goes with it. */
-  const gone = new MutationObserver(() => shown && !shown.isConnected && hide())
+  /**
+   * A redraw may take the element away while its tip shows: the tip goes with it. A morph that keeps the element strips
+   * the `aria-describedby` its html lacks, and it is put back where it is missing, so the observer's own write ends there.
+   */
+  const redrawn = new MutationObserver(() => {
+    if (!shown) return
+    if (!shown.isConnected) hide()
+    else if (shown.getAttribute('aria-describedby') !== tip.id) shown.setAttribute('aria-describedby', tip.id)
+  })
 
   const show = (el: HTMLElement) => {
     clearTimeout(pending)
     if (shown) shown.removeAttribute('aria-describedby')
-    else gone.observe(doc.body, { childList: true, subtree: true })
+    else redrawn.observe(doc.body, { childList: true, subtree: true, attributeFilter: ['aria-describedby'] })
     shown = el
     tip.textContent = el.dataset.tip ?? ''
     if (!tip.matches(':popover-open')) tip.showPopover()
@@ -96,7 +103,7 @@ export function watchTips(doc: Document) {
     if (!shown) return
     shown.removeAttribute('aria-describedby')
     shown = undefined
-    gone.disconnect()
+    redrawn.disconnect()
     warmUntil = performance.now() + WARM_MS
     tip.hidePopover()
   }
