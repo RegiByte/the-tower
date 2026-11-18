@@ -4,7 +4,7 @@
   "name": "New Claude release",
   "summary": "A Claude Code release outside the tested range: the board flags each worker on it and says so once, doctor names it, and the range moves only after `tool:claude-check` records the scenarios again on it and reads clean against the baseline and the fixtures.",
   "in": "tower",
-  "reviewed": "2026-11-17",
+  "reviewed": "2026-11-18",
   "refs": ["hub/src/shared/claude.ts#CLAUDE_TESTED", "hub/src/shared/claude.ts#CLAUDE_SURFACES", "hub/src/shared/claude.ts#releaseRange", "hub/src/mod/hooks/register.js#register", "hub/src/bridge/runtimes/claude.ts#normalizeClaude", "hub/src/bridge/board.ts#board", "hub/src/shared/health.ts#untestedHtml", "hub/test/fixtures/", "hub/test/seating.test.ts", "hub/scripts/runtime-check.ts", "hub/scripts/runtime-check.claude.ts#CLAUDE", "hub/scripts/runtime-check.ts#due", "hub/scripts/runtime-check.report.ts#scenarioDifferences", "hub/scripts/runtime-check.read.ts#withoutKept", "hub/scripts/runtime-check.claude.scenarios.ts#SCENARIOS", "hub/test/claude-shapes.json"]
 }
 ---
