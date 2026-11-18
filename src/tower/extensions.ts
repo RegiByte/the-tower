@@ -362,7 +362,7 @@ async function startExtension(a: Accepted, hash: string, deps: Deps): Promise<In
   const controller = new AbortController()
   const timers = new Set<NodeJS.Timeout>()
   const on = (project: string) => !offOn(config.read(), project, a.chain)
-  const stores = storesOf(a, config, live, on)
+  const stores = storesOf(a, config, live, on, () => holder.registry().stores)
   let unheard = () => {}
   const dispose = () => {
     unheard()

@@ -60,8 +60,12 @@ export type CollectionType = { label: string; description?: string }
  */
 export const TOWER_WIDE = '_tower'
 
-/** A file in a collection. Its id is its file name, the extension included; `modifiedAt` is epoch ms. */
-export type CollectionItem = { project: string; collection: string; id: string; size: number; modifiedAt: number }
+/**
+ * A file in a collection. Its id is its file name, the extension included; `modifiedAt` is epoch ms. `from`: the
+ * capability of the extension that contributes it, its `file` in that extension's folder. `shadows`: a user's item
+ * over an extension's item of the same id, the capability it shadows.
+ */
+export type CollectionItem = { project: string; collection: string; id: string; size: number; modifiedAt: number; from?: string; file?: string; shadows?: string }
 
 /**
  * Something kept on a project's shelf, to read or use beside its sessions: a page the project builds (`html`),

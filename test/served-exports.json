@@ -246,6 +246,7 @@
       "hooks.*.failure",
       "hooks.*.payload",
       "id",
+      "items",
       "meta",
       "provides",
       "reads",

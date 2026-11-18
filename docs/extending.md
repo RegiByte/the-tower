@@ -592,6 +592,16 @@ lists them on the board (metadata only), reads them (`tower.text('collection/<p>
 deletes them (`collection/create`, `collection/write`, `collection/delete`), and puts a deleted one back under its id
 (`collection/restore`, an undo). What a file means is your renderer's
 business: the tower page reads `drafts` as prompts and Tower 3D plays `games` in an arcade, over the same verbs.
+An extension contributes items with `items`, a folder of its own per collection: `"items": { "policies": "policies" }`.
+The collection is its own, the config's, or one of a capability it requires or wants; one another capability owns is
+refused (a warning on the extension, the items left out). A collection is then the union of its sources: the user's
+files, writable, and each contributing extension's folder, read in place and never written, on the floors where that
+extension is on (since 2.12). The board marks a contributed item `from: <cap>` and the collection's `sources` say where
+its folder is. A user's item of the same id shadows it (`shadows: <cap>`); `collection/write` on a contributed item
+makes the user's copy under its id; `collection/delete` and `tower unkeep` refuse one. A worker copies one to edit with
+`tower own <tag>`. The folder is read when the tower resolves its extensions, so an edit there shows after `tower
+extensions restart <id>`. A contributed policy is offered at its slots until the user approves its words on that floor,
+as any policy is; its `check` line runs at each slot before any approval, as trusted as the extension's own code.
 A tower-wide collection, one of no floor, is declared by an extension with `"scope": "system"`: its items are at
 `collections/_tower/<collection>/<item>`, the board carries it in `board.collections`, and the verbs and reads name its
 project `_tower` (since 2.12).

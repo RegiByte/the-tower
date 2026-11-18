@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { chainOrder, mismatchOf, registry, resolve, settingsOn, withRendererLayouts, type Found, type Link, type Outcome, type Resolved } from '../src/bridge/extensions.ts'
 import { floorSettingsOf, matchRead, MAX_DEPTH, nestedIn, qualifiedOf, settingsOf, tooDeep, type Caller } from '../src/shared/extensions.ts'
 import { extensionFactOf, type Session } from '../src/bridge/facts.ts'
-import { floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
+import { collectionItems, contributedTo, floorCollections, ownedRefusal, sessionFacts } from '../src/bridge/stores.ts'
 import type { Config } from '../src/shared/model.ts'
 
 const TOWER = '1.81'
@@ -218,7 +218,7 @@ test('a manifest within the rules is accepted with its stores, each schema read 
 })
 
 test("a floor's collections: the config's, then an extension's where it is on, by it, the config's words over its own; off, only the config's stay, open", () => {
-  const stores = [{ provides: 'pulse', chain: ['pulse'], answers: [], collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
+  const stores = [{ provides: 'pulse', chain: ['pulse'], answers: [], contributed: {}, collections: { pulse: { label: 'Beats', description: 'Its beats', owned: true, doors: DOORS }, 'pulse.notes': { label: 'Notes', description: 'Its notes' } } }]
   const c = config({
     collections: { drafts: { label: 'Drafts' }, pulse: { label: 'Our beats' } },
     projects: { app: { name: 'App', hub: '/app', repos: [] }, site: { name: 'Site', hub: '/site', repos: [], capabilities: { pulse: { off: true } } } },
@@ -436,4 +436,40 @@ test('settingsOf reads the running provider of a capability when a user extensio
 test('a floor setting settings on an extension that takes none is a problem, as it is on the system', () => {
   const c = config({ extensions: { plain: { path: '/ext/plain' } }, projects: { app: { name: 'App', hub: '/app', repos: [], extensions: { plain: { settings: { a: 1 } } } } } })
   assert.deepEqual(resolve([ext('plain')], c, TOWER).accepted.get('plain')?.problems.map((p) => [p.code, p.message]), [['invalid', 'projects.app.extensions.plain.settings: plain takes no settings']])
+})
+
+test("a collection's items: the user's and the extensions' on the floor, the first contributor's of an id, a user's item shadowing one of its id", () => {
+  const item = (id: string) => ({ id, size: 1, modifiedAt: 1 })
+  const stores = [
+    { provides: 'guides', chain: ['guides'], answers: [], collections: {}, contributed: { notes: { dir: '/g', items: [item('a.md'), item('b.md')] } } },
+    { provides: 'more', chain: ['more'], answers: [], collections: {}, contributed: { notes: { dir: '/m', items: [item('b.md'), item('c.md')] } } },
+  ]
+  const c = config({ projects: { app: { name: 'App', hub: '/app', repos: [], capabilities: { more: { off: true } } } } })
+  const contributed = contributedTo(c, 'app', 'notes', stores)
+  assert.deepEqual(
+    contributed.map((i) => [i.id, i.from, i.file]),
+    [
+      ['a.md', 'guides', '/g/a.md'],
+      ['b.md', 'guides', '/g/b.md'],
+    ],
+    "an extension off on the floor contributes nothing there",
+  )
+  assert.deepEqual(
+    contributedTo(c, '_tower', 'notes', stores).map((i) => [i.id, i.from]),
+    [
+      ['a.md', 'guides'],
+      ['b.md', 'guides'],
+      ['c.md', 'more'],
+    ],
+    'tower-wide, every extension contributes, the first keeping an id',
+  )
+  const own = [{ project: 'app', collection: 'notes', ...item('b.md') }, { project: 'app', collection: 'notes', ...item('z.md') }]
+  assert.deepEqual(
+    collectionItems(own, contributed).map((i) => [i.id, i.from, i.shadows]),
+    [
+      ['a.md', 'guides', undefined],
+      ['b.md', undefined, 'guides'],
+      ['z.md', undefined, undefined],
+    ],
+  )
 })
