@@ -27,12 +27,13 @@ export type ElementContract = {
 /**
  * Fires each event of `names` the part `from` fires on its element `to` too, bubbling, so a view that draws the element
  * as a string listens on its own host. The SDK's events fire on their part alone; a listener on `to` that cancels one
- * cancels the part's change.
+ * cancels the part's change. One the element refused already is not fired again: it never happened.
  */
 export function relay(from: Element, to: Element, names: string[]) {
   for (const name of names) {
     from.addEventListener(name, (event) => {
       const { detail, cancelable } = event as CustomEvent
+      if (event.defaultPrevented) return
       if (!to.dispatchEvent(new CustomEvent(name, { detail, cancelable, bubbles: true }))) event.preventDefault()
     })
   }
