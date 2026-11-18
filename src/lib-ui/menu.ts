@@ -28,6 +28,7 @@ export const elements = {
     events: {
       payloadchange: '`detail.value`: the subject it is about to open for. Set `items` for it here.',
       action: "`detail.value`: the value of the item chosen. It closes after.",
+      checkedchange: "A checkbox item of `items` chosen: `detail.value`, the item's value; `detail.checked`, whether it turns on. `preventDefault()` refuses it. It closes after where the item sets `closeOnSelect`.",
       openchange: '`detail.value`: whether it opens or closes, `detail.reason` why. `preventDefault()` keeps it as it is.',
     },
     states: {},
@@ -75,7 +76,8 @@ class TowerMenu extends HTMLElement {
     this.append(inner)
     this.#inner = inner
     if (this.#items) inner.items = this.#items
-    relay(inner, this, Object.keys(elements['tower-menu'].events))
+    relay(inner, this, ['payloadchange', 'action', 'openchange'])
+    inner.addEventListener('checkedchange', (event) => this.#checked(event as CustomEvent<{ value: boolean }>), { capture: true })
     inner.addEventListener('openchange', (event) => {
       if (!event.defaultPrevented) this.#mark(event.detail.value ? (inner.api.getPayload() as string | undefined) : undefined)
     })
@@ -86,6 +88,13 @@ class TowerMenu extends HTMLElement {
 
   attributeChangedCallback(name: string, was: string | null, value: string | null) {
     if (this.#inner && was !== value) this.#copy(this.#inner, name)
+  }
+
+  /** A checkbox item's own `checkedchange`, which doesn't bubble, fired again on the menu with the item's value. */
+  #checked(event: CustomEvent<{ value: boolean }>) {
+    const item = event.target as Element
+    const detail = { value: item.getAttribute('value'), checked: event.detail.value }
+    if (!this.dispatchEvent(new CustomEvent('checkedchange', { detail, cancelable: event.cancelable, bubbles: true }))) event.preventDefault()
   }
 
   #copy(inner: Element, name: string) {
