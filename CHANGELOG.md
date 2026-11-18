@@ -12,6 +12,26 @@ the entries it passes. A change is flagged when it asks something of you:
 
 Commit messages hold the detail.
 
+## v2.13.0
+
+The tower's panels start keeping what you hold while they redraw (pass 3b, the morph: #683, #685–#688), and two fixes
+to what you see every day (#689, #690). API 2.19. Nothing to restart beyond the tower (`tower update` does it).
+
+- **Shown tabs keep their titles again.** Since v2.12.0 a worker's shown tabs shrank to a few letters instead of the
+  tab row scrolling, worst in a grid cell with heads hidden, also in a narrow card view.
+- **A worker's processes are one line in its menu,** "End N processes…", which opens the confirm listing them. It
+  shows once the worker has stopped, never for the commands it is running. Earlier conversations are their own group,
+  one line each.
+- **Focus, caret and scroll survive a redraw** in Stats (the page and Tower 3D), Policies, the kept, drafts, reviews
+  and policies trays, the rail, the tally, notes, the tip, the limits and extensions popovers, the shell dock,
+  settings and the palette. A settings field being typed in keeps its text while another window changes prefs; if
+  both change the same one, a field left unchanged since it was drawn takes the other window's value, and an edited
+  one saves yours. The palette's highlight stays on its entry when a draft's title lands.
+- For renderer and extension authors: `morphPanel(el, html)` beside `drawPanel` in `/lib/view.js` (2.19); every view
+  mount gets `ctx.scope` for its ids (2.18); `keepingTyped` in `/lib/settings.js`; and the rule for attributes script
+  writes on drawn nodes, the kb decision `drawn-or-owned`: draw them into the html, or own the node.
+- For contributors: `npm run tool:act` acts out a working Claude session on a sandbox, on cue.
+
 ## v2.12.3
 
 A worker gone back to is ready to type (#681, thanks @GlaucoNeves). API unchanged. Nothing to restart beyond the
