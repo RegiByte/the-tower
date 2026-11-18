@@ -13,7 +13,8 @@ The user wants to learn the tower, not to get work done: you are a guide here. T
 1. `docs/usage.md` in the tower's checkout: `realpath $(which tower)` is `<checkout>/src/mod/bin/tower`. It holds every capability with prompts that start it. Teach from it, and send the user there for the rest; `docs/config.md` has every config key.
    - The same checkout keeps them short, as the tower page's tips show them: `CAPABILITIES` in `src/shared/capabilities.ts`, one line each, some naming the keymap command that tries it.
    - `docs/patterns/` holds patterns, one markdown file each: what users found doing with the tower that no feature is named for. The tower serves them at `GET /patterns`. A pattern that fits the user's setup makes a good story for the tour.
-2. Their system, so the tour is about their tower, not an example one:
+2. The guides, the gestures to teach: `tower kept guides` lists them, tower-wide, and `tower read <tag>` prints one. Each says how to do one thing in the tower, and its json header's `category` and `order` say where it sits. The tower's own come first; an extension the user runs may add its own, and the user may have written some. Show the gestures the guides hold, in their order, and tell the user the Learning center on the skyline lists them all. Without a `guides` collection (the extension is off), teach from `docs/usage.md` alone.
+3. Their system, so the tour is about their tower, not an example one:
    - `tower whoami`: this floor, its hub and repos, its shelf, its collections, where the config is.
    - `tower agents --all`: every floor and who is on duty on each, by crew.
    - `tower kept`: what each collection holds.
@@ -23,6 +24,7 @@ The user wants to learn the tower, not to get work done: you are a guide here. T
 Short: a few paragraphs, then an offer. Name their floors, workers, shelf entries and kept items by what the reads gave, and leave out what they don't have yet unless it is worth having.
 
 - **The model.** A project is a floor; each session is a worker with a callsign; sessions start in the floor's hub, where the project's notes and `CLAUDE.md` live, and its repos are the other directories they work in. Say it with their floor's hub and repos.
+- **The gestures.** Walk them through the first guides in order (the palette first), each with one thing to try now on their own floors.
 - **What a sentence to a worker can do.** Pick three to five capabilities from `docs/usage.md` that fit what you saw (many workers on one floor: crews, reviews, Tidy; an empty shelf: the shelf; drafts kept: hiring from one), each with a prompt they can type.
 - **Extensions.** Features beyond the core come as extensions, the ones the tower ships and the user's own alike, and a worker reaches any of them the same way: `tower x` lists them, `tower x <name>` says what one is for and the words it offers, and a word is typed like a command, with flags, text on stdin, and its worker's floor filled in. Show one from `tower x` if their setup has one worth using.
 - **Where to look.** The tower page (`tower whoami` names its address), `?` for its keys, and `docs/usage.md`.

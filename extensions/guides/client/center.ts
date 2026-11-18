@@ -1,4 +1,4 @@
-import type { Board } from '/lib/board.js'
+import { type Board, boardSubject } from '/lib/board.js'
 import { fenceText, imagePath, markdownCss, markdownHtml } from '/lib/markdown.js'
 import { closeHtml, copyTelling, itemPath, type Mount, paintOnce, viewCss } from '/lib/view.js'
 import { esc } from '/lib/words.js'
@@ -30,6 +30,7 @@ const STYLE = viewCss(
   & .reader { padding: var(--sp-xl) var(--sp-2xl); }
   & .reader .md img { max-width: 100%; border-radius: var(--radius-s); border: 1px solid var(--line); }
   & .reader .empty { color: var(--muted); }
+  & .tour { min-height: var(--control); padding: 0 var(--sp-l); }
   @media (max-width: 640px) { & .center { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }`,
 )
 
@@ -56,7 +57,8 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   const reads = new Map<string, Read>()
 
   host.innerHTML = `<style>${STYLE}${markdownCss}</style>
-  <div class="shelf-head"><span class="label">Learning center</span><span class="dim">how to do things in the tower</span><span class="actions"></span></div>
+  <div class="shelf-head"><span class="label">Learning center</span><span class="dim">how to do things in the tower</span>
+    <button class="tour primary" data-tour>Take the tour</button><span class="actions"></span></div>
   <div class="center"><nav class="index" aria-label="guides"><input type="search" placeholder="Search guides" aria-label="search guides"><div class="list"></div></nav>
     <article class="reader" aria-live="polite"></article></div>`
   const $ = <T extends Element>(selector: string) => host.querySelector<T>(selector)!
@@ -116,6 +118,7 @@ export const mount: Mount = (host, { tower, board: first, kit }) => {
   host.addEventListener('click', (e) => {
     const target = e.target as Element
     if (target.closest('[data-home]')) return kit.display('board')
+    if (target.closest('[data-tour]')) return void kit.run('guides/tour', boardSubject(board))
     const code = target.closest<HTMLElement>('[data-copy-code]')
     if (code) return void copyTelling(fenceText(code), 'the code', kit.toast)
     const id = target.closest<HTMLElement>('[data-guide]')?.dataset.guide

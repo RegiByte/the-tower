@@ -1,0 +1,19 @@
+{
+  "workers": 0,
+  "scenes": [
+    {
+      "name": "welcome",
+      "size": "1280x800",
+      "steps": [{ "until": "[data-region=\"board.skyline\"] button", "text": "Take the tour" }],
+      "crop": "[data-view=\"tower/skyline\"] .hello"
+    },
+    {
+      "name": "center",
+      "size": "1280x800",
+      "open": "#v/guides/center/board",
+      "steps": [{ "until": "[data-view=\"guides/center\"] .reader h1", "text": "The command palette" }],
+      "crop": "[data-view=\"guides/center\"]",
+      "pad": 0
+    }
+  ]
+}
