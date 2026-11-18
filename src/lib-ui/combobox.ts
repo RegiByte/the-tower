@@ -3,6 +3,12 @@
  * filters a list of options to choose one, which a form submits by its `name`. A render writes all it takes as
  * attributes, the options as JSON among them, and keeps the value its `valuechange` reports, writing it back as `value`.
  * Typing, the caret and the open list are the element's, so a page marks it `data-owned="children"`.
+ *
+ * It keeps a form's keys as a native select does. While the list is open, typing filters it and highlights the first
+ * match; Enter, with any modifier (⌘↵ too), chooses the highlighted option and closes the list, or does nothing when
+ * none is highlighted, and goes no further: the form never sees it, so a submit key doesn't submit. Closed, the keys
+ * pass on as from any field. Leaving without choosing (Escape, Tab, a press outside) shows the chosen option's label
+ * again, or the empty box: text typed but not chosen is never a value.
  */
 import type { ListData } from '@ui-sdk/web/combobox'
 import { relay, type ElementContract } from './sdk.ts'
@@ -47,11 +53,17 @@ class TowerCombobox extends HTMLElement {
     if (this.#inner) return
     const inner = document.createElement('ui-combobox')
     inner.innerHTML = PARTS
+    inner.setAttribute('auto-highlight', '')
     this.append(inner)
     this.#inner = inner
     for (const name of TowerCombobox.observedAttributes) this.#sync(inner, name)
     relay(inner, this, Object.keys(elements['tower-combobox'].events))
+    this.addEventListener('keydown', () => (this.#openAtKey = this.open), { capture: true })
+    this.addEventListener('keydown', (key) => key.key === 'Enter' && this.#openAtKey && key.stopPropagation())
   }
+
+  /** Whether the list was open as the key now going through reached the element, before the SDK's own handling closed it. */
+  #openAtKey = false
 
   attributeChangedCallback(name: string, was: string | null, value: string | null) {
     if (this.#inner && was !== value) this.#sync(this.#inner, name)
