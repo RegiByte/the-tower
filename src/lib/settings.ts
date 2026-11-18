@@ -4,6 +4,7 @@ export {
   changesSection,
   choice,
   faceInstalled,
+  keepingTyped,
   markdownSection,
   prefSections,
   section,

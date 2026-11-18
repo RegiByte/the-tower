@@ -1,9 +1,9 @@
 import { heldWhy } from './acts.ts'
 import { briefCss } from '/lib/brief.js'
 import { markdownCss } from '/lib/markdown.js'
-import { changesSection, faceInstalled, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
+import { changesSection, faceInstalled, keepingTyped, markdownSection, prefSections, settingsCss, settingsHtml, soundSection, wirePrefs } from '/lib/settings.js'
 import { placeOnOpen, watchTips, toastsCss, ask } from '/lib/chrome.js'
-import { ICON, panelsCss, itemsCss } from '/lib/view.js'
+import { ICON, morphPanel, panelsCss, itemsCss } from '/lib/view.js'
 import { sawAll, seenOf } from '/lib/viewer.js'
 import { isFresh as isNewAction, offeredIds } from '/lib/layout.js'
 import { deskVerbs } from './desk-verbs.ts'
@@ -162,8 +162,6 @@ export function startHud(started: HudDeps) {
    * The settings popover: how waits ring, the viewer's appearance and the building's lighting. Notifications are the tower page's, so it offers none. It
    * stands by the button that opened it, in the HUD or on the pause card.
    */
-  let settingsDrawn = ''
-
   /** The lighting setting as last chosen, kept in `tower.store` under `LIGHTING_KEY`: the page draws what it started with (`lit`). */
   let chosen = lit
 
@@ -175,7 +173,7 @@ export function startHud(started: HudDeps) {
 
   function paintSettings() {
     const html = settingsHtml([soundSection(port.state().attending.ring), ...prefSections(tower.prefs.get(), faceInstalled), markdownSection(port.state().viewer.briefMarkdown), changesSection(port.state().viewer.changesTree), lightingSection(chosen, lit)])
-    if (html !== settingsDrawn) settingsEl.innerHTML = settingsDrawn = html
+    keepingTyped(settingsEl, () => morphPanel(settingsEl, html))
   }
 
   placeOnOpen(settingsEl, () => settingsBy)
