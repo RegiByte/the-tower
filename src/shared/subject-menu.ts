@@ -133,12 +133,11 @@ const cardMenu = (board: Board, c: Card, ctx: MenuContext): SubjectMenu => {
     hint: r.command,
     does: { t: 'action', subject: 'resource', verb: a.verb, id: c.id, pid: r.pid },
   })))
-  const shown: MenuSub[] = c.shown.length ? [{ id: 'shown', label: `Shown (${c.shown.length})`, lines: c.shown.map((s) => shownLine(c, s, ctx)).reverse() }] : []
   return {
     title: c.callsign,
     groups: groups(
       { label: c.callsign, lines: verbs },
-      { label: 'Shown', lines: shown },
+      { label: 'Shown', lines: c.shown.map((s) => shownLine(c, s, ctx)).reverse() },
       { label: 'Earlier conversations and processes', lines: [...earlier, ...processes] },
       { label: 'Extensions', lines: addedLines(board, cardSubject(c)) },
     ),
