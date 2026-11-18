@@ -49,7 +49,7 @@ export function startAppLoop(started: AppLoopDeps) {
   const { boardNow, panelAs } = nowOf(port)
   const { toast } = started.toasts
   const { events } = started
-  const { layers, celebrate, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, flyHome, frameCabinet, floorY, syncNotes, syncCabinets, syncFilings } = started.world
+  const { layers, celebrate, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, limitsRedrawn, flyHome, frameCabinet, floorY, syncNotes, syncCabinets, syncFilings } = started.world
   const { archivedAt, archivesSettled, drawersAt, readArchives } = started.archive
   const { desk } = started.views
   const { hiring } = started.spawn
@@ -137,6 +137,7 @@ export function startAppLoop(started: AppLoopDeps) {
       'shown/arrived': ({ id, target, atDesk }) => shownArrives(id, target, atDesk),
       'game/frame': ({ project, id }) => frameCabinet(cabinetOf(planNow(), project, id)!),
       logbooks: () => freshLogbooks(boardNow()!),
+      limits: () => limitsRedrawn(),
       'replan/at': ({ until }, dispatch) => dispatch({ type: 'replan', at: Math.max(until, wallNow()) }),
       'desk/go': ({ id }) => toDesk(id),
       'shell/go': ({ id }) => toShell(id),

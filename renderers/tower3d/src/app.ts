@@ -260,6 +260,8 @@ export type AppEvent =
   | { type: 'replan-due'; until: number }
   /** The building plans its board again at wall time `at`, `until` or later when the timer fired late. */
   | { type: 'replan'; at: number }
+  /** A minute passed with no board on a moving clock: what the limits say by the clock (the budget's pace) is due again. */
+  | { type: 'limits-due' }
   | { type: 'ride'; ride: Ride }
   | { type: 'ride-arrived' }
   | { type: 'fly'; flight: Flight }
@@ -360,6 +362,8 @@ export type AppEffect =
   | { type: 'game/frame'; project: string; id: string }
   /** The open desk's brief and the reader's logbook read again when their worker changed. */
   | { type: 'logbooks' }
+  /** The rate-limit columns and the stats board drawn again if what they say changed, the minute included. */
+  | { type: 'limits' }
   /** To a desk or a shell pending once the board shows it, sat down at it. */
   | { type: 'desk/go'; id: string }
   | { type: 'shell/go'; id: string }
@@ -669,6 +673,7 @@ function took(db: Db, building: Building, reads: AppReads): AppEffect[] {
     (db) => (db.pending.desk && deskOf(plan, db.pending.desk) ? [into({ ...db, pending: { ...db.pending, desk: undefined } }), { type: 'desk/go', id: db.pending.desk }] : []),
     (db) => (db.pending.shell && kioskOf(plan, db.pending.shell) ? [into({ ...db, pending: { ...db.pending, shell: undefined } }), { type: 'shell/go', id: db.pending.shell }] : []),
     () => replanAt(building, plan, reads),
+    () => limitsDue(reads),
   )
 }
 
@@ -707,6 +712,12 @@ function replanAt(building: Building, plan: Plan, reads: AppReads): AppEffect[] 
   if (!Number.isFinite(plan.until)) return [{ type: 'timer/cancel', id: 'replan' }]
   return [{ type: 'timer/start', id: 'replan', ms: Math.max(0, plan.until - building.at), fire: { type: 'replan-due', until: plan.until } }]
 }
+
+/**
+ * The limits are due again a minute after the last board, while the clock moves: the board carries the budget's facts
+ * and stays put while nothing happens, so its pace, which moves with the clock, is drawn again on this timer.
+ */
+const limitsDue = (reads: AppReads): AppEffect[] => (reads.clockMoves ? [{ type: 'timer/start', id: 'limits', ms: 60_000, fire: { type: 'limits-due' } }] : [])
 
 /** The desk's tab goes to `to`. */
 const tabTo = (db: Db, id: string, to: TabTo): AppEffect[] => [into({ ...db, deskTab: tabName(to) }), ...tabbed(db.deskTab, id, to), DRAW]
@@ -757,6 +768,7 @@ export const appHandlers = (reads: AppReads): Handlers<Db, AppEvent, AppEffect> 
     return db.stats.read ? [{ type: 'toast', text: message }] : [into(withStats(db, { failed: message })), DRAW]
   },
   'replan-due': (_db, { until }) => [{ type: 'replan/at', until }],
+  'limits-due': () => [{ type: 'limits' }, ...limitsDue(reads)],
   /** The same board planned again at `at`, its archive as read for it kept: only a new board takes a new read. */
   replan: (db, { at }) => (db.building ? took(db, { ...db.building, at }, reads) : []),
   ride: (db, { ride }) => [into(moved(db, { ride })), { type: 'elevator' }],

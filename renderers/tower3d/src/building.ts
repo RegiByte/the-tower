@@ -211,7 +211,17 @@ export function startWorld(started: WorldDeps) {
     defaultLimits(b).rateLimits.map((r) => r.kind),
   ])
 
-  const limitsKey = (b: Board) => JSON.stringify([defaultLimits(b).rateLimits, b.today])
+  /** What the limits say: the readings, today's facts and the minute, since the budget's pace moves with the clock. */
+  const limitsKey = (b: Board) => JSON.stringify([defaultLimits(b).rateLimits, b.today, Math.floor(wallNow() / 60_000)])
+
+  /** The rate-limit columns and the stats board drawn again when what they say changed. */
+  function limitsRedrawn() {
+    const next = boardNow()!
+    const key = limitsKey(next)
+    if (key === builtLimits) return
+    builtLimits = key
+    setLimits(building!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow())
+  }
 
   function rebuildWorld() {
     if (building) discard(building.group)
@@ -403,7 +413,7 @@ export function startWorld(started: WorldDeps) {
     boards++
     const key = structureKey(planNow(), next)
     if (key !== builtShape) (builtShape = key, builtLimits = limitsKey(next), rebuildWorld())
-    if (limitsKey(next) !== builtLimits) (builtLimits = limitsKey(next), setLimits(building!, planNow(), defaultLimits(next).rateLimits, next.today, wallNow()))
+    limitsRedrawn()
     setShellTitles(building!, next.shells)
     reconcile(desksAfter(was, hang, { reviewerOf, monitorOf }, wallNow(), loaded(), people), layers.desks)
   }
@@ -591,5 +601,5 @@ export function startWorld(started: WorldDeps) {
   let firstPictured: () => void
   const firstBuilt = new Promise<void>((resolve) => (firstPictured = resolve))
 
-  return { built, counts, layers, people, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, landChairs }
+  return { built, counts, layers, people, levelOf, rootAt, showLevels, directory, screenDistance, boxesHere, here, discard, hang, reconcile, celebrate, isFresh, freshShown, dressSides, dressReplays, planOf, planNow, shownArrives, worldRebuilt, worldFurnished, limitsRedrawn, ease, lookQuaternion, vec3, flyTo, flyHome, frameOn, frameCabinet, riddenFor, DOORS_SHUT, RIDE, floorY, pickables, pick, floorOf, carried, syncStations, syncNotes, syncCabinets, syncFilings, firstBuilt, landChairs }
 }
